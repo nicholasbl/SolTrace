@@ -79,8 +79,8 @@ jobs:
 
     - name: List test directory
       run: |
-           dir google-tests
-           dir google-tests/debug
+           dir build/google-tests
+           dir build/google-tests/debug
 
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
