@@ -35,7 +35,7 @@ TEST(st_sim_run_test, BasicAssertions)
 		std::cout << "Current working directory: " << buffer << std::endl;
 	}
 
-	const char* additional_path = "\\Aperture Examples.stinput";
+	const char* additional_path = "../Aperture Examples.stinput";
 
 	if (length + strlen(additional_path) < MAX_PATH) {
 		strcat(buffer, additional_path); // Append the additional path to the current directory
@@ -47,7 +47,7 @@ TEST(st_sim_run_test, BasicAssertions)
 
 
 
-	const char* file = buffer;
+	const char* file = additional_path;
 	int nrays = 1;
 	int maxrays = 50;
 	int seed = 1;

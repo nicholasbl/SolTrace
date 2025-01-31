@@ -78,7 +78,9 @@ jobs:
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --target strace Test
 
     - name: List build directory files
-      run: ls -al build
+      run: |
+        dir build
+        dir build\google-tests\
 
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}

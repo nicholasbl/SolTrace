@@ -12,7 +12,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 
-file(GLOB SAMPLE_FILES ../app/deploy/samples/*.stinput)
+file(GLOB SAMPLE_FILES ./samples/*.stinput)
 file(GLOB SOLTRACE_EXAMPLE_TESTS soltrace_example_tests/st_sim_run_test.cpp)
 
 set(STRACE_SRC ../coretrace/strace)
@@ -27,12 +27,14 @@ set(ENV{SOLTRACE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
 
 #configure_file(${SAMPLE_FILES} ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
-if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/Release)
-	file(COPY ${SAMPLE_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Release)
-endif()
-if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/Debug)
-	file(COPY ${SAMPLE_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Debug)
-endif()
+
+file(COPY ${SAMPLE_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+#if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/Release)
+#	file(COPY ${SAMPLE_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Release)
+#endif()
+#if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/Debug)
+	#file(COPY ${SAMPLE_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Debug)
+#endif()
 
 message("Binary dir: ${CMAKE_CURRENT_BINARY_DIR}")
 message("Source dir: ${CMAKE_CURRENT_SOURCE_DIR}")
