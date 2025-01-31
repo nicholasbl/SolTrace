@@ -26,10 +26,17 @@ set(ENV{SOLTRACE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
 #(such as the ones created when globbing the sample files together)
 
 #configure_file(${SAMPLE_FILES} ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
-file(COPY ${SAMPLE_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Debug)
+
+if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/Release)
+	file(COPY ${SAMPLE_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Release)
+endif()
+if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/Debug)
+	file(COPY ${SAMPLE_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Debug)
+endif()
 
 message("Binary dir: ${CMAKE_CURRENT_BINARY_DIR}")
 message("Source dir: ${CMAKE_CURRENT_SOURCE_DIR}")
+message("Build type: ${CMAKE_BUILD_TYPE}")
 
 enable_testing()
 
