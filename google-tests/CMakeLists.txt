@@ -73,7 +73,7 @@ endif()
 #include(GoogleTest)
 #gtest_discover_tests(Test)
 
-add_definitions(-DPROJECT_DIR="${CMAKE_BINARY_DIR}")
+add_definitions(-DPROJECT_DIR="${CMAKE_CURRENT_BINARY_DIR}")
 
 enable_testing()
 add_test(NAME Test COMMAND TestExecutable)

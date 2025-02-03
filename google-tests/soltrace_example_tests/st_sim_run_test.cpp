@@ -36,19 +36,10 @@ TEST(st_sim_run_test, BasicAssertions)
 	//}
 	cout << "Current working directory: " << project_dir << endl;
 
-	string additional_path = "/Soltrace/google-tests/Aperture Examples.stinput";
+	string additional_path = "/Aperture Examples.stinput";
 	project_dir += additional_path;
 
 	cout << "File path: " << project_dir << endl;
-
-	//if (length + strlen(additional_path) < MAX_PATH) {
-	//	strcat(buffer, additional_path); // Append the additional path to the current directory
-	//	std::cout << "New path: " << buffer << std::endl;
-	//}
-	//else {
-	//	std::cerr << "Buffer too small to append!" << std::endl;
-	//}
-
 
 
 	const char* file = project_dir.data();
