@@ -86,10 +86,10 @@ jobs:
       if: matrix.os != 'windows-latest'
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --target strace
 
-    #- name: List test directory
-    #  run: |
-    #       dir build/google-tests
-    #       dir build/google-tests/debug
+    - name: List test directory
+      run: |
+          dir build/google-tests
+          
 
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
