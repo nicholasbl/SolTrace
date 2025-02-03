@@ -26,17 +26,20 @@ double roundToDecimalPlaces(double value, int decimalPlaces) {
 
 TEST(st_sim_run_test, BasicAssertions)
 {
-	std::cout << "Project Directory: " << PROJECT_DIR << std::endl;
-	std::string project_dir = PROJECT_DIR;
+	cout << "Project Directory: " << PROJECT_DIR << endl;
+	string project_dir = PROJECT_DIR;
 	//if (length == 0) {
 	//	std::cerr << "Error getting current directory!" << std::endl;
 	//}
 	//else {
 	//	std::cout << "Current working directory: " << buffer << std::endl;
 	//}
+	cout << "Current working directory: " << project_dir << endl;
 
-	std::string additional_path = "/Soltrace/google-tests/Aperture Examples.stinput";
+	string additional_path = "/Soltrace/google-tests/Aperture Examples.stinput";
 	project_dir += additional_path;
+
+	cout << "File path: " << project_dir << endl;
 
 	//if (length + strlen(additional_path) < MAX_PATH) {
 	//	strcat(buffer, additional_path); // Append the additional path to the current directory
