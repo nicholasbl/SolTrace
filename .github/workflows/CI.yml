@@ -98,4 +98,4 @@ jobs:
       if: matrix.os == 'Windows'
       run: |
         cd ${{ steps.strings.outputs.build-output-dir }}\google-tests\${{ matrix.build_type }} 
-        ./Test.exe
+        ./TestExecutable.exe

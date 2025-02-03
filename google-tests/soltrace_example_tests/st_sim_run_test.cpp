@@ -26,28 +26,29 @@ double roundToDecimalPlaces(double value, int decimalPlaces) {
 
 TEST(st_sim_run_test, BasicAssertions)
 {
-	char buffer[MAX_PATH];
-	DWORD length = GetCurrentDirectoryA(MAX_PATH, buffer);
-	if (length == 0) {
-		std::cerr << "Error getting current directory!" << std::endl;
-	}
-	else {
-		std::cout << "Current working directory: " << buffer << std::endl;
-	}
+	std::cout << "Project Directory: " << PROJECT_DIR << std::endl;
+	std::string project_dir = PROJECT_DIR;
+	//if (length == 0) {
+	//	std::cerr << "Error getting current directory!" << std::endl;
+	//}
+	//else {
+	//	std::cout << "Current working directory: " << buffer << std::endl;
+	//}
 
-	const char* additional_path = "../Aperture Examples.stinput";
+	std::string additional_path = "/Soltrace/google-tests/Aperture Examples.stinput";
+	project_dir += additional_path;
 
-	if (length + strlen(additional_path) < MAX_PATH) {
-		strcat(buffer, additional_path); // Append the additional path to the current directory
-		std::cout << "New path: " << buffer << std::endl;
-	}
-	else {
-		std::cerr << "Buffer too small to append!" << std::endl;
-	}
+	//if (length + strlen(additional_path) < MAX_PATH) {
+	//	strcat(buffer, additional_path); // Append the additional path to the current directory
+	//	std::cout << "New path: " << buffer << std::endl;
+	//}
+	//else {
+	//	std::cerr << "Buffer too small to append!" << std::endl;
+	//}
 
 
 
-	const char* file = additional_path;
+	const char* file = project_dir.data();
 	int nrays = 1;
 	int maxrays = 50;
 	int seed = 1;

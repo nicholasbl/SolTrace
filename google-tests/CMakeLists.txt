@@ -40,15 +40,14 @@ message("Binary dir: ${CMAKE_CURRENT_BINARY_DIR}")
 message("Source dir: ${CMAKE_CURRENT_SOURCE_DIR}")
 message("Build type: ${CMAKE_BUILD_TYPE}")
 
-enable_testing()
 
 
 
-add_executable( Test
+
+add_executable( TestExecutable
 	${SOLTRACE_EXAMPLE_TESTS}
 	${CORETRACE}
 	${STRACE}
-	${SAMPLE_FILES}
 )
 
 #add_test(NAME TestTest COMMAND Test)
@@ -60,12 +59,25 @@ add_compile_definitions(SAMPLE_FILES=${SAMPLE_FILES})
 #add_definitions( -D_SAMPLES = ${SAMPLE_FILES})
 
 target_link_libraries(
-	Test
+	TestExecutable
 	coretrace
 	GTest::gtest_main
 )
 
-set_target_properties(Test PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+if(UNIX)
+	target_link_libraries(TestExecutable pthread)
+endif()
 
-include(GoogleTest)
-gtest_discover_tests(Test)
+#set_target_properties(Test PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
+#include(GoogleTest)
+#gtest_discover_tests(Test)
+
+add_definitions(-DPROJECT_DIR="${CMAKE_BINARY_DIR}")
+
+enable_testing()
+add_test(NAME Test COMMAND TestExecutable)
+
+if(MSVC)
+	set_tests_properties(Test PROPERTIES WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+endif()
