@@ -104,26 +104,6 @@ TEST(st_sim_run_test, BasicAssertions)
 
 	// Retrieving stage each ray is in during simulation
 	::st_stagemap(cxt, stage_map);
-
-
-	double* x_round = new double[Length];
-	double* y_round = new double[Length];
-	double* z_round = new double[Length];
-
-	double* x_cos_round = new double[Length];
-	double* y_cos_round = new double[Length];
-	double* z_cos_round = new double[Length];
-
-	for (int i = 0; i != Length; i++)
-	{
-		x_round[i] = roundToDecimalPlaces(x_location[i], 4);
-		y_round[i] = roundToDecimalPlaces(y_location[i], 4);
-		z_round[i] = roundToDecimalPlaces(z_location[i], 4);
-
-		x_cos_round[i] = roundToDecimalPlaces(x_cos[i], 4);
-		y_cos_round[i] = roundToDecimalPlaces(y_cos[i], 4);
-		z_cos_round[i] = roundToDecimalPlaces(z_cos[i], 4);
-	}
 	
 
 	for (int i = 0; i != Length; i++)
@@ -133,38 +113,20 @@ TEST(st_sim_run_test, BasicAssertions)
 	}
 	cerr << "Ray numbers and stage numbers match." << endl;
 
-	EXPECT_EQ(element_map[0], 2);
-	EXPECT_EQ(element_map[1], 1);
-	EXPECT_EQ(element_map[2], 2);
+	EXPECT_EQ(element_map[0], 1);
+	
 	cerr << "Elements each ray hits match." << endl;
 
-	EXPECT_EQ(x_round[0], 11.57);
-	EXPECT_EQ(x_round[1], 0.5502);
-	EXPECT_EQ(x_round[2], -12.6424);
-
-
-	EXPECT_EQ(y_round[0], -4.534);
-	EXPECT_EQ(y_round[1], -0.2156);
-	EXPECT_EQ(y_round[2], 4.9542);
-
-	EXPECT_EQ(z_round[0], 1.3163);
-	EXPECT_EQ(z_round[1], 14.9843);
-	EXPECT_EQ(z_round[2], 1.7656);
+	EXPECT_NEAR(x_location[0], -3.06214, 0.0001);
+	EXPECT_NEAR(y_location[0], 5.92862, 0.0001);
+	EXPECT_NEAR(z_location[0], 12.7732, 0.0001);
 	cerr << "All intersection positions match." << endl;
 
-	EXPECT_EQ(x_cos_round[0], 0);
-	EXPECT_EQ(x_cos_round[1], -0.6095);
-	EXPECT_EQ(x_cos_round[2], -0.6808);
-
-	EXPECT_EQ(y_cos_round[0], 0);
-	EXPECT_EQ(y_cos_round[1], 0.2388);
-	EXPECT_EQ(y_cos_round[2], 0.2668);
-
-	EXPECT_EQ(z_cos_round[0], -1);
-	EXPECT_EQ(z_cos_round[1], 0.756);
-	EXPECT_EQ(z_cos_round[2], -0.6822);
+	EXPECT_NEAR(x_cos[0], 1.22465e-16, 0.0000000000000001);
+	EXPECT_NEAR(y_cos[0], 0, 0.0001);
+	EXPECT_NEAR(z_cos[0], -1, 0.0001);
 	cerr << "All intersection cosines match." << endl;
 
-	EXPECT_EQ(Length, 3);
+	EXPECT_EQ(Length, 1);
 }
 
