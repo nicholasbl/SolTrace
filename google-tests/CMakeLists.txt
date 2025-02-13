@@ -13,6 +13,7 @@ FetchContent_MakeAvailable(googletest)
 
 
 file(GLOB SAMPLE_FILES ./samples/*.stinput)
+file(GLOB GROUND_FILES ./ground_results/*.csv)
 file(GLOB SOLTRACE_EXAMPLE_TESTS soltrace_example_tests/st_sim_run_test.cpp soltrace_example_tests/st_powertower_sim_run_test.cpp soltrace_example_tests/st_mtrand_test.cpp)
 
 set(STRACE_SRC ../coretrace/strace)
@@ -21,28 +22,13 @@ set(CORETRACE ../coretrace/stapi.cpp)
 set(STRACE ../coretrace/strace/strace.cpp)
 set(ENV{SOLTRACE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
 
-# Copying files to build directory on building seems to be a common practice in cmake.
-# I wanted to use configure_file to copy these files, but this command seems to have issues with relative paths 
-#(such as the ones created when globbing the sample files together)
-
-#configure_file(${SAMPLE_FILES} ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
-
 
 file(COPY ${SAMPLE_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-#if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/Release)
-#	file(COPY ${SAMPLE_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Release)
-#endif()
-#if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/Debug)
-	#file(COPY ${SAMPLE_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Debug)
-#endif()
+file(COPY ${GROUND_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 message("Binary dir: ${CMAKE_CURRENT_BINARY_DIR}")
 message("Source dir: ${CMAKE_CURRENT_SOURCE_DIR}")
 message("Build type: ${CMAKE_BUILD_TYPE}")
-
-
-
-
 
 add_executable( TestExecutable
 	${SOLTRACE_EXAMPLE_TESTS}
@@ -50,13 +36,10 @@ add_executable( TestExecutable
 	${STRACE}
 )
 
-#add_test(NAME TestTest COMMAND Test)
-#set_tests_properties(TestTest PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-
 add_compile_definitions(STRACE_SRC=${STRACE_SRC})
 add_compile_definitions(SAMPLE_FILES=${SAMPLE_FILES})
+add_compile_definitions(GROUND_FILES=${GROUND_FILES})
 
-#add_definitions( -D_SAMPLES = ${SAMPLE_FILES})
 
 target_link_libraries(
 	TestExecutable
