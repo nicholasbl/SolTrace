@@ -13,7 +13,7 @@ FetchContent_MakeAvailable(googletest)
 
 
 file(GLOB SAMPLE_FILES ./samples/*.stinput)
-file(GLOB SOLTRACE_EXAMPLE_TESTS soltrace_example_tests/st_sim_run_test.cpp soltrace_example_tests/st_mtrand_test.cpp)
+file(GLOB SOLTRACE_EXAMPLE_TESTS soltrace_example_tests/st_sim_run_test.cpp soltrace_example_tests/st_powertower_sim_run_test.cpp soltrace_example_tests/st_mtrand_test.cpp)
 
 set(STRACE_SRC ../coretrace/strace)
 
