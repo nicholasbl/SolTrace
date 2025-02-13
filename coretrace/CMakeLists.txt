@@ -35,6 +35,7 @@ set(CORETRACE_SRC
 	newzstartforcubicsplinesurf.cpp
 	quadricsurfaceclosedform.cpp
 	raytrace.cpp
+	raytrace_refactored.cpp
 	root432.cpp
 	spencerandmurtysurfaceclosedform.cpp
 	stapi.cpp
