@@ -133,7 +133,7 @@ protected:
 	uint32 *pNext;     // next value to get from state
 	int left;          // number of values left before reload needed
     
-    std::default_random_engine random_generator;
+	std::mt19937_64 random_generator;
     std::normal_distribution<double> normal_distribution; // (5.0, 2.0);
     std::uniform_real_distribution<double> uniform_distribution;
     std::uniform_int_distribution<int> uniform_int_distribution;
