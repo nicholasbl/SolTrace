@@ -1,4 +1,3 @@
-
 /*******************************************************************************************************
 *  Copyright 2018 Alliance for Sustainable Energy, LLC
 *
@@ -27,9 +26,9 @@
 *  4. Redistribution of this software, without modification, must refer to the software by the same
 *  designation. Redistribution of a modified version of this software (i) may not refer to the modified
 *  version by the same designation, or by any confusingly similar designation, and (ii) must refer to
-*  the underlying software originally provided by Alliance as "SolTrace". Except to comply with the 
-*  foregoing, the term "SolTrace", or any confusingly similar designation may not be used to refer to 
-*  any modified version of this software or any modified version of the underlying software originally 
+*  the underlying software originally provided by Alliance as "SolTrace". Except to comply with the
+*  foregoing, the term "SolTrace", or any confusingly similar designation may not be used to refer to
+*  any modified version of this software or any modified version of the underlying software originally
 *  provided by Alliance without the prior written consent of Alliance.
 *
 *  5. The name of the copyright holder, contributors, the United States Government, the United States
@@ -56,8 +55,8 @@
 #define sqr(x) (x*x)
 
 void SurfaceNormalErrors( MTRand &myrng, double CosIn[3],
-						 TOpticalProperties *OptProperties,
-						 double CosOut[3] ) throw(nanexcept)
+                          TOpticalProperties *OptProperties,
+                          double CosOut[3] ) noexcept(false) // throw(nanexcept)
 {
 
 /*{Purpose:  To add error terms to the surface normal vector at the surface in question
@@ -70,99 +69,99 @@ void SurfaceNormalErrors( MTRand &myrng, double CosIn[3],
            Output - CosOut  = Output direction cosine vector of surface normal after error terms have been included
                    }*/
 
-	int i=0;
-	double Origin[3] = { 0.0, 0.0, 0.0 },
-		Euler[3] = { 0.0, 0.0, 0.0 };
-	double PosIn[3] = { 0.0, 0.0, 0.0 },
-		PosOut[3] = { 0.0, 0.0, 0.0 };
-	char dist = ' ';
-	double delop = 0.0, delop3 = 0.0, thetax = 0.0,
-		thetay = 0.0, ttheta = 0.0, theta2 = 0.0,
-		phi = 0.0, theta = 0.0;
-	double RRefToLoc[3][3] = { {0.0, 0.0, 0.0},
-							   {0.0, 0.0, 0.0},
-							   {0.0, 0.0, 0.0} };
-	double RLocToRef[3][3] = { {0.0, 0.0, 0.0},
-							   {0.0, 0.0, 0.0},
-							   {0.0, 0.0, 0.0} };
+  int i=0;
+  double Origin[3] = { 0.0, 0.0, 0.0 },
+    Euler[3] = { 0.0, 0.0, 0.0 };
+  double PosIn[3] = { 0.0, 0.0, 0.0 },
+    PosOut[3] = { 0.0, 0.0, 0.0 };
+  char dist = ' ';
+  double delop = 0.0, delop3 = 0.0, thetax = 0.0,
+    thetay = 0.0, ttheta = 0.0, theta2 = 0.0,
+    phi = 0.0, theta = 0.0;
+  double RRefToLoc[3][3] = { {0.0, 0.0, 0.0},
+                 {0.0, 0.0, 0.0},
+                 {0.0, 0.0, 0.0} };
+  double RLocToRef[3][3] = { {0.0, 0.0, 0.0},
+                 {0.0, 0.0, 0.0},
+                 {0.0, 0.0, 0.0} };
 
-	if ( CosIn[2] == 0.0 )
-	{
-		if ( CosIn[0] == 0.0 )
-		{
-			Euler[0] = 0.0;
-			Euler[1] = M_PI/2.0;
-			goto Label_9;
-		}
-		else
-		{
-			Euler[0] = M_PI/2.0;
-			goto Label_8;
-		}
-	}
-	
-	Euler[0] = atan2(CosIn[0],CosIn[2]);
+  if ( CosIn[2] == 0.0 )
+  {
+    if ( CosIn[0] == 0.0 )
+    {
+      Euler[0] = 0.0;
+      Euler[1] = M_PI/2.0;
+      goto Label_9;
+    }
+    else
+    {
+      Euler[0] = M_PI/2.0;
+      goto Label_8;
+    }
+  }
+
+  Euler[0] = atan2(CosIn[0],CosIn[2]);
 Label_8:
-	Euler[1] = atan2(CosIn[1],sqrt(CosIn[0]*CosIn[0]+CosIn[2]*CosIn[2]));
+  Euler[1] = atan2(CosIn[1],sqrt(CosIn[0]*CosIn[0]+CosIn[2]*CosIn[2]));
 Label_9:
-	Euler[2] = 0.0;
+  Euler[2] = 0.0;
 
-	CalculateTransformMatrices( Euler, RRefToLoc, RLocToRef );
+  CalculateTransformMatrices( Euler, RRefToLoc, RLocToRef );
 
-	dist = OptProperties->DistributionType;
-	delop = OptProperties->RMSSlopeError/1000.0;
+  dist = OptProperties->DistributionType;
+  delop = OptProperties->RMSSlopeError/1000.0;
 
 
-	int nninner = 0;
-	switch( dist )
-	{
-	case 'g':
-	case 'G':
-		//gaussian distribution
+  int nninner = 0;
+  switch( dist )
+  {
+  case 'g':
+  case 'G':
+    //gaussian distribution
         thetax = myrng.randNorm(0., delop);
         thetay = myrng.randNorm(0., delop);
 
         theta2 = thetax*thetax + thetay*thetay;
-		
+
         break;
 
-	case 'p':
-	case 'P':
-		//pillbox distribution
-		do
-		{
-			thetax = 2.0*delop*RANGEN() - delop;
-			thetay = 2.0*delop*RANGEN() - delop;
-			theta2 = thetax*thetax + thetay*thetay;
-		}
-		while ( theta2 > (delop*delop) );
+  case 'p':
+  case 'P':
+    //pillbox distribution
+    do
+    {
+      thetax = 2.0*delop*RANGEN() - delop;
+      thetay = 2.0*delop*RANGEN() - delop;
+      theta2 = thetax*thetax + thetay*thetay;
+    }
+    while ( theta2 > (delop*delop) );
 
-		break;
-	}
+    break;
+  }
 
     /* {Transform to local coordinate system of ray to set up rotation matrices for coord and inverse
        transforms} */
 
-	TransformToLocal(PosIn, CosIn, Origin, RRefToLoc, PosOut, CosOut);
+  TransformToLocal(PosIn, CosIn, Origin, RRefToLoc, PosOut, CosOut);
 
-	/* {Generate errors in terms of direction cosines in local ray coordinate system} */
-	theta = sqrt(theta2);
-	//phi = atan2(thetay, thetax); //This function appears to  present irregularities that bias results incorrectly for small values of thetay or thetax
-	phi = RANGEN()*2.0*3.1415926535897932385; // Therefore have chosen to randomize phi rather than calculate from randomized theta components
+  /* {Generate errors in terms of direction cosines in local ray coordinate system} */
+  theta = sqrt(theta2);
+  //phi = atan2(thetay, thetax); //This function appears to  present irregularities that bias results incorrectly for small values of thetay or thetax
+  phi = RANGEN()*2.0*3.1415926535897932385; // Therefore have chosen to randomize phi rather than calculate from randomized theta components
                                                       //  obtained from the distribution. The two approaches are equivalent save for this issue with
-                                                      //  arctan2.      wendelin 01-12-11 
+                                                      //  arctan2.      wendelin 01-12-11
 
-	CosOut[0] = sin(theta)*cos(phi);
-	CosOut[1] = sin(theta)*sin(phi);
-	CosOut[2] = cos(theta);
+  CosOut[0] = sin(theta)*cos(phi);
+  CosOut[1] = sin(theta)*sin(phi);
+  CosOut[2] = cos(theta);
 
-	for (i=0;i<3;i++)
-	{
-		PosIn[i]=PosOut[i];
-		CosIn[i]=CosOut[i];
-	}
+  for (i=0;i<3;i++)
+  {
+    PosIn[i]=PosOut[i];
+    CosIn[i]=CosOut[i];
+  }
 
-	/*{Transform perturbed ray back to element system}*/
-	TransformToReference(PosIn, CosIn, Origin, RLocToRef, PosOut, CosOut);
+  /*{Transform perturbed ray back to element system}*/
+  TransformToReference(PosIn, CosIn, Origin, RLocToRef, PosOut, CosOut);
 }
 //End of Procedure--------------------------------------------------------------
