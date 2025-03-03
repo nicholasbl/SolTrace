@@ -36,9 +36,9 @@ add_executable( TestExecutable
 	${STRACE}
 )
 
-add_compile_definitions(STRACE_SRC=${STRACE_SRC})
-add_compile_definitions(SAMPLE_FILES=${SAMPLE_FILES})
-add_compile_definitions(GROUND_FILES=${GROUND_FILES})
+#add_compile_definitions(STRACE_SRC=${STRACE_SRC})
+#add_compile_definitions(SAMPLE_FILES=${SAMPLE_FILES})
+#add_compile_definitions(GROUND_FILES=${GROUND_FILES})
 
 
 target_link_libraries(

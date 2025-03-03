@@ -157,7 +157,7 @@ TEST(st_powertower_sim_run_test, BasicAssertions)
 		EXPECT_NEAR(y_cos[i], stod(result[4][i + 1]), 0.01);
 		EXPECT_NEAR(z_cos[i], stod(result[5][i + 1]), 0.01);
 		
-		EXPECT_EQ(element_map[i], stod(result[6][i + 1]), 0.01);
+		EXPECT_NEAR(element_map[i], stod(result[6][i + 1]), 0.01);
 		EXPECT_EQ(stage_map[i], stod(result[7][i + 1]));
 		EXPECT_EQ(ray_numbers[i], stod(result[8][i + 1]));
 	
