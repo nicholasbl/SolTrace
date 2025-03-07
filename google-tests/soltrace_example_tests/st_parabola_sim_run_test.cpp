@@ -16,58 +16,20 @@
 
 #include "strace.h"
 #include "stapi.h"
+#include "split_csv.h"
 
 using namespace std;
 
-vector<vector<string>> split_csv(string path)
-{
-	ifstream file(path);
-	if (!file.is_open())
-	{
-		cerr << "Error opening file" << endl;
-	}
-
-	string line;
-	vector<vector<string>> csv_data_columns;
-
-	while (getline(file, line))
-	{
-		stringstream ss(line);
-		string cell;
-		int col_index = 0;
-
-		while (getline(ss, cell, ','))
-		{
-			if (csv_data_columns.size() <= col_index)
-			{
-				csv_data_columns.push_back(std::vector<std::string>());
-			}
-			csv_data_columns[col_index].push_back(cell);
-			col_index++;
-		}
-		
-	}
-
-	file.close();
-
-	return csv_data_columns;
-}
-
-TEST(st_powertower_sim_run_test, BasicAssertions)
+TEST(st_parabola_sim_run_test, BasicAssertions)
 {
 	cout << "Project Directory: " << PROJECT_DIR << endl;
 	string project_dir = PROJECT_DIR;
-	//if (length == 0) {
-	//	std::cerr << "Error getting current directory!" << std::endl;
-	//}
-	//else {
-	//	std::cout << "Current working directory: " << buffer << std::endl;
-	//}
+	
 	cout << "Current working directory: " << project_dir << endl;
 
-	string file_path = "/Power-tower-surround_singlefacet.stinput";
-	string csv_path = "/powertower_example_raydata.csv";
-	
+	string file_path = "/parabola.stinput";
+	string csv_path = "/parabola_example_raydata.csv";
+
 	string input_file_path = project_dir + file_path;
 	string ground_csv_path = project_dir + csv_path;
 
@@ -78,16 +40,18 @@ TEST(st_powertower_sim_run_test, BasicAssertions)
 
 
 	const char* file = input_file_path.data();
-	int nrays = 50000;
-	int maxrays = 5000000;
+	int nrays = 10000;
+	int maxrays = 100000;
 	int seed = 1;
 	int sunshape = 0;
 	int errors = 0;
-	int aspointfocus = 0;
+	int powertower = 0;
 
 	int code = 0;
 
 	st_context_t cxt = ::st_create_context();
+
+	//SYSTEM(cxt, -1);
 
 	FILE* fp = fopen(file, "r");
 	if (!fp)
@@ -106,7 +70,7 @@ TEST(st_powertower_sim_run_test, BasicAssertions)
 
 	fclose(fp);
 
-	::st_sim_params(cxt, nrays, maxrays, aspointfocus);
+	::st_sim_params(cxt, nrays, maxrays, powertower);
 	::st_sim_errors(cxt, sunshape, errors);
 	code = ::st_sim_run(cxt, (unsigned int)seed, ::trace_progress, 0);
 
@@ -156,11 +120,11 @@ TEST(st_powertower_sim_run_test, BasicAssertions)
 		EXPECT_NEAR(x_cos[i], stod(result[3][i + 1]), 0.01);
 		EXPECT_NEAR(y_cos[i], stod(result[4][i + 1]), 0.01);
 		EXPECT_NEAR(z_cos[i], stod(result[5][i + 1]), 0.01);
-		
+
 		EXPECT_NEAR(element_map[i], stod(result[6][i + 1]), 0.01);
 		EXPECT_EQ(stage_map[i], stod(result[7][i + 1]));
 		EXPECT_EQ(ray_numbers[i], stod(result[8][i + 1]));
-	
+
 	}
 
 	cerr << "All intersection positions match." << endl;
