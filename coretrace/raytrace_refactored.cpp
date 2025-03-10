@@ -134,6 +134,115 @@ static bool eprojdat_compare_refactored(const eprojdat_refactored &A, const epro
     return A.d_proj > B.d_proj;
 };
 
+void FindElementHit(
+	// stage info
+	const int i, const TStage* Stage, const bool PT_override, const bool AsPowerTower,
+	
+	// element info
+	const int nintelements, const vector<void*> sunint_elements, const vector<void*> reflint_elements,
+	
+	 // ray info
+	const int RayNumber, const bool in_multi_hit_loop,
+	double(&PosRayStage)[3], double(&CosRayStage)[3],
+
+
+	double(&LastPosRaySurfElement)[3], double(&LastCosRaySurfElement)[3], double(&LastDFXYZ)[3],
+	st_uint_t& LastElementNumber, st_uint_t& LastRayNumber, 
+	double(&LastPosRaySurfStage)[3], double(&LastCosRaySurfStage)[3],
+
+	int& ErrorFlag, int& LastHitBackSide,
+	bool& StageHit)
+{
+	// Initialize Variables
+	double LastPathLength = 1e99;
+	int HitBackSide = 0;
+	int InterceptFlag = 0;
+	double DFXYZ[3] = { 0.0, 0.0, 0.0 };
+	double PosRayElement[3] = { 0.0, 0.0, 0.0 };
+	double CosRayElement[3] = { 0.0, 0.0, 0.0 };
+	double PosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
+	double CosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
+	double PosRaySurfElement[3] = { 0.0, 0.0, 0.0 };
+	double CosRaySurfElement[3] = { 0.0, 0.0, 0.0 };
+	StageHit = false;
+
+
+	for (st_uint_t j = 0; j < nintelements; j++)
+	{
+		TElement* Element; // = Stage->ElementList[j];
+		if (i == 0 && !PT_override)
+		{
+			if (in_multi_hit_loop)
+			{
+				if (AsPowerTower)
+					Element = (TElement*)reflint_elements.at(j);
+				else
+					Element = (TElement*)Stage->ElementList[j];
+			}
+			else
+				Element = (TElement*)sunint_elements.at(j);
+		}
+		else
+			Element = Stage->ElementList[j];
+
+		if (!Element->Enabled)
+			continue;
+
+		//  {Transform ray to element[j] coord system of Stage[i]}
+		TransformToLocal(PosRayStage, CosRayStage,
+			Element->Origin, Element->RRefToLoc,
+			PosRayElement, CosRayElement);
+
+		ErrorFlag = 0;
+		HitBackSide = 0;
+		InterceptFlag = 0;
+		double PathLength = 0;
+
+		// increment position by tiny amount to get off the element if tracing to the same element
+		PosRayElement[0] = PosRayElement[0] + 1.0e-5 * CosRayElement[0];
+		PosRayElement[1] = PosRayElement[1] + 1.0e-5 * CosRayElement[1];
+		PosRayElement[2] = PosRayElement[2] + 1.0e-5 * CosRayElement[2];
+
+		// {Determine if ray intersects element[j]; if so, Find intersection point with surface of element[j] }
+		DetermineElementIntersectionNew(Element, PosRayElement, CosRayElement,
+			PosRaySurfElement, CosRaySurfElement, DFXYZ,
+			&PathLength, &ErrorFlag, &InterceptFlag, &HitBackSide);
+
+
+
+		if (InterceptFlag)
+		{
+			//{If hit multiple elements, this loop determines which one hit first.
+			//Also makes sure that correct part of closed surface is hit. Also, handles wavy, but close to flat zernikes and polynomials correctly.}
+			//if (PathLength < LastPathLength) and (PosRaySurfElement[2] <= Element->ZAperture) then
+			if (PathLength < LastPathLength)
+			{
+				if (PosRaySurfElement[2] <= Element->ZAperture
+					|| Element->SurfaceIndex == 'm'
+					|| Element->SurfaceIndex == 'M'
+					|| Element->SurfaceIndex == 'r'
+					|| Element->SurfaceIndex == 'R')
+				{
+					StageHit = true;
+					LastPathLength = PathLength;
+					CopyVec3_refactored(LastPosRaySurfElement, PosRaySurfElement);
+					CopyVec3_refactored(LastCosRaySurfElement, CosRaySurfElement);
+					CopyVec3_refactored(LastDFXYZ, DFXYZ);
+					LastElementNumber = (i == 0 && !PT_override) ? Element->element_number : j + 1;    //mjw change from j index to element id
+					LastRayNumber = RayNumber;
+					TransformToReference(PosRaySurfElement, CosRaySurfElement,
+						Element->Origin, Element->RLocToRef,
+						PosRaySurfStage, CosRaySurfStage);
+
+					CopyVec3_refactored(LastPosRaySurfStage, PosRaySurfStage);
+					CopyVec3_refactored(LastCosRaySurfStage, CosRaySurfStage);
+					LastHitBackSide = HitBackSide;
+				}
+			}
+		}
+	}
+}
+
 bool Trace_refactored(TSystem *System, unsigned int seed,
 		   st_uint_t NumberOfRays, 
 		   st_uint_t MaxNumberOfRays,
@@ -164,7 +273,6 @@ bool Trace_refactored(TSystem *System, unsigned int seed,
 	bool StageHit = false;
 	st_uint_t LastElementNumber = 0, LastRayNumber = 0;
 	st_uint_t MultipleHitCount = 0;
-	double LastPathLength = 0.0, PathLength = 0.0;
 
 	double PosSunStage[3] = { 0.0, 0.0, 0.0 };
 	double PosRayOutElement[3] = { 0.0, 0.0, 0.0 };
@@ -175,21 +283,14 @@ bool Trace_refactored(TSystem *System, unsigned int seed,
 	double CosRayGlob[3] = { 0.0, 0.0, 0.0 };
 	double PosRayStage[3] = { 0.0, 0.0, 0.0 };
 	double CosRayStage[3] = { 0.0, 0.0, 0.0 };
-	double PosRayElement[3] = { 0.0, 0.0, 0.0 };
-	double CosRayElement[3] = { 0.0, 0.0, 0.0 };
-	double PosRaySurfElement[3] = { 0.0, 0.0, 0.0 };
-	double CosRaySurfElement[3] = { 0.0, 0.0, 0.0 };
 	double LastPosRaySurfElement[3] = { 0.0, 0.0, 0.0 };
 	double LastCosRaySurfElement[3] = { 0.0, 0.0, 0.0 };
 	double LastPosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
 	double LastCosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
-	double PosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
-	double CosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
-	double DFXYZ[3] = { 0.0, 0.0, 0.0 };
 	double LastDFXYZ[3] = { 0.0, 0.0, 0.0 };
 	double IncidentAngle = 0.0;
 	double UnitLastDFXYZ[3] = { 0.0, 0.0, 0.0 };
-	int ErrorFlag = 0, InterceptFlag = 0, HitBackSide = 0, LastHitBackSide = 0;
+	int ErrorFlag = 0, LastHitBackSide = 0;
 
 	std::vector<GlobalRay_refactored> IncomingRays;
 	st_uint_t StageDataArrayIndex=0;
@@ -651,7 +752,6 @@ Label_StartRayLoop:
             in_multi_hit_loop = false;
             
 Label_MultiHitLoop:
-			LastPathLength = 1e99;
 			StageHit = false;
 
             st_uint_t nintelements;
@@ -695,79 +795,15 @@ Label_MultiHitLoop:
             else
                 nintelements = Stage->ElementList.size();
 
-            for( st_uint_t j=0; j<nintelements; j++)
-			{
-                TElement *Element; // = Stage->ElementList[j];
-                if( i == 0 && !PT_override )
-                {
-                    if( in_multi_hit_loop )
-                    {
-                        if( AsPowerTower )
-                            Element = (TElement*)reflint_elements.at(j);
-                        else
-                            Element = (TElement*)Stage->ElementList[j];
-                    }
-                    else
-                        Element = (TElement*)sunint_elements.at(j);
-                }
-                else
-				    Element = Stage->ElementList[j];
+			FindElementHit(i, Stage, PT_override, AsPowerTower,
+				nintelements, sunint_elements, reflint_elements,
+				RayNumber, in_multi_hit_loop,
+				PosRayStage, CosRayStage,
 
-				if (!Element->Enabled)
-					continue;
-
-				//  {Transform ray to element[j] coord system of Stage[i]}
-				TransformToLocal( PosRayStage, CosRayStage,
-								  Element->Origin, Element->RRefToLoc,
-								  PosRayElement, CosRayElement);
-
-				ErrorFlag = 0;
-				HitBackSide = 0;
-				InterceptFlag = 0;
-
-				// increment position by tiny amount to get off the element if tracing to the same element
-				PosRayElement[0] = PosRayElement[0] + 1.0e-5*CosRayElement[0];
-				PosRayElement[1] = PosRayElement[1] + 1.0e-5*CosRayElement[1];
-				PosRayElement[2] = PosRayElement[2] + 1.0e-5*CosRayElement[2];
-
-				// {Determine if ray intersects element[j]; if so, Find intersection point with surface of element[j] }
-				DetermineElementIntersectionNew(Element, PosRayElement, CosRayElement,
-					PosRaySurfElement, CosRaySurfElement, DFXYZ, 
-					&PathLength, &ErrorFlag, &InterceptFlag, &HitBackSide);
-
-
-
-				if (InterceptFlag)
-				{
-				  //{If hit multiple elements, this loop determines which one hit first.
-				  //Also makes sure that correct part of closed surface is hit. Also, handles wavy, but close to flat zernikes and polynomials correctly.}
-				  //if (PathLength < LastPathLength) and (PosRaySurfElement[2] <= Element->ZAperture) then
-					if (PathLength < LastPathLength)
-					{
-						if (PosRaySurfElement[2] <= Element->ZAperture 
-							|| Element->SurfaceIndex == 'm'
-							|| Element->SurfaceIndex == 'M'
-							|| Element->SurfaceIndex == 'r'
-							|| Element->SurfaceIndex == 'R') 
-						{
-							StageHit = true;
-							LastPathLength = PathLength;
-							CopyVec3_refactored( LastPosRaySurfElement, PosRaySurfElement );
-							CopyVec3_refactored( LastCosRaySurfElement, CosRaySurfElement );
-							CopyVec3_refactored( LastDFXYZ, DFXYZ );
-							LastElementNumber = ( i == 0 && !PT_override )? Element->element_number : j+1;    //mjw change from j index to element id
-							LastRayNumber = RayNumber;
-							TransformToReference(PosRaySurfElement, CosRaySurfElement, 
-								Element->Origin, Element->RLocToRef, 
-								PosRaySurfStage, CosRaySurfStage);
-
-							CopyVec3_refactored( LastPosRaySurfStage, PosRaySurfStage );
-							CopyVec3_refactored( LastCosRaySurfStage, CosRaySurfStage );
-							LastHitBackSide = HitBackSide;
-						}
-					}
-				}			
-			}
+				LastPosRaySurfElement, LastCosRaySurfElement, LastDFXYZ,
+				LastElementNumber, LastRayNumber,
+				LastPosRaySurfStage, LastCosRaySurfStage,
+				ErrorFlag, LastHitBackSide, StageHit);
 
 			//  {Logic for ray which misses stage element - Note that all rays eventually satisfy this
 			//  condition because rays are continually traced until they no longer hit the stage}
@@ -1111,3 +1147,6 @@ Label_EndStageLoop:
 		return false;
 	}
 }
+
+
+
