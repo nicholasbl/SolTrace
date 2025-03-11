@@ -21,9 +21,10 @@ public:
 
     virtual int initialize() = 0;
     virtual int setup_simulation(const SimulationData *data) = 0;
+    // TODO: Determine what can be "updated", that is changed
     virtual int update_simulation(const SimulationData *data) = 0;
     virtual int run_simluation() = 0;
-    virtual int report_simulation(SimulationResult *result) = 0;
+    virtual int report_simulation(SimulationResult *result, int level_spec) = 0;
 
 private:
 
