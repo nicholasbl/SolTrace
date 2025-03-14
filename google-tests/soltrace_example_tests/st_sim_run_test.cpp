@@ -25,12 +25,11 @@ double roundToDecimalPlaces(double value, int decimalPlaces) {
 
 TEST(st_sim_run_test, BasicAssertions)
 {
-	cout << "Project Directory: " << PROJECT_DIR << endl;
 	string project_dir = PROJECT_DIR;
 
 	string sample_path = PROJECT_DIR + string("/Aperture Examples.stinput");
 	
-	const char* file = project_dir.data();
+	const char* file = sample_path.data();
 	int nrays = 1;
 	int maxrays = 50;
 	int seed = 1;
