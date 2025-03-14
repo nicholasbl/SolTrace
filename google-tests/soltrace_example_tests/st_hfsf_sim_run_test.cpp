@@ -20,24 +20,24 @@
 
 using namespace std;
 
-TEST(st_powertower_sim_run_opt_test, BasicAssertions)
+TEST(st_hfsf_sim_run_opt_test, BasicAssertions)
 {
 	string project_dir = PROJECT_DIR;
-	
-	string sample_path = PROJECT_DIR + string("/Power-tower-surround_singlefacet.stinput");
-	string ground_csv_path = PROJECT_DIR + string("/powertower_example_opt_raydata.csv");
-	
+
+	string sample_path = PROJECT_DIR + string("/High Flux Solar Furnace.stinput");
+	string ground_csv_path = PROJECT_DIR + string("/hfsf_example_raydata.csv");
+
 	std::ifstream csv_file(ground_csv_path);
 	vector<vector<string>> ground_raydata = split_csv(ground_csv_path);
 
 
 	const char* file = sample_path.data();
-	int nrays = 50000;
-	int maxrays = 5000000;
+	int nrays = 10000;
+	int maxrays = 1000000;
 	int seed = 1;
 	int sunshape = 0;
 	int errors = 0;
-	int powertower = 1;
+	int powertower = 0;
 
 	int code = 0;
 
@@ -95,11 +95,11 @@ TEST(st_powertower_sim_run_opt_test, BasicAssertions)
 		EXPECT_NEAR(x_cos[i], stod(ground_raydata[3][i + 1]), 0.01);
 		EXPECT_NEAR(y_cos[i], stod(ground_raydata[4][i + 1]), 0.01);
 		EXPECT_NEAR(z_cos[i], stod(ground_raydata[5][i + 1]), 0.01);
-		
+
 		EXPECT_EQ(element_map[i], stod(ground_raydata[6][i + 1]));
 		EXPECT_EQ(stage_map[i], stod(ground_raydata[7][i + 1]));
 		EXPECT_EQ(ray_numbers[i], stod(ground_raydata[8][i + 1]));
-	
+
 	}
 
 	delete[] x_location;

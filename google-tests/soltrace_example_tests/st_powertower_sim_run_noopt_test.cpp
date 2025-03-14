@@ -22,24 +22,16 @@ using namespace std;
 
 TEST(st_powertower_sim_run_noopt_test, BasicAssertions)
 {
-	cout << "Project Directory: " << PROJECT_DIR << endl;
 	string project_dir = PROJECT_DIR;
 
-	cout << "Current working directory: " << project_dir << endl;
-
-	string file_path = "/Power-tower-surround_singlefacet.stinput";
-	string csv_path = "/powertower_example_raydata.csv";
-	
-	string input_file_path = project_dir + file_path;
-	string ground_csv_path = project_dir + csv_path;
-
-	cout << "File path: " << project_dir << endl;
+	string sample_path = PROJECT_DIR + string("/Power-tower-surround_singlefacet.stinput");
+	string ground_csv_path = PROJECT_DIR + string("/powertower_example_raydata.csv");
 
 	std::ifstream csv_file(ground_csv_path);
-	vector<vector<string>> result = split_csv(ground_csv_path);
+	vector<vector<string>> ground_raydata = split_csv(ground_csv_path);
 
 
-	const char* file = input_file_path.data();
+	const char* file = sample_path.data();
 	int nrays = 50000;
 	int maxrays = 5000000;
 	int seed = 1;
@@ -50,8 +42,6 @@ TEST(st_powertower_sim_run_noopt_test, BasicAssertions)
 	int code = 0;
 
 	st_context_t cxt = ::st_create_context();
-
-	//SYSTEM(cxt, -1);
 
 	FILE* fp = fopen(file, "r");
 	if (!fp)
@@ -90,46 +80,40 @@ TEST(st_powertower_sim_run_noopt_test, BasicAssertions)
 
 	// Retrieving data from Soltrace simulation
 
-	// Retrieving ray intersection locations
 	::st_locations(cxt, x_location, y_location, z_location);
-
-	cerr << sizeof(x_location) / sizeof(x_location[9]) << endl;
-	/*for (size_t i = 0; i < Length; ++i)
-	{
-		cerr << x_location[i] << endl;
-	}*/
-
-	// Retrieving cosines of ray intersections
 	::st_cosines(cxt, x_cos, y_cos, z_cos);
-
-	// Retrieving ray numbers for each ray
 	::st_raynumbers(cxt, ray_numbers);
-
-	// Retrieving element of simulation that each ray hit
 	::st_elementmap(cxt, element_map);
-
-	// Retrieving stage each ray is in during simulation
 	::st_stagemap(cxt, stage_map);
 
 	for (size_t i = 0; i < Length; i++)
 	{
-		EXPECT_NEAR(x_location[i], stod(result[0][i + 1]), 0.01);
-		EXPECT_NEAR(y_location[i], stod(result[1][i + 1]), 0.01);
-		EXPECT_NEAR(z_location[i], stod(result[2][i + 1]), 0.01);
+		EXPECT_NEAR(x_location[i], stod(ground_raydata[0][i + 1]), 0.01);
+		EXPECT_NEAR(y_location[i], stod(ground_raydata[1][i + 1]), 0.01);
+		EXPECT_NEAR(z_location[i], stod(ground_raydata[2][i + 1]), 0.01);
 
-		EXPECT_NEAR(x_cos[i], stod(result[3][i + 1]), 0.01);
-		EXPECT_NEAR(y_cos[i], stod(result[4][i + 1]), 0.01);
-		EXPECT_NEAR(z_cos[i], stod(result[5][i + 1]), 0.01);
-		
-		EXPECT_NEAR(element_map[i], stod(result[6][i + 1]), 0.01);
-		EXPECT_EQ(stage_map[i], stod(result[7][i + 1]));
-		EXPECT_EQ(ray_numbers[i], stod(result[8][i + 1]));
-	
+		EXPECT_NEAR(x_cos[i], stod(ground_raydata[3][i + 1]), 0.01);
+		EXPECT_NEAR(y_cos[i], stod(ground_raydata[4][i + 1]), 0.01);
+		EXPECT_NEAR(z_cos[i], stod(ground_raydata[5][i + 1]), 0.01);
+
+		EXPECT_EQ(element_map[i], stod(ground_raydata[6][i + 1]));
+		EXPECT_EQ(stage_map[i], stod(ground_raydata[7][i + 1]));
+		EXPECT_EQ(ray_numbers[i], stod(ground_raydata[8][i + 1]));
+
 	}
 
-	cerr << "All intersection positions match." << endl;
-	cerr << "Ray numbers and stage numbers match." << endl;
-	cerr << "Elements each ray hits match." << endl;
-	cerr << "All intersection cosines match." << endl;
+	delete[] x_location;
+	delete[] y_location;
+	delete[] z_location;
+
+	delete[] x_cos;
+	delete[] y_cos;
+	delete[] z_cos;
+
+	delete[] element_map;
+	delete[] stage_map;
+	delete[] ray_numbers;
+
+
 
 }
