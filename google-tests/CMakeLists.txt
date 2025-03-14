@@ -12,7 +12,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 
-file(GLOB SAMPLE_FILES ./samples/*.stinput ./samples/*.mon)
+file(GLOB SAMPLE_FILES ../app/deploy/samples/*.stinput ../app/deploy/samples/*.mon)
 file(GLOB GROUND_FILES ./ground_results/*.csv)
 file(GLOB SOLTRACE_EXAMPLE_TESTS soltrace_example_tests/*.cpp)
 file(GLOB CSV_TOOL csv_tools/*.cpp csv_tools/*.h)
@@ -30,7 +30,7 @@ message("Binary dir: ${CMAKE_CURRENT_BINARY_DIR}")
 message("Source dir: ${CMAKE_CURRENT_SOURCE_DIR}")
 message("Build type: ${CMAKE_BUILD_TYPE}")
 
-add_executable( TestExecutable
+add_executable( Test
 	${CSV_TOOL}
 	${SOLTRACE_EXAMPLE_TESTS}
 	${CORETRACE}
@@ -38,20 +38,20 @@ add_executable( TestExecutable
 )
 
 target_link_libraries(
-	TestExecutable
+	Test
 	coretrace
 	GTest::gtest_main
 )
 
 if(UNIX)
-	target_link_libraries(TestExecutable pthread)
+	target_link_libraries(Test pthread)
 endif()
 
 
 add_definitions(-DPROJECT_DIR="${CMAKE_CURRENT_BINARY_DIR}")
 
 enable_testing()
-add_test(NAME Test COMMAND TestExecutable)
+add_test(NAME TestExecutable COMMAND Test)
 
 if(MSVC)
 	set_tests_properties(Test PROPERTIES WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
