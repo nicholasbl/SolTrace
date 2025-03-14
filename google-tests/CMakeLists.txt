@@ -51,7 +51,7 @@ endif()
 add_definitions(-DPROJECT_DIR="${CMAKE_CURRENT_BINARY_DIR}")
 
 enable_testing()
-add_test(NAME TestExecutable COMMAND Test)
+add_test(NAME Test COMMAND Test)
 
 if(MSVC)
 	set_tests_properties(Test PROPERTIES WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
