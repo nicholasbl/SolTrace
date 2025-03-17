@@ -12,7 +12,7 @@ double roundToDecimalPlaces(double value, int decimalPlaces) {
 	return std::round(value * multiplier) / multiplier;
 }
 
-TEST(st_sim_run_test, BasicAssertions)
+TEST(ApertureExamples, SingleRayNoOpticalErrors)
 {
 	// Pulling in path variable from CMake and creating path to .stinput sample file
 	string sample_path = string(PROJECT_DIR) + string("/Aperture Examples.stinput");
