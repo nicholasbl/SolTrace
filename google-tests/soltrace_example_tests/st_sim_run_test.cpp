@@ -1,17 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
 #include <cmath>
-
-#include <string>
-#include <cstring>
-#include <vector>
-#include <exception>
-#include <cstdlib>
 
 #include "strace.h"
 #include "stapi.h"
@@ -25,20 +14,23 @@ double roundToDecimalPlaces(double value, int decimalPlaces) {
 
 TEST(st_sim_run_test, BasicAssertions)
 {
-	string project_dir = PROJECT_DIR;
-
-	string sample_path = PROJECT_DIR + string("/Aperture Examples.stinput");
+	// Pulling in path variable from CMake and creating path to .stinput sample file
+	string sample_path = string(PROJECT_DIR) + string("/Aperture Examples.stinput");
 	
+	// Path to .csv exported from Soltrace as ground truth
 	const char* file = sample_path.data();
+
+	// Soltrace case parameters
 	int nrays = 1;
 	int maxrays = 50;
-	int seed = 1;
+	int seed = 1; // Any positive integer will produce the same results each time, -1 will be a random seed
 	int sunshape = 0;
 	int errors = 0;
-	int aspointfocus = 0;
+	int aspointfocus = 0; // Toggles optimizations for power tower cases
 
 	int code = 0;
 
+	// Creates system context for Soltrace cases
 	st_context_t cxt = ::st_create_context();
 
 	FILE* fp = fopen(file, "r");
