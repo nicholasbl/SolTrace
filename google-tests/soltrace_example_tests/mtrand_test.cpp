@@ -4,7 +4,7 @@
 
 using namespace std;
 
-TEST(st_mtrand_test, BasicAssertions)
+TEST(RandomNumberGenerator, SingleNumberMersenneTwister)
 {
 	MTRand myrng(1);
 	double random_number = myrng.rand();
