@@ -6,7 +6,7 @@
 
 using namespace std;
 
-TEST(st_hfsf_sim_run_opt_test, BasicAssertions)
+TEST(HighFluxSolarFurnace, RaysTraced1e5OpticalErrorsOffgit )
 {
 	// Pulling in path variable from CMake and creating path to .stinput sample file
 	string sample_path = string(PROJECT_DIR) + string("/High Flux Solar Furnace.stinput");
