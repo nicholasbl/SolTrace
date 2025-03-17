@@ -1,19 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <sstream>
-#include <cmath>
-
-#include <string>
-#include <cstring>
-#include <vector>
-#include <exception>
-#include <cstdlib>
-
 #include "strace.h"
 #include "stapi.h"
 #include "split_csv.h"
@@ -22,25 +8,27 @@ using namespace std;
 
 TEST(st_hfsf_sim_run_opt_test, BasicAssertions)
 {
-	string project_dir = PROJECT_DIR;
+	// Pulling in path variable from CMake and creating path to .stinput sample file
+	string sample_path = string(PROJECT_DIR) + string("/High Flux Solar Furnace.stinput");
 
-	string sample_path = PROJECT_DIR + string("/High Flux Solar Furnace.stinput");
+	// Path to .csv exported from Soltrace as ground truth
 	string ground_csv_path = PROJECT_DIR + string("/hfsf_example_raydata.csv");
 
 	std::ifstream csv_file(ground_csv_path);
 	vector<vector<string>> ground_raydata = split_csv(ground_csv_path);
 
-
+	// Soltrace case parameters
 	const char* file = sample_path.data();
 	int nrays = 10000;
 	int maxrays = 1000000;
-	int seed = 1;
+	int seed = 1; // Any positive integer will produce the same results each time, -1 will be a random seed
 	int sunshape = 0;
 	int errors = 0;
-	int powertower = 0;
+	int powertower = 0; // Toggles optimizations for power tower cases
 
 	int code = 0;
 
+	// Creates system context for Soltrace cases
 	st_context_t cxt = ::st_create_context();
 
 	FILE* fp = fopen(file, "r");
