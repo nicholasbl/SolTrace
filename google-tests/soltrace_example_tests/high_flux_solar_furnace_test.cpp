@@ -6,7 +6,7 @@
 
 using namespace std;
 
-TEST(HighFluxSolarFurnace, RaysTraced1e5OpticalErrorsOffgit )
+TEST(HighFluxSolarFurnace, RaysTraced1e5OpticalErrorsOff)
 {
 	// Pulling in path variable from CMake and creating path to .stinput sample file
 	string sample_path = string(PROJECT_DIR) + string("/High Flux Solar Furnace.stinput");
