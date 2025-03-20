@@ -1,10 +1,10 @@
 #ifndef SOLTRACE_OPTICAL_PROPERTIES_H
 #define SOLTRACE_OPTICAL_PROPERTIES_H
 
-class OpticalProperties
+struct OpticalProperties
 {
-public:
-private:
+double transmitivity;
+double reflectivity;
 };
 
 #endif

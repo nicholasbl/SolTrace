@@ -1,11 +1,12 @@
 #ifndef SOLTRACE_ELEMENT_CONTAINER_H
 #define SOLTRACE_ELEMENT_CONTAINER_H
 
+#include <cstdint>
 #include <map>
 #include <memory>
 
-#include "element.hpp"
-#include "ray_source.hpp"
+// #include "element.hpp"
+// #include "ray_source.hpp"
 
 // typedef uint64_t element_id;
 
@@ -24,8 +25,20 @@ public:
     {
         auto key = this->next_id;
         std::map<K, value_pointer>::value_type to_insert(key, item);
-        this->container.insert(to_insert);
-        ++next_id;
+        auto result = this->container.insert(to_insert);
+        if (result->second == true)
+        {
+            ++next_id;
+        }
+        else
+        {
+            // Insertion failed. The only obvious reason for this is that
+            // the key is a duplicate. However, given the key is assigned
+            // by the container itself and is a 64-bit integer, where the
+            // next id is just incrementing the integer, this should never 
+            // happen. But just in case...
+            key = -1;
+        }
         return key;
     }
     bool remove_item(K id)
@@ -76,13 +89,5 @@ private:
     std::map<K, value_pointer> container;
     mutable K next_id;
 };
-
-using element_id = int64_t;
-using ElementContainer = Container<element_id, Element>;
-using element_ptr = ElementContainer::value_pointer;
-
-using ray_source_id = int64_t;
-using RaySourceContainer = Container<ray_source_id, RaySource>;
-using ray_source_ptr = RaySourceContainer::value_pointer;
 
 #endif

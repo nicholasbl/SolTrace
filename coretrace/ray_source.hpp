@@ -19,4 +19,8 @@ public:
 private:
 };
 
+using ray_source_id = std::int_fast64_t;
+using RaySourceContainer = Container<ray_source_id, RaySource>;
+using ray_source_ptr = RaySourceContainer::value_pointer;
+
 #endif

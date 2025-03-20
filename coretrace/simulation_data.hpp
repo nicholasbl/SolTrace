@@ -1,6 +1,7 @@
 #ifndef SOLTRACE_SIMULATION_DATA_H
 #define SOLTRACE_SIMULATION_DATA_H
 
+#include <cstdint>
 #include <map>
 #include <memory>
 
@@ -85,8 +86,8 @@ public:
     // uint64_t get_number_of_elements() const;
     // uint64_t get_total_number_of_elements() const;
 
-    void set_number_of_rays(uint64_t nrays);
-    uint64_t get_number_of_rays() const;
+    void set_number_of_rays(uint_fast64_t nrays);
+    uint_fast64_t get_number_of_rays() const;
 
     void set_tolerance(double tolerance);
     double get_tolerance() const;

@@ -4,7 +4,15 @@
 class Shape
 {
 public:
-private:
+    Shape(){}
+    virtual ~Shape(){}
+};
+
+class Plane: public Shape
+{
+public:
+    Plane(){}
+    virtual ~Plane(){}
 };
 
 #endif
