@@ -139,7 +139,7 @@ void FindElementHit(
 	const int i, const TStage* Stage, const bool PT_override, const bool AsPowerTower,
 	
 	// element info
-	const int nintelements, const vector<void*> sunint_elements, const vector<void*> reflint_elements,
+	const int nintelements, const vector<void*>& sunint_elements, const vector<void*>& reflint_elements,
 	
 	 // ray info
 	const int RayNumber, const bool in_multi_hit_loop,
@@ -243,6 +243,73 @@ void FindElementHit(
 	}
 }
 
+void ProcessInteraction(
+	// system info
+	TSystem* System, MTRand myrng, const bool IncludeSunShape, TOpticalProperties* optics,
+	const bool IncludeErrors,
+
+	// stage info
+	const int i, const TStage* Stage, int k,
+	
+	// ray info
+	const st_uint_t MultipleHitCount,
+	double(&LastDFXYZ)[3],
+	
+	double(&LastCosRaySurfElement)[3], int& ErrorFlag,
+	double(&CosRayOutElement)[3], double(&LastPosRaySurfElement)[3],
+	double(&PosRayOutElement)[3]
+
+)
+{
+
+	// Initialize
+	double CosIn[3] = { 0.0, 0.0, 0.0 };
+	double CosOut[3] = { 0.0, 0.0, 0.0 };
+
+	
+
+	if (!Stage->Virtual)
+	{
+		if (IncludeSunShape && i == 0 && MultipleHitCount == 1)//change to account for first hit only in primary stage 8-11-31
+		{
+			// Apply sunshape to UNPERTURBED ray at intersection point
+			//only apply sunshape error once for primary stage
+			CopyVec3_refactored(CosIn, LastCosRaySurfElement);
+			Errors(myrng, CosIn, 1, &System->Sun,
+				Stage->ElementList[k], optics, CosOut, LastDFXYZ);  //sun shape
+			CopyVec3_refactored(LastCosRaySurfElement, CosOut);
+		}
+
+		//{Determine interaction at surface and direction of perturbed ray}
+		ErrorFlag = 0;
+
+		// {Apply surface normal errors to surface normal before interaction ray at intersection point - Wendelin 11-23-09}
+		if (IncludeErrors)
+		{
+			CopyVec3_refactored(CosIn, CosRayOutElement);
+			SurfaceNormalErrors(myrng, LastDFXYZ, optics, CosOut);  //surface normal errors
+			CopyVec3_refactored(LastDFXYZ, CosOut);
+		}
+
+		Interaction(myrng, LastPosRaySurfElement, LastCosRaySurfElement, LastDFXYZ,
+			Stage->ElementList[k]->InteractionType, optics, 630.0,
+			PosRayOutElement, CosRayOutElement, &ErrorFlag);
+
+		// {Apply specularity optical error to PERTURBED (i.e. after interaction) ray at intersection point}
+		if (IncludeErrors)
+		{
+			if (optics->DistributionType == 'F' || optics->DistributionType == 'f')
+				CopyVec3_refactored(CosIn, LastDFXYZ);  // Apply diffuse errors relative to surface normal
+			else
+				CopyVec3_refactored(CosIn, CosRayOutElement); // Apply all other errors relative to the specularly-reflected direction
+
+			Errors(myrng, CosIn, 2, &System->Sun,
+				Stage->ElementList[k], optics, CosOut, LastDFXYZ);  //optical errors
+			CopyVec3_refactored(CosRayOutElement, CosOut);
+		}
+	}
+}
+
 bool Trace_refactored(TSystem *System, unsigned int seed,
 		   st_uint_t NumberOfRays, 
 		   st_uint_t MaxNumberOfRays,
@@ -255,7 +322,6 @@ bool Trace_refactored(TSystem *System, unsigned int seed,
            std::vector< std::vector< double > > *st1in,
            bool save_st_data)
 {
-    
     bool PT_override = false;        //override speed improvements (use as compiled option for benchmarking old version)
     
     //don't try to use the element filtering method if: 
@@ -277,8 +343,6 @@ bool Trace_refactored(TSystem *System, unsigned int seed,
 	double PosSunStage[3] = { 0.0, 0.0, 0.0 };
 	double PosRayOutElement[3] = { 0.0, 0.0, 0.0 };
 	double CosRayOutElement[3] = { 0.0, 0.0, 0.0 };
-	double CosIn[3] = { 0.0, 0.0, 0.0 };
-	double CosOut[3] = { 0.0, 0.0, 0.0 };
 	double PosRayGlob[3] = { 0.0, 0.0, 0.0 };
 	double CosRayGlob[3] = { 0.0, 0.0, 0.0 };
 	double PosRayStage[3] = { 0.0, 0.0, 0.0 };
@@ -310,7 +374,6 @@ bool Trace_refactored(TSystem *System, unsigned int seed,
 		TOpticalProperties *optics=NULL;
 		PreviousStageHasRays = false;
 
-		int k = 0;
 		TElement *optelm = 0;
 		TRayData::ray_t *p_ray = 0;
 		TStage *Stage;
@@ -1013,48 +1076,14 @@ Label_FlagMiss:
 			}
 
 Label_TransformBackToGlobal:
-			k = abs( p_ray->element ) - 1;
-
-			if ( !Stage->Virtual )
-			{
-				if (IncludeSunShape && i == 0 && MultipleHitCount == 1)//change to account for first hit only in primary stage 8-11-31
-				{
-					// Apply sunshape to UNPERTURBED ray at intersection point
-					//only apply sunshape error once for primary stage
-					CopyVec3_refactored(CosIn, LastCosRaySurfElement);
-					Errors(myrng, CosIn, 1, &System->Sun,
-						   Stage->ElementList[k], optics, CosOut, LastDFXYZ);  //sun shape
-					CopyVec3_refactored(LastCosRaySurfElement, CosOut);
-				}
-
-				//{Determine interaction at surface and direction of perturbed ray}
-				ErrorFlag = 0;
-
-				// {Apply surface normal errors to surface normal before interaction ray at intersection point - Wendelin 11-23-09}
-				if( IncludeErrors )
-				{
-					CopyVec3_refactored( CosIn, CosRayOutElement );
-					SurfaceNormalErrors(myrng, LastDFXYZ, optics, CosOut);  //surface normal errors
-					CopyVec3_refactored( LastDFXYZ, CosOut );
-				}
-
-				Interaction( myrng, LastPosRaySurfElement, LastCosRaySurfElement, LastDFXYZ,
-					Stage->ElementList[k]->InteractionType, optics, 630.0, 
-					PosRayOutElement, CosRayOutElement, &ErrorFlag);
-
-				// {Apply specularity optical error to PERTURBED (i.e. after interaction) ray at intersection point}
-				if( IncludeErrors )
-				{
-					if (optics->DistributionType == 'F' || optics->DistributionType == 'f')
-						CopyVec3_refactored(CosIn, LastDFXYZ);  // Apply diffuse errors relative to surface normal
-					else
-						CopyVec3_refactored(CosIn, CosRayOutElement); // Apply all other errors relative to the specularly-reflected direction
-
-					Errors(myrng, CosIn, 2, &System->Sun,
-						   Stage->ElementList[k], optics, CosOut, LastDFXYZ);  //optical errors
-					CopyVec3_refactored(CosRayOutElement, CosOut);
-				}
-			}
+			
+			int k = abs(p_ray->element) - 1;
+			ProcessInteraction(System, myrng, IncludeSunShape, optics, IncludeErrors,
+				i, Stage, k,
+				MultipleHitCount, LastDFXYZ,
+				LastCosRaySurfElement, ErrorFlag,
+				CosRayOutElement, LastPosRaySurfElement,
+				PosRayOutElement);
 
 			// { Transform ray back to stage coord system and trace through stage again}
 			TransformToReference(PosRayOutElement, CosRayOutElement, 
