@@ -1,13 +1,10 @@
 #include <gtest/gtest.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <iostream>
 
 #include "mtrand.h"
 
 using namespace std;
 
-TEST(st_mtrand_test, BasicAssertions)
+TEST(RandomNumberGenerator, SingleNumberMersenneTwister)
 {
 	MTRand myrng(1);
 	double random_number = myrng.rand();
