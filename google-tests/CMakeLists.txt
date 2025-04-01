@@ -12,7 +12,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 
-file(GLOB SAMPLE_FILES ../app/deploy/samples/*.stinput)
+file(GLOB SAMPLE_FILES ../app/deploy/samples/*.stinput ../app/deploy/samples/*.mon)
 file(GLOB GROUND_FILES ./ground_results/*.csv)
 file(GLOB SOLTRACE_EXAMPLE_TESTS soltrace_example_tests/*.cpp)
 file(GLOB CSV_TOOL csv_tools/*.cpp csv_tools/*.h)
@@ -25,7 +25,6 @@ set(ENV{SOLTRACE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
 
 file(COPY ${SAMPLE_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${GROUND_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ../app/deploy/samples/parabola.mon DESTINATION ../coretrace)
 
 message("Binary dir: ${CMAKE_CURRENT_BINARY_DIR}")
 message("Source dir: ${CMAKE_CURRENT_SOURCE_DIR}")
