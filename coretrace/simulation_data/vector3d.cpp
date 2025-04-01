@@ -1,100 +1,9 @@
-#ifndef SOLTRACE_VECTOR3D_H
-#define SOLTRACE_VECTOR3D_H
 
-#include <cassert>
+#include "vector3d.hpp"
 
-#include "procs.h"
+// #include <cassert>
 
-// Place holder for 3D vectors/points and 3x3 matrices
-
-class Vector3d
-{
-public:
-    Vector3d()
-    {
-        for (int i=0; i<3; ++i)
-            this->data[i] = 0.0;
-    }
-    Vector3d(double data[3])
-    {
-        for(int i=0; i<3; ++i)
-            this->data[i] = data[i];
-    }
-    Vector3d(double x, double y, double z)
-    {
-        this->data[0] = x;
-        this->data[1] = y;
-        this->data[2] = z;
-    }
-    ~Vector3d(){}
-
-    inline double get_value(int i) const
-    {
-        assert(i >= 0 && i < 3);
-        return this->data[i];
-    }
-
-    void set_value(int i, double val)
-    {
-        assert(i >= 0 && i < 3);
-        this->data[i] = val;
-        return;
-    }
-
-    void set_values(double x, double y, double z)
-    {
-        this->data[0] = x;
-        this->data[1] = y;
-        this->data[2] = z;
-        return;
-    }
-
-    inline const double &operator[](int idx) const
-    {
-        return this->get_value(idx);
-    }
-
-    inline double & operator[](int idx)
-    {   
-        assert(idx >= 0 && idx < 3);
-        return this->data[idx];
-    }
-
-    double data[3];
-
-private:
-};
-
-class Matrix3d
-{
-public:
-    Matrix3d()
-    {
-        for(int i=0; i<3; ++i)
-            for (int j=0; j<3; ++j)
-                this->data[i][j] = 0.0;
-    }
-    ~Matrix3d() {}
-
-    void set_value(int i, int j, double val)
-    {
-        assert(i >= 0 && i < 3);
-        assert(j >= 0 && j < 3);
-        this->data[i][j] = val;
-    }
-
-    double get_value(int i, int j) const
-    {
-        assert(i >= 0 && i < 3);
-        assert(j >= 0 && j < 3);
-        return this->data[i][j];
-    }
-
-    // double data[9];
-    double data[3][3];
-
-private:
-};
+#include "matvec.hpp"
 
 // Compute y = A*x placing the result in y
 void matrix_vector_product(Matrix3d &A, Vector3d &x, Vector3d &y)
@@ -110,6 +19,24 @@ void vector_add(double a, const Vector3d &x,
     for (int i = 0; i < 3; ++i)
     {
         z[i] = a * x[i] + b * y[i];
+    }
+    return;
+}
+
+void vector_max(Vector3d &max, const Vector3d &x, const Vector3d &y)
+{
+    for (int i = 0; i < 3; ++i)
+    {
+        max[i] = fmax(x[i], y[i]);
+    }
+    return;
+}
+
+void vector_min(Vector3d &min, const Vector3d &x, const Vector3d &y)
+{
+    for (int i = 0; i < 3; ++i)
+    {
+        min[i] = fmin(x[i], y[i]);
     }
     return;
 }
@@ -171,5 +98,3 @@ void compute_transform_matrices(Vector3d &euler,
                                local_to_ref.data);
     return;
 }
-
-#endif

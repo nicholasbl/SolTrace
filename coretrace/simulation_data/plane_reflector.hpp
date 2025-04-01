@@ -7,17 +7,18 @@ class PlaneReflector : public ElementBase
 {
 public:
     PlaneReflector();
-    PlaneReflector(double length, double width, const Vector3d &normal);
+    PlaneReflector(double height,
+                   double width,
+                   const Vector3d &origin,
+                   const Vector3d &normal);
     virtual ~PlaneReflector();
 
-    virtual int set_bounding_box();
+    // virtual int set_bounding_box();
     virtual int update_orientation(const DateTime &dt,
                                    const Vector3d &source,
                                    const Vector3d &target);
 
 private:
-    double length;
-    double width;
 };
 
 #endif

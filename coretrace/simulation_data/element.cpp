@@ -8,6 +8,13 @@ ElementBase::ElementBase()
     return;
 }
 
+ElementBase::ElementBase(const Vector3d &origin,
+                         const Vector3d &aim)
+    : origin(origin), aim(aim)
+{
+    return;
+}
+
 ElementBase::~ElementBase()
 {
     return;
@@ -32,3 +39,23 @@ int ElementBase::compute_coordinate_rotations()
 
     return sts;
 }
+
+int ElementBase::convert_reference_to_local(Vector3d &ref, const Vector3d &local)
+{
+    return 0;
+}
+
+int ElementBase::convert_local_to_reference(Vector3d &local, const Vector3d &ref)
+{
+    return 0;
+}
+
+// const OpticalProperties & ElementBase::get_optical_properties() const
+// {
+//     return this->optics;
+// }
+
+// void ElementBase::set_optical_properties(const OpticalProperties &op)
+// {
+//     this->optics = op;
+// }

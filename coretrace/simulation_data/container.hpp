@@ -14,19 +14,20 @@ template <typename K, typename V>
 class Container
 {
 public:
-    typedef std::shared_ptr<V> value_pointer;
-    typedef std::map<K, value_pointer>::iterator iterator;
-    typedef std::map<K, value_pointer>::const_iterator const_iterator;
 
-    Container();
-    ~Container();
+    typedef typename std::shared_ptr<V> value_pointer;
+    typedef typename std::map<K, value_pointer>::iterator iterator;
+    typedef typename std::map<K, value_pointer>::const_iterator const_iterator;
+
+    Container():next_id(0){}
+    ~Container(){}
 
     K add_item(value_pointer item)
     {
         auto key = this->next_id;
-        std::map<K, value_pointer>::value_type to_insert(key, item);
+        typename std::map<K, value_pointer>::value_type to_insert(key, item);
         auto result = this->container.insert(to_insert);
-        if (result->second == true)
+        if (result.second == true)
         {
             ++next_id;
         }
@@ -49,10 +50,11 @@ public:
     {
         // return this->container[id];
         auto item = this->container.find(id);
-        value_pointer ptr = (item == this->container.end()
-                                 ? std::nullptr_t
-                                 : item->second);
-        return ptr;
+        // value_pointer ptr = (item == this->container.end()
+        //                          ? std::nullptr_t
+        //                          : item->second);
+        // return ptr;
+        return (item == this->container.end() ? nullptr : item->second);
     }
     bool replace_item(K id, value_pointer item)
     {
@@ -82,8 +84,8 @@ public:
 
     iterator get_iterator() { return container.begin(); }
     const_iterator get_const_iterator() { return container.cbegin(); }
-    bool is_at_end(iterator iter) { return iter == container.end(); }
-    bool is_at_end(const_iterator citer) { return citer == container.cend(); }
+    bool is_at_end(iterator iter) const { return iter == container.end(); } 
+    bool is_at_end(const_iterator citer) const { return citer == container.cend(); }
 
 private:
     std::map<K, value_pointer> container;

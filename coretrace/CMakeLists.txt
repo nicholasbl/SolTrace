@@ -121,3 +121,5 @@ if (MSVC)
 endif()
 
 add_subdirectory(strace)
+
+add_subdirectory(simulation_data)

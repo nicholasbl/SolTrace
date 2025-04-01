@@ -1,6 +1,7 @@
 #ifndef SOLTRACE_RAY_SOURCE_H
 #define SOLTRACE_RAY_SOURCE_H
 
+#include "container.hpp"
 #include "datetime.hpp"
 #include "vector3d.hpp"
 

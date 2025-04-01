@@ -10,6 +10,36 @@ SimulationData::~SimulationData()
     return;
 }
 
+void SimulationData::set_simulation_date(const Date &d)
+{
+    return;
+}
+
+const Date& SimulationData::get_simulation_date() const
+{
+    return this->my_parameters.get_simulation_date();
+}
+
+void SimulationData::set_simulation_datetime(const DateTime &dt)
+{
+    return;
+}
+
+const DateTime& SimulationData::get_simulation_datetime() const
+{
+    return this->my_parameters.get_simulation_datetime();
+}
+
+void SimulationData::set_simulation_time(const Time &t)
+{
+    return;
+}
+
+const Time& SimulationData::get_simulation_time() const
+{
+    return this->my_parameters.get_simulation_time();
+}
+
 int SimulationData::update_simulation_positions()
 {
     int sts = 0;
