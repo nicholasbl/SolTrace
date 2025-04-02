@@ -139,6 +139,16 @@ public:
     this->optics_back = op;
   }
 
+  virtual const Aperature *get_aperature() const
+  {
+    return this->aperature.get();
+  }
+
+  virtual const Surface *get_surface() const
+  {
+    return this->surface.get();
+  }
+
   virtual int compute_coordinate_rotations();
 
   // Convert `ref` to local coordinates and store the result in `local`

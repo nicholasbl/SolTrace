@@ -10,7 +10,9 @@
 PlaneReflector::PlaneReflector()
 {
     this->aperature = std::make_unique<Rectangle>(1.0, 1.0);
+    this->surface = std::make_unique<Flat>();
     this->aim.zero();
+    this->origin.zero();
     return;
 }
 
