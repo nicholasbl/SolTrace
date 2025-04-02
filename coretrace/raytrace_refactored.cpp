@@ -335,6 +335,7 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 	// Initialize Internal State Variables
 	st_uint_t RayNumber = 1;						// Ray Number of current ray
 	bool PreviousStageHasRays = false;
+	st_uint_t LastRayNumberInPreviousStage = NumberOfRays;
 
 	// Initialize Sun
 	double PosSunStage[3] = { 0.0, 0.0, 0.0 };
@@ -364,7 +365,6 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 
 		// Initialize stage variables
 		st_uint_t StageDataArrayIndex = 0;
-		st_uint_t LastRayNumberInPreviousStage = NumberOfRays;
 		st_uint_t PreviousStageDataArrayIndex = 0;
 
 		// Loop through rays
