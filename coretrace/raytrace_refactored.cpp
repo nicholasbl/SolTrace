@@ -225,7 +225,7 @@ void ProcessInteraction(
 	const bool IncludeErrors,
 
 	// stage info
-	const int i, const TStage* Stage, int k,
+	const int i, const TStage* Stage, const int k,
 	
 	// ray info
 	const st_uint_t MultipleHitCount,
@@ -233,16 +233,11 @@ void ProcessInteraction(
 	
 	double(&LastCosRaySurfElement)[3], int& ErrorFlag,
 	double(&CosRayOutElement)[3], double(&LastPosRaySurfElement)[3],
-	double(&PosRayOutElement)[3], int& myrng_counter
-
-)
+	double(&PosRayOutElement)[3], int& myrng_counter)
 {
-
 	// Initialize
 	double CosIn[3] = { 0.0, 0.0, 0.0 };
 	double CosOut[3] = { 0.0, 0.0, 0.0 };
-
-	
 
 	if (!Stage->Virtual)
 	{
@@ -592,7 +587,6 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 {
 	// Skipping PT_override logic, st_data
 	bool PT_override = false;
-	//AsPowerTower = false;
 
 	// Check inputs
 
@@ -698,7 +692,6 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 			// Skipping progress bar update
 
 			// Initialize internal variables for ray intersection tracing
-			std::vector<void*> emptyVector;
 			bool RayInStage = true;
 			bool in_multi_hit_loop = false;
 			double LastPosRaySurfElement[3] = { 0.0, 0.0, 0.0 };
