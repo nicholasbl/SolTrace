@@ -585,8 +585,13 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 	int (*callback)(st_uint_t ntracedtotal, st_uint_t ntraced, st_uint_t ntotrace, st_uint_t curstage, st_uint_t nstages, void* data),
 	void* cbdata)
 {
-	// Skipping PT_override logic, st_data
+	// Determine if PT optimizations should be applied
 	bool PT_override = false;
+	if (System->StageList.size() > 0
+		&& (System->StageList[0]->ElementList.size() < 10    //the first stage contains only a few elements
+			|| System->StageList.size() == 1)                //there's only one stage
+		)
+		PT_override = true;
 
 	// Check inputs
 
@@ -615,7 +620,6 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 	if (!SunToPrimaryStage(System, System->StageList[0], &System->Sun, PosSunStage))
 		return false;
 
-	// Calculate hash tree for sun incoming plane.
 	// Calculate hash tree for reflection to receiver plane(polar coordinates).
 	st_hash_tree sun_hash;
 	st_hash_tree rec_hash;
