@@ -629,6 +629,11 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 		SetupPTOptimizations(System, AsPowerTower, sun_hash, rec_hash, reccm_helio);
 	}
 
+	// Start the clock
+	clock_t startTime = clock();
+	int rays_per_callback_estimate = 50;
+	st_uint_t RaysTracedTotal = 0;
+
 	// Loop through stages
 	for (st_uint_t i = 0; i < System->StageList.size(); i++)
 	{
@@ -693,7 +698,27 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 				Stage->Origin, Stage->RRefToLoc,
 				PosRayStage, CosRayStage);
 
-			// Skipping progress bar update
+			// Update callback
+			if (callback != 0
+				&& RaysTracedTotal++ % rays_per_callback_estimate == 0)
+			{
+				if (RaysTracedTotal > 1)
+				{
+					//update how often to call this
+					double msec_per_ray = 1000. * (clock() - startTime) / CLOCKS_PER_SEC / (double)(RaysTracedTotal > 0 ? RaysTracedTotal : 1);
+					//set the new callback estimate to be about 50 ms
+					rays_per_callback_estimate = (int)(200. / msec_per_ray);
+					//limit to something reasonable
+					rays_per_callback_estimate = rays_per_callback_estimate < 5 ? 5 : rays_per_callback_estimate;
+				}
+
+				//do the callback
+				if (!(*callback)(RaysTracedTotal, RayNumber,
+					LastRayNumberInPreviousStage, i + 1,
+					System->StageList.size(), cbdata))
+					return true;
+			}
+
 
 			// Initialize internal variables for ray intersection tracing
 			bool RayInStage = true;
