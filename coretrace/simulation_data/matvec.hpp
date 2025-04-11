@@ -198,7 +198,7 @@
 void MatrixVectorMult(double M[3][3], double V[3], double MxV[3]);
 void MatrixTranspose(double InputMatrix[3][3], int NumRowsCols, double OutputMatrix[3][3]);
 
-double DOT(double A[3], double B[3]);
+double DOT(const double A[3], const double B[3]);
 
 void TransformToLocal(double PosRef[3], double CosRef[3], double Origin[3],
     double RRefToLoc[3][3],

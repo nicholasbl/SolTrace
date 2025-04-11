@@ -6,7 +6,16 @@ FetchContent_Declare(
 	GIT_TAG main
 )
 
-include_directories(soltrace_example_tests csv_tools ../coretrace ../coretrace/strace ../app/deploy/samples)
+add_subdirectory(unit-tests)
+
+include_directories(
+	soltrace_example_tests
+	csv_tools
+	../coretrace
+	../coretrace/strace
+	../app/deploy/samples
+	../coretrace/simulation_data
+)
 
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
@@ -52,4 +61,5 @@ add_definitions(-DPROJECT_DIR="${CMAKE_CURRENT_BINARY_DIR}")
 
 enable_testing()
 add_test(NAME Test COMMAND Test)
+add_test(NAME UnitTests COMMAND UnitTests)
 

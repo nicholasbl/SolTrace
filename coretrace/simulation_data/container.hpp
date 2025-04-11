@@ -5,22 +5,23 @@
 #include <map>
 #include <memory>
 
-// #include "element.hpp"
-// #include "ray_source.hpp"
-
-// typedef uint64_t element_id;
-
 template <typename K, typename V>
 class Container
 {
 public:
+    using value_pointer = typename std::shared_ptr<V>;
+    // using make_pointer = std::make_shared<V>;
+    using iterator = typename std::map<K, value_pointer>::iterator;
+    using const_iterator = typename std::map<K, value_pointer>::const_iterator;
 
-    typedef typename std::shared_ptr<V> value_pointer;
-    typedef typename std::map<K, value_pointer>::iterator iterator;
-    typedef typename std::map<K, value_pointer>::const_iterator const_iterator;
+    template<typename... Args>
+    inline static value_pointer make_pointer(Args&&... args)
+    {
+        return std::make_shared<V>(std::forward<Args>(args)...);
+    }
 
-    Container():next_id(0){}
-    ~Container(){}
+    Container() : next_id(0) {}
+    ~Container() {}
 
     K add_item(value_pointer item)
     {
@@ -36,7 +37,7 @@ public:
             // Insertion failed. The only obvious reason for this is that
             // the key is a duplicate. However, given the key is assigned
             // by the container itself and is a 64-bit integer, where the
-            // next id is just incrementing the integer, this should never 
+            // next id is just incrementing the integer, this should never
             // happen. But just in case...
             key = -1;
         }
@@ -66,6 +67,7 @@ public:
         if (pos != this->container.end())
         {
             this->container[id] = item;
+            retval = true;
         }
         return retval;
     }
@@ -76,15 +78,15 @@ public:
     }
     uint64_t get_total_number_of_items() const
     {
-        // TODO: Implement this if needed. For elements, a value can 
-        // be a CompositeElement. In this case, it has its own 
+        // TODO: Implement this if needed. For elements, a value can
+        // be a CompositeElement. In this case, it has its own
         // collection of elements which need to be counted.
         return 0;
     }
 
     iterator get_iterator() { return container.begin(); }
     const_iterator get_const_iterator() { return container.cbegin(); }
-    bool is_at_end(iterator iter) const { return iter == container.end(); } 
+    bool is_at_end(iterator iter) const { return iter == container.end(); }
     bool is_at_end(const_iterator citer) const { return citer == container.cend(); }
 
 private:

@@ -65,6 +65,15 @@ public:
         return this->data[idx];
     }
 
+    // inline bool operator==(const Vector3d& x)
+    // {
+    //     return (
+    //         data[0] == x.data[0] &&
+    //         data[1] == x.data[1] &&
+    //         data[2] == x.data[2]
+    //     );
+    // }
+
     double data[3];
 
 private:
@@ -108,13 +117,13 @@ void vector_add(double a, const Vector3d &x,
                 double b, const Vector3d &y,
                 Vector3d &z);
 
-void vector_max(Vector3d &max, const Vector3d &x, const Vector3d &y);
+void vector_max(const Vector3d &x, const Vector3d &y, Vector3d &max);
 
-void vector_min(Vector3d &min, const Vector3d &x, const Vector3d &y);
+void vector_min(const Vector3d &x, const Vector3d &y, Vector3d &min);
 
 // Compute standard Euclidean dot product
-double dot_product(Vector3d &x, Vector3d &y);
-double vector_norm(Vector3d &x);
+double dot_product(const Vector3d &x, const Vector3d &y);
+double vector_norm(const Vector3d &x);
 void make_unit_vector(Vector3d &x);
 void transform_to_local(Vector3d &pos_ref,
                         Vector3d &cos_ref,

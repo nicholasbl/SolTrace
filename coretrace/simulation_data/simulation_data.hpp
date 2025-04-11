@@ -11,6 +11,12 @@
 #include "ray_source.hpp"
 #include "simulation_parameters.hpp"
 
+// using element_ptr=std::shared_ptr<Element>;
+// using ElementContainer=std::map<element_id, element_ptr>;
+
+// using ray_source_ptr=std::shared_ptr<RaySource>;
+// using RaySourceContainer=std::map<ray_source_id, ray_source_ptr>;
+
 class SimulationData
 {
 public:
@@ -18,7 +24,7 @@ public:
     SimulationData();
     virtual ~SimulationData();
 
-    auto add_ray_source(ray_source_ptr src)
+    ray_source_id add_ray_source(ray_source_ptr src)
     {
         return this->my_sources.add_item(src);
     }
@@ -30,7 +36,7 @@ public:
     {
         return this->my_sources.get_item(id);
     }
-    auto replace_ray_source(ray_source_id id, ray_source_ptr src)
+    bool replace_ray_source(ray_source_id id, ray_source_ptr src)
     {
         return this->my_sources.replace_item(id, src);
     }
@@ -47,7 +53,7 @@ public:
     {
         return this->my_elements.get_item(id);
     }
-    auto replace_element(element_id id, element_ptr el)
+    bool replace_element(element_id id, element_ptr el)
     {
         return this->my_elements.replace_item(id, el);
     }
@@ -98,7 +104,6 @@ public:
     void set_latitude(double latitude);
     double get_latitude() const;
 
-    // TODO: Do we need these?
     void set_longitude(double longitude);
     double get_longitude() const;
 
@@ -117,9 +122,11 @@ public:
     int update_simulation_positions(const Date &);
     int update_simulation_positions(const DateTime &);
 
-    int dump_to_csv(const char *csv_name) const;
-    int import_from_csv(const char *csv_name);
-    int import_legacy_table(const char *table_file_name);
+    // int dump_to_csv(const char *csv_name) const;
+    // int import_from_csv(const char *csv_name);
+    // int import_legacy_table(const char *table_file_name);
+    int import_from_file(const char *file_name);
+    int import_from_file(const std::string file_name);
 
 private:
     ElementContainer my_elements;

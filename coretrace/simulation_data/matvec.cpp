@@ -82,7 +82,7 @@ void MatrixVectorMult(double M[3][3], double V[3], double MxV[3])
 //End of procedure-------------------------------------------------------------
 
 
-double DOT(double A[3], double B[3])
+double DOT(const double A[3], const double B[3])
 {
 //{Purpose: To compute the dot product of 2 N-dimensional vectors, A and B
   //        Input -
