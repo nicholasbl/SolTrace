@@ -24,4 +24,10 @@ using ray_source_id = std::int_fast64_t;
 using RaySourceContainer = Container<ray_source_id, RaySource>;
 using ray_source_ptr = RaySourceContainer::value_pointer;
 
+template<typename... Args>
+inline ray_source_ptr make_ray_source(Args&&... args)
+{
+    return RaySourceContainer::make_pointer(std::forward<Args>(args)...);
+}
+
 #endif

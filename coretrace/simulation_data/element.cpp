@@ -3,17 +3,29 @@
 
 #include <math.h>
 
-ElementBase::ElementBase()
+ElementBase::ElementBase() : Element(), active(true), zrot(0.0)
 {
+    this->aim.zero();
+    this->origin.zero();
+    this->euler_angles.zero();
+
+    this->reference_to_local.zero();
+    this->local_to_reference.zero();
+
     return;
 }
 
-ElementBase::ElementBase(const Vector3d &origin,
-                         const Vector3d &aim)
-    : origin(origin), aim(aim)
-{
-    return;
-}
+// ElementBase::ElementBase(const Vector3d &origin,
+//                          const Vector3d &aim)
+//     : active(true), origin(origin), aim(aim), optics_back(), optics_front()
+// {
+//     this->euler_angles.zero();
+
+//     this->reference_to_local.zero();
+//     this->local_to_reference.zero();
+
+//     return;
+// }
 
 ElementBase::~ElementBase()
 {

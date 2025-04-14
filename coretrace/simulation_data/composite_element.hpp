@@ -7,10 +7,48 @@
 class CompositeElement : public ElementBase
 {
 public:
-    
     CompositeElement();
     virtual ~CompositeElement();
 
+    virtual bool is_composite() const
+    {
+        return true;
+    }
+
+    // Element interface functions
+    virtual const aperature_ptr get_aperature() const { return nullptr; }
+    virtual aperature_ptr get_aperature() { return nullptr; }
+    virtual void set_aperature(aperature_ptr) {}
+
+    virtual const surface_ptr get_surface() const { return nullptr; }
+    virtual surface_ptr get_surface() { return nullptr; }
+    virtual void set_surface(surface_ptr) {}
+
+    virtual const OpticalProperties *get_front_optical_properties() const
+    {
+        return nullptr;
+    }
+    virtual OpticalProperties *get_front_optical_properties()
+    {
+        return nullptr;
+    }
+    virtual void set_front_optical_properties(const OpticalProperties &) {}
+
+    virtual const OpticalProperties *get_back_optical_properties() const
+    {
+        return nullptr;
+    }
+    virtual OpticalProperties *get_back_optical_properties()
+    {
+        return nullptr;
+    }
+    virtual void set_back_optical_properties(const OpticalProperties &) {};
+
+    virtual int update_orientation(const DateTime &,
+                                   const Vector3d &source,
+                                   const Vector3d &target);
+
+    // CompositeElement accessors
     element_id add_item(element_ptr el)
     {
         return this->my_elements.add_item(el);
@@ -55,9 +93,7 @@ public:
     }
 
 private:
-
     ElementContainer my_elements;
-
 };
 
 #endif

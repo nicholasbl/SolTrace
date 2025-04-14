@@ -4,10 +4,11 @@ Project(simdata)
 include_directories(.)
 
 set(SIMDATA_SRC
+    composite_element.cpp
     element.cpp
     matvec.cpp
-    plane_reflector.cpp
     simulation_data.cpp
+    single_element.cpp
     vector3d.cpp
 )
 

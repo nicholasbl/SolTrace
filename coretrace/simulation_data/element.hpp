@@ -1,7 +1,7 @@
 #ifndef SOLTRACE_ELEMENT_H
 #define SOLTRACE_ELEMENT_H
 
-#include <memory>
+// #include <memory>
 #include <string>
 
 #include "aperature.hpp"
@@ -19,6 +19,12 @@ public:
   virtual ~Element() {};
 
   // Accessors
+  virtual void disable() const = 0;
+  virtual void enable() const = 0;
+  virtual bool is_enabled() const = 0;
+
+  virtual bool is_composite() const = 0;
+
   virtual const Vector3d &get_origin() const = 0;
   virtual void set_origin(const Vector3d &) = 0;
   virtual const Vector3d &get_aim_vector() const = 0;
@@ -31,18 +37,22 @@ public:
   // virtual const Vector3d &get_upper_bounding_box() const = 0;
   // virtual const Vector3d &get_lower_bounding_box() const = 0;
 
-  virtual const Aperature *get_aperature() const = 0;
-  virtual const Surface *get_surface() const = 0;
+  virtual const aperature_ptr get_aperature() const = 0;
+  virtual aperature_ptr get_aperature() = 0;
+  virtual void set_aperature(aperature_ptr) = 0;
+  virtual const surface_ptr get_surface() const = 0;
+  virtual surface_ptr get_surface() = 0;
+  virtual void set_surface(surface_ptr) = 0;
 
   // virtual const OpticalProperties &get_optical_properties() const = 0;
   // virtual void set_optical_properties(const OpticalProperties &) = 0;
 
-  virtual const OpticalProperties &get_front_optical_properties() const = 0;
-  virtual OpticalProperties &get_front_optical_properties() = 0;
+  virtual const OpticalProperties *get_front_optical_properties() const = 0;
+  virtual OpticalProperties *get_front_optical_properties() = 0;
   virtual void set_front_optical_properties(const OpticalProperties &) = 0;
 
-  virtual const OpticalProperties &get_back_optical_properties() const = 0;
-  virtual OpticalProperties &get_back_optical_properties() = 0;
+  virtual const OpticalProperties *get_back_optical_properties() const = 0;
+  virtual OpticalProperties *get_back_optical_properties() = 0;
   virtual void set_back_optical_properties(const OpticalProperties &) = 0;
 
   // Convert `ref` to local coordinates and store the result in `local`
@@ -69,8 +79,26 @@ class ElementBase : public Element
 {
 public:
   ElementBase();
-  ElementBase(const Vector3d &origin, const Vector3d &aim);
+  // ElementBase(const Vector3d &origin, const Vector3d &aim);
   virtual ~ElementBase();
+
+  virtual inline void disable() const
+  {
+    this->active = false;
+  }
+  virtual inline void enable() const
+  {
+    this->active = true;
+  }
+  virtual bool is_enabled() const
+  {
+    return this->active;
+  }
+
+  virtual bool is_composite() const
+  {
+    return false;
+  }
 
   virtual const Vector3d &get_origin() const
   {
@@ -109,46 +137,6 @@ public:
     return;
   }
 
-  // virtual const OpticalProperties &get_optical_properties() const;
-  const OpticalProperties &get_front_optical_properties() const
-  {
-    return this->optics_front;
-  }
-  OpticalProperties &get_front_optical_properties()
-  {
-    return this->optics_front;
-  }
-  // virtual void set_optical_properties(const OpticalProperties &);
-  void set_front_optical_properties(const OpticalProperties &op)
-  {
-    this->optics_front = op;
-  }
-
-  // virtual const OpticalProperties &get_optical_properties() const;
-  const OpticalProperties &get_back_optical_properties() const
-  {
-    return this->optics_back;
-  }
-  OpticalProperties &get_back_optical_properties()
-  {
-    return this->optics_back;
-  }
-  // virtual void set_optical_properties(const OpticalProperties &);
-  void set_back_optical_properties(const OpticalProperties &op)
-  {
-    this->optics_back = op;
-  }
-
-  virtual const Aperature *get_aperature() const
-  {
-    return this->aperature.get();
-  }
-
-  virtual const Surface *get_surface() const
-  {
-    return this->surface.get();
-  }
-
   virtual int compute_coordinate_rotations();
 
   // Convert `ref` to local coordinates and store the result in `local`
@@ -157,12 +145,7 @@ public:
   virtual int convert_local_to_reference(Vector3d &ref, const Vector3d &local);
 
 protected:
-  // void clear_box_bounds();
-
-  OpticalProperties optics_front;
-  OpticalProperties optics_back;
-  std::unique_ptr<Aperature> aperature;
-  std::unique_ptr<Surface> surface;
+  mutable bool active;
 
   // Location of the origin in the reference coordinate system
   Vector3d origin;
@@ -175,15 +158,16 @@ protected:
 
   Matrix3d reference_to_local;
   Matrix3d local_to_reference;
-
-  // // TODO: Should these be in local or reference coordinates?
-  // // TODO: Do we need these here? Or only in the tracing part?
-  // Vector3d upper_box_bound;
-  // Vector3d lower_box_bound;
 };
 
 using element_id = std::int_fast64_t;
 using ElementContainer = Container<element_id, Element>;
 using element_ptr = ElementContainer::value_pointer;
+
+template <typename C, typename... Args>
+inline auto make_element(Args &&...args)
+{
+  return ElementContainer::make_pointer<C>(std::forward<Args>(args)...);
+}
 
 #endif

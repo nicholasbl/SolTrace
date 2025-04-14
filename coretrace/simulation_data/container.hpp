@@ -10,7 +10,6 @@ class Container
 {
 public:
     using value_pointer = typename std::shared_ptr<V>;
-    // using make_pointer = std::make_shared<V>;
     using iterator = typename std::map<K, value_pointer>::iterator;
     using const_iterator = typename std::map<K, value_pointer>::const_iterator;
 
@@ -18,6 +17,12 @@ public:
     inline static value_pointer make_pointer(Args&&... args)
     {
         return std::make_shared<V>(std::forward<Args>(args)...);
+    }
+
+    template<typename C, typename... Args>
+    inline static std::shared_ptr<C> make_pointer(Args&&... args)
+    {
+        return std::make_shared<C>(std::forward<Args>(args)...);
     }
 
     Container() : next_id(0) {}
