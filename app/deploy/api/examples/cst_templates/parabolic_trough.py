@@ -13,6 +13,7 @@ from pysoltrace import PySolTrace, Point
 
 import matplotlib.pyplot as plt
 import numpy as np
+plt.rcParams.update({'font.size': 15})
 
 def meinel_clearsky(day: int, zenith: float, altitude: float):
     """
@@ -101,14 +102,13 @@ def compute_euler_angles(rotation: np.array):
 
     :return euler angles: [deg] array [beta, alpha, gamma]
     """
-    if rotation[2,1] != 1.0 or rotation[2,1] != -1:
+    if rotation[2,1] != 1.0 and rotation[2,1] != -1.0:
         beta = np.asin(rotation[2,1])
         alpha = np.atan2(rotation[2,0] / np.cos(beta), rotation[2,2] / np.cos(beta))
         gamma = - np.atan2(rotation[0,1] / np.cos(beta), rotation[1,1] / np.cos(beta))
     else:
-        # TODO: This section has not been tested
         gamma = 0.0
-        if rotation[2,1] == 1:
+        if rotation[2,1] == 1.0:
             beta = np.pi / 2
             alpha = np.atan2(rotation[0,2], rotation[1,2])
         else:
@@ -532,20 +532,16 @@ class parabolic_trough:
 
         return absorbed_power
     
-def trace(PT: PySolTrace, dni: float = 1000.0, nrays: int = 1e6, plot_results: bool = False):
-    """
-    TODO: we could clean this up...
-    """
+def trace(PT: PySolTrace, dni: float = 1000.0, nrays: int = 1e6, plot_trace: bool = False, nthreads: int = 1):
     PT.num_ray_hits = nrays
-    PT.max_rays_traced = nrays*100
+    PT.max_rays_traced = nrays*200
     PT.is_sunshape = True
     PT.is_surface_errors = True
     PT.dni = dni
     
-    PT.run(123, no_callback=True)
-    if plot_results:
+    res = PT.run(123, nthread=nthreads, no_callback=True)
+    if plot_trace:
         PT.plot_trace()
-        PT.plot_flux(trough.absorbers[0])
 
 if __name__ == "__main__":
 
@@ -612,7 +608,7 @@ if __name__ == "__main__":
     optics = [mirror_optic, absorber_optic, outer_env_optic, inner_env_optic]
 
     # Set-up the parabolic trough
-    position = Point(0.0, 0.0, 0.0)
+    position = Point(20.0, -20.0, 30.0)
     aperture_size = (5.774, 11.96)
     number_panels = (4, 7) # (1, 7)
     gaps = (0.02, 0.01, 0.08)
@@ -624,6 +620,7 @@ if __name__ == "__main__":
 
     trough = parabolic_trough(position, aperture_size, number_panels, gaps, focal_length, azimuth, tilt, receiver_dimensions)
     trough.create_geometry(PT, optics)
+    trough.update_geometry(PT, 135.0, 60.)
     PT.write_soltrace_input_file('parabolic_trough.stinput')
 
     trace(PT)
@@ -637,10 +634,11 @@ if __name__ == "__main__":
         day_of_year = 80
 
         # Trough set-up
-        positions = [Point(10.0, -13.0, 0.0), Point(10.0, 0.0, 0.0), Point(10.0, 13.0, 0.0)]    # north-south
-        #positions = [Point(-13.0, 10.0, 0.0), Point(0.0, 10.0, 0.0), Point(13.0, 10.0, 0.0)]      # east-west
+        #positions = [Point(10.0, -13.0, 0.0), Point(10.0, 0.0, 0.0), Point(10.0, 13.0, 0.0)]    # north-south
+        positions = [Point(10.0, 0.0, 0.0), Point(0.0, 0.0, 0.0), Point(-10.0, 0.0, 0.0)]    # north-south
+        # positions = [Point(-13.0, 10.0, 0.0), Point(0.0, 10.0, 0.0), Point(13.0, 10.0, 0.0)]      # east-west
         aperture_size = (6.0, 12.0)
-        number_panels = (2, 2)
+        number_panels = (4, 7)
         gaps = (0.02, 0.01, 0.08)
         focal_length = 1.71
         azimuth = 0.0
@@ -658,8 +656,8 @@ if __name__ == "__main__":
         # Time-simulation
         rec_power = list()
         dni = list()
-        #hours = [5 + h*0.5 for h in range(29)]
-        hours = [5 + h for h in range(15)]
+        hours = [5 + h*0.5 for h in range(29)]
+        #hours = [5 + h for h in range(15)]
         for h in hours:
             print("Simulating hour {:}...".format(h))
             azimuth, elevation = sun_position(latitude, day_of_year, h)    
@@ -670,11 +668,11 @@ if __name__ == "__main__":
             for trough in troughs:
                 trough.update_geometry(PT, azimuth, elevation)
 
-            # if h in [6, 12, 17]:
-            #     PT.write_soltrace_input_file('parabolic_trough_{}_hour.stinput'.format(h))
+            if h in [6, 8, 10, 12, 17]:
+                PT.write_soltrace_input_file('parabolic_trough_{}_hour.stinput'.format(h))
 
             if dni_hour > 0.0:
-                trace(PT, dni=dni_hour)
+                trace(PT, dni=dni_hour, nthreads=12)
                 # Sum power on receivers
                 power = 0.0
                 for trough in troughs:
