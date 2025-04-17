@@ -593,8 +593,6 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 		)
 		PT_override = true;
 
-	// Check inputs
-
 	// Initialize variables
 	MTRand myrng(seed);
 	int myrng_counter = 0;
@@ -603,6 +601,18 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 	st_uint_t RayNumber = 1;						// Ray Number of current ray
 	bool PreviousStageHasRays = false;
 	st_uint_t LastRayNumberInPreviousStage = NumberOfRays;
+
+	// Check Inputs
+	if (NumberOfRays < 1)
+	{
+		System->errlog("invalid number of rays: %d", NumberOfRays);
+		return false;
+	}
+	if (System->StageList.size() < 1)
+	{
+		System->errlog("no stages defined.");
+		return false;
+	}
 
 	// Define IncomingRays
 	std::vector<GlobalRay_refactored> IncomingRays;	// Vector of rays from previous stage, going into next stage
@@ -637,7 +647,12 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 	// Loop through stages
 	for (st_uint_t i = 0; i < System->StageList.size(); i++)
 	{
-		// Skipping check to see if previous stage has rays
+		// Check if previous stage has rays
+		bool StageHasRays = true;
+		if (i > 0 && PreviousStageHasRays == false)
+		{
+			StageHasRays = false;
+		}
 
 		// Get Current Stage
 		TStage* Stage = System->StageList[i];
@@ -647,7 +662,6 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 		st_uint_t PreviousStageDataArrayIndex = 0;
 
 		// Loop through rays
-		bool StageHasRays = true;
 		while (StageHasRays)
 		{
 			// Initialize Global Coordinates
@@ -780,7 +794,12 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 					i + 1,
 					LastRayNumber);
 
-				// Skipping check to make sure p_ray was generated successfully
+				// Check p_ray saved correctly
+				if (!p_ray)
+				{
+					System->errlog("Failed to save ray data at index %d", Stage->RayData.Count() - 1);
+					return false;
+				}
 
 				// Skipping LastElementNumber == 0 check
 
