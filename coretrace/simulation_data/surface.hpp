@@ -1,33 +1,66 @@
 #ifndef SOLTRACE_SURFACE_H
 #define SOLTRACE_SURFACE_H
 
-struct Surface {
-    Surface() {}
-    virtual ~Surface() {}
+enum SurfaceType
+{
+    CONICAL,
+    CYLINDER,
+    FLAT,
+    PARABOLIC,
+    SPHERICAL,
 };
 
-struct Conical : public Surface {
+struct Surface
+{
+public:
+    SurfaceType my_type;
+
+    Surface(SurfaceType st) : my_type(st) {}
+    virtual ~Surface() {}
+
+    SurfaceType get_type() { return my_type; }
+};
+
+struct Conical : public Surface
+{
     double half_angle;
-    Conical() : half_angle(0.0) {}
-    Conical(double ha) : half_angle(ha) {}
+    Conical() : Surface(CONICAL), half_angle(0.0) {}
+    Conical(double ha) : Surface(CONICAL), half_angle(ha) {}
     virtual ~Conical() {}
 };
 
-struct Cylinder : public Surface {};
+// TODO: Add needed subfields
 
-struct Flat : public Surface {
-    Flat() {}
+struct Cylinder : public Surface
+{
+    Cylinder() : Surface(CYLINDER) {}
+    virtual ~Cylinder() {}
+};
+
+struct Flat : public Surface
+{
+    Flat() : Surface(FLAT) {}
     virtual ~Flat() {}
 };
 
-struct Parabolic : public Surface {};
+struct Parabolic : public Surface
+{
+    Parabolic() : Surface(PARABOLIC) {}
+    virtual ~Parabolic() {}
+};
 
-struct Spherical : public Surface {};
+struct Spherical : public Surface
+{
+    Spherical() : Surface(SPHERICAL) {}
+    virtual ~Spherical() {}
+};
+
+// TODO: Add other surface types.
 
 using surface_ptr = std::shared_ptr<Surface>;
 
 template <typename S, typename... Args>
-inline surface_ptr make_surface(Args &&...args)
+inline auto make_surface(Args &&...args)
 {
     return std::make_shared<S>(std::forward<Args>(args)...);
 }

@@ -24,6 +24,7 @@ public:
   virtual bool is_enabled() const = 0;
 
   virtual bool is_composite() const = 0;
+  virtual bool is_virtual() const = 0;
 
   virtual const Vector3d &get_origin() const = 0;
   virtual void set_origin(const Vector3d &) = 0;
@@ -96,6 +97,10 @@ public:
   }
 
   virtual bool is_composite() const
+  {
+    return false;
+  }
+  virtual bool is_virtual() const
   {
     return false;
   }

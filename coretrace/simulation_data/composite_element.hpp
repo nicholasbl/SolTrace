@@ -49,19 +49,19 @@ public:
                                    const Vector3d &target);
 
     // CompositeElement accessors
-    element_id add_item(element_ptr el)
+    element_id add_element(element_ptr el)
     {
         return this->my_elements.add_item(el);
     }
-    auto remove_item(element_id id)
+    auto remove_element(element_id id)
     {
         return this->my_elements.remove_item(id);
     }
-    element_ptr get_item(element_id id)
+    element_ptr get_element(element_id id)
     {
         return this->my_elements.get_item(id);
     }
-    auto replace_item(element_id id, element_ptr el)
+    auto replace_element(element_id id, element_ptr el)
     {
         return this->my_elements.replace_item(id, el);
     }

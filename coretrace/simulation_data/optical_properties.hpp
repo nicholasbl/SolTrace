@@ -15,6 +15,15 @@ struct OpticalProperties
     {
     }
 
+    OpticalProperties(double trans, double refl,
+                      double slope_err, double spec_err)
+        : transmitivity(trans),
+          reflectivity(refl),
+          slope_error(slope_err),
+          specularity_error(spec_err)
+    {
+    }
+
     OpticalProperties &operator=(const OpticalProperties &rhs)
     {
         this->transmitivity = rhs.transmitivity;
@@ -23,31 +32,6 @@ struct OpticalProperties
         this->specularity_error = rhs.specularity_error;
         return *this;
     }
-
-    bool operator==(const OpticalProperties &rhs) const
-    {
-        return !(*this != rhs);
-    }
-
-    bool operator!=(const OpticalProperties &rhs) const
-    {
-        return (
-            this->transmitivity != rhs.transmitivity ||
-            this->reflectivity != rhs.reflectivity ||
-            this->slope_error != rhs.slope_error ||
-            this->specularity_error == rhs.specularity_error
-        );
-    }
 };
-
-// bool operator==(const OpticalProperties &lhs, const OpticalProperties &rhs)
-// {
-//     return (
-//         lhs.transmitivity == rhs.transmitivity &&
-//         lhs.reflectivity == rhs.reflectivity &&
-//         lhs.slope_error == rhs.slope_error &&
-//         lhs.specularity_error == rhs.specularity_error
-//     );
-// }
 
 #endif

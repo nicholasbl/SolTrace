@@ -35,7 +35,7 @@ TEST(LinearAlgebra, VectorBasics)
 
     double mag = vector_norm(x);
     EXPECT_NEAR(mag, sqrt(11.0), 1e-12);
-    
+
     make_unit_vector(x);
     EXPECT_NEAR(x[0], 1.0 / mag, 1e-12);
     EXPECT_NEAR(x[1], 1.0 / mag, 1e-12);
@@ -43,12 +43,11 @@ TEST(LinearAlgebra, VectorBasics)
 
     mag = vector_norm(y);
     EXPECT_NEAR(mag, sqrt(6.0), 1e-12);
-    
+
     make_unit_vector(y);
     EXPECT_NEAR(y[0], -1.0 / mag, 1e-12);
     EXPECT_NEAR(y[1], 2.0 / mag, 1e-12);
     EXPECT_NEAR(y[2], -1.0 / mag, 1e-12);
-
 }
 
 TEST(LinearAlgebra, MatrixVectorProduct)
@@ -70,15 +69,14 @@ TEST(LinearAlgebra, MatrixVectorProduct)
     EXPECT_NEAR(y[0], 2.5, 1e-12);
     EXPECT_NEAR(y[1], -5.0, 1e-12);
     EXPECT_NEAR(y[2], -2.0, 1e-12);
-
 }
 
 TEST(LinearAlgebra, CoordinateTransforms)
 {
-    // TODO: Implement tests for compute_transform_matrices, 
+    // TODO: Implement tests for compute_transform_matrices,
     // transform_to_local, and transform_to_reference functions
     Matrix3d A;
     Matrix3d B;
 
-    EXPECT_TRUE(is_identical(A, B));    
+    EXPECT_TRUE(is_identical(A, B));
 }
