@@ -3,6 +3,8 @@
 
 // #include <cassert>
 
+#include <cmath>
+
 #include "matvec.hpp"
 
 // Compute y = A*x placing the result in y

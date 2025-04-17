@@ -1,6 +1,8 @@
 #ifndef SOLTRACE_SURFACE_H
 #define SOLTRACE_SURFACE_H
 
+#include <memory>
+
 enum SurfaceType
 {
     CONICAL,

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <vector3d.hpp>
+#include <cmath>
 
 #include "common.hpp"
 

@@ -1,6 +1,8 @@
 #ifndef SOLTRACE_SHAPE_H
 #define SOLTRACE_SHAPE_H
 
+#include <memory>
+
 enum AperatureType
 {
     ANNULAR,
