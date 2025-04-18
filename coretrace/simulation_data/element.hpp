@@ -83,41 +83,21 @@ public:
   // ElementBase(const Vector3d &origin, const Vector3d &aim);
   virtual ~ElementBase();
 
-  virtual inline void disable() const
-  {
-    this->active = false;
-  }
-  virtual inline void enable() const
-  {
-    this->active = true;
-  }
-  virtual bool is_enabled() const
-  {
-    return this->active;
-  }
+  virtual inline void disable() const { this->active = false; }
+  virtual inline void enable() const { this->active = true; }
+  virtual bool is_enabled() const { return this->active; }
 
-  virtual bool is_composite() const
-  {
-    return false;
-  }
-  virtual bool is_virtual() const
-  {
-    return false;
-  }
+  virtual bool is_composite() const { return false; }
+  virtual bool is_single() const { return false; }
+  virtual bool is_virtual() const { return false; }
 
-  virtual const Vector3d &get_origin() const
-  {
-    return this->origin;
-  }
+  virtual const Vector3d &get_origin() const { return this->origin; }
   virtual void set_origin(const Vector3d &point)
   {
     this->origin = point;
     return;
   }
-  virtual const Vector3d &get_aim_vector() const
-  {
-    return this->aim;
-  }
+  virtual const Vector3d &get_aim_vector() const { return this->aim; }
   virtual void set_aim_vector(const Vector3d &direction)
   {
     this->aim = direction;
@@ -132,10 +112,7 @@ public:
     this->euler_angles = angles;
     return;
   }
-  virtual double get_zrot() const
-  {
-    return this->zrot;
-  }
+  virtual double get_zrot() const { return this->zrot; }
   virtual void set_zrot(double rot)
   {
     this->zrot = rot;

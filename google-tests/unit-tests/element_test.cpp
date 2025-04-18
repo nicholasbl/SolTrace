@@ -3,6 +3,7 @@
 #include <composite_element.hpp>
 #include <element.hpp>
 #include <single_element.hpp>
+#include <virtual_element.hpp>
 #include <vector3d.hpp>
 
 #include "common.hpp"
@@ -12,6 +13,8 @@ TEST(Element, Construction)
     // Smoke tests
     auto elem = make_element<SingleElement>();
     auto comp = make_element<CompositeElement>();
+    auto ve = make_element<VirtualElement>();
+    auto vp = make_element<VirtualPlane>(10.0, 10.0);
 }
 
 TEST(Element, SingleElementAccessors)

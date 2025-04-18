@@ -9,6 +9,7 @@ set(SIMDATA_SRC
     matvec.cpp
     simulation_data.cpp
     single_element.cpp
+    virtual_element.cpp
     vector3d.cpp
 )
 

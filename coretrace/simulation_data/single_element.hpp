@@ -14,6 +14,8 @@ public:
     SingleElement();
     virtual ~SingleElement();
 
+    virtual bool is_single() const { return true; }
+
     virtual const aperature_ptr get_aperature() const
     {
         return this->aperature;
@@ -25,6 +27,7 @@ public:
     virtual void set_aperature(aperature_ptr ap)
     {
         this->aperature = ap;
+        return;
     }
 
     virtual const surface_ptr get_surface() const
@@ -70,7 +73,7 @@ public:
                                    const Vector3d &source,
                                    const Vector3d &target);
 
-private:
+protected:
     aperature_ptr aperature;
     surface_ptr surface;
 
