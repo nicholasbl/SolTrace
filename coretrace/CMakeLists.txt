@@ -35,6 +35,7 @@ set(CORETRACE_SRC
 	newzstartforcubicsplinesurf.cpp
 	quadricsurfaceclosedform.cpp
 	raytrace.cpp
+	raytrace_embree.cpp
 	raytrace_refactored.cpp
 	root432.cpp
 	spencerandmurtysurfaceclosedform.cpp
@@ -82,6 +83,15 @@ endif(MSVC)
 
 
 #####################################################################################################################
+#
+# Packages
+#
+#####################################################################################################################
+
+FIND_PACKAGE(embree 4 REQUIRED)
+#TARGET_LINK_LIBRARIES(application embree)
+
+#####################################################################################################################
 # 
 # CMake Targets
 #
@@ -110,6 +120,8 @@ set_target_properties(coretrace
 	PREFIX ""
 	)
 
+target_link_libraries(coretrace PRIVATE embree)
+target_link_libraries(coretrace_api PRIVATE embree)
 
 #####################################################################################################################
 #
