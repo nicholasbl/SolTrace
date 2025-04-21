@@ -711,7 +711,7 @@ STCORE_API int st_sim_run_data( st_context_t pcxt, unsigned int seed,
 		if (!Trace_refactored(sys, seed,
 			rayct, sys->sim_raymax,
 			sys->sim_errors_sunshape, sys->sim_errors_optical, sys->sim_dynamic_group,
-			callback, cbdata, data_s1, data_s2, save_st_data))
+			callback, cbdata))
 			return -1;
 	}
 	else
