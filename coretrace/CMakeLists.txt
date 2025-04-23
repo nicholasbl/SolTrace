@@ -49,6 +49,19 @@ set(CORETRACE_SRC
 	types.cpp
 	vshot.cpp)
 
+# Add header files for IDE visibility
+set(CORETRACE_HEADERS
+	hpvm.h
+	interpolate.h
+	mtrand.h
+	procs.h
+	stapi.h
+	treemesh.h
+	types.h
+)
+
+# Group header files for IDEs
+source_group("Header Files" FILES ${CORETRACE_HEADERS})
 
 #####################################################################################################################
 #
@@ -96,8 +109,7 @@ FIND_PACKAGE(embree 4 REQUIRED)
 # CMake Targets
 #
 #####################################################################################################################
-
-add_library(coretrace_api SHARED ${CORETRACE_SRC})
+add_library(coretrace_api SHARED ${CORETRACE_SRC} ${CORETRACE_HEADERS})
 set_target_properties(coretrace_api
     PROPERTIES
     DEBUG_POSTFIX "d"
@@ -113,7 +125,7 @@ add_custom_command(
 	ARGS -E copy $<TARGET_FILE:coretrace_api> ${CMAKE_CURRENT_SOURCE_DIR}/../app/deploy/api
 	)
 	
-add_library(coretrace STATIC ${CORETRACE_SRC})
+add_library(coretrace STATIC ${CORETRACE_SRC} ${CORETRACE_HEADERS})
 set_target_properties(coretrace
     PROPERTIES
     DEBUG_POSTFIX "d"

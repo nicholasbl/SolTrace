@@ -981,10 +981,11 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 			if (SJ1 < lower_bound || SJ1 > upper_bound)
 				SJ1 = 0.5 * (lower_bound + upper_bound);
 			if (upper_bound <= lower_bound)
+			{
 				*ErrorFlag = 1; //Failed to converge
 				break;
+			}
 		}
-
 	}
 	if (i == NumIterations)
 		*ErrorFlag = 1;   //Failed to converge

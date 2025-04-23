@@ -292,10 +292,7 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 	bool IncludeErrors,
 	bool AsPowerTower,
 	int (*callback)(st_uint_t ntracedtotal, st_uint_t ntraced, st_uint_t ntotrace, st_uint_t curstage, st_uint_t nstages, void* data),
-	void* cbdata,
-	std::vector<std::vector< double > >* stage0data = 0,
-	std::vector<std::vector< double > >* stage1in = 0,
-	bool save_stage_data = false);
+	void* cbdata);
 
 bool Trace_embree(TSystem* System, unsigned int seed,
     st_uint_t NumberOfRays,

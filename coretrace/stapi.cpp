@@ -702,9 +702,11 @@ STCORE_API int st_sim_run_data( st_context_t pcxt, unsigned int seed,
 		return -1;
 
     int rayct = sys->sim_raycount;
-    if(data_s2 != 0)
-        if(data_s2->size() > 0)
-            rayct = data_s2->size();
+	if (data_s2 != 0)
+	{
+		if (data_s2->size() > 0)
+			rayct = data_s2->size();
+	}
 
 	if (use_refactor)
 	{
@@ -716,7 +718,7 @@ STCORE_API int st_sim_run_data( st_context_t pcxt, unsigned int seed,
 		if (!Trace_embree(sys, seed,
 			rayct, sys->sim_raymax,
 			sys->sim_errors_sunshape, sys->sim_errors_optical, sys->sim_dynamic_group,
-			callback, cbdata, data_s1, data_s2, save_st_data))
+			callback, cbdata))
 			return -1;
 	}
 	else

@@ -65,30 +65,29 @@
 #include "types.h"
 #include "procs.h"
 #include "treemesh.h"
-//#include "raytrace.cpp"
 
-void time_refactored(const char *message, ofstream *fout)
+inline void time(const char *message, ofstream *fout)
 {
 #ifdef WITH_DEBUG_TIMER
     (*fout) << message << chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch() ).count() << "\n"; 
 #endif
 }
 
-inline void CopyVec3_refactored( double dest[3], const std::vector<double> &src )
+inline void CopyVec3( double dest[3], const std::vector<double> &src )
 {
 	dest[0] = src[0];
 	dest[1] = src[1];
 	dest[2] = src[2];
 }
 
-inline void CopyVec3_refactored( std::vector<double> &dest, double src[3] )
+inline void CopyVec3( std::vector<double> &dest, double src[3] )
 {
 	dest[0] = src[0];
 	dest[1] = src[1];
 	dest[2] = src[2];
 }
 
-inline void CopyVec3_refactored( double dest[3], double src[3] )
+inline void CopyVec3( double dest[3], double src[3] )
 {
 	dest[0] = src[0];
 	dest[1] = src[1];
@@ -201,17 +200,17 @@ void FindElementHit(
 				{
 					StageHit = true;
 					LastPathLength = PathLength;
-					CopyVec3_refactored(LastPosRaySurfElement, PosRaySurfElement);
-					CopyVec3_refactored(LastCosRaySurfElement, CosRaySurfElement);
-					CopyVec3_refactored(LastDFXYZ, DFXYZ);
+					CopyVec3(LastPosRaySurfElement, PosRaySurfElement);
+					CopyVec3(LastCosRaySurfElement, CosRaySurfElement);
+					CopyVec3(LastDFXYZ, DFXYZ);
 					LastElementNumber = (i == 0 && !PT_override) ? Element->element_number : j + 1;    //mjw change from j index to element id
 					LastRayNumber = RayNumber;
 					TransformToReference(PosRaySurfElement, CosRaySurfElement,
 						Element->Origin, Element->RLocToRef,
 						PosRaySurfStage, CosRaySurfStage);
 
-					CopyVec3_refactored(LastPosRaySurfStage, PosRaySurfStage);
-					CopyVec3_refactored(LastCosRaySurfStage, CosRaySurfStage);
+					CopyVec3(LastPosRaySurfStage, PosRaySurfStage);
+					CopyVec3(LastCosRaySurfStage, CosRaySurfStage);
 					LastHitBackSide = HitBackSide;
 				}
 			}
@@ -245,10 +244,10 @@ void ProcessInteraction(
 		{
 			// Apply sunshape to UNPERTURBED ray at intersection point
 			//only apply sunshape error once for primary stage
-			CopyVec3_refactored(CosIn, LastCosRaySurfElement);
+			CopyVec3(CosIn, LastCosRaySurfElement);
 			Errors(myrng, CosIn, 1, &System->Sun,
 				Stage->ElementList[k], optics, CosOut, LastDFXYZ);  //sun shape
-			CopyVec3_refactored(LastCosRaySurfElement, CosOut);
+			CopyVec3(LastCosRaySurfElement, CosOut);
 		}
 
 		//{Determine interaction at surface and direction of perturbed ray}
@@ -257,10 +256,10 @@ void ProcessInteraction(
 		// {Apply surface normal errors to surface normal before interaction ray at intersection point - Wendelin 11-23-09}
 		if (IncludeErrors)
 		{
-			CopyVec3_refactored(CosIn, CosRayOutElement);
+			CopyVec3(CosIn, CosRayOutElement);
 			SurfaceNormalErrors(myrng, LastDFXYZ, optics, CosOut);  //surface normal errors
 			myrng_counter++;
-			CopyVec3_refactored(LastDFXYZ, CosOut);
+			CopyVec3(LastDFXYZ, CosOut);
 		}
 
 		Interaction(myrng, LastPosRaySurfElement, LastCosRaySurfElement, LastDFXYZ,
@@ -272,29 +271,29 @@ void ProcessInteraction(
 		if (IncludeErrors)
 		{
 			if (optics->DistributionType == 'F' || optics->DistributionType == 'f')
-				CopyVec3_refactored(CosIn, LastDFXYZ);  // Apply diffuse errors relative to surface normal
+				CopyVec3(CosIn, LastDFXYZ);  // Apply diffuse errors relative to surface normal
 			else
-				CopyVec3_refactored(CosIn, CosRayOutElement); // Apply all other errors relative to the specularly-reflected direction
+				CopyVec3(CosIn, CosRayOutElement); // Apply all other errors relative to the specularly-reflected direction
 
 			Errors(myrng, CosIn, 2, &System->Sun,
 				Stage->ElementList[k], optics, CosOut, LastDFXYZ);  //optical errors
 			myrng_counter++;
-			CopyVec3_refactored(CosRayOutElement, CosOut);
+			CopyVec3(CosRayOutElement, CosOut);
 		}
 	}
 }
 
 // PT Opitimation Methods and Structs
 
-struct eprojdat_refactored
+struct eprojdat
 {
 	TElement* el_addr;
 	double d_proj;
 	double az;
 	double zen;
 
-	eprojdat_refactored() {};
-	eprojdat_refactored(TElement* e, double d, double a, double z)
+	eprojdat() {};
+	eprojdat(TElement* e, double d, double a, double z)
 	{
 		el_addr = e;
 		d_proj = d;
@@ -304,7 +303,7 @@ struct eprojdat_refactored
 };
 
 //Comparison function for sorting vector of eprojdat
-static bool eprojdat_compare_refactored(const eprojdat_refactored& A, const eprojdat_refactored& B)
+static bool eprojdat_compare_refactored(const eprojdat& A, const eprojdat& B)
 {
 	return A.d_proj > B.d_proj;
 };
@@ -348,14 +347,14 @@ void SetupPTOptimizations(
 		TransformToLocal(reccm_global, dum1, System->StageList[0]->Origin, System->StageList[0]->RRefToLoc, reccm_helio, dum2);
 	}
 	//Create an array that stores the element address and the projected size in polar coordinates
-	vector<eprojdat_refactored> el_proj_dat;
+	vector<eprojdat> el_proj_dat;
 	el_proj_dat.reserve(System->StageList[0]->ElementList.size());
 
 	//calculate the smallest zone size. This should be on the order of the largest element in the stage. 
 	//load stage 0 elements into the mesh
 	double d_elm_max = -9.e9;
 
-	//time_refactored("Calculating element sizes:\t", &fout);
+	//time("Calculating element sizes:\t", &fout);
 
 	for (st_uint_t i = 0; i < System->StageList[0]->ElementList.size(); i++)
 	{
@@ -443,7 +442,7 @@ void SetupPTOptimizations(
 			az = atan2(dX[0] / r_elm, dX[1] / r_elm);       //Az coordinate of the heliostat from the receiver's perspective
 			zen = asin(dX[2] / r_elm);                    //Zen coordinate """"
 
-			el_proj_dat.push_back(eprojdat_refactored(el, d_elm_proj, az, zen));
+			el_proj_dat.push_back(eprojdat(el, d_elm_proj, az, zen));
 		}
 	}
 
@@ -495,7 +494,7 @@ void SetupPTOptimizations(
 		//load stage 0 elements into the receiver mesh in the order of largest projection to smallest
 		for (int i = 0; i < el_proj_dat.size(); i++)
 		{
-			eprojdat_refactored* D = &el_proj_dat.at(i);
+			eprojdat* D = &el_proj_dat.at(i);
 
 			//Calculate the angular span of the element
 			double angspan[2];
@@ -576,7 +575,7 @@ st_uint_t GetPTElements(
 
 // Trace method
 
-bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
+bool Trace_refactored(TSystem* System, unsigned int seed,
 	st_uint_t NumberOfRays,
 	st_uint_t MaxNumberOfRays,
 	bool IncludeSunShape,
@@ -591,7 +590,9 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 		&& (System->StageList[0]->ElementList.size() < 10    //the first stage contains only a few elements
 			|| System->StageList.size() == 1)                //there's only one stage
 		)
+	{
 		PT_override = true;
+	}
 
 	// Initialize variables
 	MTRand myrng(seed);
@@ -702,8 +703,8 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 
 				// Get ray from previous stage
 				RayNumber = IncomingRays[StageDataArrayIndex].Num;
-				CopyVec3_refactored(PosRayGlob, IncomingRays[StageDataArrayIndex].Pos);
-				CopyVec3_refactored(CosRayGlob, IncomingRays[StageDataArrayIndex].Cos);
+				CopyVec3(PosRayGlob, IncomingRays[StageDataArrayIndex].Pos);
+				CopyVec3(CosRayGlob, IncomingRays[StageDataArrayIndex].Cos);
 				StageDataArrayIndex++;
 			}
 
@@ -811,8 +812,8 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 				if (Stage->Virtual)
 				{
 					// If stage is virtual, there is no interaction
-					CopyVec3_refactored(PosRayOutElement, LastPosRaySurfElement);
-					CopyVec3_refactored(CosRayOutElement, LastCosRaySurfElement);
+					CopyVec3(PosRayOutElement, LastPosRaySurfElement);
+					CopyVec3(CosRayOutElement, LastCosRaySurfElement);
 				}
 				else
 				{
@@ -983,8 +984,8 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 				else
 				{
 					// Ray hit an element, so save it for next stage
-					CopyVec3_refactored(IncomingRays[PreviousStageDataArrayIndex].Pos, PosRayGlob);
-					CopyVec3_refactored(IncomingRays[PreviousStageDataArrayIndex].Cos, CosRayGlob);
+					CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Pos, PosRayGlob);
+					CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Cos, CosRayGlob);
 					IncomingRays[PreviousStageDataArrayIndex].Num = RayNumber;
 
 					// Is Ray the last in the stage?
@@ -1009,8 +1010,8 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 				if (Stage->TraceThrough || MultipleHitCount > 0)
 				{
 					// Ray is saved for the next stage
-					CopyVec3_refactored(IncomingRays[PreviousStageDataArrayIndex].Pos, PosRayGlob);
-					CopyVec3_refactored(IncomingRays[PreviousStageDataArrayIndex].Cos, CosRayGlob);
+					CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Pos, PosRayGlob);
+					CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Cos, CosRayGlob);
 					IncomingRays[PreviousStageDataArrayIndex].Num = RayNumber;
 
 					// Check if ray is last in stage
@@ -1043,8 +1044,8 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 				{
 					LastElementNumber = 0;
 					LastRayNumber = RayNumber;
-					CopyVec3_refactored(LastPosRaySurfStage, PosRayStage);
-					CopyVec3_refactored(LastCosRaySurfStage, CosRayStage);
+					CopyVec3(LastPosRaySurfStage, PosRayStage);
+					CopyVec3(LastCosRaySurfStage, CosRayStage);
 
 					// Copying this here to handle FlagMiss condition
 					TRayData::ray_t* p_ray = Stage->RayData.Append(LastPosRaySurfStage,
@@ -1110,25 +1111,7 @@ bool Trace_refactored_scratch(TSystem* System, unsigned int seed,
 
 	}
 
-}
-
-bool Trace_refactored(TSystem *System, unsigned int seed,
-		   st_uint_t NumberOfRays, 
-		   st_uint_t MaxNumberOfRays,
-		   bool IncludeSunShape, 
-		   bool IncludeErrors,
-           bool AsPowerTower,
-		   int (*callback)(st_uint_t ntracedtotal, st_uint_t ntraced, st_uint_t ntotrace, st_uint_t curstage, st_uint_t nstages, void *data),
-		   void *cbdata,
-           std::vector< std::vector< double > > *st0data,
-           std::vector< std::vector< double > > *st1in,
-           bool save_st_data)
-{
-	return Trace_refactored_scratch(System, seed,
-		NumberOfRays, MaxNumberOfRays, IncludeSunShape,
-		IncludeErrors,
-		AsPowerTower, callback,
-		cbdata);
+	return true;
 }
 
 

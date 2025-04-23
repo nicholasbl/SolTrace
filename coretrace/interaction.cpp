@@ -133,202 +133,236 @@ void Interaction(
 /*{  InteractionType = 1, Refraction
 ===============================================================================}*/
 	case 1:
-			Refr1 = Opticl->RefractiveIndex[0];
-			Refr2 = Opticl->RefractiveIndex[2];
-			RMU = Refr1/Refr2;
-			D2 = DOT(DFXYZ,DFXYZ);
-			B = (RMU*RMU - 1.0)/D2;
-			A = RMU*DOT(CosKLM, DFXYZ) /D2;
-			A2 = A*A;
-			if (B > A2)     //Total internal reflection
-			{
-				A = DOT(CosKLM, DFXYZ)/DOT(DFXYZ, DFXYZ);
-				for (i=0; i<3; i++)
-					CosOut[i] = CosKLM[i] - 2.0*A*DFXYZ[i];
-				return;
-			}
+	{
+		Refr1 = Opticl->RefractiveIndex[0];
+		Refr2 = Opticl->RefractiveIndex[2];
+		RMU = Refr1 / Refr2;
+		D2 = DOT(DFXYZ, DFXYZ);
+		B = (RMU * RMU - 1.0) / D2;
+		A = RMU * DOT(CosKLM, DFXYZ) / D2;
+		A2 = A * A;
+		if (B > A2)     //Total internal reflection
+		{
+			A = DOT(CosKLM, DFXYZ) / DOT(DFXYZ, DFXYZ);
+			for (i = 0; i < 3; i++)
+				CosOut[i] = CosKLM[i] - 2.0 * A * DFXYZ[i];
+			return;
+		}
 
-			//fresnel equations
-			UnitDFXYZ[0] = -DFXYZ[0]/sqrt(DOT(DFXYZ,DFXYZ));   //unit surface normals
-			UnitDFXYZ[1] = -DFXYZ[1]/sqrt(DOT(DFXYZ,DFXYZ));
-			UnitDFXYZ[2] = -DFXYZ[2]/sqrt(DOT(DFXYZ,DFXYZ));
-			IncidentAngle = acos(DOT(CosKLM,UnitDFXYZ));
-			Rs = sqr(((Refr1*cos(IncidentAngle)-Refr2*sqrt(1-sqr(Refr1*sin(IncidentAngle)/Refr2))))/
-					  ((Refr1*cos(IncidentAngle)+Refr2*sqrt(1-sqr(Refr1*sin(IncidentAngle)/Refr2)))));
-			Rp = sqr(((Refr1*sqrt(1-sqr(Refr1*sin(IncidentAngle)/Refr2)))-Refr2*cos(IncidentAngle))/
-					  ((Refr1*sqrt(1-sqr(Refr1*sin(IncidentAngle)/Refr2)))+Refr2*cos(IncidentAngle)));
-			Rave = (Rp + Rs)/2.0;    //average of s and p polarized light; equal parts of both = non-polarized
-			if (Rave < myrng())   //transmitted through surface
-			{
-				Gamn = -B/(2.0*A);
+		//fresnel equations
+		UnitDFXYZ[0] = -DFXYZ[0] / sqrt(DOT(DFXYZ, DFXYZ));   //unit surface normals
+		UnitDFXYZ[1] = -DFXYZ[1] / sqrt(DOT(DFXYZ, DFXYZ));
+		UnitDFXYZ[2] = -DFXYZ[2] / sqrt(DOT(DFXYZ, DFXYZ));
+		IncidentAngle = acos(DOT(CosKLM, UnitDFXYZ));
+		Rs = sqr(((Refr1 * cos(IncidentAngle) - Refr2 * sqrt(1 - sqr(Refr1 * sin(IncidentAngle) / Refr2)))) /
+			((Refr1 * cos(IncidentAngle) + Refr2 * sqrt(1 - sqr(Refr1 * sin(IncidentAngle) / Refr2)))));
+		Rp = sqr(((Refr1 * sqrt(1 - sqr(Refr1 * sin(IncidentAngle) / Refr2))) - Refr2 * cos(IncidentAngle)) /
+			((Refr1 * sqrt(1 - sqr(Refr1 * sin(IncidentAngle) / Refr2))) + Refr2 * cos(IncidentAngle)));
+		Rave = (Rp + Rs) / 2.0;    //average of s and p polarized light; equal parts of both = non-polarized
+		if (Rave < myrng())   //transmitted through surface
+		{
+			Gamn = -B / (2.0 * A);
 
-				//Begin Newton-Raphson loop to converge on correct root.
-				for (i=1;i<NIter;i++)
+			//Begin Newton-Raphson loop to converge on correct root.
+			bool converged = false;
+			for (i = 1; i < NIter; i++)
+			{
+				Gamn1 = (Gamn * Gamn - B) / (2.0 * (Gamn + A));
+				if (fabs(Gamn - Gamn1) < Epsilon)
 				{
-					Gamn1 = (Gamn*Gamn - B)/(2.0*(Gamn + A));
-					if (fabs(Gamn - Gamn1) < Epsilon) goto Label_Converge;
-					Gamn = Gamn1;
+					converged = true;
+					break;
+					//goto Label_Converge;
 				}
-				//Failed to converge
+
+				Gamn = Gamn1;
+			}
+			//Failed to converge
+			if (converged == false)
+			{
 				*ErrorFlag = 12;
 				return;
+			}
+
 			//Have converged on Gamma, Compute direction cosines of refracted ray.
-Label_Converge:
-				for (i=0;i<3;i++)
-					CosOut[i] = RMU*CosKLM[i] + Gamn1*DFXYZ[i];
-			}
-			else      //reflected from surface
-			{
-				A = DOT(CosKLM, DFXYZ)/DOT(DFXYZ, DFXYZ);
-				for (i=0;i<3;i++)
-					CosOut[i] = CosKLM[i] - 2.0*A*DFXYZ[i];
-			}
-			return;
+			//Label_Converge:
+			for (i = 0; i < 3; i++)
+				CosOut[i] = RMU * CosKLM[i] + Gamn1 * DFXYZ[i];
+		}
+		else      //reflected from surface
+		{
+			A = DOT(CosKLM, DFXYZ) / DOT(DFXYZ, DFXYZ);
+			for (i = 0; i < 3; i++)
+				CosOut[i] = CosKLM[i] - 2.0 * A * DFXYZ[i];
+		}
+		return;
 		break;
-
-
+	}
+			
 /*{  InteractionType = 2, Reflection
 ===============================================================================}*/
 	case 2:
-			A = DOT(CosKLM, DFXYZ)/DOT(DFXYZ, DFXYZ);
-			//Compute direction cosines for reflected ray
-			for (i=0;i<3;i++)
-				CosOut[i] = CosKLM[i] - 2.0*A*DFXYZ[i];
+	{
+		A = DOT(CosKLM, DFXYZ) / DOT(DFXYZ, DFXYZ);
+		//Compute direction cosines for reflected ray
+		for (i = 0; i < 3; i++)
+			CosOut[i] = CosKLM[i] - 2.0 * A * DFXYZ[i];
 
-			return;
+		return;
 		break;
-
+	}
 
 /*{  InteractionType = 3, Aperture Stop
 ===============================================================================}*/
 	case 3:
-			X = PosXYZ[0];
-			Y = PosXYZ[1];
-			IType = Opticl->ApertureStopOrGratingType;
-			A1 = Opticl->AB12[0];
-			B1 = Opticl->AB12[1];
-			
-			if (IType == 1)    //Slit Aperture
+	{
+		X = PosXYZ[0];
+		Y = PosXYZ[1];
+		IType = Opticl->ApertureStopOrGratingType;
+		A1 = Opticl->AB12[0];
+		B1 = Opticl->AB12[1];
+
+		bool ray_missed_aperture = false;
+		if (IType == 1)    //Slit Aperture
+		{
+			A2 = Opticl->AB12[2];
+			B2 = Opticl->AB12[3];
+			if (X < A1 || X > A2)
 			{
-				A2 = Opticl->AB12[2];
-				B2 = Opticl->AB12[3];
-				if (X < A1 || X > A2)
-				{
-					*ErrorFlag = 31;
-					goto RayMissesAperture;
-				}
-				if (Y >= B1 && Y <= B2) return;
-				
 				*ErrorFlag = 31;
-				goto RayMissesAperture;
+				ray_missed_aperture = true;
+				//goto RayMissesAperture;
 			}
-			
-			if (IType == 2)      //Elliptical Aperture
+			else
 			{
-				Ellips = X*X/(A1*A1) + Y*Y/(B1*B1);
-				if (Ellips <= 1.0) return;
-				*ErrorFlag = 32;
+				if (Y >= B1 && Y <= B2) return;
+
+				*ErrorFlag = 31;
+				ray_missed_aperture = true;
+				//goto RayMissesAperture;
 			}
 
-RayMissesAperture:   //Ray misses aperture
-			for (i=0;i<3;i++)
+		}
+
+		else if (IType == 2)      //Elliptical Aperture
+		{
+			Ellips = X * X / (A1 * A1) + Y * Y / (B1 * B1);
+			if (Ellips <= 1.0) return;
+			*ErrorFlag = 32;
+		}
+
+		//RayMissesAperture:   
+		//Ray misses aperture
+		if (ray_missed_aperture == true)
+		{
+			for (i = 0; i < 3; i++)
 				CosOut[i] = 0.0;
-				
-			return;
+		}
+		return;
 
 		break;
-
+	}
 
 /*{  InteractionType = 4,5; Diffraction
 ===============================================================================}*/
 	case 4:
 	case 5:
-			IType = Opticl->ApertureStopOrGratingType;
-			NMord = Opticl->DiffractionOrder;
-			Refr1 = Opticl->RefractiveIndex[0];
-			Refr2 = Opticl->RefractiveIndex[2];
-			RMU = Refr1/Refr2;
-			D2 = DOT(DFXYZ, DFXYZ);
-			RK = DFXYZ[0];
-			RL = DFXYZ[1];
-			RM = DFXYZ[2];
-			X = PosXYZ[0];
-			Y = PosXYZ[1];
+	{
+		IType = Opticl->ApertureStopOrGratingType;
+		NMord = Opticl->DiffractionOrder;
+		Refr1 = Opticl->RefractiveIndex[0];
+		Refr2 = Opticl->RefractiveIndex[2];
+		RMU = Refr1 / Refr2;
+		D2 = DOT(DFXYZ, DFXYZ);
+		RK = DFXYZ[0];
+		RL = DFXYZ[1];
+		RM = DFXYZ[2];
+		X = PosXYZ[0];
+		Y = PosXYZ[1];
 
-			if (IType == 1)     //Parallel plane grating
-			{
-				Denom = RL*RL + RM*RM;
-				U = 1.0/sqrt(1.0 + RK*RK/Denom);
-				V = -RK*RL*U/Denom;
-				W = -RK*RM*U/Denom;
-				Varr = X;
-				GFactr = 1.0/U;
-				goto CompDiffInt;
-			}
+		if (IType == 1)     //Parallel plane grating
+		{
+			Denom = RL * RL + RM * RM;
+			U = 1.0 / sqrt(1.0 + RK * RK / Denom);
+			V = -RK * RL * U / Denom;
+			W = -RK * RM * U / Denom;
+			Varr = X;
+			GFactr = 1.0 / U;
+			//goto CompDiffInt;
+		}
 
-			if (IType == 2)   //Concentric Cylinder Grating
-			{
-				Rho2 = X*X + Y*Y;
-				Rho = sqrt(Rho2);
-				RM2 = RM*RM;
-				Term = RL*X - RK*Y;
-				G = sqrt(D2*(RM2*Rho2 + Term*Term));
-				U = (RM2*X + RL*Term)/G;
-				V = (RM2*Y - RK*Term)/G;
-				W = -RM*(RK*X + RL*Y)/G;
-				Varr = Rho;
-				GFactr = Rho/(X*U + Y*V);
-			}
-CompDiffInt:         //Compute interaction due to diffraction
-			CosUVW[0] = U;
-			CosUVW[1] = V;
-			CosUVW[2] = W;
-			
-			D = 0.0;
-			XX = 1.0;
+		else if (IType == 2)   //Concentric Cylinder Grating
+		{
+			Rho2 = X * X + Y * Y;
+			Rho = sqrt(Rho2);
+			RM2 = RM * RM;
+			Term = RL * X - RK * Y;
+			G = sqrt(D2 * (RM2 * Rho2 + Term * Term));
+			U = (RM2 * X + RL * Term) / G;
+			V = (RM2 * Y - RK * Term) / G;
+			W = -RM * (RK * X + RL * Y) / G;
+			Varr = Rho;
+			GFactr = Rho / (X * U + Y * V);
+		}
+		//CompDiffInt:         //Compute interaction due to diffraction
+		CosUVW[0] = U;
+		CosUVW[1] = V;
+		CosUVW[2] = W;
 
-			for (i=0;i<4;i++)
-			{
-				D = D + Opticl->AB12[i]*XX;
-				XX = XX*Varr;
-			}
+		D = 0.0;
+		XX = 1.0;
 
-			D = D*GFactr;
-			Ordiff = NMord;
-			RLamda = Ordiff*Wavelength/(Refr2*D);
-			B = (RMU*RMU - 1.0 + RLamda*RLamda - 2.0*RMU*RLamda*DOT(CosKLM, CosUVW))/D2;
-			A = RMU*DOT(CosKLM, DFXYZ) /D2;
-			A2 = A*A;
-			if (B > A2)     //Total internal reflection
-			{
-				for (i=0;i<3;i++)
-					CosOut[i] = 0.0;
-				*ErrorFlag = 11;
-				return;
-			}
-			
-			Gamn = -B/(2.0*A);
-			if (InteractionType == 5)
-				Gamn = -Gamn - 2.0*A;
+		for (i = 0; i < 4; i++)
+		{
+			D = D + Opticl->AB12[i] * XX;
+			XX = XX * Varr;
+		}
 
-//Begin Newton-Raphson loop to converge on correct root.
-			i=0;
-			while(i++<NIter)
+		D = D * GFactr;
+		Ordiff = NMord;
+		RLamda = Ordiff * Wavelength / (Refr2 * D);
+		B = (RMU * RMU - 1.0 + RLamda * RLamda - 2.0 * RMU * RLamda * DOT(CosKLM, CosUVW)) / D2;
+		A = RMU * DOT(CosKLM, DFXYZ) / D2;
+		A2 = A * A;
+		if (B > A2)     //Total internal reflection
+		{
+			for (i = 0; i < 3; i++)
+				CosOut[i] = 0.0;
+			*ErrorFlag = 11;
+			return;
+		}
+
+		Gamn = -B / (2.0 * A);
+		if (InteractionType == 5)
+			Gamn = -Gamn - 2.0 * A;
+
+		//Begin Newton-Raphson loop to converge on correct root.
+		i = 0;
+		bool converged = false;
+		while (i++ < NIter)
+		{
+			Gamn1 = (Gamn * Gamn - B) / (2.0 * (Gamn + A));
+			if (fabs(Gamn - Gamn1) < Epsilon)
 			{
-				Gamn1 = (Gamn*Gamn - B)/(2.0*(Gamn + A));
-				if (fabs(Gamn - Gamn1) < Epsilon) goto CompDCos;
-				Gamn = Gamn1;
+				converged = true;
+				break;
+				//goto CompDCos;
 			}
-//Failed to converge
+			Gamn = Gamn1;
+		}
+		//Failed to converge
+		if (converged == false)
+		{
 			*ErrorFlag = 12;
 			return;
-//Have converged on Gamn1. Compute direction cosines of diffracted ray.
-CompDCos:
-			for (i=0;i<3;i++)
-				CosOut[i] = RMU*CosKLM[i] - RLamda*CosUVW[i] + Gamn1*DFXYZ[i];
+		}
+		//Have converged on Gamn1. Compute direction cosines of diffracted ray.
+		//CompDCos:
+		for (i = 0; i < 3; i++)
+			CosOut[i] = RMU * CosKLM[i] - RLamda * CosUVW[i] + Gamn1 * DFXYZ[i];
 
 		break;
-		
+	}		
 	default:
 		break;
 	}
