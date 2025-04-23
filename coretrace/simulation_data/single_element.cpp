@@ -3,14 +3,14 @@
 
 #include <memory>
 
-#include "aperature.hpp"
+#include "aperture.hpp"
 #include "element.hpp"
 #include "vector3d.hpp"
 
 SingleElement::SingleElement()
     : ElementBase(), optics_front(), optics_back()
 {
-    this->aperature = nullptr;
+    this->aperture = nullptr;
     this->surface = nullptr;
     return;
 }
@@ -28,7 +28,7 @@ SingleElement::SingleElement()
 
 SingleElement::~SingleElement()
 {
-    this->aperature = nullptr;
+    this->aperture = nullptr;
     this->surface = nullptr;
     return;
 }

@@ -11,7 +11,7 @@ public:
     VirtualElement();
     virtual ~VirtualElement();
 
-    virtual bool is_virtual() { return true; }
+    virtual bool is_virtual() const { return true; }
 
 private:
     void set_front_optical_properties(const OpticalProperties &op) {}
@@ -25,7 +25,7 @@ public:
     virtual ~VirtualPlane();
 
 private:
-    void set_aperature(aperature_ptr ap) {}
+    void set_aperture(aperture_ptr ap) {}
     void set_surface(surface_ptr sp) {}
 };
 

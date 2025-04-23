@@ -24,7 +24,7 @@ TEST(Element, SingleElementAccessors)
     EXPECT_TRUE(is_identical(ref.get_origin(), zero));
     EXPECT_TRUE(is_identical(ref.get_aim_vector(), zero));
     EXPECT_TRUE(is_identical(ref.get_euler_angles(), zero));
-    EXPECT_EQ(ref.get_aperature(), nullptr);
+    EXPECT_EQ(ref.get_aperture(), nullptr);
     EXPECT_EQ(ref.get_surface(), nullptr);
 
     EXPECT_TRUE(ref.is_enabled());
@@ -32,6 +32,10 @@ TEST(Element, SingleElementAccessors)
     EXPECT_FALSE(ref.is_enabled());
     ref.enable();
     EXPECT_TRUE(ref.is_enabled());
+
+    EXPECT_FALSE(ref.is_composite());
+    EXPECT_FALSE(ref.is_virtual());
+    EXPECT_TRUE(ref.is_single());
 
     auto pos = Vector3d(2.0, 1.0, -3.0);
     ref.set_origin(pos);
@@ -50,9 +54,9 @@ TEST(Element, SingleElementAccessors)
     EXPECT_EQ(ref.get_zrot(), ZROT);
 
     const double D = 1.0;
-    auto ap = make_aperature<Circular>(D);
-    ref.set_aperature(ap);
-    auto rap = std::dynamic_pointer_cast<Circular>(ref.get_aperature());
+    auto ap = make_aperture<Circular>(D);
+    ref.set_aperture(ap);
+    auto rap = std::dynamic_pointer_cast<Circular>(ref.get_aperture());
     EXPECT_FALSE(rap == nullptr);
     EXPECT_EQ(rap->diameter, D);
 
@@ -91,6 +95,57 @@ TEST(Element, SingleElementOrientationUpdate)
     return;
 }
 
+TEST(Element, VirtualElement)
+{
+    VirtualElement ve;
+    
+    const double LX = 1.0;
+    const double LY = 2.0;
+    ve.set_aperture(make_aperture<Rectangular>(LX, LY));
+    auto aptr = ve.get_aperture();
+    EXPECT_EQ(aptr->get_type(), RECTANGULAR);
+    auto rptr = std::dynamic_pointer_cast<Rectangular>(aptr);
+    EXPECT_NE(rptr, nullptr);
+    if(rptr != nullptr)
+    {
+        EXPECT_EQ(rptr->x_length, LX);
+        EXPECT_EQ(rptr->y_length, LY);
+    }
+    
+    ve.set_surface(make_surface<Flat>());
+    auto sptr = ve.get_surface();
+    EXPECT_EQ(sptr->get_type(), FLAT);
+    auto fptr = std::dynamic_pointer_cast<Flat>(sptr);
+    EXPECT_NE(fptr, nullptr);
+
+    EXPECT_TRUE(ve.is_virtual());
+    EXPECT_TRUE(ve.is_single());
+    EXPECT_FALSE(ve.is_composite());
+
+    return;
+}
+
+TEST(Element, VirtualPlane)
+{
+    const double LX = 5.0;
+    const double LY = 2.5;
+    VirtualPlane vp(LX, LY);
+
+    EXPECT_EQ(vp.get_aperture()->get_type(), RECTANGULAR);
+    EXPECT_EQ(vp.get_surface()->get_type(), FLAT);
+
+    auto rptr = std::dynamic_pointer_cast<Rectangular>(vp.get_aperture());
+    EXPECT_NE(rptr, nullptr);
+    if(rptr != nullptr)
+    {
+        EXPECT_EQ(rptr->x_length, LX);
+        EXPECT_EQ(rptr->y_length, LY);
+    }
+
+    return;
+
+}
+
 TEST(Element, CompositeElementAccessors)
 {
     auto cmp = make_element<CompositeElement>();
@@ -98,7 +153,7 @@ TEST(Element, CompositeElementAccessors)
     EXPECT_TRUE(cmp->is_composite());
 
     // Things that should be empty...
-    EXPECT_EQ(cmp->get_aperature(), nullptr);
+    EXPECT_EQ(cmp->get_aperture(), nullptr);
     EXPECT_EQ(cmp->get_surface(), nullptr);
     EXPECT_EQ(cmp->get_front_optical_properties(), nullptr);
     EXPECT_EQ(cmp->get_back_optical_properties(), nullptr);

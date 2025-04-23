@@ -22,7 +22,7 @@ VirtualElement::~VirtualElement()
 
 VirtualPlane::VirtualPlane(double x_len, double y_len) : VirtualElement()
 {
-    this->aperature = make_aperature<Rectangular>(x_len, y_len);
+    this->aperture = make_aperture<Rectangular>(x_len, y_len);
     this->surface = make_surface<Flat>();
 }
 

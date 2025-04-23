@@ -5,7 +5,7 @@
 
 #include <memory>
 
-#include "aperature.hpp"
+#include "aperture.hpp"
 #include "surface.hpp"
 
 class SingleElement : public ElementBase
@@ -16,17 +16,17 @@ public:
 
     virtual bool is_single() const { return true; }
 
-    virtual const aperature_ptr get_aperature() const
+    virtual const aperture_ptr get_aperture() const
     {
-        return this->aperature;
+        return this->aperture;
     }
-    virtual aperature_ptr get_aperature()
+    virtual aperture_ptr get_aperture()
     {
-        return this->aperature;
+        return this->aperture;
     }
-    virtual void set_aperature(aperature_ptr ap)
+    virtual void set_aperture(aperture_ptr ap)
     {
-        this->aperature = ap;
+        this->aperture = ap;
         return;
     }
 
@@ -74,7 +74,7 @@ public:
                                    const Vector3d &target);
 
 protected:
-    aperature_ptr aperature;
+    aperture_ptr aperture;
     surface_ptr surface;
 
     OpticalProperties optics_front;

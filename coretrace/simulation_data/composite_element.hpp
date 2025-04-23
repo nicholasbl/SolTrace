@@ -16,9 +16,9 @@ public:
     }
 
     // Element interface functions
-    virtual const aperature_ptr get_aperature() const { return nullptr; }
-    virtual aperature_ptr get_aperature() { return nullptr; }
-    virtual void set_aperature(aperature_ptr) {}
+    virtual const aperture_ptr get_aperture() const { return nullptr; }
+    virtual aperture_ptr get_aperture() { return nullptr; }
+    virtual void set_aperture(aperture_ptr) {}
 
     virtual const surface_ptr get_surface() const { return nullptr; }
     virtual surface_ptr get_surface() { return nullptr; }

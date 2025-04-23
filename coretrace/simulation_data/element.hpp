@@ -4,7 +4,7 @@
 // #include <memory>
 #include <string>
 
-#include "aperature.hpp"
+#include "aperture.hpp"
 #include "container.hpp"
 #include "datetime.hpp"
 #include "optical_properties.hpp"
@@ -38,9 +38,9 @@ public:
   // virtual const Vector3d &get_upper_bounding_box() const = 0;
   // virtual const Vector3d &get_lower_bounding_box() const = 0;
 
-  virtual const aperature_ptr get_aperature() const = 0;
-  virtual aperature_ptr get_aperature() = 0;
-  virtual void set_aperature(aperature_ptr) = 0;
+  virtual const aperture_ptr get_aperture() const = 0;
+  virtual aperture_ptr get_aperture() = 0;
+  virtual void set_aperture(aperture_ptr) = 0;
   virtual const surface_ptr get_surface() const = 0;
   virtual surface_ptr get_surface() = 0;
   virtual void set_surface(surface_ptr) = 0;
