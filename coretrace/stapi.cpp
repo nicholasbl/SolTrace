@@ -702,9 +702,11 @@ STCORE_API int st_sim_run_data( st_context_t pcxt, unsigned int seed,
 		return -1;
 
     int rayct = sys->sim_raycount;
-    if(data_s2 != 0)
-        if(data_s2->size() > 0)
-            rayct = data_s2->size();
+	if (data_s2 != 0)
+	{
+		if (data_s2->size() > 0)
+			rayct = data_s2->size();
+	}
 
 	if (use_refactor)
 	{

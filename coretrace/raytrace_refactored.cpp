@@ -1111,6 +1111,7 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 
 	}
 
+	return true;
 }
 
 
