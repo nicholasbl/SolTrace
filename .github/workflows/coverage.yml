@@ -1,0 +1,66 @@
+name: coverage
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+env:
+  BUILD_TYPE: Debug
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get install -o Acquire::Retries=3 lcov
+        sudo apt-get install -y libfontconfig1-dev
+
+    - name: Set reusable strings
+      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+    - name: Setup cmake
+      uses: jwlawson/actions-setup-cmake@v2
+      with:
+        cmake-version: '3.24.x'
+
+    - name: Test cmake version
+      run: cmake --version
+
+    - name: Configure CMake
+      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+        -DSOLTRACE_BUILD_GUI=OFF
+        -DENABLE_COVERAGE=ON
+        -S ${{ github.workspace }}
+
+    - name: Build
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ env.BUILD_TYPE }}
+
+    - name: Run Test
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}/google-tests
+      # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      run: ctest --output-on-failure --build-config ${{ env.BUILD_TYPE }} -VV
+                
+    - name: Coverage
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      shell: bash
+      run: make coverage 
+
+    - name: Coveralls
+      uses: coverallsapp/github-action@v2
+      with:
+        path-to-lcov: ${{ steps.strings.outputs.build-output-dir }}/coverage.info
+        github-token: ${{ secrets.GITHUB_TOKEN }}      
