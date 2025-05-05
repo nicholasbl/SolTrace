@@ -48,7 +48,7 @@ public:
         }
         return key;
     }
-    bool remove_item(K id)
+    auto remove_item(K id)
     {
         return this->container.erase(id);
     }

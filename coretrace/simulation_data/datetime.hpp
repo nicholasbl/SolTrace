@@ -3,37 +3,46 @@
 
 // Dummy date-time class to stand in for future date-time representation
 
-class Date
+struct Date
 {
 public:
-    Date(){}
+    Date() {}
+
 private:
 };
 
-class Time
+struct Time
 {
 public:
-    Time(){}
+    Time() {}
+
 private:
 };
 
-class DateTime
+struct DateTime
 {
 public:
-    DateTime(){}
-    const Date& get_date() const {return this->my_date;}
-    void set_date(const Date &d){this->my_date = d; return;}
-    const Time& get_time() const {return this->my_time;}
-    void set_time(const Time &t) {this->my_time = t; return;}
-    void set_datetime(const DateTime &dt)
-    {
-        this->set_date(dt.get_date());
-        this->set_time(dt.get_time());
-        return;
-    }
-private:
     Date my_date;
     Time my_time;
+
+    DateTime() {}
+
+    void set(const DateTime &dt)
+    {
+        // this->set_date(dt.get_date());
+        // this->set_time(dt.get_time());
+        this->my_date = dt.my_date;
+        this->my_time = dt.my_time;
+        return;
+    }
+
+    DateTime &operator=(const DateTime &rhs)
+    {
+        this->set(rhs);
+        return *this;
+    }
+
+private:
 };
 
 #endif

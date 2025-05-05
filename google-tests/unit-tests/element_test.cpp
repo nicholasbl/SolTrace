@@ -57,7 +57,7 @@ TEST(Element, SingleElementAccessors)
     auto ap = make_aperture<Circular>(D);
     ref.set_aperture(ap);
     auto rap = std::dynamic_pointer_cast<Circular>(ref.get_aperture());
-    EXPECT_FALSE(rap == nullptr);
+    EXPECT_NE(rap, nullptr);
     EXPECT_EQ(rap->diameter, D);
 
     const double HA = 0.25;

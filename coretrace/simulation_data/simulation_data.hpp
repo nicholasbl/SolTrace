@@ -20,7 +20,6 @@
 class SimulationData
 {
 public:
-
     SimulationData();
     virtual ~SimulationData();
 
@@ -84,47 +83,99 @@ public:
         return this->my_elements.is_at_end(citer);
     }
 
-    // element_id add_element(std::shared_ptr<Element> el);
-    // void remove_element(element_id id);
-    // std::shared_ptr<Element> get_element(element_id id);
-    // void replace_element(element_id id, std::shared_ptr<Element> el);
-    
-    // uint64_t get_number_of_elements() const;
-    // uint64_t get_total_number_of_elements() const;
+    void set_number_of_rays(uint_fast64_t nrays)
+    {
+        this->my_parameters.number_of_rays = nrays;
+        return;
+    }
+    uint_fast64_t get_number_of_rays() const
+    {
+        return this->my_parameters.number_of_rays;
+    }
 
-    void set_number_of_rays(uint_fast64_t nrays);
-    uint_fast64_t get_number_of_rays() const;
+    void set_tolerance(double tolerance)
+    {
+        this->my_parameters.tolerance = tolerance;
+        return;
+    }
+    double get_tolerance() const
+    {
+        return this->my_parameters.tolerance;
+    }
 
-    void set_tolerance(double tolerance);
-    double get_tolerance() const;
+    void set_seed(int seed)
+    {
+        this->my_parameters.seed = seed;
+        return;
+    }
+    int get_seed() const
+    {
+        return this->my_parameters.seed;
+    }
 
-    void set_seed(int seed);
-    int get_seed() const;
+    void set_latitude(double latitude)
+    {
+        this->my_parameters.latitude = latitude;
+        return;
+    }
+    double get_latitude() const
+    {
+        return this->my_parameters.latitude;
+    }
 
-    void set_latitude(double latitude);
-    double get_latitude() const;
+    void set_longitude(double longitude)
+    {
+        this->my_parameters.longitude = longitude;
+        return;
+    }
+    double get_longitude() const
+    {
+        return this->my_parameters.longitude;
+    }
 
-    void set_longitude(double longitude);
-    double get_longitude() const;
+    void set_simulation_date(const Date &d)
+    {
+        this->my_parameters.sim_dt.my_date = d;
+    }
+    const Date &get_simulation_date() const
+    {
+        return this->my_parameters.sim_dt.my_date;
+    }
 
-    // TODO: How to handle date/time?
-    void set_simulation_date(const Date &);
-    const Date & get_simulation_date() const;
-    void set_simulation_datetime(const DateTime &);
-    const DateTime & get_simulation_datetime() const;
-    void set_simulation_time(const Time &);
-    const Time & get_simulation_time() const;
+    void set_simulation_datetime(const DateTime &dt)
+    {
+        this->my_parameters.sim_dt = dt;
+        return;
+    }
+    const DateTime &get_simulation_datetime() const
+    {
+        return this->my_parameters.sim_dt;
+    }
 
-    const SimulationParameters & get_simulation_parameters() const;
+    void set_simulation_time(const Time &t)
+    {
+        this->my_parameters.sim_dt.my_time = t;
+        return;
+    }
+    const Time &get_simulation_time() const
+    {
+        return this->my_parameters.sim_dt.my_time;
+    }
+
+    SimulationParameters &get_simulation_parameters()
+    {
+        return this->my_parameters;
+    }
+    const SimulationParameters &get_simulation_parameters() const
+    {
+        return this->my_parameters;
+    }
 
     int update_simulation_positions();
     int update_simulation_positions(const Time &);
     int update_simulation_positions(const Date &);
     int update_simulation_positions(const DateTime &);
 
-    // int dump_to_csv(const char *csv_name) const;
-    // int import_from_csv(const char *csv_name);
-    // int import_legacy_table(const char *table_file_name);
     int import_from_file(const char *file_name);
     int import_from_file(const std::string file_name);
 
@@ -132,7 +183,6 @@ private:
     ElementContainer my_elements;
     RaySourceContainer my_sources;
     SimulationParameters my_parameters;
-
 };
 
 #endif

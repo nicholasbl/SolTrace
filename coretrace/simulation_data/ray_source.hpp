@@ -8,10 +8,11 @@
 class RaySource
 {
 public:
-    RaySource();
-    virtual ~RaySource();
+    RaySource() {}
+    virtual ~RaySource() {}
 
     virtual const Vector3d &get_position() const = 0;
+    virtual Vector3d &get_position() = 0;
     virtual void set_position(const Vector3d &) = 0;
     virtual void set_position(const DateTime &, double lat, double long) = 0;
     virtual void get_shape() = 0;
@@ -24,10 +25,10 @@ using ray_source_id = std::int_fast64_t;
 using RaySourceContainer = Container<ray_source_id, RaySource>;
 using ray_source_ptr = RaySourceContainer::value_pointer;
 
-template<typename... Args>
-inline ray_source_ptr make_ray_source(Args&&... args)
+template<typename C, typename... Args>
+inline auto make_ray_source(Args&&... args)
 {
-    return RaySourceContainer::make_pointer(std::forward<Args>(args)...);
+    return RaySourceContainer::make_pointer<C>(std::forward<Args>(args)...);
 }
 
 #endif
