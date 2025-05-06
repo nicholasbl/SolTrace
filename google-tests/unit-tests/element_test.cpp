@@ -98,6 +98,8 @@ TEST(Element, SingleElementOrientationUpdate)
 TEST(Element, VirtualElement)
 {
     VirtualElement ve;
+
+    EXPECT_TRUE(ve.is_virtual());
     
     const double LX = 1.0;
     const double LY = 2.0;

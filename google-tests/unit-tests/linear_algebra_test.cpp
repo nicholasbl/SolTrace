@@ -11,6 +11,10 @@ TEST(LinearAlgebra, VectorBasics)
     Vector3d y(-1.0, 2.0, -1.0);
     Vector3d z;
 
+    EXPECT_EQ(z[0], 0.0);
+    EXPECT_EQ(z[1], 0.0);
+    EXPECT_EQ(z[2], 0.0);
+
     vector_add(1.0, x, 1.0, y, z);
     EXPECT_NEAR(z[0], 0.0, 1e-12);
     EXPECT_NEAR(z[1], 3.0, 1e-12);
@@ -49,6 +53,23 @@ TEST(LinearAlgebra, VectorBasics)
     EXPECT_NEAR(y[0], -1.0 / mag, 1e-12);
     EXPECT_NEAR(y[1], 2.0 / mag, 1e-12);
     EXPECT_NEAR(y[2], -1.0 / mag, 1e-12);
+
+    z.zero();
+    EXPECT_EQ(z[0], 0.0);
+    EXPECT_EQ(z[1], 0.0);
+    EXPECT_EQ(z[2], 0.0);
+
+    z[0] = 1.0;
+    z[1] = 2.0;
+    z[2] = 3.0;
+    EXPECT_EQ(z[0], 1.0);
+    EXPECT_EQ(z[1], 2.0);
+    EXPECT_EQ(z[2], 3.0);
+
+    Vector3d u(z.data);
+    EXPECT_EQ(z[0], u[0]);
+    EXPECT_EQ(z[1], u[1]);
+    EXPECT_EQ(z[2], u[2]);
 }
 
 TEST(LinearAlgebra, MatrixVectorProduct)

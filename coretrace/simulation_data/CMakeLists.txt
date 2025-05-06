@@ -21,3 +21,7 @@ set_target_properties(simdata
     DEBUG_POSTFIX "d"
 	PREFIX ""
 )
+
+if (NOT APPLE AND ENABLE_COVERAGE)
+	SET(CMAKE_CXX_FLAGS "-O0 -coverage -fkeep-inline-functions")
+endif()

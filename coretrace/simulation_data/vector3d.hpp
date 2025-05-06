@@ -32,18 +32,18 @@ public:
             this->data[i] = 0.0;
     }
 
-    inline double get_value(int i) const
-    {
-        assert(i >= 0 && i < 3);
-        return this->data[i];
-    }
+    // inline double get_value(int i) const
+    // {
+    //     assert(i >= 0 && i < 3);
+    //     return this->data[i];
+    // }
 
-    void set_value(int i, double val)
-    {
-        assert(i >= 0 && i < 3);
-        this->data[i] = val;
-        return;
-    }
+    // void set_value(int i, double val)
+    // {
+    //     assert(i >= 0 && i < 3);
+    //     this->data[i] = val;
+    //     return;
+    // }
 
     void set_values(double x, double y, double z)
     {
