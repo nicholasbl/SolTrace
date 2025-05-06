@@ -262,7 +262,7 @@ static void _traceopt( lk::invoke_t &cxt )
 		r.hash_item("include_sunshape", ss ? 1.0 : 0.0 );
 		r.hash_item("optical_errors", oe ? 1.0 : 0.0 );
 		r.hash_item("point_focus", pf ? 1.0 : 0.0 );
-		r.hash_item("use_refactor", rf ? 1.0 : 0.0);
+		r.hash_item("use_refactor_trace", rf ? 1.0 : 0.0);
 	}
 	else if (cxt.arg_count() == 1)
 	{
@@ -288,7 +288,7 @@ static void _traceopt( lk::invoke_t &cxt )
 		if ( (vval = cxt.arg(0).lookup("point_focus")) )
 			pf = vval->deref().as_integer() ? true : false;
 
-		if ((vval = cxt.arg(0).lookup("use_refactor")))
+		if ((vval = cxt.arg(0).lookup("use_refactor_trace")))
 			rf = vval->deref().as_integer() ? true : false;
 
 		tf->SetOptions( nrays, nmax, ncpu, seed, ss, oe, pf, rf );

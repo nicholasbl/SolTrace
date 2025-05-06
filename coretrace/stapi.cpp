@@ -682,7 +682,7 @@ STCORE_API int st_sim_run_data( st_context_t pcxt, unsigned int seed,
                             std::vector<std::vector< double > > *data_s2, 
                             bool save_st_data,
 						    int (*callback)(st_uint_t ntracedtotal, st_uint_t ntraced, st_uint_t ntotrace, st_uint_t curstage, st_uint_t nstages, void *data), void *cbdata,
-                            bool use_refactor)
+                            bool use_refactor_trace)
 {
     /* 
     Run a simulation and save the stage 1-2 ray data for future use. Return this data in the data_s1, data_s2 structures.
@@ -708,7 +708,7 @@ STCORE_API int st_sim_run_data( st_context_t pcxt, unsigned int seed,
 			rayct = data_s2->size();
 	}
 
-	if (use_refactor)
+	if (use_refactor_trace)
 	{
 		if (!Trace_refactored(sys, seed,
 			rayct, sys->sim_raymax,
@@ -747,9 +747,9 @@ STCORE_API int st_sim_run( st_context_t pcxt, unsigned int seed,
 
 STCORE_API int st_sim_run_with_refactor(st_context_t pcxt, unsigned int seed,
 	int (*callback)(st_uint_t ntracedtotal, st_uint_t ntraced, st_uint_t ntotrace, st_uint_t curstage, st_uint_t nstages, void* data), void* cbdata,
-	bool use_refactor)
+	bool use_refactor_trace)
 {
-	return st_sim_run_data(pcxt, seed, 0, 0, false, callback, cbdata, use_refactor);
+	return st_sim_run_data(pcxt, seed, 0, 0, false, callback, cbdata, use_refactor_trace);
 }
 
 STCORE_API void st_calc_euler_angles( double origin[3], double aimpoint[3], double zrot, double euler[3] )

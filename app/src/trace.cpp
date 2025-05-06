@@ -114,7 +114,7 @@ TraceForm::TraceForm( wxWindow *parent, Project &prj )
 	flxsizer->AddStretchSpacer();
 	flxsizer->Add( m_asPowerTower = new wxCheckBox( sizer1->GetStaticBox(), ID_INCL_POINTFOCUS, "Point-focus system" ), 0, wxALL|wxALIGN_CENTER_VERTICAL, 3 );
 	flxsizer->AddStretchSpacer();
-	flxsizer->Add(m_use_refactor = new wxCheckBox(sizer1->GetStaticBox(), ID_USE_REFACTOR, "Use refactor trace"), 0, wxALL | wxALIGN_CENTER_VERTICAL, 3);
+	flxsizer->Add(m_use_refactor_trace = new wxCheckBox(sizer1->GetStaticBox(), ID_USE_REFACTOR, "Use refactor trace"), 0, wxALL | wxALIGN_CENTER_VERTICAL, 3);
 
 
 	sizer1->Add( flxsizer, 0, wxALL, 5 );
@@ -172,12 +172,12 @@ void TraceForm::UpdateFromData()
 	m_inclSunShape->SetValue(T.is_include_sunshape);
 	m_inclOpticalErrors->SetValue(T.is_include_errors);
 	m_asPowerTower->SetValue(T.is_point_focus);
-	m_use_refactor->SetValue(T.use_refactor);
+	m_use_refactor_trace->SetValue(T.use_refactor_trace);
 }
 
 
 void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed,
-	bool sunshape, bool opterr, bool aspowertower, bool use_refactor )
+	bool sunshape, bool opterr, bool aspowertower, bool use_refactor_trace )
 {
 	m_numRays->SetValue( nrays );
 	m_numMaxSunRays->SetValue( nmaxsunrays );
@@ -186,7 +186,7 @@ void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed
 	m_inclSunShape->SetValue( sunshape );
 	m_inclOpticalErrors->SetValue( opterr );
     m_asPowerTower->SetValue( aspowertower );
-	m_use_refactor->SetValue( use_refactor );
+	m_use_refactor_trace->SetValue( use_refactor_trace );
 
 	TraceSettings& T = m_prj.Trace_Settings;
 	T.n_rays = m_numRays->AsUnsigned();
@@ -196,11 +196,11 @@ void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed
 	T.is_include_sunshape = m_inclSunShape->GetValue();
 	T.is_include_errors = m_inclOpticalErrors->GetValue();
 	T.is_point_focus = m_asPowerTower->GetValue();
-	T.use_refactor = m_use_refactor->GetValue();
+	T.use_refactor_trace = m_use_refactor_trace->GetValue();
 }
 
 void TraceForm::GetOptions( size_t *nrays, size_t *nmaxsunrays, int *ncpu, int *seed,
-	bool *sunshape, bool *opterr, bool *aspowertower, bool *use_refactor )
+	bool *sunshape, bool *opterr, bool *aspowertower, bool *use_refactor_trace )
 {
 	if ( nrays ) *nrays = m_numRays->AsUnsigned();
 	if ( nmaxsunrays ) *nmaxsunrays = m_numMaxSunRays->AsUnsigned();
@@ -209,7 +209,7 @@ void TraceForm::GetOptions( size_t *nrays, size_t *nmaxsunrays, int *ncpu, int *
 	if ( sunshape ) *sunshape = m_inclSunShape->GetValue();
 	if ( opterr ) *opterr = m_inclOpticalErrors->GetValue();
     if ( aspowertower ) *aspowertower = m_asPowerTower->GetValue();
-	if ( use_refactor ) *use_refactor = m_use_refactor->GetValue();
+	if ( use_refactor_trace ) *use_refactor_trace = m_use_refactor_trace->GetValue();
 }
 
 
@@ -253,7 +253,7 @@ void TraceForm::OnCommand( wxCommandEvent &evt )
 		T.is_point_focus = m_asPowerTower->GetValue();
 		break;
 	case ID_USE_REFACTOR:
-		T.use_refactor = m_use_refactor->GetValue();
+		T.use_refactor_trace = m_use_refactor_trace->GetValue();
 		break;
 	case wxID_EXECUTE:
 		StartTrace();
@@ -671,7 +671,7 @@ public:
 
 		m_resultCode = ::st_sim_run_with_refactor(m_contextId,
 			(unsigned int)m_seedVal,
-			trace_callback_multi_thread, this, this->m_system->Trace_Settings.use_refactor);
+			trace_callback_multi_thread, this, this->m_system->Trace_Settings.use_refactor_trace);
 
 		return 0;
 	}
