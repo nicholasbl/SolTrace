@@ -41,9 +41,9 @@ int ElementBase::compute_coordinate_rotations()
     vector_add(1.0, this->aim, -1.0, this->origin, dr);
     make_unit_vector(dr);
 
-    this->euler_angles.set_value(0, atan2(dr[0], dr[2]));
-    this->euler_angles.set_value(1, asin(dr[1]));
-    this->euler_angles.set_value(2, this->zrot);
+    this->euler_angles[0] = atan2(dr[0], dr[2]);
+    this->euler_angles[1] = asin(dr[1]);
+    this->euler_angles[2] = this->zrot;
 
     compute_transform_matrices(this->euler_angles,
                                this->reference_to_local,
