@@ -6,6 +6,9 @@
 struct Date
 {
 public:
+
+    // TODO: Implement this struct
+
     Date() {}
 
 private:
@@ -14,6 +17,9 @@ private:
 struct Time
 {
 public:
+
+    // TODO: Implement this struct
+
     Time() {}
 
 private:

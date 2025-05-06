@@ -12,6 +12,8 @@
 #include "surface.hpp"
 #include "vector3d.hpp"
 
+using element_id = std::int_fast64_t;
+
 class Element
 {
 public:
@@ -142,7 +144,6 @@ protected:
   Matrix3d local_to_reference;
 };
 
-using element_id = std::int_fast64_t;
 using ElementContainer = Container<element_id, Element>;
 using element_ptr = ElementContainer::value_pointer;
 

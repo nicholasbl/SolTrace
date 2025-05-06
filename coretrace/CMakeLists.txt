@@ -13,7 +13,7 @@ endif()
 
 #####################################################################################################################
 #
-# Project Settings 
+# Project Settings
 #
 #####################################################################################################################
 
@@ -65,18 +65,24 @@ if(MSVC)
 	endforeach()
 else(MSVC)
 	if (APPLE)
-		add_compile_options(-arch x86_64 -fno-common)
+		execute_process(
+			COMMAND uname -m
+			RESULT_VARIABLE result
+			OUTPUT_VARIABLE OSX_NATIVE_ARCHITECTURE
+			OUTPUT_STRIP_TRAILING_WHITESPACE
+			)
+
+		add_compile_options(-arch ${OSX_NATIVE_ARCHITECTURE} -fno-common)
   		add_definitions(-DWX_PRECOMP)
 	else()
 		add_definitions(-D__64BIT__)
 	endif()
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unknown-pragmas -Wno-sign-compare -Wno-unused-variable -Wno-uninitialized -Wno-int-to-pointer-cast ")
 	if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 		add_compile_definitions(_DEBUG)
 		if (NOT APPLE AND ENABLE_COVERAGE)
 			SET(CMAKE_CXX_FLAGS "-O0 -coverage")
-   		endif()  
+		endif()
 	else()
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG" )
 	endif()
@@ -84,7 +90,7 @@ endif(MSVC)
 
 
 #####################################################################################################################
-# 
+#
 # CMake Targets
 #
 #####################################################################################################################
@@ -104,7 +110,7 @@ add_custom_command(
 	COMMAND ${CMAKE_COMMAND}
 	ARGS -E copy $<TARGET_FILE:coretrace_api> ${CMAKE_CURRENT_SOURCE_DIR}/../app/deploy/api
 	)
-	
+
 add_library(coretrace STATIC ${CORETRACE_SRC})
 set_target_properties(coretrace
     PROPERTIES
@@ -143,4 +149,4 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug"
 		# generate report
 		COMMAND ${GENHTML} --demangle-cpp -o coverage coverage.info
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-endif()    
+endif()
