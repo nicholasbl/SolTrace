@@ -32,6 +32,13 @@ target_link_libraries(
 	GTest::gtest_main
 )
 
+if (ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+	target_link_options(UnitTests PRIVATE --coverage)
+	target_link_libraries(UnitTests gcov)
+# else()
+# 	target_link_libraries(UnitTests coretrace GTest::gtest_main)
+endif()
+
 if(UNIX)
 	target_link_libraries(UnitTests pthread)
 endif()
