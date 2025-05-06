@@ -50,7 +50,7 @@ TEST(HighFluxSolarFurnace, RaysTraced1e5OpticalErrorsOff)
 
 	::st_sim_params(cxt, nrays, maxrays, powertower);
 	::st_sim_errors(cxt, sunshape, errors);
-	code = ::st_sim_run(cxt, (unsigned int)seed, ::trace_progress, 0);
+	code = ::st_sim_run_with_refactor(cxt, (unsigned int)seed, ::trace_progress, 0, true);
 
 	int Length = ::st_num_intersections(cxt);
 

@@ -188,7 +188,7 @@ void QuadricSurfaceClosedForm(
 			PosXYZ[1] = PosLoc[1] + t1 * CosLoc[1];
 			PosXYZ[2] = PosLoc[2] + t1 * CosLoc[2];
 			*PathLength = t1;
-			goto Label_100;
+			//goto Label_100;
 		}
 		else
 		{
@@ -197,10 +197,7 @@ void QuadricSurfaceClosedForm(
 			return;
 		}
 	}
-
-
-
-	if (sqr(B) > 4.0*A*C)
+	else if (sqr(B) > 4.0*A*C)
 	{
 		t1 = (-B + sqrt(sqr(B)-4.0*A*C))/(2.0*A);
 		t2 = (-B - sqrt(sqr(B)-4.0*A*C))/(2.0*A);
@@ -257,25 +254,25 @@ void QuadricSurfaceClosedForm(
 			}
            //***********************************************************************************************************
 
-			goto Label_100;
+			//goto Label_100;
 		}
-		if (t2 == 0)   //initial ray location at surface
+		else if (t2 == 0)   //initial ray location at surface
 		{
 			PosXYZ[0] = PosLoc[0] + t1*CosLoc[0];
 			PosXYZ[1] = PosLoc[1] + t1*CosLoc[1];
 			PosXYZ[2] = PosLoc[2] + t1*CosLoc[2];
 			*PathLength = t1;
-			goto Label_100;
+			//goto Label_100;
 		}
-		if (t2 < 0 && t1 > 0)     //initial ray location inside surface
+		else if (t2 < 0 && t1 > 0)     //initial ray location inside surface
 		{
 			PosXYZ[0] = PosLoc[0] + t1*CosLoc[0];
 			PosXYZ[1] = PosLoc[1] + t1*CosLoc[1];
 			PosXYZ[2] = PosLoc[2] + t1*CosLoc[2];
 			*PathLength = t1;
-			goto Label_100;
+			//goto Label_100;
 		}
-		if (t1 <= 0)
+		else if (t1 <= 0)
 		{
 			*PathLength = t1; //ray heading away from surface
 			*ErrorFlag = 1;
@@ -289,7 +286,7 @@ void QuadricSurfaceClosedForm(
 		return;
 	}
 
-Label_100:
+//Label_100:
 
 	if (Element->SurfaceIndex == 'p' || Element->SurfaceIndex == 'P')
 	{

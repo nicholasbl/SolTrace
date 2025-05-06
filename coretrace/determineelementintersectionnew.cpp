@@ -97,7 +97,8 @@ void DetermineElementIntersectionNew(
 		DFXYZ[2] = 0.0;
 		*BacksideFlag = 0;
 		*PathLength = 0.0;
-		goto Label_100;
+		//goto Label_100;
+		return;
 	}
 
 	x = PosRayOut[0];
@@ -127,7 +128,8 @@ void DetermineElementIntersectionNew(
 			   *PathLength = 0.0;
 			   *ErrorFlag = 0;
 			   *BacksideFlag = 0;
-			   goto Label_100;
+			   //goto Label_100;
+			   break;
 			}
 			else
 			{
@@ -136,7 +138,8 @@ void DetermineElementIntersectionNew(
 				else
 					*BacksideFlag = 1;
 				*Intercept = 1;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 		break;
 	
@@ -159,7 +162,8 @@ void DetermineElementIntersectionNew(
 			   *PathLength = 0.0;
 			   *ErrorFlag = 0;
 			   *BacksideFlag = 0;
-			   goto Label_100;
+			   //goto Label_100;
+			   break;
 			}
 			Ri = Ro*cos(30.0*(ACOSM1O180));
 
@@ -170,7 +174,8 @@ void DetermineElementIntersectionNew(
 				else
 					*BacksideFlag = 1;
 				*Intercept = 1;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 
 			XL = sqrt(Ro*Ro - Ri*Ri); //otherwise break hexagon into 3 sections
@@ -186,7 +191,8 @@ void DetermineElementIntersectionNew(
 						*BacksideFlag = 1;
 						
 					*Intercept = 1;
-					goto Label_100;
+					//goto Label_100;
+					break;
 				}
 				*Intercept = 0;
 				PosRayOut[0] = 0.0;
@@ -201,7 +207,8 @@ void DetermineElementIntersectionNew(
 				*PathLength = 0.0;
 				*BacksideFlag = 0;
 				*ErrorFlag = 0;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 			
 			if ( (x <= XL) && (x >= -XL) )    //2nd section
@@ -213,7 +220,8 @@ void DetermineElementIntersectionNew(
 					else
 						*BacksideFlag = 1;
 					*Intercept = 1;
-					goto Label_100;
+					//goto Label_100;
+					break;
 				}
 				*Intercept = 0;
 				PosRayOut[0] = 0.0;
@@ -228,7 +236,8 @@ void DetermineElementIntersectionNew(
 				*PathLength = 0.0;
 				*BacksideFlag = 0;
 				*ErrorFlag = 0;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 			
 			if ( (x < -XL) && (x >= -Ro) )    //3rd section
@@ -242,7 +251,8 @@ void DetermineElementIntersectionNew(
 					else
 						*BacksideFlag = 1;
 					*Intercept = 1;
-					goto Label_100;
+					//goto Label_100;
+					break;
 				}
 				*Intercept = 0;
 				PosRayOut[0] = 0.0;
@@ -257,7 +267,8 @@ void DetermineElementIntersectionNew(
 				*PathLength = 0.0;
 				*BacksideFlag = 0;
 				*ErrorFlag = 0;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 		break;
 
@@ -280,7 +291,8 @@ void DetermineElementIntersectionNew(
 				*PathLength = 0.0;
 				*BacksideFlag = 0;
 				*ErrorFlag = 0;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 			Ri = Ro*sin(30.0*(ACOSM1O180));
 
@@ -291,7 +303,8 @@ void DetermineElementIntersectionNew(
 				else
 					*BacksideFlag = 1;
 				*Intercept = 1;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 
 			if ( (x <= Ro) && (x > 0.0) )  //1st section
@@ -305,7 +318,8 @@ void DetermineElementIntersectionNew(
 					else
 						*BacksideFlag = 1;
 					*Intercept = 1;
-					goto Label_100;
+					//goto Label_100;
+					break;
 				}
 				*Intercept = 0;
 				PosRayOut[0] = 0.0;
@@ -320,7 +334,8 @@ void DetermineElementIntersectionNew(
 				*PathLength = 0.0;
 				*BacksideFlag = 0;
 				*ErrorFlag = 0;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 			if ( (x >= -Ro) && (x <= 0.0) )  //2nd section
 			{
@@ -333,7 +348,8 @@ void DetermineElementIntersectionNew(
 					else
 						*BacksideFlag = 1;
 					*Intercept = 1;
-					goto Label_100;
+					//goto Label_100;
+					break;
 				}
 				*Intercept = 0;
 				PosRayOut[0] = 0.0;
@@ -348,7 +364,8 @@ void DetermineElementIntersectionNew(
 				*PathLength = 0.0;
 				*BacksideFlag = 0;
 				*ErrorFlag = 0;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 		break;
 
@@ -370,7 +387,8 @@ void DetermineElementIntersectionNew(
 				*PathLength = 0.0;
 				*BacksideFlag = 0;
 				*ErrorFlag = 0;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 			
 			if ( (y > Element->ParameterB/2.0) || (y < -Element->ParameterB/2.0) )
@@ -388,7 +406,8 @@ void DetermineElementIntersectionNew(
 				*PathLength = 0.0;
 				*BacksideFlag = 0;
 				*ErrorFlag = 0;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 
 			if ( DOT(CosRayIn, DFXYZ) < 0 ) //successfully falls on rectangle
@@ -397,16 +416,19 @@ void DetermineElementIntersectionNew(
 				*BacksideFlag = 1;
 				
 			*Intercept = 1;
-			goto Label_100;
+			//goto Label_100;
 
 		break;
 
 	case 'a':
 	case 'A': //Annulus or torus contour
 	
-			if ( (Element->ParameterA == 0.0) && (Element->ParameterB == 0.0) ) goto Label_5; //torus
-
-			if ( (r < Element->ParameterA) || (r > Element->ParameterB) )
+			if ((Element->ParameterA == 0.0) && (Element->ParameterB == 0.0))
+			{
+				// Naturally goes to Label_5
+				//goto Label_5; //torus
+			}
+			else if ( (r < Element->ParameterA) || (r > Element->ParameterB) )
 			{
 				*Intercept = 0;
 				PosRayOut[0] = 0.0;
@@ -421,9 +443,10 @@ void DetermineElementIntersectionNew(
 				*PathLength = 0.0;
 				*BacksideFlag = 0;
 				*ErrorFlag = 0;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
-Label_5:
+			//Label_5:
 			if ( x >= 0.0 )
 			{
 				if ( (asin(y/r) > Element->ParameterC*(ACOSM1O180)/2.0) || (asin(y/r) < -Element->ParameterC*(ACOSM1O180)/2.0) )
@@ -441,7 +464,8 @@ Label_5:
 					*PathLength = 0.0;
 					*BacksideFlag = 0;
 					*ErrorFlag = 0;
-					goto Label_100;
+					//goto Label_100;
+					break;
 				}
 
 				if ( DOT(CosRayIn, DFXYZ) < 0 ) //successfully falls on annular section
@@ -449,7 +473,8 @@ Label_5:
 				else
 					*BacksideFlag = 1;
 				*Intercept = 1;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 			
 			if ( x < 0.0 )
@@ -469,7 +494,8 @@ Label_5:
 					*PathLength = 0.0;
 					*BacksideFlag = 0;
 					*ErrorFlag = 0;
-					goto Label_100;
+					//goto Label_100;
+					break;
 				}
 				else if ( (y < 0) && ((-acos(-y/r)-M_PI/2.0) < -Element->ParameterC*(ACOSM1O180)/2.0) )
 				{
@@ -486,7 +512,8 @@ Label_5:
 					*PathLength = 0.0;
 					*BacksideFlag = 0;
 					*ErrorFlag = 0;
-					goto Label_100;
+					//goto Label_100;
+					break;
 				}
 
 				if ( DOT(CosRayIn, DFXYZ) < 0 ) //successfully falls on annular section
@@ -494,15 +521,19 @@ Label_5:
 				else
 					*BacksideFlag = 1;
 				*Intercept = 1;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 		break;
 
 	case 'l':
 	case 'L': //off axis aperture section of line focus trough  or cylinder
-			if ( (Element->ParameterA == 0.0) && (Element->ParameterB == 0.0) ) goto Label_10; //for cylinder, only need to check for limits on y
-
-			if ( (x < Element->ParameterA) || (x > Element->ParameterB) )
+			if ((Element->ParameterA == 0.0) && (Element->ParameterB == 0.0))
+			{
+				// Skipping goto (now goes to label 10 automatically)
+				//goto Label_10; //for cylinder, only need to check for limits on y
+			}
+			else if ( (x < Element->ParameterA) || (x > Element->ParameterB) )
 			{
 				*Intercept = 0;
 				PosRayOut[0] = 0.0;
@@ -517,10 +548,11 @@ Label_5:
 				*PathLength = 0.0;
 				*BacksideFlag = 0;
 				*ErrorFlag = 0;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 
-Label_10:
+			//Label_10:
 			if ( (y < -Element->ParameterC/2.0) || (y > Element->ParameterC/2.0) )
 			{
 				*Intercept = 0;
@@ -536,7 +568,8 @@ Label_10:
 				*PathLength = 0.0;
 				*BacksideFlag = 0;
 				*ErrorFlag = 0;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 
 			if ( DOT(CosRayIn, DFXYZ) < 0 ) //successfully falls on line focus or cylindrical section
@@ -545,7 +578,7 @@ Label_10:
 				*BacksideFlag = 1;
 				
 			*Intercept = 1;
-			goto Label_100;
+			//goto Label_100;
 		break;
 
 	case 'i':
@@ -572,7 +605,8 @@ Label_10:
 				*PathLength = 0.0;
 				*ErrorFlag = 0;
 				*BacksideFlag = 0;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 
 			if ( DOT(CosRayIn, DFXYZ) < 0 )
@@ -580,7 +614,7 @@ Label_10:
 			else
 				*BacksideFlag = 1;
 			*Intercept = 1;
-			goto Label_100;
+			//goto Label_100;
 		break;
 
 	case 'q':
@@ -611,7 +645,8 @@ Label_10:
 				*PathLength = 0.0;
 				*ErrorFlag = 0;
 				*BacksideFlag = 0;
-				goto Label_100;
+				//goto Label_100;
+				break;
 			}
 
 			if ( DOT(CosRayIn, DFXYZ) < 0 )
@@ -619,11 +654,11 @@ Label_10:
 			else
 				*BacksideFlag = 1;
 			*Intercept = 1;
-			goto Label_100;
+			//goto Label_100;
 		break;
 	} //end select case
 	
-Label_100:
+	//Label_100:
 	if ( *BacksideFlag )   //if hit on backside of element then slope of surface is reversed
 	{
 		DFXYZ[0] = -DFXYZ[0];
