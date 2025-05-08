@@ -124,6 +124,21 @@ TEST(Element, VirtualElement)
     EXPECT_TRUE(ve.is_single());
     EXPECT_FALSE(ve.is_composite());
 
+    // These functions should have no effects
+    OpticalProperties op(0.75, 0.25, 0.1, 0.001);
+    ve.set_front_optical_properties(op);
+    auto opf = ve.get_front_optical_properties();
+    EXPECT_EQ(opf->reflectivity, 0.0);
+    EXPECT_EQ(opf->slope_error, 0.0);
+    EXPECT_EQ(opf->specularity_error, 0.0);
+    EXPECT_EQ(opf->transmitivity, 1.0);
+    ve.set_back_optical_properties(op);
+    auto opb = ve.get_back_optical_properties();
+    EXPECT_EQ(opb->reflectivity, 0.0);
+    EXPECT_EQ(opb->slope_error, 0.0);
+    EXPECT_EQ(opb->specularity_error, 0.0);
+    EXPECT_EQ(opb->transmitivity, 1.0);
+
     return;
 }
 
@@ -143,6 +158,12 @@ TEST(Element, VirtualPlane)
         EXPECT_EQ(rptr->x_length, LX);
         EXPECT_EQ(rptr->y_length, LY);
     }
+
+    // These functions should have no effects
+    vp.set_aperture(make_aperture<Circular>());
+    EXPECT_EQ(vp.get_aperture()->get_type(), RECTANGULAR);
+    vp.set_surface(make_surface<Parabolic>());
+    EXPECT_EQ(vp.get_surface()->get_type(), FLAT);
 
     return;
 

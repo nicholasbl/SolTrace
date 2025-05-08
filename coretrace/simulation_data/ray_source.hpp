@@ -1,6 +1,8 @@
 #ifndef SOLTRACE_RAY_SOURCE_H
 #define SOLTRACE_RAY_SOURCE_H
 
+#include <map>
+
 #include "container.hpp"
 #include "datetime.hpp"
 #include "vector3d.hpp"
@@ -22,6 +24,8 @@ private:
 };
 
 using ray_source_id = std::int_fast64_t;
+// using ray_source_ptr = typename std::shared_ptr<RaySource>;
+// using RaySourceContainer = typename std::map<ray_source_id, ray_source_ptr>;
 using RaySourceContainer = Container<ray_source_id, RaySource>;
 using ray_source_ptr = RaySourceContainer::value_pointer;
 

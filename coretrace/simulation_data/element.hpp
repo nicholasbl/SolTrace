@@ -13,6 +13,9 @@
 #include "vector3d.hpp"
 
 using element_id = std::int_fast64_t;
+const element_id ELEMENT_ERROR = -1;
+const element_id ELEMENT_ID_UNASSIGNED = -2;
+const element_id ELEMENT_ALREADY_REGISTERED = -3;
 
 class Element
 {
@@ -26,7 +29,11 @@ public:
   virtual bool is_enabled() const = 0;
 
   virtual bool is_composite() const = 0;
+  virtual bool is_single() const = 0;
   virtual bool is_virtual() const = 0;
+
+  virtual element_id get_id() const = 0;
+  virtual void set_id(element_id) = 0;
 
   virtual const Vector3d &get_origin() const = 0;
   virtual void set_origin(const Vector3d &) = 0;
@@ -93,6 +100,9 @@ public:
   virtual bool is_single() const { return false; }
   virtual bool is_virtual() const { return false; }
 
+  virtual element_id get_id() const { return this->my_id; }
+  virtual void set_id(element_id id) { this->my_id = id; return; }
+
   virtual const Vector3d &get_origin() const { return this->origin; }
   virtual void set_origin(const Vector3d &point)
   {
@@ -129,7 +139,9 @@ public:
   virtual int convert_local_to_reference(Vector3d &ref, const Vector3d &local);
 
 protected:
+  // TODO: Do these need to be mutable?
   mutable bool active;
+  mutable element_id my_id;
 
   // Location of the origin in the reference coordinate system
   Vector3d origin;
@@ -146,6 +158,8 @@ protected:
 
 using ElementContainer = Container<element_id, Element>;
 using element_ptr = ElementContainer::value_pointer;
+// using element_ptr = typename std::shared_ptr<Element>;
+// using ElementContainer = std::map<element_id, element_ptr>;
 
 template <typename C, typename... Args>
 inline auto make_element(Args &&...args)

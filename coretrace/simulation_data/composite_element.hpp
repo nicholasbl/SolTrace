@@ -1,6 +1,8 @@
 #ifndef SOLTRACE_COMPOSITE_ELEMENT_H
 #define SOLTRACE_COMPOSITE_ELEMENT_H
 
+#include <memory>
+
 #include "container.hpp"
 #include "element.hpp"
 
@@ -70,10 +72,10 @@ public:
     {
         return this->my_elements.get_number_of_items();
     }
-    uint64_t get_total_number_of_elements() const
-    {
-        return this->my_elements.get_total_number_of_items();
-    }
+    // uint64_t get_total_number_of_elements() const
+    // {
+    //     return this->my_elements.get_total_number_of_items();
+    // }
 
     ElementContainer::iterator get_iterator()
     {
@@ -95,5 +97,7 @@ public:
 private:
     ElementContainer my_elements;
 };
+
+using composite_element_ptr = std::shared_ptr<CompositeElement>;
 
 #endif

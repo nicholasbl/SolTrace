@@ -81,13 +81,13 @@ public:
     {
         return this->container.size();
     }
-    uint64_t get_total_number_of_items() const
-    {
-        // TODO: Implement this if needed. For elements, a value can
-        // be a CompositeElement. In this case, it has its own
-        // collection of elements which need to be counted.
-        return 0;
-    }
+    // uint64_t get_total_number_of_items() const
+    // {
+    //     // TODO: Implement this if needed. For elements, a value can
+    //     // be a CompositeElement. In this case, it has its own
+    //     // collection of elements which need to be counted.
+    //     return 0;
+    // }
 
     iterator get_iterator() { return container.begin(); }
     const_iterator get_const_iterator() { return container.cbegin(); }

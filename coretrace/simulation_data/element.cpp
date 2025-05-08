@@ -3,7 +3,10 @@
 
 #include <math.h>
 
-ElementBase::ElementBase() : Element(), active(true), zrot(0.0)
+ElementBase::ElementBase() : Element(),
+                             active(true),
+                             my_id(ELEMENT_ID_UNASSIGNED),
+                             zrot(0.0)
 {
     this->aim.zero();
     this->origin.zero();

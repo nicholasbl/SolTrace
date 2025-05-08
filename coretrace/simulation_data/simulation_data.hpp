@@ -5,17 +5,17 @@
 #include <map>
 #include <memory>
 
+#include "composite_element.hpp"
 #include "container.hpp"
 #include "datetime.hpp"
 #include "element.hpp"
 #include "ray_source.hpp"
 #include "simulation_parameters.hpp"
+#include "single_element.hpp"
 
-// using element_ptr=std::shared_ptr<Element>;
-// using ElementContainer=std::map<element_id, element_ptr>;
-
-// using ray_source_ptr=std::shared_ptr<RaySource>;
-// using RaySourceContainer=std::map<ray_source_id, ray_source_ptr>;
+using SingleElementMap = typename std::map<element_id, single_element_ptr>;
+using CompositeElementMap = typename std::map<element_id,
+                                              composite_element_ptr>;
 
 class SimulationData
 {
@@ -26,6 +26,7 @@ public:
     ray_source_id add_ray_source(ray_source_ptr src)
     {
         return this->my_sources.add_item(src);
+        // return this->my_sources
     }
     auto remove_ray_source(ray_source_id id)
     {
@@ -40,47 +41,36 @@ public:
         return this->my_sources.replace_item(id, src);
     }
 
-    element_id add_element(element_ptr el)
+    element_id add_element(element_ptr el);
+
+    uint_fast64_t remove_element(element_id id);
+    element_ptr get_element(element_id id);
+    bool replace_element(element_id id, element_ptr el);
+
+    uint_fast64_t get_number_of_elements() const
     {
-        return this->my_elements.add_item(el);
-    }
-    auto remove_element(element_id id)
-    {
-        return this->my_elements.remove_item(id);
-    }
-    element_ptr get_element(element_id id)
-    {
-        return this->my_elements.get_item(id);
-    }
-    bool replace_element(element_id id, element_ptr el)
-    {
-        return this->my_elements.replace_item(id, el);
+        return this->my_elements.size();
     }
 
-    uint64_t get_number_of_elements() const
+    SingleElementMap::iterator get_iterator()
     {
-        return this->my_elements.get_number_of_items();
+        // return this->my_elements.get_iterator();
+        return this->my_elements.begin();
     }
-    uint64_t get_total_number_of_elements() const
+    SingleElementMap::const_iterator get_const_iterator()
     {
-        return this->my_elements.get_total_number_of_items();
+        // return this->my_elements.get_const_iterator();
+        return this->my_elements.cbegin();
     }
-
-    ElementContainer::iterator get_iterator()
+    bool is_at_end(SingleElementMap::iterator iter)
     {
-        return this->my_elements.get_iterator();
+        // return this->my_elements.is_at_end(iter);
+        return iter == this->my_elements.end();
     }
-    ElementContainer::const_iterator get_const_iterator()
+    bool is_at_end(SingleElementMap::const_iterator citer)
     {
-        return this->my_elements.get_const_iterator();
-    }
-    bool is_at_end(ElementContainer::iterator iter)
-    {
-        return this->my_elements.is_at_end(iter);
-    }
-    bool is_at_end(ElementContainer::const_iterator citer)
-    {
-        return this->my_elements.is_at_end(citer);
+        // return this->my_elements.is_at_end(citer);
+        return citer == this->my_elements.end();
     }
 
     void set_number_of_rays(uint_fast64_t nrays)
@@ -180,9 +170,18 @@ public:
     int import_from_file(const std::string file_name);
 
 private:
-    ElementContainer my_elements;
+    mutable element_id next_element_id;
+
+    SingleElementMap my_elements;
+    CompositeElementMap composite_elements;
     RaySourceContainer my_sources;
     SimulationParameters my_parameters;
+
+    void add_single_element(element_id key, single_element_ptr el);
+    void add_composite_element(element_id key, composite_element_ptr el);
+    uint_fast64_t remove_single_element(SingleElementMap::iterator iter);
+    uint_fast64_t remove_composite_element(CompositeElementMap::iterator iter);
+    uint_fast64_t remove_subelements(composite_element_ptr el);
 };
 
 #endif

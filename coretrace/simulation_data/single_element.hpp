@@ -81,4 +81,6 @@ protected:
     OpticalProperties optics_back;
 };
 
+using single_element_ptr = typename std::shared_ptr<SingleElement>;
+
 #endif

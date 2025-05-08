@@ -5,45 +5,157 @@
 #include <sun.hpp>
 #include <simulation_data.hpp>
 
-TEST(SimulationData, ElementInterface)
+TEST(SimulationData, AddRemoveGetElements)
 {
     // auto my_reflector = std::make_shared<PlaneReflector>();
     SimulationData my_sim;
 
     auto my_reflector = make_element<SingleElement>();
     auto id1 = my_sim.add_element(my_reflector);
-    auto my_comp = make_element<CompositeElement>();
-    auto id2 = my_sim.add_element(my_comp);
+    EXPECT_EQ(id1, my_reflector->get_id());
+    EXPECT_EQ(my_sim.get_number_of_elements(), 1);
 
-    EXPECT_EQ(my_sim.get_number_of_elements(), 2);
+    auto my_comp = make_element<CompositeElement>();
+    auto sub1 = make_element<SingleElement>();
+    auto sub2 = make_element<SingleElement>();
+    my_comp->add_element(sub1);
+    my_comp->add_element(sub2);
+    auto id2 = my_sim.add_element(my_comp);
+    EXPECT_EQ(id2, my_comp->get_id());
     EXPECT_NE(id1, id2);
+    EXPECT_NE(sub1->get_id(), ELEMENT_ID_UNASSIGNED);
+
+    EXPECT_EQ(my_sim.get_number_of_elements(), 3);
     EXPECT_EQ(my_sim.get_element(id1), my_reflector);
     EXPECT_EQ(my_sim.get_element(id2), my_comp);
+    EXPECT_EQ(my_sim.get_element(sub1->get_id()), sub1);
+
+    EXPECT_EQ(my_sim.add_element(sub1), ELEMENT_ALREADY_REGISTERED);
+    EXPECT_EQ(my_sim.get_number_of_elements(), 3);
 
     element_id nonexistant = id2 + 1000;
     EXPECT_EQ(my_sim.get_element(nonexistant), nullptr);
     EXPECT_EQ(my_sim.remove_element(nonexistant), 0);
-    EXPECT_EQ(my_sim.get_number_of_elements(), 2);
-
-    EXPECT_EQ(my_sim.remove_element(id1), 1);
-    EXPECT_EQ(my_sim.get_number_of_elements(), 1);
-    EXPECT_EQ(my_sim.get_element(id1), nullptr);
-
-    auto my_el = make_element<SingleElement>();
-    EXPECT_FALSE(my_sim.replace_element(nonexistant, my_el));
-    EXPECT_TRUE(my_sim.replace_element(id2, my_el));
-    EXPECT_EQ(my_sim.get_element(id2), my_el);
-
-    my_sim.add_element(my_reflector);
-    my_sim.add_element(my_comp);
     EXPECT_EQ(my_sim.get_number_of_elements(), 3);
 
-    // These are pass through calls and tested fully in the container_test.cpp
-    // Here just call them to make sure the calls work.
-    auto iter = my_sim.get_iterator();
-    EXPECT_FALSE(my_sim.is_at_end(iter));
-    auto citer = my_sim.get_const_iterator();
-    EXPECT_FALSE(my_sim.is_at_end(citer));
+    EXPECT_EQ(my_sim.remove_element(id1), 1);
+    EXPECT_EQ(my_sim.get_number_of_elements(), 2);
+    EXPECT_EQ(my_sim.get_element(id1), nullptr);
+
+    auto id3 = sub1->get_id();
+    EXPECT_EQ(my_sim.remove_element(id2), 2);
+    EXPECT_EQ(my_sim.get_number_of_elements(), 0);
+    EXPECT_EQ(my_sim.get_element(id2), nullptr);
+    EXPECT_EQ(my_sim.get_element(id3), nullptr);
+
+    EXPECT_EQ(my_reflector->get_id(), ELEMENT_ID_UNASSIGNED);
+    EXPECT_EQ(my_comp->get_id(), ELEMENT_ID_UNASSIGNED);
+    EXPECT_EQ(sub1->get_id(), ELEMENT_ID_UNASSIGNED);
+}
+
+TEST(SimulationData, ReplaceElement)
+{
+    auto el1 = make_element<SingleElement>();
+    auto el2 = make_element<SingleElement>();
+    auto cmp1 = make_element<CompositeElement>();
+    auto sub1 = make_element<SingleElement>();
+    auto sub2 = make_element<SingleElement>();
+    cmp1->add_element(sub1);
+    cmp1->add_element(sub2);
+    auto cmp2 = make_element<CompositeElement>();
+    auto sub3 = make_element<SingleElement>();
+    auto sub4 = make_element<SingleElement>();
+    auto sub5 = make_element<SingleElement>();
+    cmp2->add_element(sub3);
+    cmp2->add_element(sub4);
+    cmp2->add_element(sub5);
+
+    SimulationData my_sim;
+    auto id1 = my_sim.add_element(el1);
+    auto id2 = my_sim.add_element(cmp1);
+    EXPECT_EQ(my_sim.get_number_of_elements(), 3);
+
+    // Replace element that is not in the simulation data
+    EXPECT_FALSE(my_sim.replace_element(ELEMENT_ID_UNASSIGNED, el2));
+
+    // Replace single element with single element
+    EXPECT_TRUE(my_sim.replace_element(id1, el2));
+    EXPECT_EQ(el1->get_id(), ELEMENT_ID_UNASSIGNED);
+    EXPECT_EQ(el2->get_id(), id1);
+    EXPECT_EQ(my_sim.get_element(id1), el2);
+    EXPECT_EQ(my_sim.get_number_of_elements(), 3);
+
+    // Replace composite element with single element
+    EXPECT_TRUE(my_sim.replace_element(id2, el1));
+    EXPECT_EQ(my_sim.get_element(id2), el1);
+    EXPECT_EQ(my_sim.get_number_of_elements(), 2);
+    EXPECT_EQ(cmp1->get_id(), ELEMENT_ID_UNASSIGNED);
+    EXPECT_EQ(sub1->get_id(), ELEMENT_ID_UNASSIGNED);
+    EXPECT_EQ(el1->get_id(), id2);
+
+    // Replace single element with composite element
+    EXPECT_TRUE(my_sim.replace_element(id2, cmp2));
+    EXPECT_EQ(my_sim.get_element(id2), cmp2);
+    EXPECT_EQ(my_sim.get_number_of_elements(), 4);
+    EXPECT_EQ(el1->get_id(), ELEMENT_ID_UNASSIGNED);
+    EXPECT_EQ(cmp2->get_id(), id2);
+    EXPECT_NE(sub3->get_id(), ELEMENT_ID_UNASSIGNED);
+    EXPECT_EQ(my_sim.get_element(sub3->get_id()), sub3);
+
+    // Replace composite element with composite element
+    EXPECT_TRUE(my_sim.replace_element(id2, cmp1));
+    EXPECT_EQ(my_sim.get_element(id2), cmp1);
+    EXPECT_EQ(my_sim.get_number_of_elements(), 3);
+    EXPECT_EQ(cmp2->get_id(), ELEMENT_ID_UNASSIGNED);
+    EXPECT_EQ(cmp1->get_id(), id2);
+    EXPECT_EQ(sub3->get_id(), ELEMENT_ID_UNASSIGNED);
+    EXPECT_NE(sub1->get_id(), ELEMENT_ID_UNASSIGNED);
+    EXPECT_EQ(my_sim.get_element(sub1->get_id()), sub1);
+}
+
+TEST(SimulationData, IteratorElement)
+{
+    auto el1 = make_element<SingleElement>();
+    auto el2 = make_element<SingleElement>();
+    auto cmp1 = make_element<CompositeElement>();
+    auto sub1 = make_element<SingleElement>();
+    auto sub2 = make_element<SingleElement>();
+    cmp1->add_element(sub1);
+    cmp1->add_element(sub2);
+    auto cmp2 = make_element<CompositeElement>();
+    auto sub3 = make_element<SingleElement>();
+    auto sub4 = make_element<SingleElement>();
+    auto sub5 = make_element<SingleElement>();
+    cmp2->add_element(sub3);
+    cmp2->add_element(sub4);
+    cmp2->add_element(sub5);
+
+    SimulationData my_sim;
+    my_sim.add_element(el1);
+    my_sim.add_element(el2);
+    my_sim.add_element(cmp1);
+    my_sim.add_element(cmp2);
+    EXPECT_EQ(my_sim.get_number_of_elements(), 7);
+
+    std::set<element_id> ids;
+    for (auto iter = my_sim.get_iterator();
+         !my_sim.is_at_end(iter);
+         ++iter)
+    {
+        ids.insert(iter->first);
+        EXPECT_EQ(iter->first, iter->second->get_id());
+    }
+    EXPECT_EQ(ids.size(), my_sim.get_number_of_elements());
+
+    ids.clear();
+    for (auto iter = my_sim.get_const_iterator();
+         !my_sim.is_at_end(iter);
+         ++iter)
+    {
+        ids.insert(iter->first);
+        EXPECT_EQ(iter->first, iter->second->get_id());
+    }
+    EXPECT_EQ(ids.size(), my_sim.get_number_of_elements());
 }
 
 TEST(SimulationData, RaySourceInterface)

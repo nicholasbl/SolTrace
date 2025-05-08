@@ -13,9 +13,10 @@ public:
 
     virtual bool is_virtual() const { return true; }
 
-private:
     void set_front_optical_properties(const OpticalProperties &op) {}
     void set_back_optical_properties(const OpticalProperties &op) {}
+
+private:
 };
 
 class VirtualPlane : public VirtualElement
@@ -24,9 +25,10 @@ public:
     VirtualPlane(double x_len, double y_len);
     virtual ~VirtualPlane();
 
-private:
     void set_aperture(aperture_ptr ap) {}
     void set_surface(surface_ptr sp) {}
+
+private:
 };
 
 #endif
