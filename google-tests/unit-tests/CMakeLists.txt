@@ -3,9 +3,11 @@ Project(UnitTests)
 
 include_directories(
 	.
-	../coretrace
 	../app/deploy/samples
+	../../coretrace
 	../../coretrace/simulation_data
+	../../coretrace/simulation_runner
+	../../coretrace/simulation_runner/native_runner
 )
 
 # file(GLOB UNIT_TEST_SRC *.cpp)
@@ -19,6 +21,7 @@ set(UNIT_TEST_SRC
     container_test.cpp
     element_test.cpp
     simulation_data_test.cpp
+	native_runner_test.cpp
 )
 
 add_executable(UnitTests
@@ -28,6 +31,7 @@ add_executable(UnitTests
 target_link_libraries(
     UnitTests
     simdata
+	native_runner
 	coretrace
 	GTest::gtest_main
 )

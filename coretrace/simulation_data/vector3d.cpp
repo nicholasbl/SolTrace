@@ -8,7 +8,7 @@
 #include "matvec.hpp"
 
 // Compute y = A*x placing the result in y
-void matrix_vector_product(Matrix3d &A, Vector3d &x, Vector3d &y)
+void matrix_vector_product(const Matrix3d &A, const Vector3d &x, Vector3d &y)
 {
     MatrixVectorMult(A.data, x.data, y.data);
     return;

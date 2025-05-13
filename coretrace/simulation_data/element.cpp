@@ -3,10 +3,13 @@
 
 #include <math.h>
 
+// ElementContainer ElementBase::empty_container;
+
 ElementBase::ElementBase() : Element(),
                              active(true),
                              my_id(ELEMENT_ID_UNASSIGNED),
                              zrot(0.0)
+                            //  parent(nullptr)
 {
     this->aim.zero();
     this->origin.zero();
@@ -32,8 +35,19 @@ ElementBase::ElementBase() : Element(),
 
 ElementBase::~ElementBase()
 {
+    // this->parent = nullptr;
     return;
 }
+
+// ElementContainer::iterator ElementBase::get_iterator()
+// {
+//     return empty_container.get_iterator();
+// }
+
+// ElementContainer::const_iterator ElementBase::get_const_iterator()
+// {
+//     return empty_container.get_const_iterator();
+// }
 
 int ElementBase::compute_coordinate_rotations()
 {
@@ -55,14 +69,73 @@ int ElementBase::compute_coordinate_rotations()
     return sts;
 }
 
-int ElementBase::convert_reference_to_local(Vector3d &ref, const Vector3d &local)
+int ElementBase::convert_reference_to_local(Vector3d &local, const Vector3d &ref)
 {
+    // matrix_vector_product(this->reference_to_local, ref, local);
     return 0;
+}
+
+int ElementBase::convert_global_to_local(Vector3d &local, const Vector3d &global)
+{
+    // No parent element means that the reference coordinate frame
+    // is the global coordinate frame. Otherwise, we need to account for
+    // the parent element coordinate frame when converting to global.
+
+    int sts = 0;
+
+    // if(this->parent == nullptr)
+    // {
+    //     sts = this->convert_reference_to_local(local, global);
+    // }
+    // else
+    // {
+    //     Vector3d ref;
+    //     sts = this->parent->convert_reference_to_local(ref, global);
+    //     // If nonzero status, something went wrong. Return that problem
+    //     // regardless if that is the end of the computation or not.
+    //     if (sts == 0)
+    //     {
+    //         sts = this->convert_reference_to_local(local, ref);
+    //     }
+    // }
+
+    return sts;
+
 }
 
 int ElementBase::convert_local_to_reference(Vector3d &local, const Vector3d &ref)
 {
+    // TODO: Implement this
     return 0;
+}
+
+int ElementBase::convert_local_to_global(Vector3d &global, const Vector3d &local)
+{
+
+    // No parent element means that the reference coordinate frame
+    // is the global coordinate frame. Otherwise, we need to account for
+    // the parent element coordinate frame when converting to global.
+
+    int sts = 0;
+
+    // if (this->parent == nullptr)
+    // {
+    //     sts = this->convert_local_to_reference(global, local);
+    // }
+    // else
+    // {
+    //     Vector3d ref;
+    //     sts = this->convert_local_to_reference(ref, local);
+    //     // If nonzero status, something went wrong. Return that problem
+    //     // regardless if that is the end of the computation or not.
+    //     if (sts == 0)
+    //     {
+    //         sts = this->parent->convert_local_to_reference(global, ref);
+    //     }
+    // }
+
+    return sts;
+
 }
 
 // const OpticalProperties & ElementBase::get_optical_properties() const

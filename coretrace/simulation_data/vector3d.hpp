@@ -122,7 +122,7 @@ private:
 };
 
 // Compute y = A*x placing the result in y
-void matrix_vector_product(Matrix3d &A, Vector3d &x, Vector3d &y);
+void matrix_vector_product(const Matrix3d &A, const Vector3d &x, Vector3d &y);
 
 void vector_add(double a, const Vector3d &x,
                 double b, const Vector3d &y,

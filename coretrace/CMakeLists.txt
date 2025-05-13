@@ -145,6 +145,7 @@ endif()
 add_subdirectory(strace)
 
 add_subdirectory(simulation_data)
+add_subdirectory(simulation_runner)
 
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug"

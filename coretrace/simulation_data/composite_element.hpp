@@ -53,10 +53,12 @@ public:
     // CompositeElement accessors
     element_id add_element(element_ptr el)
     {
+        // el->set_parent_element(element_ptr(this));
         return this->my_elements.add_item(el);
     }
     auto remove_element(element_id id)
     {
+        // this->get_element(id)->set_parent_element(nullptr);
         return this->my_elements.remove_item(id);
     }
     element_ptr get_element(element_id id)
@@ -77,19 +79,19 @@ public:
     //     return this->my_elements.get_total_number_of_items();
     // }
 
-    ElementContainer::iterator get_iterator()
+    virtual ElementContainer::iterator get_iterator()
     {
         return this->my_elements.get_iterator();
     }
-    ElementContainer::const_iterator get_const_iterator()
+    virtual ElementContainer::const_iterator get_const_iterator()
     {
         return this->my_elements.get_const_iterator();
     }
-    bool is_at_end(ElementContainer::iterator iter)
+    virtual bool is_at_end(ElementContainer::iterator iter)
     {
         return this->my_elements.is_at_end(iter);
     }
-    bool is_at_end(ElementContainer::const_iterator citer)
+    virtual bool is_at_end(ElementContainer::const_iterator citer)
     {
         return this->my_elements.is_at_end(citer);
     }

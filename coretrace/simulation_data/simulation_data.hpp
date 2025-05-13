@@ -23,45 +23,89 @@ public:
     SimulationData();
     virtual ~SimulationData();
 
+    /// @brief Add the given RaySource to the simulation data
+    /// @param src RaySource to add
+    /// @return unique identifier for the RaySource
     ray_source_id add_ray_source(ray_source_ptr src)
     {
         return this->my_sources.add_item(src);
-        // return this->my_sources
     }
+
+    /// @brief Remove the RaySource corresponding to the unique identifier `id`
+    /// @param id unique identifier of the RaySource to remove
+    /// @return true if the element was removed, false otherwise
     auto remove_ray_source(ray_source_id id)
     {
         return this->my_sources.remove_item(id);
     }
+
+    /// @brief Get the RaySource corresponding to the unique identifier `id`
+    /// @param id unique identifier of the RaySource to get
+    /// @return requested RaySource if found, nullptr otherwise
     ray_source_ptr get_ray_source(ray_source_id id)
     {
         return this->my_sources.get_item(id);
     }
+
+    /// @brief Replace the RaySource with id `id` with the RaySource `src`
+    /// @param id unique identifier of the RaySource to replace
+    /// @param src RaySource to use in replacement
+    /// @return true if the RaySource was replaced, false otherwise
     bool replace_ray_source(ray_source_id id, ray_source_ptr src)
     {
         return this->my_sources.replace_item(id, src);
     }
 
+    /// @brief Add the given Element to the SimulationData
+    /// @param el Element to add
+    /// @return unique identifier for the given object
     element_id add_element(element_ptr el);
 
+    /// @brief Remove the Element corresponding to the unique identifier `id`
+    /// @param id unique identifier of element to remove
+    /// @return number of elements removed
     uint_fast64_t remove_element(element_id id);
+
+    /// @brief Get the Element corresponding to the unique identifier `id`
+    /// @param id unique identifier of element to get
+    /// @return requested Element (pointer) if found, nullptr otherwise
     element_ptr get_element(element_id id);
+
+    /// @brief Replace the Element with id `id` with the Element `el`
+    /// @param id unique identifier of element to replace
+    /// @param el Element to use in replacement
+    /// @return true if Element was replaced, false otherwise
     bool replace_element(element_id id, element_ptr el);
 
+    /// @brief Gives the number of elements owned by the SimulationData.
+    ///        CompositeElements do not count toward this number.
+    /// @return Number of elements owned by the SimulationData object
     uint_fast64_t get_number_of_elements() const
     {
         return this->my_elements.size();
     }
 
+    /// @brief Get an iterator that can be used to access all elements owned
+    ///        by this SimulationData object.
+    /// @return iterator
     SingleElementMap::iterator get_iterator()
     {
         // return this->my_elements.get_iterator();
         return this->my_elements.begin();
     }
+
+    /// @brief Get an const_iterator that can be used to access all elements
+    ///        owned by this SimulationData object.
+    /// @return iterator
     SingleElementMap::const_iterator get_const_iterator()
     {
         // return this->my_elements.get_const_iterator();
         return this->my_elements.cbegin();
     }
+
+    /// @brief Tests whether the given iterator is at the end
+    /// @param iter iterator to test
+    /// @return true if at end, false otherwise
     bool is_at_end(SingleElementMap::iterator iter)
     {
         // return this->my_elements.is_at_end(iter);
@@ -73,11 +117,16 @@ public:
         return citer == this->my_elements.end();
     }
 
+    /// @brief Set the number of rays to trace
+    /// @param nrays number of rays to trace
     void set_number_of_rays(uint_fast64_t nrays)
     {
         this->my_parameters.number_of_rays = nrays;
         return;
     }
+
+    /// @brief Get the number of rays to trace
+    /// @return number of rays to trace
     uint_fast64_t get_number_of_rays() const
     {
         return this->my_parameters.number_of_rays;
@@ -93,11 +142,16 @@ public:
         return this->my_parameters.tolerance;
     }
 
+    /// @brief Set the seed used for the random number generation
+    /// @param seed seed to set
     void set_seed(int seed)
     {
         this->my_parameters.seed = seed;
         return;
     }
+
+    /// @brief Get the seed used for random number generation
+    /// @return current seed
     int get_seed() const
     {
         return this->my_parameters.seed;
@@ -172,6 +226,12 @@ public:
 private:
     mutable element_id next_element_id;
 
+    // DESIGN NOTE:
+    // CompositeElements are collections of elements and knowledge of them
+    // is not needed by the ray tracing computations. To facilitate simple
+    // passing of element data to the runners, CompositeElements are stored
+    // separately. Adding/removing/replacing a CompositeElement adds/removes/
+    // replaces all elements that belong to the CompositeElement collection.
     SingleElementMap my_elements;
     CompositeElementMap composite_elements;
     RaySourceContainer my_sources;
