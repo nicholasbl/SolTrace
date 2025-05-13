@@ -89,6 +89,9 @@ else(MSVC)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unknown-pragmas -Wno-sign-compare -Wno-unused-variable -Wno-uninitialized -Wno-int-to-pointer-cast ")
 	if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 		add_compile_definitions(_DEBUG)
+		if (NOT APPLE AND ENABLE_COVERAGE)
+			SET(CMAKE_CXX_FLAGS "-O0 -coverage")
+   		endif()  
 	else()
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG" )
 	endif()
@@ -146,3 +149,20 @@ if (MSVC)
 endif()
 
 add_subdirectory(strace)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug"
+       AND ENABLE_COVERAGE
+       AND NOT APPLE
+       AND NOT WIN32)
+    # find required tools
+    find_program(LCOV lcov REQUIRED)
+    find_program(GENHTML genhtml REQUIRED)
+
+	# add coverage target
+	add_custom_target(coverage
+		# gather data
+		COMMAND ${LCOV} --directory . --capture --exclude '/usr/*' --output-file coverage.info
+		# generate report
+		COMMAND ${GENHTML} --demangle-cpp -o coverage coverage.info
+		WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+endif()    

@@ -51,27 +51,13 @@
 
 #include <vector>
 #include <string>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <cmath>
 #include <algorithm>
 #include <ctime>
-//#define WITH_DEBUG_TIMER
-#ifdef WITH_DEBUG_TIMER
-    #include <chrono>    //comment out for production
-#endif
 
 #include "types.h"
 #include "procs.h"
 #include "treemesh.h"
-
-inline void time(const char *message, ofstream *fout)
-{
-#ifdef WITH_DEBUG_TIMER
-    (*fout) << message << chrono::duration_cast< chrono::milliseconds >( chrono::system_clock::now().time_since_epoch() ).count() << "\n"; 
-#endif
-}
 
 inline void CopyVec3( double dest[3], const std::vector<double> &src )
 {
@@ -94,8 +80,6 @@ inline void CopyVec3( double dest[3], double src[3] )
 	dest[2] = src[2];
 }
 
-#define ZeroVec(x) x[0]=x[1]=x[2]=0.0
-
 class GlobalRay_refactored
 {
 public:
@@ -116,11 +100,11 @@ void FindElementHit(
 	// element info
 	const int nintelements, const vector<void*>& sunint_elements, const vector<void*>& reflint_elements,
 	
-	 // ray info
+	// ray info
 	const int RayNumber, const bool in_multi_hit_loop,
 	double(&PosRayStage)[3], double(&CosRayStage)[3],
 
-
+	// outputs
 	double(&LastPosRaySurfElement)[3], double(&LastCosRaySurfElement)[3], double(&LastDFXYZ)[3],
 	st_uint_t& LastElementNumber, st_uint_t& LastRayNumber, 
 	double(&LastPosRaySurfStage)[3], double(&LastCosRaySurfStage)[3],
@@ -230,6 +214,7 @@ void ProcessInteraction(
 	const st_uint_t MultipleHitCount,
 	double(&LastDFXYZ)[3],
 	
+	// Outputs
 	double(&LastCosRaySurfElement)[3], int& ErrorFlag,
 	double(&CosRayOutElement)[3], double(&LastPosRaySurfElement)[3],
 	double(&PosRayOutElement)[3], int& myrng_counter)
@@ -283,7 +268,7 @@ void ProcessInteraction(
 	}
 }
 
-// PT Opitimation Methods and Structs
+// PT Optimization Methods and Structs
 
 struct eprojdat
 {
@@ -353,8 +338,6 @@ void SetupPTOptimizations(
 	//calculate the smallest zone size. This should be on the order of the largest element in the stage. 
 	//load stage 0 elements into the mesh
 	double d_elm_max = -9.e9;
-
-	//time("Calculating element sizes:\t", &fout);
 
 	for (st_uint_t i = 0; i < System->StageList[0]->ElementList.size(); i++)
 	{
@@ -448,8 +431,6 @@ void SetupPTOptimizations(
 
 	if (AsPowerTower)
 	{
-		//time("Sorting polar mesh entries:\t", &fout);
-
 		//Sort the polar projections by size, largest to smallest
 		std::sort(el_proj_dat.begin(), el_proj_dat.end(), eprojdat_compare_refactored);
 	}
@@ -464,7 +445,6 @@ void SetupPTOptimizations(
 	sun_ld.min_unit_dy = d_elm_max;
 
 	sun_hash.create_mesh(sun_ld);
-	//time("Adding solar mesh elements:\t", &fout);
 
 	//load stage 0 elements into the mesh
 	for (st_uint_t i = 0; i < System->StageList[0]->ElementList.size(); i++)
@@ -474,7 +454,6 @@ void SetupPTOptimizations(
 	}
 
 	//calculate and associate neighbors with each zone
-	//time("Adding solar mesh neighbors:\t", &fout);
 	sun_hash.add_neighborhood_data();
 
 	if (AsPowerTower)
@@ -489,7 +468,6 @@ void SetupPTOptimizations(
 		rec_ld.min_unit_dx = rec_ld.min_unit_dy = el_proj_dat.back().d_proj; //radians at equator
 
 		rec_hash.create_mesh(rec_ld);
-		//time("Adding polar mesh elements:\t", &fout);
 
 		//load stage 0 elements into the receiver mesh in the order of largest projection to smallest
 		for (int i = 0; i < el_proj_dat.size(); i++)
@@ -504,7 +482,7 @@ void SetupPTOptimizations(
 			angspan[1] = D->d_proj / M_PI * adjmult;    //zenithal span
 			rec_hash.add_object((void*)D->el_addr, D->az, D->zen, angspan);
 		}
-		//time("Adding polar mesh neighbors:\t", &fout);
+
 		//associate neighbors with each zone
 		rec_hash.add_neighborhood_data();
 	}
@@ -696,11 +674,6 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 			}
 			else
 			{
-				if (StageDataArrayIndex >= IncomingRays.size())
-				{
-					double asdg = 0;
-				}
-
 				// Get ray from previous stage
 				RayNumber = IncomingRays[StageDataArrayIndex].Num;
 				CopyVec3(PosRayGlob, IncomingRays[StageDataArrayIndex].Pos);
@@ -968,7 +941,6 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 			if (StageHit == true)
 			{
 				// This shouldn't happen...
-				int asdg = 0;
 			}
 
 			// Ray has left the stage
