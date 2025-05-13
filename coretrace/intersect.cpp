@@ -191,7 +191,6 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 	double SJ1 = 0.0;
 	double DFDXYZ = 0.0;
 	double FXYZ = 0.0;
-	int OKFlag = 0;
 	double ZStart = 0.0, ZA = 0.0;
 	double ZStartcs = 0.0, PLengthcs = 0.0;
 	int EFlagcs=0;
@@ -301,7 +300,8 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 			if (r > Ro) //ray falls outside circular circumference aperture
 			{
 				ZAInterceptInsideAperture = false;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 			
 			Ri = Ro*cos(30.0*(ACOSM1O180));
@@ -309,7 +309,8 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 			if (r <= Ri) //ray falls inside inscribed circle
 			{
 				ZAInterceptInsideAperture = true;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 			
 			XL = sqrt(Ro*Ro - Ri*Ri); //otherwise break hexagon into 3 sections
@@ -320,11 +321,13 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 				if (y >= Y1 && y <= Y2)
 				{
 					ZAInterceptInsideAperture = true;
-					goto Label_5;
+					//goto Label_5;
+					break;
 				}
 
 				ZAInterceptInsideAperture = false;					
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 			
 			if (x <= XL && x >= -XL) //2nd section
@@ -332,11 +335,13 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 				if (y >= -Ri && y <= Ri)
 				{
 					ZAInterceptInsideAperture = true;
-					goto Label_5;
+					//goto Label_5;
+					break;
 				}
 
 				ZAInterceptInsideAperture = false;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 			
 			if (x < -XL && x >= -Ro) //3rd section
@@ -346,11 +351,13 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 				if (y >= Y4 && y <= Y3)
 				{
 					ZAInterceptInsideAperture = true;
-					goto Label_5;
+					//goto Label_5;
+					break;
 				}
 				
 				ZAInterceptInsideAperture = false;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 		break;
 
@@ -361,7 +368,8 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 			if (r > Ro) //ray falls outside circular circumference aperture
 			{
 				ZAInterceptInsideAperture = false;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 			
 			Ri = Ro*sin(30.0*(ACOSM1O180));
@@ -369,7 +377,8 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 			if (r <= Ri)  //ray falls inside inscribed circle
 			{
 				ZAInterceptInsideAperture = true;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 			
 			if (x <= Ro && x > 0.0) //1st section
@@ -380,7 +389,8 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 					ZAInterceptInsideAperture = true;
 				else
 					ZAInterceptInsideAperture = false;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 			
 			if (x >= -Ro && x <= 0.0) //2nd section
@@ -392,7 +402,8 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 				else
 					ZAInterceptInsideAperture = false;
 					
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 		break;
 	
@@ -402,17 +413,19 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 			if (x > Element->ParameterA/2.0 && x < -Element->ParameterA/2.0)
 			{
 				ZAInterceptInsideAperture = false;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 
 			if (y > Element->ParameterB/2.0 && y < -Element->ParameterB/2.0)
 			{
 				ZAInterceptInsideAperture = false;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 			
 			ZAInterceptInsideAperture = true;
-			goto Label_5;
+			//goto Label_5;
 			
 		break;
 
@@ -422,7 +435,8 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 			if (r < Element->ParameterA || r > Element->ParameterB)
 			{
 				ZAInterceptInsideAperture = false;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 			
 			if (x >= 0.0)
@@ -432,7 +446,8 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 					ZAInterceptInsideAperture = false;
 				else
 					ZAInterceptInsideAperture = true;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 			
 			if (x < 0.0)
@@ -440,16 +455,19 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 				if ( (y >= 0) && ((acos(y/r)+M_PI/2.0) > Element->ParameterC*(ACOSM1O180)/2.0) )
 				{
 					ZAInterceptInsideAperture = false;
-					goto Label_5;
+					//goto Label_5;
+					break;
 				}
 				else if ((y < 0) && ((-acos(-y/r)-M_PI/2.0) < -Element->ParameterC*(ACOSM1O180)/2.0) )
 				{
 					ZAInterceptInsideAperture = false;
-					goto Label_5;
+					//goto Label_5;
+					break;
 				}
 			
 				ZAInterceptInsideAperture = true;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 			
 		break;
@@ -457,23 +475,27 @@ at intersection point of ray and surface. Path length is also computed.  From Sp
 	case 'l':
 	case 'L': //off axis aperture section of line focus trough  or cylinder
 		
-			if (Element->ParameterA == 0.0 && Element->ParameterB == 0.0) goto Label_4; //for cylinder, only need to check for limits on y
-			
-			if (x < Element->ParameterA || x > Element->ParameterB)
+			if (Element->ParameterA == 0.0 && Element->ParameterB == 0.0)
+			{
+				//goto Label_4; //for cylinder, only need to check for limits on y
+			}
+			else if (x < Element->ParameterA || x > Element->ParameterB)
 			{
 				ZAInterceptInsideAperture = false;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 			
-Label_4:
+			//Label_4:
 			if (y < -Element->ParameterC/2.0 || y > Element->ParameterC/2.0)
 			{
 				ZAInterceptInsideAperture = false;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
 			
 			ZAInterceptInsideAperture = true;
-			goto Label_5;
+			//goto Label_5;
 			
 		break;
 		
@@ -489,37 +511,12 @@ Label_4:
 			if (!intri( P1x, P1y, P2x, P2y, P3x, P3y, x, y ))
 			{
 				ZAInterceptInsideAperture = false;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
-			
-			/*
-			//Side 1
-			Tn = (P2y-P1y)*(P1x-x)-(P2x-P1x)*(P1y-y);
-			if (Tn < 0.0)
-			{
-				ZAInterceptInsideAperture = false;
-				goto Label_5;
-			}
-			
-			//side 2
-			Tn = (P3y-P2y)*(P2x-x)-(P3x-P2x)*(P2y-y);
-			if (Tn < 0.0)
-			{
-				ZAInterceptInsideAperture = false;
-				goto Label_5;
-			}
-			
-			//side 3
-			Tn = (P1y-P3y)*(P3x-x)-(P1x-P3x)*(P3y-y);
-			if (Tn < 0.0)
-			{
-				ZAInterceptInsideAperture = false;
-				goto Label_5;
-			}
-			*/
 			
 			ZAInterceptInsideAperture = true;
-			goto Label_5;
+			//goto Label_5;
 		break;
 			
 	case 'q':
@@ -539,51 +536,19 @@ Label_4:
 			if (!in_quad)
 			{
 				ZAInterceptInsideAperture = false;
-				goto Label_5;
+				//goto Label_5;
+				break;
 			}
-			
-			/*
-			//Side 1
-			Tn = (P2y-P1y)*(P1x-x)-(P2x-P1x)*(P1y-y);
-			if (Tn < 0.0)
-			{
-				ZAInterceptInsideAperture = false;
-				goto Label_5;
-			}
-			
-			//side 2
-			Tn = (P3y-P2y)*(P2x-x)-(P3x-P2x)*(P2y-y);
-			if (Tn < 0.0)
-			{
-				ZAInterceptInsideAperture = false;
-				goto Label_5;
-			}
-			
-			//side 3
-			Tn = (P4y-P3y)*(P3x-x)-(P4x-P3x)*(P3y-y);
-			if (Tn < 0.0)
-			{
-				ZAInterceptInsideAperture = false;
-				goto Label_5;
-			}
-			
-			//side 4
-			Tn =  (P1y-P4y)*(P4x-x)-(P1x-P4x)*(P4y-y);
-			if (Tn < 0.0)
-			{
-				ZAInterceptInsideAperture = false;
-				goto Label_5;
-			} */
 			
 			ZAInterceptInsideAperture = true;
-			goto Label_5;
+			//goto Label_5;
 		break;
 	default:
 		break;
 	} // end switch
 
 
-Label_5:
+//Label_5:
 //	if (in_quad && !ZAInterceptInsideAperture)
 //		printf("ERROR\n");
 
@@ -598,37 +563,37 @@ Label_5:
 		if (PosXYZ[2] <= 0.0 && CosKLM[2] > 0.0)     //if ray position below z=0 and pointing up then
 		{             										//ZStart should be z=0 plane.
 			ZStart = 0.0;
-			goto Label_10;
+			//goto Label_10;
 		}
 		
-		if (PosXYZ[2] <= FXY && CosKLM[2] > 0.0)     //if ray position is below surface equation and pointing up
+		else if (PosXYZ[2] <= FXY && CosKLM[2] > 0.0)     //if ray position is below surface equation and pointing up
 		{                                                //then ZStart should be z=0 plane.
 			ZStart = 0.0;
-			goto Label_10;
-		};
+			//goto Label_10;
+		}
 		
-		if ( PosXYZ[2] <= FXY 
+		else if ( PosXYZ[2] <= FXY 
 				&& CosKLM[2] < 0.0 
 				&& PosXYZ[2] > Element->ZAperture 
 				&& ZAInterceptInsideAperture )
 		{                                                 //if ray position is below surface equation, above the aperture
 			ZStart = 0.0;                                      //plane and pointing down
-			goto Label_10;                                            //and the interception point with aperture plane is inside of
+			//goto Label_10;                                            //and the interception point with aperture plane is inside of
 		}                                                  //aperture, then ZStart should be z=0 plane.
 		
-		if (PosXYZ[2] <= FXY && CosKLM[2] < 0.0)      //if ray position is below surface equation, pointing down
+		else if (PosXYZ[2] <= FXY && CosKLM[2] < 0.0)      //if ray position is below surface equation, pointing down
 		{                                                 //and hits surface below aperture plane then ZStart should be
 			ZStart = Element->ZAperture;                        //aperture plane.
-			goto Label_10;
+			//goto Label_10;
 		}
 		
-		if (PosXYZ[2]  > FXY && CosKLM[2] < 0.0)      //if ray position is above surface and pointing in negative z
+		else if (PosXYZ[2]  > FXY && CosKLM[2] < 0.0)      //if ray position is above surface and pointing in negative z
 		{                                                 //direction then ZStart should be z=0 plane
 			ZStart = 0.0;
-			goto Label_10;
+			//goto Label_10;
 		}
 		
-		if (PosXYZ[2] > FXY && CosKLM[2] > 0.0)
+		else if (PosXYZ[2] > FXY && CosKLM[2] > 0.0)
 			 ZStart = Element->ZAperture;  //if ray position is above the surface and
 	}                                                           //pointing up then ZStart should be
 
@@ -675,14 +640,14 @@ Label_5:
 				if (EFlagcs == 0)
 				{
 					ZStart = ZStartcs;
-					goto Label_10;
+					//goto Label_10;
 				}
 				//ray misses virtual cylinder so move on.
-				goto Label_10;
+				//goto Label_10;
 			}
 			
 			//{check R or X position depending if rotationally symmetric curvature or single axis curvature}
-			if (   (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && (R1A <= OuterRadius))
+			else if ((((ApertureShapeIndex == 'a') || (ApertureShapeIndex == 'A')) && (R1A <= OuterRadius))
 			    || (((ApertureShapeIndex=='l') || (ApertureShapeIndex=='L')) && (X1A <= OuterRadius)) )
 			{
 				if (   (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && (R10 >= OuterRadius))
@@ -694,20 +659,20 @@ Label_5:
 					if (EFlagcs == 0)
 					{
 						ZStart = ZStartcs;
-						goto Label_10;
+						//goto Label_10;
 					}				
 						
 					//ray misses virtual cylinder so move on.
-					goto Label_10;
+					//goto Label_10;
 				}
 				
 				ZStart = 0.0;
-				goto Label_10;
+				//goto Label_10;
 			}
 		}
 		
 		//ray at or below Z0 plane and heading toward ZA
-		if (PosXYZ[2] <= 0.0 && CosKLM[2] > 0.0)
+		else if (PosXYZ[2] <= 0.0 && CosKLM[2] > 0.0)
 		{
 			//move starting point for ray to z=0 plane, so intersects at correct point on cylinder below     03/20/04
 			PosAtZ0[0] = X10;
@@ -723,39 +688,39 @@ Label_5:
 				if (EFlagcs == 0)
 				{
 					ZStart = ZStartcs;
-					goto Label_10;
+					//goto Label_10;
 				}
 				//ray misses virtual cylinder so move on.
-				goto Label_10;
+				//goto Label_10;
 			}
 		  
-		  //{check R or X position depending if rotationally symmetric curvature or single axis curvature}
-		  if ( (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && ((R10 < OuterRadius) && (R10 > InnerRadius))) 
-			 || (((ApertureShapeIndex=='l') || (ApertureShapeIndex=='L')) && ((X10 < OuterRadius) && (X10 > InnerRadius))) )
-		  {
+			//{check R or X position depending if rotationally symmetric curvature or single axis curvature}
+			else if ( (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && ((R10 < OuterRadius) && (R10 > InnerRadius))) 
+				|| (((ApertureShapeIndex=='l') || (ApertureShapeIndex=='L')) && ((X10 < OuterRadius) && (X10 > InnerRadius))) )
+			{
 				ZStart = 0.0;
-				goto Label_10;
-		  }
+				//goto Label_10;
+			}
 		  
-		  //{check R or X position depending if rotationally symmetric curvature or single axis curvature}
-		  if ( (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && (R10 <= InnerRadius)) 
-		    || (((ApertureShapeIndex=='l') || (ApertureShapeIndex=='L')) && (X10 <= InnerRadius)) )
-		  {
+			//{check R or X position depending if rotationally symmetric curvature or single axis curvature}
+			else if ( (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && (R10 <= InnerRadius)) 
+				|| (((ApertureShapeIndex=='l') || (ApertureShapeIndex=='L')) && (X10 <= InnerRadius)) )
+			{
 				//find intersection with cylinder at inside edge of dataset.  The z value becomes the new ZStart.
 				//NewZStartforCubicSplineSurf(InnerRadius/0.999999, PosLoc, CosLoc, ZStartcs, PLengthcs, EFlagcs); //see PosAtZ0 comment above
 				NewZStartforCubicSplineSurf(InnerRadius/0.999999, PosAtZ0, CosLoc, ApertureShapeIndex, &ZStartcs, &PLengthcs, &EFlagcs);
 				if (EFlagcs == 0)
 				{
 					ZStart = ZStartcs;
-					goto Label_10;
+					//goto Label_10;
 				}
 				//ray misses virtual cylinder so move on.
-				goto Label_10;
+				//goto Label_10;
 			}
 		}
 
 		//ray in between ZA and Z0 planes and headed towared Z0
-		if (PosXYZ[2] < ZA && PosXYZ[2] > 0.0 && CosKLM[2] < 0.0)
+		else if (PosXYZ[2] < ZA && PosXYZ[2] > 0.0 && CosKLM[2] < 0.0)
 		{
 			R1 = sqrt(PosXYZ[0]*PosXYZ[0]+PosXYZ[1]*PosXYZ[1]);  //ray radial position
 			//{check R or X position depending if rotationally symmetric curvature or single axis curvature}
@@ -767,15 +732,15 @@ Label_5:
 				if (EFlagcs == 0)
 				{
 				  ZStart = ZStartcs;
-				  goto Label_10;
+				  //goto Label_10;
 				}
 				//ray misses virtual cylinder so move on.
-				goto Label_10;
+				//goto Label_10;
 			}
 			
 			//{check R or X position depending if rotationally symmetric curvature or single axis curvature}
-			if ( (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && ((R1 < OuterRadius) && (R1 > InnerRadius)))
-			 ||  (((ApertureShapeIndex=='l') || (ApertureShapeIndex=='L')) && ((PosXYZ[0] < OuterRadius) &&(PosXYZ[0] > InnerRadius))) )  //ray radial position within dataset boundaries
+			else if ( (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && ((R1 < OuterRadius) && (R1 > InnerRadius)))
+				||  (((ApertureShapeIndex=='l') || (ApertureShapeIndex=='L')) && ((PosXYZ[0] < OuterRadius) &&(PosXYZ[0] > InnerRadius))) )  //ray radial position within dataset boundaries
 			{                                 //find z value at x,y. this determines if point is above or below curve
 				if (ApertureShapeIndex=='a' || ApertureShapeIndex=='A')
 					 PosInputToCS = R1;
@@ -803,27 +768,34 @@ Label_5:
 						if (EFlagcs == 0)
 						{
 							ZStart = ZStartcs;
-							goto Label_10;
+							//goto Label_10;
 						}
 						//ray misses virtual cylinder so move on.
-						goto Label_10;
+						//goto Label_10;
 					}
-					 
-					ZStart = 0.0;
-					goto Label_10;
+					else 
+					{
+						ZStart = 0.0;
+						//goto Label_10;
+					}
+					
 				}
 				
-				if (Z1 >= PosXYZ[2]) //ray is below curve
+				else if (Z1 >= PosXYZ[2]) //ray is below curve
 				{
 					 ZStart = PosXYZ[2];
 					 //ray misses virtual cylinder so move on.
-					 goto Label_10;
+					 //goto Label_10;
 				}
-				goto Label_10;
+				else
+				{
+					//goto Label_10;
+				}
+				
 			}
 			
 			//{check R or X position depending if rotationally symmetric curvature or single axis curvature}
-			if ( (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && (R1 <= InnerRadius))
+			else if ( (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && (R1 <= InnerRadius))
 			 ||  (((ApertureShapeIndex=='l') || (ApertureShapeIndex=='L')) && (PosXYZ[0] <= InnerRadius)) )   //ray radial position inside of dataset
 			{
 				//find intersection with cylinder at inside edge of dataset.  The z value becomes the new ZStart.
@@ -831,16 +803,16 @@ Label_5:
 				if (EFlagcs == 0)
 				{
 					ZStart = ZStartcs;
-					goto Label_10;
+					//goto Label_10;
 				}
 				
 				//ray misses virtual cylinder so move on.
-				goto Label_10;
+				//goto Label_10;
 			}
 		}
 
 		//ray in between ZA and Z0 planes and headed toward ZA
-		if (PosXYZ[2] < ZA && PosXYZ[2] > 0.0 && CosKLM[2] > 0.0)
+		else if (PosXYZ[2] < ZA && PosXYZ[2] > 0.0 && CosKLM[2] > 0.0)
 		{
 			R1 = sqrt(PosXYZ[0]*PosXYZ[0]+PosXYZ[1]*PosXYZ[1]);  //ray radial position
 			// {check R or X position depending if rotationally symmetric curvature or single axis curvature}
@@ -852,14 +824,14 @@ Label_5:
 				if (EFlagcs == 0)
 				{
 					ZStart = ZStartcs;
-					goto Label_10;
+					//goto Label_10;
 				}
 				//ray misses virtual cylinder so move on.
-				goto Label_10;
+				//goto Label_10;
 			}
 			
          //  {check R or X position depending if rotationally symmetric curvature or single axis curvature}
-			if ( (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && ((R1 < OuterRadius) && (R1 > InnerRadius))) 
+			else if ( (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && ((R1 < OuterRadius) && (R1 > InnerRadius))) 
 			  || (((ApertureShapeIndex=='l') || (ApertureShapeIndex=='L')) && ((PosXYZ[0] < OuterRadius) && (PosXYZ[0] > InnerRadius))) )     //ray radial position falls within dataset boundaries
 			{             //find z value at x,y. this determines if point is above or below curve
 			
@@ -889,26 +861,26 @@ Label_5:
 						if (EFlagcs == 0)
 						{
 							ZStart = ZStartcs;
-							goto Label_10;
+							//goto Label_10;
 						}
 						//ray misses virtual cylinder so move on.
-						goto Label_10;
+						//goto Label_10;
 					}
-					goto Label_10;
+					//goto Label_10;
 				}
 				
-				if (Z1 >= PosXYZ[2]) //ray is below curve
+				else if (Z1 >= PosXYZ[2]) //ray is below curve
 				{
 					 //{check R or X position depending if rotationally symmetric curvature or single axis curvature}
 					if ( (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && (R10 < OuterRadius)) 
 					  || (((ApertureShapeIndex=='l') || (ApertureShapeIndex=='L')) && (X10 < OuterRadius)) )
 					{
 						ZStart = 0.0;
-						goto Label_10;
+						//goto Label_10;
 					}
 					
 					// {check R or X position depending if rotationally symmetric curvature or single axis curvature}
-					if ( (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && (R10 >= OuterRadius))
+					else if ( (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && (R10 >= OuterRadius))
 					  || (((ApertureShapeIndex=='l') || (ApertureShapeIndex=='L')) && (X10 >= OuterRadius)) )
 					{
 						PosDum[0] = X10;  //back up to intersection with z=0 plane
@@ -919,32 +891,32 @@ Label_5:
 						if (EFlagcs == 0)
 						{
 							ZStart = ZStartcs;
-							goto Label_10;
+							//goto Label_10;
 						}
 						//ray misses virtual cylinder so move on.
-						goto Label_10;
+						//goto Label_10;
 					}
 				}
 			}
 			
 			// {check R or X position depending if rotationally symmetric curvature or single axis curvature}
-			if ( (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && (R1 <= InnerRadius)) 
-			  || (((ApertureShapeIndex=='l') || (ApertureShapeIndex=='L')) && (PosXYZ[0] <= InnerRadius)) )    //ray radial position inside of dataset minimum radius
+			else if ( (((ApertureShapeIndex=='a') || (ApertureShapeIndex=='A')) && (R1 <= InnerRadius)) 
+				|| (((ApertureShapeIndex=='l') || (ApertureShapeIndex=='L')) && (PosXYZ[0] <= InnerRadius)) )    //ray radial position inside of dataset minimum radius
 			{
 				//find intersection with cylinder at outside edge of dataset.  The z value becomes the new ZStart.
 				NewZStartforCubicSplineSurf(OuterRadius*0.999999, PosLoc, CosLoc, ApertureShapeIndex, &ZStartcs, &PLengthcs, &EFlagcs);
 				if (EFlagcs == 0)
 				{
 					ZStart = ZStartcs;
-					goto Label_10;
+					//goto Label_10;
 				}
 				//ray misses virtual cylinder so move on.
-				goto Label_10;
+				//goto Label_10;
 			}
 		}
 	}
 
-Label_10:
+//Label_10:
 	if (ZStart-PosXYZ[2] == 0.0)   //numerical fix? 11-16-06 Tim Wendelin
 		S0 = 0.0;
 	else
@@ -970,6 +942,8 @@ Label_10:
 
 	i = 0;
 //Begin the Newton-Raphson Iteration
+	int OKFlag = 0;
+
 	while ( i++ < NumIterations)
 	{
 		SJ = SJ1;
@@ -979,15 +953,22 @@ Label_10:
 
 		Surface(PosXYZ, Element, &FXYZ, DFXYZ, &OKFlag);
 		
-		if (OKFlag == 0) goto Label_40;
+		//if (OKFlag == 0) goto Label_40;
+		if (OKFlag != 0)
+		{
+			*ErrorFlag = 2;  //Interpolation error in Surface procedure
+			break;
+			//goto Label_100;
+		}
 		
-		*ErrorFlag = 2;  //Interpolation error in Surface procedure
-		goto Label_100;
-		
-Label_40:
+//Label_40:
 		DFDXYZ = DOT(DFXYZ, CosKLM);
-		if ( fabs(FXYZ) <= Epsilon*fabs(DFDXYZ) ) goto Label_100;
-		
+		if (fabs(FXYZ) <= Epsilon * fabs(DFDXYZ))
+		{
+			break;
+			//goto Label_100;
+		}
+
 		SJ1 = SJ - FXYZ/DFDXYZ;
 
 		// JM 10/2023: Enforce bounds to restrict next guess for cubic spline
@@ -1000,12 +981,15 @@ Label_40:
 			if (SJ1 < lower_bound || SJ1 > upper_bound)
 				SJ1 = 0.5 * (lower_bound + upper_bound);
 			if (upper_bound <= lower_bound)
+			{
+				*ErrorFlag = 1; //Failed to converge
 				break;
+			}
 		}
-
 	}
-	*ErrorFlag = 1;   //Failed to converge
+	if (i == NumIterations)
+		*ErrorFlag = 1;   //Failed to converge
 
-Label_100:
+//Label_100:
 	*PathLength = S0 + SJ;
 }

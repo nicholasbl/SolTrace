@@ -123,37 +123,50 @@ void TorusClosedForm(
 			*ErrorFlag = 1;
 			return;
 		}
-		*PathLength = rvector[4];
-		if (rvector[3] <= 0.0 )
-			goto Label_10;
-		else
+		//*PathLength = rvector[4];
+		//if (rvector[3] <= 0.0 )
+		//	goto Label_10;
+		//else
+		//	*PathLength = rvector[3];
+		//	
+		//if (rvector[2] <= 0.0 )
+		//	goto Label_10;
+		//else
+		//	*PathLength = rvector[2];
+		//	
+		//if (rvector[1] <= 0.0 )
+		//	goto Label_10;
+		//else
+		//	*PathLength = rvector[1];
+			
+		if (rvector[3] > 0)
+		{
 			*PathLength = rvector[3];
-			
-		if (rvector[2] <= 0.0 )
-			goto Label_10;
-		else
-			*PathLength = rvector[2];
-			
-		if (rvector[1] <= 0.0 )
-			goto Label_10;
-		else
-			*PathLength = rvector[1];
-			
-		goto Label_10;
+			if (rvector[2] > 0) 
+			{
+				*PathLength = rvector[2];
+				if (rvector[1] > 0)
+				{
+					*PathLength = rvector[1];
+				}
+			}
+		}
+
+		//goto Label_10;
 	}
 
 
-	if (imagroot1==0.0 && imagroot2!=0.0)
+	else if (imagroot1==0.0 && imagroot2!=0.0)
 	{
 		//two real roots rvector[1-2] which are the pathlengths
 		if (rvector[1] <= rvector[2])
 			*PathLength = rvector[1];
 		else
 			*PathLength = rvector[2];
-		goto Label_10;
+		//goto Label_10;
 	}
 
-    if (imagroot1!=0.0 && imagroot2==0.0)
+    else if (imagroot1!=0.0 && imagroot2==0.0)
     {
       //two real roots rvector[3-4] which are the pathlengths
       if (rvector[3] <= rvector[4])
@@ -161,12 +174,16 @@ void TorusClosedForm(
       else
 		*PathLength = rvector[4];
 		
-      goto Label_10;
+      //goto Label_10;
     }
-
-    *PathLength = 0.0;        
+	
+	else
+	{
+		*PathLength = 0.0;
+	}
+     
     
-Label_10:
+//Label_10:
 	if (*PathLength==0.0)   //ray missed torus completely
 	{
 		*ErrorFlag = 1;

@@ -74,9 +74,9 @@ public:
 	void UpdateFromData();
 
 	void SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed,
-		bool sunshape, bool opterr, bool aspowertower );
+		bool sunshape, bool opterr, bool aspowertower, bool use_refactor_trace );
 	void GetOptions( size_t *nrays, size_t *nmaxsunrays, int *ncpu, int *seed,
-		bool *sunshape, bool *opterr, bool *aspowertower );
+		bool *sunshape, bool *opterr, bool *aspowertower, bool *use_refactor_trace );
 
 	void SetWorkDir( const wxString &path );
 	wxString GetWorkDir();
@@ -94,6 +94,7 @@ private:
 	wxNumericCtrl *m_numRays, *m_numMaxSunRays, *m_numCpus, *m_seed;
 	wxCheckBox *m_inclSunShape, *m_inclOpticalErrors, *m_asPowerTower;
 	wxExtTextCtrl *m_workDir;
+	wxCheckBox *m_use_refactor_trace;
 
 	int m_lastSeedVal;
 	wxNumericCtrl *m_elapsedTime, *m_lastSeed;

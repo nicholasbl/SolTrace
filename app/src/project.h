@@ -209,6 +209,7 @@ public:
 	bool is_include_sunshape;
 	bool is_include_errors;
 	bool is_point_focus;
+	bool use_refactor_trace;
 };
 
 

@@ -285,6 +285,15 @@ bool Trace(TSystem *System, unsigned int seed,
            std::vector<std::vector< double > > *stage1in = 0,
            bool save_stage_data = false);
 
+bool Trace_refactored(TSystem* System, unsigned int seed,
+	st_uint_t NumberOfRays,
+	st_uint_t MaxNumberOfRays,
+	bool IncludeSunShape,
+	bool IncludeErrors,
+	bool AsPowerTower,
+	int (*callback)(st_uint_t ntracedtotal, st_uint_t ntraced, st_uint_t ntotrace, st_uint_t curstage, st_uint_t nstages, void* data),
+	void* cbdata);
+
 bool DumpSystem(const char *file, TSystem *sys);
 
 //std::vector< std::string > split( const std::string &str, const std::string &delim, bool ret_empty = false, bool ret_delim = false );
