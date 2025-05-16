@@ -47,17 +47,17 @@
 *  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************************************/
 
-
-
 #include <vector>
 #include <string>
 #include <cmath>
 #include <algorithm>
 #include <ctime>
+#include <embree4/rtcore.h>
 
 #include "types.h"
 #include "procs.h"
 #include "treemesh.h"
+#include "embree_helper.h"
 
 inline void CopyVec3( double dest[3], const std::vector<double> &src )
 {
@@ -167,7 +167,7 @@ void FindElementHit(
 			PosRaySurfElement, CosRaySurfElement, DFXYZ,
 			&PathLength, &ErrorFlag, &InterceptFlag, &HitBackSide);
 
-
+		
 
 		if (InterceptFlag)
 		{
@@ -200,6 +200,77 @@ void FindElementHit(
 			}
 		}
 	}
+}
+
+void FindElementHit_embree(
+
+	// Embree args
+	RTCScene &scene,
+
+	// Ray info
+	const int i, const int RayNumber,
+	const double(&PosRayGlob)[3], const double(&CosRayGlob)[3],
+
+	// outputs
+	double(&LastPosRaySurfElement)[3], double(&LastCosRaySurfElement)[3], double(&LastDFXYZ)[3],
+	st_uint_t& LastElementNumber, st_uint_t& LastRayNumber,
+	double(&LastPosRaySurfStage)[3], double(&LastCosRaySurfStage)[3],
+	int& ErrorFlag, int& LastHitBackSide,
+	bool& StageHit
+)
+{
+	// Initialize outputs
+	StageHit = false;
+
+	// Make payload object to store intersect outputs
+	embree_helper::RayIntersectPayload ray_payload;
+	rtcInitRayQueryContext(&ray_payload.context);
+	RTCIntersectArguments args;
+	rtcInitIntersectArguments(&args);
+	args.context = &ray_payload.context;
+
+	// Make rayhit object
+	RTCRayHit rayhit;
+	rayhit.ray.org_x = PosRayGlob[0];
+	rayhit.ray.org_y = PosRayGlob[1];
+	rayhit.ray.org_z = PosRayGlob[2];
+	rayhit.ray.dir_x = CosRayGlob[0];
+	rayhit.ray.dir_y = CosRayGlob[1];
+	rayhit.ray.dir_z = CosRayGlob[2];
+
+	// Define rayhit outputs
+	rayhit.ray.tnear = 0;
+	rayhit.ray.tfar = std::numeric_limits<float>::infinity();
+	rayhit.ray.mask = i + 1;
+	rayhit.ray.flags = 0;
+	rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+	rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
+	// Find intersection
+	rtcIntersect1(scene, &rayhit, &args);
+
+	// Check if ray hit any elements
+	if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID)
+	{
+		// Collect intersection outputs
+		StageHit = true;
+		CopyVec3(LastPosRaySurfElement, ray_payload.LastPosRaySurfElement);
+		CopyVec3(LastCosRaySurfElement, ray_payload.LastCosRaySurfElement);
+		CopyVec3(LastDFXYZ, ray_payload.LastDFXYZ);
+		LastElementNumber = ray_payload.element_number;
+		LastRayNumber = RayNumber;
+		CopyVec3(LastPosRaySurfStage, ray_payload.LastPosRaySurfStage);
+		CopyVec3(LastCosRaySurfStage, ray_payload.LastCosRaySurfStage);
+		ErrorFlag = ray_payload.ErrorFlag;
+		LastHitBackSide = ray_payload.LastHitBackSide;
+	}
+
+	// No hit
+	else
+	{
+		StageHit = false;
+	}
+
 }
 
 void ProcessInteraction(
@@ -572,6 +643,21 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 		PT_override = true;
 	}
 
+	// Initialize Embree vars
+	bool use_embree = true;
+	RTCDevice embree_device = nullptr;
+	RTCScene embree_scene = nullptr;
+	if (use_embree)
+	{
+		// Make device
+		embree_device = rtcNewDevice(NULL);
+		rtcSetDeviceErrorFunction(embree_device, embree_helper::error_function, NULL);
+
+		// Convert st stages into scene
+		embree_scene = embree_helper::make_scene(embree_device, *System);
+		rtcCommitScene(embree_scene);
+	}
+
 	// Initialize variables
 	MTRand myrng(seed);
 	int myrng_counter = 0;
@@ -743,16 +829,102 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 					nintelements = Stage->ElementList.size();
 				}
 
-				// Find the element the ray hits
-				FindElementHit(i, Stage, PT_override, AsPowerTower,
-					nintelements, sunint_elements, reflint_elements,
-					RayNumber, in_multi_hit_loop,
-					PosRayStage, CosRayStage,
+				bool is_debug_test = true;
+				if (is_debug_test && use_embree)
+				{
+					double eb_posraysurfelement[3], eb_cosraysurfelement[3],
+						eb_dfxyz[3], eb_posraysurfstage[3], eb_cosraysurfstage[3];
+					st_uint_t eb_elementnumber, eb_raynumber;
+					int eb_errorflag, eb_lasthitbackside;				
+					bool eb_stagehit;
 
-					LastPosRaySurfElement, LastCosRaySurfElement, LastDFXYZ,
-					LastElementNumber, LastRayNumber,
-					LastPosRaySurfStage, LastCosRaySurfStage,
-					ErrorFlag, LastHitBackSide, StageHit);
+					double st_posraysurfelement[3], st_cosraysurfelement[3],
+						st_dfxyz[3], st_posraysurfstage[3], st_cosraysurfstage[3];
+					st_uint_t st_elementnumber, st_raynumber;
+					int st_errorflag, st_lasthitbackside;
+					bool st_stagehit;
+
+
+					FindElementHit_embree(embree_scene, i, RayNumber,
+						PosRayGlob, CosRayGlob,
+
+						eb_posraysurfelement, eb_cosraysurfelement,
+						eb_dfxyz, eb_elementnumber, eb_raynumber,
+						eb_posraysurfstage, eb_cosraysurfstage,
+						eb_errorflag, eb_lasthitbackside, eb_stagehit);
+
+					FindElementHit(i, Stage, PT_override, AsPowerTower,
+						nintelements, sunint_elements, reflint_elements,
+						RayNumber, in_multi_hit_loop,
+						PosRayStage, CosRayStage,
+
+						st_posraysurfelement, st_cosraysurfelement,
+						st_dfxyz, st_elementnumber, st_raynumber,
+						st_posraysurfstage, st_cosraysurfstage,
+						st_errorflag, st_lasthitbackside, st_stagehit);
+
+
+					bool valid = embree_helper::validate_intersect(eb_posraysurfelement, eb_cosraysurfelement,
+						eb_dfxyz, eb_elementnumber, eb_raynumber,
+						eb_posraysurfstage, eb_cosraysurfstage,
+						eb_errorflag, eb_lasthitbackside, eb_stagehit,
+
+						st_posraysurfelement, st_cosraysurfelement,
+						st_dfxyz, st_elementnumber, st_raynumber,
+						st_posraysurfstage, st_cosraysurfstage,
+						st_errorflag, st_lasthitbackside, st_stagehit);
+
+					if (valid == false)
+					{
+						valid = embree_helper::validate_intersect(eb_posraysurfelement, eb_cosraysurfelement,
+							eb_dfxyz, eb_elementnumber, eb_raynumber,
+							eb_posraysurfstage, eb_cosraysurfstage,
+							eb_errorflag, eb_lasthitbackside, eb_stagehit,
+
+							st_posraysurfelement, st_cosraysurfelement,
+							st_dfxyz, st_elementnumber, st_raynumber,
+							st_posraysurfstage, st_cosraysurfstage,
+							st_errorflag, st_lasthitbackside, st_stagehit);
+
+						// Add ray to Stage RayData
+						FindElementHit_embree(embree_scene, i, RayNumber,
+							PosRayGlob, CosRayGlob,
+							LastPosRaySurfElement, LastCosRaySurfElement,
+							LastDFXYZ, LastElementNumber, LastRayNumber,
+							LastPosRaySurfStage, LastCosRaySurfStage,
+							ErrorFlag, LastHitBackSide, StageHit);
+						TRayData::ray_t* p_ray = Stage->RayData.Append(LastPosRaySurfStage,
+							LastCosRaySurfStage,
+							LastElementNumber,
+							i + 1,
+							LastRayNumber);
+						return false;
+					}
+
+				}
+
+				// Find the element the ray hits
+				if (use_embree)
+				{
+					FindElementHit_embree(embree_scene, i, RayNumber,
+						PosRayGlob, CosRayGlob,
+						LastPosRaySurfElement, LastCosRaySurfElement,
+						LastDFXYZ, LastElementNumber, LastRayNumber,
+						LastPosRaySurfStage, LastCosRaySurfStage,
+						ErrorFlag, LastHitBackSide, StageHit);
+				}
+				else
+				{
+					FindElementHit(i, Stage, PT_override, AsPowerTower,
+						nintelements, sunint_elements, reflint_elements,
+						RayNumber, in_multi_hit_loop,
+						PosRayStage, CosRayStage,
+
+						LastPosRaySurfElement, LastCosRaySurfElement, LastDFXYZ,
+						LastElementNumber, LastRayNumber,
+						LastPosRaySurfStage, LastCosRaySurfStage,
+						ErrorFlag, LastHitBackSide, StageHit);
+				}
 
 				// Breakout if ray left stage
 				if (!StageHit)
@@ -1081,6 +1253,15 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 			return false;
 		}
 
+	}
+
+	// Clean embree
+	if (use_embree)
+	{
+		rtcReleaseScene(embree_scene);
+		embree_scene = nullptr;
+		rtcReleaseDevice(embree_device);
+		embree_device = nullptr;
 	}
 
 	return true;

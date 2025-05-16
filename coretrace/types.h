@@ -81,6 +81,8 @@ public:
 	MatDoub nodes;
 };
 
+// Forward declaration for TStage
+struct TStage;
 
 class TOpticalProperties
 {
@@ -197,6 +199,8 @@ struct TElement
 
 	std::string Comment;	
     int element_number;     //mjw element number in the stage - unique ID in order of addition to element list
+
+	TStage* parent_stage = nullptr;	// tmb Pointer to stage element is within (needed for embree)
 };
 
 struct TSun

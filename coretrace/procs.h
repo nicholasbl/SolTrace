@@ -196,6 +196,32 @@ void SurfaceZatXYPair(
 
 
 void MatrixVectorMult(double M[3][3], double V[3], double MxV[3]);
+
+template<typename T>
+void MatrixVectorMult_generic(double M[3][3], const T V[3], T MxV[3])
+{
+    /*{Purpose: To perform multiplication of a matrix (3,3) and a vector (3) to result
+              in new vector (3)
+
+              Input -
+                    Matrix = Matrix
+                    Vector = Vector
+              Output -
+                     MxV = Matrix*Vector = new vector}*/
+
+    MxV[0] = M[0][0] * V[0] + M[0][1] * V[1] + M[0][2] * V[2];
+    MxV[1] = M[1][0] * V[0] + M[1][1] * V[1] + M[1][2] * V[2];
+    MxV[2] = M[2][0] * V[0] + M[2][1] * V[1] + M[2][2] * V[2];
+    /*
+        int i, j;
+        for (i=0;i<3;i++)
+        {
+            MxV[i] = 0.0;
+            for (j=0;j<3;j++)
+                MxV[i] = Matrix[i][j]*Vector[j] + MxV[i];
+        }*/
+}
+
 void MatrixTranspose(double InputMatrix[3][3], int NumRowsCols, double OutputMatrix[3][3]);
 
 double DOT(double A[3], double B[3]);
@@ -293,18 +319,6 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 	bool AsPowerTower,
 	int (*callback)(st_uint_t ntracedtotal, st_uint_t ntraced, st_uint_t ntotrace, st_uint_t curstage, st_uint_t nstages, void* data),
 	void* cbdata);
-
-bool Trace_embree(TSystem* System, unsigned int seed,
-    st_uint_t NumberOfRays,
-    st_uint_t MaxNumberOfRays,
-    bool IncludeSunShape,
-    bool IncludeErrors,
-    bool AsPowerTower,
-    int (*callback)(st_uint_t ntracedtotal, st_uint_t ntraced, st_uint_t ntotrace, st_uint_t curstage, st_uint_t nstages, void* data),
-    void* cbdata,
-    std::vector<std::vector< double > >* stage0data = 0,
-    std::vector<std::vector< double > >* stage1in = 0,
-    bool save_stage_data = false);
 
 bool DumpSystem(const char *file, TSystem *sys);
 

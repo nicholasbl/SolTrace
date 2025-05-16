@@ -26,6 +26,7 @@ set(CORETRACE_SRC
 	apertureplane.cpp
 	determineelementintersectionnew.cpp
 	dumpsys.cpp
+	embree_helper.cpp
 	errors.cpp
 	generateray.cpp
 	input.cpp
@@ -35,7 +36,6 @@ set(CORETRACE_SRC
 	newzstartforcubicsplinesurf.cpp
 	quadricsurfaceclosedform.cpp
 	raytrace.cpp
-	raytrace_embree.cpp
 	raytrace_refactored.cpp
 	root432.cpp
 	spencerandmurtysurfaceclosedform.cpp
@@ -51,6 +51,7 @@ set(CORETRACE_SRC
 
 # Add header files for IDE visibility
 set(CORETRACE_HEADERS
+	embree_helper.h
 	hpvm.h
 	interpolate.h
 	mtrand.h
