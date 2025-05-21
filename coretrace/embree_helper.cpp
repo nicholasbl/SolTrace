@@ -153,10 +153,8 @@ namespace embree_helper
 			
 			min_coord_element[1] = st_element->ParameterC * -0.5;
 			max_coord_element[1] = st_element->ParameterC * 0.5;
-			
-			//min_coord_element[2] = st_element->Origin[2] - 2.f * R;
-			//max_coord_element[2] = st_element->Origin[2] + 2.f * R;
-			min_coord_element[2] = -2.f * R;
+
+			min_coord_element[2] = 0;
 			max_coord_element[2] = 2.f * R;
 		}
 
