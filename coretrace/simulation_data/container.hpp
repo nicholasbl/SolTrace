@@ -26,7 +26,7 @@ public:
     }
 
     Container() : next_id(0) {}
-    ~Container() {}
+    ~Container() { this->clear(); }
 
     K add_item(value_pointer item)
     {
@@ -52,7 +52,7 @@ public:
     {
         return this->container.erase(id);
     }
-    value_pointer get_item(K id)
+    value_pointer get_item(K id) const
     {
         // return this->container[id];
         auto item = this->container.find(id);
@@ -89,8 +89,14 @@ public:
     //     return 0;
     // }
 
+    void clear()
+    {
+        this->container.clear();
+        return;
+    }
+
     iterator get_iterator() { return container.begin(); }
-    const_iterator get_const_iterator() { return container.cbegin(); }
+    const_iterator get_const_iterator() const { return container.cbegin(); }
     bool is_at_end(iterator iter) const { return iter == container.end(); }
     bool is_at_end(const_iterator citer) const { return citer == container.cend(); }
 

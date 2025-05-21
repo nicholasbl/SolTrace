@@ -46,8 +46,8 @@
  *  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************************************/
 
-#ifndef __procs_h
-#define __procs_h
+#ifndef SOLTRACE_MATVEC_H
+#define SOLTRACE_MATVEC_H
 
 #include <string>
 #include <vector>
@@ -196,6 +196,9 @@ void MatrixVectorMult(const double M[3][3],
 void MatrixTranspose(const double InputMatrix[3][3],
                      int NumRowsCols,
                      double OutputMatrix[3][3]);
+void MatrixMatrixMult(const double M1[3][3],
+                      const double M2[3][3],
+                      double OutputMatrix[3][3]);
 
 double DOT(const double A[3], const double B[3]);
 
@@ -217,8 +220,31 @@ void CalculateTransformMatrices(const double Euler[3],
                                 double RRefToLoc[3][3],
                                 double RLocToRef[3][3]);
 
-inline void CopyVec3(double dest[3], const std::vector<double> &src);
-inline void CopyVec3(std::vector<double> &dest, double src[3]);
-inline void CopyVec3(double dest[3], double src[3]);
+// inline void CopyVec3(double dest[3], const std::vector<double> &src);
+// inline void CopyVec3(std::vector<double> &dest, const double src[3]);
+// inline void CopyVec3(double dest[3], const double src[3]);
+
+inline void CopyVec3(double dest[3], const std::vector<double> &src)
+{
+    dest[0] = src[0];
+    dest[1] = src[1];
+    dest[2] = src[2];
+}
+
+inline void CopyVec3(std::vector<double> &dest, const double src[3])
+{
+    dest[0] = src[0];
+    dest[1] = src[1];
+    dest[2] = src[2];
+}
+
+inline void CopyVec3(double dest[3], const double src[3])
+{
+    dest[0] = src[0];
+    dest[1] = src[1];
+    dest[2] = src[2];
+}
+
+void CopyMat3(double dest[3][3], const double src[3][3]);
 
 #endif

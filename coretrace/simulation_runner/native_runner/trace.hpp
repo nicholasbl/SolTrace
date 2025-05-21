@@ -127,13 +127,13 @@ void DetermineElementIntersectionNew(TElement *Element,
                                      int *Intercept,
                                      int *BacksideFlag);
 
-void NewZStartforCubicSplineSurf(double CRadius,
-                                 double PosLoc[3],
-                                 double CosLoc[3],
-                                 char AperShapeIndex,
-                                 double *NewZStart,
-                                 double *PLength,
-                                 int *EFlag);
+// void NewZStartforCubicSplineSurf(double CRadius,
+//                                  double PosLoc[3],
+//                                  double CosLoc[3],
+//                                  char AperShapeIndex,
+//                                  double *NewZStart,
+//                                  double *PLength,
+//                                  int *EFlag);
 
 void SurfaceZatXYPair(double PosXYZ[3],
                       TElement *Element,
@@ -155,19 +155,19 @@ void SurfaceZatXYPair(double PosXYZ[3],
 
 // void CalculateTransformMatrices(double Euler[3], double RRefToLoc[3][3], double RLocToRef[3][3]);
 
-// the 0.0's are values for DeltaX and DeltaY; **[need to look at this further]**
-void EvalPoly(double ax,
-              double ay,
-              std::vector<double> &Coeffs,
-              int POrder,
-              double *az);
+// // the 0.0's are values for DeltaX and DeltaY; **[need to look at this further]**
+// void EvalPoly(double ax,
+//               double ay,
+//               std::vector<double> &Coeffs,
+//               int POrder,
+//               double *az);
 
-void PolySlope(std::vector<double> &Coeffs,
-               int POrder,
-               double ax,
-               double ay,
-               double *dzdx,
-               double *dzdy);
+// void PolySlope(std::vector<double> &Coeffs,
+//                int POrder,
+//                double ax,
+//                double ay,
+//                double *dzdx,
+//                double *dzdy);
 
 bool splint(std::vector<double> &xa,
             std::vector<double> &ya,
@@ -177,11 +177,11 @@ bool splint(std::vector<double> &xa,
             double *y,
             double *dydx);
 
-void spline(std::vector<double> &x,
-            std::vector<double> &y,
-            int n,
-            double yp1, double ypn,
-            std::vector<double> &y2);
+// void spline(std::vector<double> &x,
+//             std::vector<double> &y,
+//             int n,
+//             double yp1, double ypn,
+//             std::vector<double> &y2);
 
 void piksrt(int n, double arr[5]);
 
@@ -227,7 +227,11 @@ void piksrt(int n, double arr[5]);
 //                 double *dzrdx,
 //                 double *dzrdy);
 
-void Root_432(int order, double Coeffs[5][5], double RealRoots[5], double *ImRoot1, double *ImRoot2);
+void Root_432(int order,
+              double Coeffs[5][5],
+              double RealRoots[5],
+              double *ImRoot1,
+              double *ImRoot2);
 
 bool InitGeometries(TSystem *sys);
 // bool TranslateSurfaceParams( TElement *elm, double params[8]);
@@ -236,20 +240,20 @@ bool InitGeometries(TSystem *sys);
 bool TranslateSurfaceParams(TSystem *sys, TElement *elm, double params[8]);
 bool ReadSurfaceFile(const char *file, TElement *elm, TSystem *sys);
 
-inline void CopyVec3(double dest[3], const std::vector<double> &src);
-inline void CopyVec3(std::vector<double> &dest, double src[3]);
-inline void CopyVec3(double dest[3], double src[3]);
+// inline void CopyVec3(double dest[3], const std::vector<double> &src);
+// inline void CopyVec3(std::vector<double> &dest, double src[3]);
+// inline void CopyVec3(double dest[3], double src[3]);
 
-// int intri(double x1, double y1,
-//           double x2, double y2,
-//           double x3, double y3,
-//           double xt, double yt);
+int intri(double x1, double y1,
+          double x2, double y2,
+          double x3, double y3,
+          double xt, double yt);
 
-// int inquad(double x1, double y1,
-//            double x2, double y2,
-//            double x3, double y3,
-//            double x4, double y4,
-//            double xt, double yt);
+int inquad(double x1, double y1,
+           double x2, double y2,
+           double x3, double y3,
+           double x4, double y4,
+           double xt, double yt);
 
 bool trace_native(TSystem *System,
                   unsigned int seed,

@@ -8,8 +8,9 @@
 ElementBase::ElementBase() : Element(),
                              active(true),
                              my_id(ELEMENT_ID_UNASSIGNED),
-                             zrot(0.0)
-                            //  parent(nullptr)
+                             stage(-1),
+                             zrot(0.0),
+                             reference_element(nullptr)
 {
     this->aim.zero();
     this->origin.zero();
@@ -21,21 +22,9 @@ ElementBase::ElementBase() : Element(),
     return;
 }
 
-// ElementBase::ElementBase(const Vector3d &origin,
-//                          const Vector3d &aim)
-//     : active(true), origin(origin), aim(aim), optics_back(), optics_front()
-// {
-//     this->euler_angles.zero();
-
-//     this->reference_to_local.zero();
-//     this->local_to_reference.zero();
-
-//     return;
-// }
-
 ElementBase::~ElementBase()
 {
-    // this->parent = nullptr;
+    this->reference_element = nullptr;
     return;
 }
 
@@ -48,6 +37,161 @@ ElementBase::~ElementBase()
 // {
 //     return empty_container.get_const_iterator();
 // }
+
+Vector3d ElementBase::get_origin_stage() const
+{
+    // TODO: Implement this
+    Vector3d origin_stage;
+    auto ref_el = this->reference_element;
+    if (this->is_stage())
+    {
+        // This is the stage element so the stage origin is zero.
+        origin_stage.zero();
+    }
+    else if (ref_el == nullptr)
+    {
+        // We hit the end of the chain without finding a stage element.
+        // Assume we are not using stages and return the global origin.
+        origin_stage = this->origin;
+    }
+    else
+    {
+        vector_add(1.0, ref_el->get_origin_stage(),
+                   1.0, this->origin,
+                   origin_stage);
+    }
+    return origin_stage;
+}
+
+Vector3d ElementBase::get_origin_global() const
+{
+    Vector3d origin_global;
+    auto ref_el = this->reference_element;
+    if (ref_el == nullptr)
+    {
+        origin_global = this->origin;
+    }
+    else
+    {
+        vector_add(1.0, ref_el->get_origin_global(),
+                   1.0, this->origin,
+                   origin_global);
+    }
+    return origin_global;
+}
+
+Vector3d ElementBase::get_aim_vector_stage() const
+{
+    Vector3d aim_stage;
+    if (this->reference_element == nullptr)
+    {
+        aim_stage = this->aim;
+    }
+    else
+    {
+        this->reference_element->convert_local_to_stage(
+            aim_stage, this->aim);
+    }
+    return aim_stage;
+}
+
+Vector3d ElementBase::get_aim_vector_global() const
+{
+    Vector3d aim_global;
+    if (this->reference_element == nullptr)
+    {
+        aim_global = this->aim;
+    }
+    else
+    {
+        this->reference_element->convert_local_to_global(
+            aim_global, this->aim);
+    }
+    return aim_global;
+}
+
+Matrix3d ElementBase::get_reference_to_local() const
+{
+    return this->reference_to_local;
+}
+
+Matrix3d ElementBase::get_stage_to_local() const
+{
+    Matrix3d stage_to_local;
+    if (this->is_stage())
+    {
+        stage_to_local.set_value(0, 0, 1.0);
+        stage_to_local.set_value(1, 1, 1.0);
+        stage_to_local.set_value(2, 2, 1.0);
+    }
+    else if (this->reference_element == nullptr)
+    {
+        stage_to_local = this->reference_to_local;
+    }
+    else
+    {
+        Matrix3d R = this->reference_element->get_stage_to_local();
+        matrix_matrix_product(this->reference_to_local, R, stage_to_local);
+    }
+    return stage_to_local;
+}
+
+Matrix3d ElementBase::get_global_to_local() const
+{
+    Matrix3d global_to_local;
+    if (this->reference_element == nullptr)
+    {
+        global_to_local = this->reference_to_local;
+    }
+    else
+    {
+        Matrix3d R = this->reference_element->get_global_to_local();
+        matrix_matrix_product(this->reference_to_local, R, global_to_local);
+    }
+    return global_to_local;
+}
+
+Matrix3d ElementBase::get_local_to_reference() const
+{
+    return this->local_to_reference;
+}
+
+Matrix3d ElementBase::get_local_to_stage() const
+{
+    // TODO: Implement this
+    Matrix3d local_to_stage;
+    if (this->is_stage())
+    {
+        local_to_stage.set_value(0, 0, 1.0);
+        local_to_stage.set_value(1, 1, 1.0);
+        local_to_stage.set_value(2, 2, 1.0);
+    }
+    else if (this->reference_element == nullptr)
+    {
+        local_to_stage = this->local_to_reference;
+    }
+    else
+    {
+        Matrix3d R = this->reference_element->get_local_to_stage();
+        matrix_matrix_product(R, this->local_to_reference, local_to_stage);
+    }
+    return local_to_stage;
+}
+
+Matrix3d ElementBase::get_local_to_global() const
+{
+    Matrix3d local_to_global;
+    if (this->reference_element == nullptr)
+    {
+        local_to_global = this->local_to_reference;
+    }
+    else
+    {
+        Matrix3d R = this->reference_element->get_local_to_global();
+        matrix_matrix_product(R, this->local_to_reference, local_to_global);
+    }
+    return local_to_global;
+}
 
 int ElementBase::compute_coordinate_rotations()
 {
@@ -69,73 +213,113 @@ int ElementBase::compute_coordinate_rotations()
     return sts;
 }
 
-int ElementBase::convert_reference_to_local(Vector3d &local, const Vector3d &ref)
+int ElementBase::set_reference_frame_geometry(const Vector3d &origin,
+                                              const Vector3d &aim,
+                                              double zrot)
 {
-    // matrix_vector_product(this->reference_to_local, ref, local);
+    this->origin = origin;
+    this->aim = aim;
+    this->zrot = zrot;
+    return this->compute_coordinate_rotations();
+}
+
+int ElementBase::convert_reference_to_local(Vector3d &local,
+                                            const Vector3d &ref)
+{
+    matrix_vector_product(this->reference_to_local, ref, local);
     return 0;
 }
 
-int ElementBase::convert_global_to_local(Vector3d &local, const Vector3d &global)
+int ElementBase::convert_stage_to_local(Vector3d &local,
+                                        const Vector3d &stage)
 {
-    // No parent element means that the reference coordinate frame
-    // is the global coordinate frame. Otherwise, we need to account for
-    // the parent element coordinate frame when converting to global.
-
-    int sts = 0;
-
-    // if(this->parent == nullptr)
-    // {
-    //     sts = this->convert_reference_to_local(local, global);
-    // }
-    // else
-    // {
-    //     Vector3d ref;
-    //     sts = this->parent->convert_reference_to_local(ref, global);
-    //     // If nonzero status, something went wrong. Return that problem
-    //     // regardless if that is the end of the computation or not.
-    //     if (sts == 0)
-    //     {
-    //         sts = this->convert_reference_to_local(local, ref);
-    //     }
-    // }
-
-    return sts;
-
-}
-
-int ElementBase::convert_local_to_reference(Vector3d &local, const Vector3d &ref)
-{
-    // TODO: Implement this
+    // TODO: Implement this!
+    if (this->is_stage())
+    {
+        // We are in the stage coordinate frame so the local coordinates
+        // are the stage coordinates
+        local = stage;
+    }
+    else if (this->reference_element == nullptr)
+    {
+        // No stage frame found so assume we are not using stages
+        // and return the same answer as convert_global_to_local
+        this->convert_reference_to_local(local, stage);
+    }
+    else
+    {
+        Vector3d ref;
+        this->reference_element->convert_stage_to_local(ref, stage);
+        convert_reference_to_local(local, ref);
+    }
     return 0;
 }
 
-int ElementBase::convert_local_to_global(Vector3d &global, const Vector3d &local)
+int ElementBase::convert_global_to_local(Vector3d &local,
+                                         const Vector3d &global)
 {
+    auto ref_el = this->reference_element;
+    if (ref_el == nullptr)
+    {
+        // We are at the global coordinate frame
+        this->convert_reference_to_local(local, global);
+    }
+    else
+    {
+        Vector3d ref;
+        ref_el->convert_global_to_local(ref, global);
+        this->convert_reference_to_local(local, ref);
+    }
+    return 0;
+}
 
-    // No parent element means that the reference coordinate frame
-    // is the global coordinate frame. Otherwise, we need to account for
-    // the parent element coordinate frame when converting to global.
+int ElementBase::convert_local_to_reference(Vector3d &ref,
+                                            const Vector3d &local)
+{
+    matrix_vector_product(this->local_to_reference, local, ref);
+    return 0;
+}
 
-    int sts = 0;
+int ElementBase::convert_local_to_stage(Vector3d &stage,
+                                        const Vector3d &local)
+{
+    if (this->is_stage())
+    {
+        // We are in the stage coordinate frame so the local coordinates
+        // are the stage coordinates
+        stage = local;
+    }
+    else if (this->reference_element == nullptr)
+    {
+        // No stage has been found so assume we are not using stages
+        // and convert to global coordinates
+        this->convert_local_to_reference(stage, local);
+        // TODO: This should probably return something other than 0...
+    }
+    else
+    {
+        Vector3d ref;
+        this->convert_local_to_reference(ref, local);
+        this->reference_element->convert_local_to_stage(stage, ref);
+    }
+    return 0;
+}
 
-    // if (this->parent == nullptr)
-    // {
-    //     sts = this->convert_local_to_reference(global, local);
-    // }
-    // else
-    // {
-    //     Vector3d ref;
-    //     sts = this->convert_local_to_reference(ref, local);
-    //     // If nonzero status, something went wrong. Return that problem
-    //     // regardless if that is the end of the computation or not.
-    //     if (sts == 0)
-    //     {
-    //         sts = this->parent->convert_local_to_reference(global, ref);
-    //     }
-    // }
-
-    return sts;
-
+int ElementBase::convert_local_to_global(Vector3d &global,
+                                         const Vector3d &local)
+{
+    auto ref_el = this->reference_element;
+    if (ref_el == nullptr)
+    {
+        this->convert_local_to_reference(global, local);
+    }
+    else
+    {
+        Vector3d ref;
+        this->convert_local_to_reference(ref, local);
+        ref_el->convert_local_to_global(global, ref);
+    }
+    return 0;
 }
 
 // const OpticalProperties & ElementBase::get_optical_properties() const

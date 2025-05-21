@@ -54,6 +54,35 @@
 // #include "procs.h"
 #include "matvec.hpp"
 
+// inline void CopyVec3(double dest[3], const std::vector<double> &src)
+// {
+// 	dest[0] = src[0];
+// 	dest[1] = src[1];
+// 	dest[2] = src[2];
+// }
+
+// inline void CopyVec3(std::vector<double> &dest, double src[3])
+// {
+// 	dest[0] = src[0];
+// 	dest[1] = src[1];
+// 	dest[2] = src[2];
+// }
+
+// inline void CopyVec3(double dest[3], double src[3])
+// {
+// 	dest[0] = src[0];
+// 	dest[1] = src[1];
+// 	dest[2] = src[2];
+// }
+
+void CopyMat3(double dest[3][3], const double src[3][3])
+{
+	for (int i = 0; i < 3; ++i)
+		for (int j = 0; j < 3; ++j)
+			dest[i][j] = src[i][j];
+	return;
+}
+
 void MatrixVectorMult(const double M[3][3], const double V[3], double MxV[3])
 {
 	/*{Purpose: To perform multiplication of a matrix (3,3) and a vector (3) to result
@@ -78,6 +107,25 @@ void MatrixVectorMult(const double M[3][3], const double V[3], double MxV[3])
 		}*/
 }
 // End of procedure-------------------------------------------------------------
+
+void MatrixMatrixMult(const double A[3][3],
+					  const double B[3][3],
+					  double C[3][3])
+{
+	double sum;
+	for (int i=0; i<3; ++i)
+	{
+		for (int j=0; j<3; ++j)
+		{
+			sum = 0.0;
+			for (int k=0; k<3; ++k)
+			{
+				sum += A[i][k] * B[k][j];
+			}
+			C[i][j] = sum;
+		}
+	}
+}
 
 double DOT(const double A[3], const double B[3])
 {

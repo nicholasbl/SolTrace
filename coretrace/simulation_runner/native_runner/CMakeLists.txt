@@ -3,8 +3,8 @@ Project(native_runner)
 include_directories(
     .
     # ${CMAKE_SOURCE_DIR}/coretrace
-    ${CMAKE_SOURCE_DIR}/coretrace/simulation_runner
     ${CMAKE_SOURCE_DIR}/coretrace/simulation_data
+    ${CMAKE_SOURCE_DIR}/coretrace/simulation_runner
 )
 
 set(NATIVE_RUNNER_SRC
@@ -12,18 +12,24 @@ set(NATIVE_RUNNER_SRC
     # ${CMAKE_SOURCE_DIR}/coretrace/types.cpp
     native_runner.cpp
     native_runner_types.cpp
+    root432.cpp
     trace.cpp
     treemesh.cpp
 )
 
 set(POSITION_INDEPENDENT_CODE ON)
 
-add_library(native_runner STATIC ${NATIVE_RUNNER_SRC})
+add_library(native_runner SHARED ${NATIVE_RUNNER_SRC})
 set_target_properties(
     native_runner
     PROPERTIES
     DEBUG_POSTFIX "d"
 	PREFIX ""
+)
+
+target_link_libraries(
+    native_runner
+    simdata
 )
 
 if (NOT APPLE AND ENABLE_COVERAGE)

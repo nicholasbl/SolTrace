@@ -5,17 +5,17 @@
 #include <map>
 #include <memory>
 
-#include "composite_element.hpp"
+// #include "composite_element.hpp"
 #include "container.hpp"
 #include "datetime.hpp"
 #include "element.hpp"
 #include "ray_source.hpp"
 #include "simulation_parameters.hpp"
-#include "single_element.hpp"
+// #include "single_element.hpp"
 
-using SingleElementMap = typename std::map<element_id, single_element_ptr>;
-using CompositeElementMap = typename std::map<element_id,
-                                              composite_element_ptr>;
+// using SingleElementMap = typename std::map<element_id, single_element_ptr>;
+// using CompositeElementMap = typename std::map<element_id,
+//                                               composite_element_ptr>;
 
 class SimulationData
 {
@@ -42,9 +42,14 @@ public:
     /// @brief Get the RaySource corresponding to the unique identifier `id`
     /// @param id unique identifier of the RaySource to get
     /// @return requested RaySource if found, nullptr otherwise
-    ray_source_ptr get_ray_source(ray_source_id id)
+    ray_source_ptr get_ray_source(ray_source_id id) const
     {
         return this->my_sources.get_item(id);
+    }
+
+    ray_source_ptr get_ray_source() const
+    {
+        return this->my_sources.get_const_iterator()->second;
     }
 
     /// @brief Replace the RaySource with id `id` with the RaySource `src`
@@ -56,10 +61,22 @@ public:
         return this->my_sources.replace_item(id, src);
     }
 
-    /// @brief Add the given Element to the SimulationData
+    uint_fast64_t get_number_of_ray_sources() const
+    {
+        return this->my_sources.get_number_of_items();
+    }
+
+    /// @brief Add the given Element to the SimulationData. When adding a
+    ///        CompositeElement, all subelements must already be present.
+    ///        Any subelements added to the CompositeElement after calling
+    ///        `add_element` will not be used in any ray tracing.
     /// @param el Element to add
     /// @return unique identifier for the given object
     element_id add_element(element_ptr el);
+    inline element_id add_stage(element_ptr el)
+    {
+        return add_element(el);
+    }
 
     /// @brief Remove the Element corresponding to the unique identifier `id`
     /// @param id unique identifier of element to remove
@@ -69,7 +86,7 @@ public:
     /// @brief Get the Element corresponding to the unique identifier `id`
     /// @param id unique identifier of element to get
     /// @return requested Element (pointer) if found, nullptr otherwise
-    element_ptr get_element(element_id id);
+    element_ptr get_element(element_id id) const;
 
     /// @brief Replace the Element with id `id` with the Element `el`
     /// @param id unique identifier of element to replace
@@ -82,39 +99,40 @@ public:
     /// @return Number of elements owned by the SimulationData object
     uint_fast64_t get_number_of_elements() const
     {
-        return this->my_elements.size();
+        // return this->my_elements.size();
+        return this->number_of_elements;
     }
 
     /// @brief Get an iterator that can be used to access all elements owned
     ///        by this SimulationData object.
     /// @return iterator
-    SingleElementMap::iterator get_iterator()
+    ElementContainer::iterator get_iterator()
     {
-        // return this->my_elements.get_iterator();
-        return this->my_elements.begin();
+        return this->my_elements.get_iterator();
+        // return this->my_elements.begin();
     }
 
     /// @brief Get an const_iterator that can be used to access all elements
     ///        owned by this SimulationData object.
     /// @return iterator
-    SingleElementMap::const_iterator get_const_iterator()
+    ElementContainer::const_iterator get_const_iterator() const
     {
-        // return this->my_elements.get_const_iterator();
-        return this->my_elements.cbegin();
+        return this->my_elements.get_const_iterator();
+        // return this->my_elements.cbegin();
     }
 
     /// @brief Tests whether the given iterator is at the end
     /// @param iter iterator to test
     /// @return true if at end, false otherwise
-    bool is_at_end(SingleElementMap::iterator iter)
+    bool is_at_end(ElementContainer::iterator iter)
     {
-        // return this->my_elements.is_at_end(iter);
-        return iter == this->my_elements.end();
+        return this->my_elements.is_at_end(iter);
+        // return iter == this->my_elements.end();
     }
-    bool is_at_end(SingleElementMap::const_iterator citer)
+    bool is_at_end(ElementContainer::const_iterator citer) const
     {
-        // return this->my_elements.is_at_end(citer);
-        return citer == this->my_elements.end();
+        return this->my_elements.is_at_end(citer);
+        // return citer == this->my_elements.end();
     }
 
     /// @brief Set the number of rays to trace
@@ -224,24 +242,28 @@ public:
     int import_from_file(const std::string file_name);
 
 private:
-    mutable element_id next_element_id;
+    // mutable element_id next_element_id;
 
-    // DESIGN NOTE:
-    // CompositeElements are collections of elements and knowledge of them
-    // is not needed by the ray tracing computations. To facilitate simple
-    // passing of element data to the runners, CompositeElements are stored
-    // separately. Adding/removing/replacing a CompositeElement adds/removes/
-    // replaces all elements that belong to the CompositeElement collection.
-    SingleElementMap my_elements;
-    CompositeElementMap composite_elements;
+    uint_fast64_t number_of_elements;
+
+    // // DESIGN NOTE:
+    // // CompositeElements are collections of elements and knowledge of them
+    // // is not needed by the ray tracing computations. To facilitate simple
+    // // passing of element data to the runners, CompositeElements are stored
+    // // separately. Adding/removing/replacing a CompositeElement adds/removes/
+    // // replaces all elements that belong to the CompositeElement collection.
+    // SingleElementMap my_elements;
+    // CompositeElementMap composite_elements;
+    ElementContainer my_elements;
     RaySourceContainer my_sources;
     SimulationParameters my_parameters;
 
-    void add_single_element(element_id key, single_element_ptr el);
-    void add_composite_element(element_id key, composite_element_ptr el);
-    uint_fast64_t remove_single_element(SingleElementMap::iterator iter);
-    uint_fast64_t remove_composite_element(CompositeElementMap::iterator iter);
-    uint_fast64_t remove_subelements(composite_element_ptr el);
+    // void add_single_element(element_id key, element_ptr el);
+    // void add_composite_element(element_id key, element_ptr el);
+    // uint_fast64_t remove_single_element(ElementContainer::iterator iter);
+    // uint_fast64_t remove_composite_element(element_ptr el);
+    uint_fast64_t add_subelements(element_ptr el);
+    uint_fast64_t remove_subelements(element_ptr el);
 };
 
 #endif

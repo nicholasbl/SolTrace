@@ -52,16 +52,19 @@
 #include <string.h>
 #include <stdarg.h>
 
+#include "composite_element.hpp"
+#include "matvec.hpp"
 #include "native_runner_types.hpp"
+#include "vector3d.hpp"
 
 TOpticalProperties::TOpticalProperties()
 {
     for (int i = 0; i < 4; i++)
         RefractiveIndex[i] = AB12[i] = 0;
 
-    OpticSurfNumber = 1;
-    ApertureStopOrGratingType = 0;
-    DiffractionOrder = 0;
+    // OpticSurfNumber = 1;
+    // ApertureStopOrGratingType = 0;
+    // DiffractionOrder = 0;
     Reflectivity = 0;
     Transmissivity = 0;
     RMSSlopeError = 0;
@@ -74,9 +77,9 @@ TOpticalProperties::TOpticalProperties()
 TOpticalProperties &TOpticalProperties::operator=(const TOpticalProperties &rhs)
 {
     DistributionType = rhs.DistributionType;
-    OpticSurfNumber = rhs.OpticSurfNumber;
-    ApertureStopOrGratingType = rhs.ApertureStopOrGratingType;
-    DiffractionOrder = rhs.DiffractionOrder;
+    // OpticSurfNumber = rhs.OpticSurfNumber;
+    // ApertureStopOrGratingType = rhs.ApertureStopOrGratingType;
+    // DiffractionOrder = rhs.DiffractionOrder;
     Reflectivity = rhs.Reflectivity;
     Transmissivity = rhs.Transmissivity;
     RMSSlopeError = rhs.RMSSlopeError;
@@ -110,14 +113,17 @@ TElement::TElement()
 {
     int i, j;
     for (i = 0; i < 3; i++)
-        Origin[i] = AimPoint[i] = Euler[i] = PosSunCoords[i] = 0;
+    {
+        // Origin[i] = AimPoint[i] = Euler[i] = PosSunCoords[i] = 0;
+        Origin[i] = AimPoint[i] = PosSunCoords[i] = 0;
+    }
     for (i = 0; i < 3; i++)
         for (j = 0; j < 3; j++)
             RRefToLoc[i][j] = RLocToRef[i][j] = 0;
     for (i = 0; i < 5; i++)
         Alpha[i] = 0;
 
-    Enabled = true;
+    // Enabled = true;
     ZRot = 0;
     ShapeIndex = ' ';
     ParameterA = ParameterB = ParameterC = ParameterD = 0;
@@ -135,8 +141,8 @@ TElement::TElement()
 
     FitOrder = 0;
 
-    CubicSplineDYDXbc1 = 0;
-    CubicSplineDYDXbcN = 0;
+    // CubicSplineDYDXbc1 = 0;
+    // CubicSplineDYDXbcN = 0;
 
     // VSHOTRMSSlope = 0;
     // VSHOTRMSScale = 0;
@@ -148,7 +154,7 @@ TElement::TElement()
 
     ZAperture = 0;
 
-    Optics = NULL;
+    Optics = nullptr;
     element_number = -1; // mjw nonsense
 }
 
@@ -159,7 +165,6 @@ TSun::TSun()
 
 void TSun::Reset()
 {
-
     int i, j;
     for (i = 0; i < 3; i++)
         Origin[i] = Euler[i] = 0;
@@ -180,6 +185,17 @@ void TSun::Reset()
     MinXSun = 0;
     MaxYSun = 0;
     MinYSun = 0;
+}
+
+void TSun::set_values(ray_source_ptr rsrc)
+{
+    CopyVec3(this->Origin, rsrc->get_position().data);
+
+    // TODO: Need to get sun parameters here too. For now make everything
+    // a point source
+    this->PointSource = true;
+
+    return;
 }
 
 /*
@@ -433,12 +449,14 @@ TStage::TStage()
     MultiHitsPerRay = true;
     Virtual = false;
     TraceThrough = false;
+
+    ElementList.clear();
 }
 
 TStage::~TStage()
 {
-    for (uint_fast64_t i = 0; i < ElementList.size(); i++)
-        delete ElementList[i];
+    // for (uint_fast64_t i = 0; i < ElementList.size(); i++)
+    //     delete ElementList[i];
     ElementList.clear();
 }
 
@@ -451,12 +469,14 @@ TSystem::TSystem()
     sim_dynamic_group = false;
     sim_errors_sunshape = true;
     sim_errors_optical = true;
+
+    ClearAll();
 }
 
 TSystem::~TSystem()
 {
-    for (uint_fast64_t i = 0; i < StageList.size(); i++)
-        delete StageList[i];
+    // for (uint_fast64_t i = 0; i < StageList.size(); i++)
+    //     delete StageList[i];
     StageList.clear();
 }
 
@@ -466,8 +486,8 @@ void TSystem::ClearAll()
         delete OpticsList[i];
     OpticsList.clear();
 
-    for (uint_fast64_t i = 0; i < StageList.size(); i++)
-        delete StageList[i];
+    // for (uint_fast64_t i = 0; i < StageList.size(); i++)
+    //     delete StageList[i];
     StageList.clear();
 }
 
@@ -483,4 +503,54 @@ void TSystem::errlog(const char *fmt, ...)
 #endif
     va_end(arglist);
     messages.push_back(buf);
+}
+
+telement_ptr make_telement(element_ptr el)
+{
+    auto telem = std::make_shared<TElement>();
+    vector_copy(telem->Origin, el->get_origin_stage());
+    vector_copy(telem->AimPoint, el->get_aim_vector_stage());
+    telem->ZRot = el->get_zrot();
+
+    // vector_copy(telem->Euler, el->get_euler_angles());
+    matrix_copy(telem->RRefToLoc, el->get_stage_to_local());
+    matrix_copy(telem->RLocToRef, el->get_local_to_stage());
+
+    // TODO: Aperture and Surface stuff...
+
+    return telem;
+}
+
+tstage_ptr make_tstage(element_ptr el)
+{
+    tstage_ptr my_stage = std::make_shared<TStage>();
+    auto stage_el = std::dynamic_pointer_cast<StageElement>(el);
+    assert(stage_el != nullptr);
+
+    // TODO: What to do with these fields?
+    my_stage->MultiHitsPerRay = true;
+    my_stage->Virtual = false;
+    my_stage->TraceThrough = false;
+
+    // Add coordinate stuff
+    vector_copy(my_stage->Origin, stage_el->get_origin_global());
+    vector_copy(my_stage->AimPoint, stage_el->get_aim_vector_global());
+    my_stage->ZRot = stage_el->get_zrot();
+    matrix_copy(my_stage->RRefToLoc, stage_el->get_global_to_local());
+    matrix_copy(my_stage->RLocToRef, stage_el->get_local_to_global());
+
+    // Add elements to the stage
+    for (auto iter = stage_el->get_iterator();
+         !stage_el->is_at_end(iter);
+         ++iter)
+    {
+        element_ptr el = iter->second;
+        if (el->is_enabled())
+        {
+            auto elem = make_telement(iter->second);
+            my_stage->ElementList.push_back(elem);
+        }
+    }
+
+    return my_stage;
 }

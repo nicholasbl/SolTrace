@@ -1,6 +1,10 @@
 #include "simulation_data.hpp"
 
-SimulationData::SimulationData()
+#include <cassert>
+
+#include "composite_element.hpp"
+
+SimulationData::SimulationData() : number_of_elements(0)
 {
     return;
 }
@@ -12,221 +16,209 @@ SimulationData::~SimulationData()
 
 element_id SimulationData::add_element(element_ptr el)
 {
-    auto key = this->next_element_id;
+    element_id id = ELEMENT_ERROR;
 
-    // Make sure this element_id is not in use
-    assert(this->my_elements.find(key) == this->my_elements.end());
-    assert(this->composite_elements.find(key) == this->composite_elements.end());
-
-    if (!el->is_composite() && !el->is_single())
+    if (el->get_id() != ELEMENT_ID_UNASSIGNED)
     {
-        // We should never get here--it is expected that all elements are
-        // either SingleElements or CompositeElements
-        key = ELEMENT_ERROR;
-    }
-    else if (el->get_id() != ELEMENT_ID_UNASSIGNED)
-    {
-        key = ELEMENT_ALREADY_REGISTERED;
+        id = ELEMENT_ALREADY_REGISTERED;
     }
     else
     {
-        el->set_id(key);
-        ++this->next_element_id;
-        if (el->is_single())
+        id = this->my_elements.add_item(el);
+        if (Element::is_success(id))
         {
-            single_element_ptr sptr =
-                std::dynamic_pointer_cast<SingleElement>(el);
-            assert(sptr != nullptr);
-            this->add_single_element(key, sptr);
-        }
-        else
-        {
-            composite_element_ptr cptr =
-                std::dynamic_pointer_cast<CompositeElement>(el);
-            assert(cptr != nullptr);
-            this->add_composite_element(key, cptr);
+            el->set_id(id);
+            if (el->is_composite())
+            {
+                // The CompositeElement itself does not count toward the
+                // number of elements since it does not impact the ray
+                // tracing computation. So we do not increment the
+                // number of elements here.
+                uint_fast64_t n = this->add_subelements(el);
+                assert(n == el->get_number_of_elements());
+            }
+            else
+            {
+                this->number_of_elements++;
+            }
         }
     }
 
-    return key;
+    return id;
 }
 
-void SimulationData::add_single_element(element_id key,
-                                        single_element_ptr el)
-{
-    SingleElementMap::value_type to_insert(key, el);
-    auto result = this->my_elements.insert(to_insert);
-    assert(result.second);
-    return;
-}
+// void SimulationData::add_single_element(element_id key,
+//                                         element_ptr el)
+// {
+//     SingleElementMap::value_type to_insert(key, el);
+//     auto result = this->my_elements.insert(to_insert);
+//     assert(result.second);
+//     return;
+// }
 
-void SimulationData::add_composite_element(element_id key,
-                                           composite_element_ptr el)
+uint_fast64_t SimulationData::add_subelements(element_ptr el)
 {
-    CompositeElementMap::value_type to_insert(key, el);
-    auto result = this->composite_elements.insert(to_insert);
-    assert(result.second);
-    auto iter = el->get_iterator();
-    while (!el->is_at_end(iter))
+    // CompositeElementMap::value_type to_insert(key, el);
+    // auto result = this->composite_elements.insert(to_insert);
+    // assert(result.second);
+
+    composite_element_ptr cptr =
+        std::dynamic_pointer_cast<CompositeElement>(el);
+    assert(cptr != nullptr);
+
+    uint_fast64_t nadded = cptr->get_number_of_elements();
+
+    auto iter = cptr->get_const_iterator();
+    while (!cptr->is_at_end(iter))
     {
-        this->add_element(iter->second);
+        auto id = this->add_element(iter->second);
+        assert(Element::is_success(id));
         ++iter;
     }
-    return;
+
+    return nadded;
 }
 
 bool SimulationData::replace_element(element_id id, element_ptr el)
 {
-    bool retval = false;
-
-    if (this->my_elements.find(id) != this->my_elements.end())
+    bool success = false;
+    assert(el->get_id() == ELEMENT_ID_UNASSIGNED);
+    element_ptr old_el = this->get_element(id);
+    if (old_el != nullptr)
     {
-        assert(this->composite_elements.find(id) ==
-               this->composite_elements.end());
-
-        retval = true;
-        el->set_id(id);
-
-        if (el->is_single())
+        success = this->my_elements.replace_item(id, el);
+        if (success)
         {
-            // Original element and replacement are both SingleElements
-            auto iter = this->my_elements.find(id);
-            this->remove_single_element(iter);
-
-            single_element_ptr ptr =
-                std::dynamic_pointer_cast<SingleElement>(el);
-            assert(ptr != nullptr);
-            this->add_single_element(id, ptr);
-        }
-        else
-        {
-            // Original element is SingleElement and replacement
-            // is CompositeElement
-            assert(el->is_composite());
-
-            auto iter = this->my_elements.find(id);
-            this->remove_single_element(iter);
-
-            composite_element_ptr ptr =
-                std::dynamic_pointer_cast<CompositeElement>(el);
-            assert(ptr != nullptr);
-            this->add_composite_element(id, ptr);
+            old_el->set_id(ELEMENT_ID_UNASSIGNED);
+            if (old_el->is_composite())
+            {
+                this->remove_subelements(old_el);
+            }
+            else
+            {
+                this->number_of_elements--;
+            }
+            el->set_id(id);
+            if (el->is_composite())
+            {
+                this->add_subelements(el);
+            }
+            else
+            {
+                this->number_of_elements++;
+            }
+            // this->number_of_elements -= old_el->get_number_of_elements();
+            // this->number_of_elements += el->get_number_of_elements();
         }
     }
-    else if (this->composite_elements.find(id) != this->composite_elements.end())
-    {
-        assert(this->my_elements.find(id) == this->my_elements.end());
 
-        retval = true;
-        el->set_id(id);
-
-        if (el->is_composite())
-        {
-            // Original element and replacement are CompositeElements
-            auto iter = this->composite_elements.find(id);
-            assert(iter != this->composite_elements.end());
-            this->remove_composite_element(iter);
-
-            composite_element_ptr rep =
-                std::dynamic_pointer_cast<CompositeElement>(el);
-            assert(rep != nullptr);
-            this->add_composite_element(id, rep);
-        }
-        else
-        {
-            // Original element is CompositeElement and replacement
-            // is SingleElement
-            assert(el->is_single());
-
-            auto iter = this->composite_elements.find(id);
-            this->remove_composite_element(iter);
-
-            single_element_ptr ptr =
-                std::dynamic_pointer_cast<SingleElement>(el);
-            assert(ptr != nullptr);
-            this->add_single_element(id, ptr);
-        }
-    }
-    else
-    {
-        // Intentional no-op
-    }
-    return retval;
+    return success;
 }
 
-element_ptr SimulationData::get_element(element_id id)
+element_ptr SimulationData::get_element(element_id id) const
 {
-    // return this->my_elements.get_item(id);
-    element_ptr retval = nullptr;
-    auto iter1 = this->my_elements.find(id);
-    auto iter2 = this->composite_elements.find(id);
-    if (iter1 != this->my_elements.end())
-    {
-        retval = iter1->second;
-    }
-    else if (iter2 != this->composite_elements.end())
-    {
-        retval = iter2->second;
-    }
-    else
-    {
-        // Intentional no-op
-    }
-    return retval;
+    return this->my_elements.get_item(id);
+    // element_ptr retval = nullptr;
+    // auto iter1 = this->my_elements.find(id);
+    // auto iter2 = this->composite_elements.find(id);
+    // if (iter1 != this->my_elements.end())
+    // {
+    //     retval = iter1->second;
+    // }
+    // else if (iter2 != this->composite_elements.end())
+    // {
+    //     retval = iter2->second;
+    // }
+    // else
+    // {
+    //     // Intentional no-op
+    // }
+    // return retval;
 }
 
 uint_fast64_t SimulationData::remove_element(element_id id)
 {
+
+    uint_fast64_t nremoved = 0;
+    element_ptr el = this->my_elements.get_item(id);
+
+    if (el != nullptr)
+    {
+        this->my_elements.remove_item(id);
+        el->set_id(ELEMENT_ID_UNASSIGNED);
+        if (el->is_composite())
+        {
+            // The CompositeElement itself does not count toward the number
+            // of elements since it does not impact the ray tracing computation.
+            // So we do not decrement the number of elements here.
+            nremoved = this->remove_subelements(el);
+            assert(nremoved == el->get_number_of_elements());
+        }
+        else
+        {
+            this->number_of_elements--;
+            nremoved = 1;
+        }
+    }
+
+    return nremoved;
+
+    // auto iter2 = this->composite_elements.find(id);
+    // if (iter1 != this->my_elements.end())
+    // {
+    //     retval = remove_single_element(iter1);
+    // }
+    // else if (iter2 != this->composite_elements.end())
+    // {
+    //     retval = remove_composite_element(iter2);
+    // }
+    // else
+    // {
+    //     // Intentional no-op
+    // }
+    // return retval;
+}
+
+// uint_fast64_t SimulationData::remove_single_element(
+//     SingleElementMap::iterator iter)
+// {
+//     iter->second->set_id(ELEMENT_ID_UNASSIGNED);
+//     this->my_elements.erase(iter);
+//     return 1;
+// }
+
+// uint_fast64_t SimulationData::remove_composite_element(element_ptr el)
+// {
+//     composite_element_ptr cptr = iter->second;
+//     iter->second->set_id(ELEMENT_ID_UNASSIGNED);
+//     this->composite_elements.erase(iter);
+//     return this->remove_subelements(cptr);
+// }
+
+uint_fast64_t SimulationData::remove_subelements(element_ptr el)
+{
     uint_fast64_t retval = 0;
-    auto iter1 = this->my_elements.find(id);
-    auto iter2 = this->composite_elements.find(id);
-    if (iter1 != this->my_elements.end())
-    {
-        retval = remove_single_element(iter1);
-    }
-    else if (iter2 != this->composite_elements.end())
-    {
-        retval = remove_composite_element(iter2);
-    }
-    else
-    {
-        // Intentional no-op
-    }
-    return retval;
-}
 
-uint_fast64_t SimulationData::remove_single_element(
-    SingleElementMap::iterator iter)
-{
-    iter->second->set_id(ELEMENT_ID_UNASSIGNED);
-    this->my_elements.erase(iter);
-    return 1;
-}
+    composite_element_ptr cptr =
+        std::dynamic_pointer_cast<CompositeElement>(el);
+    assert(cptr != nullptr);
 
-uint_fast64_t SimulationData::remove_composite_element(
-    CompositeElementMap::iterator iter)
-{
-    composite_element_ptr cptr = iter->second;
-    iter->second->set_id(ELEMENT_ID_UNASSIGNED);
-    this->composite_elements.erase(iter);
-    return this->remove_subelements(cptr);
-}
-
-uint_fast64_t SimulationData::remove_subelements(composite_element_ptr el)
-{
-    uint_fast64_t retval = 0;
     element_ptr ptr = nullptr;
-    for (auto iter = el->get_iterator(); !el->is_at_end(iter); ++iter)
+    for (auto iter = cptr->get_iterator(); !cptr->is_at_end(iter); ++iter)
     {
         ptr = iter->second;
         retval += this->remove_element(ptr->get_id());
     }
+
+    assert(retval == cptr->get_number_of_elements());
+
     return retval;
 }
 
 int SimulationData::update_simulation_positions()
 {
     int sts = 0;
+    // TODO: Implement this
     return sts;
 }
 

@@ -26,9 +26,9 @@
 *  4. Redistribution of this software, without modification, must refer to the software by the same
 *  designation. Redistribution of a modified version of this software (i) may not refer to the modified
 *  version by the same designation, or by any confusingly similar designation, and (ii) must refer to
-*  the underlying software originally provided by Alliance as "SolTrace". Except to comply with the 
-*  foregoing, the term "SolTrace", or any confusingly similar designation may not be used to refer to 
-*  any modified version of this software or any modified version of the underlying software originally 
+*  the underlying software originally provided by Alliance as "SolTrace". Except to comply with the
+*  foregoing, the term "SolTrace", or any confusingly similar designation may not be used to refer to
+*  any modified version of this software or any modified version of the underlying software originally
 *  provided by Alliance without the prior written consent of Alliance.
 *
 *  5. The name of the copyright holder, contributors, the United States Government, the United States
@@ -53,6 +53,9 @@
 #include <exception>
 #include <string>
 #include <vector>
+
+#include "element.hpp"
+#include "ray_source.hpp"
 
 #define ACOSM1O180 0.017453292519943295 // acos(-1)/180.0
 #ifndef M_PI
@@ -80,18 +83,18 @@ class TOpticalProperties
 public:
 	TOpticalProperties();
 	TOpticalProperties &operator=(const TOpticalProperties &rhs);
-	
+
 	char DistributionType;
-	int OpticSurfNumber;
-	int ApertureStopOrGratingType;
-	int DiffractionOrder;
+	// int OpticSurfNumber;
+	// int ApertureStopOrGratingType;
+	// int DiffractionOrder;
 	double Reflectivity;
 	double Transmissivity;
 	double RMSSlopeError;
 	double RMSSpecError;
 
 	double RefractiveIndex[4];
-	double AB12[4];	
+	double AB12[4];
 
 	bool UseReflectivityTable;
 	struct refldat { double angle; double refl; };
@@ -106,24 +109,24 @@ class TOpticalPropertySet
 public:
 	std::string Name;
 	TOpticalProperties Front;
-	TOpticalProperties Back;	
+	TOpticalProperties Back;
 };
 
 struct TElement
 {
 	TElement();
-	
-	bool Enabled;
-	
+
+	// bool Enabled;
+
 	/////////// ORIENTATION PARAMETERS ///////////////
 	double Origin[3];
 	double AimPoint[3];
 	double ZRot;
-	double Euler[3]; // calculated
+	// double Euler[3]; // calculated
 	double RRefToLoc[3][3]; // calculated
 	double RLocToRef[3][3]; // calculated
 	double PosSunCoords[3]; // calculated -- position in sun plane coordinates - mw
-	
+
 	/////////// APERTURE PARAMETERS ///////////////
 	char ShapeIndex;
 	double ParameterA;
@@ -134,15 +137,15 @@ struct TElement
 	double ParameterF;
 	double ParameterG;
 	double ParameterH;
-	
+
 	double ApertureArea; // calculated
-	double ZAperture; // calculated 
-	
+	double ZAperture; // calculated
+
 	/////////// SURFACE PARAMETERS ///////////////
 	char SurfaceIndex;
 	int SurfaceType; // calculated
 	std::string SurfaceFile;
-	
+
 	double Kappa;
 	double Alpha[5];
 	double VertexCurvX;
@@ -151,24 +154,24 @@ struct TElement
 	double CrossSectionRadius;
 	double ConeHalfAngle;
 	double CurvOfRev;
-		
+
 	int FitOrder;
-	
+
 
 	// // Zernike (*.mon) monomial coeffs
 	// // (also used for VSHOT Zernike fits)
 	// HPM2D BCoefficients;
 
-	// Rotationally symmetric polynomial coeffs
-	std::vector< double > PolyCoeffs;
-	
-	// Rotationally symmetric cubic spline
-	std::vector< double > CubicSplineXData;
-	std::vector< double > CubicSplineYData; 
-	std::vector< double > CubicSplineY2Data;   
-	double CubicSplineDYDXbc1;
-	double CubicSplineDYDXbcN;
-	
+	// // Rotationally symmetric polynomial coeffs
+	// std::vector< double > PolyCoeffs;
+
+	// // Rotationally symmetric cubic spline
+	// std::vector< double > CubicSplineXData;
+	// std::vector< double > CubicSplineYData;
+	// std::vector< double > CubicSplineY2Data;
+	// double CubicSplineDYDXbc1;
+	// double CubicSplineDYDXbcN;
+
 	// // // VSHOT file data
 	// // HPM2D VSHOTData;
 	// double VSHOTRMSSlope;
@@ -176,44 +179,48 @@ struct TElement
 	// double VSHOTRadius;
 	// double VSHOTFocLen;
 	// double VSHOTTarDis;
-	
+
 	// // Finite Element data coeffs
-	// //HPM2D FEData;	
+	// //HPM2D FEData;
 	// //GaussMarkov* FEMeshInterp;
 	// //GaussMarkov FEData;
 	// FEDataObj FEData;
-	
+
 	/////////// OPTICAL PARAMETERS ///////////////
 	int InteractionType;
 	TOpticalPropertySet *Optics;
 	std::string OpticName;
 
-	std::string Comment;	
+	std::string Comment;
     int element_number;     //mjw element number in the stage - unique ID in order of addition to element list
 };
+
+using telement_ptr = typename std::shared_ptr<TElement>;
+telement_ptr make_telement(element_ptr el);
 
 struct TSun
 {
 	TSun();
 	void Reset();
-	
-	char ShapeIndex;	
+	void set_values(ray_source_ptr rsrc);
+
+	char ShapeIndex;
 	double Sigma;
 	bool PointSource;
-	
+
 	std::vector<double> SunShapeAngle;
 	std::vector<double> SunShapeIntensity;
 	double MaxAngle;
 	double MaxIntensity;
-	
-	
+
+
 	double Origin[3];
-	
+
 	//calculated
 	double Euler[3];
 	double RRefToLoc[3][3];
 	double RLocToRef[3][3];
-	
+
 	double MaxRad;
 	double Xcm;
 	double Ycm;
@@ -271,7 +278,6 @@ public:
 private:
 	static const unsigned int block_size = 8192;
 
-
 	struct block_t
 	{
 		ray_t data[block_size];
@@ -283,29 +289,32 @@ private:
 	uint_fast64_t m_dataCapacity;
 };
 
-
 struct TStage
 {
 	TStage();
 	~TStage();
-		
+
 	bool MultiHitsPerRay;
 	bool Virtual;
 	bool TraceThrough;
-	
+
 	double Origin[3];
 	double AimPoint[3];
 	double ZRot;
 
-	std::vector<TElement*> ElementList;
-	
+	// std::vector<TElement*> ElementList;
+	std::vector<telement_ptr> ElementList;
+
 	// calculated
 	double Euler[3];
 	double RRefToLoc[3][3];
 	double RLocToRef[3][3];
-	
+
 	TRayData RayData;
 };
+
+using tstage_ptr = typename std::shared_ptr<TStage>;
+tstage_ptr make_tstage(element_ptr el);
 
 struct TSystem
 {
@@ -313,11 +322,11 @@ struct TSystem
 	~TSystem();
 
 	void ClearAll();
-	
+
 	TSun Sun;
 	std::vector<TOpticalPropertySet*> OpticsList;
-	std::vector<TStage*> StageList;
-
+	// std::vector<TStage*> StageList;
+	std::vector<tstage_ptr> StageList;
 
 	// system simulation context data
 	int sim_raycount;
@@ -325,6 +334,8 @@ struct TSystem
 	bool sim_dynamic_group;	// point-focus heliostat dynamic grouping to reduce stage one computation
 	bool sim_errors_sunshape;
 	bool sim_errors_optical;
+
+	uint_fast64_t seed;
 
 	// simulation outputs
 	TRayData AllRayData;

@@ -20,6 +20,8 @@ TEST(SimulationData, AddRemoveGetElements)
     auto sub2 = make_element<SingleElement>();
     my_comp->add_element(sub1);
     my_comp->add_element(sub2);
+    EXPECT_EQ(my_comp->get_number_of_elements(), 2);
+
     auto id2 = my_sim.add_element(my_comp);
     EXPECT_EQ(id2, my_comp->get_id());
     EXPECT_NE(id1, id2);
@@ -138,24 +140,42 @@ TEST(SimulationData, IteratorElement)
     EXPECT_EQ(my_sim.get_number_of_elements(), 7);
 
     std::set<element_id> ids;
+    std::set<element_id> cids;
     for (auto iter = my_sim.get_iterator();
          !my_sim.is_at_end(iter);
          ++iter)
     {
-        ids.insert(iter->first);
+        if (iter->second->is_single())
+        {
+            ids.insert(iter->first);
+        }
+        if (iter->second->is_composite())
+        {
+            cids.insert(iter->first);
+        }
         EXPECT_EQ(iter->first, iter->second->get_id());
     }
     EXPECT_EQ(ids.size(), my_sim.get_number_of_elements());
+    EXPECT_EQ(cids.size(), 2);
 
     ids.clear();
+    cids.clear();
     for (auto iter = my_sim.get_const_iterator();
          !my_sim.is_at_end(iter);
          ++iter)
     {
-        ids.insert(iter->first);
+        if (iter->second->is_single())
+        {
+            ids.insert(iter->first);
+        }
+        if (iter->second->is_composite())
+        {
+            cids.insert(iter->first);
+        }
         EXPECT_EQ(iter->first, iter->second->get_id());
     }
     EXPECT_EQ(ids.size(), my_sim.get_number_of_elements());
+    EXPECT_EQ(cids.size(), 2);
 }
 
 TEST(SimulationData, RaySourceInterface)

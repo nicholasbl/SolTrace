@@ -93,6 +93,38 @@ TEST(LinearAlgebra, MatrixVectorProduct)
     EXPECT_NEAR(y[2], -2.0, 1e-12);
 }
 
+TEST(LinearAlgebra, MatrixMatrixProduct)
+{
+    Matrix3d A;
+    A.set_value(0, 1, 1.0);
+    A.set_value(0, 2, 2.0);
+    A.set_value(1, 0, -1.0);
+    A.set_value(1, 1, 1.0);
+    A.set_value(2, 0, 2.0);
+    A.set_value(2, 2, 1.0);
+
+    Matrix3d B;
+    B.set_value(0, 0, -1.0);
+    B.set_value(0, 1, 1.0);
+    B.set_value(1, 1, 1.0);
+    B.set_value(1, 2, -2.0);
+    B.set_value(2, 2, 1.0);
+
+    Matrix3d Ctrue;
+    Ctrue.set_value(0, 1, 1.0);
+    Ctrue.set_value(1, 0, 1.0);
+    Ctrue.set_value(1, 2, -2.0);
+    Ctrue.set_value(2, 0, -2.0);
+    Ctrue.set_value(2, 1, 2.0);
+    Ctrue.set_value(2, 2, 1.0);
+
+    Matrix3d C;
+    C.zero();
+
+    matrix_matrix_product(A, B, C);
+    EXPECT_TRUE(is_identical(C, Ctrue));
+}
+
 TEST(LinearAlgebra, CoordinateTransforms)
 {
     // TODO: Implement tests for compute_transform_matrices,

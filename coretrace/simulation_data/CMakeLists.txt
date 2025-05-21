@@ -15,7 +15,7 @@ set(SIMDATA_SRC
 
 set(POSITION_INDEPENDENT_CODE ON)
 
-add_library(simdata STATIC ${SIMDATA_SRC})
+add_library(simdata SHARED ${SIMDATA_SRC})
 set_target_properties(simdata
     PROPERTIES
     DEBUG_POSTFIX "d"

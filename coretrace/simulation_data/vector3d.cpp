@@ -7,10 +7,27 @@
 
 #include "matvec.hpp"
 
+// inline void vector_copy(double data[3], const Vector3d &x)
+// {
+//     CopyVec3(data, x.data);
+//     return;
+// }
+// inline void vector_copy(std::vector<double> &dest, const Vector3d &x)
+// {
+//     CopyVec3(dest, x.data);
+//     return;
+// }
+
 // Compute y = A*x placing the result in y
 void matrix_vector_product(const Matrix3d &A, const Vector3d &x, Vector3d &y)
 {
     MatrixVectorMult(A.data, x.data, y.data);
+    return;
+}
+
+void matrix_matrix_product(const Matrix3d &A, const Matrix3d &B, Matrix3d &C)
+{
+    MatrixMatrixMult(A.data, B.data, C.data);
     return;
 }
 
