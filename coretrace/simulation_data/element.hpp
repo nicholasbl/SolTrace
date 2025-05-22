@@ -12,6 +12,11 @@
 #include "surface.hpp"
 #include "vector3d.hpp"
 
+// TODO: Make a header file for constants...
+#ifndef M_PI
+	#define M_PI 3.141592653589793238462643
+#endif
+
 using element_id = std::int_fast64_t;
 const element_id ELEMENT_ERROR = -1;
 const element_id ELEMENT_ID_UNASSIGNED = -2;
