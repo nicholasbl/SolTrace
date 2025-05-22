@@ -152,6 +152,7 @@ TEST(Element, VirtualPlane)
     const double LY = 2.5;
     VirtualPlane vp(LX, LY);
 
+    EXPECT_TRUE(vp.is_virtual());
     EXPECT_EQ(vp.get_aperture()->get_type(), RECTANGULAR);
     EXPECT_EQ(vp.get_surface()->get_type(), FLAT);
 
@@ -183,6 +184,18 @@ TEST(Element, CompositeElementAccessors)
     EXPECT_EQ(cmp->get_surface(), nullptr);
     EXPECT_EQ(cmp->get_front_optical_properties(), nullptr);
     EXPECT_EQ(cmp->get_back_optical_properties(), nullptr);
+    const aperture_ptr ap = cmp->get_aperture();
+    EXPECT_EQ(ap, nullptr);
+    const surface_ptr sp = cmp->get_surface();
+    EXPECT_EQ(sp, nullptr);
+    const OpticalProperties* op = cmp->get_back_optical_properties();
+    EXPECT_EQ(op, nullptr);
+    op = cmp->get_front_optical_properties();
+    EXPECT_EQ(op, nullptr);
+
+    // These should do nothing...
+    cmp->set_front_optical_properties(OpticalProperties());
+    cmp->set_back_optical_properties(OpticalProperties());
 
     // Add/remove/change elements
     const int NUM_ELEMENTS = 4;

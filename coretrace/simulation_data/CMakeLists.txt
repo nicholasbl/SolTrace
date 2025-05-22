@@ -28,5 +28,6 @@ set_target_properties(simdata
 )
 
 if (NOT APPLE AND ENABLE_COVERAGE)
-	SET(CMAKE_CXX_FLAGS "-O0 -coverage -fkeep-inline-functions")
+	# SET(CMAKE_CXX_FLAGS "-O0 -coverage -fkeep-inline-functions")
+    SET(CMAKE_CXX_FLAGS "-O0 -coverage")
 endif()
