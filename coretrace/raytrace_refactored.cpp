@@ -851,11 +851,6 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 					nintelements = Stage->ElementList.size();
 				}
 
-				if (RayNumber == 5)
-				{
-					int asdgsg = 0;
-				}
-
 				bool is_debug_test = false;
 				if (is_debug_test && use_embree)
 				{
@@ -870,11 +865,6 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 					st_uint_t st_elementnumber, st_raynumber;
 					int st_errorflag, st_lasthitbackside;
 					bool st_stagehit;
-
-					if (RayNumber == 5)
-					{
-						int asdgsg = 0;
-					}
 
 					FindElementHit_embree(embree_scene, i, RayNumber,
 						PosRayGlob, CosRayGlob,
@@ -893,15 +883,6 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 						st_dfxyz, st_elementnumber, st_raynumber,
 						st_posraysurfstage, st_cosraysurfstage,
 						st_errorflag, st_lasthitbackside, st_stagehit);
-
-					if (eb_stagehit != st_stagehit)
-					{
-						int xasgd = 0;
-					}
-					if (eb_elementnumber != st_elementnumber)
-					{
-						int adgsdhg = 0;
-					}
 
 					bool valid = embree_helper::validate_intersect(eb_posraysurfelement, eb_cosraysurfelement,
 						eb_dfxyz, eb_elementnumber, eb_raynumber,

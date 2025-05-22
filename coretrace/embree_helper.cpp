@@ -379,7 +379,6 @@ namespace embree_helper
 			stage_mask++;
 		}
 
-
 		return scene;
 	}
 
@@ -404,7 +403,6 @@ namespace embree_helper
 		if (!compare_Vec3(LastDFXYZ1, LastDFXYZ2, tol_diff)) return false;
 		if (!compare_Vec3(LastPosRaySurfStage1, LastPosRaySurfStage2, tol_diff)) return false;
 		if (!compare_Vec3(LastCosRaySurfStage1, LastCosRaySurfStage2, tol_diff)) return false;
-		
 
 		return true;
 	}
