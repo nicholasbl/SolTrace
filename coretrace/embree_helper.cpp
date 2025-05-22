@@ -52,6 +52,13 @@
 
 namespace embree_helper 
 {
+	inline void CopyVec3(double dest[3], double src[3])
+	{
+		dest[0] = src[0];
+		dest[1] = src[1];
+		dest[2] = src[2];
+	}
+
 
 	void error_function(void* userPtr, RTCError error, const char* str)
 	{
@@ -134,12 +141,11 @@ namespace embree_helper
 			min_coord_element[0] = st_element->ParameterA;
 			max_coord_element[0] = st_element->ParameterB;
 
-			min_coord_element[1] = st_element->ParameterC * -0.5;
-			max_coord_element[1] = st_element->ParameterC * 0.5;
+			min_coord_element[1] = st_element->ParameterC * -0.5f;
+			max_coord_element[1] = st_element->ParameterC * 0.5f;
 
 			min_coord_element[2] = 0.f;
-			max_coord_element[2] = 0.5 * (st_element->VertexCurvX *
-				max_coord_element[0] * max_coord_element[0]);
+			max_coord_element[2] = 0.5f * (st_element->VertexCurvX * std::pow(max_coord_element[0], 2.f));
 		}
 		else if (st_element->ShapeIndex == 'l' && st_element->SurfaceIndex == 't')
 		{
@@ -151,11 +157,37 @@ namespace embree_helper
 			min_coord_element[0] = -R;
 			max_coord_element[0] = R;
 			
-			min_coord_element[1] = st_element->ParameterC * -0.5;
-			max_coord_element[1] = st_element->ParameterC * 0.5;
+			min_coord_element[1] = st_element->ParameterC * -0.5f;
+			max_coord_element[1] = st_element->ParameterC * 0.5f;
 
 			min_coord_element[2] = 0;
 			max_coord_element[2] = 2.f * R;
+		}
+		else if (st_element->ShapeIndex == 'r' && st_element->SurfaceIndex == 'p')
+		{
+			// Parabolic heliostat
+			// r - rectangular
+			// p - parabolic
+			float aperture_width = st_element->ParameterA;	// X axis side of rect
+			float aperture_height = st_element->ParameterB;	// Y axis side of rect
+
+			float min_x = aperture_width * -0.5f;
+			float max_x = aperture_width * 0.5f;
+			float min_y = aperture_height * -0.5f;
+			float max_y = aperture_height * 0.5f;
+
+			float abs_max_x = std::max(std::abs(min_x), std::abs(max_x));
+			float abs_max_y = std::max(std::abs(min_y), std::abs(max_y));
+
+			min_coord_element[0] = aperture_width * -0.5f;
+			max_coord_element[0] = aperture_width * 0.5f;
+
+			min_coord_element[1] = aperture_height * -0.5f;
+			max_coord_element[1] = aperture_height * 0.5f;
+
+			min_coord_element[2] = 0;
+			max_coord_element[2] = 0.5f * (st_element->VertexCurvX * std::pow(abs_max_x, 2.f)
+				+ st_element->VertexCurvY * std::pow(abs_max_y, 2.f));
 		}
 
 		// NOT SUPPORTED
@@ -218,9 +250,9 @@ namespace embree_helper
 			PosRayElement, CosRayElement);
 
 		// increment position by tiny amount to get off the element if tracing to the same element
-		PosRayElement[0] = PosRayElement[0] + 1.0e-5 * CosRayElement[0];
-		PosRayElement[1] = PosRayElement[1] + 1.0e-5 * CosRayElement[1];
-		PosRayElement[2] = PosRayElement[2] + 1.0e-5 * CosRayElement[2];
+		PosRayElement[0] = PosRayElement[0] + 1.0e-3 * CosRayElement[0];
+		PosRayElement[1] = PosRayElement[1] + 1.0e-3 * CosRayElement[1];
+		PosRayElement[2] = PosRayElement[2] + 1.0e-3 * CosRayElement[2];
 
 		// Get payload object
 		RayIntersectPayload* payload = (RayIntersectPayload*)args->context;
@@ -342,7 +374,8 @@ namespace embree_helper
 	{
 		for (int i = 0; i < 3; i++)
 		{
-			if (std::abs(vec1[i] - vec2[i]) > tol_diff)
+			if ((std::abs(vec1[i] / vec2[i]) - 1.f > tol_diff)
+				&& (std::abs(vec1[i] - vec2[i]) > 1e-3))
 				return false;
 		}
 		return true;
@@ -360,15 +393,16 @@ namespace embree_helper
 		int& ErrorFlag2, int& LastHitBackSide2,
 		bool& StageHit2)
 	{
-		double tol_diff = 1e-5;
+		double tol_diff = 1e-2;
+		if (StageHit1 != StageHit2) return false;
+		if (LastElementNumber1 != LastElementNumber2) return false;
+		if (LastHitBackSide1 != LastHitBackSide2) return false;
 		if (!compare_Vec3(LastPosRaySurfElement1, LastPosRaySurfElement2, tol_diff)) return false;
 		if (!compare_Vec3(LastCosRaySurfElement1, LastCosRaySurfElement2, tol_diff)) return false;
 		if (!compare_Vec3(LastDFXYZ1, LastDFXYZ2, tol_diff)) return false;
 		if (!compare_Vec3(LastPosRaySurfStage1, LastPosRaySurfStage2, tol_diff)) return false;
 		if (!compare_Vec3(LastCosRaySurfStage1, LastCosRaySurfStage2, tol_diff)) return false;
-		if (LastElementNumber1 != LastElementNumber2) return false;
-		if (LastHitBackSide1 != LastHitBackSide2) return false;
-		if (StageHit1 != StageHit2) return false;
+		
 
 		return true;
 	}

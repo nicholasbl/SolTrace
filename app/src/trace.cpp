@@ -71,7 +71,9 @@
 static wxThreadProgressDialog *g_currentThreadProgress = NULL;
 
 enum{ ID_NUM_RAYS = wxID_HIGHEST+923,
-	  ID_NUM_RAYS_SUN, ID_NUM_CPU, ID_SEED, ID_INCL_SUNSHAPE, ID_INCL_ERRORS, ID_INCL_POINTFOCUS, ID_USE_REFACTOR};
+	  ID_NUM_RAYS_SUN, ID_NUM_CPU, ID_SEED, ID_INCL_SUNSHAPE, ID_INCL_ERRORS, ID_INCL_POINTFOCUS, ID_USE_REFACTOR,
+	  ID_USE_EMBREE_TRACE
+};
 
 BEGIN_EVENT_TABLE( TraceForm, wxPanel )
 	EVT_BUTTON( wxID_SETUP, TraceForm::OnCommand )
@@ -84,6 +86,7 @@ BEGIN_EVENT_TABLE( TraceForm, wxPanel )
 	EVT_CHECKBOX( ID_INCL_ERRORS, TraceForm::OnCommand)
 	EVT_CHECKBOX( ID_INCL_POINTFOCUS, TraceForm::OnCommand)
 	EVT_CHECKBOX( ID_USE_REFACTOR, TraceForm::OnCommand)
+	EVT_CHECKBOX( ID_USE_EMBREE_TRACE, TraceForm::OnCommand)
 
 
 END_EVENT_TABLE()
@@ -115,6 +118,8 @@ TraceForm::TraceForm( wxWindow *parent, Project &prj )
 	flxsizer->Add( m_asPowerTower = new wxCheckBox( sizer1->GetStaticBox(), ID_INCL_POINTFOCUS, "Point-focus system" ), 0, wxALL|wxALIGN_CENTER_VERTICAL, 3 );
 	flxsizer->AddStretchSpacer();
 	flxsizer->Add(m_use_refactor_trace = new wxCheckBox(sizer1->GetStaticBox(), ID_USE_REFACTOR, "Use refactor trace"), 0, wxALL | wxALIGN_CENTER_VERTICAL, 3);
+	flxsizer->AddStretchSpacer();
+	flxsizer->Add(m_use_embree_trace = new wxCheckBox(sizer1->GetStaticBox(), ID_USE_EMBREE_TRACE, "Use embree trace"), 0, wxALL | wxALIGN_CENTER_VERTICAL, 3);
 
 
 	sizer1->Add( flxsizer, 0, wxALL, 5 );
@@ -173,11 +178,12 @@ void TraceForm::UpdateFromData()
 	m_inclOpticalErrors->SetValue(T.is_include_errors);
 	m_asPowerTower->SetValue(T.is_point_focus);
 	m_use_refactor_trace->SetValue(T.use_refactor_trace);
+	m_use_embree_trace->SetValue(T.use_embree_trace);
 }
 
 
 void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed,
-	bool sunshape, bool opterr, bool aspowertower, bool use_refactor_trace )
+	bool sunshape, bool opterr, bool aspowertower, bool use_refactor_trace, bool use_embree_trace )
 {
 	m_numRays->SetValue( nrays );
 	m_numMaxSunRays->SetValue( nmaxsunrays );
@@ -187,6 +193,7 @@ void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed
 	m_inclOpticalErrors->SetValue( opterr );
     m_asPowerTower->SetValue( aspowertower );
 	m_use_refactor_trace->SetValue( use_refactor_trace );
+	m_use_embree_trace->SetValue( use_embree_trace );
 
 	TraceSettings& T = m_prj.Trace_Settings;
 	T.n_rays = m_numRays->AsUnsigned();
@@ -197,10 +204,12 @@ void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed
 	T.is_include_errors = m_inclOpticalErrors->GetValue();
 	T.is_point_focus = m_asPowerTower->GetValue();
 	T.use_refactor_trace = m_use_refactor_trace->GetValue();
+	T.use_embree_trace = m_use_embree_trace->GetValue();
 }
 
 void TraceForm::GetOptions( size_t *nrays, size_t *nmaxsunrays, int *ncpu, int *seed,
-	bool *sunshape, bool *opterr, bool *aspowertower, bool *use_refactor_trace )
+	bool *sunshape, bool *opterr, bool *aspowertower, bool *use_refactor_trace,
+	bool *use_embree_trace)
 {
 	if ( nrays ) *nrays = m_numRays->AsUnsigned();
 	if ( nmaxsunrays ) *nmaxsunrays = m_numMaxSunRays->AsUnsigned();
@@ -210,6 +219,7 @@ void TraceForm::GetOptions( size_t *nrays, size_t *nmaxsunrays, int *ncpu, int *
 	if ( opterr ) *opterr = m_inclOpticalErrors->GetValue();
     if ( aspowertower ) *aspowertower = m_asPowerTower->GetValue();
 	if ( use_refactor_trace ) *use_refactor_trace = m_use_refactor_trace->GetValue();
+	if ( use_embree_trace ) *use_embree_trace = m_use_embree_trace->GetValue();
 }
 
 
@@ -254,6 +264,9 @@ void TraceForm::OnCommand( wxCommandEvent &evt )
 		break;
 	case ID_USE_REFACTOR:
 		T.use_refactor_trace = m_use_refactor_trace->GetValue();
+		break;
+	case ID_USE_EMBREE_TRACE:
+		T.use_embree_trace = m_use_embree_trace->GetValue();
 		break;
 	case wxID_EXECUTE:
 		StartTrace();
@@ -593,8 +606,10 @@ private:
 	wxArrayString* m_errmsg;
 
 	wxMutex m_statusLock;
+
 public:
-	TraceThread( Project* system, st_context_t spcxt, wxArrayString* errmsg, int ithread, int seed, bool aspowertower, int nrays, int nmaxrays, bool sunshape, bool opterrs)
+	TraceThread( Project* system, st_context_t spcxt, wxArrayString* errmsg, int ithread, int seed, 
+		bool aspowertower, int nrays, int nmaxrays, bool sunshape, bool opterrs)
 		: wxThread( wxTHREAD_JOINABLE ), m_cancelFlag( false )
 	{
 		m_iThread = ithread;
@@ -671,7 +686,8 @@ public:
 
 		m_resultCode = ::st_sim_run_with_refactor(m_contextId,
 			(unsigned int)m_seedVal,
-			trace_callback_multi_thread, this, this->m_system->Trace_Settings.use_refactor_trace);
+			trace_callback_multi_thread, this, this->m_system->Trace_Settings.use_refactor_trace,
+			this->m_system->Trace_Settings.use_embree_trace, nullptr);
 
 		return 0;
 	}

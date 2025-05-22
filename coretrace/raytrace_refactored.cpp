@@ -158,16 +158,27 @@ void FindElementHit(
 		double PathLength = 0;
 
 		// increment position by tiny amount to get off the element if tracing to the same element
-		PosRayElement[0] = PosRayElement[0] + 1.0e-5 * CosRayElement[0];
-		PosRayElement[1] = PosRayElement[1] + 1.0e-5 * CosRayElement[1];
-		PosRayElement[2] = PosRayElement[2] + 1.0e-5 * CosRayElement[2];
+		PosRayElement[0] = PosRayElement[0] + 1.0e-4 * CosRayElement[0];
+		PosRayElement[1] = PosRayElement[1] + 1.0e-4 * CosRayElement[1];
+		PosRayElement[2] = PosRayElement[2] + 1.0e-4 * CosRayElement[2];
+
+		
 
 		// {Determine if ray intersects element[j]; if so, Find intersection point with surface of element[j] }
 		DetermineElementIntersectionNew(Element, PosRayElement, CosRayElement,
 			PosRaySurfElement, CosRaySurfElement, DFXYZ,
 			&PathLength, &ErrorFlag, &InterceptFlag, &HitBackSide);
 
-		
+		int LastElementNumbertest = (i == 0 && !PT_override) ? Element->element_number : j + 1;    //mjw change from j index to element id
+		if (LastElementNumbertest == 150)
+		{
+			int asdg = 0;
+		}
+
+		// {Determine if ray intersects element[j]; if so, Find intersection point with surface of element[j] }
+		DetermineElementIntersectionNew(Element, PosRayElement, CosRayElement,
+			PosRaySurfElement, CosRaySurfElement, DFXYZ,
+			&PathLength, &ErrorFlag, &InterceptFlag, &HitBackSide);
 
 		if (InterceptFlag)
 		{
@@ -631,7 +642,8 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 	bool IncludeErrors,
 	bool AsPowerTower,
 	int (*callback)(st_uint_t ntracedtotal, st_uint_t ntraced, st_uint_t ntotrace, st_uint_t curstage, st_uint_t nstages, void* data),
-	void* cbdata)
+	void* cbdata,
+	bool use_embree, void* embree_scene_shared)
 {
 	// Determine if PT optimizations should be applied
 	bool PT_override = false;
@@ -644,18 +656,26 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 	}
 
 	// Initialize Embree vars
-	bool use_embree = true;
 	RTCDevice embree_device = nullptr;
 	RTCScene embree_scene = nullptr;
+	bool use_shared_embree = false;
 	if (use_embree)
 	{
-		// Make device
-		embree_device = rtcNewDevice(NULL);
-		rtcSetDeviceErrorFunction(embree_device, embree_helper::error_function, NULL);
+		if (embree_scene_shared == nullptr)
+		{
+			// Make device
+			embree_device = rtcNewDevice(NULL);
+			rtcSetDeviceErrorFunction(embree_device, embree_helper::error_function, NULL);
 
-		// Convert st stages into scene
-		embree_scene = embree_helper::make_scene(embree_device, *System);
-		rtcCommitScene(embree_scene);
+			// Convert st stages into scene
+			embree_scene = embree_helper::make_scene(embree_device, *System);
+			rtcCommitScene(embree_scene);
+		}
+		else
+		{
+			embree_scene = static_cast<RTCScene>(embree_scene_shared);
+			use_shared_embree = true;
+		}
 	}
 
 	// Initialize variables
@@ -829,7 +849,12 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 					nintelements = Stage->ElementList.size();
 				}
 
-				bool is_debug_test = true;
+				if (RayNumber == 5)
+				{
+					int asdgsg = 0;
+				}
+
+				bool is_debug_test = false;
 				if (is_debug_test && use_embree)
 				{
 					double eb_posraysurfelement[3], eb_cosraysurfelement[3],
@@ -844,6 +869,10 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 					int st_errorflag, st_lasthitbackside;
 					bool st_stagehit;
 
+					if (RayNumber == 5)
+					{
+						int asdgsg = 0;
+					}
 
 					FindElementHit_embree(embree_scene, i, RayNumber,
 						PosRayGlob, CosRayGlob,
@@ -863,6 +892,14 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 						st_posraysurfstage, st_cosraysurfstage,
 						st_errorflag, st_lasthitbackside, st_stagehit);
 
+					if (eb_stagehit != st_stagehit)
+					{
+						int xasgd = 0;
+					}
+					if (eb_elementnumber != st_elementnumber)
+					{
+						int adgsdhg = 0;
+					}
 
 					bool valid = embree_helper::validate_intersect(eb_posraysurfelement, eb_cosraysurfelement,
 						eb_dfxyz, eb_elementnumber, eb_raynumber,
@@ -898,7 +935,7 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 							LastElementNumber,
 							i + 1,
 							LastRayNumber);
-						return false;
+						return true;
 					}
 
 				}
@@ -1256,7 +1293,7 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 	}
 
 	// Clean embree
-	if (use_embree)
+	if (use_embree && !use_shared_embree)
 	{
 		rtcReleaseScene(embree_scene);
 		embree_scene = nullptr;

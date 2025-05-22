@@ -682,7 +682,7 @@ STCORE_API int st_sim_run_data( st_context_t pcxt, unsigned int seed,
                             std::vector<std::vector< double > > *data_s2, 
                             bool save_st_data,
 						    int (*callback)(st_uint_t ntracedtotal, st_uint_t ntraced, st_uint_t ntotrace, st_uint_t curstage, st_uint_t nstages, void *data), void *cbdata,
-                            bool use_refactor_trace)
+                            bool use_refactor_trace, bool use_embree_trace, void* embree_scene)
 {
     /* 
     Run a simulation and save the stage 1-2 ray data for future use. Return this data in the data_s1, data_s2 structures.
@@ -718,7 +718,7 @@ STCORE_API int st_sim_run_data( st_context_t pcxt, unsigned int seed,
 		if (!Trace_refactored(sys, seed,
 			rayct, sys->sim_raymax,
 			sys->sim_errors_sunshape, sys->sim_errors_optical, sys->sim_dynamic_group,
-			callback, cbdata))
+			callback, cbdata, use_embree_trace, embree_scene))
 			return -1;
 	}
 	else
@@ -747,14 +747,14 @@ STCORE_API int st_sim_run_data( st_context_t pcxt, unsigned int seed,
 STCORE_API int st_sim_run( st_context_t pcxt, unsigned int seed,
 						  int (*callback)(st_uint_t ntracedtotal, st_uint_t ntraced, st_uint_t ntotrace, st_uint_t curstage, st_uint_t nstages, void *data), void *cbdata)
 {
-    return st_sim_run_data( pcxt, seed, 0, 0, false, callback, cbdata, false);
+    return st_sim_run_data( pcxt, seed, 0, 0, false, callback, cbdata, false, false, nullptr);
 }
 
 STCORE_API int st_sim_run_with_refactor(st_context_t pcxt, unsigned int seed,
 	int (*callback)(st_uint_t ntracedtotal, st_uint_t ntraced, st_uint_t ntotrace, st_uint_t curstage, st_uint_t nstages, void* data), void* cbdata,
-	bool use_refactor_trace)
+	bool use_refactor_trace, bool use_embree_trace, void* embree_scene)
 {
-	return st_sim_run_data(pcxt, seed, 0, 0, false, callback, cbdata, use_refactor_trace);
+	return st_sim_run_data(pcxt, seed, 0, 0, false, callback, cbdata, use_refactor_trace, use_embree_trace, embree_scene);
 }
 
 STCORE_API void st_calc_euler_angles( double origin[3], double aimpoint[3], double zrot, double euler[3] )

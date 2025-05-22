@@ -52,7 +52,7 @@ TEST(ApertureExamples, SingleRayNoOpticalErrors)
 
 	::st_sim_params(cxt, nrays, maxrays, aspointfocus);
 	::st_sim_errors(cxt, sunshape, errors);
-	code = ::st_sim_run_with_refactor(cxt, (unsigned int)seed, ::trace_progress, 0, true);
+	code = ::st_sim_run_with_refactor(cxt, (unsigned int)seed, ::trace_progress, 0, true, false, nullptr);
 
 	int Length = ::st_num_intersections(cxt);
 	
