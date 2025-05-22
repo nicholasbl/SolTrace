@@ -150,6 +150,17 @@ public:
         return this->my_parameters.number_of_rays;
     }
 
+    void set_max_rays_traced(uint_fast64_t nrays)
+    {
+        this->my_parameters.max_number_of_rays = nrays;
+        return;
+    }
+
+    uint_fast64_t get_max_number_rays_traced() const
+    {
+        return this->my_parameters.max_number_of_rays;
+    }
+
     void set_tolerance(double tolerance)
     {
         this->my_parameters.tolerance = tolerance;
@@ -162,7 +173,7 @@ public:
 
     /// @brief Set the seed used for the random number generation
     /// @param seed seed to set
-    void set_seed(int seed)
+    void set_seed(uint_fast64_t seed)
     {
         this->my_parameters.seed = seed;
         return;
@@ -170,7 +181,7 @@ public:
 
     /// @brief Get the seed used for random number generation
     /// @return current seed
-    int get_seed() const
+    uint_fast64_t get_seed() const
     {
         return this->my_parameters.seed;
     }

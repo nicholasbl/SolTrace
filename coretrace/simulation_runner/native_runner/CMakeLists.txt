@@ -19,7 +19,13 @@ set(NATIVE_RUNNER_SRC
 
 set(POSITION_INDEPENDENT_CODE ON)
 
-add_library(native_runner SHARED ${NATIVE_RUNNER_SRC})
+if(WIN32)
+    # Hack to build on Windows
+    add_library(native_runner STATIC ${NATIVE_RUNNER_SRC})
+else(WIN32)
+    add_library(native_runner SHARED ${NATIVE_RUNNER_SRC})
+endif()
+
 set_target_properties(
     native_runner
     PROPERTIES

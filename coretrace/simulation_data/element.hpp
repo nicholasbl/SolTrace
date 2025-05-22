@@ -60,7 +60,6 @@ public:
   /// @brief Get the element id assigned when registerd with SimulationData
   /// @return id if registered with SimulationData, ELEMENT_ID_UNASSIGNED if not
   virtual element_id get_id() const = 0;
-
   virtual int_fast64_t get_stage() = 0;
 
   virtual const std::string &get_name() const = 0;
@@ -78,6 +77,7 @@ public:
   virtual Vector3d get_origin_global() const = 0;
   // Always the location of the origin with respect the reference coordinates
   virtual void set_origin(const Vector3d &) = 0;
+  virtual void set_origin(double, double, double) = 0;
   // virtual const Vector3d &get_global_origin() const = 0;
   // virtual void set_global_origin(const Vector3d &) = 0;
   virtual Vector3d get_aim_vector_local() const = 0;
@@ -85,12 +85,14 @@ public:
   virtual Vector3d get_aim_vector_global() const = 0;
   // Always the aim vector with respect the reference coordinates
   virtual void set_aim_vector(const Vector3d &) = 0;
+  virtual void set_aim_vector(double, double, double) = 0;
   // Always the Euler angles with respect the reference coordinates
   virtual const Vector3d &get_euler_angles() const = 0;
-  // virtual void set_euler_angles(const Vector3d &) = 0;
   // Always the ZRot with respect to the reference coordinates
   virtual double get_zrot() const = 0;
   virtual void set_zrot(double) = 0;
+  virtual double get_zrot_radians() const = 0;
+  virtual void set_zrot_radians(double) = 0;
 
   virtual Matrix3d get_reference_to_local() const = 0;
   virtual Matrix3d get_stage_to_local() const = 0;
@@ -168,6 +170,13 @@ public:
   virtual void set_reference_element(Element *reference) = 0;
   virtual void set_stage(int_fast64_t stage) = 0;
 
+  // WARNING: The below Accessors should be used with care. They set
+  // values that are set automatically -- these are here just in case...
+  virtual void set_euler_angles(const Vector3d &) = 0;
+  virtual void set_euler_angles(double, double, double) = 0;
+  virtual void set_reference_to_local(const Matrix3d &) = 0;
+  virtual void set_local_to_reference(const Matrix3d &) = 0;
+
 protected:
   // virtual int set_bounding_box() = 0;
 
@@ -229,12 +238,22 @@ public:
     this->origin = point;
     return;
   }
+  virtual void set_origin(double x, double y, double z)
+  {
+    this->origin.set_values(x, y, z);
+    return;
+  }
   virtual Vector3d get_aim_vector_local() const { return this->aim; }
   virtual Vector3d get_aim_vector_stage() const;
   virtual Vector3d get_aim_vector_global() const;
   virtual void set_aim_vector(const Vector3d &direction)
   {
     this->aim = direction;
+    return;
+  }
+  virtual void set_aim_vector(double x, double y, double z)
+  {
+    this->aim.set_values(x, y, z);
     return;
   }
   virtual const Vector3d &get_euler_angles() const
@@ -250,6 +269,16 @@ public:
   virtual void set_zrot(double rot)
   {
     this->zrot = rot;
+    return;
+  }
+
+  virtual double get_zrot_radians() const
+  {
+    return this->zrot * M_PI / 180.0;
+  }
+  virtual void set_zrot_radians(double zrad)
+  {
+    this->zrot = zrad * 180.0 / M_PI;
     return;
   }
 
@@ -278,6 +307,25 @@ public:
   // Convert `local` to global coordinates and store the result in `global`
   virtual int convert_local_to_global(Vector3d &global, const Vector3d &local);
 
+  // WARNING: The below Accessors should be used with care. They set
+  // values that are set automatically -- these are here just in case...
+  virtual void set_euler_angles(const Vector3d &ea)
+  {
+    this->euler_angles = ea;
+  }
+  virtual void set_euler_angles(double alpha, double beta, double gamma)
+  {
+    this->euler_angles.set_values(alpha, beta, gamma);
+  }
+  virtual void set_reference_to_local(const Matrix3d &rtol)
+  {
+    this->reference_to_local = rtol;
+  }
+  virtual void set_local_to_reference(const Matrix3d &ltor)
+  {
+    this->local_to_reference = ltor;
+  }
+
 protected:
   // TODO: Do these need to be mutable?
   mutable bool active;
@@ -290,7 +338,7 @@ protected:
   Vector3d origin;
   // Aim vector of element--aligns with the local (positive) z-axis
   Vector3d aim;
-  // Rotation about the aim vector to set local x and y axes in radians
+  // Rotation about the aim vector to set local x and y axes in degrees (ugh!)
   double zrot;
 
   Vector3d euler_angles;

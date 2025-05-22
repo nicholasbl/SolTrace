@@ -23,6 +23,11 @@ public:
         this->my_position = pos;
         return;
     }
+    virtual void set_position(double x, double y, double z)
+    {
+        this->my_position.set_values(x, y, z);
+        return;
+    }
     virtual void set_position(const DateTime &, double lat, double long) {}
     virtual void get_shape() {}
     virtual void set_shape() {}

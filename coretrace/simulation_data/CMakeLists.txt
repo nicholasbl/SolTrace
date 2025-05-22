@@ -15,7 +15,12 @@ set(SIMDATA_SRC
 
 set(POSITION_INDEPENDENT_CODE ON)
 
-add_library(simdata SHARED ${SIMDATA_SRC})
+if(WIN32)
+    # Hack to build on Windows
+    add_library(simdata STATIC ${SIMDATA_SRC})
+else(WIN32)
+    add_library(simdata SHARED ${SIMDATA_SRC})
+endif()
 set_target_properties(simdata
     PROPERTIES
     DEBUG_POSTFIX "d"

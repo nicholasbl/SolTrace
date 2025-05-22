@@ -21,9 +21,10 @@ TEST(Element, ConstructionSmokeTest)
 TEST(Element, SingleElementAccessors)
 {
     SingleElement ref;
-    Vector3d zero = Vector3d(0.0, 0.0, 0.0);
+    Vector3d zero(0.0, 0.0, 0.0);
+    Vector3d khat(0.0, 0.0, 1.0);
     EXPECT_TRUE(is_identical(ref.get_origin_local(), zero));
-    EXPECT_TRUE(is_identical(ref.get_aim_vector_local(), zero));
+    EXPECT_TRUE(is_identical(ref.get_aim_vector_local(), khat));
     EXPECT_TRUE(is_identical(ref.get_euler_angles(), zero));
     EXPECT_EQ(ref.get_aperture(), nullptr);
     EXPECT_EQ(ref.get_surface(), nullptr);

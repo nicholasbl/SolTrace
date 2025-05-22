@@ -65,6 +65,14 @@ public:
         return this->data[idx];
     }
 
+    friend std::ostream &operator<<(std::ostream &os, const Vector3d &x)
+    {
+        os << "[" << x.data[0] << ", "
+           << x.data[1] << ", "
+           << x.data[2] << "]";
+        return os;
+    }
+
     // inline bool operator==(const Vector3d& x)
     // {
     //     return (
@@ -106,17 +114,46 @@ public:
 
     void zero()
     {
-        for (int i=0; i<3; ++i)
+        for (int i = 0; i < 3; ++i)
         {
-            for (int j=0; j<3; ++j)
+            for (int j = 0; j < 3; ++j)
             {
                 data[i][j] = 0.0;
             }
         }
     }
 
+    void identity()
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            for (int j = 0; j < 3; ++j)
+            {
+                data[i][j] = (i == j ? 1.0 : 0.0);
+            }
+        }
+    }
+
     // double data[9];
     double data[3][3];
+
+    friend std::ostream &operator<<(std::ostream &os, const Matrix3d &A)
+    {
+        // os << "[" << x.data[0] << ", "
+        //    << x.data[1] << ", "
+        //    << x.data[2] << "]";
+        os << "[";
+        for (int i = 0; i < 3; ++i)
+        {
+            for (int j = 0; j < 3; ++j)
+            {
+                os << A.data[i][j]
+                   << (j < 2 ? ", " : "; ");
+            }
+        }
+        os << "]";
+        return os;
+    }
 
 private:
 };

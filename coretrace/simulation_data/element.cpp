@@ -12,12 +12,13 @@ ElementBase::ElementBase() : Element(),
                              zrot(0.0),
                              reference_element(nullptr)
 {
-    this->aim.zero();
+    // Default local coordinates to match with the reference coordinates
+    this->aim.set_values(0.0, 0.0, 1.0);
     this->origin.zero();
-    this->euler_angles.zero();
 
-    this->reference_to_local.zero();
-    this->local_to_reference.zero();
+    this->euler_angles.zero();
+    this->reference_to_local.identity();
+    this->local_to_reference.identity();
 
     return;
 }

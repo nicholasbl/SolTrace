@@ -22,6 +22,7 @@ set(UNIT_TEST_SRC
     element_test.cpp
     simulation_data_test.cpp
 	native_runner_test.cpp
+	tower_demo.cpp
 )
 
 add_executable(UnitTests
