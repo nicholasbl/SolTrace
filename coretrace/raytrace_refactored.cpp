@@ -73,7 +73,7 @@ inline void CopyVec3( std::vector<double> &dest, double src[3] )
 	dest[2] = src[2];
 }
 
-inline void CopyVec3( double dest[3], double src[3] )
+inline void CopyVec3( double dest[3], const double src[3] )
 {
 	dest[0] = src[0];
 	dest[1] = src[1];
@@ -235,6 +235,8 @@ void FindElementHit_embree(
 
 	// Make payload object to store intersect outputs
 	embree_helper::RayIntersectPayload ray_payload;
+	CopyVec3(ray_payload.PosRayGlobIn, PosRayGlob);	// Copy position (with full double precision)
+	CopyVec3(ray_payload.CosRayGlobIn, CosRayGlob);	// Copy direction (with full double precision)
 	rtcInitRayQueryContext(&ray_payload.context);
 	RTCIntersectArguments args;
 	rtcInitIntersectArguments(&args);

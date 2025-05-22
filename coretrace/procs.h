@@ -285,7 +285,7 @@ bool ReadSurfaceFile(const char *file, TElement *elm, TSystem *sys);
 
 inline void CopyVec3( double dest[3], const std::vector<double> &src );
 inline void CopyVec3( std::vector<double> &dest, double src[3] );
-inline void CopyVec3( double dest[3], double src[3] );
+inline void CopyVec3( double dest[3], const double src[3] );
 
 
 int intri(double x1, double y1,

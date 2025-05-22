@@ -74,6 +74,10 @@ namespace embree_helper
 
 		int element_number = -1;
 		int ErrorFlag = 0;
+
+		double PosRayGlobIn[3] = { 0.0, 0.0, 0.0 };
+		double CosRayGlobIn[3] = { 0.0, 0.0, 0.0 };
+
 	};
 
 	void error_function(void* userPtr, RTCError error, const char* str);

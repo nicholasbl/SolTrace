@@ -59,6 +59,17 @@ namespace embree_helper
 		dest[2] = src[2];
 	}
 
+	template<typename T>
+	bool compare_Vec3(T vec1[3], T vec2[3], double tol_diff)
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			if ((std::abs(vec1[i] / vec2[i]) - 1.f > tol_diff)
+				&& (std::abs(vec1[i] - vec2[i]) > 1e-10))
+				return false;
+		}
+		return true;
+	}
 
 	void error_function(void* userPtr, RTCError error, const char* str)
 	{
@@ -227,9 +238,16 @@ namespace embree_helper
 	void intersect_function(const RTCIntersectFunctionNArguments* args)
 	{
 		// Retrieve ray data (GLOBAL coordinates, may NOT be normalized/unit)
-		const RTCRayHit* rayhit = (const RTCRayHit*)args->rayhit;
-		double PosRayGlob[3] = { rayhit->ray.org_x, rayhit->ray.org_y, rayhit->ray.org_z };
-		double CosRayGlob[3] = { rayhit->ray.dir_x, rayhit->ray.dir_y, rayhit->ray.dir_z };	// ASSUMING these are normalized (dangerous)
+		//const RTCRayHit* rayhit = (const RTCRayHit*)args->rayhit;
+		//double PosRayGlob[3] = { rayhit->ray.org_x, rayhit->ray.org_y, rayhit->ray.org_z };
+		//double CosRayGlob[3] = { rayhit->ray.dir_x, rayhit->ray.dir_y, rayhit->ray.dir_z };	// ASSUMING these are normalized (dangerous)
+
+		// Get payload object
+		RayIntersectPayload* payload = (RayIntersectPayload*)args->context;
+
+		double PosRayGlob[3], CosRayGlob[3];
+		CopyVec3(PosRayGlob, payload->PosRayGlobIn);
+		CopyVec3(CosRayGlob, payload->CosRayGlobIn);
 
 		// Get Element data
 		TElement* st_element = (TElement*)args->geometryUserPtr;
@@ -253,9 +271,6 @@ namespace embree_helper
 		PosRayElement[0] = PosRayElement[0] + 1.0e-3 * CosRayElement[0];
 		PosRayElement[1] = PosRayElement[1] + 1.0e-3 * CosRayElement[1];
 		PosRayElement[2] = PosRayElement[2] + 1.0e-3 * CosRayElement[2];
-
-		// Get payload object
-		RayIntersectPayload* payload = (RayIntersectPayload*)args->context;
 
 		// Call DeterminElementIntersectionNew
 		double PosRaySurfElement[3] = { 0.0, 0.0, 0.0 };
@@ -368,19 +383,6 @@ namespace embree_helper
 		return scene;
 	}
 
-
-	template<typename T>
-	bool compare_Vec3(T vec1[3], T vec2[3], double tol_diff)
-	{
-		for (int i = 0; i < 3; i++)
-		{
-			if ((std::abs(vec1[i] / vec2[i]) - 1.f > tol_diff)
-				&& (std::abs(vec1[i] - vec2[i]) > 1e-3))
-				return false;
-		}
-		return true;
-	}
-
 	bool validate_intersect(double(&LastPosRaySurfElement1)[3], double(&LastCosRaySurfElement1)[3], double(&LastDFXYZ1)[3],
 		st_uint_t& LastElementNumber1, st_uint_t& LastRayNumber1,
 		double(&LastPosRaySurfStage1)[3], double(&LastCosRaySurfStage1)[3],
@@ -393,7 +395,7 @@ namespace embree_helper
 		int& ErrorFlag2, int& LastHitBackSide2,
 		bool& StageHit2)
 	{
-		double tol_diff = 1e-2;
+		double tol_diff = 1e-7;
 		if (StageHit1 != StageHit2) return false;
 		if (LastElementNumber1 != LastElementNumber2) return false;
 		if (LastHitBackSide1 != LastHitBackSide2) return false;
