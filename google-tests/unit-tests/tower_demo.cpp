@@ -26,7 +26,7 @@ TEST(TowerDemo, NativeRunnerWithStages)
     absorber->set_origin(0.0, 0.0, 10.0);
     absorber->set_aim_vector(0.0, 5.0, 0.0);
     absorber->set_surface(make_surface<Flat>());
-    absorber->set_aperture(make_aperture<Rectangular>(2.0, 2.0));
+    absorber->set_aperture(make_aperture<Rectangle>(2.0, 2.0));
     OpticalProperties *foptics = absorber->get_front_optical_properties();
     foptics->my_type = REFLECTION;
     foptics->reflectivity = 0.0;
@@ -92,7 +92,7 @@ TEST(TowerDemo, NativeRunnerWithStages)
         // el->set_zrot_radians(M_PI / 3.0 * i);
 
         el->set_surface(make_surface<Flat>());
-        el->set_aperture(make_aperture<Rectangular>(1.0, 1.95));
+        el->set_aperture(make_aperture<Rectangle>(1.0, 1.95));
 
         std::stringstream name;
         name << "Reflector " << i;
@@ -113,35 +113,35 @@ TEST(TowerDemo, NativeRunnerWithStages)
     params.include_sun_shape_errors = true;
     params.seed = 12345;
 
-    // We can go over all the elements added
-    for (auto iter = sd.get_iterator();
-         !sd.is_at_end(iter);
-         ++iter)
-    {
-        // iter is a iterator over the storing container which is a map
-        // so that the iterator gives the key value pair
-        element_id id = iter->first;
-        // `element_ptr` is a std::shared_pointer to an Element
-        element_ptr el = iter->second;
-        std::cout << "------------\n"
-                  << "Element ID: " << id
-                  << "\nElement name: " << el->get_name()
-                  << "\nIs Stage: " << el->is_stage()
-                  << "\nIs Composite: " << el->is_composite()
-                  << "\nIs Single: " << el->is_single()
-                  // Below are all the same in this case
-                  << "\nOrigin (local): " << el->get_origin_local()
-                  << "\nOrigin (stage): " << el->get_origin_stage()
-                  << "\nOrigin (global): " << el->get_origin_global()
-                  << "\n";
-        // NOTE: The above iteration includes StageElements (e.g. stages),
-        // CompositeElements (which are collections of elements), as well as
-        // SingleElements (actual physical elements that interact with rays).
-        // We can distinguish between them by calling the various `is_XXXX`
-        // methods as seen above. For runners that put everything in global
-        // coordinates, anything that is not a SingleElement (so `is_single`
-        // returns true) can be ignored.
-    }
+    // // We can go over all the elements added
+    // for (auto iter = sd.get_iterator();
+    //      !sd.is_at_end(iter);
+    //      ++iter)
+    // {
+    //     // iter is a iterator over the storing container which is a map
+    //     // so that the iterator gives the key value pair
+    //     element_id id = iter->first;
+    //     // `element_ptr` is a std::shared_pointer to an Element
+    //     element_ptr el = iter->second;
+    //     std::cout << "------------\n"
+    //               << "Element ID: " << id
+    //               << "\nElement name: " << el->get_name()
+    //               << "\nIs Stage: " << el->is_stage()
+    //               << "\nIs Composite: " << el->is_composite()
+    //               << "\nIs Single: " << el->is_single()
+    //               // Below are all the same in this case
+    //               << "\nOrigin (local): " << el->get_origin_local()
+    //               << "\nOrigin (stage): " << el->get_origin_stage()
+    //               << "\nOrigin (global): " << el->get_origin_global()
+    //               << "\n";
+    //     // NOTE: The above iteration includes StageElements (e.g. stages),
+    //     // CompositeElements (which are collections of elements), as well as
+    //     // SingleElements (actual physical elements that interact with rays).
+    //     // We can distinguish between them by calling the various `is_XXXX`
+    //     // methods as seen above. For runners that put everything in global
+    //     // coordinates, anything that is not a SingleElement (so `is_single`
+    //     // returns true) can be ignored.
+    // }
 
     NativeRunner runner;
     RunnerStatus sts = runner.initialize();

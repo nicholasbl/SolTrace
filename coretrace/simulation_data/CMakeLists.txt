@@ -4,6 +4,7 @@ Project(simdata)
 include_directories(.)
 
 set(SIMDATA_SRC
+    aperture.cpp
     composite_element.cpp
     element.cpp
     matvec.cpp

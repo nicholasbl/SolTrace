@@ -52,8 +52,8 @@ TEST(NativeRunner, SmokeTest)
     RunnerStatus sts;
     sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-    // sts = runner.setup_simulation(&my_sim);
-    // EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&my_sim);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     // sts = runner.run_simulation();
     // EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 }

@@ -1,15 +1,16 @@
 #ifndef SOLTRACE_APERTURE_H
 #define SOLTRACE_APERTURE_H
 
+#include <cmath>
 #include <memory>
 
 enum ApertureType
 {
-    ANNULAR,
-    CIRCULAR,
-    HEXAGONAL,
-    RECTANGULAR,
-    TRIANGULAR,
+    ANNULUS,
+    CIRCLE,
+    HEXAGON,
+    RECTANGLE,
+    EQUILATERAL_TRIANGLE,
     SINGLE_AXIS_CURVATURE_SECTION,
     IRREGULAR_TRIANGLE,
     IRREGULAR_QUADRILATERAL
@@ -23,68 +24,178 @@ public:
     Aperture(ApertureType type) : my_type(type) {}
     virtual ~Aperture() {}
 
-    ApertureType get_type()
+    inline ApertureType get_type() const
     {
         return my_type;
     }
+    virtual inline double radius_circumscribed_circle() const
+    {
+        return 0.5 * this->diameter_circumscribed_circle();
+    }
+
+    virtual double aperture_area() const = 0;
+    virtual double diameter_circumscribed_circle() const = 0;
+    virtual bool is_in(double x, double y) const = 0;
 };
 
-struct Annular : public Aperture
+struct Annulus : public Aperture
 {
     double inner_radius;
     double outer_radius;
     double arc_angle;
-    Annular()
-        : Aperture(ANNULAR),
+
+    Annulus()
+        : Aperture(ANNULUS),
           inner_radius(0.0), outer_radius(0.0), arc_angle(0.0)
     {
     }
-    Annular(double ri, double ro, double arc)
-        : Aperture(ANNULAR),
+    Annulus(double ri, double ro, double arc)
+        : Aperture(ANNULUS),
           inner_radius(ri), outer_radius(ro), arc_angle(arc)
     {
     }
-    virtual ~Annular() {}
+    virtual ~Annulus() {}
+
+    virtual double aperture_area() const
+    {
+        // TODO: input.cpp on line 219 uses the formula
+        //    elm->ParameterC*(ACOSM1O180)*(elm->ParameterB - elm->ParameterA);
+        //    = \theta * (r - R)
+        // This seems to be wrong...
+        double R = this->outer_radius;
+        double r = this->inner_radius;
+        double arc = this->arc_angle * 180.0 / M_PI;
+        return 0.5 * arc * (R * R - r * r);
+    }
+
+    virtual double diameter_circumscribed_circle() const
+    {
+        return 2.0 * this->outer_radius;
+    }
+
+    virtual bool is_in(double x, double y) const
+    {
+        double r = sqrt(x * x + y * y);
+        return (this->inner_radius <= r &&
+                r <= this->outer_radius);
+    }
 };
 
-struct Circular : public Aperture
+struct Circle : public Aperture
 {
     double diameter;
-    Circular() : Aperture(CIRCULAR), diameter(0.0) {}
-    Circular(double d) : Aperture(CIRCULAR), diameter(d) {}
-    virtual ~Circular() {}
+
+    Circle() : Aperture(CIRCLE), diameter(0.0) {}
+    Circle(double d) : Aperture(CIRCLE), diameter(d) {}
+    virtual ~Circle() {}
+
+    virtual double aperture_area() const
+    {
+        return 0.25 * M_PI * this->diameter * this->diameter;
+    }
+
+    virtual double diameter_circumscribed_circle() const
+    {
+        return this->diameter;
+    }
+
+    virtual bool is_in(double x, double y) const
+    {
+        double r = sqrt(x * x + y * y);
+        return r <= 0.5 * this->diameter;
+    }
 };
 
-struct Hexagonal : public Aperture
+struct EqualateralTriangle : public Aperture
 {
     double circumscribe_diameter;
-    Hexagonal() : Aperture(HEXAGONAL), circumscribe_diameter(0.0) {}
-    Hexagonal(double d) : Aperture(HEXAGONAL), circumscribe_diameter(d) {}
-    virtual ~Hexagonal() {}
+    EqualateralTriangle() : Aperture(EQUILATERAL_TRIANGLE),
+                            circumscribe_diameter(0.0)
+    {
+    }
+    EqualateralTriangle(double cd) : Aperture(EQUILATERAL_TRIANGLE),
+                                     circumscribe_diameter(cd)
+    {
+    }
+    virtual ~EqualateralTriangle() {}
+
+    virtual double aperture_area() const
+    {
+        double r = 0.5 * this->circumscribe_diameter;
+        return 0.75 * sqrt(3) * r * r;
+    }
+
+    virtual double diameter_circumscribed_circle() const
+    {
+        return this->circumscribe_diameter;
+    }
+
+    virtual bool is_in(double x, double y) const;
 };
 
-struct Rectangular : public Aperture
+struct Hexagon : public Aperture
+{
+    double circumscribe_diameter;
+
+    Hexagon() : Aperture(HEXAGON), circumscribe_diameter(0.0) {}
+    Hexagon(double d) : Aperture(HEXAGON), circumscribe_diameter(d) {}
+    virtual ~Hexagon() {}
+    virtual double aperture_area() const
+    {
+        // TODO: input.cpp on line 210 uses the formula
+        //    5*sqr(elm->ParameterA/2.0)*cos(30.0*(ACOSM1O180))*sin(30.0*(ACOSM1O180));
+        //    = 5*(d/2)^2*cos(pi/6)*sin(pi/6)
+        //    = 5*(d/2)^2*sqrt(3)/2*1/2
+        //    = 5*sqrt(3)/4 * (d/2)^2
+        //    = 1.25*sqrt(3) * (d/2)^2
+        // This seems to be wrong...
+        double r = 0.5 * this->circumscribe_diameter;
+        return 1.5 * sqrt(3) * r * r;
+    }
+
+    virtual double diameter_circumscribed_circle() const
+    {
+        return circumscribe_diameter;
+    }
+
+    virtual bool is_in(double x, double y) const;
+};
+
+struct Rectangle : public Aperture
 {
     double x_length;
     double y_length;
-    Rectangular() : Aperture(RECTANGULAR),
-                    x_length(0.0), y_length(0.0) {}
-    Rectangular(double xlen, double ylen) : Aperture(RECTANGULAR),
-                                            x_length(xlen), y_length(ylen) {}
-    virtual ~Rectangular() {}
+    Rectangle() : Aperture(RECTANGLE),
+                  x_length(0.0),
+                  y_length(0.0)
+    {
+    }
+    Rectangle(double xlen, double ylen) : Aperture(RECTANGLE),
+                                          x_length(xlen),
+                                          y_length(ylen)
+    {
+    }
+    virtual ~Rectangle() {}
+
+    virtual double aperture_area() const
+    {
+        return this->x_length * this->y_length;
+    }
+
+    virtual double diameter_circumscribed_circle() const
+    {
+        return sqrt(x_length * x_length + y_length * y_length);
+    }
+
+    virtual bool is_in(double x, double y) const
+    {
+        double xh = 0.5 * this->x_length;
+        double yh = 0.5 * this->y_length;
+        return (-xh <= x && x <= xh && -yh <= y && y <= yh);
+    }
 };
 
-struct Triangular : public Aperture
-{
-    double circumscribe_diameter;
-    Triangular() : Aperture(TRIANGULAR),
-                   circumscribe_diameter(0.0) {}
-    Triangular(double cd) : Aperture(TRIANGULAR),
-                            circumscribe_diameter(cd) {}
-    virtual ~Triangular() {}
-};
-
-// TODO: Implement the below cases?
+// TODO: Implement the below cases
 
 struct SingleAxisCurvatureSection : public Aperture
 {

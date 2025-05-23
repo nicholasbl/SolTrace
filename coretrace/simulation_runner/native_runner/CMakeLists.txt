@@ -10,9 +10,12 @@ include_directories(
 set(NATIVE_RUNNER_SRC
     # ${CMAKE_SOURCE_DIR}/coretrace/treemesh.cpp
     # ${CMAKE_SOURCE_DIR}/coretrace/types.cpp
+    element_intersection.cpp
     native_runner.cpp
     native_runner_types.cpp
+    pt_optimizations.cpp
     root432.cpp
+    sun_to_primary_stage.cpp
     trace.cpp
     treemesh.cpp
 )

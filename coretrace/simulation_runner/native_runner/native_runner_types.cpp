@@ -109,7 +109,7 @@ TOpticalProperties &TOpticalProperties::operator=(const TOpticalProperties &rhs)
     return *this;
 }
 
-TElement::TElement()
+TElement::TElement() : aperture(nullptr)
 {
     int i, j;
     for (i = 0; i < 3; i++)
@@ -125,10 +125,10 @@ TElement::TElement()
 
     // Enabled = true;
     ZRot = 0;
-    ShapeIndex = ' ';
-    ParameterA = ParameterB = ParameterC = ParameterD = 0;
-    ParameterE = ParameterF = ParameterG = ParameterH = 0;
-    ApertureArea = 0;
+    // ShapeIndex = ' ';
+    // ParameterA = ParameterB = ParameterC = ParameterD = 0;
+    // ParameterE = ParameterF = ParameterG = ParameterH = 0;
+    // ApertureArea = 0;
     Kappa = 0;
     VertexCurvX = 0;
     VertexCurvY = 0;
@@ -156,6 +156,12 @@ TElement::TElement()
 
     Optics = nullptr;
     element_number = -1; // mjw nonsense
+}
+
+TElement::~TElement()
+{
+    aperture = nullptr;
+    Optics = nullptr;
 }
 
 TSun::TSun()
@@ -517,6 +523,7 @@ telement_ptr make_telement(element_ptr el)
     matrix_copy(telem->RLocToRef, el->get_local_to_stage());
 
     // TODO: Aperture and Surface stuff...
+    telem->aperture = el->get_aperture();
 
     return telem;
 }

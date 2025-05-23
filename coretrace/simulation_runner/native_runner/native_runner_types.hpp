@@ -115,6 +115,7 @@ public:
 struct TElement
 {
 	TElement();
+	~TElement();
 
 	// bool Enabled;
 
@@ -127,19 +128,21 @@ struct TElement
 	double RLocToRef[3][3]; // calculated
 	double PosSunCoords[3]; // calculated -- position in sun plane coordinates - mw
 
-	/////////// APERTURE PARAMETERS ///////////////
-	char ShapeIndex;
-	double ParameterA;
-	double ParameterB;
-	double ParameterC;
-	double ParameterD;
-	double ParameterE;
-	double ParameterF;
-	double ParameterG;
-	double ParameterH;
+	// /////////// APERTURE PARAMETERS ///////////////
+	// char ShapeIndex;
+	// double ParameterA;
+	// double ParameterB;
+	// double ParameterC;
+	// double ParameterD;
+	// double ParameterE;
+	// double ParameterF;
+	// double ParameterG;
+	// double ParameterH;
 
-	double ApertureArea; // calculated
+	// double ApertureArea; // calculated
 	double ZAperture; // calculated
+
+	aperture_ptr aperture;
 
 	/////////// SURFACE PARAMETERS ///////////////
 	char SurfaceIndex;

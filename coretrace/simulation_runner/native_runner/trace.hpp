@@ -23,44 +23,13 @@ public:
     uint_fast64_t Num;
 };
 
-void Intersect(double PosLoc[3],
-               double CosLoc[3],
-               TElement *Element,
-               double PosXYZ[3],
-               double CosKLM[3],
-               double DFXYZ[3],
-               double *PathLength,
-               int *ErrorFlag);
-
-void Surface(double PosXYZ[3],
-             TElement *Element,
-             double *FXYZ,
-             double DFXYZ[3],
-             int *ErrorFlag);
-
-void QuadricSurfaceClosedForm(TElement *Element,
-                              double PosLoc[3],
-                              double CosLoc[3],
-                              double PosXYZ[3],
-                              double DFXYZ[3],
-                              double *PathLength,
-                              int *ErrorFlag);
-
-void TorusClosedForm(TElement *Element,
-                     double PosLoc[3],
-                     double CosLoc[3],
-                     double PosXYZ[3],
-                     double DFXYZ[3],
-                     double *PathLength,
-                     int *ErrorFlag);
-
-void SpencerandMurtySurfaceClosedForm(TElement *Element,
-                                      double PosLoc[3],
-                                      double CosLoc[3],
-                                      double PosXYZ[3],
-                                      double DFXYZ[3],
-                                      double *PathLength,
-                                      int *ErrorFlag);
+// void SpencerandMurtySurfaceClosedForm(TElement *Element,
+//                                       double PosLoc[3],
+//                                       double CosLoc[3],
+//                                       double PosXYZ[3],
+//                                       double DFXYZ[3],
+//                                       double *PathLength,
+//                                       int *ErrorFlag);
 
 void Interaction(MTRand &myrng,
                  double PosXYZ[3],
@@ -95,11 +64,6 @@ void GenerateRay(MTRand &myrng,
 //                            double CosRayGlobal[3],
 //                            int &raynum);
 
-bool SunToPrimaryStage(TSystem *System,
-                       TStage *Stage,
-                       TSun *Sun,
-                       double PosSunStage[3]);
-
 bool AperturePlane(TElement *Element);
 
 void Errors(MTRand &myrng,
@@ -116,17 +80,6 @@ void SurfaceNormalErrors(MTRand &myrng,
                          TOpticalProperties *OptProperties,
                          double CosOut[3]) noexcept(false); // throw(nanexcept);
 
-void DetermineElementIntersectionNew(TElement *Element,
-                                     double PosRayIn[3],
-                                     double CosRayIn[3],
-                                     double PosRayOut[3],
-                                     double CosRayOut[3],
-                                     double DFXYZ[3],
-                                     double *PathLength,
-                                     int *ErrorFlag,
-                                     int *Intercept,
-                                     int *BacksideFlag);
-
 // void NewZStartforCubicSplineSurf(double CRadius,
 //                                  double PosLoc[3],
 //                                  double CosLoc[3],
@@ -135,27 +88,8 @@ void DetermineElementIntersectionNew(TElement *Element,
 //                                  double *PLength,
 //                                  int *EFlag);
 
-void SurfaceZatXYPair(double PosXYZ[3],
-                      TElement *Element,
-                      double *FXYZ,
-                      int *ErrorFlag);
-
-// void MatrixVectorMult(double M[3][3], double V[3], double MxV[3]);
-// void MatrixTranspose(double InputMatrix[3][3], int NumRowsCols, double OutputMatrix[3][3]);
-
-// double DOT(double A[3], double B[3]);
-
-// void TransformToLocal(double PosRef[3], double CosRef[3], double Origin[3],
-//     double RRefToLoc[3][3],
-//     double PosLoc[3], double CosLoc[3]);
-
-// void TransformToReference(double PosLoc[3], double CosLoc[3], double Origin[3],
-//     double RLocToRef[3][3],
-//     double PosRef[3], double CosRef[3]);
-
-// void CalculateTransformMatrices(double Euler[3], double RRefToLoc[3][3], double RLocToRef[3][3]);
-
-// // the 0.0's are values for DeltaX and DeltaY; **[need to look at this further]**
+// // the 0.0's are values for DeltaX and DeltaY;
+// **[need to look at this further]**
 // void EvalPoly(double ax,
 //               double ay,
 //               std::vector<double> &Coeffs,
@@ -169,21 +103,11 @@ void SurfaceZatXYPair(double PosXYZ[3],
 //                double *dzdx,
 //                double *dzdy);
 
-bool splint(std::vector<double> &xa,
-            std::vector<double> &ya,
-            std::vector<double> &y2a,
-            int n,
-            double x,
-            double *y,
-            double *dydx);
-
 // void spline(std::vector<double> &x,
 //             std::vector<double> &y,
 //             int n,
 //             double yp1, double ypn,
 //             std::vector<double> &y2);
-
-void piksrt(int n, double arr[5]);
 
 // void EvalMono(double ax,
 //               double ay,
@@ -227,33 +151,12 @@ void piksrt(int n, double arr[5]);
 //                 double *dzrdx,
 //                 double *dzrdy);
 
-void Root_432(int order,
-              double Coeffs[5][5],
-              double RealRoots[5],
-              double *ImRoot1,
-              double *ImRoot2);
-
 bool InitGeometries(TSystem *sys);
 // bool TranslateSurfaceParams( TElement *elm, double params[8]);
 // bool ReadSurfaceFile( const char *file, TElement *elm );
 
 bool TranslateSurfaceParams(TSystem *sys, TElement *elm, double params[8]);
 bool ReadSurfaceFile(const char *file, TElement *elm, TSystem *sys);
-
-// inline void CopyVec3(double dest[3], const std::vector<double> &src);
-// inline void CopyVec3(std::vector<double> &dest, double src[3]);
-// inline void CopyVec3(double dest[3], double src[3]);
-
-int intri(double x1, double y1,
-          double x2, double y2,
-          double x3, double y3,
-          double xt, double yt);
-
-int inquad(double x1, double y1,
-           double x2, double y2,
-           double x3, double y3,
-           double x4, double y4,
-           double xt, double yt);
 
 bool trace_native(TSystem *System,
                   unsigned int seed,
