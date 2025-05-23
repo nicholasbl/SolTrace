@@ -1,6 +1,8 @@
 
 #include "pt_optimizations.hpp"
 
+#include <algorithm>
+
 void SetupPTOptimizations(
 	// system info
 	TSystem *System, const bool AsPowerTower,
