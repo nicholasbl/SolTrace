@@ -139,7 +139,7 @@ TElement::TElement() : aperture(nullptr)
     SurfaceIndex = ' ';
     SurfaceType = 0;
 
-    FitOrder = 0;
+    // FitOrder = 0;
 
     // CubicSplineDYDXbc1 = 0;
     // CubicSplineDYDXbcN = 0;
@@ -554,7 +554,7 @@ tstage_ptr make_tstage(element_ptr el)
         element_ptr el = iter->second;
         if (el->is_enabled())
         {
-            auto elem = make_telement(iter->second);
+            telement_ptr elem = make_telement(iter->second);
             my_stage->ElementList.push_back(elem);
         }
     }

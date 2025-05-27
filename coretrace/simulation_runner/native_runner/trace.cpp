@@ -1379,6 +1379,8 @@ void Errors(
 	double RRefToLoc[3][3] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
 	double RLocToRef[3][3] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
 
+	// TODO: Rework function without goto statements...
+
 	if (CosIn[2] == 0.0)
 	{
 		if (CosIn[0] == 0.0)

@@ -56,25 +56,25 @@ void QuadricSurfaceClosedForm(TElement *Element,
                               double *PathLength,
                               int *ErrorFlag);
 
-int intri(double x1, double y1,
-          double x2, double y2,
-          double x3, double y3,
-          double xt, double yt);
+// int intri(double x1, double y1,
+//           double x2, double y2,
+//           double x3, double y3,
+//           double xt, double yt);
 
-int inquad(double x1, double y1,
-           double x2, double y2,
-           double x3, double y3,
-           double x4, double y4,
-           double xt, double yt);
+// int inquad(double x1, double y1,
+//            double x2, double y2,
+//            double x3, double y3,
+//            double x4, double y4,
+//            double xt, double yt);
 
 void piksrt(int n, double arr[5]);
 
-bool splint(std::vector<double> &xa,
-            std::vector<double> &ya,
-            std::vector<double> &y2a,
-            int n,
-            double x,
-            double *y,
-            double *dydx);
+// bool splint(std::vector<double> &xa,
+//             std::vector<double> &ya,
+//             std::vector<double> &y2a,
+//             int n,
+//             double x,
+//             double *y,
+//             double *dydx);
 
 #endif

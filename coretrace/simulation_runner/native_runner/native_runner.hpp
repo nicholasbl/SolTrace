@@ -26,13 +26,16 @@ public:
     void disable_power_tower() { this->as_power_tower = false; }
     void enable_power_tower() { this->as_power_tower = true; }
 
+    // Runner accessors
+    const TSystem *get_system() const { return &this->tsys; }
+
 private:
     // bool include_sun_shape_errors;
     // bool include_errors;
     bool as_power_tower;
     
     // // SimulationData to use for ray tracing computations
-    const SimulationData *simdata;
+    // const SimulationData *simdata;
     TSystem tsys;
 
     RunnerStatus setup_parameters(const SimulationData *data);

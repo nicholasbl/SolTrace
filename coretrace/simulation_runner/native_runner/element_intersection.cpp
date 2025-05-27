@@ -132,7 +132,8 @@ void Intersect(double PosLoc[3],
     double ZStart = 0.0, ZA = 0.0;
     double ZStartcs = 0.0, PLengthcs = 0.0;
     int EFlagcs = 0;
-    double OuterRadius = 0.0, InnerRadius = 0.0, R1 = 0.0, R1A = 0.0, R10 = 0.0, Z1 = 0.0, dzdR1 = 0.0;
+    double OuterRadius = 0.0, InnerRadius = 0.0;
+    double R1 = 0.0, R1A = 0.0, R10 = 0.0, Z1 = 0.0, dzdR1 = 0.0;
     double S0Aperture = 0.0;
     double Ro = 0.0, Ri = 0.0, XL = 0.0;
     bool ZAInterceptInsideAperture = false;
@@ -1626,25 +1627,25 @@ void QuadricSurfaceClosedForm(
     }
 }
 
-int intri(double x1, double y1,
-          double x2, double y2,
-          double x3, double y3,
-          double xt, double yt)
-{
-    double a = (x1 - xt) * (y2 - yt) - (x2 - xt) * (y1 - yt);
-    double b = (x2 - xt) * (y3 - yt) - (x3 - xt) * (y2 - yt);
-    double c = (x3 - xt) * (y1 - yt) - (x1 - xt) * (y3 - yt);
-    return (sign(a) == sign(b) && sign(b) == sign(c));
-}
+// int intri(double x1, double y1,
+//           double x2, double y2,
+//           double x3, double y3,
+//           double xt, double yt)
+// {
+//     double a = (x1 - xt) * (y2 - yt) - (x2 - xt) * (y1 - yt);
+//     double b = (x2 - xt) * (y3 - yt) - (x3 - xt) * (y2 - yt);
+//     double c = (x3 - xt) * (y1 - yt) - (x1 - xt) * (y3 - yt);
+//     return (sign(a) == sign(b) && sign(b) == sign(c));
+// }
 
-int inquad(double x1, double y1,
-           double x2, double y2,
-           double x3, double y3,
-           double x4, double y4,
-           double xt, double yt)
-{
-    return intri(x1, y1, x2, y2, x3, y3, xt, yt) || intri(x1, y1, x3, y3, x4, y4, xt, yt);
-}
+// int inquad(double x1, double y1,
+//            double x2, double y2,
+//            double x3, double y3,
+//            double x4, double y4,
+//            double xt, double yt)
+// {
+//     return intri(x1, y1, x2, y2, x3, y3, xt, yt) || intri(x1, y1, x3, y3, x4, y4, xt, yt);
+// }
 
 void piksrt(int n, double arr[5])
 {
@@ -1664,47 +1665,47 @@ void piksrt(int n, double arr[5])
 	}
 }
 
-bool splint(std::vector<double> &xa,
-            std::vector<double> &ya,
-            std::vector<double> &y2a,
-            int n,
-            double x,
-            double *y,
-            double *dydx)
-{
-    int klo = 0, khi = 0, k = 0;
-    double h = 0.0, b = 0.0, a = 0.0;
+// bool splint(std::vector<double> &xa,
+//             std::vector<double> &ya,
+//             std::vector<double> &y2a,
+//             int n,
+//             double x,
+//             double *y,
+//             double *dydx)
+// {
+//     int klo = 0, khi = 0, k = 0;
+//     double h = 0.0, b = 0.0, a = 0.0;
 
-    klo = 0;
-    khi = n - 1;
-    while (khi - klo > 1)
-    {
-        k = (khi + klo) / 2;
-        if (xa[k] > x)
-            khi = k;
-        else
-            klo = k;
-    }
+//     klo = 0;
+//     khi = n - 1;
+//     while (khi - klo > 1)
+//     {
+//         k = (khi + klo) / 2;
+//         if (xa[k] > x)
+//             khi = k;
+//         else
+//             klo = k;
+//     }
 
-    h = xa[khi] - xa[klo];
-    if (h != 0.0)
-    {
+//     h = xa[khi] - xa[klo];
+//     if (h != 0.0)
+//     {
 
-        a = (xa[khi] - x) / h;
-        b = (x - xa[klo]) / h;
-        *y = a * ya[klo] + b * ya[khi] +
-             ((a * a * a - a) * y2a[klo] + (b * b * b - b) * y2a[khi]) * (h * h) / 6.0;
-        *dydx = (ya[khi] - ya[klo]) / (xa[khi] - xa[klo]) -
-                (3.0 * a * a - 1.0) * (xa[khi] - xa[klo]) * y2a[klo] / 6.0 + 
-                (3.0 * b * b - 1.0) * (xa[khi] - xa[klo]) * y2a[khi] / 6.0;
-    }
-    else
-    {
-        return false;
-    }
+//         a = (xa[khi] - x) / h;
+//         b = (x - xa[klo]) / h;
+//         *y = a * ya[klo] + b * ya[khi] +
+//              ((a * a * a - a) * y2a[klo] + (b * b * b - b) * y2a[khi]) * (h * h) / 6.0;
+//         *dydx = (ya[khi] - ya[klo]) / (xa[khi] - xa[klo]) -
+//                 (3.0 * a * a - 1.0) * (xa[khi] - xa[klo]) * y2a[klo] / 6.0 + 
+//                 (3.0 * b * b - 1.0) * (xa[khi] - xa[klo]) * y2a[khi] / 6.0;
+//     }
+//     else
+//     {
+//         return false;
+//     }
 
-    return true;
-}
+//     return true;
+// }
 
 
 #undef sign

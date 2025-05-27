@@ -289,6 +289,7 @@ TEST(Element, StageElementAccessors)
 
 TEST(Element, CoordinateComputationsSmokeTests)
 {
+    // TODO: Make more robust test. This is better than nothing for now.
     auto el = make_element<SingleElement>();
     auto st = make_stage(0);
     Vector3d origin(0.0, 0.0, 0.0);

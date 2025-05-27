@@ -147,7 +147,7 @@ struct TElement
 	/////////// SURFACE PARAMETERS ///////////////
 	char SurfaceIndex;
 	int SurfaceType; // calculated
-	std::string SurfaceFile;
+	// std::string SurfaceFile;
 
 	double Kappa;
 	double Alpha[5];
@@ -158,7 +158,7 @@ struct TElement
 	double ConeHalfAngle;
 	double CurvOfRev;
 
-	int FitOrder;
+	// int FitOrder;
 
 
 	// // Zernike (*.mon) monomial coeffs
