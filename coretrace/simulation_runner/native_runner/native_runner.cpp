@@ -4,8 +4,11 @@
 #include "simulation_data.hpp"
 #include "trace.hpp"
 
-NativeRunner::NativeRunner() : SimulationRunner()
-//    simdata(nullptr)
+NativeRunner::NativeRunner() : SimulationRunner(),
+                               as_power_tower(false),
+                               number_of_threads(1),
+                               newton_tolerance(1e-6),
+                               newton_max_iters(20)
 {
 }
 

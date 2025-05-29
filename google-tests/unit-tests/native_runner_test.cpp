@@ -43,7 +43,10 @@ TEST(NativeRunner, SmokeTest)
     const int NUM_ELEMENTS = 4;
     for (int k = 0; k < NUM_ELEMENTS; ++k)
     {
-        my_st->add_element(make_element<SingleElement>());
+        element_ptr el = make_element<SingleElement>();
+        el->set_aperture(make_aperture<Circle>(2.0));
+        el->set_surface(make_surface<Flat>());
+        my_st->add_element(el);
     }
     EXPECT_EQ(my_st->get_number_of_elements(), NUM_ELEMENTS);
     my_sim.add_stage(my_st);

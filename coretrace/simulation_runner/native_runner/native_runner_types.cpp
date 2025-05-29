@@ -52,6 +52,7 @@
 #include <string.h>
 #include <stdarg.h>
 
+#include "calculator_factory.hpp"
 #include "composite_element.hpp"
 #include "matvec.hpp"
 #include "native_runner_types.hpp"
@@ -109,7 +110,7 @@ TOpticalProperties &TOpticalProperties::operator=(const TOpticalProperties &rhs)
     return *this;
 }
 
-TElement::TElement() : aperture(nullptr)
+TElement::TElement() : aperture(nullptr), Optics()
 {
     int i, j;
     for (i = 0; i < 3; i++)
@@ -136,8 +137,8 @@ TElement::TElement() : aperture(nullptr)
     CrossSectionRadius = 0;
     ConeHalfAngle = 0;
     CurvOfRev = 0;
-    SurfaceIndex = ' ';
-    SurfaceType = 0;
+    // SurfaceIndex = ' ';
+    // SurfaceType = 0;
 
     // FitOrder = 0;
 
@@ -150,18 +151,18 @@ TElement::TElement() : aperture(nullptr)
     // VSHOTFocLen = 0;
     // VSHOTTarDis = 0;
 
-    InteractionType = 0;
+    // InteractionType = 0;
 
     ZAperture = 0;
 
-    Optics = nullptr;
+    // Optics = nullptr;
     element_number = -1; // mjw nonsense
 }
 
 TElement::~TElement()
 {
     aperture = nullptr;
-    Optics = nullptr;
+    // Optics = nullptr;
 }
 
 TSun::TSun()
@@ -179,7 +180,8 @@ void TSun::Reset()
             RRefToLoc[i][j] = RLocToRef[i][j] = 0;
 
     PointSource = false;
-    ShapeIndex = ' ';
+    // ShapeIndex = ' ';
+    ShapeIndex = GAUSSIAN;
     Sigma = 0;
 
     MaxAngle = 0;
@@ -513,7 +515,7 @@ void TSystem::errlog(const char *fmt, ...)
 
 telement_ptr make_telement(element_ptr el)
 {
-    auto telem = std::make_shared<TElement>();
+    telement_ptr telem = std::make_shared<TElement>();
     vector_copy(telem->Origin, el->get_origin_stage());
     vector_copy(telem->AimPoint, el->get_aim_vector_stage());
     telem->ZRot = el->get_zrot();
@@ -522,8 +524,14 @@ telement_ptr make_telement(element_ptr el)
     matrix_copy(telem->RRefToLoc, el->get_stage_to_local());
     matrix_copy(telem->RLocToRef, el->get_local_to_stage());
 
-    // TODO: Aperture and Surface stuff...
-    telem->aperture = el->get_aperture();
+    telem->aperture = el->get_aperture()->make_copy();
+    // TODO: Do we need to pass aperture or other element properties to the
+    // intersection calculator?
+    telem->sic = CalculatorFactory::get()->make_calculator(el->get_surface());
+
+    // How to handle optical properties?
+    telem->Optics.Front = *el->get_front_optical_properties();
+    telem->Optics.Back = *el->get_back_optical_properties();
 
     return telem;
 }
@@ -552,7 +560,8 @@ tstage_ptr make_tstage(element_ptr el)
          ++iter)
     {
         element_ptr el = iter->second;
-        if (el->is_enabled())
+        // Ignore CompositeElements and those that are disabled
+        if (el->is_enabled() && el->is_single())
         {
             telement_ptr elem = make_telement(iter->second);
             my_stage->ElementList.push_back(elem);

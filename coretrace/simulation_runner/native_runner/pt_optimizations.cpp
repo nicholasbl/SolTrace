@@ -210,7 +210,9 @@ uint_fast64_t GetPTElements(
 	const bool AsPowerTower,
 
 	// Stage info
-	const TStage *Stage, const int i,
+	// const TStage *Stage
+	const tstage_ptr Stage,
+	const int i,
 
 	// Ray info
 	const bool in_multi_hit_loop, const double (&PosRayStage)[3],

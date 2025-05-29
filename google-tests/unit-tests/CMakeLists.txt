@@ -18,6 +18,7 @@ include_directories(
 set(UNIT_TEST_SRC
     common.cpp
     linear_algebra_test.cpp
+	aperture_test.cpp
     container_test.cpp
     element_test.cpp
     simulation_data_test.cpp

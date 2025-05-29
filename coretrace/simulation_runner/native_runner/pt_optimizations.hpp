@@ -35,7 +35,7 @@ void SetupPTOptimizations(TSystem *System,
                           double (&reccm_helio)[3]);
 
 uint_fast64_t GetPTElements(const bool AsPowerTower,
-                            const TStage *Stage,
+                            const tstage_ptr Stage,
                             const int i,
                             const bool in_multi_hit_loop, 
                             const double (&PosRayStage)[3],

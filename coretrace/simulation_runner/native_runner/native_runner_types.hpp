@@ -55,7 +55,9 @@
 #include <vector>
 
 #include "element.hpp"
+#include "optical_properties.hpp"
 #include "ray_source.hpp"
+#include "surface_intersection_calculator.hpp"
 
 #define ACOSM1O180 0.017453292519943295 // acos(-1)/180.0
 #ifndef M_PI
@@ -108,8 +110,10 @@ class TOpticalPropertySet
 {
 public:
 	std::string Name;
-	TOpticalProperties Front;
-	TOpticalProperties Back;
+	// TOpticalProperties Front;
+	// TOpticalProperties Back;
+	OpticalProperties Front;
+	OpticalProperties Back;
 };
 
 struct TElement
@@ -128,25 +132,15 @@ struct TElement
 	double RLocToRef[3][3]; // calculated
 	double PosSunCoords[3]; // calculated -- position in sun plane coordinates - mw
 
-	// /////////// APERTURE PARAMETERS ///////////////
-	// char ShapeIndex;
-	// double ParameterA;
-	// double ParameterB;
-	// double ParameterC;
-	// double ParameterD;
-	// double ParameterE;
-	// double ParameterF;
-	// double ParameterG;
-	// double ParameterH;
-
-	// double ApertureArea; // calculated
+	/////////// APERTURE PARAMETERS //////////////
 	double ZAperture; // calculated
-
 	aperture_ptr aperture;
 
 	/////////// SURFACE PARAMETERS ///////////////
-	char SurfaceIndex;
-	int SurfaceType; // calculated
+	// SurfaceIntersectionCalculator *sic;
+	calculator_ptr sic;
+	// char SurfaceIndex;
+	// int SurfaceType; // calculated
 	// std::string SurfaceFile;
 
 	double Kappa;
@@ -190,9 +184,10 @@ struct TElement
 	// FEDataObj FEData;
 
 	/////////// OPTICAL PARAMETERS ///////////////
-	int InteractionType;
-	TOpticalPropertySet *Optics;
-	std::string OpticName;
+	// // int InteractionType;
+	// TOpticalPropertySet *Optics;
+	// std::string OpticName;
+	TOpticalPropertySet Optics;
 
 	std::string Comment;
     int element_number;     //mjw element number in the stage - unique ID in order of addition to element list
@@ -207,7 +202,8 @@ struct TSun
 	void Reset();
 	void set_values(ray_source_ptr rsrc);
 
-	char ShapeIndex;
+	// char ShapeIndex;
+	DistributionType ShapeIndex;
 	double Sigma;
 	bool PointSource;
 

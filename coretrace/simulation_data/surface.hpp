@@ -5,11 +5,11 @@
 
 enum SurfaceType
 {
-    CONICAL,
+    CONE,
     CYLINDER,
     FLAT,
-    PARABOLIC,
-    SPHERICAL,
+    PARABOLA,
+    SPHERE,
 };
 
 struct Surface
@@ -23,12 +23,12 @@ public:
     SurfaceType get_type() { return my_type; }
 };
 
-struct Conical : public Surface
+struct Cone : public Surface
 {
     double half_angle;
-    Conical() : Surface(CONICAL), half_angle(0.0) {}
-    Conical(double ha) : Surface(CONICAL), half_angle(ha) {}
-    virtual ~Conical() {}
+    Cone() : Surface(CONE), half_angle(0.0) {}
+    Cone(double ha) : Surface(CONE), half_angle(ha) {}
+    virtual ~Cone() {}
 };
 
 // TODO: Add needed subfields
@@ -45,16 +45,28 @@ struct Flat : public Surface
     virtual ~Flat() {}
 };
 
-struct Parabolic : public Surface
+struct Parabola : public Surface
 {
-    Parabolic() : Surface(PARABOLIC) {}
-    virtual ~Parabolic() {}
+    double vertex_x_curv;
+    double vertex_y_curv;
+
+    Parabola() : Surface(PARABOLA),
+                  vertex_x_curv(0.0),
+                  vertex_y_curv(0.0)
+    {
+    }
+    virtual ~Parabola() {}
 };
 
-struct Spherical : public Surface
+struct Sphere : public Surface
 {
-    Spherical() : Surface(SPHERICAL) {}
-    virtual ~Spherical() {}
+    double vertex_curv;
+
+    Sphere() : Surface(SPHERE),
+                  vertex_curv(0.0)
+    {
+    }
+    virtual ~Sphere() {}
 };
 
 // TODO: Add other surface types.

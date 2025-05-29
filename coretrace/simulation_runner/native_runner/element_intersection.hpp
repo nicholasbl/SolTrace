@@ -14,14 +14,14 @@ void DetermineElementIntersectionNew(TElement *Element,
                                      int *Intercept,
                                      int *BacksideFlag);
 
-void Intersect(double PosLoc[3],
-               double CosLoc[3],
-               TElement *Element,
-               double PosXYZ[3],
-               double CosKLM[3],
-               double DFXYZ[3],
-               double *PathLength,
-               int *ErrorFlag);
+// void Intersect(double PosLoc[3],
+//                double CosLoc[3],
+//                TElement *Element,
+//                double PosXYZ[3],
+//                double CosKLM[3],
+//                double DFXYZ[3],
+//                double *PathLength,
+//                int *ErrorFlag);
 
 void Root_432(int order,
               double Coeffs[5][5],
@@ -29,16 +29,16 @@ void Root_432(int order,
               double *ImRoot1,
               double *ImRoot2);
 
-void Surface(double PosXYZ[3],
-             TElement *Element,
-             double *FXYZ,
-             double DFXYZ[3],
-             int *ErrorFlag);
+// void Surface(double PosXYZ[3],
+//              TElement *Element,
+//              double *FXYZ,
+//              double DFXYZ[3],
+//              int *ErrorFlag);
 
-void SurfaceZatXYPair(double PosXYZ[3],
-                      TElement *Element,
-                      double *FXYZ,
-                      int *ErrorFlag);
+// void SurfaceZatXYPair(double PosXYZ[3],
+//                       TElement *Element,
+//                       double *FXYZ,
+//                       int *ErrorFlag);
 
 void TorusClosedForm(TElement *Element,
                      double PosLoc[3],
@@ -47,14 +47,6 @@ void TorusClosedForm(TElement *Element,
                      double DFXYZ[3],
                      double *PathLength,
                      int *ErrorFlag);
-
-void QuadricSurfaceClosedForm(TElement *Element,
-                              double PosLoc[3],
-                              double CosLoc[3],
-                              double PosXYZ[3],
-                              double DFXYZ[3],
-                              double *PathLength,
-                              int *ErrorFlag);
 
 // int intri(double x1, double y1,
 //           double x2, double y2,

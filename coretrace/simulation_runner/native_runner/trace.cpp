@@ -68,7 +68,7 @@
 void FindElementHit(
 	// stage info
 	const int i,
-	const TStage *Stage,
+	const tstage_ptr Stage,
 	const bool PT_override,
 	const bool AsPowerTower,
 	// element info
@@ -163,11 +163,13 @@ void FindElementHit(
 			// polynomials correctly.}
 			if (PathLength < LastPathLength)
 			{
-				if (PosRaySurfElement[2] <= Element->ZAperture ||
-					Element->SurfaceIndex == 'm' ||
-					Element->SurfaceIndex == 'M' ||
-					Element->SurfaceIndex == 'r' ||
-					Element->SurfaceIndex == 'R')
+				// if (PosRaySurfElement[2] <= Element->ZAperture ||
+				// 	Element->SurfaceIndex == 'm' ||
+				// 	Element->SurfaceIndex == 'M' ||
+				// 	Element->SurfaceIndex == 'r' ||
+				// 	Element->SurfaceIndex == 'R')
+				// TODO: Is this the correct thing to do?
+				if (PosRaySurfElement[2] <= Element->ZAperture)
 				{
 					StageHit = true;
 					LastPathLength = PathLength;
@@ -194,12 +196,14 @@ void ProcessInteraction(
 	TSystem *System,
 	MTRand &myrng,
 	const bool IncludeSunShape,
-	TOpticalProperties *optics,
+	const OpticalProperties *optics,
 	const bool IncludeErrors,
 	// stage info
 	const int i,
-	const TStage *Stage,
-	const int k,
+	// const TStage *Stage,
+	const tstage_ptr Stage,
+	// const telement_ptr Elem,
+	// const int k,
 	// ray info
 	const uint_fast64_t MultipleHitCount,
 	double (&LastDFXYZ)[3],
@@ -225,7 +229,7 @@ void ProcessInteraction(
 			CopyVec3(CosIn, LastCosRaySurfElement);
 			// sun shape
 			Errors(myrng, CosIn, 1, &System->Sun,
-				   Stage->ElementList[k].get(), optics, CosOut, LastDFXYZ);
+				   optics, CosOut, LastDFXYZ);
 			CopyVec3(LastCosRaySurfElement, CosOut);
 		}
 
@@ -244,7 +248,7 @@ void ProcessInteraction(
 		}
 
 		Interaction(myrng, LastPosRaySurfElement, LastCosRaySurfElement,
-					LastDFXYZ, Stage->ElementList[k]->InteractionType,
+					LastDFXYZ, // Stage->ElementList[k]->InteractionType,
 					optics, 630.0, PosRayOutElement, CosRayOutElement,
 					&ErrorFlag);
 		myrng_counter++;
@@ -253,21 +257,28 @@ void ProcessInteraction(
 		// interaction) ray at intersection point}
 		if (IncludeErrors)
 		{
-			if (optics->DistributionType == 'F' ||
-				optics->DistributionType == 'f')
-			{
-				// Apply diffuse errors relative to surface normal
-				CopyVec3(CosIn, LastDFXYZ);
-			}
-			else
-			{
-				// Apply all other errors relative to the specularly-reflected
-				// direction
-				CopyVec3(CosIn, CosRayOutElement);
-			}
+			// if (optics->error_distribution_type == 'F' ||
+			// 	optics->error_distribution_type == 'f')
+			// {
+			// 	// Apply diffuse errors relative to surface normal
+			// 	CopyVec3(CosIn, LastDFXYZ);
+			// }
+			// else
+			// {
+			// 	// Apply all other errors relative to the specularly-reflected
+			// 	// direction
+			// 	CopyVec3(CosIn, CosRayOutElement);
+			// }
+
+			// TODO: Not sure what error distribution type 'F' is?
+			// Do we need to implement it? For now just use the 'else'
+			// clause from the above.
+			CopyVec3(CosIn, CosRayOutElement);
+
 			// optical errors
 			Errors(myrng, CosIn, 2, &System->Sun,
-				   Stage->ElementList[k].get(), optics, CosOut, LastDFXYZ);
+				//    Stage->ElementList[k].get(), 
+				   optics, CosOut, LastDFXYZ);
 			myrng_counter++;
 			CopyVec3(CosRayOutElement, CosOut);
 		}
@@ -359,7 +370,8 @@ bool trace_native(
 		}
 
 		// Get Current Stage
-		TStage *Stage = System->StageList[i].get();
+		// TStage *Stage = System->StageList[i].get();
+		tstage_ptr Stage = System->StageList[i];
 
 		// Initialize stage variables
 		uint_fast64_t StageDataArrayIndex = 0;
@@ -511,7 +523,7 @@ bool trace_native(
 				MultipleHitCount++;
 
 				// Get optics and check for absorption
-				TOpticalProperties *optics = 0;
+				const OpticalProperties *optics = 0;
 				if (Stage->Virtual)
 				{
 					// If stage is virtual, there is no interaction
@@ -521,76 +533,82 @@ bool trace_native(
 				else
 				{
 					// trace through the interaction
-					TElement *optelm = Stage->ElementList[p_ray->element - 1].get();
+					telement_ptr optelm = Stage->ElementList[p_ray->element - 1];
 
 					if (LastHitBackSide)
-						optics = &optelm->Optics->Back;
+						optics = &optelm->Optics.Back;
 					else
-						optics = &optelm->Optics->Front;
+						optics = &optelm->Optics.Front;
 
 					double TestValue;
 					double UnitLastDFXYZ[3] = {0.0, 0.0, 0.0};
 					double IncidentAngle = 0;
-					switch (optelm->InteractionType)
+					// switch (optelm->InteractionType)
+					switch (optics->my_type)
 					{
-					case 1: // refraction
-						if (optics->UseTransmissivityTable)
-						{
-							int npoints = optics->TransmissivityTable.size();
-							int m = 0;
+					case REFRACTION: // refraction
+						// TODO: Implement transmissivity table?
+						// if (optics->UseTransmissivityTable)
+						// {
+						// 	int npoints = optics->TransmissivityTable.size();
+						// 	int m = 0;
 
-							UnitLastDFXYZ[0] = -LastDFXYZ[0] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
-							UnitLastDFXYZ[1] = -LastDFXYZ[1] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
-							UnitLastDFXYZ[2] = -LastDFXYZ[2] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
-							IncidentAngle = acos(DOT(LastCosRaySurfElement, UnitLastDFXYZ)) * 1000.; //[mrad]
-							if (IncidentAngle >= optics->TransmissivityTable[npoints - 1].angle)
-							{
-								TestValue = optics->TransmissivityTable[npoints - 1].trans;
-							}
-							else
-							{
-								while (optics->TransmissivityTable[m].angle < IncidentAngle)
-									m++;
+						// 	UnitLastDFXYZ[0] = -LastDFXYZ[0] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
+						// 	UnitLastDFXYZ[1] = -LastDFXYZ[1] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
+						// 	UnitLastDFXYZ[2] = -LastDFXYZ[2] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
+						// 	IncidentAngle = acos(DOT(LastCosRaySurfElement, UnitLastDFXYZ)) * 1000.; //[mrad]
+						// 	if (IncidentAngle >= optics->TransmissivityTable[npoints - 1].angle)
+						// 	{
+						// 		TestValue = optics->TransmissivityTable[npoints - 1].trans;
+						// 	}
+						// 	else
+						// 	{
+						// 		while (optics->TransmissivityTable[m].angle < IncidentAngle)
+						// 			m++;
 
-								if (m == 0)
-									TestValue = optics->TransmissivityTable[m].trans;
-								else
-									TestValue = (optics->TransmissivityTable[m].trans + optics->TransmissivityTable[m - 1].trans) / 2.0;
-							}
-						}
-						else
-							TestValue = optics->Transmissivity;
+						// 		if (m == 0)
+						// 			TestValue = optics->TransmissivityTable[m].trans;
+						// 		else
+						// 			TestValue = (optics->TransmissivityTable[m].trans + optics->TransmissivityTable[m - 1].trans) / 2.0;
+						// 	}
+						// }
+						// else
+						// 	TestValue = optics->Transmissivity;
+						TestValue = optics->transmitivity;
 						break;
-					case 2: // reflection
+					case REFLECTION: // reflection
 
-						if (optics->UseReflectivityTable)
-						{
-							int npoints = optics->ReflectivityTable.size();
-							int m = 0;
-							UnitLastDFXYZ[0] = -LastDFXYZ[0] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
-							UnitLastDFXYZ[1] = -LastDFXYZ[1] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
-							UnitLastDFXYZ[2] = -LastDFXYZ[2] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
-							IncidentAngle = acos(DOT(LastCosRaySurfElement, UnitLastDFXYZ)) * 1000.; //[mrad]
-							if (IncidentAngle >= optics->ReflectivityTable[npoints - 1].angle)
-							{
-								TestValue = optics->ReflectivityTable[npoints - 1].refl;
-							}
-							else
-							{
-								while (optics->ReflectivityTable[m].angle < IncidentAngle)
-									m++;
+						// if (optics->UseReflectivityTable)
+						// {
+						// 	int npoints = optics->ReflectivityTable.size();
+						// 	int m = 0;
+						// 	UnitLastDFXYZ[0] = -LastDFXYZ[0] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
+						// 	UnitLastDFXYZ[1] = -LastDFXYZ[1] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
+						// 	UnitLastDFXYZ[2] = -LastDFXYZ[2] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
+						// 	IncidentAngle = acos(DOT(LastCosRaySurfElement, UnitLastDFXYZ)) * 1000.; //[mrad]
+						// 	if (IncidentAngle >= optics->ReflectivityTable[npoints - 1].angle)
+						// 	{
+						// 		TestValue = optics->ReflectivityTable[npoints - 1].refl;
+						// 	}
+						// 	else
+						// 	{
+						// 		while (optics->ReflectivityTable[m].angle < IncidentAngle)
+						// 			m++;
 
-								if (m == 0)
-									TestValue = optics->ReflectivityTable[m].refl;
-								else
-									TestValue = (optics->ReflectivityTable[m].refl + optics->ReflectivityTable[m - 1].refl) / 2.0;
-							}
-						}
-						else
-							TestValue = optics->Reflectivity;
+						// 		if (m == 0)
+						// 			TestValue = optics->ReflectivityTable[m].refl;
+						// 		else
+						// 			TestValue = (optics->ReflectivityTable[m].refl + optics->ReflectivityTable[m - 1].refl) / 2.0;
+						// 	}
+						// }
+						// else
+						// 	TestValue = optics->Reflectivity;
+						TestValue = optics->reflectivity;
 						break;
 					default:
-						System->errlog("Bad optical interaction type = %d (stage %d)", i, optelm->InteractionType);
+						System->errlog(
+							"Bad optical interaction type = %d (stage %d)",
+							i, optics->my_type);
 						return false;
 					}
 
@@ -607,8 +625,10 @@ bool trace_native(
 
 				// Process Interaction
 				int k = abs(p_ray->element) - 1;
-				ProcessInteraction(System, myrng, IncludeSunShape, optics, IncludeErrors,
-								   i, Stage, k,
+				ProcessInteraction(System, myrng, IncludeSunShape,
+								   optics,
+								   IncludeErrors,
+								   i, Stage, // k,
 								   MultipleHitCount, LastDFXYZ,
 								   LastCosRaySurfElement, ErrorFlag,
 								   CosRayOutElement, LastPosRaySurfElement,
@@ -926,8 +946,8 @@ void Interaction(
 	double PosXYZ[3],
 	double CosKLM[3],
 	double DFXYZ[3],
-	int InteractionType,
-	TOpticalProperties *Opticl,
+	// int InteractionType,
+	const OpticalProperties *Opticl,
 	double Wavelength,
 	double PosOut[3],
 	double CosOut[3],
@@ -995,15 +1015,19 @@ void Interaction(
 	for (i = 0; i < 3; i++)
 		PosOut[i] = PosXYZ[i];
 
-	switch (InteractionType)
+	switch (Opticl->my_type)
 	{
 
 		/*{  InteractionType = 1, Refraction
 		===============================================================================}*/
-	case 1:
+	case REFRACTION:
 	{
-		Refr1 = Opticl->RefractiveIndex[0];
-		Refr2 = Opticl->RefractiveIndex[2];
+		// TODO: Check that this grabs the correct/savem values
+		// as the commented out bit immediately below.
+		// Refr1 = Opticl->RefractiveIndex[0];
+		// Refr2 = Opticl->RefractiveIndex[2];
+		Refr1 = Opticl->refraction_index_front;
+		Refr2 = Opticl->refraction_index_back;
 		RMU = Refr1 / Refr2;
 		D2 = DOT(DFXYZ, DFXYZ);
 		B = (RMU * RMU - 1.0) / D2;
@@ -1068,7 +1092,7 @@ void Interaction(
 
 		/*{  InteractionType = 2, Reflection
 		===============================================================================}*/
-	case 2:
+	case REFLECTION:
 	{
 		A = DOT(CosKLM, DFXYZ) / DOT(DFXYZ, DFXYZ);
 		// Compute direction cosines for reflected ray
@@ -1233,8 +1257,10 @@ void Interaction(
 	return;
 }
 
-void SurfaceNormalErrors(MTRand &myrng, double CosIn[3],
-						 TOpticalProperties *OptProperties,
+void SurfaceNormalErrors(MTRand &myrng,
+						 double CosIn[3],
+						 //  TOpticalProperties *OptProperties,
+						 const OpticalProperties *OptProperties,
 						 double CosOut[3]) noexcept(false) // throw(nanexcept)
 {
 
@@ -1253,7 +1279,8 @@ void SurfaceNormalErrors(MTRand &myrng, double CosIn[3],
 		   Euler[3] = {0.0, 0.0, 0.0};
 	double PosIn[3] = {0.0, 0.0, 0.0},
 		   PosOut[3] = {0.0, 0.0, 0.0};
-	char dist = ' ';
+	// char dist = ' ';
+	DistributionType dist;
 	double delop = 0.0, delop3 = 0.0, thetax = 0.0,
 		   thetay = 0.0, ttheta = 0.0, theta2 = 0.0,
 		   phi = 0.0, theta = 0.0;
@@ -1287,14 +1314,18 @@ Label_9:
 
 	CalculateTransformMatrices(Euler, RRefToLoc, RLocToRef);
 
-	dist = OptProperties->DistributionType;
-	delop = OptProperties->RMSSlopeError / 1000.0;
+	// TODO: Add distribution type to optical properties
+	// dist = OptProperties->DistributionType;
+	dist = OptProperties->error_distribution_type;
+	// delop = OptProperties->RMSSlopeError / 1000.0;
+	delop = OptProperties->slope_error / 1000.0;
 
 	int nninner = 0;
 	switch (dist)
 	{
-	case 'g':
-	case 'G':
+	// case 'g':
+	// case 'G':
+	case GAUSSIAN:
 		// gaussian distribution
 		thetax = myrng.randNorm(0., delop);
 		thetay = myrng.randNorm(0., delop);
@@ -1303,8 +1334,9 @@ Label_9:
 
 		break;
 
-	case 'p':
-	case 'P':
+	// case 'p':
+	// case 'P':
+	case PILLBOX:
 		// pillbox distribution
 		do
 		{
@@ -1347,8 +1379,10 @@ void Errors(
 	double CosIn[3],
 	int Source,
 	TSun *Sun,
-	TElement *Element,
-	TOpticalProperties *OptProperties,
+	// telement_ptr Element,
+	const OpticalProperties *OptProperties,
+	// TElement *Element,
+	// TOpticalProperties *OptProperties,
 	double CosOut[3],
 	double DFXYZ[3])
 {
@@ -1373,7 +1407,8 @@ void Errors(
 	double Euler[3] = {0.0, 0.0, 0.0};
 	double PosIn[3] = {0.0, 0.0, 0.0};
 	double PosOut[3] = {0.0, 0.0, 0.0};
-	char dist = 'g';
+	// char dist = 'g';
+	DistributionType dist = GAUSSIAN;
 	double delop = 0, delop3 = 0, thetax = 0, thetay = 0, ttheta = 0, theta2 = 0, phi = 0, theta = 0, stest = 0;
 	uint_fast64_t i;
 	double RRefToLoc[3][3] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
@@ -1415,9 +1450,11 @@ Label_9:
 
 	if (Source == 2)
 	{
-		dist = OptProperties->DistributionType; // errors
-		// delop = sqrt(4.0*sqr(OptProperties->RMSSlopeError)+sqr(OptProperties->RMSSpecError))/1000.0;
-		delop = OptProperties->RMSSpecError / 1000.0;
+		// dist = OptProperties->DistributionType; // errors
+		dist = OptProperties->error_distribution_type;
+		// // delop = sqrt(4.0*sqr(OptProperties->RMSSlopeError)+sqr(OptProperties->RMSSpecError))/1000.0;
+		// delop = OptProperties->RMSSpecError / 1000.0;
+		delop = OptProperties->specularity_error / 1000.0;
 	}
 
 	unsigned int maxcall = 0;
@@ -1425,8 +1462,9 @@ Label_9:
 Label_50:
 	switch (dist)
 	{
-	case 'g':
-	case 'G': // gaussian distribution
+	// case 'g':
+	// case 'G': // gaussian distribution
+	case GAUSSIAN:
 		thetax = myrng.randNorm(0., delop);
 		thetay = myrng.randNorm(0., delop);
 
@@ -1434,8 +1472,9 @@ Label_50:
 
 		break;
 
-	case 'p':
-	case 'P': // pillbox distribution
+	// case 'p':
+	// case 'P': // pillbox distribution
+	case PILLBOX:
 	Label_200:
 		thetax = 2.0 * delop * myrng() - delop;
 		thetay = 2.0 * delop * myrng() - delop;
@@ -1444,37 +1483,38 @@ Label_50:
 			goto Label_200;
 		break;
 
-	case 'd':
-	case 'D': // sunshape data  (for sunshape only)
-	Label_300:
-		thetax = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
-		thetay = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
-		theta2 = thetax * thetax + thetay * thetay;
-		theta = sqrt(theta2); // wendelin 1-9-12  do the test once on theta NOT individually on thetax and thetay as before
+	// TODO: Do we need to the below code?
+	// case 'd':
+	// case 'D': // sunshape data  (for sunshape only)
+	// Label_300:
+	// 	thetax = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
+	// 	thetay = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
+	// 	theta2 = thetax * thetax + thetay * thetay;
+	// 	theta = sqrt(theta2); // wendelin 1-9-12  do the test once on theta NOT individually on thetax and thetay as before
 
-		i = 0;
-		while (i < Sun->SunShapeAngle.size() - 1 && Sun->SunShapeAngle[i] < theta)
-			i++;
+	// 	i = 0;
+	// 	while (i < Sun->SunShapeAngle.size() - 1 && Sun->SunShapeAngle[i] < theta)
+	// 		i++;
 
-		if (i == 0)
-			stest = Sun->SunShapeIntensity[0];
-		else // change from average interpolation between data points to linear interpolation  12-20-11 wendelin
-			stest = Sun->SunShapeIntensity[i - 1] + (Sun->SunShapeIntensity[i] - Sun->SunShapeIntensity[i - 1]) * (theta - Sun->SunShapeAngle[i - 1]) /
-														(Sun->SunShapeAngle[i] - Sun->SunShapeAngle[i - 1]);
-		// stest = (Sun->SunShapeIntensity[i] + Sun->SunShapeIntensity[i-1])/2.0;
+	// 	if (i == 0)
+	// 		stest = Sun->SunShapeIntensity[0];
+	// 	else // change from average interpolation between data points to linear interpolation  12-20-11 wendelin
+	// 		stest = Sun->SunShapeIntensity[i - 1] + (Sun->SunShapeIntensity[i] - Sun->SunShapeIntensity[i - 1]) * (theta - Sun->SunShapeAngle[i - 1]) /
+	// 													(Sun->SunShapeAngle[i] - Sun->SunShapeAngle[i - 1]);
+	// 	// stest = (Sun->SunShapeIntensity[i] + Sun->SunShapeIntensity[i-1])/2.0;
 
-		if (myrng() > (stest / Sun->MaxIntensity))
-			goto Label_300;
+	// 	if (myrng() > (stest / Sun->MaxIntensity))
+	// 		goto Label_300;
 
-		if (theta2 > (Sun->MaxAngle * Sun->MaxAngle))
-			goto Label_300;
-		theta2 = theta2 / 1000000.0;
-		break;
+	// 	if (theta2 > (Sun->MaxAngle * Sun->MaxAngle))
+	// 		goto Label_300;
+	// 	theta2 = theta2 / 1000000.0;
+	// 	break;
 
-	case 'f': // gray diffuse distribution
-	case 'F':
-		theta2 = pow(asin(sqrt(myrng())), 2);
-		break;
+	// case 'f': // gray diffuse distribution
+	// case 'F':
+	// 	theta2 = pow(asin(sqrt(myrng())), 2);
+	// 	break;
 	}
 
 	/*{Transform to local coordinate system of ray to set up rotation matrices for coord and inverse
@@ -1504,8 +1544,12 @@ Label_50:
 
 	/*{If reflection error applicaton and new ray direction (after errors) physically goes through opaque surface,
 	then go back and get new perturbation 06-12-07}*/
-	if ((Source == 2) && (Element->InteractionType == 2) && (DOT(CosOut, DFXYZ) < 0) && maxcall++ < 50000)
+	if ((Source == 2) &&
+		(OptProperties->my_type == REFLECTION) &&
+		(DOT(CosOut, DFXYZ) < 0) &&
+		maxcall++ < 50000)
+	{
 		goto Label_50;
+	}
 }
 // End of Procedure--------------------------------------------------------------
-

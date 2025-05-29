@@ -66,9 +66,9 @@ TEST(Element, SingleElementAccessors)
     EXPECT_EQ(rap->diameter, D);
 
     const double HA = 0.25;
-    auto sp = make_surface<Conical>(HA);
+    auto sp = make_surface<Cone>(HA);
     ref.set_surface(sp);
-    auto rsp = std::dynamic_pointer_cast<Conical>(ref.get_surface());
+    auto rsp = std::dynamic_pointer_cast<Cone>(ref.get_surface());
     EXPECT_FALSE(rsp == nullptr);
     EXPECT_EQ(rsp->half_angle, HA);
 
@@ -79,7 +79,7 @@ TEST(Element, SingleElementAccessors)
     EXPECT_EQ(opf->slope_error, opb->slope_error);
     EXPECT_EQ(opf->specularity_error, opb->specularity_error);
 
-    OpticalProperties op(REFLECTION, 0.75, 0.25, 0.1, 0.001, 1.0, 1.0);
+    OpticalProperties op(REFLECTION, GAUSSIAN, 0.75, 0.25, 0.1, 0.001, 1.0, 1.0);
     ref.set_front_optical_properties(op);
     // EXPECT_EQ(*opf, op);
     EXPECT_EQ(opf->transmitivity, op.transmitivity);
@@ -129,7 +129,7 @@ TEST(Element, VirtualElement)
     EXPECT_FALSE(ve.is_composite());
 
     // These functions should have no effects
-    OpticalProperties op(REFLECTION, 0.75, 0.25, 0.1, 0.001, 1.0, 1.0);
+    OpticalProperties op(REFLECTION, GAUSSIAN, 0.75, 0.25, 0.1, 0.001, 1.0, 1.0);
     ve.set_front_optical_properties(op);
     auto opf = ve.get_front_optical_properties();
     EXPECT_EQ(opf->reflectivity, 0.0);
@@ -167,7 +167,7 @@ TEST(Element, VirtualPlane)
     // These functions should have no effects
     vp.set_aperture(make_aperture<Circle>());
     EXPECT_EQ(vp.get_aperture()->get_type(), RECTANGLE);
-    vp.set_surface(make_surface<Parabolic>());
+    vp.set_surface(make_surface<Parabola>());
     EXPECT_EQ(vp.get_surface()->get_type(), FLAT);
 
     return;

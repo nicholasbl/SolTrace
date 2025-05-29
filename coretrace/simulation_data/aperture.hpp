@@ -6,7 +6,7 @@
 
 // TODO: Make a header file for constants...
 #ifndef M_PI
-	#define M_PI 3.141592653589793238462643
+#define M_PI 3.141592653589793238462643
 #endif
 
 enum ApertureType
@@ -20,6 +20,15 @@ enum ApertureType
     IRREGULAR_TRIANGLE,
     IRREGULAR_QUADRILATERAL
 };
+
+struct Aperture;
+using aperture_ptr = std::shared_ptr<Aperture>;
+
+template <typename A, typename... Args>
+inline auto make_aperture(Args &&...args)
+{
+    return std::make_shared<A>(std::forward<Args>(args)...);
+}
 
 struct Aperture
 {
@@ -41,6 +50,14 @@ public:
     virtual double aperture_area() const = 0;
     virtual double diameter_circumscribed_circle() const = 0;
     virtual bool is_in(double x, double y) const = 0;
+
+    virtual aperture_ptr make_copy() const = 0;
+
+    // virtual Aperture& operator=(const Aperture &rhs)
+    // {
+    //     this->my_type = rhs.my_type;
+    //     return *this;
+    // }
 };
 
 struct Annulus : public Aperture
@@ -69,8 +86,13 @@ struct Annulus : public Aperture
         // This seems to be wrong...
         double R = this->outer_radius;
         double r = this->inner_radius;
-        double arc = this->arc_angle * 180.0 / M_PI;
-        return 0.5 * arc * (R * R - r * r);
+        // double arc = this->arc_angle * 180.0 / M_PI;
+        double arc = this->arc_angle * M_PI / 180.0;
+        return 0.5 * M_PI * arc * (R * R - r * r);
+        // Below should be more efficient but is less readable...
+        // static const double coef = M_PI * M_PI / 90.0;
+        // double arc = this->arc_angle;
+        // return coef * arc * (R * R - r * r);
     }
 
     virtual double diameter_circumscribed_circle() const
@@ -84,6 +106,21 @@ struct Annulus : public Aperture
         return (this->inner_radius <= r &&
                 r <= this->outer_radius);
     }
+
+    virtual aperture_ptr make_copy() const
+    {
+        // Invokes the implicit copy constructor
+        return make_aperture<Annulus>(*this);
+    }
+
+    // virtual Annulus& operator=(const Annulus &rhs)
+    // {
+    //     Aperture::operator=(rhs);
+    //     this->inner_radius = rhs.inner_radius;
+    //     this->outer_radius = rhs.outer_radius;
+    //     this->arc_angle = rhs.arc_angle;
+    //     return *this;
+    // }
 };
 
 struct Circle : public Aperture
@@ -109,6 +146,19 @@ struct Circle : public Aperture
         double r = sqrt(x * x + y * y);
         return r <= 0.5 * this->diameter;
     }
+
+    virtual aperture_ptr make_copy() const
+    {
+        // Invokes the implicit copy constructor
+        return make_aperture<Circle>(*this);
+    }
+
+    // virtual Circle& operator=(const Circle &rhs)
+    // {
+    //     Aperture::operator=(rhs);
+    //     this->diameter = rhs.diameter;
+    //     return *this;
+    // }
 };
 
 struct EqualateralTriangle : public Aperture
@@ -136,6 +186,19 @@ struct EqualateralTriangle : public Aperture
     }
 
     virtual bool is_in(double x, double y) const;
+
+    virtual aperture_ptr make_copy() const
+    {
+        // Invokes the implicit copy constructor
+        return make_aperture<EqualateralTriangle>(*this);
+    }
+
+    // virtual EqualateralTriangle& operator=(const EqualateralTriangle &rhs)
+    // {
+    //     Aperture::operator=(rhs);
+    //     this->circumscribe_diameter = rhs.circumscribe_diameter;
+    //     return *this;
+    // }
 };
 
 struct Hexagon : public Aperture
@@ -164,6 +227,19 @@ struct Hexagon : public Aperture
     }
 
     virtual bool is_in(double x, double y) const;
+
+    virtual aperture_ptr make_copy() const
+    {
+        // Invokes the implicit copy constructor
+        return make_aperture<Hexagon>(*this);
+    }
+
+    // virtual Hexagon& operator=(const Hexagon &rhs)
+    // {
+    //     Aperture::operator=(rhs);
+    //     this->circumscribe_diameter = rhs.circumscribe_diameter;
+    //     return *this;
+    // }
 };
 
 struct Rectangle : public Aperture
@@ -198,6 +274,20 @@ struct Rectangle : public Aperture
         double yh = 0.5 * this->y_length;
         return (-xh <= x && x <= xh && -yh <= y && y <= yh);
     }
+
+    virtual aperture_ptr make_copy() const
+    {
+        // Invokes the implicit copy constructor
+        return make_aperture<Rectangle>(*this);
+    }
+
+    // virtual Rectangle& operator=(const Rectangle &rhs)
+    // {
+    //     Aperture::operator=(rhs);
+    //     this->x_length = rhs.x_length;
+    //     this->y_length = rhs.y_length;
+    //     return *this;
+    // }
 };
 
 // TODO: Implement the below cases
@@ -213,13 +303,5 @@ struct IrregularTriangle : public Aperture
 struct IrregularQuadrilateral : public Aperture
 {
 };
-
-using aperture_ptr = std::shared_ptr<Aperture>;
-
-template <typename A, typename... Args>
-inline auto make_aperture(Args &&...args)
-{
-    return std::make_shared<A>(std::forward<Args>(args)...);
-}
 
 #endif
