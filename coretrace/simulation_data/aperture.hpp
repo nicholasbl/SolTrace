@@ -86,13 +86,9 @@ struct Annulus : public Aperture
         // This seems to be wrong...
         double R = this->outer_radius;
         double r = this->inner_radius;
-        // double arc = this->arc_angle * 180.0 / M_PI;
+        // Convert to radians
         double arc = this->arc_angle * M_PI / 180.0;
-        return 0.5 * M_PI * arc * (R * R - r * r);
-        // Below should be more efficient but is less readable...
-        // static const double coef = M_PI * M_PI / 90.0;
-        // double arc = this->arc_angle;
-        // return coef * arc * (R * R - r * r);
+        return 0.5 * arc * (R * R - r * r);
     }
 
     virtual double diameter_circumscribed_circle() const
@@ -103,8 +99,14 @@ struct Annulus : public Aperture
     virtual bool is_in(double x, double y) const
     {
         double r = sqrt(x * x + y * y);
+        double theta = atan2(y, x);
+        if (theta < 0)
+            theta += 2.0 * M_PI;
+        double arc = this->arc_angle * M_PI / 180.0;
+        // Below assumes that the arc begins at the (local) x-axis
         return (this->inner_radius <= r &&
-                r <= this->outer_radius);
+                r <= this->outer_radius &&
+                theta <= arc);
     }
 
     virtual aperture_ptr make_copy() const
@@ -144,7 +146,7 @@ struct Circle : public Aperture
     virtual bool is_in(double x, double y) const
     {
         double r = sqrt(x * x + y * y);
-        return r <= 0.5 * this->diameter;
+        return r <= this->radius_circumscribed_circle();
     }
 
     virtual aperture_ptr make_copy() const

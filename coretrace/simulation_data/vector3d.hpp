@@ -184,9 +184,13 @@ void matrix_vector_product(const Matrix3d &A, const Vector3d &x, Vector3d &y);
 // Compute C = A * B placing result in C
 void matrix_matrix_product(const Matrix3d &A, const Matrix3d &B, Matrix3d &C);
 
+// Compute z = a*x + b*y (result stored in z)
 void vector_add(double a, const Vector3d &x,
                 double b, const Vector3d &y,
                 Vector3d &z);
+// Compute y = a*x + b*y (result stored in y)
+void vector_add(double a, const Vector3d &x,
+                double b, Vector3d &y);
 
 void vector_max(const Vector3d &x, const Vector3d &y, Vector3d &max);
 
@@ -202,12 +206,12 @@ void transform_to_local(Vector3d &pos_ref,
                         Matrix3d &ref_to_local,
                         Vector3d &pos_local,
                         Vector3d &cos_local);
-void transform_to_reference(Vector3d &pos_local,
-                            Vector3d &cos_local,
-                            Vector3d &origin,
-                            Matrix3d &local_to_ref,
-                            Vector3d &pos_ref,
-                            Vector3d &cos_ref);
+// void transform_to_reference(Vector3d &pos_local,
+//                             Vector3d &cos_local,
+//                             Vector3d &origin,
+//                             Matrix3d &local_to_ref,
+//                             Vector3d &pos_ref,
+//                             Vector3d &cos_ref);
 void compute_transform_matrices(Vector3d &euler,
                                 Matrix3d &ref_to_local,
                                 Matrix3d &local_to_ref);

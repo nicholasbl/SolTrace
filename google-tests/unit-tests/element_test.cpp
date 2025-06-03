@@ -23,8 +23,8 @@ TEST(Element, SingleElementAccessors)
     SingleElement ref;
     Vector3d zero(0.0, 0.0, 0.0);
     Vector3d khat(0.0, 0.0, 1.0);
-    EXPECT_TRUE(is_identical(ref.get_origin_local(), zero));
-    EXPECT_TRUE(is_identical(ref.get_aim_vector_local(), khat));
+    EXPECT_TRUE(is_identical(ref.get_origin_ref(), zero));
+    EXPECT_TRUE(is_identical(ref.get_aim_vector_ref(), khat));
     EXPECT_TRUE(is_identical(ref.get_euler_angles(), zero));
     EXPECT_EQ(ref.get_aperture(), nullptr);
     EXPECT_EQ(ref.get_surface(), nullptr);
@@ -41,11 +41,11 @@ TEST(Element, SingleElementAccessors)
 
     auto pos = Vector3d(2.0, 1.0, -3.0);
     ref.set_origin(pos);
-    EXPECT_TRUE(is_identical(ref.get_origin_local(), pos));
+    EXPECT_TRUE(is_identical(ref.get_origin_ref(), pos));
 
     auto aim = Vector3d(-1.0, 0.0, 1.0);
     ref.set_aim_vector(aim);
-    EXPECT_TRUE(is_identical(ref.get_aim_vector_local(), aim));
+    EXPECT_TRUE(is_identical(ref.get_aim_vector_ref(), aim));
 
     // auto eulers = Vector3d(0.1, 0.2, -0.3);
     // // ref.set_euler_angles(eulers);
@@ -104,7 +104,7 @@ TEST(Element, VirtualElement)
     VirtualElement ve;
 
     EXPECT_TRUE(ve.is_virtual());
-    
+
     const double LX = 1.0;
     const double LY = 2.0;
     ve.set_aperture(make_aperture<Rectangle>(LX, LY));
@@ -112,12 +112,12 @@ TEST(Element, VirtualElement)
     EXPECT_EQ(aptr->get_type(), RECTANGLE);
     auto rptr = std::dynamic_pointer_cast<Rectangle>(aptr);
     EXPECT_NE(rptr, nullptr);
-    if(rptr != nullptr)
+    if (rptr != nullptr)
     {
         EXPECT_EQ(rptr->x_length, LX);
         EXPECT_EQ(rptr->y_length, LY);
     }
-    
+
     ve.set_surface(make_surface<Flat>());
     auto sptr = ve.get_surface();
     EXPECT_EQ(sptr->get_type(), FLAT);
@@ -158,7 +158,7 @@ TEST(Element, VirtualPlane)
 
     auto rptr = std::dynamic_pointer_cast<Rectangle>(vp.get_aperture());
     EXPECT_NE(rptr, nullptr);
-    if(rptr != nullptr)
+    if (rptr != nullptr)
     {
         EXPECT_EQ(rptr->x_length, LX);
         EXPECT_EQ(rptr->y_length, LY);
@@ -171,7 +171,6 @@ TEST(Element, VirtualPlane)
     EXPECT_EQ(vp.get_surface()->get_type(), FLAT);
 
     return;
-
 }
 
 TEST(Element, CompositeElementAccessors)
@@ -188,7 +187,7 @@ TEST(Element, CompositeElementAccessors)
     EXPECT_EQ(ap, nullptr);
     const surface_ptr sp = cmp->get_surface();
     EXPECT_EQ(sp, nullptr);
-    const OpticalProperties* op = cmp->get_back_optical_properties();
+    const OpticalProperties *op = cmp->get_back_optical_properties();
     EXPECT_EQ(op, nullptr);
     op = cmp->get_front_optical_properties();
     EXPECT_EQ(op, nullptr);
@@ -251,11 +250,6 @@ TEST(Element, CompositeElementAccessors)
     EXPECT_TRUE(cmp->is_at_end(citer));
 }
 
-TEST(Element, CompositeElementOrientationUpdate)
-{
-    // TODO: Implement this test.
-}
-
 TEST(Element, StageElementAccessors)
 {
     const int_fast64_t STAGE = 10;
@@ -287,9 +281,8 @@ TEST(Element, StageElementAccessors)
     EXPECT_EQ(sub1->get_stage(), RESET_STAGE);
 }
 
-TEST(Element, CoordinateComputationsSmokeTests)
+TEST(Element, CoordinateComputationsIdentity)
 {
-    // TODO: Make more robust test. This is better than nothing for now.
     auto el = make_element<SingleElement>();
     auto st = make_stage(0);
     Vector3d origin(0.0, 0.0, 0.0);
@@ -336,29 +329,131 @@ TEST(Element, CoordinateComputationsSmokeTests)
     result.zero();
 
     // Origin location tests
-    EXPECT_TRUE(is_identical(origin, st->get_origin_local()));
+    EXPECT_TRUE(is_identical(origin, st->get_origin_ref()));
     EXPECT_TRUE(is_identical(origin, st->get_origin_stage()));
     EXPECT_TRUE(is_identical(origin, st->get_origin_global()));
 
-    EXPECT_TRUE(is_identical(origin, el->get_origin_local()));
+    EXPECT_TRUE(is_identical(origin, el->get_origin_ref()));
     EXPECT_TRUE(is_identical(origin, el->get_origin_stage()));
     EXPECT_TRUE(is_identical(origin, el->get_origin_global()));
 
     // Aim vector conversion tests
-    EXPECT_TRUE(is_identical(aim, st->get_aim_vector_local()));
+    EXPECT_TRUE(is_identical(aim, st->get_aim_vector_ref()));
     EXPECT_TRUE(is_identical(aim, st->get_aim_vector_stage()));
     EXPECT_TRUE(is_identical(aim, st->get_aim_vector_global()));
 
-    EXPECT_TRUE(is_identical(aim, el->get_aim_vector_local()));
+    EXPECT_TRUE(is_identical(aim, el->get_aim_vector_ref()));
     EXPECT_TRUE(is_identical(aim, el->get_aim_vector_stage()));
     EXPECT_TRUE(is_identical(aim, el->get_aim_vector_global()));
 
     // Operators
-    // TODO: Add some tests here...
+    Matrix3d Q;
+    Q.identity();
     Matrix3d RtoL = el->get_reference_to_local();
+    EXPECT_TRUE(is_identical(RtoL, Q));
     Matrix3d LtoR = el->get_local_to_reference();
+    EXPECT_TRUE(is_identical(LtoR, Q));
     Matrix3d StoL = el->get_stage_to_local();
+    EXPECT_TRUE(is_identical(StoL, Q));
     Matrix3d LtoS = el->get_local_to_stage();
+    EXPECT_TRUE(is_identical(LtoS, Q));
     Matrix3d GtoL = el->get_global_to_local();
+    EXPECT_TRUE(is_identical(GtoL, Q));
     Matrix3d LtoG = el->get_local_to_global();
+    EXPECT_TRUE(is_identical(LtoG, Q));
+}
+
+TEST(Element, CoordinateComputations)
+{
+    // **** Setup Answers **** //
+    // Origin
+    Vector3d Origin1(1.0, 2.0, 3.0);
+    // Coordinate transform matrix
+    Matrix3d Q1;
+    Q1.set_value(0, 0, 0.5);
+    Q1.set_value(1, 0, sqrt(3.0) / 2.0);
+    Q1.set_value(2, 0, 0.0);
+    Q1.set_value(0, 1, -1.0 / sqrt(2.0));
+    Q1.set_value(1, 1, 1.0 / sqrt(6.0));
+    Q1.set_value(2, 1, -1.0 / sqrt(3.0));
+    Q1.set_value(0, 2, -0.5);
+    Q1.set_value(1, 2, sqrt(3.0) / 6.0);
+    Q1.set_value(2, 2, sqrt(6.0) / 3.0);
+    Matrix3d Q1t;
+    MatrixTranspose(Q1.data, 3, Q1t.data);
+    // Corresponding Euler angles in radians
+    const double a1 = 0.0;
+    const double b1 = asin(-1.0 / sqrt(3.0));
+    const double g1 = acos(1.0 / cos(b1) * 1.0 / sqrt(6.0)); // approximately 0.615
+    // Corresponding aim vector (local z-axis in reference coordinates)
+    // Vector3d aim1(0.0, -sqrt(3.0) / 2.0, sqrt(2.0 / 3.0));
+    Vector3d aim1(0.0, -1.0 / sqrt(3.0), sqrt(2.0 / 3.0));
+    vector_add(1.0, Origin1, 1.0, aim1);
+
+    // Z-Rotation is the last of the Euler angles but in degrees
+    const double zrot1 = g1 * 180.0 / M_PI;
+
+    // Origin
+    Vector3d Origin2(-3.0, 1.0, -5.0);
+    // // Need to add the stage origin to the aim point too
+    // vector_add(1.0, Origin2, 1.0, aim1);
+    Matrix3d Q2;
+    Q2.set_value(0, 0, (sqrt(8.0) + sqrt(6.0)) / 8.0);
+    Q2.set_value(0, 1, -0.75);
+    Q2.set_value(0, 2, (sqrt(6.0) - sqrt(8.0)) / 8.0);
+    Q2.set_value(1, 0, (2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0);
+    Q2.set_value(1, 1, sqrt(3.0) / 4.0);
+    Q2.set_value(1, 2, (-2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0);
+    Q2.set_value(2, 0, sqrt(6.0) / 4.0);
+    Q2.set_value(2, 1, 0.5);
+    Q2.set_value(2, 2, sqrt(6.0) / 4.0);
+    Matrix3d Q2t;
+    MatrixTranspose(Q2.data, 3, Q2t.data);
+    // Corresponding Euler angles in radians
+    const double a2 = M_PI / 4.0;
+    const double b2 = M_PI / 6.0;
+    const double g2 = M_PI / 3.0;
+    // Corresponding aim vector (local z-axis in reference coordinates)
+    Vector3d aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
+    vector_add(1.0, Origin2, 1.0, aim2);
+
+    // Z-Rotation is the last of the Euler angles but in degrees
+    const double zrot2 = 60.0;
+
+    // **** Setup Elements **** //
+    auto el = make_element<SingleElement>();
+    el->set_aperture(make_aperture<Circle>(2.0));
+    el->set_surface(make_surface<Flat>());
+    el->set_reference_frame_geometry(Origin1, aim1, zrot1);
+
+    auto st = make_stage(0);
+    st->set_reference_frame_geometry(Origin2, aim2, zrot2);
+    st->add_element(el);
+
+    // **** Tests **** //
+    const double TOL = 1e-12;
+    Vector3d scratch;
+    Vector3d result_vec;
+    Matrix3d result_mat;
+    // Origin tests
+    EXPECT_TRUE(is_identical(el->get_origin_stage(), el->get_origin_ref()));
+    EXPECT_TRUE(is_identical(el->get_origin_ref(), Origin1));
+    vector_add(1.0, Origin1, 1.0, Origin2, result_vec);
+    EXPECT_TRUE(is_identical(el->get_origin_global(), result_vec));
+
+    // Euler angles tests
+    result_vec = el->get_euler_angles();
+    EXPECT_NEAR(result_vec[0], a1, TOL);
+    EXPECT_NEAR(result_vec[1], b1, TOL);
+    EXPECT_NEAR(result_vec[2], g1, TOL);
+    result_vec = st->get_euler_angles();
+    EXPECT_NEAR(result_vec[0], a2, TOL);
+    EXPECT_NEAR(result_vec[1], b2, TOL);
+    EXPECT_NEAR(result_vec[2], g2, TOL);
+
+    // Aim vector tests
+    EXPECT_TRUE(is_identical(el->get_aim_vector_ref(), aim1, TOL));
+    EXPECT_TRUE(is_identical(el->get_aim_vector_stage(), el->get_aim_vector_ref(), TOL));
+    matrix_vector_product(Q2t, aim1, result_vec);
+    EXPECT_TRUE(is_identical(el->get_aim_vector_global(), result_vec, TOL));
 }

@@ -38,7 +38,14 @@ TEST(NativeRunner, SmokeTest)
 {
     NativeRunner runner;
     SimulationData my_sim;
-    my_sim.add_ray_source(make_ray_source<Sun>());
+
+    my_sim.set_number_of_rays(10);
+    my_sim.set_max_rays_traced(100);
+
+    auto sun = make_ray_source<Sun>();
+    sun->set_position(0.0, 0.0, 100.0);
+    my_sim.add_ray_source(sun);
+
     auto my_st = make_stage(0);
     const int NUM_ELEMENTS = 4;
     for (int k = 0; k < NUM_ELEMENTS; ++k)
@@ -57,6 +64,6 @@ TEST(NativeRunner, SmokeTest)
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.setup_simulation(&my_sim);
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-    // sts = runner.run_simulation();
-    // EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 }

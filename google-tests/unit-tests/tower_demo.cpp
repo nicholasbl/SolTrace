@@ -106,8 +106,9 @@ TEST(TowerDemo, NativeRunnerWithStages)
     sd.add_stage(st1);
 
     // Set parameters
-    auto params = sd.get_simulation_parameters();
-    params.number_of_rays = 1000000;
+    SimulationParameters &params = sd.get_simulation_parameters();
+    // params.number_of_rays = 1000000;
+    params.number_of_rays = 100; // Above takes too long
     params.max_number_of_rays = params.number_of_rays * 100;
     params.include_optical_errors = true;
     params.include_sun_shape_errors = true;
@@ -149,9 +150,9 @@ TEST(TowerDemo, NativeRunnerWithStages)
     // Setup runs but is not complete
     sts = runner.setup_simulation(&sd);
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-    // // Run simulation runs but returns RunnerStatus::ERROR
-    // sts = runner.run_simulation();
-    // EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    // Run simulation runs but returns RunnerStatus::ERROR
+    sts = runner.run_simulation();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 }
 
 TEST(TowerDemo, NativeRunnerWithoutStages)

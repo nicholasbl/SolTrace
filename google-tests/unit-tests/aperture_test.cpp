@@ -20,12 +20,6 @@ TEST(Aperture, ApertureBase)
         {
             return make_aperture<TestAperture>(*this);
         }
-        // virtual TestAperture& operator=(const TestAperture &rhs)
-        // {
-        //     Aperture::operator=(rhs);
-        //     this->my_value = rhs.my_value;
-        //     return *this;
-        // }
     };
 
     TestAperture ta1(1.2, CIRCLE);
@@ -40,8 +34,168 @@ TEST(Aperture, ApertureBase)
     auto ta3 = ta1.make_copy();
     EXPECT_EQ(ta3->aperture_area(), ta1.aperture_area());
     EXPECT_EQ(ta3->get_type(), ta1.get_type());
+}
 
-    // aperture_ptr ap1 = make_aperture<TestAperture>(-21.3, HEXAGON);
-    // auto ap2 = make_aperture<TestAperture>(*ap1);
-    // EXPECT_EQ(ap2->my_value, -21.3);
+TEST(Aperture, Annulus)
+{
+    const double RO = 5.0;
+    const double RI = 1.0;
+    const double ARC1 = 90.0;
+    const double ARC2 = 360.0;
+
+    // Inside both
+    const double X1 = 2.0;
+    const double Y1 = 2.0;
+    // Outside both in center
+    const double X2 = 0.5;
+    const double Y2 = 0.5;
+    // Outside both
+    const double X3 = 1.0;
+    const double Y3 = -5.0;
+    // Inside ann2 but outside ann1
+    const double X4 = -2.0;
+    const double Y4 = -3.0;
+    // Inside ann2 but outside ann1
+    const double X5 = -2.0;
+    const double Y5 = 3.0;
+
+    auto ann1 = make_aperture<Annulus>(RI, RO, ARC1);
+    auto ann2 = make_aperture<Annulus>(RI, RO, ARC2);
+
+    EXPECT_EQ(ann1->diameter_circumscribed_circle(), 2*RO);
+    EXPECT_EQ(ann2->diameter_circumscribed_circle(), 2*RO);
+
+    EXPECT_EQ(ann1->radius_circumscribed_circle(), RO);
+    EXPECT_EQ(ann2->radius_circumscribed_circle(), RO);
+
+    EXPECT_EQ(ann2->aperture_area(), M_PI * (RO * RO - RI * RI));
+    EXPECT_EQ(ann1->aperture_area(), 0.25*ann2->aperture_area());
+
+    EXPECT_TRUE(ann1->is_in(X1, Y1));
+    EXPECT_FALSE(ann1->is_in(X2, Y2));
+    EXPECT_FALSE(ann1->is_in(X3, Y3));
+    EXPECT_FALSE(ann1->is_in(X4, Y4));
+    EXPECT_FALSE(ann1->is_in(X5, Y5));
+
+    EXPECT_TRUE(ann2->is_in(X1, Y1));
+    EXPECT_FALSE(ann2->is_in(X2, Y2));
+    EXPECT_FALSE(ann2->is_in(X3, Y3));
+    EXPECT_TRUE(ann2->is_in(X4, Y4));
+    EXPECT_TRUE(ann2->is_in(X5, Y5));
+
+    aperture_ptr a1 = ann1->make_copy();
+    EXPECT_EQ(a1->diameter_circumscribed_circle(), ann1->diameter_circumscribed_circle());
+    EXPECT_EQ(a1->radius_circumscribed_circle(), ann1->radius_circumscribed_circle());
+    EXPECT_EQ(a1->aperture_area(), ann1->aperture_area());
+    EXPECT_TRUE(a1->is_in(X1, Y1));
+    EXPECT_FALSE(a1->is_in(X2, Y2));
+    EXPECT_FALSE(a1->is_in(X3, Y3));
+    EXPECT_FALSE(a1->is_in(X4, Y4));
+    EXPECT_FALSE(a1->is_in(X5, Y5));
+}
+
+TEST(Aperture, Circle)
+{
+    const double D = 2.0;
+    const double X1 = 0.5;
+    const double Y1 = -0.5;
+    const double X2 = 1.0;
+    const double Y2 = 1.5;
+    auto cir = make_aperture<Circle>(D);
+
+    EXPECT_EQ(cir->diameter_circumscribed_circle(), D);
+    EXPECT_EQ(cir->radius_circumscribed_circle(), 0.5*D);
+    EXPECT_EQ(cir->aperture_area(), M_PI * 0.25 * D * D);
+
+    EXPECT_TRUE(cir->is_in(X1, Y1));
+    EXPECT_FALSE(cir->is_in(X2, Y2));
+
+    aperture_ptr ap = cir->make_copy();
+    EXPECT_EQ(ap->diameter_circumscribed_circle(), cir->diameter_circumscribed_circle());
+    EXPECT_EQ(ap->radius_circumscribed_circle(), cir->radius_circumscribed_circle());
+    EXPECT_EQ(ap->aperture_area(), cir->aperture_area());
+    EXPECT_TRUE(ap->is_in(X1, Y1));
+    EXPECT_FALSE(ap->is_in(X2, Y2));
+}
+
+TEST(Aperture, EqualateralTriangle)
+{
+    const double TOL = 1e-12;
+    const double D = 2.0;
+    const double R = 0.5 * D;
+    const double S = sqrt(3.0) * R; // Side length of triangle
+    const double AREA = sqrt(27.0) * R * R / 4.0;
+
+    // Inside inscribed circle
+    const double X1 = 0.1;
+    const double Y1 = 0.1;
+    // Inside but outside inscribed circle
+    const double X2 = -0.375 * S;
+    const double Y2 = -0.375 * R;
+    // Outside circumscribed circle
+    const double X3 = 1.0;
+    const double Y3 = -1.0;
+    // Outside but inside circumscribed circle
+    const double X4 = -R / sqrt(3.0) - 0.1;
+    const double Y4 = 0.1;
+
+    auto et = make_aperture<EqualateralTriangle>(D);
+
+    EXPECT_EQ(et->diameter_circumscribed_circle(), D);
+    EXPECT_EQ(et->radius_circumscribed_circle(), 0.5*D);
+    EXPECT_NEAR(et->aperture_area(), AREA, TOL);
+
+    EXPECT_TRUE(et->is_in(X1, Y1));
+    EXPECT_TRUE(et->is_in(X2, Y2));
+    EXPECT_FALSE(et->is_in(X3, Y3));
+    EXPECT_FALSE(et->is_in(X4, Y4));
+
+    aperture_ptr ap = et->make_copy();
+    EXPECT_EQ(ap->diameter_circumscribed_circle(), et->diameter_circumscribed_circle());
+    EXPECT_EQ(ap->radius_circumscribed_circle(), et->radius_circumscribed_circle());
+    EXPECT_EQ(ap->aperture_area(), et->aperture_area());
+    EXPECT_TRUE(ap->is_in(X1, Y1));
+    EXPECT_FALSE(ap->is_in(X3, Y3));
+}
+
+TEST(Aperture, Hexagon)
+{
+    // TODO: Implement this test
+}
+
+TEST(Aperture, Rectangle)
+{
+    const double TOL = 1e-12;
+    const double D = 2.0;
+    const double LY = 1.0;
+    const double LX = sqrt(D*D - LY*LY);
+    const double AREA = LY * LX;
+
+    // Inside
+    const double X1 = -0.5*LX;
+    const double Y1 = 0.5*LY;
+    // Outside left
+    const double X2 = -2.0*LX;
+    const double Y2 = Y1;
+    // Outside right
+    const double X3 = 2.0*LX;
+    const double Y3 = -Y1;
+    // Outside top
+    const double X4 = X1;
+    const double Y4 = 1.5*LY;
+    // Outside bottom
+    const double X5 = -X1;
+    const double Y5 = -1.5*LY;
+
+    auto rect = make_aperture<Rectangle>(LX, LY);
+
+    EXPECT_NEAR(rect->diameter_circumscribed_circle(), D, TOL);
+    EXPECT_NEAR(rect->radius_circumscribed_circle(), 0.5*D, TOL);
+    EXPECT_NEAR(rect->aperture_area(), AREA, TOL);
+
+    EXPECT_TRUE(rect->is_in(X1, Y1));
+    EXPECT_FALSE(rect->is_in(X2, Y2));
+    EXPECT_FALSE(rect->is_in(X3, Y3));
+    EXPECT_FALSE(rect->is_in(X4, Y4));
+    EXPECT_FALSE(rect->is_in(X5, Y5));
 }

@@ -1,6 +1,8 @@
 
 #include "common.hpp"
 
+#include <cmath>
+
 #include <vector3d.hpp>
 
 bool is_identical(const Vector3d &x, const Vector3d &y)
@@ -9,6 +11,14 @@ bool is_identical(const Vector3d &x, const Vector3d &y)
         x.data[0] == y.data[0] &&
         x.data[1] == y.data[1] &&
         x.data[2] == y.data[2]);
+}
+
+bool is_identical(const Vector3d &x, const Vector3d &y, double tol)
+{
+    return (
+        fabs(x.data[0] - y.data[0]) <= tol &&
+        fabs(x.data[1] - y.data[1]) <= tol &&
+        fabs(x.data[2] - y.data[2]) <= tol);
 }
 
 bool is_identical(const Matrix3d &A, const Matrix3d &B)
