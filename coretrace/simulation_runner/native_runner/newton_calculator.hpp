@@ -3,7 +3,7 @@
 
 #include "surface_intersection_calculator.hpp"
 
-#include "surface.hpp"
+#include "simulation_data/surface.hpp"
 
 class NewtonCalculator : public SurfaceIntersectionCalculator
 {

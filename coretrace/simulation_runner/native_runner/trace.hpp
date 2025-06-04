@@ -4,8 +4,8 @@
 #include <cstdint>
 
 #include "mtrand.h"
-#include "native_runner_types.hpp"
-#include "simulation_data.hpp"
+#include "simulation_runner/native_runner/native_runner_types.hpp"
+#include "simulation_data/simulation_data.hpp"
 // #include "types.h"
 
 class GlobalRay_refactored

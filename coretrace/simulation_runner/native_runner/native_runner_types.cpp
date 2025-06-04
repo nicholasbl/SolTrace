@@ -53,10 +53,10 @@
 #include <stdarg.h>
 
 #include "calculator_factory.hpp"
-#include "composite_element.hpp"
-#include "matvec.hpp"
+#include "simulation_data/composite_element.hpp"
+#include "simulation_data/matvec.hpp"
 #include "native_runner_types.hpp"
-#include "vector3d.hpp"
+#include "simulation_data/vector3d.hpp"
 
 TOpticalProperties::TOpticalProperties()
 {

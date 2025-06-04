@@ -5,7 +5,7 @@
 #include <cmath>
 #include <limits>
 
-#include "surface.hpp"
+#include "simulation_data/surface.hpp"
 
 #define sqr(x) (x * x)
 

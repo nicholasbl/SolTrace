@@ -3,8 +3,8 @@
 
 #include <cassert>
 
-#include "matvec.hpp"
-#include "surface.hpp"
+#include "simulation_data/matvec.hpp"
+#include "simulation_data/surface.hpp"
 #include "surface_intersection_calculator.hpp"
 
 class FlatCalculator : public SurfaceIntersectionCalculator

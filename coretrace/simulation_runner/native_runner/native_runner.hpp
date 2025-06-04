@@ -1,9 +1,9 @@
 #ifndef SOLTRACE_NATIVE_RUNNER_H
 #define SOLTRACE_NATIVE_RUNNER_H
 
-#include "native_runner_types.hpp"
+#include "simulation_runner/native_runner/native_runner_types.hpp"
 #include "simulation_result.hpp"
-#include "simulation_runner.hpp"
+#include "simulation_runner/simulation_runner.hpp"
 
 class NativeRunner : public SimulationRunner
 {

@@ -1,7 +1,7 @@
 
-#include "native_runner.hpp"
-#include "simulation_parameters.hpp"
-#include "simulation_data.hpp"
+#include "simulation_runner/native_runner/native_runner.hpp"
+#include "simulation_data/simulation_parameters.hpp"
+#include "simulation_data/simulation_data.hpp"
 #include "trace.hpp"
 
 NativeRunner::NativeRunner() : SimulationRunner(),

@@ -1,7 +1,7 @@
 
 #include "calculator_factory.hpp"
 
-#include "surface.hpp"
+#include "simulation_data/surface.hpp"
 
 #include "flat_calculator.hpp"
 #include "newton_calculator.hpp"

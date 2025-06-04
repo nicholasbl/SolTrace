@@ -54,9 +54,9 @@
 #include <string>
 #include <vector>
 
-#include "element.hpp"
-#include "optical_properties.hpp"
-#include "ray_source.hpp"
+#include "simulation_data/element.hpp"
+#include "simulation_data/optical_properties.hpp"
+#include "simulation_data/ray_source.hpp"
 #include "surface_intersection_calculator.hpp"
 
 #define ACOSM1O180 0.017453292519943295 // acos(-1)/180.0

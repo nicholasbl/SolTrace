@@ -4,8 +4,8 @@
 // #include <map>
 // #include <memory>
 
-#include "aperture.hpp"
-#include "surface.hpp"
+#include "simulation_data/aperture.hpp"
+#include "simulation_data/surface.hpp"
 #include "surface_intersection_calculator.hpp"
 
 class CalculatorFactory
