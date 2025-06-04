@@ -78,6 +78,8 @@ namespace embree_helper
 		double PosRayGlobIn[3] = { 0.0, 0.0, 0.0 };
 		double CosRayGlobIn[3] = { 0.0, 0.0, 0.0 };
 
+		double LastPathLength = std::numeric_limits<double>::infinity();
+
 	};
 
 	void error_function(void* userPtr, RTCError error, const char* str);

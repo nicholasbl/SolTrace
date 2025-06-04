@@ -228,6 +228,7 @@ void FindElementHit_embree(
 	RTCIntersectArguments args;
 	rtcInitIntersectArguments(&args);
 	args.context = &ray_payload.context;
+	ray_payload.LastPathLength = std::numeric_limits<double>::infinity();
 
 	// Make rayhit object
 	RTCRayHit rayhit;

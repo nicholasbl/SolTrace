@@ -503,9 +503,9 @@ namespace embree_helper
 			PosRayElement, CosRayElement);
 
 		// increment position by tiny amount to get off the element if tracing to the same element
-		PosRayElement[0] = PosRayElement[0] + 1.0e-3 * CosRayElement[0];
-		PosRayElement[1] = PosRayElement[1] + 1.0e-3 * CosRayElement[1];
-		PosRayElement[2] = PosRayElement[2] + 1.0e-3 * CosRayElement[2];
+		PosRayElement[0] = PosRayElement[0] + 1.0e-4 * CosRayElement[0];
+		PosRayElement[1] = PosRayElement[1] + 1.0e-4 * CosRayElement[1];
+		PosRayElement[2] = PosRayElement[2] + 1.0e-4 * CosRayElement[2];
 
 		// Call DeterminElementIntersectionNew
 		double PosRaySurfElement[3] = { 0.0, 0.0, 0.0 };
@@ -526,7 +526,9 @@ namespace embree_helper
 			RTCRayHit* rayhit_out = (RTCRayHit*)args->rayhit;
 
 			// Check if hit is closer than other hits
-			if (PathLength < rayhit_out->ray.tfar) 
+			// Using payload pathlength for double precision
+			// Ignoring rayhit_out->ray.tfar
+			if (PathLength < payload->LastPathLength) 
 			{
 				// Transform ray back to stage coordinate system
 				double PosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
@@ -540,7 +542,7 @@ namespace embree_helper
 				rayhit_out->hit.primID = 0; // Single primitive
 
 				// Define Ng (will not be used)
-				rayhit_out->hit.Ng_x = st_element->element_number;
+				rayhit_out->hit.Ng_x = std::numeric_limits<float>::quiet_NaN();
 				rayhit_out->hit.Ng_y = std::numeric_limits<float>::quiet_NaN();
 				rayhit_out->hit.Ng_z = std::numeric_limits<float>::quiet_NaN();
 
@@ -554,6 +556,7 @@ namespace embree_helper
 				CopyVec3(payload->LastPosRaySurfElement, PosRaySurfElement);
 				CopyVec3(payload->LastCosRaySurfElement, CosRaySurfElement);
 				payload->element_number = st_element->element_number;
+				payload->LastPathLength = PathLength;
 			}
 			
 		}
