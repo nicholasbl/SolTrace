@@ -140,6 +140,12 @@ void QuadricSurfaceClosedForm(
         B = 2.0 * (Kx * Xdelta * CosLoc[0] / a2 + Ky * Ydelta * CosLoc[1] / b2 + Kz * Zdelta * CosLoc[2] / c2);
         C = Kx * Xdelta * Xdelta / a2 + Ky * Ydelta * Ydelta / a2 + Kz * Zdelta * Zdelta / c2 - r2;
         break;
+    default:
+        // TODO: This is an error. Is this the correct thing to do?
+        *ErrorFlag = 1;
+        *PathLength = 0.0;
+        return;
+        break;
     }
 
     if (fabs(A) < 1e-12) // Should only happen for parabolas

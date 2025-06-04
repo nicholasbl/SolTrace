@@ -79,7 +79,7 @@ public:
 
   // TODO: get_xxxx_local should probably be get_xxxx_reference...
 
-  virtual Vector3d get_origin_local() const = 0;
+  virtual Vector3d get_origin_ref() const = 0;
   virtual Vector3d get_origin_stage() const = 0;
   virtual Vector3d get_origin_global() const = 0;
   // Always the location of the origin with respect the reference coordinates
@@ -87,7 +87,7 @@ public:
   virtual void set_origin(double, double, double) = 0;
   // virtual const Vector3d &get_global_origin() const = 0;
   // virtual void set_global_origin(const Vector3d &) = 0;
-  virtual Vector3d get_aim_vector_local() const = 0;
+  virtual Vector3d get_aim_vector_ref() const = 0;
   virtual Vector3d get_aim_vector_stage() const = 0;
   virtual Vector3d get_aim_vector_global() const = 0;
   // Always the aim vector with respect the reference coordinates
@@ -237,7 +237,7 @@ public:
     this->my_name = name;
   }
 
-  virtual Vector3d get_origin_local() const { return this->origin; }
+  virtual Vector3d get_origin_ref() const { return this->origin; }
   virtual Vector3d get_origin_stage() const;
   virtual Vector3d get_origin_global() const;
   virtual void set_origin(const Vector3d &point)
@@ -250,7 +250,7 @@ public:
     this->origin.set_values(x, y, z);
     return;
   }
-  virtual Vector3d get_aim_vector_local() const { return this->aim; }
+  virtual Vector3d get_aim_vector_ref() const { return this->aim; }
   virtual Vector3d get_aim_vector_stage() const;
   virtual Vector3d get_aim_vector_global() const;
   virtual void set_aim_vector(const Vector3d &direction)

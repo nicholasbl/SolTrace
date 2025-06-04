@@ -205,7 +205,7 @@ int ElementBase::compute_coordinate_rotations()
 
     this->euler_angles[0] = atan2(dr[0], dr[2]);
     this->euler_angles[1] = asin(dr[1]);
-    this->euler_angles[2] = this->zrot;
+    this->euler_angles[2] = this->zrot * M_PI / 180.0;
 
     compute_transform_matrices(this->euler_angles,
                                this->reference_to_local,
