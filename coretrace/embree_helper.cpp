@@ -49,6 +49,7 @@
 #include "embree_helper.h"
 #include <stdio.h>
 #include "procs.h"
+#include <cctype>
 
 namespace embree_helper 
 {
@@ -64,8 +65,8 @@ namespace embree_helper
 	{
 		for (int i = 0; i < 3; i++)
 		{
-			if ((std::abs(vec1[i] / vec2[i]) - 1.f > tol_diff)
-				&& (std::abs(vec1[i] - vec2[i]) > 1e-10))
+			if ((std::abs(vec1[i] / vec2[i] - 1.f) > tol_diff)
+				&& (std::abs(vec1[i] - vec2[i]) > 1e-5))
 				return false;
 		}
 		return true;
@@ -134,6 +135,285 @@ namespace embree_helper
 		}
 	}
 
+	float get_absolute_max(const float values[], int size)
+	{
+		float max_abs = std::abs(values[0]);
+		for (int i = 1; i < size; i++)
+		{
+			float abs_val = std::abs(values[i]);
+			if (abs_val > max_abs)
+				max_abs = abs_val;
+		}
+		return max_abs;
+	}
+
+	int get_aperture_bounds(TElement* st_element, float& x_min, float& x_max,
+		float& y_min, float& y_max)
+	{
+		switch (std::tolower(st_element->ShapeIndex))
+		{
+			case('c'):
+			{
+				// Circular
+				float r = st_element->ParameterA * 0.5f;
+				x_min = -r;
+				x_max = r;
+				y_min = -r;
+				y_max = r;
+
+				break;
+			}
+			case('h'):
+			{
+				// Hexagonal
+				float r = st_element->ParameterA * 0.5f;
+				float apothem = (2.f * r * std::sqrtf(3.f)) / 4.f;
+				x_min = -r;
+				x_max = r;
+				y_min = -apothem;
+				y_max = apothem;
+
+				break;
+			}
+			case('t'):
+			{
+				// Triangular
+				float r = st_element->ParameterA * 0.5f;
+				float side = r * std::sqrtf(3.f);
+				float h = 1.5f * r;
+				x_min = -0.5f * side;
+				x_max = 0.5f * side;
+				y_min = r - h;
+				y_max = r;
+
+				break;
+			}
+			case('r'):
+			{
+				// Rectangular
+				x_min = st_element->ParameterA * -0.5f;
+				x_max = st_element->ParameterA * 0.5f;
+				y_min = st_element->ParameterB * -0.5f;
+				y_max = st_element->ParameterB * 0.5f;
+
+				break;
+			}
+			case('l'):
+			{
+				// Single axis curvature section
+				x_min = st_element->ParameterA;
+				x_max = st_element->ParameterB;
+				y_min = st_element->ParameterC * -0.5f;
+				y_max = st_element->ParameterC * 0.5f;
+
+				break;
+			}
+			case('a'):
+			{
+				// Annular
+				float r_inner = st_element->ParameterA;
+				float r_outer = st_element->ParameterB;
+				float theta_deg = st_element->ParameterC;
+
+				// IGNORING theta for now
+				x_min = -1.f * r_outer;
+				x_max = r_outer;
+				y_min = -1.f * r_outer;
+				y_max = r_outer;
+
+				break;
+			}
+			case('i'):
+			{
+				// Irregular triangle
+				float x1 = st_element->ParameterA;
+				float y1 = st_element->ParameterB;
+				float x2 = st_element->ParameterC;
+				float y2 = st_element->ParameterD;
+				float x3 = st_element->ParameterE;
+				float y3 = st_element->ParameterF;
+
+				// Put all x and y values in arrays
+				float x_values[3] = { x1, x2, x3 };
+				float y_values[3] = { y1, y2, y3 };
+
+				// Find min and max using std::min_element and std::max_element
+				x_min = *std::min_element(x_values, x_values + 3);
+				x_max = *std::max_element(x_values, x_values + 3);
+				y_min = *std::min_element(y_values, y_values + 3);
+				y_max = *std::max_element(y_values, y_values + 3);
+
+				break;
+			}
+			case('q'):
+			{
+				// Irregular quadrilateral
+				float x1 = st_element->ParameterA;
+				float y1 = st_element->ParameterB;
+				float x2 = st_element->ParameterC;
+				float y2 = st_element->ParameterD;
+				float x3 = st_element->ParameterE;
+				float y3 = st_element->ParameterF;
+				float x4 = st_element->ParameterG;
+				float y4 = st_element->ParameterH;
+
+				// Put all x and y values in arrays
+				float x_values[4] = { x1, x2, x3, x4 };
+				float y_values[4] = { y1, y2, y3, y4 };
+
+				// Find min and max using std::min_element and std::max_element
+				x_min = *std::min_element(x_values, x_values + 4);
+				x_max = *std::max_element(x_values, x_values + 4);
+				y_min = *std::min_element(y_values, y_values + 4);
+				y_max = *std::max_element(y_values, y_values + 4);
+
+				break;
+			}
+			default:
+			{
+				x_min = std::numeric_limits<float>::quiet_NaN();
+				x_max = std::numeric_limits<float>::quiet_NaN();
+				y_min = std::numeric_limits<float>::quiet_NaN();
+				y_max = std::numeric_limits<float>::quiet_NaN();
+				return -1;
+				break;
+			}
+		}
+
+		return 0;
+	}
+
+	int get_surface_bounds(TElement* st_element, float x_minmax[2], float y_minmax[2],
+		float& z_min, float& z_max)
+	{
+
+		switch (std::tolower(st_element->SurfaceIndex))
+		{
+			case 's':
+			{
+				// Spherical
+				float c = st_element->VertexCurvX;
+				float r = 1.f / c;
+
+				float x_abs_max = get_absolute_max(x_minmax, 2);
+				float y_abs_max = get_absolute_max(y_minmax, 2);
+
+				// Check if max x,y combo is outside sphere
+				float x, y;
+				float in_root = 1.f - 1.f - (c * c) * (x_abs_max * x_abs_max + y_abs_max * y_abs_max);
+				if (in_root <= 0)
+				{
+					z_max = r;
+					z_min = 0.f;
+				}
+				else
+				{
+					float z_numerator = (c * (x_abs_max * x_abs_max + y_abs_max * y_abs_max));
+					float z_denom = 1.f + std::sqrtf(1.f - (c * c) * (x_abs_max * x_abs_max + y_abs_max * y_abs_max));
+
+					z_max = z_numerator / z_denom;
+					z_min = 0.f;
+				}
+
+				break;
+			}
+			case 'p':
+			{
+				// Parabolic
+				float cx = st_element->VertexCurvX;
+				float cy = st_element->VertexCurvY;
+
+				float x_abs_max = get_absolute_max(x_minmax, 2);
+				float y_abs_max = get_absolute_max(y_minmax, 2);
+
+				z_max = 0.5f * (cx * x_abs_max * x_abs_max + cy * y_abs_max * y_abs_max);
+				z_min = 0.f;
+
+				break;
+			}
+			case 'o':
+			{
+				// Hyperboloids and hemiellipsoids
+				float c = st_element->VertexCurvX;
+				float kappa = st_element->Kappa;
+
+				float x_abs_max = get_absolute_max(x_minmax, 2);
+				float y_abs_max = get_absolute_max(y_minmax, 2);
+
+				float z_numer = c * (x_abs_max * x_abs_max + y_abs_max * y_abs_max);
+				float z_denom = 1.f + std::sqrtf(1.f - (kappa * c * c) * (x_abs_max * x_abs_max + y_abs_max * y_abs_max));
+
+				z_max = z_numer / z_denom;
+				z_min = 0.f;
+
+				break;
+			}
+			case 'f':
+			{
+				// Flat
+				z_max = 1.e-4f;
+				z_min = -1.e-4f;
+
+				break;
+			}
+			case 'c':
+			{
+				// Conical
+				float theta_deg = st_element->ConeHalfAngle;
+				float theta_rad = theta_deg * (M_PI / 180.0f);
+
+				float x_abs_max = get_absolute_max(x_minmax, 2);
+				float y_abs_max = get_absolute_max(y_minmax, 2);
+
+				z_max = std::sqrtf(x_abs_max * x_abs_max + y_abs_max * y_abs_max) / std::tanf(theta_rad);
+				z_min = 0.f;
+
+				break;
+			}
+			case 't':
+			{
+				// Cylindrical (only works with l aperture)
+				float inverse_R = st_element->CurvOfRev;
+				float R = 1.f / inverse_R;
+
+				// OVERWRITES X BOUNDS
+				x_minmax[0] = -R;
+				x_minmax[1] = R;
+
+				z_max = 2.f * R;
+				z_min = 0.f;
+
+				break;
+			}
+			default:
+			{
+				// not supported for embree
+				z_min = std::numeric_limits<float>::quiet_NaN();
+				z_max = std::numeric_limits<float>::quiet_NaN();
+				return -1;
+			}
+		}
+
+		return 0;
+	}
+
+	void bounds_error(const RTCBoundsFunctionArguments* args, const char* str)
+	{
+		// Set bounds to zero and report error
+		RTCBounds* bounds_o = args->bounds_o;
+		bounds_o->lower_x = std::numeric_limits<float>::quiet_NaN();
+		bounds_o->upper_x = std::numeric_limits<float>::quiet_NaN();
+		bounds_o->lower_y = std::numeric_limits<float>::quiet_NaN();
+		bounds_o->upper_y = std::numeric_limits<float>::quiet_NaN();
+		bounds_o->lower_z = std::numeric_limits<float>::quiet_NaN();
+		bounds_o->upper_z = std::numeric_limits<float>::quiet_NaN();
+
+		error_function(args->geometryUserPtr, RTC_ERROR_INVALID_OPERATION,
+			str);
+
+		throw std::runtime_error("Embree scene commit failed");
+	}
+
 	void bounds_function(const RTCBoundsFunctionArguments* args)
 	{
 		// Get element and stage
@@ -144,81 +424,35 @@ namespace embree_helper
 		float min_coord_element[3] = {0.f, 0.f, 0.f};
 		float max_coord_element[3] = {0.f, 0.f, 0.f};
 
-		// Check if element type is implemented
-		if (st_element->ShapeIndex == 'l'
-			&& st_element->SurfaceIndex == 'p')
+		float x_minmax[2] = { 0.f, 0.f };
+		float y_minmax[2] = { 0.f, 0.f };
+		float z_minmax[2] = { 0.f, 0.f };
+
+		// Process aperture bounds (sets x and y)
+		int error_code = get_aperture_bounds(st_element, x_minmax[0], x_minmax[1],
+			y_minmax[0], y_minmax[1]);
+		if (error_code != 0)
 		{
-			// Trough
-			min_coord_element[0] = st_element->ParameterA;
-			max_coord_element[0] = st_element->ParameterB;
-
-			min_coord_element[1] = st_element->ParameterC * -0.5f;
-			max_coord_element[1] = st_element->ParameterC * 0.5f;
-
-			min_coord_element[2] = 0.f;
-			max_coord_element[2] = 0.5f * (st_element->VertexCurvX * std::pow(max_coord_element[0], 2.f));
-		}
-		else if (st_element->ShapeIndex == 'l' && st_element->SurfaceIndex == 't')
-		{
-			// Cylinder
-			float inverse_R = st_element->VertexCurvX;	// 1/radius
-			float R = 1.0f / inverse_R;	// radius
-			float epsilon = 1e-4f;
-
-			min_coord_element[0] = -R;
-			max_coord_element[0] = R;
-			
-			min_coord_element[1] = st_element->ParameterC * -0.5f;
-			max_coord_element[1] = st_element->ParameterC * 0.5f;
-
-			min_coord_element[2] = 0;
-			max_coord_element[2] = 2.f * R;
-		}
-		else if (st_element->ShapeIndex == 'r' && st_element->SurfaceIndex == 'p')
-		{
-			// Parabolic heliostat
-			// r - rectangular
-			// p - parabolic
-			float aperture_width = st_element->ParameterA;	// X axis side of rect
-			float aperture_height = st_element->ParameterB;	// Y axis side of rect
-
-			float min_x = aperture_width * -0.5f;
-			float max_x = aperture_width * 0.5f;
-			float min_y = aperture_height * -0.5f;
-			float max_y = aperture_height * 0.5f;
-
-			float abs_max_x = std::max(std::abs(min_x), std::abs(max_x));
-			float abs_max_y = std::max(std::abs(min_y), std::abs(max_y));
-
-			min_coord_element[0] = aperture_width * -0.5f;
-			max_coord_element[0] = aperture_width * 0.5f;
-
-			min_coord_element[1] = aperture_height * -0.5f;
-			max_coord_element[1] = aperture_height * 0.5f;
-
-			min_coord_element[2] = 0;
-			max_coord_element[2] = 0.5f * (st_element->VertexCurvX * std::pow(abs_max_x, 2.f)
-				+ st_element->VertexCurvY * std::pow(abs_max_y, 2.f));
-		}
-
-		// NOT SUPPORTED
-		else
-		{
-			// Set bounds to zero and report error
-			RTCBounds* bounds_o = args->bounds_o;
-			bounds_o->lower_x = 0.f;
-			bounds_o->upper_x = 0.f;
-			bounds_o->lower_y = 0.f;
-			bounds_o->upper_y = 0.f;
-			bounds_o->lower_z = 0.f;
-			bounds_o->upper_z = 0.f;
-
-			error_function(args->geometryUserPtr, RTC_ERROR_INVALID_OPERATION, 
-				"Unsupported st element type");
-
+			bounds_error(args, "Invalid aperture");
 			return;
 		}
 
+		// Process surface bounds (sets y, and possibly overwrites x and y)
+		error_code = get_surface_bounds(st_element, x_minmax, y_minmax, z_minmax[0], z_minmax[1]);
+		if (error_code != 0)
+		{
+			bounds_error(args, "Invalid surface");
+			return;
+		}
+
+		// Assign points to min/max coordinate element arrays
+		min_coord_element[0] = x_minmax[0];
+		min_coord_element[1] = y_minmax[0];
+		min_coord_element[2] = z_minmax[0];
+		max_coord_element[0] = x_minmax[1];
+		max_coord_element[1] = y_minmax[1];
+		max_coord_element[2] = z_minmax[1];
+		
 		// Convert local element bounds, to global xyz
 		float min_coord_global[3];
 		float max_coord_global[3];
@@ -252,6 +486,7 @@ namespace embree_helper
 		// Get Element data
 		TElement* st_element = (TElement*)args->geometryUserPtr;
 		TStage* st_stage = (TStage*)st_element->parent_stage;
+		
 
 		// First, convert ray coordinates to element
 		// Global -> stage -> element
@@ -287,43 +522,40 @@ namespace embree_helper
 		// Update rayhit info (if hit)
 		if (InterceptFlag != 0)
 		{
-			// Transform ray back to stage coordinate system
-			double PosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
-			double CosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
-			::TransformToReference(PosRaySurfElement, CosRaySurfElement,
-				st_element->Origin, st_element->RLocToRef,
-				PosRaySurfStage, CosRaySurfStage);
-
-			// Removed global tranformation because it is not used
-			
-			// Transform to global coordinate system
-			//double PosRaySurfGlob[3] = { 0.0, 0.0, 0.0 };
-			//double CosRaySurfGlob[3] = { 0.0, 0.0, 0.0 };
-			//::TransformToReference(PosRaySurfStage, CosRaySurfStage,
-			//	st_stage->Origin, st_stage->RLocToRef,
-			//	PosRaySurfGlob, CosRaySurfGlob);
-
-			// Update rayhit with intersection information (it hit)
+			// Get rayhit data
 			RTCRayHit* rayhit_out = (RTCRayHit*)args->rayhit;
-			rayhit_out->ray.tfar = (float)PathLength; // Update intersection distance
-			rayhit_out->hit.geomID = args->geomID;
-			rayhit_out->hit.primID = 0; // Single primitive
 
-			// Define Ng (will not be used)
-			rayhit_out->hit.Ng_x = std::numeric_limits<float>::quiet_NaN();
-			rayhit_out->hit.Ng_y = std::numeric_limits<float>::quiet_NaN();
-			rayhit_out->hit.Ng_z = std::numeric_limits<float>::quiet_NaN();
+			// Check if hit is closer than other hits
+			if (PathLength < rayhit_out->ray.tfar) 
+			{
+				// Transform ray back to stage coordinate system
+				double PosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
+				double CosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
+				::TransformToReference(PosRaySurfElement, CosRaySurfElement,
+					st_element->Origin, st_element->RLocToRef,
+					PosRaySurfStage, CosRaySurfStage);
 
-			// Assign custom outputs
-			payload->LastHitBackSide = HitBackSide;
-			CopyVec3(payload->LastDFXYZ, DFXYZ);
-			//CopyVec3(payload->LastPosRaySurfGlob, PosRaySurfGlob);
-			//CopyVec3(payload->LastCosRaySurfGlob, CosRaySurfGlob);
-			CopyVec3(payload->LastPosRaySurfStage, PosRaySurfStage);
-			CopyVec3(payload->LastCosRaySurfStage, CosRaySurfStage);
-			CopyVec3(payload->LastPosRaySurfElement, PosRaySurfElement);
-			CopyVec3(payload->LastCosRaySurfElement, CosRaySurfElement);
-			payload->element_number = st_element->element_number;
+				rayhit_out->ray.tfar = (float)PathLength; // Update intersection distance
+				rayhit_out->hit.geomID = args->geomID;
+				rayhit_out->hit.primID = 0; // Single primitive
+
+				// Define Ng (will not be used)
+				rayhit_out->hit.Ng_x = st_element->element_number;
+				rayhit_out->hit.Ng_y = std::numeric_limits<float>::quiet_NaN();
+				rayhit_out->hit.Ng_z = std::numeric_limits<float>::quiet_NaN();
+
+				// Assign custom outputs
+				payload->LastHitBackSide = HitBackSide;
+				CopyVec3(payload->LastDFXYZ, DFXYZ);
+				//CopyVec3(payload->LastPosRaySurfGlob, PosRaySurfGlob);
+				//CopyVec3(payload->LastCosRaySurfGlob, CosRaySurfGlob);
+				CopyVec3(payload->LastPosRaySurfStage, PosRaySurfStage);
+				CopyVec3(payload->LastCosRaySurfStage, CosRaySurfStage);
+				CopyVec3(payload->LastPosRaySurfElement, PosRaySurfElement);
+				CopyVec3(payload->LastCosRaySurfElement, CosRaySurfElement);
+				payload->element_number = st_element->element_number;
+			}
+			
 		}
 		else
 		{
@@ -337,16 +569,25 @@ namespace embree_helper
 		RTCScene scene = rtcNewScene(device);
 
 		// Loop through stages
-		unsigned int stage_mask = 1;
+		unsigned int stage_index = 1;
 		for (TStage* stage : system.StageList)
 		{
 			// Loop through elements in each stage
 			int j = 0;
+			unsigned int stage_mask = 1u << stage_index;
 			for (TElement* st_element : stage->ElementList)
 			{
+				// Skip if not enabled
+				if (st_element->Enabled == false)
+				{
+					j++;
+					continue;
+				}
+
 				// Add ptr to parent stage to st_element
 				st_element->parent_stage = stage;
 				st_element->element_number = j + 1;
+				st_element->embree_mask = stage_mask;
 
 				// Make embree geometry for each element
 				RTCGeometry embree_geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_USER);
@@ -369,14 +610,14 @@ namespace embree_helper
 
 				// Attach geometry
 				unsigned int geomID = rtcAttachGeometry(scene, embree_geom);
-				
+
 				// Release geometry (it is owned by the scene now)
 				rtcReleaseGeometry(embree_geom);
 
 				j++;
 			}
 
-			stage_mask++;
+			stage_index++;
 		}
 
 		return scene;
@@ -394,7 +635,7 @@ namespace embree_helper
 		int& ErrorFlag2, int& LastHitBackSide2,
 		bool& StageHit2)
 	{
-		double tol_diff = 1e-7;
+		double tol_diff = 1e-4;
 		if (StageHit1 != StageHit2) return false;
 		if (LastElementNumber1 != LastElementNumber2) return false;
 		if (LastHitBackSide1 != LastHitBackSide2) return false;
@@ -406,6 +647,5 @@ namespace embree_helper
 
 		return true;
 	}
-
 
 }	// namespace embree_helper

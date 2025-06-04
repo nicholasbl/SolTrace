@@ -162,19 +162,6 @@ void FindElementHit(
 		PosRayElement[1] = PosRayElement[1] + 1.0e-4 * CosRayElement[1];
 		PosRayElement[2] = PosRayElement[2] + 1.0e-4 * CosRayElement[2];
 
-		
-
-		// {Determine if ray intersects element[j]; if so, Find intersection point with surface of element[j] }
-		DetermineElementIntersectionNew(Element, PosRayElement, CosRayElement,
-			PosRaySurfElement, CosRaySurfElement, DFXYZ,
-			&PathLength, &ErrorFlag, &InterceptFlag, &HitBackSide);
-
-		int LastElementNumbertest = (i == 0 && !PT_override) ? Element->element_number : j + 1;    //mjw change from j index to element id
-		if (LastElementNumbertest == 150)
-		{
-			int asdg = 0;
-		}
-
 		// {Determine if ray intersects element[j]; if so, Find intersection point with surface of element[j] }
 		DetermineElementIntersectionNew(Element, PosRayElement, CosRayElement,
 			PosRaySurfElement, CosRaySurfElement, DFXYZ,
@@ -254,7 +241,7 @@ void FindElementHit_embree(
 	// Define rayhit outputs
 	rayhit.ray.tnear = 0;
 	rayhit.ray.tfar = std::numeric_limits<float>::infinity();
-	rayhit.ray.mask = i + 1;
+	rayhit.ray.mask = 1u << i + 1;
 	rayhit.ray.flags = 0;
 	rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
 	rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
@@ -672,6 +659,14 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 			// Convert st stages into scene
 			embree_scene = embree_helper::make_scene(embree_device, *System);
 			rtcCommitScene(embree_scene);
+
+			// Validate bounds
+			RTCError err = rtcGetDeviceError(embree_device);
+			if (err != RTC_ERROR_NONE)
+			{
+				int asdg = 0;
+				return -1;
+			}
 		}
 		else
 		{
@@ -913,6 +908,17 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 							LastDFXYZ, LastElementNumber, LastRayNumber,
 							LastPosRaySurfStage, LastCosRaySurfStage,
 							ErrorFlag, LastHitBackSide, StageHit);
+
+						FindElementHit(i, Stage, PT_override, AsPowerTower,
+							nintelements, sunint_elements, reflint_elements,
+							RayNumber, in_multi_hit_loop,
+							PosRayStage, CosRayStage,
+
+							st_posraysurfelement, st_cosraysurfelement,
+							st_dfxyz, st_elementnumber, st_raynumber,
+							st_posraysurfstage, st_cosraysurfstage,
+							st_errorflag, st_lasthitbackside, st_stagehit);
+
 						TRayData::ray_t* p_ray = Stage->RayData.Append(LastPosRaySurfStage,
 							LastCosRaySurfStage,
 							LastElementNumber,

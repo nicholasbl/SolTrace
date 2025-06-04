@@ -201,6 +201,7 @@ struct TElement
     int element_number;     //mjw element number in the stage - unique ID in order of addition to element list
 
 	TStage* parent_stage = nullptr;	// tmb Pointer to stage element is within (needed for embree)
+	unsigned int embree_mask = -1;	// tmb Mask of element (for embree stage logic)
 };
 
 struct TSun
