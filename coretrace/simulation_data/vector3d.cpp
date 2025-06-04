@@ -77,6 +77,69 @@ std::ostream &operator<<(std::ostream &os, const Vector3d &x)
     return os;
 }
 
+Matrix3d::Matrix3d()
+{
+    // for (int i = 0; i < 3; ++i)
+    //     for (int j = 0; j < 3; ++j)
+    //         this->data[i][j] = 0.0;
+    this->zero();
+}
+Matrix3d::~Matrix3d() {}
+
+void Matrix3d::set_value(int i, int j, double val)
+{
+    assert(i >= 0 && i < 3);
+    assert(j >= 0 && j < 3);
+    this->data[i][j] = val;
+}
+
+double Matrix3d::get_value(int i, int j) const
+{
+    assert(i >= 0 && i < 3);
+    assert(j >= 0 && j < 3);
+    return this->data[i][j];
+}
+
+void Matrix3d::zero()
+{
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            data[i][j] = 0.0;
+        }
+    }
+}
+
+void Matrix3d::identity()
+{
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            data[i][j] = (i == j ? 1.0 : 0.0);
+        }
+    }
+}
+
+std::ostream &operator<<(std::ostream &os, const Matrix3d &A)
+{
+    // os << "[" << x.data[0] << ", "
+    //    << x.data[1] << ", "
+    //    << x.data[2] << "]";
+    os << "[";
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            os << A.data[i][j]
+               << (j < 2 ? ", " : "; ");
+        }
+    }
+    os << "]";
+    return os;
+}
+
 // Compute y = A*x placing the result in y
 void matrix_vector_product(const Matrix3d &A, const Vector3d &x, Vector3d &y)
 {
