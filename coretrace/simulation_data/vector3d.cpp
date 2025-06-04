@@ -18,6 +18,65 @@
 //     return;
 // }
 
+Vector3d::Vector3d()
+{
+    this->zero();
+    return;
+}
+
+Vector3d::Vector3d(double data[3])
+{
+    for (int i = 0; i < 3; ++i)
+        this->data[i] = data[i];
+    return;
+}
+Vector3d::Vector3d(double x, double y, double z)
+{
+    this->data[0] = x;
+    this->data[1] = y;
+    this->data[2] = z;
+    return;
+}
+Vector3d::~Vector3d()
+{
+    return;
+}
+
+void Vector3d::zero()
+{
+    for (int i = 0; i < 3; ++i)
+        this->data[i] = 0.0;
+    return;
+}
+
+void Vector3d::set_values(double x, double y, double z)
+{
+    this->data[0] = x;
+    this->data[1] = y;
+    this->data[2] = z;
+    return;
+}
+
+const double &Vector3d::operator[](int idx) const
+{
+    assert(idx >= 0 && idx < 3);
+    return this->data[idx];
+}
+
+double &Vector3d::operator[](int idx)
+{
+    assert(idx >= 0 && idx < 3);
+    return this->data[idx];
+}
+
+std::ostream &operator<<(std::ostream &os, const Vector3d &x)
+{
+    os << "[" << x.data[0] << ", "
+       << x.data[1] << ", "
+       << x.data[2] << "]";
+    return os;
+}
+
 // Compute y = A*x placing the result in y
 void matrix_vector_product(const Matrix3d &A, const Vector3d &x, Vector3d &y)
 {

@@ -14,9 +14,10 @@ set(NATIVE_RUNNER_SRC
     element_intersection.cpp
     native_runner.cpp
     native_runner_types.cpp
+    parabola_calculator.cpp
     pt_optimizations.cpp
-    quadric_calculator.cpp
-    root432.cpp
+    # quadric_calculator.cpp
+    # root432.cpp
     sun_to_primary_stage.cpp
     trace.cpp
     treemesh.cpp

@@ -152,12 +152,12 @@ void SurfaceNormalErrors(MTRand &myrng,
 //                 double *dzrdx,
 //                 double *dzrdy);
 
-bool InitGeometries(TSystem *sys);
+// bool InitGeometries(TSystem *sys);
 // bool TranslateSurfaceParams( TElement *elm, double params[8]);
 // bool ReadSurfaceFile( const char *file, TElement *elm );
 
-bool TranslateSurfaceParams(TSystem *sys, TElement *elm, double params[8]);
-bool ReadSurfaceFile(const char *file, TElement *elm, TSystem *sys);
+// bool TranslateSurfaceParams(TSystem *sys, TElement *elm, double params[8]);
+// bool ReadSurfaceFile(const char *file, TElement *elm, TSystem *sys);
 
 bool trace_native(TSystem *System,
                   unsigned int seed,

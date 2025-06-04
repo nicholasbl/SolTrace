@@ -9,6 +9,9 @@ public:
     SurfaceIntersectionCalculator() {}
     ~SurfaceIntersectionCalculator() {}
 
+    // TODO: Should probably move these to using Vector3d rather
+    // than arrays of doubles...
+    // TODO: Not sure what purpose CosKLM serves here. Investigate...
     virtual int intersect(const double PosLoc[3],
                           const double CosLoc[3],
                           double PosXYZ[3],

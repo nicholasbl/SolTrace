@@ -25,7 +25,9 @@ TEST(TowerDemo, NativeRunnerWithStages)
     auto absorber = make_element<SingleElement>();
     absorber->set_origin(0.0, 0.0, 10.0);
     absorber->set_aim_vector(0.0, 5.0, 0.0);
-    absorber->set_surface(make_surface<Flat>());
+    absorber->set_zrot(0.0);
+    absorber->compute_coordinate_rotations();
+    absorber->set_surface(make_surface<Flat>()); // surface(nullptr)
     absorber->set_aperture(make_aperture<Rectangle>(2.0, 2.0));
     OpticalProperties *foptics = absorber->get_front_optical_properties();
     foptics->my_type = REFLECTION;
@@ -90,6 +92,7 @@ TEST(TowerDemo, NativeRunnerWithStages)
         el->set_zrot(30.0 * i);
         // // Could also be set in radians
         // el->set_zrot_radians(M_PI / 3.0 * i);
+        el->compute_coordinate_rotations();
 
         el->set_surface(make_surface<Flat>());
         el->set_aperture(make_aperture<Rectangle>(1.0, 1.95));
@@ -155,6 +158,6 @@ TEST(TowerDemo, NativeRunnerWithStages)
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 }
 
-TEST(TowerDemo, NativeRunnerWithoutStages)
-{
-}
+// TEST(TowerDemo, NativeRunnerWithoutStages)
+// {
+// }

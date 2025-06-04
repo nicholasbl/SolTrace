@@ -71,3 +71,23 @@ bool Hexagon::is_in(double x, double y) const
 
     return false;
 }
+
+// int intri(double x1, double y1,
+//           double x2, double y2,
+//           double x3, double y3,
+//           double xt, double yt)
+// {
+//     double a = (x1 - xt) * (y2 - yt) - (x2 - xt) * (y1 - yt);
+//     double b = (x2 - xt) * (y3 - yt) - (x3 - xt) * (y2 - yt);
+//     double c = (x3 - xt) * (y1 - yt) - (x1 - xt) * (y3 - yt);
+//     return (sign(a) == sign(b) && sign(b) == sign(c));
+// }
+
+// int inquad(double x1, double y1,
+//            double x2, double y2,
+//            double x3, double y3,
+//            double x4, double y4,
+//            double xt, double yt)
+// {
+//     return intri(x1, y1, x2, y2, x3, y3, xt, yt) || intri(x1, y1, x3, y3, x4, y4, xt, yt);
+// }

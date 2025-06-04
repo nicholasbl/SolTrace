@@ -45,7 +45,7 @@ TEST(Aperture, Annulus)
 
     // Inside both
     const double X1 = 2.0;
-    const double Y1 = 2.0;
+    const double Y1 = 1.0;
     // Outside both in center
     const double X2 = 0.5;
     const double Y2 = 0.5;
@@ -58,6 +58,9 @@ TEST(Aperture, Annulus)
     // Inside ann2 but outside ann1
     const double X5 = -2.0;
     const double Y5 = 3.0;
+    // Inside both
+    const double X6 = 2.0;
+    const double Y6 = -1.0;
 
     auto ann1 = make_aperture<Annulus>(RI, RO, ARC1);
     auto ann2 = make_aperture<Annulus>(RI, RO, ARC2);
@@ -76,12 +79,14 @@ TEST(Aperture, Annulus)
     EXPECT_FALSE(ann1->is_in(X3, Y3));
     EXPECT_FALSE(ann1->is_in(X4, Y4));
     EXPECT_FALSE(ann1->is_in(X5, Y5));
+    EXPECT_TRUE(ann1->is_in(X6, Y6));
 
     EXPECT_TRUE(ann2->is_in(X1, Y1));
     EXPECT_FALSE(ann2->is_in(X2, Y2));
     EXPECT_FALSE(ann2->is_in(X3, Y3));
     EXPECT_TRUE(ann2->is_in(X4, Y4));
     EXPECT_TRUE(ann2->is_in(X5, Y5));
+    EXPECT_TRUE(ann2->is_in(X6, Y6));
 
     aperture_ptr a1 = ann1->make_copy();
     EXPECT_EQ(a1->diameter_circumscribed_circle(), ann1->diameter_circumscribed_circle());

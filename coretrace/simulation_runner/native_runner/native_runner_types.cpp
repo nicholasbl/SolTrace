@@ -58,101 +58,74 @@
 #include "native_runner_types.hpp"
 #include "vector3d.hpp"
 
-TOpticalProperties::TOpticalProperties()
-{
-    for (int i = 0; i < 4; i++)
-        RefractiveIndex[i] = AB12[i] = 0;
+// TOpticalProperties::TOpticalProperties()
+// {
+//     for (int i = 0; i < 4; i++)
+//         RefractiveIndex[i] = AB12[i] = 0;
 
-    // OpticSurfNumber = 1;
-    // ApertureStopOrGratingType = 0;
-    // DiffractionOrder = 0;
-    Reflectivity = 0;
-    Transmissivity = 0;
-    RMSSlopeError = 0;
-    RMSSpecError = 0;
-    DistributionType = 'g';
-    UseReflectivityTable = false;
-    UseTransmissivityTable = false;
-}
+//     // OpticSurfNumber = 1;
+//     // ApertureStopOrGratingType = 0;
+//     // DiffractionOrder = 0;
+//     Reflectivity = 0;
+//     Transmissivity = 0;
+//     RMSSlopeError = 0;
+//     RMSSpecError = 0;
+//     DistributionType = 'g';
+//     UseReflectivityTable = false;
+//     UseTransmissivityTable = false;
+// }
 
-TOpticalProperties &TOpticalProperties::operator=(const TOpticalProperties &rhs)
-{
-    DistributionType = rhs.DistributionType;
-    // OpticSurfNumber = rhs.OpticSurfNumber;
-    // ApertureStopOrGratingType = rhs.ApertureStopOrGratingType;
-    // DiffractionOrder = rhs.DiffractionOrder;
-    Reflectivity = rhs.Reflectivity;
-    Transmissivity = rhs.Transmissivity;
-    RMSSlopeError = rhs.RMSSlopeError;
-    RMSSpecError = rhs.RMSSpecError;
-    UseReflectivityTable = rhs.UseReflectivityTable;
-    UseTransmissivityTable = rhs.UseTransmissivityTable;
+// TOpticalProperties &TOpticalProperties::operator=(const TOpticalProperties &rhs)
+// {
+//     DistributionType = rhs.DistributionType;
+//     // OpticSurfNumber = rhs.OpticSurfNumber;
+//     // ApertureStopOrGratingType = rhs.ApertureStopOrGratingType;
+//     // DiffractionOrder = rhs.DiffractionOrder;
+//     Reflectivity = rhs.Reflectivity;
+//     Transmissivity = rhs.Transmissivity;
+//     RMSSlopeError = rhs.RMSSlopeError;
+//     RMSSpecError = rhs.RMSSpecError;
+//     UseReflectivityTable = rhs.UseReflectivityTable;
+//     UseTransmissivityTable = rhs.UseTransmissivityTable;
 
-    for (int i = 0; i < 4; i++)
-    {
-        RefractiveIndex[i] = rhs.RefractiveIndex[i];
-        AB12[i] = rhs.AB12[i];
-    }
+//     for (int i = 0; i < 4; i++)
+//     {
+//         RefractiveIndex[i] = rhs.RefractiveIndex[i];
+//         AB12[i] = rhs.AB12[i];
+//     }
 
-    ReflectivityTable.resize(rhs.ReflectivityTable.size());
-    for (size_t i = 0; i < rhs.ReflectivityTable.size(); i++)
-    {
-        ReflectivityTable[i].angle = rhs.ReflectivityTable[i].angle;
-        ReflectivityTable[i].refl = rhs.ReflectivityTable[i].refl;
-    }
-    TransmissivityTable.resize(rhs.TransmissivityTable.size());
-    for (size_t i = 0; i < rhs.TransmissivityTable.size(); i++)
-    {
-        TransmissivityTable[i].angle = rhs.TransmissivityTable[i].angle;
-        TransmissivityTable[i].trans = rhs.TransmissivityTable[i].trans;
-    }
+//     ReflectivityTable.resize(rhs.ReflectivityTable.size());
+//     for (size_t i = 0; i < rhs.ReflectivityTable.size(); i++)
+//     {
+//         ReflectivityTable[i].angle = rhs.ReflectivityTable[i].angle;
+//         ReflectivityTable[i].refl = rhs.ReflectivityTable[i].refl;
+//     }
+//     TransmissivityTable.resize(rhs.TransmissivityTable.size());
+//     for (size_t i = 0; i < rhs.TransmissivityTable.size(); i++)
+//     {
+//         TransmissivityTable[i].angle = rhs.TransmissivityTable[i].angle;
+//         TransmissivityTable[i].trans = rhs.TransmissivityTable[i].trans;
+//     }
 
-    return *this;
-}
+//     return *this;
+// }
 
-TElement::TElement() : aperture(nullptr), Optics()
+TElement::TElement() : aperture(nullptr),
+                       icalc(nullptr),
+                       Optics()
 {
     int i, j;
     for (i = 0; i < 3; i++)
     {
         // Origin[i] = AimPoint[i] = Euler[i] = PosSunCoords[i] = 0;
         Origin[i] = AimPoint[i] = PosSunCoords[i] = 0;
+        // PosSunCoords[i] = 0;
     }
     for (i = 0; i < 3; i++)
         for (j = 0; j < 3; j++)
             RRefToLoc[i][j] = RLocToRef[i][j] = 0;
-    for (i = 0; i < 5; i++)
-        Alpha[i] = 0;
 
-    // Enabled = true;
-    ZRot = 0;
-    // ShapeIndex = ' ';
-    // ParameterA = ParameterB = ParameterC = ParameterD = 0;
-    // ParameterE = ParameterF = ParameterG = ParameterH = 0;
-    // ApertureArea = 0;
-    Kappa = 0;
-    VertexCurvX = 0;
-    VertexCurvY = 0;
-    AnnularRadius = 0;
-    CrossSectionRadius = 0;
-    ConeHalfAngle = 0;
-    CurvOfRev = 0;
-    // SurfaceIndex = ' ';
-    // SurfaceType = 0;
-
-    // FitOrder = 0;
-
-    // CubicSplineDYDXbc1 = 0;
-    // CubicSplineDYDXbcN = 0;
-
-    // VSHOTRMSSlope = 0;
-    // VSHOTRMSScale = 0;
-    // VSHOTRadius = 0;
-    // VSHOTFocLen = 0;
-    // VSHOTTarDis = 0;
-
-    // InteractionType = 0;
-
+    // ZRot = 0;
     ZAperture = 0;
 
     // Optics = nullptr;
@@ -434,7 +407,8 @@ void TRayData::Print()
         unsigned int ray;
         if (Query(i, pos, cos, &elm, &stage, &ray))
         {
-            printf("   [%zu] = { [%lg,%lg,%lg][%lg,%lg,%lg] %d %d %u }\n", i,
+            printf("   [%zu] = { [%lg,%lg,%lg][%lg,%lg,%lg] %d %d %u }\n",
+                   i,
                    pos[0], pos[1], pos[2],
                    cos[0], cos[1], cos[2],
                    elm, stage, ray);
@@ -527,7 +501,8 @@ telement_ptr make_telement(element_ptr el)
     telem->aperture = el->get_aperture()->make_copy();
     // TODO: Do we need to pass aperture or other element properties to the
     // intersection calculator?
-    telem->sic = CalculatorFactory::get()->make_calculator(el->get_surface());
+    telem->icalc =
+        CalculatorFactory::get()->make_calculator(el->get_surface());
 
     // How to handle optical properties?
     telem->Optics.Front = *el->get_front_optical_properties();

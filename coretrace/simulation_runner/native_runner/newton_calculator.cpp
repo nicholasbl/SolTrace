@@ -1,9 +1,10 @@
 
 #include "newton_calculator.hpp"
 
-NewtonCalculator::NewtonCalculator() : SurfaceIntersectionCalculator(),
-                                       tolerance(1e-6),
-                                       max_iters(20)
+NewtonCalculator::NewtonCalculator(surface_ptr surf)
+    : SurfaceIntersectionCalculator(),
+      tolerance(1e-6),
+      max_iters(20)
 {
 }
 
@@ -16,5 +17,10 @@ int NewtonCalculator::intersect(const double PosLoc[3],
 {
     int sts = 0;
     // TODO: Implement this
+
+    // z0 = this->set_zstart();
+
+    // Run newton's method...
+
     return sts;
 }

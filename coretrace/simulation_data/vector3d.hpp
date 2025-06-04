@@ -9,78 +9,17 @@
 class Vector3d
 {
 public:
-    Vector3d()
-    {
-        this->zero();
-    }
-    Vector3d(double data[3])
-    {
-        for (int i = 0; i < 3; ++i)
-            this->data[i] = data[i];
-    }
-    Vector3d(double x, double y, double z)
-    {
-        this->data[0] = x;
-        this->data[1] = y;
-        this->data[2] = z;
-    }
-    ~Vector3d() {}
+    Vector3d();
+    Vector3d(double data[3]);
+    Vector3d(double x, double y, double z);
+    ~Vector3d();
 
-    void zero()
-    {
-        for (int i = 0; i < 3; ++i)
-            this->data[i] = 0.0;
-    }
+    void zero();
+    void set_values(double x, double y, double z);
 
-    // inline double get_value(int i) const
-    // {
-    //     assert(i >= 0 && i < 3);
-    //     return this->data[i];
-    // }
-
-    // void set_value(int i, double val)
-    // {
-    //     assert(i >= 0 && i < 3);
-    //     this->data[i] = val;
-    //     return;
-    // }
-
-    void set_values(double x, double y, double z)
-    {
-        this->data[0] = x;
-        this->data[1] = y;
-        this->data[2] = z;
-        return;
-    }
-
-    inline const double &operator[](int idx) const
-    {
-        assert(idx >= 0 && idx < 3);
-        return this->data[idx];
-    }
-
-    inline double &operator[](int idx)
-    {
-        assert(idx >= 0 && idx < 3);
-        return this->data[idx];
-    }
-
-    friend std::ostream &operator<<(std::ostream &os, const Vector3d &x)
-    {
-        os << "[" << x.data[0] << ", "
-           << x.data[1] << ", "
-           << x.data[2] << "]";
-        return os;
-    }
-
-    // inline bool operator==(const Vector3d& x)
-    // {
-    //     return (
-    //         data[0] == x.data[0] &&
-    //         data[1] == x.data[1] &&
-    //         data[2] == x.data[2]
-    //     );
-    // }
+    const double &operator[](int idx) const;
+    double &operator[](int idx);
+    friend std::ostream &operator<<(std::ostream &os, const Vector3d &x);
 
     double data[3];
 

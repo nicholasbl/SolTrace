@@ -94,10 +94,10 @@ TEST(Element, SingleElementAccessors)
     EXPECT_EQ(opb->specularity_error, op.specularity_error);
 }
 
-TEST(Element, SingleElementOrientationUpdate)
-{
-    // TODO: Implement this test.
-}
+// TEST(Element, SingleElementOrientationUpdate)
+// {
+//     // TODO: Implement this test.
+// }
 
 TEST(Element, VirtualElement)
 {

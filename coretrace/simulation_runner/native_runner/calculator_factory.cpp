@@ -5,7 +5,8 @@
 
 #include "flat_calculator.hpp"
 #include "newton_calculator.hpp"
-#include "quadric_calculator.hpp"
+#include "parabola_calculator.hpp"
+// #include "quadric_calculator.hpp"
 
 // std::map<SurfaceType,
 
@@ -18,7 +19,8 @@ calculator_ptr CalculatorFactory::make_calculator(surface_ptr surf)
     calculator_ptr calc = nullptr;
     if (st == PARABOLA)
     {
-        calc = std::make_shared<QuadricCalculator>(surf);
+        // calc = std::make_shared<QuadricCalculator>(surf);
+        calc = std::make_shared<ParabolaCalculator>(surf);
     }
     else if(st == FLAT)
     {

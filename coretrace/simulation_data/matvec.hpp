@@ -230,6 +230,13 @@ inline void ZeroVec3(double vec[3])
     return;
 }
 
+inline void SetVec3(double vec[3], double v1, double v2, double v3)
+{
+    vec[0] = v1;
+    vec[1] = v2;
+    vec[2] = v3;
+}
+
 inline void CopyVec3(double dest[3], const std::vector<double> &src)
 {
     dest[0] = src[0];
