@@ -65,7 +65,7 @@ namespace embree_helper
 	{
 		for (int i = 0; i < 3; i++)
 		{
-			if ((std::abs(vec1[i] / vec2[i] - 1.f) > tol_diff)
+			if ((std::abs(vec1[i] / vec2[i] - 1) > tol_diff)
 				&& (std::abs(vec1[i] - vec2[i]) > 1e-5))
 				return false;
 		}
@@ -527,8 +527,11 @@ namespace embree_helper
 
 			// Check if hit is closer than other hits
 			// Using payload pathlength for double precision
-			// Ignoring rayhit_out->ray.tfar
-			if (PathLength < payload->LastPathLength) 
+			// If pathlength == lastpathlength, use which element number is lower
+			// to match results with original code
+			if ((PathLength < payload->LastPathLength) 
+				|| ((PathLength == payload->LastPathLength) 
+					&& (st_element->element_number < payload->element_number)))
 			{
 				// Transform ray back to stage coordinate system
 				double PosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
@@ -638,6 +641,9 @@ namespace embree_helper
 		int& ErrorFlag2, int& LastHitBackSide2,
 		bool& StageHit2)
 	{
+		if (StageHit1 == false && StageHit2 == false)
+			return true;
+
 		double tol_diff = 1e-4;
 		if (StageHit1 != StageHit2) return false;
 		if (LastElementNumber1 != LastElementNumber2) return false;
