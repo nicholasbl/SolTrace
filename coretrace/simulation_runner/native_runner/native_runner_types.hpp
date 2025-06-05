@@ -159,7 +159,9 @@ struct TElement
 	TOpticalPropertySet Optics;
 
 	std::string Comment;
-	int element_number; // mjw element number in the stage - unique ID in order of addition to element list
+	// mjw element number in the stage - unique ID in order
+	// of addition to element list
+	int element_number;
 };
 
 using telement_ptr = typename std::shared_ptr<TElement>;
@@ -230,17 +232,17 @@ public:
 			   double cos[3],
 			   int *element,
 			   int *stage,
-			   unsigned int *raynum);
+			   unsigned int *raynum) const;
 
 	void Merge(TRayData &dest);
 
 	void Clear();
 
-	void Print();
+	void Print() const;
 
-	uint_fast64_t Count();
+	uint_fast64_t Count() const;
 
-	ray_t *Index(uint_fast64_t i, bool write_access);
+	ray_t *Index(uint_fast64_t i, bool write_access) const;
 
 private:
 	static const unsigned int block_size = 8192;
@@ -289,9 +291,10 @@ struct TSystem
 	~TSystem();
 
 	void ClearAll();
+	void CollectResults();
 
 	TSun Sun;
-	std::vector<TOpticalPropertySet *> OpticsList;
+	// std::vector<TOpticalPropertySet *> OpticsList;
 	// std::vector<TStage*> StageList;
 	std::vector<tstage_ptr> StageList;
 

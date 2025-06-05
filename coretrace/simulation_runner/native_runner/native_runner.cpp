@@ -98,6 +98,9 @@ RunnerStatus NativeRunner::run_simulation()
         this->tsys.sim_errors_sunshape,
         this->tsys.sim_errors_optical,
         this->as_power_tower);
+
+    this->tsys.CollectResults();
+
     return trace_return ? RunnerStatus::SUCCESS : RunnerStatus::ERROR;
 }
 

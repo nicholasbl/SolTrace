@@ -19,7 +19,7 @@ public:
                           double DFXYZ[3],
                           double *PathLength)
     {
-
+        int sts = 0;
         // TODO: Make sure that intersection should be computed
         // in local coordinate frame.
         double x0 = PosLoc[0];
@@ -30,34 +30,44 @@ public:
         double mz = CosLoc[2];
         double t;
 
+        ZeroVec3(PosXYZ);
+        ZeroVec3(DFXYZ);
+        ZeroVec3(CosKLM);
+
         if (fabs(mz) < 1e-12)
         {
             // Ray is parallel to the flat plane.
             // It does not intersect.
-            ZeroVec3(PosXYZ);
-            ZeroVec3(DFXYZ);
-            ZeroVec3(CosKLM);
-
-            *PathLength = -1.0;
+            sts = 1;
+            *PathLength = 0.0;
         }
         else
         {
-            CopyVec3(CosKLM, CosLoc);
-            DFXYZ[0] = DFXYZ[1] = 0.0;
-            DFXYZ[2] = 1.0;
-
             t = -z0 / mz;
 
-            PosXYZ[0] = x0 + t * mx;
-            PosXYZ[1] = y0 + t * my;
-            PosXYZ[2] = 0.0;
-            
-            assert(fabs(z0 + t * mz) < 1e-12);
+            if (t > 0.0)
+            {
+                CopyVec3(CosKLM, CosLoc);
 
-            *PathLength = t;
+                PosXYZ[0] = x0 + t * mx;
+                PosXYZ[1] = y0 + t * my;
+                PosXYZ[2] = 0.0;
+
+                DFXYZ[0] = DFXYZ[1] = 0.0;
+                DFXYZ[2] = 1.0;
+
+                assert(fabs(z0 + t * mz) < 1e-12);
+
+                *PathLength = t;
+            }
+            else
+            {
+                sts = 1;
+                *PathLength = 0.0;
+            }
         }
 
-        return 0;
+        return sts;
     }
 };
 

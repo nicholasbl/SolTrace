@@ -10,7 +10,7 @@ class Vector3d
 {
 public:
     Vector3d();
-    Vector3d(double data[3]);
+    Vector3d(const double data[3]);
     Vector3d(double x, double y, double z);
     ~Vector3d();
 

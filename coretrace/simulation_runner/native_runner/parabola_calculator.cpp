@@ -90,7 +90,7 @@ int ParabolaCalculator::intersect(const double PosLoc[3],
             t1 = -0.5 * (b + scratch) / a;
             // Positive root
             t2 = -0.5 * (b - scratch) / a;
-            
+
             if (t1 > 0.0)
             {
                 *PathLength = t1;
@@ -108,11 +108,11 @@ int ParabolaCalculator::intersect(const double PosLoc[3],
                 sts = 1;
                 *PathLength = 0.0;
             }
-            this->surface_normal(PosXYZ, DFXYZ);
         }
     }
 
-    CopyVec3(CosKLM, CosLoc);
+    if (sts == 0)
+        CopyVec3(CosKLM, CosLoc);
 
     return sts;
 }
@@ -120,10 +120,13 @@ int ParabolaCalculator::intersect(const double PosLoc[3],
 void ParabolaCalculator::surface_normal(const double PosXYZ[3],
                                         double DFXYZ[3])
 {
+    // TODO: Need to default to returning the surface normal of
+    // whatever is the "front". Is that the inside of the parabola
+    // (which is used currently) or the outside?
     double cx = this->cx;
     double cy = this->cy;
-    DFXYZ[0] = cx * PosXYZ[0];
-    DFXYZ[1] = cy * PosXYZ[1];
-    DFXYZ[2] = -1.0;
+    DFXYZ[0] = -cx * PosXYZ[0];
+    DFXYZ[1] = -cy * PosXYZ[1];
+    DFXYZ[2] = 1.0;
     return;
 }

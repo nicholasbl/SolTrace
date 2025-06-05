@@ -44,6 +44,7 @@ TEST(NativeRunner, SmokeTest)
 
     auto sun = make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 100.0);
+    // sun->set_shape();
     my_sim.add_ray_source(sun);
 
     auto my_st = make_stage(0);

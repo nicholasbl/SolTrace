@@ -23,6 +23,8 @@ set(UNIT_TEST_SRC
     container_test.cpp
     element_test.cpp
     simulation_data_test.cpp
+	flat_calculator_test.cpp
+	parabola_calculator_test.cpp
 	native_runner_test.cpp
 	tower_demo.cpp
 )

@@ -53,10 +53,12 @@
 #include <cmath>
 // #include <ctime>
 // #include <string>
+#include <limits>
 #include <vector>
 
 #include "matvec.hpp"
-#include "element_intersection.hpp"
+#include "determine_element_intersection_new.hpp"
+// #include "element_intersection.hpp"
 #include "native_runner_backend.hpp"
 #include "native_runner_types.hpp"
 #include "treemesh.hpp"
@@ -277,7 +279,7 @@ void ProcessInteraction(
 
 			// optical errors
 			Errors(myrng, CosIn, 2, &System->Sun,
-				//    Stage->ElementList[k].get(), 
+				   //    Stage->ElementList[k].get(),
 				   optics, CosOut, LastDFXYZ);
 			myrng_counter++;
 			CopyVec3(CosRayOutElement, CosOut);
@@ -356,12 +358,13 @@ bool trace_native(
 
 	// Start the clock
 	clock_t startTime = clock();
-	int rays_per_callback_estimate = 50;
+	// int rays_per_callback_estimate = 50;
 	uint_fast64_t RaysTracedTotal = 0;
 
 	// Loop through stages
 	for (uint_fast64_t i = 0; i < System->StageList.size(); i++)
 	{
+		// std::cout << "Processing stage " << i << "..." << std::endl;
 		// Check if previous stage has rays
 		bool StageHasRays = true;
 		if (i > 0 && PreviousStageHasRays == false)
@@ -395,6 +398,18 @@ bool trace_native(
 			// Get Ray
 			if (i == 0)
 			{
+				// static unsigned count = 0;
+				// // std::cout << "Making ray " << count << "..." << std::endl;
+				// if (count >= MaxNumberOfRays)
+				// {
+				// 	std::cout << "Hit max rays. Terminating..." << std::endl;
+				// 	break;
+				// }
+				// ++count;
+
+				// TODO: This function seems to ignore the MaxNumberOfRays
+				// argument. Should fix that.
+
 				// Make ray (if first stage)
 				double PosRaySun[3];
 				GenerateRay(myrng, PosSunStage, Stage->Origin,
@@ -402,6 +417,11 @@ bool trace_native(
 							PosRayGlob, CosRayGlob, PosRaySun);
 				myrng_counter++;
 				System->SunRayCount++;
+
+				// Vector3d rpos(PosRayGlob);
+				// Vector3d rdir(CosRayGlob);
+				// std::cout << "Ray position: " << rpos
+				// 		  << "\nRay direction: " << rdir << std::endl;
 
 				// If using PT optimizations, check if stage has elements
 				// that could interact with ray
@@ -487,14 +507,18 @@ bool trace_native(
 
 				// Find the element the ray hits
 				FindElementHit(i, Stage, PT_override, AsPowerTower,
-							   nintelements, sunint_elements, reflint_elements,
+							   nintelements, sunint_elements,
+							   reflint_elements,
 							   RayNumber, in_multi_hit_loop,
 							   PosRayStage, CosRayStage,
-
-							   LastPosRaySurfElement, LastCosRaySurfElement, LastDFXYZ,
+							   LastPosRaySurfElement,
+							   LastCosRaySurfElement,
+							   LastDFXYZ,
 							   LastElementNumber, LastRayNumber,
 							   LastPosRaySurfStage, LastCosRaySurfStage,
 							   ErrorFlag, LastHitBackSide, StageHit);
+
+				// std::cout << "Ray hit: " << StageHit << std::endl;
 
 				// Breakout if ray left stage
 				if (!StageHit)
@@ -502,18 +526,24 @@ bool trace_native(
 					RayInStage = false;
 					break;
 				}
+				// else
+				// {
+				// 	std::cout << "StageHit: " << StageHit << std::endl;
+				// }
 
 				// Add ray to Stage RayData
-				TRayData::ray_t *p_ray = Stage->RayData.Append(LastPosRaySurfStage,
-															   LastCosRaySurfStage,
-															   LastElementNumber,
-															   i + 1,
-															   LastRayNumber);
+				TRayData::ray_t *p_ray =
+					Stage->RayData.Append(LastPosRaySurfStage,
+										  LastCosRaySurfStage,
+										  LastElementNumber,
+										  i + 1,
+										  LastRayNumber);
 
 				// Check p_ray saved correctly
 				if (!p_ray)
 				{
-					System->errlog("Failed to save ray data at index %d", Stage->RayData.Count() - 1);
+					System->errlog("Failed to save ray data at index %d",
+								   Stage->RayData.Count() - 1);
 					return false;
 				}
 
@@ -577,7 +607,7 @@ bool trace_native(
 						TestValue = optics->transmitivity;
 						break;
 					case REFLECTION: // reflection
-
+						// TODO: Implement reflectivity table?
 						// if (optics->UseReflectivityTable)
 						// {
 						// 	int npoints = optics->ReflectivityTable.size();
@@ -612,11 +642,13 @@ bool trace_native(
 						return false;
 					}
 
-					//  {Apply MonteCarlo probability of absorption. Limited for now, but can make more complex later on if desired}
+					// Apply MonteCarlo probability of absorption. Limited
+					// for now, but can make more complex later on if desired
 					if (TestValue <= myrng())
 					{
 						myrng_counter++;
-						// ray was fully absorbed, so indicate by negating the element number
+						// ray was fully absorbed, so indicate by negating
+						// the element number
 						p_ray->element = 0 - p_ray->element;
 						RayIsAbsorbed = true;
 						break;
@@ -636,7 +668,8 @@ bool trace_native(
 
 				// Transform ray back to stage coordinate system
 				TransformToReference(PosRayOutElement, CosRayOutElement,
-									 Stage->ElementList[k]->Origin, Stage->ElementList[k]->RLocToRef,
+									 Stage->ElementList[k]->Origin,
+									 Stage->ElementList[k]->RLocToRef,
 									 PosRayStage, CosRayStage);
 				TransformToReference(PosRayStage, CosRayStage,
 									 Stage->Origin, Stage->RLocToRef,
@@ -702,8 +735,10 @@ bool trace_native(
 				else
 				{
 					// Ray hit an element, so save it for next stage
-					CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Pos, PosRayGlob);
-					CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Cos, CosRayGlob);
+					CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Pos,
+							 PosRayGlob);
+					CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Cos,
+							 CosRayGlob);
 					IncomingRays[PreviousStageDataArrayIndex].Num = RayNumber;
 
 					// Is Ray the last in the stage?
@@ -728,8 +763,10 @@ bool trace_native(
 				if (Stage->TraceThrough || MultipleHitCount > 0)
 				{
 					// Ray is saved for the next stage
-					CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Pos, PosRayGlob);
-					CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Cos, CosRayGlob);
+					CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Pos,
+							 PosRayGlob);
+					CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Cos,
+							 CosRayGlob);
 					IncomingRays[PreviousStageDataArrayIndex].Num = RayNumber;
 
 					// Check if ray is last in stage
@@ -765,11 +802,12 @@ bool trace_native(
 					CopyVec3(LastCosRaySurfStage, CosRayStage);
 
 					// Copying this here to handle FlagMiss condition
-					TRayData::ray_t *p_ray = Stage->RayData.Append(LastPosRaySurfStage,
-																   LastCosRaySurfStage,
-																   LastElementNumber,
-																   i + 1,
-																   LastRayNumber);
+					TRayData::ray_t *p_ray =
+						Stage->RayData.Append(LastPosRaySurfStage,
+											  LastCosRaySurfStage,
+											  LastElementNumber,
+											  i + 1,
+											  LastRayNumber);
 
 					if (RayNumber == LastRayNumberInPreviousStage)
 					{
@@ -1483,38 +1521,38 @@ Label_50:
 			goto Label_200;
 		break;
 
-	// TODO: Do we need to the below code?
-	// case 'd':
-	// case 'D': // sunshape data  (for sunshape only)
-	// Label_300:
-	// 	thetax = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
-	// 	thetay = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
-	// 	theta2 = thetax * thetax + thetay * thetay;
-	// 	theta = sqrt(theta2); // wendelin 1-9-12  do the test once on theta NOT individually on thetax and thetay as before
+		// TODO: Do we need to the below code?
+		// case 'd':
+		// case 'D': // sunshape data  (for sunshape only)
+		// Label_300:
+		// 	thetax = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
+		// 	thetay = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
+		// 	theta2 = thetax * thetax + thetay * thetay;
+		// 	theta = sqrt(theta2); // wendelin 1-9-12  do the test once on theta NOT individually on thetax and thetay as before
 
-	// 	i = 0;
-	// 	while (i < Sun->SunShapeAngle.size() - 1 && Sun->SunShapeAngle[i] < theta)
-	// 		i++;
+		// 	i = 0;
+		// 	while (i < Sun->SunShapeAngle.size() - 1 && Sun->SunShapeAngle[i] < theta)
+		// 		i++;
 
-	// 	if (i == 0)
-	// 		stest = Sun->SunShapeIntensity[0];
-	// 	else // change from average interpolation between data points to linear interpolation  12-20-11 wendelin
-	// 		stest = Sun->SunShapeIntensity[i - 1] + (Sun->SunShapeIntensity[i] - Sun->SunShapeIntensity[i - 1]) * (theta - Sun->SunShapeAngle[i - 1]) /
-	// 													(Sun->SunShapeAngle[i] - Sun->SunShapeAngle[i - 1]);
-	// 	// stest = (Sun->SunShapeIntensity[i] + Sun->SunShapeIntensity[i-1])/2.0;
+		// 	if (i == 0)
+		// 		stest = Sun->SunShapeIntensity[0];
+		// 	else // change from average interpolation between data points to linear interpolation  12-20-11 wendelin
+		// 		stest = Sun->SunShapeIntensity[i - 1] + (Sun->SunShapeIntensity[i] - Sun->SunShapeIntensity[i - 1]) * (theta - Sun->SunShapeAngle[i - 1]) /
+		// 													(Sun->SunShapeAngle[i] - Sun->SunShapeAngle[i - 1]);
+		// 	// stest = (Sun->SunShapeIntensity[i] + Sun->SunShapeIntensity[i-1])/2.0;
 
-	// 	if (myrng() > (stest / Sun->MaxIntensity))
-	// 		goto Label_300;
+		// 	if (myrng() > (stest / Sun->MaxIntensity))
+		// 		goto Label_300;
 
-	// 	if (theta2 > (Sun->MaxAngle * Sun->MaxAngle))
-	// 		goto Label_300;
-	// 	theta2 = theta2 / 1000000.0;
-	// 	break;
+		// 	if (theta2 > (Sun->MaxAngle * Sun->MaxAngle))
+		// 		goto Label_300;
+		// 	theta2 = theta2 / 1000000.0;
+		// 	break;
 
-	// case 'f': // gray diffuse distribution
-	// case 'F':
-	// 	theta2 = pow(asin(sqrt(myrng())), 2);
-	// 	break;
+		// case 'f': // gray diffuse distribution
+		// case 'F':
+		// 	theta2 = pow(asin(sqrt(myrng())), 2);
+		// 	break;
 	}
 
 	/*{Transform to local coordinate system of ray to set up rotation matrices for coord and inverse

@@ -65,14 +65,14 @@ TEST(Aperture, Annulus)
     auto ann1 = make_aperture<Annulus>(RI, RO, ARC1);
     auto ann2 = make_aperture<Annulus>(RI, RO, ARC2);
 
-    EXPECT_EQ(ann1->diameter_circumscribed_circle(), 2*RO);
-    EXPECT_EQ(ann2->diameter_circumscribed_circle(), 2*RO);
+    EXPECT_EQ(ann1->diameter_circumscribed_circle(), 2 * RO);
+    EXPECT_EQ(ann2->diameter_circumscribed_circle(), 2 * RO);
 
     EXPECT_EQ(ann1->radius_circumscribed_circle(), RO);
     EXPECT_EQ(ann2->radius_circumscribed_circle(), RO);
 
     EXPECT_EQ(ann2->aperture_area(), M_PI * (RO * RO - RI * RI));
-    EXPECT_EQ(ann1->aperture_area(), 0.25*ann2->aperture_area());
+    EXPECT_EQ(ann1->aperture_area(), 0.25 * ann2->aperture_area());
 
     EXPECT_TRUE(ann1->is_in(X1, Y1));
     EXPECT_FALSE(ann1->is_in(X2, Y2));
@@ -89,8 +89,10 @@ TEST(Aperture, Annulus)
     EXPECT_TRUE(ann2->is_in(X6, Y6));
 
     aperture_ptr a1 = ann1->make_copy();
-    EXPECT_EQ(a1->diameter_circumscribed_circle(), ann1->diameter_circumscribed_circle());
-    EXPECT_EQ(a1->radius_circumscribed_circle(), ann1->radius_circumscribed_circle());
+    EXPECT_EQ(a1->diameter_circumscribed_circle(),
+              ann1->diameter_circumscribed_circle());
+    EXPECT_EQ(a1->radius_circumscribed_circle(),
+              ann1->radius_circumscribed_circle());
     EXPECT_EQ(a1->aperture_area(), ann1->aperture_area());
     EXPECT_TRUE(a1->is_in(X1, Y1));
     EXPECT_FALSE(a1->is_in(X2, Y2));
@@ -109,15 +111,17 @@ TEST(Aperture, Circle)
     auto cir = make_aperture<Circle>(D);
 
     EXPECT_EQ(cir->diameter_circumscribed_circle(), D);
-    EXPECT_EQ(cir->radius_circumscribed_circle(), 0.5*D);
+    EXPECT_EQ(cir->radius_circumscribed_circle(), 0.5 * D);
     EXPECT_EQ(cir->aperture_area(), M_PI * 0.25 * D * D);
 
     EXPECT_TRUE(cir->is_in(X1, Y1));
     EXPECT_FALSE(cir->is_in(X2, Y2));
 
     aperture_ptr ap = cir->make_copy();
-    EXPECT_EQ(ap->diameter_circumscribed_circle(), cir->diameter_circumscribed_circle());
-    EXPECT_EQ(ap->radius_circumscribed_circle(), cir->radius_circumscribed_circle());
+    EXPECT_EQ(ap->diameter_circumscribed_circle(),
+              cir->diameter_circumscribed_circle());
+    EXPECT_EQ(ap->radius_circumscribed_circle(),
+              cir->radius_circumscribed_circle());
     EXPECT_EQ(ap->aperture_area(), cir->aperture_area());
     EXPECT_TRUE(ap->is_in(X1, Y1));
     EXPECT_FALSE(ap->is_in(X2, Y2));
@@ -147,7 +151,7 @@ TEST(Aperture, EqualateralTriangle)
     auto et = make_aperture<EqualateralTriangle>(D);
 
     EXPECT_EQ(et->diameter_circumscribed_circle(), D);
-    EXPECT_EQ(et->radius_circumscribed_circle(), 0.5*D);
+    EXPECT_EQ(et->radius_circumscribed_circle(), 0.5 * D);
     EXPECT_NEAR(et->aperture_area(), AREA, TOL);
 
     EXPECT_TRUE(et->is_in(X1, Y1));
@@ -156,8 +160,10 @@ TEST(Aperture, EqualateralTriangle)
     EXPECT_FALSE(et->is_in(X4, Y4));
 
     aperture_ptr ap = et->make_copy();
-    EXPECT_EQ(ap->diameter_circumscribed_circle(), et->diameter_circumscribed_circle());
-    EXPECT_EQ(ap->radius_circumscribed_circle(), et->radius_circumscribed_circle());
+    EXPECT_EQ(ap->diameter_circumscribed_circle(),
+              et->diameter_circumscribed_circle());
+    EXPECT_EQ(ap->radius_circumscribed_circle(),
+              et->radius_circumscribed_circle());
     EXPECT_EQ(ap->aperture_area(), et->aperture_area());
     EXPECT_TRUE(ap->is_in(X1, Y1));
     EXPECT_FALSE(ap->is_in(X3, Y3));
@@ -173,29 +179,29 @@ TEST(Aperture, Rectangle)
     const double TOL = 1e-12;
     const double D = 2.0;
     const double LY = 1.0;
-    const double LX = sqrt(D*D - LY*LY);
+    const double LX = sqrt(D * D - LY * LY);
     const double AREA = LY * LX;
 
     // Inside
-    const double X1 = -0.5*LX;
-    const double Y1 = 0.5*LY;
+    const double X1 = -0.5 * LX;
+    const double Y1 = 0.5 * LY;
     // Outside left
-    const double X2 = -2.0*LX;
+    const double X2 = -2.0 * LX;
     const double Y2 = Y1;
     // Outside right
-    const double X3 = 2.0*LX;
+    const double X3 = 2.0 * LX;
     const double Y3 = -Y1;
     // Outside top
     const double X4 = X1;
-    const double Y4 = 1.5*LY;
+    const double Y4 = 1.5 * LY;
     // Outside bottom
     const double X5 = -X1;
-    const double Y5 = -1.5*LY;
+    const double Y5 = -1.5 * LY;
 
     auto rect = make_aperture<Rectangle>(LX, LY);
 
     EXPECT_NEAR(rect->diameter_circumscribed_circle(), D, TOL);
-    EXPECT_NEAR(rect->radius_circumscribed_circle(), 0.5*D, TOL);
+    EXPECT_NEAR(rect->radius_circumscribed_circle(), 0.5 * D, TOL);
     EXPECT_NEAR(rect->aperture_area(), AREA, TOL);
 
     EXPECT_TRUE(rect->is_in(X1, Y1));
@@ -203,4 +209,13 @@ TEST(Aperture, Rectangle)
     EXPECT_FALSE(rect->is_in(X3, Y3));
     EXPECT_FALSE(rect->is_in(X4, Y4));
     EXPECT_FALSE(rect->is_in(X5, Y5));
+
+    aperture_ptr ap = rect->make_copy();
+    EXPECT_EQ(ap->diameter_circumscribed_circle(),
+              rect->diameter_circumscribed_circle());
+    EXPECT_EQ(ap->radius_circumscribed_circle(),
+              rect->radius_circumscribed_circle());
+    EXPECT_EQ(ap->aperture_area(), rect->aperture_area());
+    EXPECT_TRUE(ap->is_in(X1, Y1));
+    EXPECT_FALSE(ap->is_in(X3, Y3));
 }

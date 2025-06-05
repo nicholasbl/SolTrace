@@ -60,11 +60,11 @@ struct Annulus : public Aperture
     double outer_radius;
     double arc_angle;
 
-    Annulus()
-        : Aperture(ANNULUS),
-          inner_radius(0.0), outer_radius(0.0), arc_angle(0.0)
-    {
-    }
+    // Annulus()
+    //     : Aperture(ANNULUS),
+    //       inner_radius(0.0), outer_radius(0.0), arc_angle(0.0)
+    // {
+    // }
     Annulus(double ri, double ro, double arc)
         : Aperture(ANNULUS),
           inner_radius(ri), outer_radius(ro), arc_angle(arc)
@@ -116,7 +116,7 @@ struct Circle : public Aperture
 {
     double diameter;
 
-    Circle() : Aperture(CIRCLE), diameter(0.0) {}
+    // Circle() : Aperture(CIRCLE), diameter(0.0) {}
     Circle(double d) : Aperture(CIRCLE), diameter(d) {}
     virtual ~Circle() {}
 
@@ -146,10 +146,10 @@ struct Circle : public Aperture
 struct EqualateralTriangle : public Aperture
 {
     double circumscribe_diameter;
-    EqualateralTriangle() : Aperture(EQUILATERAL_TRIANGLE),
-                            circumscribe_diameter(0.0)
-    {
-    }
+    // EqualateralTriangle() : Aperture(EQUILATERAL_TRIANGLE),
+    //                         circumscribe_diameter(0.0)
+    // {
+    // }
     EqualateralTriangle(double cd) : Aperture(EQUILATERAL_TRIANGLE),
                                      circumscribe_diameter(cd)
     {
@@ -180,7 +180,7 @@ struct Hexagon : public Aperture
 {
     double circumscribe_diameter;
 
-    Hexagon() : Aperture(HEXAGON), circumscribe_diameter(0.0) {}
+    // Hexagon() : Aperture(HEXAGON), circumscribe_diameter(0.0) {}
     Hexagon(double d) : Aperture(HEXAGON), circumscribe_diameter(d) {}
     virtual ~Hexagon() {}
     virtual double aperture_area() const
@@ -214,11 +214,11 @@ struct Rectangle : public Aperture
 {
     double x_length;
     double y_length;
-    Rectangle() : Aperture(RECTANGLE),
-                  x_length(0.0),
-                  y_length(0.0)
-    {
-    }
+    // Rectangle() : Aperture(RECTANGLE),
+    //               x_length(0.0),
+    //               y_length(0.0)
+    // {
+    // }
     Rectangle(double xlen, double ylen) : Aperture(RECTANGLE),
                                           x_length(xlen),
                                           y_length(ylen)

@@ -24,7 +24,7 @@ Vector3d::Vector3d()
     return;
 }
 
-Vector3d::Vector3d(double data[3])
+Vector3d::Vector3d(const double data[3])
 {
     for (int i = 0; i < 3; ++i)
         this->data[i] = data[i];

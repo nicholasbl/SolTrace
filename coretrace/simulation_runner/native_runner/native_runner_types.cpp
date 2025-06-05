@@ -172,9 +172,8 @@ void TSun::set_values(ray_source_ptr rsrc)
 {
     CopyVec3(this->Origin, rsrc->get_position().data);
 
-    // TODO: Need to get sun parameters here too. For now make everything
-    // a point source
-    this->PointSource = true;
+    // TODO: Need to get sun parameters here too.
+    this->PointSource = false;
 
     return;
 }
@@ -288,7 +287,7 @@ bool TRayData::Query(unsigned int idx,
                      double cos[3],
                      int *element,
                      int *stage,
-                     unsigned int *raynum)
+                     unsigned int *raynum) const
 {
     ray_t *r = Index(idx, false);
     if (r != 0)
@@ -364,12 +363,12 @@ void TRayData::Clear()
     m_dataCapacity = 0;
 }
 
-uint_fast64_t TRayData::Count()
+uint_fast64_t TRayData::Count() const
 {
     return m_dataCount;
 }
 
-TRayData::ray_t *TRayData::Index(uint_fast64_t i, bool write_access)
+TRayData::ray_t *TRayData::Index(uint_fast64_t i, bool write_access) const
 {
     if (i >= m_dataCapacity)
         return 0;
@@ -392,7 +391,7 @@ TRayData::ray_t *TRayData::Index(uint_fast64_t i, bool write_access)
     return &(b->data[block_idx]);
 }
 
-void TRayData::Print()
+void TRayData::Print() const
 {
     printf("[ blocks: %zu count: %u capacity: %u ]\n",
            m_blockList.size(),
@@ -464,13 +463,25 @@ TSystem::~TSystem()
 
 void TSystem::ClearAll()
 {
-    for (uint_fast64_t i = 0; i < OpticsList.size(); i++)
-        delete OpticsList[i];
-    OpticsList.clear();
+    // for (uint_fast64_t i = 0; i < OpticsList.size(); i++)
+    //     delete OpticsList[i];
+    // OpticsList.clear();
 
     // for (uint_fast64_t i = 0; i < StageList.size(); i++)
     //     delete StageList[i];
     StageList.clear();
+}
+
+void TSystem::CollectResults()
+{
+    // Collect the ray data from the stages
+    // tstage_ptr st;
+    for (auto iter = this->StageList.cbegin();
+         iter != this->StageList.cend();
+         ++iter)
+    {
+        this->AllRayData.Merge((*iter)->RayData);
+    }
 }
 
 void TSystem::errlog(const char *fmt, ...)

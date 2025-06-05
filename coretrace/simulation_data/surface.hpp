@@ -28,7 +28,7 @@ struct Cone : public Surface
     // z(x,y) = sqrt(x^2 + y^2) / tan(theta)
     // where theta = half_angle
     double half_angle;
-    Cone() : Surface(CONE), half_angle(0.0) {}
+    // Cone() : Surface(CONE), half_angle(0.0) {}
     Cone(double ha) : Surface(CONE), half_angle(ha) {}
     virtual ~Cone() {}
 };
@@ -55,11 +55,11 @@ struct Parabola : public Surface
     double vertex_x_curv;
     double vertex_y_curv;
 
-    Parabola() : Surface(PARABOLA),
-                 vertex_x_curv(0.0),
-                 vertex_y_curv(0.0)
-    {
-    }
+    // Parabola() : Surface(PARABOLA),
+    //              vertex_x_curv(0.0),
+    //              vertex_y_curv(0.0)
+    // {
+    // }
     Parabola(double x_curv, double y_curv) : Surface(PARABOLA),
                                              vertex_x_curv(x_curv),
                                              vertex_y_curv(y_curv)
@@ -75,10 +75,10 @@ struct Sphere : public Surface
     // TODO: Assume vertex_curv gives 1/R.
     double vertex_curv;
 
-    Sphere() : Surface(SPHERE),
-               vertex_curv(0.0)
-    {
-    }
+    // Sphere() : Surface(SPHERE),
+    //            vertex_curv(0.0)
+    // {
+    // }
     Sphere(double curv) : Surface(SPHERE),
                           vertex_curv(curv)
     {

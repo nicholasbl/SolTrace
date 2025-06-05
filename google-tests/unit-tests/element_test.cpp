@@ -165,9 +165,9 @@ TEST(Element, VirtualPlane)
     }
 
     // These functions should have no effects
-    vp.set_aperture(make_aperture<Circle>());
+    vp.set_aperture(make_aperture<Circle>(2.0));
     EXPECT_EQ(vp.get_aperture()->get_type(), RECTANGLE);
-    vp.set_surface(make_surface<Parabola>());
+    vp.set_surface(make_surface<Parabola>(1.0, 1.0));
     EXPECT_EQ(vp.get_surface()->get_type(), FLAT);
 
     return;

@@ -18,7 +18,9 @@ public:
                           double DFXYZ[3],
                           double *PathLength);
 
-    virtual void set_zstart() = 0;
+    // For x = PosXYZ[0], y = PosXYZ[1], make a guess at
+    // value of z and place in PosXYZ[2].
+    virtual void set_zstart(double PosXYZ[3]) = 0;
     virtual void surface_and_jacobian(const double PosXYZ[3],
                                       double *F,
                                       double DFXYZ[3]) = 0;

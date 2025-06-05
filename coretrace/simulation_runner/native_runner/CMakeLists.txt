@@ -11,7 +11,8 @@ set(NATIVE_RUNNER_SRC
     # ${CMAKE_SOURCE_DIR}/coretrace/treemesh.cpp
     # ${CMAKE_SOURCE_DIR}/coretrace/types.cpp
     calculator_factory.cpp
-    element_intersection.cpp
+    determine_element_intersection_new.cpp
+    # element_intersection.cpp
     native_runner.cpp
     native_runner_types.cpp
     parabola_calculator.cpp

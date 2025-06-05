@@ -26,7 +26,11 @@ public:
     void disable_power_tower() { this->as_power_tower = false; }
     void enable_power_tower() { this->as_power_tower = true; }
 
-    void set_number_of_threads(uint_fast64_t nthr);
+    void set_number_of_threads(uint_fast64_t nthr)
+    {
+        this->number_of_threads = nthr;
+        return;
+    }
 
     // Runner accessors
     const TSystem *get_system() const { return &this->tsys; }

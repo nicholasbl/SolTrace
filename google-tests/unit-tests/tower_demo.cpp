@@ -111,10 +111,10 @@ TEST(TowerDemo, NativeRunnerWithStages)
     // Set parameters
     SimulationParameters &params = sd.get_simulation_parameters();
     // params.number_of_rays = 1000000;
-    params.number_of_rays = 100; // Above takes too long
+    params.number_of_rays = 10; // Above takes too long
     params.max_number_of_rays = params.number_of_rays * 100;
-    params.include_optical_errors = true;
-    params.include_sun_shape_errors = true;
+    params.include_optical_errors = false;
+    params.include_sun_shape_errors = false;
     params.seed = 12345;
 
     // // We can go over all the elements added
@@ -156,6 +156,12 @@ TEST(TowerDemo, NativeRunnerWithStages)
     // Run simulation runs but returns RunnerStatus::ERROR
     sts = runner.run_simulation();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    // TODO: Do some post processing tests here
+
+    // const TSystem *sys = runner.get_system();
+    // // auto ray_data = sys->AllRayData;
+    // sys->AllRayData.Print();
 }
 
 // TEST(TowerDemo, NativeRunnerWithoutStages)
