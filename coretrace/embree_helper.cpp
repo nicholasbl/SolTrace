@@ -167,6 +167,26 @@ namespace embree_helper
 		}
 	}
 
+	void process_FE_bounds(TElement* st_element, float x_minmax[2], float y_minmax[2],
+		float(&z_minmax)[2])
+	{
+		float& z_min = z_minmax[0];
+		float& z_max = z_minmax[1];
+
+		z_min = std::numeric_limits<double>::infinity();
+		z_max = -std::numeric_limits<double>::infinity();
+
+		const MatDoub& xyz_nodes = st_element->FEData.nodes;
+
+		for (const std::vector<double>& fe_node : xyz_nodes)
+		{
+			if (fe_node[2] > z_max)
+				z_max = fe_node[2];
+			if (fe_node[2] < z_min)
+				z_min = fe_node[2];
+		}
+	}
+
 	void transform_to_global(const float coord_element[3], 
 		TStage* st_stage, TElement* st_element,
 		float(&coord_global)[3])
@@ -503,6 +523,17 @@ namespace embree_helper
 				// Rotationally symmetric cubic spline file
 				float z_minmax[2] = { 0,0 };
 				process_cubic_spline_bounds(st_element, x_minmax, y_minmax, z_minmax);
+
+				z_min = z_minmax[0];
+				z_max = z_minmax[1];
+
+				break;
+			}
+			case 'e':
+			{
+				// Finite element data
+				float z_minmax[2] = { 0,0 };
+				process_FE_bounds(st_element, x_minmax, y_minmax, z_minmax);
 
 				z_min = z_minmax[0];
 				z_max = z_minmax[1];
