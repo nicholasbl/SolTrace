@@ -24,6 +24,7 @@ set(UNIT_TEST_SRC
     element_test.cpp
     simulation_data_test.cpp
 	flat_calculator_test.cpp
+	newton_calculator_test.cpp
 	parabola_calculator_test.cpp
 	native_runner_test.cpp
 	tower_demo.cpp

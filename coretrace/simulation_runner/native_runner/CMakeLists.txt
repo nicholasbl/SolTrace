@@ -13,8 +13,10 @@ set(NATIVE_RUNNER_SRC
     calculator_factory.cpp
     determine_element_intersection_new.cpp
     # element_intersection.cpp
+    flat_calculator.cpp
     native_runner.cpp
     native_runner_types.cpp
+    newton_calculator.cpp
     parabola_calculator.cpp
     pt_optimizations.cpp
     # quadric_calculator.cpp
