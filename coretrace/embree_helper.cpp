@@ -414,8 +414,9 @@ namespace embree_helper
 				break;
 			}
 			case 'm':
+			case 'v':
 			{
-				// Zernike series file
+				// Zernike series file (m) or VSHOT (v)
 				float z_minmax[2] = { 0,0 };
 				process_zernike_bounds(st_element, x_minmax, y_minmax, z_minmax);
 
@@ -572,33 +573,43 @@ namespace embree_helper
 				|| ((PathLength == payload->LastPathLength) 
 					&& (st_element->element_number < payload->element_number)))
 			{
-				// Transform ray back to stage coordinate system
-				double PosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
-				double CosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
-				::TransformToReference(PosRaySurfElement, CosRaySurfElement,
-					st_element->Origin, st_element->RLocToRef,
-					PosRaySurfStage, CosRaySurfStage);
 
-				rayhit_out->ray.tfar = (float)PathLength; // Update intersection distance
-				rayhit_out->hit.geomID = args->geomID;
-				rayhit_out->hit.primID = 0; // Single primitive
+				if (PosRaySurfElement[2] <= st_element->ZAperture
+					|| st_element->SurfaceIndex == 'm'
+					|| st_element->SurfaceIndex == 'M'
+					|| st_element->SurfaceIndex == 'r'
+					|| st_element->SurfaceIndex == 'R')
+				{
 
-				// Define Ng (will not be used)
-				rayhit_out->hit.Ng_x = std::numeric_limits<float>::quiet_NaN();
-				rayhit_out->hit.Ng_y = std::numeric_limits<float>::quiet_NaN();
-				rayhit_out->hit.Ng_z = std::numeric_limits<float>::quiet_NaN();
+					// Transform ray back to stage coordinate system
+					double PosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
+					double CosRaySurfStage[3] = { 0.0, 0.0, 0.0 };
+					::TransformToReference(PosRaySurfElement, CosRaySurfElement,
+						st_element->Origin, st_element->RLocToRef,
+						PosRaySurfStage, CosRaySurfStage);
 
-				// Assign custom outputs
-				payload->LastHitBackSide = HitBackSide;
-				CopyVec3(payload->LastDFXYZ, DFXYZ);
-				//CopyVec3(payload->LastPosRaySurfGlob, PosRaySurfGlob);
-				//CopyVec3(payload->LastCosRaySurfGlob, CosRaySurfGlob);
-				CopyVec3(payload->LastPosRaySurfStage, PosRaySurfStage);
-				CopyVec3(payload->LastCosRaySurfStage, CosRaySurfStage);
-				CopyVec3(payload->LastPosRaySurfElement, PosRaySurfElement);
-				CopyVec3(payload->LastCosRaySurfElement, CosRaySurfElement);
-				payload->element_number = st_element->element_number;
-				payload->LastPathLength = PathLength;
+					rayhit_out->ray.tfar = (float)PathLength; // Update intersection distance
+					rayhit_out->hit.geomID = args->geomID;
+					rayhit_out->hit.primID = 0; // Single primitive
+
+					// Define Ng (will not be used)
+					rayhit_out->hit.Ng_x = std::numeric_limits<float>::quiet_NaN();
+					rayhit_out->hit.Ng_y = std::numeric_limits<float>::quiet_NaN();
+					rayhit_out->hit.Ng_z = std::numeric_limits<float>::quiet_NaN();
+
+					// Assign custom outputs
+					payload->LastHitBackSide = HitBackSide;
+					CopyVec3(payload->LastDFXYZ, DFXYZ);
+					//CopyVec3(payload->LastPosRaySurfGlob, PosRaySurfGlob);
+					//CopyVec3(payload->LastCosRaySurfGlob, CosRaySurfGlob);
+					CopyVec3(payload->LastPosRaySurfStage, PosRaySurfStage);
+					CopyVec3(payload->LastCosRaySurfStage, CosRaySurfStage);
+					CopyVec3(payload->LastPosRaySurfElement, PosRaySurfElement);
+					CopyVec3(payload->LastCosRaySurfElement, CosRaySurfElement);
+					payload->element_number = st_element->element_number;
+					payload->LastPathLength = PathLength;
+
+				}
 			}
 			
 		}
