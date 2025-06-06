@@ -105,6 +105,35 @@ namespace embree_helper
 		}
 	}
 
+	void process_poly_bounds(TElement* st_element, float x_minmax[2], float y_minmax[2],
+		float(&z_minmax)[2])
+	{
+		double z, x, y;
+
+		float& z_min = z_minmax[0];
+		float& z_max = z_minmax[1];
+
+		z_min = std::numeric_limits<double>::infinity();
+		z_max = -std::numeric_limits<double>::infinity();
+
+		float x_range[3] = { x_minmax[0], x_minmax[1], 0.f };
+		float y_range[3] = { y_minmax[0], y_minmax[1], 0.f };
+
+		for (int xi = 0; xi < 3; ++xi)
+		{
+			for (int yi = 0; yi < 3; ++yi)
+			{
+				x = x_range[xi];
+				y = y_range[yi];
+				EvalPoly(x, y, st_element->PolyCoeffs, st_element->FitOrder, &z);
+
+				if (z < z_min) z_min = z;
+				if (z > z_max) z_max = z;
+			}
+		}
+	}
+
+
 	void transform_to_global(const float coord_element[3], 
 		TStage* st_stage, TElement* st_element,
 		float(&coord_global)[3])
@@ -419,6 +448,17 @@ namespace embree_helper
 				// Zernike series file (m) or VSHOT (v)
 				float z_minmax[2] = { 0,0 };
 				process_zernike_bounds(st_element, x_minmax, y_minmax, z_minmax);
+
+				z_min = z_minmax[0];
+				z_max = z_minmax[1];
+
+				break;
+			}
+			case 'r':
+			{
+				// Rotationally symmetric polynomial file
+				float z_minmax[2] = { 0,0 };
+				process_poly_bounds(st_element, x_minmax, y_minmax, z_minmax);
 
 				z_min = z_minmax[0];
 				z_max = z_minmax[1];
