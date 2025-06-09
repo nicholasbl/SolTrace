@@ -249,152 +249,160 @@ bool read_optic(FILE *fp, st_context_t cxt)
 }
 
 
-bool read_element(FILE *fp, st_context_t cxt, int istage)
+bool read_element(FILE* fp, st_context_t cxt, int istage, const char* base_dir)
 {
-  int ielm = ::st_add_element( cxt, istage );
+    int ielm = ::st_add_element(cxt, istage);
 
-  char buf[1024];
-  read_line(buf, 1023, fp);
+    char buf[1024];
+    read_line(buf, 1023, fp);
 
-  std::vector<std::string> tok = split( buf, "\t", true, false );
-  if (tok.size() < 29)
-  {
-    printf("too few tokens for element: %zu\n", tok.size());
-    printf("\t>> %s\n", buf);
-    return false;
-  }
-
-
-  st_element_enabled( cxt, istage, ielm,  atoi( tok[0].c_str() ) ? 1 : 0 );
-  st_element_xyz( cxt, istage, ielm,
-    atof( tok[1].c_str() ),
-    atof( tok[2].c_str() ),
-    atof( tok[3].c_str() ) );
-  st_element_aim( cxt, istage, ielm,
-    atof( tok[4].c_str() ),
-    atof( tok[5].c_str() ),
-    atof( tok[6].c_str() ) );
-  st_element_zrot( cxt, istage, ielm,  atof( tok[7].c_str() ) );
-  if (tok[8].length() > 0) st_element_aperture( cxt, istage, ielm, tok[8][0] );
-
-  double Params[8];
-
-  for (int i=0;i<8;i++)
-    Params[i] = atof( tok[i+9].c_str() );
-
-  st_element_aperture_params( cxt, istage, ielm,  Params );
-
-
-
-  if (tok[17].length() > 0) st_element_surface( cxt, istage, ielm, tok[17][0] );
-
-  for (int i=0;i<8;i++)
-    Params[i] = atof( tok[i+18].c_str() );
-
-  std::string SurfaceFile = tok[26];
-  if (!SurfaceFile.empty())
-  {
-    if ( st_element_surface_file( cxt, istage, ielm,  SurfaceFile.c_str() ) < 0)
+    std::vector<std::string> tok = split(buf, "\t", true, false);
+    if (tok.size() < 29)
     {
-      for (int j=0;j<st_num_messages(cxt);j++)
-        printf( "error: %s\n", st_message(cxt, j) );
-      return false;
+        printf("too few tokens for element: %zu\n", tok.size());
+        printf("\t>> %s\n", buf);
+        return false;
     }
-  }
-  else
-    st_element_surface_params( cxt, istage, ielm, Params );
 
 
-  st_element_optic( cxt, istage, ielm,  tok[27].c_str() );
-  st_element_interaction( cxt, istage, ielm,  atoi( tok[28].c_str()) );
+    st_element_enabled(cxt, istage, ielm, atoi(tok[0].c_str()) ? 1 : 0);
+    st_element_xyz(cxt, istage, ielm,
+        atof(tok[1].c_str()),
+        atof(tok[2].c_str()),
+        atof(tok[3].c_str()));
+    st_element_aim(cxt, istage, ielm,
+        atof(tok[4].c_str()),
+        atof(tok[5].c_str()),
+        atof(tok[6].c_str()));
+    st_element_zrot(cxt, istage, ielm, atof(tok[7].c_str()));
+    if (tok[8].length() > 0) st_element_aperture(cxt, istage, ielm, tok[8][0]);
 
-  return true;
+    double Params[8];
+
+    for (int i = 0; i < 8; i++)
+        Params[i] = atof(tok[i + 9].c_str());
+
+    st_element_aperture_params(cxt, istage, ielm, Params);
+
+
+
+    if (tok[17].length() > 0) st_element_surface(cxt, istage, ielm, tok[17][0]);
+
+    for (int i = 0; i < 8; i++)
+        Params[i] = atof(tok[i + 18].c_str());
+
+    std::string SurfaceFile = tok[26];
+    if (!SurfaceFile.empty())
+    {
+        std::string fullPath = SurfaceFile;
+        if (!SurfaceFile.empty() && base_dir && base_dir[0] != '\0' &&
+            (SurfaceFile[0] != '/' && (SurfaceFile.size() < 2 || SurfaceFile[1] != ':')))
+        {
+            fullPath = std::string(base_dir) + "/" + SurfaceFile;
+        }
+
+        if (st_element_surface_file(cxt, istage, ielm, fullPath.c_str()) < 0)
+        {
+            for (int j = 0; j < st_num_messages(cxt); j++)
+                printf("error: %s\n", st_message(cxt, j));
+            return false;
+        }
+    }
+    else
+        st_element_surface_params(cxt, istage, ielm, Params);
+
+
+    st_element_optic(cxt, istage, ielm, tok[27].c_str());
+    st_element_interaction(cxt, istage, ielm, atoi(tok[28].c_str()));
+
+    return true;
 }
 
-
-bool read_stage(FILE *fp, st_context_t cxt)
+bool read_stage(FILE* fp, st_context_t cxt, const char* base_dir)
 {
-  if (!fp) return false;
+    if (!fp) return false;
 
-  char buf[1024];
-  read_line( buf, 1023, fp );
+    char buf[1024];
+    read_line(buf, 1023, fp);
 
-  int virt=0,multi=1,count=0,tr=0;
-  double X, Y, Z, AX, AY, AZ, ZRot;
+    int virt = 0, multi = 1, count = 0, tr = 0;
+    double X, Y, Z, AX, AY, AZ, ZRot;
 
 
-  sscanf(buf, "STAGE\tXYZ\t%lg\t%lg\t%lg\tAIM\t%lg\t%lg\t%lg\tZROT\t%lg\tVIRTUAL\t%d\tMULTIHIT\t%d\tELEMENTS\t%d\tTRACETHROUGH\t%d",
-    &X, &Y, &Z,
-    &AX, &AY, &AZ,
-    &ZRot,
-    &virt,
-    &multi,
-    &count,
-    &tr );
+    sscanf(buf, "STAGE\tXYZ\t%lg\t%lg\t%lg\tAIM\t%lg\t%lg\t%lg\tZROT\t%lg\tVIRTUAL\t%d\tMULTIHIT\t%d\tELEMENTS\t%d\tTRACETHROUGH\t%d",
+        &X, &Y, &Z,
+        &AX, &AY, &AZ,
+        &ZRot,
+        &virt,
+        &multi,
+        &count,
+        &tr);
 
-  read_line( buf, 1023, fp ); // read name
+    read_line(buf, 1023, fp); // read name
 
-  int istage = st_add_stage( cxt );
+    int istage = st_add_stage(cxt);
 
-  ::st_stage_flags( cxt, istage, virt, multi, tr );
+    ::st_stage_flags(cxt, istage, virt, multi, tr);
 
-  st_stage_xyz(cxt, istage, X, Y, Z );
-  st_stage_aim(cxt, istage, AX, AY, AZ );
-  st_stage_zrot(cxt, istage, ZRot );
+    st_stage_xyz(cxt, istage, X, Y, Z);
+    st_stage_aim(cxt, istage, AX, AY, AZ);
+    st_stage_zrot(cxt, istage, ZRot);
 
-  printf("stage '%s': [%d] %lg %lg %lg   %lg %lg %lg   %lg   %d %d %d\n",
-    buf, count, X, Y, Z, AX, AY, AZ, ZRot, virt, multi, tr );
+    printf("stage '%s': [%d] %lg %lg %lg   %lg %lg %lg   %lg   %d %d %d\n",
+        buf, count, X, Y, Z, AX, AY, AZ, ZRot, virt, multi, tr);
 
-  st_clear_elements(cxt, istage);
+    st_clear_elements(cxt, istage);
 
-  for (int i=0;i<count;i++)
-    if (!read_element( fp, cxt, istage ))
-    { printf("error in element %d of %d in stage %d\n", i, count, istage ); return false; }
+    for (int i = 0; i < count; i++)
+        if (!read_element(fp, cxt, istage, base_dir))
+        {
+            printf("error in element %d of %d in stage %d\n", i, count, istage); return false;
+        }
 
-  return true;
+    return true;
 }
 
-bool read_system(FILE *fp, st_context_t cxt)
+bool read_system(FILE* fp, st_context_t cxt, const char* base_dir)
 {
-  if (!fp) return false;
+    if (!fp) return false;
 
-  char buf[1024];
+    char buf[1024];
 
-  char c = fgetc(fp);
-  if ( c == '#' )
-  {
-    int vmaj = 0, vmin = 0, vmic = 0;
-    read_line( buf, 1023, fp ); sscanf( buf, " SOLTRACE VERSION %d.%d.%d INPUT FILE", &vmaj, &vmin, &vmic);
+    char c = fgetc(fp);
+    if (c == '#')
+    {
+        int vmaj = 0, vmin = 0, vmic = 0;
+        read_line(buf, 1023, fp); sscanf(buf, " SOLTRACE VERSION %d.%d.%d INPUT FILE", &vmaj, &vmin, &vmic);
 
-    unsigned int file_version = vmaj*10000 + vmin*100 + vmic;
+        unsigned int file_version = vmaj * 10000 + vmin * 100 + vmic;
 
-    printf( "loading input file version %d.%d.%d\n", vmaj, vmin, vmic );
-  }
-  else
-  {
-    ungetc( c, fp );
-    printf("input file must start with '#'\n");
-    return false;
-  }
+        printf("loading input file version %d.%d.%d\n", vmaj, vmin, vmic);
+    }
+    else
+    {
+        ungetc(c, fp);
+        printf("input file must start with '#'\n");
+        return false;
+    }
 
-  if ( !read_sun( fp, cxt ) ) return false;
+    if (!read_sun(fp, cxt)) return false;
 
-  int count = 0;
+    int count = 0;
 
-  count = 0;
-  read_line( buf, 1023, fp ); sscanf(buf, "OPTICS LIST COUNT\t%d", &count);
+    count = 0;
+    read_line(buf, 1023, fp); sscanf(buf, "OPTICS LIST COUNT\t%d", &count);
 
-  ::st_clear_optics( cxt );
-  for (int i=0;i<count;i++)
-    if (!read_optic( fp, cxt )) return false;
+    ::st_clear_optics(cxt);
+    for (int i = 0; i < count; i++)
+        if (!read_optic(fp, cxt)) return false;
 
-  count = 0;
-  read_line( buf, 1023, fp ); sscanf(buf, "STAGE LIST COUNT\t%d", &count);
-  ::st_clear_stages( cxt );
-  for (int i=0;i<count;i++)
-    if (!read_stage( fp, cxt )) return false;
+    count = 0;
+    read_line(buf, 1023, fp); sscanf(buf, "STAGE LIST COUNT\t%d", &count);
+    ::st_clear_stages(cxt);
+    for (int i = 0; i < count; i++)
+        if (!read_stage(fp, cxt, base_dir)) return false;
 
-  return true;
+    return true;
 }
 
 bool write_data_file(const char *file, st_context_t cxt)

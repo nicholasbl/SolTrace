@@ -11,11 +11,11 @@ bool read_optic_surface(FILE* fp, st_context_t cxt, int iopt, int fb);
 
 bool read_optic(FILE* fp, st_context_t cxt);
 
-bool read_element(FILE* fp, st_context_t cxt, int istage);
+bool read_element(FILE* fp, st_context_t cxt, int istage, const char* base_dir = "");
 
-bool read_stage(FILE* fp, st_context_t cxt);
+bool read_stage(FILE* fp, st_context_t cxt, const char* base_dir = "");
 
-bool read_system(FILE* fp, st_context_t cxt);
+bool read_system(FILE* fp, st_context_t cxt, const char* base_dir = "");
 
 bool write_data_file(const char* file, st_context_t cxt);
 

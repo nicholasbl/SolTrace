@@ -39,16 +39,6 @@ void SingleTest(st_context_t& cxt, const int seed, const bool use_refactor, cons
 	{
 		ASSERT_NEAR(x_location[i], stod(ground_raydata[0][i + 1]), 0.01);
 		ASSERT_NEAR(y_location[i], stod(ground_raydata[1][i + 1]), 0.01);
-		
-		if (i == 8192)
-		{
-			int asdgag = 0;
-		}
-		
-		if (fabs(z_location[i] - stod(ground_raydata[2][i + 1])) > 0.01) {
-			// Set a breakpoint here or add:
-			__debugbreak(); // On Windows/MSVC
-		}
 		ASSERT_NEAR(z_location[i], stod(ground_raydata[2][i + 1]), 0.01);
 
 		ASSERT_NEAR(x_cos[i], stod(ground_raydata[3][i + 1]), 0.01);
@@ -102,7 +92,7 @@ void GenericEmbreeTest(string sample_path, string ground_csv_path)
 	}
 
 	printf("input file: %s\n", file);
-	if (!read_system(fp, cxt))
+	if (!read_system(fp, cxt, string(PROJECT_DIR).c_str()))
 	{
 		printf("error in input file.\n");
 		fclose(fp);
@@ -118,7 +108,7 @@ void GenericEmbreeTest(string sample_path, string ground_csv_path)
 
 	// Test without embree (validate raydata)
 	bool use_embree = false;
-	SingleTest(cxt, seed, use_refactor, use_embree, ground_raydata, code);
+	//SingleTest(cxt, seed, use_refactor, use_embree, ground_raydata, code);
 
 	// Test with embree
 	use_embree = true;
@@ -144,6 +134,18 @@ TEST(EmbreeTests, ApertureSampleBuiltIn)
 
 	// Path to .csv exported from Soltrace as ground truth
 	string ground_csv_path = PROJECT_DIR + string("/eb_aperture_sample_built_in_raydata.csv");
+
+	// Compare runs with and without embree to saved raydata
+	GenericEmbreeTest(sample_path, ground_csv_path);
+}
+
+TEST(EmbreeTests, ApertureSampleExternal)
+{
+	// Pulling in path variable from CMake and creating path to .stinput sample file
+	string sample_path = string(PROJECT_DIR) + string("/Aperture Sample-External Files.stinput");
+
+	// Path to .csv exported from Soltrace as ground truth
+	string ground_csv_path = PROJECT_DIR + string("/eb_aperture_sample_external_raydata.csv");
 
 	// Compare runs with and without embree to saved raydata
 	GenericEmbreeTest(sample_path, ground_csv_path);

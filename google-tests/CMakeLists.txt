@@ -12,7 +12,12 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 
-file(GLOB SAMPLE_FILES ../app/deploy/samples/*.stinput ../app/deploy/samples/*.mon)
+file(GLOB SAMPLE_FILES ../app/deploy/samples/*.stinput 
+	../app/deploy/samples/*.mon 
+	../app/deploy/samples/*.ply 
+	../app/deploy/samples/*.csi 
+	../app/deploy/samples/*.sht 
+	../app/deploy/samples/*.fed)
 file(GLOB GROUND_FILES ./ground_results/*.csv)
 file(GLOB SOLTRACE_EXAMPLE_TESTS soltrace_example_tests/*.cpp)
 file(GLOB CSV_TOOL csv_tools/*.cpp csv_tools/*.h)
