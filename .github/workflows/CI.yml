@@ -70,6 +70,16 @@ jobs:
       run: |
         brew install embree
 
+    - name: Install Embree on Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install embree --yes
+
+    - name: Set EMBREE_DIR on Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        $embree_root = "C:/ProgramData/chocolatey/lib/embree"
+        echo "CMAKE_PREFIX_PATH=$embree_root" >> $env:GITHUB_ENV
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
@@ -87,6 +97,7 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DSOLTRACE_BUILD_GUI=OFF
+        -DCMAKE_PREFIX_PATH="${{ env.CMAKE_PREFIX_PATH }}"
         -S ${{ github.workspace }}
 
     - name: Build-Windows
