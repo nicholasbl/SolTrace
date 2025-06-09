@@ -1,0 +1,10 @@
+#ifndef SOLTRACE_ERROR_DISTRIBUTIONS_H
+#define SOLTRACE_ERROR_DISTRIBUTIONS_H
+
+enum DistributionType
+{
+    GAUSSIAN,
+    PILLBOX
+};
+
+#endif

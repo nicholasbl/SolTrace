@@ -1,17 +1,19 @@
 #ifndef SOLTRACE_OPTICAL_PROPERTIES_H
 #define SOLTRACE_OPTICAL_PROPERTIES_H
 
+#include "error_distributions.hpp"
+
 enum InteractionType
 {
     REFLECTION,
     REFRACTION
 };
 
-enum DistributionType
-{
-    GAUSSIAN,
-    PILLBOX
-};
+// enum DistributionType
+// {
+//     GAUSSIAN,
+//     PILLBOX
+// };
 
 struct OpticalProperties
 {

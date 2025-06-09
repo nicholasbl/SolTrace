@@ -171,7 +171,7 @@ struct TSun
 {
 	TSun();
 	void Reset();
-	void set_values(ray_source_ptr rsrc);
+	// void set_values(ray_source_ptr rsrc);
 
 	// char ShapeIndex;
 	DistributionType ShapeIndex;

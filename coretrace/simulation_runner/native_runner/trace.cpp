@@ -1441,6 +1441,7 @@ void Errors(
 
 			   Output - CosOut  = Output direction cosine vector of ray after error terms have been included
 					   }*/
+
 	double Origin[3] = {0.0, 0.0, 0.0};
 	double Euler[3] = {0.0, 0.0, 0.0};
 	double PosIn[3] = {0.0, 0.0, 0.0};

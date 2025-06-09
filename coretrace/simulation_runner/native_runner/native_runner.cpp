@@ -1,4 +1,7 @@
 
+#include <map>
+// #include <algorithm>
+
 #include "native_runner.hpp"
 #include "simulation_parameters.hpp"
 #include "simulation_data.hpp"
@@ -14,10 +17,6 @@ NativeRunner::NativeRunner() : SimulationRunner(),
 
 NativeRunner::~NativeRunner()
 {
-    // if (this->simdata != nullptr)
-    // {
-    //     this->simdata = nullptr;
-    // }
 }
 
 RunnerStatus NativeRunner::initialize()
@@ -30,14 +29,13 @@ RunnerStatus NativeRunner::setup_simulation(const SimulationData *data)
 
     RunnerStatus sts;
 
-    // this->simdata = data;
+    sts = this->setup_parameters(data);
 
-    this->setup_parameters(data);
-    this->setup_sun(data);
-    sts = this->setup_elements(data);
+    if (sts == RunnerStatus::SUCCESS)
+        sts = this->setup_sun(data);
 
-    // std::cout << "Number of stages: " << this->tsys.StageList.size()
-    //           << std::endl;
+    if (sts == RunnerStatus::SUCCESS)
+        sts = this->setup_elements(data);
 
     return sts;
 }
@@ -59,12 +57,18 @@ RunnerStatus NativeRunner::setup_sun(const SimulationData *data)
 {
     // Get RaySource data (this runner assumes there is only the Sun)
     assert(data->get_number_of_ray_sources() == 1);
-    this->tsys.Sun.set_values(data->get_ray_source());
+    // this->tsys.Sun.set_values(data->get_ray_source());
+    ray_source_ptr sun = data->get_ray_source();
+    vector_copy(this->tsys.Sun.Origin, sun->get_position());
+    this->tsys.Sun.ShapeIndex = sun->get_shape();
     return RunnerStatus::SUCCESS;
 }
 
 RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
 {
+    RunnerStatus sts = RunnerStatus::SUCCESS;
+    auto my_map = std::map<int_fast64_t, tstage_ptr>();
+
     for (auto iter = data->get_const_iterator();
          !data->is_at_end(iter);
          ++iter)
@@ -73,12 +77,32 @@ RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
         if (el->is_enabled() && el->is_stage())
         {
             tstage_ptr stage = make_tstage(el);
-            this->tsys.StageList.push_back(stage);
-            // TODO: Need to put these in sorted order...
+            auto retval = my_map.insert(
+                std::make_pair(el->get_stage(), stage));
+            if (retval.second == false)
+            {
+                // TODO: Duplicate stage numbers. Need to make an error
+                // message.
+                sts = RunnerStatus::ERROR;
+            }
         }
     }
-    // std::cout << "Number of stages: " << sys.StageList.size() << std::endl;
-    return RunnerStatus::SUCCESS;
+
+    // std::map (according to the documentation) is automatically
+    // ordered by the keys so inserting into a map will sort the stages
+    // and we can just transfer the pointers, in order, to the StageList
+    // simply by pulling them out of the map.
+    int_fast64_t last_stage_id = -1;
+    for (auto iter = my_map.cbegin();
+         iter != my_map.cend();
+         ++iter)
+    {
+        assert(last_stage_id < iter->first);
+        last_stage_id = iter->first;
+        this->tsys.StageList.push_back(iter->second);
+    }
+
+    return sts;
 }
 
 RunnerStatus NativeRunner::update_simulation(const SimulationData *data)

@@ -35,6 +35,10 @@ public:
     // Runner accessors
     const TSystem *get_system() const { return &this->tsys; }
 
+    RunnerStatus setup_parameters(const SimulationData *data);
+    RunnerStatus setup_sun(const SimulationData *data);
+    RunnerStatus setup_elements(const SimulationData *data);
+
 private:
     // Use power tower speed ups
     bool as_power_tower;
@@ -49,10 +53,6 @@ private:
     // // SimulationData to use for ray tracing computations
     // const SimulationData *simdata;
     TSystem tsys;
-
-    RunnerStatus setup_parameters(const SimulationData *data);
-    RunnerStatus setup_sun(const SimulationData *data);
-    RunnerStatus setup_elements(const SimulationData *data);
 };
 
 #endif

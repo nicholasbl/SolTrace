@@ -168,15 +168,15 @@ void TSun::Reset()
     MinYSun = 0;
 }
 
-void TSun::set_values(ray_source_ptr rsrc)
-{
-    CopyVec3(this->Origin, rsrc->get_position().data);
+// void TSun::set_values(ray_source_ptr rsrc)
+// {
+//     CopyVec3(this->Origin, rsrc->get_position().data);
 
-    // TODO: Need to get sun parameters here too.
-    this->PointSource = false;
+//     // TODO: Need to get sun parameters here too.
+//     this->PointSource = false;
 
-    return;
-}
+//     return;
+// }
 
 /*
  // Small program to test TRayData memory block allocation scheme

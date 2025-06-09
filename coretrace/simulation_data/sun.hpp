@@ -2,6 +2,8 @@
 #define SOLTRACE_SUN_H
 
 #include "ray_source.hpp"
+
+#include "error_distributions.hpp"
 #include "vector3d.hpp"
 
 class Sun : public RaySource
@@ -29,10 +31,18 @@ public:
         return;
     }
     virtual void set_position(const DateTime &, double lat, double long) {}
-    virtual void get_shape() {}
-    virtual void set_shape() {}
+    virtual DistributionType get_shape() const
+    {
+        return this->my_shape;
+    }
+    virtual void set_shape(DistributionType shape)
+    {
+        this->my_shape = shape;
+        return;
+    }
 
 private:
+    DistributionType my_shape;
     Vector3d my_position;
 };
 
