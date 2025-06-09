@@ -645,10 +645,16 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 		PT_override = true;
 	}
 
+	// Disable PT optimizations if using embree
+	bool is_embree_debug = false;
+	if (use_embree && !is_embree_debug)
+		PT_override = true;
+
 	// Initialize Embree vars
 	RTCDevice embree_device = nullptr;
 	RTCScene embree_scene = nullptr;
 	bool use_shared_embree = false;
+	
 	if (use_embree)
 	{
 		if (embree_scene_shared == nullptr)
@@ -847,8 +853,7 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 					nintelements = Stage->ElementList.size();
 				}
 
-				bool is_debug_test = false;
-				if (is_debug_test && use_embree)
+				if (is_embree_debug && use_embree)
 				{
 					double eb_posraysurfelement[3], eb_cosraysurfelement[3],
 						eb_dfxyz[3], eb_posraysurfstage[3], eb_cosraysurfstage[3];
@@ -925,7 +930,7 @@ bool Trace_refactored(TSystem* System, unsigned int seed,
 							LastElementNumber,
 							i + 1,
 							LastRayNumber);
-						return true;
+						return false;
 					}
 
 				}
