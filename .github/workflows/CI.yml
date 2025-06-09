@@ -65,6 +65,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libembree-dev
 
+    - name: Install Embree on macOS
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install embree
+
+
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
