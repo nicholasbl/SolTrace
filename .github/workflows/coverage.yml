@@ -2,9 +2,9 @@ name: coverage
 
 on:
   push:
-    branches: [ develop ]
+    branches: [ develop, trace_embree ]
   pull_request:
-    branches: [ develop ]
+    branches: [ develop, trace_embree ]
 env:
   BUILD_TYPE: Debug
 
