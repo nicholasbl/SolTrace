@@ -77,6 +77,32 @@ namespace embree_helper
 		printf("error %d: %s\n", error, str);
 	}
 	
+	float get_absolute_minmax(const float values[], int size, bool is_max)
+	{
+		float minmax_abs = std::abs(values[0]);
+
+		if (is_max)
+		{
+			for (int i = 1; i < size; i++)
+			{
+				float abs_val = std::abs(values[i]);
+				if (abs_val > minmax_abs)
+					minmax_abs = abs_val;
+			}
+		}
+		else
+		{
+			for (int i = 1; i < size; i++)
+			{
+				float abs_val = std::abs(values[i]);
+				if (abs_val < minmax_abs)
+					minmax_abs = abs_val;
+			}
+		}
+		
+		return minmax_abs;
+	}
+
 	void process_zernike_bounds(TElement* st_element, float x_minmax[2], float y_minmax[2],
 		float (&z_minmax)[2])
 	{
@@ -133,6 +159,106 @@ namespace embree_helper
 		}
 	}
 
+	bool findSplineExtrema(std::vector<double>& xa,
+		std::vector<double>& ya,
+		std::vector<double>& y2a,
+		double xMin, double xMax,
+		double& yMin, double& yMax)
+	{
+		if (xa.size() < 2 || xa.size() != ya.size() || xa.size() != y2a.size())
+			return false;
+
+		int n = xa.size();
+		yMin = INFINITY;
+		yMax = -INFINITY;
+
+		// Check all interval critical points
+		for (int i = 0; i < n - 1; i++) {
+			double h = xa[i + 1] - xa[i];
+			if (h == 0) continue;
+
+			// The spline derivative equal to zero gives us a quadratic equation
+			// Coefficients derived from the derivative expression in splint function
+			double A = h * (y2a[i + 1] - y2a[i]) / 2.0;
+			double B = h * y2a[i] / 2.0 - (ya[i + 1] - ya[i]) / h;
+			double C = -h * y2a[i] / 6.0;
+
+			// Solve quadratic equation: A*t² + B*t + C = 0 where t = (x-xa[i])/h
+			double discriminant = B * B - 4 * A * C;
+
+			if (std::abs(A) < 1e-10) {
+				// Linear case
+				if (std::abs(B) > 1e-10) {
+					double t = -C / B;
+					double x = xa[i] + t * h;
+					if (x >= xMin && x <= xMax && x >= xa[i] && x <= xa[i + 1]) {
+						double y, dydx;
+						if (splint(xa, ya, y2a, n, x, &y, &dydx)) {
+							yMin = std::min(yMin, y);
+							yMax = std::max(yMax, y);
+						}
+					}
+				}
+			}
+			else if (discriminant >= 0) {
+				// Two possible roots
+				double t1 = (-B + sqrt(discriminant)) / (2 * A);
+				double t2 = (-B - sqrt(discriminant)) / (2 * A);
+
+				double x1 = xa[i] + t1 * h;
+				double x2 = xa[i] + t2 * h;
+
+				// Check if critical points are in this interval and the overall range
+				if (x1 >= xa[i] && x1 <= xa[i + 1] && x1 >= xMin && x1 <= xMax) {
+					double y, dydx;
+					if (splint(xa, ya, y2a, n, x1, &y, &dydx)) {
+						yMin = std::min(yMin, y);
+						yMax = std::max(yMax, y);
+					}
+				}
+
+				if (x2 >= xa[i] && x2 <= xa[i + 1] && x2 >= xMin && x2 <= xMax) {
+					double y, dydx;
+					if (splint(xa, ya, y2a, n, x2, &y, &dydx)) {
+						yMin = std::min(yMin, y);
+						yMax = std::max(yMax, y);
+					}
+				}
+			}
+		}
+
+		// Also check endpoints and knot points within range
+		for (int i = 0; i < n; i++) {
+			if (xa[i] >= xMin && xa[i] <= xMax) {
+				double y, dydx;
+				if (splint(xa, ya, y2a, n, xa[i], &y, &dydx)) {
+					yMin = std::min(yMin, y);
+					yMax = std::max(yMax, y);
+				}
+			}
+		}
+
+		// Check range endpoints if they're not knot points
+		double y, dydx;
+		if (splint(xa, ya, y2a, n, xMin, &y, &dydx)) {
+			yMin = std::min(yMin, y);
+			yMax = std::max(yMax, y);
+		}
+
+		if (splint(xa, ya, y2a, n, xMax, &y, &dydx)) {
+			yMin = std::min(yMin, y);
+			yMax = std::max(yMax, y);
+		}
+
+		// Check x = 0;
+		if (splint(xa, ya, y2a, n, 0, &y, &dydx)) {
+			yMin = std::min(yMin, y);
+			yMax = std::max(yMax, y);
+		}
+
+		return yMin != INFINITY && yMax != -INFINITY;
+	}
+
 	void process_cubic_spline_bounds(TElement* st_element, float x_minmax[2], float y_minmax[2],
 		float(&z_minmax)[2])
 	{
@@ -144,10 +270,22 @@ namespace embree_helper
 		z_min = std::numeric_limits<double>::infinity();
 		z_max = -std::numeric_limits<double>::infinity();
 
-		float x_range[3] = { x_minmax[0], x_minmax[1], 0.f };
-		float y_range[3] = { y_minmax[0], y_minmax[1], 0.f };
+		float x_min_abs = get_absolute_minmax(x_minmax, 2, false);
+		float x_max_abs = get_absolute_minmax(x_minmax, 2, true);
+		float y_min_abs = get_absolute_minmax(y_minmax, 2, false);
+		float y_max_abs = get_absolute_minmax(y_minmax, 2, true);
 
-		for (int xi = 0; xi < 3; ++xi)
+		double Rho_min = sqrt(x_min_abs * x_min_abs + y_min_abs * y_min_abs);
+		double Rho_max = sqrt(x_max_abs * x_max_abs + y_max_abs * y_max_abs);
+		double z_min_test;
+		double z_max_test;
+
+		findSplineExtrema(st_element->CubicSplineXData,
+			st_element->CubicSplineYData,
+			st_element->CubicSplineY2Data,
+			Rho_min, Rho_max, z_min_test, z_max_test);
+
+		/*for (int xi = 0; xi < 3; ++xi)
 		{
 			for (int yi = 0; yi < 3; ++yi)
 			{
@@ -164,7 +302,10 @@ namespace embree_helper
 				if (z < z_min) z_min = z;
 				if (z > z_max) z_max = z;
 			}
-		}
+		}*/
+
+		z_min = z_min_test;
+		z_max = z_max_test;
 	}
 
 	void process_FE_bounds(TElement* st_element, float x_minmax[2], float y_minmax[2],
@@ -245,17 +386,7 @@ namespace embree_helper
 		}
 	}
 
-	float get_absolute_max(const float values[], int size)
-	{
-		float max_abs = std::abs(values[0]);
-		for (int i = 1; i < size; i++)
-		{
-			float abs_val = std::abs(values[i]);
-			if (abs_val > max_abs)
-				max_abs = abs_val;
-		}
-		return max_abs;
-	}
+	
 
 	int get_aperture_bounds(TElement* st_element, float& x_min, float& x_max,
 		float& y_min, float& y_max)
@@ -405,8 +536,8 @@ namespace embree_helper
 				float c = st_element->VertexCurvX;
 				float r = 1.f / c;
 
-				float x_abs_max = get_absolute_max(x_minmax, 2);
-				float y_abs_max = get_absolute_max(y_minmax, 2);
+				float x_abs_max = get_absolute_minmax(x_minmax, 2, true);
+				float y_abs_max = get_absolute_minmax(y_minmax, 2, true);
 
 				// Check if max x,y combo is outside sphere
 				float x, y;
@@ -433,8 +564,8 @@ namespace embree_helper
 				float cx = st_element->VertexCurvX;
 				float cy = st_element->VertexCurvY;
 
-				float x_abs_max = get_absolute_max(x_minmax, 2);
-				float y_abs_max = get_absolute_max(y_minmax, 2);
+				float x_abs_max = get_absolute_minmax(x_minmax, 2, true);
+				float y_abs_max = get_absolute_minmax(y_minmax, 2, true);
 
 				z_max = 0.5f * (cx * x_abs_max * x_abs_max + cy * y_abs_max * y_abs_max);
 				z_min = 0.f;
@@ -447,8 +578,8 @@ namespace embree_helper
 				float c = st_element->VertexCurvX;
 				float kappa = st_element->Kappa;
 
-				float x_abs_max = get_absolute_max(x_minmax, 2);
-				float y_abs_max = get_absolute_max(y_minmax, 2);
+				float x_abs_max = get_absolute_minmax(x_minmax, 2, true);
+				float y_abs_max = get_absolute_minmax(y_minmax, 2, true);
 
 				float z_numer = c * (x_abs_max * x_abs_max + y_abs_max * y_abs_max);
 				float z_denom = 1.f + std::sqrtf(1.f - (kappa * c * c) * (x_abs_max * x_abs_max + y_abs_max * y_abs_max));
@@ -472,8 +603,8 @@ namespace embree_helper
 				float theta_deg = st_element->ConeHalfAngle;
 				float theta_rad = theta_deg * (M_PI / 180.0f);
 
-				float x_abs_max = get_absolute_max(x_minmax, 2);
-				float y_abs_max = get_absolute_max(y_minmax, 2);
+				float x_abs_max = get_absolute_minmax(x_minmax, 2, true);
+				float y_abs_max = get_absolute_minmax(y_minmax, 2, true);
 
 				z_max = std::sqrtf(x_abs_max * x_abs_max + y_abs_max * y_abs_max) / std::tanf(theta_rad);
 				z_min = 0.f;
@@ -524,7 +655,7 @@ namespace embree_helper
 				float z_minmax[2] = { 0,0 };
 				process_cubic_spline_bounds(st_element, x_minmax, y_minmax, z_minmax);
 
-				z_min = z_minmax[0];
+				z_min = z_minmax[0] - 10000;
 				z_max = z_minmax[1];
 
 				break;
@@ -599,6 +730,12 @@ namespace embree_helper
 			bounds_error(args, "Invalid surface");
 			return;
 		}
+
+		// Expand bounding boxes slightly to account for float precision
+		float expand = 0.001;
+		x_minmax[0] -= expand; x_minmax[1] += expand;
+		y_minmax[0] -= expand; y_minmax[1] += expand;
+		z_minmax[0] -= expand; z_minmax[1] += expand;
 
 		// Assign points to min/max coordinate element arrays
 		min_coord_element[0] = x_minmax[0];
