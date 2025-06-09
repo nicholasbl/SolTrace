@@ -70,16 +70,26 @@ jobs:
       run: |
         brew install embree
 
-    - name: Install Embree on Windows
+    - name: Download Embree Release (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        choco install embree --yes
+        curl -L -o embree.zip https://github.com/RenderKit/embree/releases/download/v4.4.0/embree-4.4.0.x64.windows.zip
+        unzip embree.zip -d embree
+  
+    - name: List Embree files (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        dir embree
 
-    - name: Set EMBREE_DIR on Windows
+    - name: Set CMAKE_PREFIX_PATH for Embree (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        $embree_root = "C:/ProgramData/chocolatey/lib/embree"
-        echo "CMAKE_PREFIX_PATH=$embree_root" >> $env:GITHUB_ENV
+        echo "CMAKE_PREFIX_PATH=${{ github.workspace }}/embree/lib/cmake/embree-4.4.0" >> $env:GITHUB_ENV
+
+    - name: Add Embree to PATH
+      if: matrix.os == 'windows-latest'
+      run: |
+        echo "${{ github.workspace }}/embree/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
