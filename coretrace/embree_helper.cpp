@@ -50,6 +50,7 @@
 #include <stdio.h>
 #include "procs.h"
 #include <cctype>
+#include <algorithm>
 
 namespace embree_helper 
 {
@@ -408,7 +409,7 @@ namespace embree_helper
 			{
 				// Hexagonal
 				float r = st_element->ParameterA * 0.5f;
-				float apothem = (2.f * r * std::sqrtf(3.f)) / 4.f;
+				float apothem = (2.f * r * std::sqrt(3.f)) / 4.f;
 				x_min = -r;
 				x_max = r;
 				y_min = -apothem;
@@ -420,7 +421,7 @@ namespace embree_helper
 			{
 				// Triangular
 				float r = st_element->ParameterA * 0.5f;
-				float side = r * std::sqrtf(3.f);
+				float side = r * std::sqrt(3.f);
 				float h = 1.5f * r;
 				x_min = -0.5f * side;
 				x_max = 0.5f * side;
@@ -550,7 +551,7 @@ namespace embree_helper
 				else
 				{
 					float z_numerator = (c * (x_abs_max * x_abs_max + y_abs_max * y_abs_max));
-					float z_denom = 1.f + std::sqrtf(1.f - (c * c) * (x_abs_max * x_abs_max + y_abs_max * y_abs_max));
+					float z_denom = 1.f + std::sqrt(1.f - (c * c) * (x_abs_max * x_abs_max + y_abs_max * y_abs_max));
 
 					z_max = z_numerator / z_denom;
 					z_min = 0.f;
@@ -582,7 +583,7 @@ namespace embree_helper
 				float y_abs_max = get_absolute_minmax(y_minmax, 2, true);
 
 				float z_numer = c * (x_abs_max * x_abs_max + y_abs_max * y_abs_max);
-				float z_denom = 1.f + std::sqrtf(1.f - (kappa * c * c) * (x_abs_max * x_abs_max + y_abs_max * y_abs_max));
+				float z_denom = 1.f + std::sqrt(1.f - (kappa * c * c) * (x_abs_max * x_abs_max + y_abs_max * y_abs_max));
 
 				z_max = z_numer / z_denom;
 				z_min = 0.f;
@@ -606,7 +607,7 @@ namespace embree_helper
 				float x_abs_max = get_absolute_minmax(x_minmax, 2, true);
 				float y_abs_max = get_absolute_minmax(y_minmax, 2, true);
 
-				z_max = std::sqrtf(x_abs_max * x_abs_max + y_abs_max * y_abs_max) / std::tanf(theta_rad);
+				z_max = std::sqrt(x_abs_max * x_abs_max + y_abs_max * y_abs_max) / std::tan(theta_rad);
 				z_min = 0.f;
 
 				break;
