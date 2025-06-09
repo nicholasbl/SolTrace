@@ -70,6 +70,10 @@ jobs:
       run: |
         brew install embree
 
+    - name: Install Embree on Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install embree --yes
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
