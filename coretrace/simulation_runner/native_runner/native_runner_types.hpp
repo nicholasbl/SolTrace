@@ -64,15 +64,15 @@
 #define M_PI 3.141592653589793238462643
 #endif
 
-class nanexcept : public std::exception
-{
-	std::string m_text;
+// class nanexcept : public std::exception
+// {
+// 	std::string m_text;
 
-public:
-	nanexcept(const char *text) : m_text(text) {}
-	virtual ~nanexcept() throw() {}
-	virtual const char *what() const throw() { return m_text.c_str(); }
-};
+// public:
+// 	nanexcept(const char *text) : m_text(text) {}
+// 	virtual ~nanexcept() throw() {}
+// 	virtual const char *what() const throw() { return m_text.c_str(); }
+// };
 
 // class FEDataObj : public st_hash_tree
 // {
@@ -113,6 +113,16 @@ public:
 // 	};
 // 	std::vector<transdat> TransmissivityTable;
 // };
+
+// Struct for storing runner side only element parameters
+struct ElementParameters
+{
+	ElementParameters();
+	~ElementParameters();
+	// Newton's method controls
+	double newton_tolerance;
+	uint_fast64_t newton_max_iters;
+};
 
 class TOpticalPropertySet
 {
@@ -161,11 +171,13 @@ struct TElement
 	std::string Comment;
 	// mjw element number in the stage - unique ID in order
 	// of addition to element list
-	int element_number;
+	// int element_number;
+	element_id element_number;
 };
 
 using telement_ptr = typename std::shared_ptr<TElement>;
-telement_ptr make_telement(element_ptr el);
+telement_ptr make_telement(element_ptr el,
+						   const ElementParameters &eparams);
 
 struct TSun
 {
@@ -283,7 +295,8 @@ struct TStage
 };
 
 using tstage_ptr = typename std::shared_ptr<TStage>;
-tstage_ptr make_tstage(element_ptr el);
+tstage_ptr make_tstage();
+tstage_ptr make_tstage(element_ptr el, const ElementParameters &eparams);
 
 struct TSystem
 {
@@ -294,8 +307,6 @@ struct TSystem
 	void CollectResults();
 
 	TSun Sun;
-	// std::vector<TOpticalPropertySet *> OpticsList;
-	// std::vector<TStage*> StageList;
 	std::vector<tstage_ptr> StageList;
 
 	// system simulation context data

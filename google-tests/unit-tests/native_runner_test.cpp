@@ -4,6 +4,7 @@
 
 #include <composite_element.hpp>
 #include <error_distributions.hpp>
+#include <mtrand.hpp>
 #include <native_runner.hpp>
 #include <native_runner_types.hpp>
 #include <ray_source.hpp>
@@ -11,6 +12,14 @@
 #include <simulation_data.hpp>
 #include <single_element.hpp>
 #include <vector3d.hpp>
+
+TEST(RandomNumberGenerator, SingleNumberMersenneTwister)
+{
+	MTRand myrng(1);
+	double random_number = myrng.rand();
+
+	EXPECT_NEAR(random_number, 0.13387664401253274, 1e-7);
+}
 
 TEST(NativeRunnerTypes, TSun)
 {
@@ -109,4 +118,47 @@ TEST(NativeRunner, SmokeTest)
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.run_simulation();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    const TSystem *sys = runner.get_system();
+    sys->AllRayData.Print();
+}
+
+TEST(NativeRunner, PowerTowerSmokeTest)
+{
+    NativeRunner runner;
+    SimulationData my_sim;
+
+    my_sim.set_number_of_rays(10);
+    my_sim.set_max_rays_traced(100);
+
+    auto sun = make_ray_source<Sun>();
+    sun->set_position(0.0, 0.0, 100.0);
+    // sun->set_shape();
+    my_sim.add_ray_source(sun);
+
+    auto my_st = make_stage(0);
+    const int NUM_ELEMENTS = 4;
+    for (int k = 0; k < NUM_ELEMENTS; ++k)
+    {
+        element_ptr el = make_element<SingleElement>();
+        el->set_aperture(make_aperture<Circle>(2.0));
+        el->set_surface(make_surface<Flat>());
+        my_st->add_element(el);
+    }
+    EXPECT_EQ(my_st->get_number_of_elements(), NUM_ELEMENTS);
+    my_sim.add_stage(my_st);
+    EXPECT_EQ(my_sim.get_number_of_elements(), NUM_ELEMENTS);
+
+    runner.enable_power_tower();
+
+    RunnerStatus sts;
+    sts = runner.initialize();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&my_sim);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    // const TSystem *sys = runner.get_system();
+    // sys->AllRayData.Print();
 }

@@ -77,8 +77,6 @@ public:
    * CompositeElements even if that CompositeElement is then stored in a stage.
    ***************************************************************************/
 
-  // TODO: get_xxxx_local should probably be get_xxxx_reference...
-
   virtual Vector3d get_origin_ref() const = 0;
   virtual Vector3d get_origin_stage() const = 0;
   virtual Vector3d get_origin_global() const = 0;

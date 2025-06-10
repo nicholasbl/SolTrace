@@ -6,6 +6,7 @@ include_directories(
 	../app/deploy/samples
 	../../coretrace
 	../../coretrace/simulation_data
+	../../coretrace/simulation_results
 	../../coretrace/simulation_runner
 	../../coretrace/simulation_runner/native_runner
 )

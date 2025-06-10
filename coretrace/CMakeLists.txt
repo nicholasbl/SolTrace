@@ -10,6 +10,8 @@ if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
 endif()
 
+add_subdirectory(simulation_data)
+add_subdirectory(simulation_runner)
 
 #####################################################################################################################
 #
@@ -144,10 +146,6 @@ if (MSVC)
 endif()
 
 add_subdirectory(strace)
-
-add_subdirectory(simulation_data)
-add_subdirectory(simulation_runner)
-
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug"
        AND ENABLE_COVERAGE

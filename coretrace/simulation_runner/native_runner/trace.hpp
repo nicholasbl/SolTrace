@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#include "mtrand.h"
+#include "mtrand.hpp"
 #include "native_runner_types.hpp"
 #include "simulation_data.hpp"
 // #include "types.h"

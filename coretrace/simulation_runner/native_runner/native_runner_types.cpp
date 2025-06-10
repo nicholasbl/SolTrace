@@ -110,6 +110,16 @@
 //     return *this;
 // }
 
+ElementParameters::ElementParameters()
+    : newton_tolerance(1e-6),
+      newton_max_iters(20)
+{
+}
+
+ElementParameters::~ElementParameters()
+{
+}
+
 TElement::TElement() : aperture(nullptr),
                        icalc(nullptr),
                        Optics()
@@ -436,8 +446,6 @@ TStage::TStage()
 
 TStage::~TStage()
 {
-    // for (uint_fast64_t i = 0; i < ElementList.size(); i++)
-    //     delete ElementList[i];
     ElementList.clear();
 }
 
@@ -456,20 +464,14 @@ TSystem::TSystem()
 
 TSystem::~TSystem()
 {
-    // for (uint_fast64_t i = 0; i < StageList.size(); i++)
-    //     delete StageList[i];
     StageList.clear();
 }
 
 void TSystem::ClearAll()
 {
-    // for (uint_fast64_t i = 0; i < OpticsList.size(); i++)
-    //     delete OpticsList[i];
-    // OpticsList.clear();
-
-    // for (uint_fast64_t i = 0; i < StageList.size(); i++)
-    //     delete StageList[i];
     StageList.clear();
+    Sun.Reset();
+    this->AllRayData.Clear();
 }
 
 void TSystem::CollectResults()
@@ -498,7 +500,7 @@ void TSystem::errlog(const char *fmt, ...)
     messages.push_back(buf);
 }
 
-telement_ptr make_telement(element_ptr el)
+telement_ptr make_telement(element_ptr el, const ElementParameters &eparams)
 {
     telement_ptr telem = std::make_shared<TElement>();
     vector_copy(telem->Origin, el->get_origin_stage());
@@ -513,16 +515,35 @@ telement_ptr make_telement(element_ptr el)
     // TODO: Do we need to pass aperture or other element properties to the
     // intersection calculator?
     telem->icalc =
-        CalculatorFactory::get()->make_calculator(el->get_surface());
+        CalculatorFactory::get()->make_calculator(telem->aperture,
+                                                  el->get_surface(),
+                                                  eparams);
 
     // How to handle optical properties?
     telem->Optics.Front = *el->get_front_optical_properties();
     telem->Optics.Back = *el->get_back_optical_properties();
 
+    telem->element_number = el->get_id();
+
     return telem;
 }
 
-tstage_ptr make_tstage(element_ptr el)
+tstage_ptr make_tstage()
+{
+    tstage_ptr my_stage = std::make_shared<TStage>();
+
+    // Use global coordinates as stage coordinates
+    ZeroVec3(my_stage->Origin);
+    ZeroVec3(my_stage->AimPoint);
+    my_stage->AimPoint[2] = 1.0;
+    my_stage->ZRot = 0.0;
+    IdentityMat3(my_stage->RRefToLoc);
+    IdentityMat3(my_stage->RLocToRef);
+
+    return my_stage;
+}
+
+tstage_ptr make_tstage(element_ptr el, const ElementParameters &eparams)
 {
     tstage_ptr my_stage = std::make_shared<TStage>();
     auto stage_el = std::dynamic_pointer_cast<StageElement>(el);
@@ -549,7 +570,7 @@ tstage_ptr make_tstage(element_ptr el)
         // Ignore CompositeElements and those that are disabled
         if (el->is_enabled() && el->is_single())
         {
-            telement_ptr elem = make_telement(iter->second);
+            telement_ptr elem = make_telement(iter->second, eparams);
             my_stage->ElementList.push_back(elem);
         }
     }

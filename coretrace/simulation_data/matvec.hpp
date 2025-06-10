@@ -260,4 +260,6 @@ inline void CopyVec3(double dest[3], const double src[3])
 
 void CopyMat3(double dest[3][3], const double src[3][3]);
 
+void IdentityMat3(double mat[3][3]);
+
 #endif

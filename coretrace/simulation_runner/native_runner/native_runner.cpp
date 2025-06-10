@@ -9,9 +9,7 @@
 
 NativeRunner::NativeRunner() : SimulationRunner(),
                                as_power_tower(false),
-                               number_of_threads(1),
-                               newton_tolerance(1e-6),
-                               newton_max_iters(20)
+                               number_of_threads(1)
 {
 }
 
@@ -76,7 +74,7 @@ RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
         element_ptr el = iter->second;
         if (el->is_enabled() && el->is_stage())
         {
-            tstage_ptr stage = make_tstage(el);
+            tstage_ptr stage = make_tstage(el, this->eparams);
             auto retval = my_map.insert(
                 std::make_pair(el->get_stage(), stage));
             if (retval.second == false)
@@ -86,6 +84,30 @@ RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
                 sts = RunnerStatus::ERROR;
             }
         }
+    }
+
+    if (my_map.size() == 0)
+    {
+        // No stage elements found in the passed in data. However,
+        // the runner requires stages. So make a single stage
+        // and put everything there. Note that the coordinates are
+        // set to correspond to global coordinates. This is necessary
+        // so that the element coordinate setup in make_element are
+        // correct.
+        auto stage = make_tstage();
+        stage->ElementList.reserve(data->get_number_of_elements());
+        for (auto iter = data->get_const_iterator();
+             !data->is_at_end(iter);
+             ++iter)
+        {
+            element_ptr el = iter->second;
+            if (el->is_enabled() && el->is_single())
+            {
+                telement_ptr tel = make_telement(el, this->eparams);
+                stage->ElementList.push_back(tel);
+            }
+        }
+        my_map.insert(std::make_pair(0, stage));
     }
 
     // std::map (according to the documentation) is automatically
@@ -107,8 +129,9 @@ RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
 
 RunnerStatus NativeRunner::update_simulation(const SimulationData *data)
 {
+    // TODO: Do a more efficient implementation of this?
+    this->tsys.ClearAll();
     this->setup_simulation(data);
-    // TODO: Implement this
     return RunnerStatus::SUCCESS;
 }
 

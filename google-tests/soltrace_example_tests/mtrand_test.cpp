@@ -9,5 +9,5 @@ TEST(RandomNumberGenerator, SingleNumberMersenneTwister)
 	MTRand myrng(1);
 	double random_number = myrng.rand();
 
-	EXPECT_NEAR(random_number, 0.13387664401253274, 0.0000001);
+	EXPECT_NEAR(random_number, 0.13387664401253274, 1e-7);
 }
