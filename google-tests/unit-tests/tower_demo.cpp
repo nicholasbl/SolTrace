@@ -54,6 +54,8 @@ TEST(TowerDemo, NativeRunnerWithStages)
     st1->set_origin(0.0, 0.0, 0.0);
     // Set aim vector so stage and global coordinates are identical
     st1->set_aim_vector(0.0, 0.0, 1.0);
+    st1->set_zrot(0.0);
+    st1->compute_coordinate_rotations();
     st1->add_element(absorber);
     // Optional -- to help the user identify things
     st1->set_name("Stage 1--Absorber");
@@ -62,6 +64,8 @@ TEST(TowerDemo, NativeRunnerWithStages)
     auto st0 = make_stage(0);
     st0->set_origin(0.0, 0.0, 0.0);
     st0->set_aim_vector(0.0, 0.0, 1.0);
+    st0->set_zrot(0.0);
+    st0->compute_coordinate_rotations();
     st0->set_name("Stage 0--Reflectors");
 
     Vector3d rvec, svec, avec;
@@ -187,36 +191,6 @@ TEST(TowerDemo, NativeRunnerWithoutStages)
     absorber->set_name("Absorber");
     sd.add_element(absorber);
 
-    // // Absorber -- Cylindrical -- MAY NOT WORK DUE TO UNIMPLEMENTED CODE!
-    // auto absorber = make_element<SingleElement>();
-    // const double r = 5.0;
-    // absorber->set_origin(0.0, -r, 0.0);
-    // absorber->set_zrot(0.0);
-    // absorber->set_aim_vector(0.0, 100.0, -(r + 50.0));
-    // // These are the default options but to show off the constructor
-    // OpticalProperties op(REFLECTION, 0.0, 0.0, 0.0, 0.0);
-    // // Alternative to getting the pointer and setting values
-    // absorber->set_front_optical_properties(op);
-    // absorber->set_surface(make_surface<Cylinder>());
-    // absorber->set_aperture(make_aperture<SingleAxisCurvatureSection>());
-
-    // // Make stage 1 -- second stage -- these can be added to SimulationData
-    // // in any order but should be numbered in the desired order
-    // auto st1 = make_stage(1);
-    // // Origin is initialized to zero but set it explicitly
-    // st1->set_origin(0.0, 0.0, 0.0);
-    // // Set aim vector so stage and global coordinates are identical
-    // st1->set_aim_vector(0.0, 0.0, 1.0);
-    // st1->add_element(absorber);
-    // // Optional -- to help the user identify things
-    // st1->set_name("Stage 1--Absorber");
-
-    // // Make stage 0 -- this will be the first stage if the runner uses stages
-    // auto st0 = make_stage(0);
-    // st0->set_origin(0.0, 0.0, 0.0);
-    // st0->set_aim_vector(0.0, 0.0, 1.0);
-    // st0->set_name("Stage 0--Reflectors");
-
     Vector3d rvec, svec, avec;
     Vector3d aim, pos;
 
@@ -257,10 +231,6 @@ TEST(TowerDemo, NativeRunnerWithoutStages)
         sd.add_element(el);
     }
 
-    // // Stages must have all elements present before adding to SimulationData!!
-    // sd.add_stage(st0);
-    // sd.add_stage(st1);
-
     // Set parameters
     SimulationParameters &params = sd.get_simulation_parameters();
     params.number_of_rays = 100000;
@@ -269,36 +239,6 @@ TEST(TowerDemo, NativeRunnerWithoutStages)
     params.include_optical_errors = false;
     params.include_sun_shape_errors = false;
     params.seed = 12345;
-
-    // // We can go over all the elements added
-    // for (auto iter = sd.get_iterator();
-    //      !sd.is_at_end(iter);
-    //      ++iter)
-    // {
-    //     // iter is a iterator over the storing container which is a map
-    //     // so that the iterator gives the key value pair
-    //     element_id id = iter->first;
-    //     // `element_ptr` is a std::shared_pointer to an Element
-    //     element_ptr el = iter->second;
-    //     std::cout << "------------\n"
-    //               << "Element ID: " << id
-    //               << "\nElement name: " << el->get_name()
-    //               << "\nIs Stage: " << el->is_stage()
-    //               << "\nIs Composite: " << el->is_composite()
-    //               << "\nIs Single: " << el->is_single()
-    //               // Below are all the same in this case
-    //               << "\nOrigin (local): " << el->get_origin_local()
-    //               << "\nOrigin (stage): " << el->get_origin_stage()
-    //               << "\nOrigin (global): " << el->get_origin_global()
-    //               << "\n";
-    //     // NOTE: The above iteration includes StageElements (e.g. stages),
-    //     // CompositeElements (which are collections of elements), as well as
-    //     // SingleElements (actual physical elements that interact with rays).
-    //     // We can distinguish between them by calling the various `is_XXXX`
-    //     // methods as seen above. For runners that put everything in global
-    //     // coordinates, anything that is not a SingleElement (so `is_single`
-    //     // returns true) can be ignored.
-    // }
 
     NativeRunner runner;
     RunnerStatus sts = runner.initialize();
@@ -340,19 +280,6 @@ TEST(TowerDemo, NativeRunnerWithErrors)
     foptics->reflectivity = 0.0;
     absorber->set_name("Absorber");
 
-    // // Absorber -- Cylindrical -- MAY NOT WORK DUE TO UNIMPLEMENTED CODE!
-    // auto absorber = make_element<SingleElement>();
-    // const double r = 5.0;
-    // absorber->set_origin(0.0, -r, 0.0);
-    // absorber->set_zrot(0.0);
-    // absorber->set_aim_vector(0.0, 100.0, -(r + 50.0));
-    // // These are the default options but to show off the constructor
-    // OpticalProperties op(REFLECTION, 0.0, 0.0, 0.0, 0.0);
-    // // Alternative to getting the pointer and setting values
-    // absorber->set_front_optical_properties(op);
-    // absorber->set_surface(make_surface<Cylinder>());
-    // absorber->set_aperture(make_aperture<SingleAxisCurvatureSection>());
-
     // Make stage 1 -- second stage -- these can be added to SimulationData
     // in any order but should be numbered in the desired order
     auto st1 = make_stage(1);
@@ -360,6 +287,8 @@ TEST(TowerDemo, NativeRunnerWithErrors)
     st1->set_origin(0.0, 0.0, 0.0);
     // Set aim vector so stage and global coordinates are identical
     st1->set_aim_vector(0.0, 0.0, 1.0);
+    st1->set_zrot(0.0);
+    st1->compute_coordinate_rotations();
     st1->add_element(absorber);
     // Optional -- to help the user identify things
     st1->set_name("Stage 1--Absorber");
@@ -368,6 +297,8 @@ TEST(TowerDemo, NativeRunnerWithErrors)
     auto st0 = make_stage(0);
     st0->set_origin(0.0, 0.0, 0.0);
     st0->set_aim_vector(0.0, 0.0, 1.0);
+    st0->set_zrot(0.0);
+    st0->compute_coordinate_rotations();
     st0->set_name("Stage 0--Reflectors");
 
     Vector3d rvec, svec, avec;
