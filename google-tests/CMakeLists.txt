@@ -26,7 +26,7 @@ set(STRACE_SRC ../coretrace/strace)
 set(CORETRACE ../coretrace/stapi.cpp)
 set(STRACE ../coretrace/strace/strace.cpp)
 set(ENV{SOLTRACE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
-
+set(BBOX_CALCULATOR ../coretrace/bbox_calculator.cpp)
 
 file(COPY ${SAMPLE_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${GROUND_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
@@ -40,6 +40,7 @@ add_executable( Test
 	${SOLTRACE_EXAMPLE_TESTS}
 	${CORETRACE}
 	${STRACE}
+	${BBOX_CALCULATOR}
 )
 
 if (ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")

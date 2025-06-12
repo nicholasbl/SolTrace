@@ -24,6 +24,7 @@ include_directories(.)
 set(CORETRACE_SRC
 	interpolate.cpp
 	apertureplane.cpp
+	bbox_calculator.cpp
 	determineelementintersectionnew.cpp
 	dumpsys.cpp
 	embree_helper.cpp
@@ -51,6 +52,7 @@ set(CORETRACE_SRC
 
 # Add header files for IDE visibility
 set(CORETRACE_HEADERS
+	bbox_calculator.h
 	embree_helper.h
 	hpvm.h
 	interpolate.h
