@@ -194,12 +194,13 @@ void bbox_test_single_element(TElement* element, double gen_size_factor, int N_g
 	}
 
 	// SUCCESS
-	SUCCEED() << "Aperture: " << element->ShapeIndex 
+	cerr << "Aperture: " << element->ShapeIndex 
 		<< "Surface: " << element->SurfaceIndex 
 		<< "bbox_hitrates: ["
 		<< bbox_hitrates[0] << ", "
 		<< bbox_hitrates[1] << ", "
-		<< bbox_hitrates[2] << "]";
+		<< bbox_hitrates[2] << "]"
+		<< endl;
 
 	return;
 }
