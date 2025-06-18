@@ -212,7 +212,8 @@ void QuadricSurfaceClosedForm(
 			//makes sure to get shortest ray path on valid side of surface; 10-05-10    for open surface of parabola
 			//if cylinder, then PosXYZ[3] will always be less than or equal to Element.Zaperture so never passes this test.
 			// Test for  cylinder follows below.
-			if (PosXYZ[2] > Element->ZAperture)
+			if (!((Element->SurfaceIndex == 't') || (Element->SurfaceIndex == 'T'))
+				&& (PosXYZ[2] > Element->ZAperture))
 			{
 				PosXYZ[0] = PosLoc[0] + t1*CosLoc[0];
 				PosXYZ[1] = PosLoc[1] + t1*CosLoc[1];
