@@ -19,6 +19,9 @@ public:
                           double *PathLength);
 
     void surface_normal(const double PosXYZ[3], double DFXYZ[3]);
+
+    virtual double compute_z_aperture(aperture_ptr ap);
+
 private:
     double radius;
     // double length_x;

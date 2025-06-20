@@ -3,6 +3,7 @@
 
 #include "surface_intersection_calculator.hpp"
 
+#include "aperture.hpp"
 #include "surface.hpp"
 
 class ParabolaCalculator : public SurfaceIntersectionCalculator
@@ -18,6 +19,9 @@ public:
                           double *PathLength);
 
     void surface_normal(const double PosXYZ[3], double DFXYZ[3]);
+
+    virtual double compute_z_aperture(aperture_ptr ap);
+
 private:
     double cx;
     double cy;

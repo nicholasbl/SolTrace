@@ -1,8 +1,10 @@
 
 #include "flat_calculator.hpp"
 
+#include <cassert>
 #include <cmath>
 
+#include "matvec.hpp"
 #include "surface.hpp"
 
 FlatCalculator::FlatCalculator(surface_ptr surf)
@@ -68,4 +70,9 @@ int FlatCalculator::intersect(const double PosLoc[3],
     }
 
     return sts;
+}
+
+double FlatCalculator::compute_z_aperture(aperture_ptr ap)
+{
+    return 0.0;
 }

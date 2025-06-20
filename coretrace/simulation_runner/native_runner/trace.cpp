@@ -179,7 +179,7 @@ void FindElementHit(
 				// 	Element->SurfaceIndex == 'r' ||
 				// 	Element->SurfaceIndex == 'R')
 				// TODO: Is this the correct thing to do?
-				// if (PosRaySurfElement[2] <= Element->ZAperture)
+				if (PosRaySurfElement[2] <= Element->ZAperture)
 				{
 					StageHit = true;
 					LastPathLength = PathLength;

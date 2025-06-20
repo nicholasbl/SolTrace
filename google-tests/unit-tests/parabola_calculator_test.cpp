@@ -22,6 +22,11 @@
 //    t2 = (-b + sqrt(Delta)) / (2a) -- positive root
 // From these last two, we always have t1 < t2.
 
+double focal_length(double c)
+{
+    return 0.5 / c;
+}
+
 TEST(ParabolaCalculator, Case1)
 {
     // Case: a == 0, t <= 0 -- returns no solution
@@ -133,7 +138,8 @@ TEST(ParabolaCalculator, Case4)
     Vector3d mt;
     Vector3d gradf;
 
-    auto parabola = make_surface<Parabola>(0.5 / cx, 0.5 / cy);
+    auto parabola = make_surface<Parabola>(focal_length(cx),
+                                           focal_length(cy));
     ParabolaCalculator pcalc(parabola);
     int sts = pcalc.intersect(x0.data, m.data,
                               xt.data, mt.data, gradf.data, &t);
@@ -169,7 +175,8 @@ TEST(ParabolaCalculator, Case5)
     Vector3d mt;
     Vector3d gradf;
 
-    auto parabola = make_surface<Parabola>(0.5 / cx, 0.5 / cy);
+    auto parabola = make_surface<Parabola>(focal_length(cx),
+                                           focal_length(cy));
     ParabolaCalculator pcalc(parabola);
     int sts = pcalc.intersect(x0.data, m.data,
                               xt.data, mt.data, gradf.data, &t);
@@ -207,7 +214,8 @@ TEST(ParabolaCalculator, Case6)
     Vector3d mt;
     Vector3d gradf;
 
-    auto parabola = make_surface<Parabola>(0.5, 0.25);
+    auto parabola = make_surface<Parabola>(focal_length(cx),
+                                           focal_length(cy));
     ParabolaCalculator pcalc(parabola);
     int sts = pcalc.intersect(x0.data, m.data,
                               xt.data, mt.data, gradf.data, &t);
@@ -216,4 +224,27 @@ TEST(ParabolaCalculator, Case6)
     EXPECT_TRUE(is_identical(xt, zero));
     EXPECT_TRUE(is_identical(mt, zero));
     EXPECT_TRUE(is_identical(gradf, zero));
+}
+
+TEST(ParabolaCalculator, ZAperture)
+{
+    const double TOL = 1e-12;
+
+    double cx = 1.0;
+    double cy = 2.0;
+    double r = 2.5;
+    auto ap = make_aperture<Circle>(2.0 * r);
+    auto parabola = make_surface<Parabola>(focal_length(cx),
+                                           focal_length(cy));
+    ParabolaCalculator pcalc(parabola);
+    double zap = pcalc.compute_z_aperture(ap);
+    double zmax = 0.5 * cy * r * r;
+    EXPECT_NEAR(zap, zmax, TOL);
+
+    // Swap x and y coefficients
+    parabola = make_surface<Parabola>(focal_length(cy),
+                                      focal_length(cx));
+    ParabolaCalculator pcalc_swap(parabola);
+    zap = pcalc.compute_z_aperture(ap);
+    EXPECT_NEAR(zap, zmax, TOL);
 }

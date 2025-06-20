@@ -3,6 +3,8 @@
 
 #include <memory>
 
+#include "aperture.hpp"
+
 class SurfaceIntersectionCalculator
 {
 public:
@@ -18,6 +20,8 @@ public:
                           double CosKLM[3],
                           double DFXYZ[3],
                           double *PathLength) = 0;
+
+    virtual double compute_z_aperture(aperture_ptr ap) = 0;
 
 private:
 };

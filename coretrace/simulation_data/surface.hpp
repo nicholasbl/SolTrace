@@ -33,8 +33,6 @@ struct Cone : public Surface
     virtual ~Cone() {}
 };
 
-// TODO: Add needed subfields
-
 struct Cylinder : public Surface
 {
     double radius;
@@ -70,6 +68,8 @@ struct Parabola : public Surface
     }
     virtual ~Parabola() {}
 };
+
+// TODO: Add needed subfields
 
 struct Sphere : public Surface
 {

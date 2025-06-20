@@ -94,3 +94,9 @@ TEST(FlatCalculator, Case3)
     EXPECT_NEAR(gradf[1], 0.0, TOL);
     EXPECT_NEAR(gradf[2], 1.0, TOL);
 }
+
+TEST(FlatCalculator, ZAperture)
+{
+    FlatCalculator fcalc(nullptr);
+    EXPECT_EQ(fcalc.compute_z_aperture(nullptr), 0.0);
+}

@@ -143,3 +143,9 @@ void CylinderCalculator::surface_normal(const double PosXYZ[3],
     DFXYZ[2] = 2.0 * PosXYZ[2];
     return;
 }
+
+double CylinderCalculator::compute_z_aperture(aperture_ptr ap)
+{
+    double zmax = 2.0 * this->radius;
+    return zmax;
+}

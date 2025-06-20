@@ -57,6 +57,10 @@ private:
     ElementParameters eparams;
     
     TSystem tsys;
+
+    bool set_aperture_planes(TSystem *tsys);
+    bool set_aperture_planes(tstage_ptr stage);
+    bool aperture_plane(telement_ptr Element);
 };
 
 #endif

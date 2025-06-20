@@ -36,6 +36,12 @@ public:
     }
     double cx;
     double cy;
+
+    // Unused -- here so that this is not a pure virtual class
+    virtual double compute_z_aperture(aperture_ptr ap)
+    {
+        return 0.0;
+    }
 };
 
 TEST(NewtonCalculator, Case1)

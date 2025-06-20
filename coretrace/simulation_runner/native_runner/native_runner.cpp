@@ -1,8 +1,9 @@
 
+#include "native_runner.hpp"
+
 #include <map>
 // #include <algorithm>
 
-#include "native_runner.hpp"
 #include "simulation_parameters.hpp"
 #include "simulation_data.hpp"
 #include "trace.hpp"
@@ -64,6 +65,8 @@ RunnerStatus NativeRunner::setup_sun(const SimulationData *data)
 
 RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
 {
+    // TODO: Improve error messages from this function.
+
     RunnerStatus sts = RunnerStatus::SUCCESS;
     auto my_map = std::map<int_fast64_t, tstage_ptr>();
 
@@ -130,6 +133,13 @@ RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
         this->tsys.StageList.push_back(iter->second);
     }
 
+    if (sts == RunnerStatus::SUCCESS)
+    {
+        // Compute and set ZAperture field in each element
+        bool success = set_aperture_planes(&this->tsys);
+        sts = success ? RunnerStatus::SUCCESS : RunnerStatus::ERROR;
+    }
+
     return sts;
 }
 
@@ -162,4 +172,53 @@ RunnerStatus NativeRunner::report_simulation(SimulationResult *result,
 {
     // TODO: Implement this
     return RunnerStatus::SUCCESS;
+}
+
+bool NativeRunner::set_aperture_planes(TSystem *tsys)
+{
+    bool retval;
+
+    for (auto iter = tsys->StageList.cbegin();
+         iter != tsys->StageList.cend();
+         ++iter)
+    {
+        retval = this->set_aperture_planes(*iter);
+        if (!retval)
+            break;
+    }
+
+    return retval;
+}
+
+bool NativeRunner::set_aperture_planes(tstage_ptr stage)
+{
+    bool retval;
+
+    for (auto eiter = stage->ElementList.begin();
+         eiter != stage->ElementList.end();
+         ++eiter)
+    {
+        retval = aperture_plane(*eiter);
+        if (!retval)
+            break;
+    }
+
+    return retval;
+}
+
+bool NativeRunner::aperture_plane(telement_ptr Element)
+{
+    /*{Calculates the aperture plane of the element in element coord system.
+    Applicable to rotationally symmetric apertures surfaces with small
+    curvature: g, s, p, o, c, v, m, e, r, i.
+      input - Element = Element record containing geometry of element
+      output -
+             - Element.ZAperture  where ZAperture is the distance from
+               the origin to the plane.
+    }*/
+
+    Element->ZAperture =
+        Element->icalc->compute_z_aperture(Element->aperture);
+
+    return true;
 }
