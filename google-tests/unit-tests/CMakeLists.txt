@@ -28,6 +28,7 @@ set(UNIT_TEST_SRC
 	newton_calculator_test.cpp
 	parabola_calculator_test.cpp
 	native_runner_test.cpp
+	parabolic_trough_test.cpp
 	tower_demo.cpp
 )
 

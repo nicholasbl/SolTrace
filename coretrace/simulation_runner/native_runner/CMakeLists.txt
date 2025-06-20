@@ -12,6 +12,7 @@ set(NATIVE_RUNNER_SRC
     # ${CMAKE_SOURCE_DIR}/coretrace/treemesh.cpp
     # ${CMAKE_SOURCE_DIR}/coretrace/types.cpp
     calculator_factory.cpp
+    cylinder_calculator.cpp
     determine_element_intersection_new.cpp
     # element_intersection.cpp
     flat_calculator.cpp

@@ -111,6 +111,13 @@ bool CompositeElement::replace_element(element_id id, element_ptr el)
     return replaced;
 }
 
+void CompositeElement::clear()
+{
+    this->number_of_elements = 0;
+    this->my_elements.clear();
+    return;
+}
+
 int CompositeElement::update_orientation(const DateTime &dt,
                                          const Vector3d &source,
                                          const Vector3d &target)

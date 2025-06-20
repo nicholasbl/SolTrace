@@ -51,6 +51,7 @@
 
 #include <cstdint>
 #include <exception>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -171,12 +172,13 @@ struct TElement
 	std::string Comment;
 	// mjw element number in the stage - unique ID in order
 	// of addition to element list
-	// int element_number;
-	element_id element_number;
+	int_fast64_t element_number;
+	element_id sim_data_id;
 };
 
 using telement_ptr = typename std::shared_ptr<TElement>;
 telement_ptr make_telement(element_ptr el,
+						   int_fast64_t el_num,
 						   const ElementParameters &eparams);
 
 struct TSun
@@ -285,6 +287,7 @@ struct TStage
 
 	// std::vector<TElement*> ElementList;
 	std::vector<telement_ptr> ElementList;
+	// std::map<element_id, telement_ptr> ElementList;
 
 	// calculated
 	double Euler[3];

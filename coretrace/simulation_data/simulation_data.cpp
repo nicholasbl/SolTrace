@@ -4,7 +4,9 @@
 
 #include "composite_element.hpp"
 
-SimulationData::SimulationData() : number_of_elements(0)
+SimulationData::SimulationData() : number_of_elements(0),
+                                   my_elements(1),
+                                   my_sources(0)
 {
     return;
 }

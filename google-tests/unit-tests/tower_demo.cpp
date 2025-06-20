@@ -260,7 +260,7 @@ TEST(TowerDemo, NativeRunnerWithoutStages)
 
 TEST(TowerDemo, NativeRunnerWithErrors)
 {
-        SimulationData sd;
+    SimulationData sd;
 
     // Sun
     auto sun = make_ray_source<Sun>();

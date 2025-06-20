@@ -58,7 +58,7 @@ void SetupPTOptimizations(
 	{
 		TElement *el = System->StageList[0]->ElementList.at(i).get();
 
-		el->element_number = i + 1; // use index for element number
+		// el->element_number = i + 1; // use index for element number
 
 		d_elm = el->aperture->diameter_circumscribed_circle();
 

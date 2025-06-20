@@ -176,12 +176,14 @@ TEST(Aperture, Hexagon)
 
 TEST(Aperture, Rectangle)
 {
+    /**** Common Constants ****/
     const double TOL = 1e-12;
     const double D = 2.0;
     const double LY = 1.0;
     const double LX = sqrt(D * D - LY * LY);
     const double AREA = LY * LX;
 
+    /**** Rectangle that is at the origin ****/
     // Inside
     const double X1 = -0.5 * LX;
     const double Y1 = 0.5 * LY;
@@ -218,4 +220,45 @@ TEST(Aperture, Rectangle)
     EXPECT_EQ(ap->aperture_area(), rect->aperture_area());
     EXPECT_TRUE(ap->is_in(X1, Y1));
     EXPECT_FALSE(ap->is_in(X3, Y3));
+
+    /**** Rectangle that is shifted from the origin ****/
+    const double XL = -1.0;
+    const double YL = -2.0;
+
+    // Inside
+    const double X6 = 0.5 * LX + XL;
+    const double Y6 = 0.5 * LY + YL;
+    // Outside left
+    const double X7 = -2.0 * LX + XL;
+    const double Y7 = Y1 + YL;
+    // Outside right
+    const double X8 = 2.0 * LX + XL;
+    const double Y8 = -Y1 + YL;
+    // Outside top
+    const double X9 = X1 + XL;
+    const double Y9 = 1.5 * LY + YL;
+    // Outside bottom
+    const double X10 = -X1 + XL;
+    const double Y10 = -1.5 * LY + YL;
+
+    auto rect_shift = make_aperture<Rectangle>(LX, LY, XL, YL);
+
+    EXPECT_NEAR(rect_shift->diameter_circumscribed_circle(), D, TOL);
+    EXPECT_NEAR(rect_shift->radius_circumscribed_circle(), 0.5 * D, TOL);
+    EXPECT_NEAR(rect_shift->aperture_area(), AREA, TOL);
+
+    EXPECT_TRUE(rect_shift->is_in(X6, Y6));
+    EXPECT_FALSE(rect_shift->is_in(X7, Y7));
+    EXPECT_FALSE(rect_shift->is_in(X8, Y8));
+    EXPECT_FALSE(rect_shift->is_in(X9, Y9));
+    EXPECT_FALSE(rect_shift->is_in(X10, Y10));
+
+    aperture_ptr ap_shift = rect_shift->make_copy();
+    EXPECT_EQ(ap_shift->diameter_circumscribed_circle(),
+              rect_shift->diameter_circumscribed_circle());
+    EXPECT_EQ(ap_shift->radius_circumscribed_circle(),
+              rect_shift->radius_circumscribed_circle());
+    EXPECT_EQ(ap_shift->aperture_area(), rect_shift->aperture_area());
+    EXPECT_TRUE(ap_shift->is_in(X6, Y6));
+    EXPECT_FALSE(ap_shift->is_in(X8, Y8));
 }

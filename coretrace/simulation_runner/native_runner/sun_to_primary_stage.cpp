@@ -101,20 +101,35 @@ bool SunToPrimaryStage(
 	//{Now calculate center of mass of projected distribution. Added 09/26/05}
 	Xsum = 0.0;
 	Ysum = 0.0;
-	for (i = 0; i < Stage->ElementList.size(); i++)
+	// for (i = 0; i < Stage->ElementList.size(); i++)
+	// {
+	// 	// if (!Stage->ElementList[i]->Enabled)
+	// 	// 	continue;
+	// 	TransformToLocal(Stage->ElementList[i]->Origin, CosDum, Origin, RRefToLoc, PosLoc, CosLoc);
+	// 	// Now have PosLoc which is the projected position of element[i] in xy plane of sun coord. system
+	// 	Xsum = Xsum + PosLoc[0];
+	// 	Ysum = Ysum + PosLoc[1];
+	// }
+
+	telement_ptr elem;
+	for (auto iter = Stage->ElementList.cbegin();
+		 iter != Stage->ElementList.cend();
+		 ++iter)
 	{
-		// if (!Stage->ElementList[i]->Enabled)
-		// 	continue;
-		TransformToLocal(Stage->ElementList[i]->Origin, CosDum, Origin, RRefToLoc, PosLoc, CosLoc);
-		// Now have PosLoc which is the projected position of element[i] in xy plane of sun coord. system
-		Xsum = Xsum + PosLoc[0];
-		Ysum = Ysum + PosLoc[1];
+		// TransformToLocal(iter->second->Origin, CosDum, Origin,
+		// 				 RRefToLoc, PosLoc, CosLoc);
+		elem = *iter;
+		TransformToLocal(elem->Origin, CosDum, Origin,
+						 RRefToLoc, PosLoc, CosLoc);
+		Xsum += PosLoc[0];
+		Ysum += PosLoc[1];
 	}
+
 	Sun->Xcm = Xsum / Stage->ElementList.size(); // center of mass of distribution of element locations as projected in sun coord.
 	Sun->Ycm = Ysum / Stage->ElementList.size(); // system.   Added 09/26/05
 
 	size_t nelements = 0;
-	telement_ptr elem = nullptr;
+	elem = nullptr;
 
 	// for (i = 0; i < Stage->ElementList.size(); i++)
 	for (auto iter = Stage->ElementList.cbegin();
@@ -124,10 +139,12 @@ bool SunToPrimaryStage(
 		// if (!Stage->ElementList[i]->Enabled)
 		// 	continue;
 
+		// elem = iter->second;
 		elem = *iter;
 
 		// TransformToLocal(Stage->ElementList[i]->Origin, CosDum, Origin, RRefToLoc, PosLoc, CosLoc);
-		TransformToLocal(elem->Origin, CosDum, Origin, RRefToLoc, PosLoc, CosLoc);
+		TransformToLocal(elem->Origin, CosDum, Origin,
+						 RRefToLoc, PosLoc, CosLoc);
 		// Now have PosLoc which is the projected position of element[i] in xy plane of sun coord. system
 		x = PosLoc[0] - Sun->Xcm; // changes origin to center of mass of all elements  09/26/05
 		y = PosLoc[1] - Sun->Ycm;

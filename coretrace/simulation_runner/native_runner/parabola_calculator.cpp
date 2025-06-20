@@ -18,8 +18,17 @@ ParabolaCalculator::ParabolaCalculator(surface_ptr surf)
     assert(para != nullptr);
 
     // TODO: Check that this is the correct thing to do
-    this->cx = para->vertex_x_curv;
-    this->cy = para->vertex_y_curv;
+    // this->cx = para->vertex_x_curv;
+    // this->cy = para->vertex_y_curv;
+
+    double fx = para->focal_length_x;
+    double fy = para->focal_length_y;
+    this->cx = fabs(fx) < 1e-12 ? 0.0 : 0.5 / fx;
+    this->cy = fabs(fy) < 1e-12 ? 0.0 : 0.5 / fy;
+
+    // std::cout << "cx: " << cx
+    //           << "\ncy: " << cy
+    //           << std::endl;
 
     return;
 }
@@ -36,6 +45,8 @@ int ParabolaCalculator::intersect(const double PosLoc[3],
                                   double *PathLength)
 {
     int sts = 0;
+
+    // std::cout << "Computing parabola intersection" << std::endl;
 
     double x0 = PosLoc[0], y0 = PosLoc[1], z0 = PosLoc[2];
     double mx = CosLoc[0], my = CosLoc[1], mz = CosLoc[2];
@@ -113,6 +124,8 @@ int ParabolaCalculator::intersect(const double PosLoc[3],
 
     if (sts == 0)
         CopyVec3(CosKLM, CosLoc);
+
+    // std::cout << "Exiting with status: " << sts << std::endl;
 
     return sts;
 }

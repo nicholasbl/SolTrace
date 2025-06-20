@@ -8,6 +8,7 @@ set(SIMDATA_SRC
     composite_element.cpp
     element.cpp
     matvec.cpp
+    parabolic_trough.cpp
     simulation_data.cpp
     single_element.cpp
     virtual_element.cpp

@@ -41,7 +41,6 @@ ElementBase::~ElementBase()
 
 Vector3d ElementBase::get_origin_stage() const
 {
-    // TODO: Implement this
     Vector3d origin_stage;
     auto ref_el = this->reference_element;
     if (this->is_stage())

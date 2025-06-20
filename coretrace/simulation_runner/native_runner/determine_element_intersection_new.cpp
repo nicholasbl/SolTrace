@@ -49,6 +49,12 @@ void DetermineElementIntersectionNew(
     x = PosRayOut[0];
     y = PosRayOut[1];
 
+    // std::cout << "x: " << x << "  y: " << y
+    //           << "\nis in: " << Element->aperture->is_in(x, y)
+    //           << "\nz: " << PosRayOut[2]
+    //           << "\nZAp: " << Element->ZAperture
+    //           << std::endl;
+
     if (Element->aperture->is_in(x, y))
     {
         *BacksideFlag = DOT(CosRayIn, DFXYZ) < 0 ? 0 : 1;

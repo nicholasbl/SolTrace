@@ -25,7 +25,7 @@ public:
         return std::make_shared<C>(std::forward<Args>(args)...);
     }
 
-    Container() : next_id(0) {}
+    Container(K start=0) : next_id(start) {}
     ~Container() { this->clear(); }
 
     K add_item(value_pointer item)
@@ -77,7 +77,7 @@ public:
         return retval;
     }
 
-    uint64_t get_number_of_items() const
+    uint_fast64_t get_number_of_items() const
     {
         return this->container.size();
     }

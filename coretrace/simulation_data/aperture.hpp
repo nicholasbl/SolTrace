@@ -214,14 +214,26 @@ struct Rectangle : public Aperture
 {
     double x_length;
     double y_length;
-    // Rectangle() : Aperture(RECTANGLE),
-    //               x_length(0.0),
-    //               y_length(0.0)
-    // {
-    // }
-    Rectangle(double xlen, double ylen) : Aperture(RECTANGLE),
-                                          x_length(xlen),
-                                          y_length(ylen)
+    // NOTE: The point (x_coord, y_coord) gives the location of the
+    // lower left hand corner of the rectangle in the xy-plane.
+    double x_coord;
+    double y_coord;
+    Rectangle(double xlen, double ylen)
+        : Aperture(RECTANGLE),
+          x_length(xlen),
+          y_length(ylen)
+    {
+        // Default to rectangle centered at the origin.
+        this->x_coord = -0.5 * this->x_length;
+        this->y_coord = -0.5 * this->y_length;
+        return;
+    }
+    Rectangle(double xlen, double ylen, double xl, double yl)
+        : Aperture(RECTANGLE),
+          x_length(xlen),
+          y_length(ylen),
+          x_coord(xl),
+          y_coord(yl)
     {
     }
     virtual ~Rectangle() {}
@@ -238,9 +250,11 @@ struct Rectangle : public Aperture
 
     virtual bool is_in(double x, double y) const
     {
-        double xh = 0.5 * this->x_length;
-        double yh = 0.5 * this->y_length;
-        return (-xh <= x && x <= xh && -yh <= y && y <= yh);
+        double xl = this->x_coord;
+        double yl = this->y_coord;
+        double xu = xl + this->x_length;
+        double yu = yl + this->y_length;
+        return (xl <= x && x <= xu && yl <= y && y <= yu);
     }
 
     virtual aperture_ptr make_copy() const

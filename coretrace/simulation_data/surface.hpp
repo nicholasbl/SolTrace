@@ -37,7 +37,10 @@ struct Cone : public Surface
 
 struct Cylinder : public Surface
 {
-    Cylinder() : Surface(CYLINDER) {}
+    double radius;
+    Cylinder(double r) : Surface(CYLINDER), radius(r)
+    {
+    }
     virtual ~Cylinder() {}
 };
 
@@ -52,17 +55,17 @@ struct Parabola : public Surface
     // z(x,y) = (cx * x^2 + cy * y^2) / 2
     // TODO: Assuming that vertex_x_curv gives cx and
     // that vertex_y_curv gives cy
-    double vertex_x_curv;
-    double vertex_y_curv;
+    double focal_length_x;
+    double focal_length_y;
 
     // Parabola() : Surface(PARABOLA),
     //              vertex_x_curv(0.0),
     //              vertex_y_curv(0.0)
     // {
     // }
-    Parabola(double x_curv, double y_curv) : Surface(PARABOLA),
-                                             vertex_x_curv(x_curv),
-                                             vertex_y_curv(y_curv)
+    Parabola(double focal_x, double focal_y) : Surface(PARABOLA),
+                                               focal_length_x(focal_x),
+                                               focal_length_y(focal_y)
     {
     }
     virtual ~Parabola() {}

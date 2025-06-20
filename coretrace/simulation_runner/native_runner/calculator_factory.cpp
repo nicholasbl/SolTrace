@@ -1,6 +1,7 @@
 
 #include "calculator_factory.hpp"
 
+#include "cylinder_calculator.hpp"
 #include "flat_calculator.hpp"
 #include "native_runner_types.hpp"
 #include "newton_calculator.hpp"
@@ -29,9 +30,14 @@ calculator_ptr CalculatorFactory::make_calculator(
     {
         calc = std::make_shared<FlatCalculator>(surf);
     }
+    else if (st == CYLINDER)
+    {
+        calc = std::make_shared<CylinderCalculator>(surf, ap);
+    }
     else
     {
-        // TODO: Error message here?
+        // TODO: Error message here!
+        assert(false);
     }
     return calc;
 }

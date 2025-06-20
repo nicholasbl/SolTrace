@@ -10,7 +10,7 @@ TEST(Surface, Typing)
     // cone = make_surface<Cone>();
     // EXPECT_EQ(cone->get_type(), CONE);
 
-    auto cylinder = make_surface<Cylinder>();
+    auto cylinder = make_surface<Cylinder>(1.0);
     EXPECT_EQ(cylinder->get_type(), CYLINDER);
 
     auto flat = make_surface<Flat>();

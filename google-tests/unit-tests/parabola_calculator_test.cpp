@@ -38,7 +38,7 @@ TEST(ParabolaCalculator, Case1)
     Vector3d mt;
     Vector3d gradf;
 
-    auto parabola = make_surface<Parabola>(1.0, 2.0);
+    auto parabola = make_surface<Parabola>(0.5, 0.25);
     ParabolaCalculator pcalc(parabola);
     int sts = pcalc.intersect(x0.data, m.data,
                               xt.data, mt.data, gradf.data, &t);
@@ -70,7 +70,7 @@ TEST(ParabolaCalculator, Case2)
     Vector3d mt;
     Vector3d gradf;
 
-    auto parabola = make_surface<Parabola>(1.0, 2.0);
+    auto parabola = make_surface<Parabola>(0.5, 0.25);
     ParabolaCalculator pcalc(parabola);
     int sts = pcalc.intersect(x0.data, m.data,
                               xt.data, mt.data, gradf.data, &t);
@@ -102,7 +102,7 @@ TEST(ParabolaCalculator, Case3)
     Vector3d mt;
     Vector3d gradf;
 
-    auto parabola = make_surface<Parabola>(1.0, 2.0);
+    auto parabola = make_surface<Parabola>(0.5, 0.25);
     ParabolaCalculator pcalc(parabola);
     int sts = pcalc.intersect(x0.data, m.data,
                               xt.data, mt.data, gradf.data, &t);
@@ -133,7 +133,7 @@ TEST(ParabolaCalculator, Case4)
     Vector3d mt;
     Vector3d gradf;
 
-    auto parabola = make_surface<Parabola>(cx, cy);
+    auto parabola = make_surface<Parabola>(0.5 / cx, 0.5 / cy);
     ParabolaCalculator pcalc(parabola);
     int sts = pcalc.intersect(x0.data, m.data,
                               xt.data, mt.data, gradf.data, &t);
@@ -169,7 +169,7 @@ TEST(ParabolaCalculator, Case5)
     Vector3d mt;
     Vector3d gradf;
 
-    auto parabola = make_surface<Parabola>(cx, cy);
+    auto parabola = make_surface<Parabola>(0.5 / cx, 0.5 / cy);
     ParabolaCalculator pcalc(parabola);
     int sts = pcalc.intersect(x0.data, m.data,
                               xt.data, mt.data, gradf.data, &t);
@@ -207,7 +207,7 @@ TEST(ParabolaCalculator, Case6)
     Vector3d mt;
     Vector3d gradf;
 
-    auto parabola = make_surface<Parabola>(1.0, 2.0);
+    auto parabola = make_surface<Parabola>(0.5, 0.25);
     ParabolaCalculator pcalc(parabola);
     int sts = pcalc.intersect(x0.data, m.data,
                               xt.data, mt.data, gradf.data, &t);

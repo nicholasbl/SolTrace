@@ -94,6 +94,7 @@ RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
         // set to correspond to global coordinates. This is necessary
         // so that the element coordinate setup in make_element are
         // correct.
+        int_fast64_t element_number = 1;
         auto stage = make_tstage();
         stage->ElementList.reserve(data->get_number_of_elements());
         for (auto iter = data->get_const_iterator();
@@ -103,8 +104,13 @@ RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
             element_ptr el = iter->second;
             if (el->is_enabled() && el->is_single())
             {
-                telement_ptr tel = make_telement(el, this->eparams);
+                telement_ptr tel = make_telement(el,
+                                                 element_number,
+                                                 this->eparams);
                 stage->ElementList.push_back(tel);
+                ++element_number;
+                // stage->ElementList.insert(
+                //     std::make_pair(tel->element_number, tel));
             }
         }
         my_map.insert(std::make_pair(0, stage));

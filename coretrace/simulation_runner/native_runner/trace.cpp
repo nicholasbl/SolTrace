@@ -115,15 +115,23 @@ void FindElementHit(
 			if (in_multi_hit_loop)
 			{
 				if (AsPowerTower)
+				{
 					Element = (TElement *)reflint_elements.at(j);
+				}
 				else
+				{
 					Element = Stage->ElementList[j].get();
+				}
 			}
 			else
+			{
 				Element = (TElement *)sunint_elements.at(j);
+			}
 		}
 		else
+		{
 			Element = Stage->ElementList[j].get();
+		}
 
 		// if (!Element->Enabled)
 		// 	continue;
@@ -171,14 +179,15 @@ void FindElementHit(
 				// 	Element->SurfaceIndex == 'r' ||
 				// 	Element->SurfaceIndex == 'R')
 				// TODO: Is this the correct thing to do?
-				if (PosRaySurfElement[2] <= Element->ZAperture)
+				// if (PosRaySurfElement[2] <= Element->ZAperture)
 				{
 					StageHit = true;
 					LastPathLength = PathLength;
 					CopyVec3(LastPosRaySurfElement, PosRaySurfElement);
 					CopyVec3(LastCosRaySurfElement, CosRaySurfElement);
 					CopyVec3(LastDFXYZ, DFXYZ);
-					LastElementNumber = ((i == 0 && !PT_override) ? Element->element_number : j + 1); // mjw change from j index to element id
+					// LastElementNumber = ((i == 0 && !PT_override) ? Element->element_number : j + 1); // mjw change from j index to element id
+					LastElementNumber = Element->element_number;
 					LastRayNumber = RayNumber;
 					TransformToReference(PosRaySurfElement, CosRaySurfElement,
 										 Element->Origin, Element->RLocToRef,
@@ -398,8 +407,15 @@ bool trace_native(
 			// Get Ray
 			if (i == 0)
 			{
+
+				// if (System->SunRayCount >= MaxNumberOfRays)
+				// {
+				// 	std::cout << "Hit max rays. Terminating..." << std::endl;
+				// 	break;
+				// }
+
 				// static unsigned count = 0;
-				// // std::cout << "Making ray " << count << "..." << std::endl;
+				// std::cout << "Making ray " << count << "..." << std::endl;
 				// if (count >= MaxNumberOfRays)
 				// {
 				// 	std::cout << "Hit max rays. Terminating..." << std::endl;
@@ -446,6 +462,11 @@ bool trace_native(
 			TransformToLocal(PosRayGlob, CosRayGlob,
 							 Stage->Origin, Stage->RRefToLoc,
 							 PosRayStage, CosRayStage);
+
+			// Vector3d rpos(PosRayStage);
+			// Vector3d rdir(CosRayStage);
+			// std::cout << "Ray stage position: " << rpos
+			// 			  << "\nRay stage direction: " << rdir << std::endl;
 
 			// // Update callback
 			// if (callback != 0
@@ -564,6 +585,7 @@ bool trace_native(
 				{
 					// trace through the interaction
 					telement_ptr optelm = Stage->ElementList[p_ray->element - 1];
+					// telement_ptr optelm = Stage->ElementList[p_ray->element];
 
 					if (LastHitBackSide)
 						optics = &optelm->Optics.Back;
@@ -649,14 +671,16 @@ bool trace_native(
 						myrng_counter++;
 						// ray was fully absorbed, so indicate by negating
 						// the element number
-						p_ray->element = 0 - p_ray->element;
+						p_ray->element = -p_ray->element;
 						RayIsAbsorbed = true;
 						break;
 					}
 				}
 
-				// Process Interaction
-				int k = abs(p_ray->element) - 1;
+				// // TODO: Make sure below maps to correct element...
+				// // Process Interaction
+				// int k = abs(p_ray->element) - 1;
+				int_fast64_t k = abs(p_ray->element) - 1;
 				ProcessInteraction(System, myrng, IncludeSunShape,
 								   optics,
 								   IncludeErrors,

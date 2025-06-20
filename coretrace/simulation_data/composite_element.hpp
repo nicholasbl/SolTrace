@@ -66,6 +66,7 @@ public:
     uint_fast64_t remove_element(element_id id);
     element_ptr get_element(element_id id);
     bool replace_element(element_id id, element_ptr el);
+    void clear();
 
     // uint64_t get_total_number_of_elements() const
     // {
