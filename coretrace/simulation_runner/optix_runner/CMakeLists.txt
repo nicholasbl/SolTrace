@@ -1,18 +1,11 @@
 Project(optix_runner)
 
-# need to find CUDA, optix, and optix_soltarce library
+find_package(CUDAToolkit REQUIRED)
 
-# before you define optix_runner
-add_library(optix_soltrace STATIC IMPORTED)
-
-set_target_properties(optix_soltrace PROPERTIES
-    IMPORTED_LOCATION
-        "C:/Users/fang/Documents/NREL_SOLAR/optix/interface_build/lib/Release/optix_soltrace.lib"
-    INTERFACE_INCLUDE_DIRECTORIES
-        "C:/Users/fang/Documents/NREL_SOLAR/optix/optixSoltraceDemos/interface;C:/Users/fang/Documents/NREL_SOLAR/optix/optixSoltraceDemos/lib;C:/Users/fang/Documents/NREL_SOLAR/optix/optixSoltraceDemos/cuda;C:/Users/fang/Documents/NREL_SOLAR/optix/optixSoltraceDemos;${CUDAToolkit_LIBRARY_ROOT}/include;${OptiX_ROOT_DIR}/include;${OptiX_ROOT_DIR}/SDK/;C:/Users/fang/Documents/NREL_SOLAR/optix/interface_build/"    # headers
-)
-
-message("OptiX_ROOT_DIR_SDK: ${OptiX_ROOT_DIR}/SDK")
+# TODO: this part should not be hardcoded 
+# add a way for user to specify the build path to OptixCSP
+set(OptixCSP_DIR "/Users/fang/Documents/NREL_SOLAR/optix/cmake_refactor/build/cmake")
+find_package(OptixCSP REQUIRED)
 
 include_directories(
     .
@@ -41,8 +34,8 @@ set_target_properties(
 	PREFIX ""
 )
 
-target_link_libraries(
-    optix_runner
-    simdata
-    optix_soltrace
+target_link_libraries(optix_runner
+    PUBLIC  OptixCSP::OptixCSP_core
+            simdata
+            CUDA::cuda_driver
 )

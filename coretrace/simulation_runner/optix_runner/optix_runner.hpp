@@ -3,7 +3,7 @@
 
 #include "simulation_result.hpp"
 #include "simulation_runner/simulation_runner.hpp"
-#include "interface/soltrace_optix_interface.hpp"
+#include "core/soltrace_system.h"
 
 class OptixRunner : public SimulationRunner
 {
@@ -30,7 +30,7 @@ public:
 
 private:
 
-    soltrace_optix_interface sys;
+    SolTraceSystem m_sys;
 
     const SimulationData *m_simdata;  
     RunnerStatus setup_parameters(const SimulationData *data);

@@ -6,7 +6,7 @@
 
 OptixRunner::OptixRunner() : SimulationRunner(),
                              m_simdata(nullptr),    
-                             sys(10000) {}
+                             m_sys(10000) {}
 
 
 OptixRunner::~OptixRunner()
@@ -36,7 +36,7 @@ RunnerStatus OptixRunner::setup_simulation(const SimulationData *data)
     this->setup_sun(data);
     sts = this->setup_elements(data);
 
-    sys.initialize();
+    m_sys.initialize();
 
     // std::cout << "Number of stages: " << this->tsys.StageList.size()
     //           << std::endl;
@@ -64,7 +64,7 @@ RunnerStatus OptixRunner::setup_sun(const SimulationData *data)
     // Get RaySource data (this runner assumes there is only the Sun)
     assert(data->get_number_of_ray_sources() == 1);
 
-    sys.set_sun_vector(0, 0, 10);
+    m_sys.set_sun_vector(Vector3d(0,0,10));
 
     return RunnerStatus::SUCCESS;
 }
@@ -96,7 +96,7 @@ RunnerStatus OptixRunner::update_simulation(const SimulationData *data)
 RunnerStatus OptixRunner::run_simulation()
 {
 
-    sys.run();
+    m_sys.run();
     return RunnerStatus::SUCCESS;
 }
 
