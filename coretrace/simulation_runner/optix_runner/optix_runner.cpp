@@ -3,6 +3,10 @@
 #include "simulation_data/simulation_parameters.hpp"
 #include "simulation_data/simulation_data.hpp"
 
+#include "core/vec3d.h"
+#include "core/CspElement.h"
+#include "core/surface.h"
+#include "core/aperture.h"
 
 OptixRunner::OptixRunner() : SimulationRunner(),
                              m_simdata(nullptr),    
@@ -64,7 +68,7 @@ RunnerStatus OptixRunner::setup_sun(const SimulationData *data)
     // Get RaySource data (this runner assumes there is only the Sun)
     assert(data->get_number_of_ray_sources() == 1);
 
-    m_sys.set_sun_vector(Vector3d(0,0,10));
+    m_sys.set_sun_vector(OptixCSP::Vec3d(0,0,10));
 
     return RunnerStatus::SUCCESS;
 }
@@ -79,7 +83,32 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
         if (el->is_enabled())
         {
 
-			 std::cout << "adding elements " << el->get_name() << std::endl;
+            auto optix_el = std::make_shared<OptixCSP::CspElement>();
+			Vector3d origin = el->get_origin_global();
+
+			OptixCSP::Vec3d origin_vec(origin[0], origin[1], origin[2]);
+
+			optix_el->set_origin(ToVec3d(origin));
+
+			optix_el->set_aim_point(ToVec3d(el->get_aim_vector_global()));
+            
+            std::cout << "adding elements " << el->get_name() << std::endl;
+			std::cout << "Origin: " << origin[0] << ", " << origin[1] << ", " << origin[2] << std::endl;
+
+            if (el->get_surface() != nullptr) {
+                std::cout << "surface type: " << el->get_surface()->get_type() << std::endl;
+
+                auto surface = std::make_shared<OptixCSP::SurfaceFlat>();
+
+                optix_el->set_surface(surface);
+                auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(2,2);
+                optix_el->set_aperture(aperture);
+                
+				m_sys.add_element(optix_el);
+
+            }
+			std::cout << "=====================================================" << std::endl;
+
         }
     }
     // std::cout << "Number of stages: " << sys.StageList.size() << std::endl;
@@ -105,4 +134,11 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
 {
     // TODO: Implement this
     return RunnerStatus::SUCCESS;
+}
+
+
+OptixCSP::Vec3d OptixRunner::ToVec3d(Vector3d v) {
+
+    OptixCSP::Vec3d vec(v[0], v[1], v[2]);
+    return vec;
 }

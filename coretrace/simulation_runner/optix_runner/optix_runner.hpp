@@ -30,12 +30,15 @@ public:
 
 private:
 
-    SolTraceSystem m_sys;
+    OptixCSP::SolTraceSystem m_sys;
 
     const SimulationData *m_simdata;  
     RunnerStatus setup_parameters(const SimulationData *data);
     RunnerStatus setup_sun(const SimulationData *data);
     RunnerStatus setup_elements(const SimulationData *data);
+
+    // helper function, convert Vector3d to Optix::Vec3d
+    OptixCSP::Vec3d ToVec3d(Vector3d v);
 };
 
 #endif
