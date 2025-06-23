@@ -214,10 +214,11 @@ void make_unit_vector(Vector3d &x)
 {
     double mag = vector_norm(x);
     assert(mag > 0.0);
-    for (int i = 0; i < 3; ++i)
-    {
-        x.data[i] /= mag;
-    }
+    x.scalar_mult(1.0 / mag);
+    // for (int i = 0; i < 3; ++i)
+    // {
+    //     x.data[i] /= mag;
+    // }
     return;
 }
 

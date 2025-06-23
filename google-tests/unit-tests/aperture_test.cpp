@@ -138,7 +138,7 @@ TEST(Aperture, EqualateralTriangle)
     // Inside inscribed circle
     const double X1 = 0.1;
     const double Y1 = 0.1;
-    // Inside but outside inscribed circle
+    // Inside but outside inscribed circle on left
     const double X2 = -0.375 * S;
     const double Y2 = -0.375 * R;
     // Outside circumscribed circle
@@ -147,6 +147,9 @@ TEST(Aperture, EqualateralTriangle)
     // Outside but inside circumscribed circle
     const double X4 = -R / sqrt(3.0) - 0.1;
     const double Y4 = 0.1;
+    // Inside but outside inscribed circle on right
+    const double X5 = 0.375 * S;
+    const double Y5 = -0.375 * R;
 
     auto et = make_aperture<EqualateralTriangle>(D);
 
@@ -158,6 +161,7 @@ TEST(Aperture, EqualateralTriangle)
     EXPECT_TRUE(et->is_in(X2, Y2));
     EXPECT_FALSE(et->is_in(X3, Y3));
     EXPECT_FALSE(et->is_in(X4, Y4));
+    EXPECT_TRUE(et->is_in(X5, Y5));
 
     aperture_ptr ap = et->make_copy();
     EXPECT_EQ(ap->diameter_circumscribed_circle(),
@@ -171,7 +175,55 @@ TEST(Aperture, EqualateralTriangle)
 
 TEST(Aperture, Hexagon)
 {
-    // TODO: Implement this test
+    const double TOL = 1e-12;
+    const double D = 2.0;
+    const double R = 0.5 * D;
+    const double S = sqrt(3.0) * R; // Side length of hexagon
+    const double AREA = 0.5 * sqrt(27.0) * R * R;
+
+    const double X1 = 1.0;
+    const double Y1 = 1.0;
+    const double X2 = -0.5;
+    const double Y2 = 0.5;
+    const double X3 = 0.9;
+    const double Y3 = 0.1;
+    const double X4 = 0.9;
+    const double Y4 = 0.25;
+    const double X5 = -0.45;
+    const double Y5 = -0.8;
+    const double X6 = 0.1;
+    const double Y6 = 0.95;
+
+    auto hex = make_aperture<Hexagon>(D);
+
+    EXPECT_EQ(hex->diameter_circumscribed_circle(), D);
+    EXPECT_EQ(hex->radius_circumscribed_circle(), R);
+    EXPECT_NEAR(hex->aperture_area(), AREA, TOL);
+
+    // Outside Circumscribed, Inside Inscribed
+    EXPECT_FALSE(hex->is_in(X1, Y1));
+    EXPECT_TRUE(hex->is_in(X2, Y2));
+    // Left side inside (outside inscribed circle), outside above, below
+    EXPECT_TRUE(hex->is_in(-X3, Y3));
+    EXPECT_FALSE(hex->is_in(-X4, Y4));
+    EXPECT_FALSE(hex->is_in(-X4, -Y4));
+    // Right side inside (outside inscribed circle), outside above, below
+    EXPECT_TRUE(hex->is_in(X3, Y3));
+    EXPECT_FALSE(hex->is_in(X4, Y4));
+    EXPECT_FALSE(hex->is_in(X4, -Y4));
+    // Center inside (outside inscribed circle), outside above, below
+    EXPECT_TRUE(hex->is_in(X5, Y5));
+    EXPECT_FALSE(hex->is_in(X6, Y6));
+    EXPECT_FALSE(hex->is_in(-X6, -Y6));
+
+    aperture_ptr ap = hex->make_copy();
+    EXPECT_EQ(ap->diameter_circumscribed_circle(),
+              hex->diameter_circumscribed_circle());
+    EXPECT_EQ(ap->radius_circumscribed_circle(),
+              hex->radius_circumscribed_circle());
+    EXPECT_EQ(ap->aperture_area(), hex->aperture_area());
+    EXPECT_TRUE(ap->is_in(X2, Y2));
+    EXPECT_FALSE(ap->is_in(X4, Y4));
 }
 
 TEST(Aperture, Rectangle)

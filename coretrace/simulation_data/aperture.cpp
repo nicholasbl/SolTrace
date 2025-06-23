@@ -3,6 +3,78 @@
 
 #include <cmath>
 
+double Annulus::aperture_area() const
+{
+    // TODO: input.cpp on line 219 uses the formula
+    //    elm->ParameterC*(ACOSM1O180)*(elm->ParameterB - elm->ParameterA);
+    //    = \theta * (r - R)
+    // This seems to be wrong...
+    double R = this->outer_radius;
+    double r = this->inner_radius;
+    // Convert to radians
+    double arc = this->arc_angle * M_PI / 180.0;
+    return 0.5 * arc * (R * R - r * r);
+}
+
+double Annulus::diameter_circumscribed_circle() const
+{
+    return 2.0 * this->outer_radius;
+}
+
+bool Annulus::is_in(double x, double y) const
+{
+    double r = sqrt(x * x + y * y);
+    bool inside = false;
+    if (this->inner_radius <= r &&
+        r <= this->outer_radius)
+    {
+        double theta = atan2(y, x);
+        // Arc is split across x-axis, hence the 0.5
+        double arc = 0.5 * this->arc_angle * M_PI / 180.0;
+        inside = (-arc <= theta && theta <= arc);
+    }
+    return inside;
+}
+
+aperture_ptr Annulus::make_copy() const
+{
+    // Invokes the implicit copy constructor
+    return make_aperture<Annulus>(*this);
+}
+
+double Circle::aperture_area() const
+{
+    return 0.25 * M_PI * this->diameter * this->diameter;
+}
+
+double Circle::diameter_circumscribed_circle() const
+{
+    return this->diameter;
+}
+
+bool Circle::is_in(double x, double y) const
+{
+    double r = sqrt(x * x + y * y);
+    return r <= this->radius_circumscribed_circle();
+}
+
+aperture_ptr Circle::make_copy() const
+{
+    // Invokes the implicit copy constructor
+    return make_aperture<Circle>(*this);
+}
+
+double EqualateralTriangle::aperture_area() const
+{
+    double r = 0.5 * this->circumscribe_diameter;
+    return 0.75 * sqrt(3) * r * r;
+}
+
+double EqualateralTriangle::diameter_circumscribed_circle() const
+{
+    return this->circumscribe_diameter;
+}
+
 bool EqualateralTriangle::is_in(double x, double y) const
 {
     double r = sqrt(x * x + y * y);
@@ -30,6 +102,30 @@ bool EqualateralTriangle::is_in(double x, double y) const
     }
 
     return false;
+}
+
+aperture_ptr EqualateralTriangle::make_copy() const
+{
+    // Invokes the implicit copy constructor
+    return make_aperture<EqualateralTriangle>(*this);
+}
+
+double Hexagon::aperture_area() const
+{
+    // TODO: input.cpp on line 210 uses the formula
+    //    5*sqr(elm->ParameterA/2.0)*cos(30.0*(ACOSM1O180))*sin(30.0*(ACOSM1O180));
+    //    = 5*(d/2)^2*cos(pi/6)*sin(pi/6)
+    //    = 5*(d/2)^2*sqrt(3)/2*1/2
+    //    = 5*sqrt(3)/4 * (d/2)^2
+    //    = 1.25*sqrt(3) * (d/2)^2
+    // This seems to be wrong...
+    double r = 0.5 * this->circumscribe_diameter;
+    return 1.5 * sqrt(3) * r * r;
+}
+
+double Hexagon::diameter_circumscribed_circle() const
+{
+    return circumscribe_diameter;
 }
 
 bool Hexagon::is_in(double x, double y) const
@@ -62,7 +158,7 @@ bool Hexagon::is_in(double x, double y) const
     {
         return (-ri <= y && y <= ri);
     }
-    else if (-ro <= x && x < xl)
+    else if (-ro <= x && x < -xl)
     {
         y1 = sqrt(3.0) * (x + ro);
         y2 = -y1;
@@ -70,6 +166,12 @@ bool Hexagon::is_in(double x, double y) const
     }
 
     return false;
+}
+
+aperture_ptr Hexagon::make_copy() const
+{
+    // Invokes the implicit copy constructor
+    return make_aperture<Hexagon>(*this);
 }
 
 // int intri(double x1, double y1,

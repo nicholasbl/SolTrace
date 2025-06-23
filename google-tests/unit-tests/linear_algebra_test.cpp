@@ -7,6 +7,8 @@
 
 TEST(LinearAlgebra, VectorBasics)
 {
+    const double TOL = 1e-12;
+
     Vector3d x(1.0, 1.0, 3.0);
     Vector3d y(-1.0, 2.0, -1.0);
     Vector3d z;
@@ -16,14 +18,14 @@ TEST(LinearAlgebra, VectorBasics)
     EXPECT_EQ(z[2], 0.0);
 
     vector_add(1.0, x, 1.0, y, z);
-    EXPECT_NEAR(z[0], 0.0, 1e-12);
-    EXPECT_NEAR(z[1], 3.0, 1e-12);
-    EXPECT_NEAR(z[2], 2.0, 1e-12);
+    EXPECT_NEAR(z[0], 0.0, TOL);
+    EXPECT_NEAR(z[1], 3.0, TOL);
+    EXPECT_NEAR(z[2], 2.0, TOL);
 
     vector_add(0.5, x, -2.0, y, z);
-    EXPECT_NEAR(z[0], 2.5, 1e-12);
-    EXPECT_NEAR(z[1], -3.5, 1e-12);
-    EXPECT_NEAR(z[2], 3.5, 1e-12);
+    EXPECT_NEAR(z[0], 2.5, TOL);
+    EXPECT_NEAR(z[1], -3.5, TOL);
+    EXPECT_NEAR(z[2], 3.5, TOL);
 
     vector_max(x, y, z);
     EXPECT_EQ(z[0], 1.0);
@@ -34,6 +36,12 @@ TEST(LinearAlgebra, VectorBasics)
     EXPECT_EQ(z[0], -1.0);
     EXPECT_EQ(z[1], 1.0);
     EXPECT_EQ(z[2], -1.0);
+
+    z.set_values(1.0, 2.0, 3.0);
+    z.scalar_mult(-0.5);
+    EXPECT_NEAR(z[0], -0.5, TOL);
+    EXPECT_NEAR(z[1], -1.0, TOL);
+    EXPECT_NEAR(z[2], -1.5, TOL);
 
     double dp = dot_product(x, y);
     EXPECT_NEAR(dp, -2.0, 1e-12);

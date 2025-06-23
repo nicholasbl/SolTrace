@@ -50,7 +50,6 @@ public:
     virtual double aperture_area() const = 0;
     virtual double diameter_circumscribed_circle() const = 0;
     virtual bool is_in(double x, double y) const = 0;
-
     virtual aperture_ptr make_copy() const = 0;
 };
 
@@ -72,44 +71,10 @@ struct Annulus : public Aperture
     }
     virtual ~Annulus() {}
 
-    virtual double aperture_area() const
-    {
-        // TODO: input.cpp on line 219 uses the formula
-        //    elm->ParameterC*(ACOSM1O180)*(elm->ParameterB - elm->ParameterA);
-        //    = \theta * (r - R)
-        // This seems to be wrong...
-        double R = this->outer_radius;
-        double r = this->inner_radius;
-        // Convert to radians
-        double arc = this->arc_angle * M_PI / 180.0;
-        return 0.5 * arc * (R * R - r * r);
-    }
-
-    virtual double diameter_circumscribed_circle() const
-    {
-        return 2.0 * this->outer_radius;
-    }
-
-    virtual bool is_in(double x, double y) const
-    {
-        double r = sqrt(x * x + y * y);
-        bool inside = false;
-        if (this->inner_radius <= r &&
-            r <= this->outer_radius)
-        {
-            double theta = atan2(y, x);
-            // Arc is split across x-axis, hence the 0.5
-            double arc = 0.5 * this->arc_angle * M_PI / 180.0;
-            inside = (-arc <= theta && theta <= arc);
-        }
-        return inside;
-    }
-
-    virtual aperture_ptr make_copy() const
-    {
-        // Invokes the implicit copy constructor
-        return make_aperture<Annulus>(*this);
-    }
+    virtual double aperture_area() const;
+    virtual double diameter_circumscribed_circle() const;
+    virtual bool is_in(double x, double y) const;
+    virtual aperture_ptr make_copy() const;
 };
 
 struct Circle : public Aperture
@@ -120,27 +85,10 @@ struct Circle : public Aperture
     Circle(double d) : Aperture(CIRCLE), diameter(d) {}
     virtual ~Circle() {}
 
-    virtual double aperture_area() const
-    {
-        return 0.25 * M_PI * this->diameter * this->diameter;
-    }
-
-    virtual double diameter_circumscribed_circle() const
-    {
-        return this->diameter;
-    }
-
-    virtual bool is_in(double x, double y) const
-    {
-        double r = sqrt(x * x + y * y);
-        return r <= this->radius_circumscribed_circle();
-    }
-
-    virtual aperture_ptr make_copy() const
-    {
-        // Invokes the implicit copy constructor
-        return make_aperture<Circle>(*this);
-    }
+    virtual double aperture_area() const;
+    virtual double diameter_circumscribed_circle() const;
+    virtual bool is_in(double x, double y) const;
+    virtual aperture_ptr make_copy() const;
 };
 
 struct EqualateralTriangle : public Aperture
@@ -156,24 +104,10 @@ struct EqualateralTriangle : public Aperture
     }
     virtual ~EqualateralTriangle() {}
 
-    virtual double aperture_area() const
-    {
-        double r = 0.5 * this->circumscribe_diameter;
-        return 0.75 * sqrt(3) * r * r;
-    }
-
-    virtual double diameter_circumscribed_circle() const
-    {
-        return this->circumscribe_diameter;
-    }
-
+    virtual double aperture_area() const;
+    virtual double diameter_circumscribed_circle() const;
     virtual bool is_in(double x, double y) const;
-
-    virtual aperture_ptr make_copy() const
-    {
-        // Invokes the implicit copy constructor
-        return make_aperture<EqualateralTriangle>(*this);
-    }
+    virtual aperture_ptr make_copy() const;
 };
 
 struct Hexagon : public Aperture
@@ -183,31 +117,10 @@ struct Hexagon : public Aperture
     // Hexagon() : Aperture(HEXAGON), circumscribe_diameter(0.0) {}
     Hexagon(double d) : Aperture(HEXAGON), circumscribe_diameter(d) {}
     virtual ~Hexagon() {}
-    virtual double aperture_area() const
-    {
-        // TODO: input.cpp on line 210 uses the formula
-        //    5*sqr(elm->ParameterA/2.0)*cos(30.0*(ACOSM1O180))*sin(30.0*(ACOSM1O180));
-        //    = 5*(d/2)^2*cos(pi/6)*sin(pi/6)
-        //    = 5*(d/2)^2*sqrt(3)/2*1/2
-        //    = 5*sqrt(3)/4 * (d/2)^2
-        //    = 1.25*sqrt(3) * (d/2)^2
-        // This seems to be wrong...
-        double r = 0.5 * this->circumscribe_diameter;
-        return 1.5 * sqrt(3) * r * r;
-    }
-
-    virtual double diameter_circumscribed_circle() const
-    {
-        return circumscribe_diameter;
-    }
-
+    virtual double aperture_area() const;
+    virtual double diameter_circumscribed_circle() const;
     virtual bool is_in(double x, double y) const;
-
-    virtual aperture_ptr make_copy() const
-    {
-        // Invokes the implicit copy constructor
-        return make_aperture<Hexagon>(*this);
-    }
+    virtual aperture_ptr make_copy() const;
 };
 
 struct Rectangle : public Aperture
