@@ -534,7 +534,7 @@ telement_ptr make_telement(element_ptr el,
     return telem;
 }
 
-tstage_ptr make_tstage()
+tstage_ptr make_tstage(const ElementParameters &eparams)
 {
     tstage_ptr my_stage = std::make_shared<TStage>();
 
@@ -560,6 +560,7 @@ tstage_ptr make_tstage(element_ptr el,
     my_stage->MultiHitsPerRay = true;
     my_stage->Virtual = false;
     my_stage->TraceThrough = false;
+    my_stage->stage_id = stage_el->get_stage();
 
     // Add coordinate stuff
     vector_copy(my_stage->Origin, stage_el->get_origin_global());
@@ -567,35 +568,6 @@ tstage_ptr make_tstage(element_ptr el,
     my_stage->ZRot = stage_el->get_zrot();
     matrix_copy(my_stage->RRefToLoc, stage_el->get_global_to_local());
     matrix_copy(my_stage->RLocToRef, stage_el->get_local_to_global());
-
-    // Add elements to the stage
-    int_fast64_t element_number = 1;
-    my_stage->ElementList.reserve(stage_el->get_number_of_elements());
-    for (auto iter = stage_el->get_iterator();
-         !stage_el->is_at_end(iter);
-         ++iter)
-    {
-        element_ptr el = iter->second;
-        // Ignore CompositeElements and those that are disabled
-        if (el->is_enabled() && el->is_single())
-        {
-            telement_ptr elem = make_telement(iter->second,
-                                              element_number,
-                                              eparams);
-            my_stage->ElementList.push_back(elem);
-            ++element_number;
-            // // This should never fail as the SimulationData ensures there
-            // // are no duplicate element ids.
-            // my_stage->ElementList.insert(std::make_pair(elem->element_number,
-            //                                             elem));
-        }
-    }
-
-    // // TODO: Find a better way to do this.
-    // for (int_fast64_t k = 0; k < my_stage->ElementList.size(); ++k)
-    // {
-    //     my_stage->ElementList[k]->stage_index = k;
-    // }
 
     return my_stage;
 }

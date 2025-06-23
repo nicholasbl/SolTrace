@@ -57,6 +57,13 @@ void Vector3d::set_values(double x, double y, double z)
     return;
 }
 
+void Vector3d::scalar_mult(double alpha)
+{
+    for (int i = 0; i < 3; ++i)
+        this->data[i] *= alpha;
+    return;
+}
+
 const double &Vector3d::operator[](int idx) const
 {
     assert(idx >= 0 && idx < 3);

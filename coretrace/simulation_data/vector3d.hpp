@@ -16,6 +16,7 @@ public:
 
     void zero();
     void set_values(double x, double y, double z);
+    void scalar_mult(double alpha);
 
     const double &operator[](int idx) const;
     double &operator[](int idx);

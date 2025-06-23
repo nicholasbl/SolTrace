@@ -101,7 +101,7 @@ TEST(ParabolicTrough, Tracing)
     pt->set_name("Parabolic Trough");
 
     auto sun = make_ray_source<Sun>();
-    sun->set_position(0.0, 0.0, 10.0);
+    sun->set_position(0.0, 0.0, 1000.0);
     sun->set_shape(DistributionType::PILLBOX);
     my_sim.add_ray_source(sun);
     

@@ -295,10 +295,12 @@ struct TStage
 	double RLocToRef[3][3];
 
 	TRayData RayData;
+
+	int_fast64_t stage_id;
 };
 
 using tstage_ptr = typename std::shared_ptr<TStage>;
-tstage_ptr make_tstage();
+tstage_ptr make_tstage(const ElementParameters &eparams);
 tstage_ptr make_tstage(element_ptr el, const ElementParameters &eparams);
 
 struct TSystem

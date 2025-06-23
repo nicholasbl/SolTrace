@@ -7,6 +7,7 @@ set(SIMDATA_SRC
     aperture.cpp
     composite_element.cpp
     element.cpp
+    heliostat.cpp
     matvec.cpp
     parabolic_trough.cpp
     simulation_data.cpp

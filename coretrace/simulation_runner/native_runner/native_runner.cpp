@@ -1,9 +1,12 @@
 
 #include "native_runner.hpp"
 
+#include <exception>
 #include <map>
 // #include <algorithm>
 
+#include "composite_element.hpp"
+#include "element.hpp"
 #include "simulation_parameters.hpp"
 #include "simulation_data.hpp"
 #include "trace.hpp"
@@ -69,6 +72,10 @@ RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
 
     RunnerStatus sts = RunnerStatus::SUCCESS;
     auto my_map = std::map<int_fast64_t, tstage_ptr>();
+    // int_fast64_t current_stage_id = -1;
+    tstage_ptr current_stage = nullptr;
+    int_fast64_t element_number = 1;
+    bool element_found_before_stage = false;
 
     for (auto iter = data->get_const_iterator();
          !data->is_at_end(iter);
@@ -80,13 +87,48 @@ RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
             tstage_ptr stage = make_tstage(el, this->eparams);
             auto retval = my_map.insert(
                 std::make_pair(el->get_stage(), stage));
+
+            // current_stage_id = stage->stage_id;
+
+            // std::cout << "Created stage " << el->get_stage()
+            //           << " with " << stage->ElementList.size() << " elements"
+            //           << std::endl;
+
             if (retval.second == false)
             {
                 // TODO: Duplicate stage numbers. Need to make an error
                 // message.
                 sts = RunnerStatus::ERROR;
             }
+
+            current_stage = stage;
+            element_number = 1;
         }
+        else if (el->is_enabled() && el->is_single())
+        {
+            if (current_stage == nullptr)
+            {
+                // throw std::runtime_error("No stage to add element to");
+                element_found_before_stage = true;
+                continue;
+            }
+            else if (el->get_stage() != current_stage->stage_id)
+            {
+                throw std::runtime_error(
+                    "Element does not match current stage");
+            }
+
+            telement_ptr elem = make_telement(iter->second,
+                                              element_number,
+                                              this->eparams);
+            ++element_number;
+            current_stage->ElementList.push_back(elem);
+        }
+    }
+
+    if (my_map.size() != 0 && element_found_before_stage)
+    {
+        throw std::runtime_error("Element found without a stage");
     }
 
     if (my_map.size() == 0)
@@ -98,7 +140,7 @@ RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
         // so that the element coordinate setup in make_element are
         // correct.
         int_fast64_t element_number = 1;
-        auto stage = make_tstage();
+        auto stage = make_tstage(this->eparams);
         stage->ElementList.reserve(data->get_number_of_elements());
         for (auto iter = data->get_const_iterator();
              !data->is_at_end(iter);
@@ -112,8 +154,6 @@ RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
                                                  this->eparams);
                 stage->ElementList.push_back(tel);
                 ++element_number;
-                // stage->ElementList.insert(
-                //     std::make_pair(tel->element_number, tel));
             }
         }
         my_map.insert(std::make_pair(0, stage));
@@ -135,6 +175,7 @@ RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
 
     if (sts == RunnerStatus::SUCCESS)
     {
+        // std::cout << "Setting ZAperture..." << std::endl;
         // Compute and set ZAperture field in each element
         bool success = set_aperture_planes(&this->tsys);
         sts = success ? RunnerStatus::SUCCESS : RunnerStatus::ERROR;
