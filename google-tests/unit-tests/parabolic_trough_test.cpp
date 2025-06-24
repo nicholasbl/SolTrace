@@ -6,7 +6,7 @@
 #include <simulation_data.hpp>
 #include <sun.hpp>
 
-#include "common.hpp"
+// #include "common.hpp"
 
 TEST(ParabolicTrough, Build)
 {
@@ -60,9 +60,9 @@ TEST(ParabolicTrough, Tracing)
     SimulationParameters &params = my_sim.get_simulation_parameters();
     params.number_of_rays = NRAYS;
     params.max_number_of_rays = params.number_of_rays * 100;
-    params.include_optical_errors = false;
-    params.include_sun_shape_errors = false;
-    params.seed = 12345;
+    params.include_optical_errors = true;
+    params.include_sun_shape_errors = true;
+    params.seed = 123;
     
     NativeRunner my_runner;
     my_runner.disable_power_tower();
@@ -70,28 +70,32 @@ TEST(ParabolicTrough, Tracing)
 
     OpticalProperties mirror;
     mirror.set_ideal_reflection();
+    mirror.slope_error = 1.5;
+    mirror.specularity_error = 0.5;
 
     OpticalProperties absorber;
     absorber.set_ideal_absorption();
+    absorber.slope_error = 1e-5;
+    absorber.specularity_error = 1e-5;
 
     OpticalProperties envelop_out;
     envelop_out.set_ideal_transmission();
     envelop_out.refraction_index_front = 1.46;
     envelop_out.refraction_index_back = 1.0;
+    envelop_out.slope_error = 1e-4;
+    envelop_out.specularity_error = 1e-4;
 
     OpticalProperties envelop_in;
     envelop_in.set_ideal_transmission();
     envelop_in.refraction_index_front = 1.0;
     envelop_in.refraction_index_back = 1.46;
+    envelop_in.slope_error = 1e-4;
+    envelop_out.specularity_error = 1e-4;
 
     auto pt = make_element<ParabolicTrough>();
     pt->set_optics(mirror, absorber, envelop_out, envelop_in);
-    // pt->set_origin(2.0, -2.0, 3.0);
-    pt->set_origin(0.0, 0.0, 0.0);
-    // pt->set_aperture_size(5.774, 11.96);
+    pt->set_origin(20.0, -20.0, 30.0);
     pt->set_aperture_size(6.0, 12.0);
-    // pt->set_number_panels(1, 1);
-    // pt->set_gaps(0.0, 0.0, 0.0);
     pt->set_number_panels(4, 7);
     pt->set_gaps(0.02, 0.01, 0.08);
     pt->set_focal_length(1.71);

@@ -7,6 +7,8 @@ Heliostat::Heliostat()
     : CompositeElement(),
       initialized(false)
 {
+    // TODO: Initialize to nonsense and enforce user setting of values
+    // TODO: Need to do something similar for elements totally
     return;
 }
 

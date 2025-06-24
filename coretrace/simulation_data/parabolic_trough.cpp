@@ -29,7 +29,8 @@ ParabolicTrough::ParabolicTrough()
       tracking_limit_lower(0.0),
       tracking_limit_upper(180.0)
 {
-    // TODO: Implement...
+    // TODO: Initialize to nonsense and enforce user setting of values
+    // TODO: Need to do something similar for elements totally
     return;
 }
 
@@ -58,9 +59,9 @@ void ParabolicTrough::create_geometry()
     Vector3d aim;
     double xstop;
     double gap;
-    double ycoord;
+    double ystart, ycoord;
 
-    double ystart = -0.5 * this->aperture_size_y;
+    // double ystart = -0.5 * this->aperture_size_y;
     double panel_length_y = (this->aperture_size_y -
                              this->gap_y * (this->num_panels_y - 1)) /
                             this->num_panels_y;
@@ -80,13 +81,22 @@ void ParabolicTrough::create_geometry()
     for (int i = 0; i < this->num_panels_x; ++i)
     {
         xstop = determine_x_coordinate(xstart, panel_arc_length);
-
+        ystart = -0.5 * this->aperture_size_y;
         ycoord = ystart + 0.5 * panel_length_y;
-        origin.set_values(0.0, ycoord, 0.0);
-        aim.set_values(0.0, ycoord, 1.0);
 
         for (int j = 0; j < this->num_panels_y; ++j)
         {
+            // std::cout << "**** i = " << i << "  j = " << j << " ****"
+            //           << "\nxstart = " << xstart << "  xstop = " << xstop
+            //           << "\nystart = " << ystart << "  ycoord = " << ycoord
+            //           << "\npanel_len_y = " << panel_length_y
+            //           << "\npanel_arc_len = " << panel_arc_length
+            //           << "\narc_len = " << arc_length
+            //           << std::endl;
+
+            origin.set_values(0.0, ycoord, 0.0);
+            aim.set_values(0.0, ycoord, 1.0);
+
             panel = make_element<SingleElement>();
             panel->set_name("Mirror");
             panel->set_reference_frame_geometry(origin, aim, 0.0);
@@ -99,11 +109,17 @@ void ParabolicTrough::create_geometry()
             panel->set_surface(surf);
             panel->set_front_optical_properties(this->optics_mirror);
             panel->enable();
+
             this->mirrors.push_back(panel);
             this->add_element(panel);
+
+            ystart += panel_length_y + this->gap_y;
+            ycoord = ystart + 0.5 * panel_length_y;
         }
-        ystart += panel_length_y + this->gap_y;
-        gap = i == this->num_panels_x / 2 ? this->gap_center : this->gap_x;
+        gap = i == this->num_panels_x / 2 - 1 ? this->gap_center : this->gap_x;
+        // std::cout << "Gap: " << gap << std::endl;
+        // std::cout << "this->num_panels_x / 2 = " << this->num_panels_x / 2
+        //           << std::endl;
         xstart = determine_x_coordinate(xstop, gap);
     }
 
@@ -174,7 +190,9 @@ void ParabolicTrough::create_geometry()
         throw std::runtime_error("Failed to add inner envelope element");
     }
 
+    this->enable();
     this->initialized = true;
+
     return;
 }
 
@@ -352,7 +370,8 @@ void ParabolicTrough::set_tracking_limits(double lower, double upper)
 
 double ParabolicTrough::parabolic_arc_length(double x)
 {
-    return sqrt(1.0 + this->cx * this->cx * x * x);
+    double cxx = this->cx * x;
+    return sqrt(1.0 + cxx * cxx);
 }
 
 double ParabolicTrough::determine_x_coordinate(double x0, double arc_length)
@@ -362,11 +381,21 @@ double ParabolicTrough::determine_x_coordinate(double x0, double arc_length)
     double x1 = x0;
     double y1 = parabolic_arc_length(x1);
     double s = 0.5 * y1 * dx;
-    while (s < arc_length)
+    double area;
+    while (true)
     {
         x1 += dx;
         y1 = parabolic_arc_length(x1);
-        s += 0.5 * y1 * dx;
+        area = 0.5 * y1 * dx;
+        s += area;
+        if (s < arc_length)
+        {
+            s += area;
+        }
+        else
+        {
+            break;
+        }
     }
 
     return x1;
