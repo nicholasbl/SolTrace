@@ -36,6 +36,6 @@ set_target_properties(
 
 target_link_libraries(optix_runner
     PUBLIC  OptixCSP::OptixCSP_core
-            simdata
             CUDA::cuda_driver
+            simdata
 )

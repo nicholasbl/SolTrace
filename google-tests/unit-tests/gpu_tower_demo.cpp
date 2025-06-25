@@ -65,14 +65,16 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
     Vector3d rvec, svec, avec;
     Vector3d aim, pos;
 
-    for (int i = -1; i < 2; ++i)
+	double spacing = M_PI / 4.0; 
+
+    for (int i = -1; i < 4; ++i)
     {
         auto el = make_element<SingleElement>();
         foptics = el->get_front_optical_properties();
         foptics->reflectivity = 1.0;
 
-        pos.set_values(5 * sin(i * M_PI / 2.0),
-            5 * cos(i * M_PI / 2.0),
+        pos.set_values(5 * sin(i * spacing),
+            5 * cos(i * spacing),
             0.0);
         el->set_origin(pos);
         vector_add(1.0, absorber->get_origin_global(),
@@ -153,4 +155,8 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
     // Run simulation runs but returns RunnerStatus::ERROR
     sts = runner.run_simulation();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    //sts = runner.report_simulation();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
 }
