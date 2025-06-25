@@ -137,7 +137,7 @@ namespace bbox_calculator
 		}
 	}
 
-	bool findSplineExtrema(std::vector<double>& xa,
+	bool find_spline_extrema(std::vector<double>& xa,
 		std::vector<double>& ya,
 		std::vector<double>& y2a,
 		double xMin, double xMax,
@@ -258,7 +258,7 @@ namespace bbox_calculator
 		double z_min_test;
 		double z_max_test;
 
-		findSplineExtrema(st_element->CubicSplineXData,
+		find_spline_extrema(st_element->CubicSplineXData,
 			st_element->CubicSplineYData,
 			st_element->CubicSplineY2Data,
 			Rho_min, Rho_max, z_min_test, z_max_test);
