@@ -9,12 +9,26 @@
 #include <math.h>
 #include <vector>
 #include <exception>
-#include <filesystem>
 
 
 #ifndef M_PI
   #define M_PI 3.141592653589793238462643
 #endif
+
+std::string get_parent_path(const std::string& path) {
+    size_t pos1 = path.find_last_of('/');
+    size_t pos2 = path.find_last_of('\\');
+    size_t pos = std::string::npos;
+    if (pos1 != std::string::npos && pos2 != std::string::npos)
+        pos = std::max(pos1, pos2);
+    else if (pos1 != std::string::npos)
+        pos = pos1;
+    else if (pos2 != std::string::npos)
+        pos = pos2;
+    if (pos != std::string::npos)
+        return path.substr(0, pos);
+    return "";
+}
 
 std::vector< std::string > split( const std::string &str, const std::string &delim, bool ret_empty, bool ret_delim )
 {
@@ -533,8 +547,7 @@ int main(int argc, char *argv[])
 
   st_context_t cxt = ::st_create_context();
 
-  std::filesystem::path filepath(file);
-  std::string base_dir = filepath.parent_path().string();
+  std::string base_dir = get_parent_path(file);
 
   FILE *fp = fopen(file, "r");
   if (!fp)
