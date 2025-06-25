@@ -14,6 +14,7 @@ Heliostat::Heliostat()
 
 Heliostat::~Heliostat()
 {
+    this->facets.clear();
     return;
 }
 
@@ -21,6 +22,9 @@ void Heliostat::create_geometry()
 {
     if (this->initialized)
         return;
+
+    this->facets.clear();
+    this->clear();
 
     double panel_len_x = this->aperture_size_x -
                          this->gap_x * (this->num_panels_x - 1);
@@ -245,6 +249,15 @@ void Heliostat::set_canting(CantingType ct, double val1, double val2)
     {
         throw std::runtime_error("Unrecognized canting method");
     }
+
+    return;
+}
+
+void Heliostat::enforce_user_fields_set() const
+{
+    CompositeElement::enforce_user_fields_set();
+
+    // TODO: Implement the remainder of this function
 
     return;
 }

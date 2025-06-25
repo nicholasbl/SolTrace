@@ -73,6 +73,8 @@ public:
                                    const Vector3d &source,
                                    const Vector3d &target);
 
+    virtual void enforce_user_fields_set();
+
 protected:
     aperture_ptr aperture;
     surface_ptr surface;

@@ -51,6 +51,8 @@ public:
                                  double env_thick);
     void set_tracking_limits(double lower, double upper);
 
+    virtual void enforce_user_fields_set() const;
+
 private:
     // Flags
     bool initialized;
@@ -92,7 +94,6 @@ private:
     std::vector<single_element_ptr> envelopes;
     std::vector<single_element_ptr> mirrors;
 
-    double parabolic_arc_length(double x);
     double determine_x_coordinate(double x0, double arc_length);
 };
 

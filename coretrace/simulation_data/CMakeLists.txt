@@ -5,10 +5,12 @@ include_directories(.)
 
 set(SIMDATA_SRC
     aperture.cpp
+    arclength.cpp
     composite_element.cpp
     element.cpp
     heliostat.cpp
     matvec.cpp
+    parabolic_dish.cpp
     parabolic_trough.cpp
     simulation_data.cpp
     single_element.cpp

@@ -3,19 +3,19 @@
 #include <arclength.hpp>
 #include <native_runner.hpp>
 #include <native_runner_types.hpp>
-#include <parabolic_trough.hpp>
+#include <parabolic_dish.hpp>
 #include <simulation_data.hpp>
 #include <sun.hpp>
 
 // #include "common.hpp"
 
-TEST(ParabolicTrough, ArcLength)
+TEST(ParabolicDish, ArcLength)
 {
     const double TOL = 1e-6;
-    const double ARC_LENGTH = 2.295587149392638;
+    const double ARC_LENGTH = 4.105679289785514;
 
     double x0 = -1.0;
-    double x1 = 1.0;
+    double x1 = 2.0;
     double cx = 1.0;
     // double xstart = -hw;
     // double arc_length = hw * sqrt(hw * this->cx * hw * this->cx + 1) +
@@ -27,7 +27,7 @@ TEST(ParabolicTrough, ArcLength)
     EXPECT_NEAR(xtest, x1, TOL);
 }
 
-TEST(ParabolicTrough, Build)
+TEST(ParabolicDish, Build)
 {
     OpticalProperties mirror;
     mirror.set_ideal_reflection();
@@ -35,42 +35,30 @@ TEST(ParabolicTrough, Build)
     OpticalProperties absorber;
     absorber.set_ideal_absorption();
 
-    OpticalProperties envelop_out;
-    envelop_out.set_ideal_transmission();
-    envelop_out.refraction_index_front = 1.46;
-    envelop_out.refraction_index_back = 1.0;
+    auto dish = make_element<ParabolicDish>();
+    dish->set_optics(mirror, absorber);
+    dish->set_origin(20.0, -20.0, 30.0);
+    dish->set_aperture_size(10.0);
+    dish->set_number_of_panels(2, 2);
+    dish->set_gaps(0.02, 0.01, 0.5);
+    dish->set_focal_length(7.5);
+    dish->set_receiver_dimensions(0.25, 7.25);
+    dish->create_geometry();
 
-    OpticalProperties envelop_in;
-    envelop_in.set_ideal_transmission();
-    envelop_in.refraction_index_front = 1.0;
-    envelop_in.refraction_index_back = 1.46;
-
-    auto pt = make_element<ParabolicTrough>();
-    pt->set_optics(mirror, absorber, envelop_out, envelop_in);
-    pt->set_origin(20.0, -20.0, 30.0);
-    pt->set_aperture_size(5.774, 11.96);
-    pt->set_number_panels(4, 7);
-    pt->set_gaps(0.02, 0.01, 0.08);
-    pt->set_focal_length(1.71);
-    pt->set_receiver_dimensions(0.07, 0.115, 0.003);
-    pt->set_angles(0.0, 0.0);
-    pt->create_geometry();
-
-    pt = make_element<ParabolicTrough>();
-    pt->set_optics(mirror, absorber, envelop_out, envelop_in);
-    pt->set_origin(20.0, -20.0, 30.0);
-    pt->set_aperture_size(5.774, 11.96);
-    pt->set_number_panels(1, 7);
-    pt->set_gaps(0.0, 0.01, 0.0);
-    pt->set_focal_length(1.71);
-    pt->set_receiver_dimensions(0.07, 0.115, 0.003);
-    pt->set_angles(0.0, 0.0);
-    pt->create_geometry();
+    dish = make_element<ParabolicDish>();
+    dish->set_optics(mirror, absorber);
+    dish->set_origin(20.0, -20.0, 30.0);
+    dish->set_aperture_size(10.0);
+    dish->set_number_of_panels(1, 1);
+    dish->set_gaps(0.02, 0.01, 0.5);
+    dish->set_focal_length(7.5);
+    dish->set_receiver_dimensions(0.25, 7.25);
+    dish->create_geometry();
 
     // TODO: Check that everything ends up in the proper position
 }
 
-TEST(ParabolicTrough, Tracing)
+TEST(ParabolicDish, Tracing)
 {
     const uint_fast64_t NRAYS = 10000;
 
@@ -97,31 +85,16 @@ TEST(ParabolicTrough, Tracing)
     absorber.slope_error = 1e-5;
     absorber.specularity_error = 1e-5;
 
-    OpticalProperties envelop_out;
-    envelop_out.set_ideal_transmission();
-    envelop_out.refraction_index_front = 1.46;
-    envelop_out.refraction_index_back = 1.0;
-    envelop_out.slope_error = 1e-4;
-    envelop_out.specularity_error = 1e-4;
-
-    OpticalProperties envelop_in;
-    envelop_in.set_ideal_transmission();
-    envelop_in.refraction_index_front = 1.0;
-    envelop_in.refraction_index_back = 1.46;
-    envelop_in.slope_error = 1e-4;
-    envelop_out.specularity_error = 1e-4;
-
-    auto pt = make_element<ParabolicTrough>();
-    pt->set_optics(mirror, absorber, envelop_out, envelop_in);
-    pt->set_origin(20.0, -20.0, 30.0);
-    pt->set_aperture_size(6.0, 12.0);
-    pt->set_number_panels(4, 7);
-    pt->set_gaps(0.02, 0.01, 0.08);
-    pt->set_focal_length(1.71);
-    pt->set_receiver_dimensions(0.07, 0.115, 0.003);
-    pt->set_angles(0.0, 0.0);
-    pt->create_geometry();
-    pt->set_name("Parabolic Trough");
+    auto dish = make_element<ParabolicDish>();
+    dish->set_optics(mirror, absorber);
+    dish->set_origin(2.0, -2.0, 0.0);
+    dish->set_aperture_size(10.0);
+    dish->set_number_of_panels(2, 2);
+    dish->set_gaps(0.02, 0.01, 0.5);
+    dish->set_focal_length(7.5);
+    dish->set_receiver_dimensions(0.5, 7.25);
+    dish->set_name("ParabolicDish");
+    dish->create_geometry();
 
     auto sun = make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 1000.0);
@@ -129,13 +102,10 @@ TEST(ParabolicTrough, Tracing)
     my_sim.add_ray_source(sun);
     
     // Assumes that reference and global coordinates are the same
-    // Vector3d pt_aim_point;
-    // vector_add(1.0, sun->get_position(), -1.0, pt->get_origin_ref(), pt_aim_point);
-    // pt->set_aim_vector(pt_aim_point);
-    pt->set_aim_vector(sun->get_position());
-    pt->set_zrot(0.0);
-    pt->compute_coordinate_rotations();
-    my_sim.add_element(pt);
+    dish->set_aim_vector(sun->get_position());
+    dish->set_zrot(0.0);
+    dish->compute_coordinate_rotations();
+    my_sim.add_element(dish);
 
     // // We can go over all the elements added
     // for (auto iter = my_sim.get_iterator();

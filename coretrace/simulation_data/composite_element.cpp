@@ -1,6 +1,8 @@
 
 #include "composite_element.hpp"
 
+#include <sstream>
+
 CompositeElement::CompositeElement() : ElementBase(),
                                        number_of_elements(0),
                                        my_elements()
@@ -10,7 +12,7 @@ CompositeElement::CompositeElement() : ElementBase(),
 
 CompositeElement::~CompositeElement()
 {
-    // NOTE: ElementContainer should handle all the necessary tear down here
+    this->clear();
     return;
 }
 
@@ -146,4 +148,19 @@ element_id StageElement::add_element(element_ptr el)
         el->set_stage(this->stage);
     }
     return id;
+}
+
+void CompositeElement::enforce_user_fields_set() const
+{
+    ElementBase::enforce_user_fields_set();
+
+    if (this->number_of_elements == 0)
+    {
+        std::stringstream ss;
+        ss << "CompositeElement (Name: " << this->get_name()
+           << ", UUID: " << this->get_id()
+           << ") has no subelements.";
+        throw std::invalid_argument(ss.str());
+    }
+    return;
 }

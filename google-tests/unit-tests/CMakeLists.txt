@@ -31,6 +31,7 @@ set(UNIT_TEST_SRC
 	tower_demo.cpp
 	parabolic_trough_test.cpp
 	heliostat_test.cpp
+	parabolic_dish_test.cpp
 )
 
 add_executable(UnitTests

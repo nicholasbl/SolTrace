@@ -1,7 +1,9 @@
 
 #include "single_element.hpp"
 
+#include <exception>
 #include <memory>
+#include <sstream>
 
 #include "aperture.hpp"
 #include "element.hpp"
@@ -32,4 +34,31 @@ int SingleElement::update_orientation(const DateTime &dt,
     int sts = 0;
     // TODO: Implment this
     return sts;
+}
+
+void SingleElement::enforce_user_fields_set()
+{
+    ElementBase::enforce_user_fields_set();
+
+    if (this->aperture == nullptr)
+    {
+        std::stringstream ss;
+        ss << "Element (Name: " << this->get_name()
+           << ", UUID: " << this->get_id()
+           << ") has no aperture.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (this->surface == nullptr)
+    {
+        std::stringstream ss;
+        ss << "Element (Name: " << this->get_name()
+           << ", UUID: " << this->get_id()
+           << ") has no surface.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    // TODO: Add optics checks here
+
+    return;
 }

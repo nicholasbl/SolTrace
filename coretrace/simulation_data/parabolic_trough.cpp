@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 #include "aperture.hpp"
+#include "arclength.hpp"
 #include "composite_element.hpp"
 #include "element.hpp"
 #include "surface.hpp"
@@ -36,8 +37,6 @@ ParabolicTrough::ParabolicTrough()
 
 ParabolicTrough::~ParabolicTrough()
 {
-    // TODO: Implement...
-    // this->elements->clear();
     absorbers.clear();
     envelopes.clear();
     mirrors.clear();
@@ -50,6 +49,11 @@ void ParabolicTrough::create_geometry()
 
     if (initialized)
         return;
+
+    this->absorbers.clear();
+    this->mirrors.clear();
+    this->envelopes.clear();
+    this->clear();
 
     // Mirrors
     aperture_ptr ap = nullptr;
@@ -98,7 +102,7 @@ void ParabolicTrough::create_geometry()
             aim.set_values(0.0, ycoord, 1.0);
 
             panel = make_element<SingleElement>();
-            panel->set_name("Mirror");
+            panel->set_name("ParabolicMirror");
             panel->set_reference_frame_geometry(origin, aim, 0.0);
             ap = make_aperture<Rectangle>(xstop - xstart,
                                           panel_length_y,
@@ -148,7 +152,7 @@ void ParabolicTrough::create_geometry()
 
     // Envelope -- Outer
     auto envout = make_element<SingleElement>();
-    envout->set_name("Envelope Outer");
+    envout->set_name("EnvelopeOuter");
     envout->set_origin(0.0, 0.0,
                        this->focal_length - 0.5 * this->envelope_diameter);
     envout->set_aim_vector(0.0, 0.0, 1.0);
@@ -169,7 +173,7 @@ void ParabolicTrough::create_geometry()
 
     // Envelope -- Inner
     auto envin = make_element<SingleElement>();
-    envin->set_name("Envelope Inner");
+    envin->set_name("EnvelopeInner");
     envin->set_origin(0.0, 0.0,
                       this->focal_length - 0.5 * this->envelope_diameter +
                           this->envelope_thickness);
@@ -368,35 +372,17 @@ void ParabolicTrough::set_tracking_limits(double lower, double upper)
     return;
 }
 
-double ParabolicTrough::parabolic_arc_length(double x)
+double ParabolicTrough::determine_x_coordinate(double x0,
+                                               double arc_length)
 {
-    double cxx = this->cx * x;
-    return sqrt(1.0 + cxx * cxx);
+    return parabolic_determine_x_coordinate(this->cx, x0, arc_length);
 }
 
-double ParabolicTrough::determine_x_coordinate(double x0, double arc_length)
+void ParabolicTrough::enforce_user_fields_set() const
 {
-    const double dx = 1e-6;
+    CompositeElement::enforce_user_fields_set();
 
-    double x1 = x0;
-    double y1 = parabolic_arc_length(x1);
-    double s = 0.5 * y1 * dx;
-    double area;
-    while (true)
-    {
-        x1 += dx;
-        y1 = parabolic_arc_length(x1);
-        area = 0.5 * y1 * dx;
-        s += area;
-        if (s < arc_length)
-        {
-            s += area;
-        }
-        else
-        {
-            break;
-        }
-    }
+    // TODO: Add required fields here
 
-    return x1;
+    return;
 }
