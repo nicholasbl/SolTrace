@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include <composite_element.hpp>
 #include <element.hpp>
 #include <single_element.hpp>
+#include <stage_element.hpp>
 #include <virtual_element.hpp>
 #include <vector3d.hpp>
 

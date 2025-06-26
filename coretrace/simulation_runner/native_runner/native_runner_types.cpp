@@ -53,9 +53,9 @@
 #include <stdarg.h>
 
 #include "calculator_factory.hpp"
-#include "composite_element.hpp"
 #include "matvec.hpp"
 #include "native_runner_types.hpp"
+#include "stage_element.hpp"
 #include "vector3d.hpp"
 
 // TOpticalProperties::TOpticalProperties()

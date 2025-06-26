@@ -99,21 +99,4 @@ private:
 
 using composite_element_ptr = std::shared_ptr<CompositeElement>;
 
-class StageElement: public CompositeElement
-{
-public:
-    StageElement(int_fast64_t stage);
-    ~StageElement();
-    virtual bool is_stage() const { return true; }
-    virtual element_id add_element(element_ptr el);
-private:
-};
-
-using stage_ptr = std::shared_ptr<StageElement>;
-template <typename... Args>
-inline auto make_stage(Args &&...args)
-{
-    return make_element<StageElement>(std::forward<Args>(args)...);
-}
-
 #endif

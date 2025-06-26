@@ -2,7 +2,6 @@
 
 #include <common.hpp>
 
-#include <composite_element.hpp>
 #include <error_distributions.hpp>
 #include <mtrand.hpp>
 #include <native_runner.hpp>
@@ -11,6 +10,7 @@
 #include <sun.hpp>
 #include <simulation_data.hpp>
 #include <single_element.hpp>
+#include <stage_element.hpp>
 #include <vector3d.hpp>
 
 TEST(RandomNumberGenerator, SingleNumberMersenneTwister)

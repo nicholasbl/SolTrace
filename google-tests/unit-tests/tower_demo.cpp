@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include <composite_element.hpp>
 #include <element.hpp>
 #include <native_runner.hpp>
 #include <sun.hpp>
 #include <simulation_data.hpp>
 #include <single_element.hpp>
+#include <stage_element.hpp>
 #include <vector3d.hpp>
 
 #include <cmath>
