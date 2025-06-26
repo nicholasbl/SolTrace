@@ -1,7 +1,8 @@
 
 #include "heliostat.hpp"
 
-#include <exception>
+#include <sstream>
+#include <stdexcept>
 
 Heliostat::Heliostat()
     : CompositeElement(),
@@ -22,6 +23,8 @@ void Heliostat::create_geometry()
 {
     if (this->initialized)
         return;
+
+    this->enforce_user_fields_set();
 
     this->facets.clear();
     this->clear();
@@ -100,7 +103,7 @@ void Heliostat::create_geometry()
                                               this->focal_length_y);
             }
             elem->set_surface(surf);
-            
+
             elem->set_front_optical_properties(this->optics_mirror);
             elem->set_back_optical_properties(this->optics_mirror);
             elem->enable();
@@ -129,8 +132,11 @@ void Heliostat::set_aperture_size(double size_x,
 {
     if (size_x <= 0.0 || size_y <= 0.0)
     {
-        throw std::invalid_argument(
-            "Aperture sizes must be strictly positive");
+        std::stringstream ss;
+        ss << "Heliostat::set_aperture_size: Invalid aperture dimensions. "
+           << "size_x (" << size_x << ") and size_y (" << size_y
+           << ") must be positive.";
+        throw std::invalid_argument(ss.str());
     }
 
     this->initialized = false;
@@ -144,9 +150,10 @@ void Heliostat::set_focal_length(double flen)
 {
     if (flen < 0.0)
     {
-        // TODO: Custom exception type here?
-        throw std::invalid_argument(
-            "Focal length must be nonnegative");
+        std::stringstream ss;
+        ss << "Heliostat::set_focal_length: Invalid focal length ("
+           << flen << "). Must be non-negative.";
+        throw std::invalid_argument(ss.str());
     }
 
     this->initialized = false;
@@ -160,8 +167,11 @@ void Heliostat::set_focal_length(double fx, double fy)
 {
     if (fx < 0.0 || fy < 0.0)
     {
-        throw std::invalid_argument(
-            "Focal length must be nonnegative");
+        std::stringstream ss;
+        ss << "Heliostat::set_focal_length: Invalid focal lengths. "
+           << "fx (" << fx << ") and fy (" << fy
+           << ") must be non-negative.";
+        throw std::invalid_argument(ss.str());
     }
 
     this->initialized = false;
@@ -176,8 +186,11 @@ void Heliostat::set_gaps(double gap_x,
 {
     if (gap_x < 0.0 || gap_y < 0.0)
     {
-        throw std::invalid_argument(
-            "All gap values must be nonnegative");
+        std::stringstream ss;
+        ss << "Heliostat::set_gaps: Invalid gap dimensions. "
+           << "gap_x (" << gap_x << ") and gap_y (" << gap_y
+           << ") must be non-negative.";
+        throw std::invalid_argument(ss.str());
     }
 
     this->initialized = false;
@@ -192,8 +205,11 @@ void Heliostat::set_number_panels(uint_fast64_t num_x,
 {
     if (num_x < 1 || num_y < 1)
     {
-        throw std::invalid_argument(
-            "Number of panels must be greater than one");
+        std::stringstream ss;
+        ss << "Heliostat::set_number_panels: Invalid panel count. "
+           << "num_x (" << num_x << ") and num_y (" << num_y
+           << ") must be at least 1.";
+        throw std::invalid_argument(ss.str());
     }
 
     this->initialized = false;
@@ -222,13 +238,19 @@ void Heliostat::set_canting(CantingType ct, double val1, double val2)
     {
         if (val1 < 0.0 || val1 > 360.0)
         {
-            throw std::domain_error(
-                "Off-axis canting sun azimuth angle be lie in [0, 360]");
+            std::stringstream ss;
+            ss << "Heliostat::set_canting: Invalid off-axis canting "
+               << "sun azimuth angle (" << val1
+               << "). Must be between 0 and 360 degrees.";
+            throw std::invalid_argument(ss.str());
         }
         if (val2 < 0.0 || val2 > 90.0)
         {
-            throw std::domain_error(
-                "Off-axis canting sun zenith angle must lie in [0, 90]");
+            std::stringstream ss;
+            ss << "Heliostat::set_canting: Invalid off-axis canting "
+               << "sun zenith angle (" << val2
+               << "). Must be between 0 and 90 degrees.";
+            throw std::invalid_argument(ss.str());
         }
         this->offaxis_canting_sun_position_azimuth = val1;
         this->offaxis_canting_sun_position_zenith = val2;
@@ -238,8 +260,10 @@ void Heliostat::set_canting(CantingType ct, double val1, double val2)
     {
         if (val1 <= 0.0)
         {
-            throw std::domain_error(
-                "On-axis canting distance must be strictly positive");
+            std::stringstream ss;
+            ss << "Heliostat::set_canting: Invalid on-axis canting "
+               << "distance (" << val1 << "). Must be positive.";
+            throw std::invalid_argument(ss.str());
         }
         this->onaxis_canting_distance = val1;
         this->offaxis_canting_sun_position_azimuth = -1.0;
@@ -247,7 +271,10 @@ void Heliostat::set_canting(CantingType ct, double val1, double val2)
     }
     else
     {
-        throw std::runtime_error("Unrecognized canting method");
+        std::stringstream ss;
+        ss << "Heliostat::set_canting: Unrecognized canting method ("
+           << static_cast<int>(ct) << ").";
+        throw std::invalid_argument(ss.str());
     }
 
     return;
@@ -255,9 +282,32 @@ void Heliostat::set_canting(CantingType ct, double val1, double val2)
 
 void Heliostat::enforce_user_fields_set() const
 {
-    CompositeElement::enforce_user_fields_set();
+    if (this->initialized)
+    {
+        CompositeElement::enforce_user_fields_set();
+    }
 
-    // TODO: Implement the remainder of this function
+    // Validate that all required parameters have been set
+    if (this->aperture_size_x <= 0.0 || this->aperture_size_y <= 0.0)
+    {
+        throw std::invalid_argument(
+            "Heliostat: Aperture size must be set "
+            "before creating geometry.");
+    }
+
+    if (this->num_panels_x <= 0 || this->num_panels_y <= 0)
+    {
+        throw std::invalid_argument(
+            "Heliostat: Number of panels must be set "
+            "before creating geometry.");
+    }
+
+    if (this->canting_method == UNSET)
+    {
+        throw std::invalid_argument(
+            "Heliostat: Canting method must be set "
+            "before creating geometry.");
+    }
 
     return;
 }

@@ -3,7 +3,8 @@
 
 #include <algorithm>
 #include <cmath>
-#include <exception>
+#include <sstream>
+#include <stdexcept>
 
 #include "arclength.hpp"
 
@@ -36,6 +37,8 @@ void ParabolicDish::create_geometry()
 {
     if (this->initialized)
         return;
+
+    this->enforce_user_fields_set();
 
     // TODO: What is the correct behavior when gap_center is unset (i.e. < 0)?
     // Currently, if gap_center is unset, then there is no gap at the center.
@@ -155,8 +158,10 @@ void ParabolicDish::set_aperture_size(double diameter)
 {
     if (diameter <= 0.0)
     {
-        throw std::invalid_argument(
-            "Aperture radius must be strictly positive");
+        std::stringstream ss;
+        ss << "ParabolicDish::set_aperture_size: Invalid aperture diameter ("
+           << diameter << "). Must be positive.";
+        throw std::invalid_argument(ss.str());
     }
 
     this->initialized = false;
@@ -170,8 +175,10 @@ void ParabolicDish::set_focal_length(double flen)
 {
     if (flen <= 0.0)
     {
-        throw std::invalid_argument(
-            "Focal length must be strictly positive");
+        std::stringstream ss;
+        ss << "ParabolicDish::set_focal_length: Invalid focal length ("
+           << flen << "). Must be positive.";
+        throw std::invalid_argument(ss.str());
     }
 
     this->initialized = false;
@@ -187,22 +194,21 @@ void ParabolicDish::set_gaps(double radial,
 {
     if (radial < 0.0)
     {
-        throw std::invalid_argument(
-            "Radial gap must be nonnegative");
+        std::stringstream ss;
+        ss << "ParabolicDish::set_gaps: Invalid radial gap ("
+           << radial << "). Must be non-negative.";
+        throw std::invalid_argument(ss.str());
     }
 
     if (angular < 0.0)
     {
-        throw std::invalid_argument(
-            "Angular gap must be nonnegative");
+        std::stringstream ss;
+        ss << "ParabolicDish::set_gaps: Invalid angular gap ("
+           << angular << "). Must be non-negative.";
+        throw std::invalid_argument(ss.str());
     }
 
-    // if (center_radius < 0.0)
-    // {
-    //     throw std::invalid_argument(
-    //         "Center radial gap must be nonnegative");
-    // }
-
+    // Note: center_radius can be negative (meaning no center gap)
     this->initialized = false;
     this->gap_r = radial;
     this->gap_a = angular;
@@ -216,14 +222,18 @@ void ParabolicDish::set_number_of_panels(int_fast64_t nradial,
 {
     if (nradial < 1)
     {
-        throw std::invalid_argument(
-            "Number of radial panels must be greater than 0");
+        std::stringstream ss;
+        ss << "ParabolicDish::set_number_of_panels: Invalid number of "
+           << "radial panels (" << nradial << "). Must be at least 1.";
+        throw std::invalid_argument(ss.str());
     }
 
     if (nangular < 1)
     {
-        throw std::invalid_argument(
-            "Number of angular panels must be greater than 0");
+        std::stringstream ss;
+        ss << "ParabolicDish::set_number_of_panels: Invalid number of "
+           << "angular panels (" << nangular << "). Must be at least 1.";
+        throw std::invalid_argument(ss.str());
     }
 
     this->initialized = false;
@@ -246,14 +256,20 @@ void ParabolicDish::set_receiver_dimensions(double diameter,
 {
     if (diameter <= 0.0)
     {
-        throw std::invalid_argument(
-            "Receiver diameter must be strictly positive");
+        std::stringstream ss;
+        ss << "ParabolicDish::set_receiver_dimensions: "
+           << "Invalid receiver diameter (" << diameter
+           << "). Must be positive.";
+        throw std::invalid_argument(ss.str());
     }
 
     if (distance < 0.0)
     {
-        throw std::invalid_argument(
-            "Receiver distance must be nonnegative");
+        std::stringstream ss;
+        ss << "ParabolicDish::set_receiver_dimensions: "
+           << "Invalid receiver distance (" << distance
+           << "). Must be non-negative.";
+        throw std::invalid_argument(ss.str());
     }
 
     this->initialized = false;
@@ -271,9 +287,39 @@ double ParabolicDish::determine_x_coordinate(double x0,
 
 void ParabolicDish::enforce_user_fields_set() const
 {
-    CompositeElement::enforce_user_fields_set();
-    
-    // TODO: Implement the remainder of this function...
-    
+    if (this->initialized)
+    {
+        CompositeElement::enforce_user_fields_set();
+    }
+
+    // Validate that all required parameters have been set
+    if (this->aperture_diameter <= 0.0)
+    {
+        throw std::invalid_argument(
+            "ParabolicDish: Aperture diameter must be set "
+            "before creating geometry.");
+    }
+
+    if (this->focal_length <= 0.0)
+    {
+        throw std::invalid_argument(
+            "ParabolicDish: Focal length must be set "
+            "before creating geometry.");
+    }
+
+    if (this->num_panels_r <= 0 || this->num_panels_a <= 0)
+    {
+        throw std::invalid_argument(
+            "ParabolicDish: Number of panels must be set "
+            "before creating geometry.");
+    }
+
+    if (this->abs_diameter <= 0.0 || this->abs_distance < 0.0)
+    {
+        throw std::invalid_argument(
+            "ParabolicDish: Receiver dimensions must be set "
+            "before creating geometry.");
+    }
+
     return;
 }
