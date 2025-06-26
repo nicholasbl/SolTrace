@@ -36,7 +36,7 @@ public:
     void set_aperture_size(double size_x, double size_y);
     void set_focal_length(double flen);
     void set_gaps(double gap_x, double gap_y, double gap_center);
-    void set_number_panels(uint_fast64_t num_x, uint_fast64_t num_y);
+    void set_number_panels(int_fast64_t num_x, int_fast64_t num_y);
     void set_optics(const OpticalProperties &mirror,
                     const OpticalProperties &absorber,
                     const OpticalProperties &envelope_inner,
@@ -71,8 +71,8 @@ private:
     double gap_x;
     double gap_y;
     double gap_center;
-    uint_fast64_t num_panels_x;
-    uint_fast64_t num_panels_y;
+    int_fast64_t num_panels_x;
+    int_fast64_t num_panels_y;
     OpticalProperties optics_mirror;
 
     // Receiver Characteristics

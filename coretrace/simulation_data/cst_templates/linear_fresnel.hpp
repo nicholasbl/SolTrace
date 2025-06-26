@@ -1,0 +1,69 @@
+#ifndef SOLTRACE_LINEAR_FRESNEL_H
+#define SOLTRACE_LINEAR_FRESNEL_H
+
+#include "composite_element.hpp"
+
+#include <cstdint>
+#include <vector>
+
+#include "element.hpp"
+#include "single_element.hpp"
+
+class LinearFresnel : public CompositeElement
+{
+public:
+    LinearFresnel();
+    ~LinearFresnel();
+    void set_angles(double azimuth, double tilt);
+    void set_aperture_size(double len_x, double len_y);
+    void set_focused_panels(bool focused);
+    void set_gaps(double gap_x, double gap_y, double gap_center);
+    void set_number_panels(int_fast64_t num_x, int_fast64_t num_y);
+    void set_optics(const OpticalProperties &mirror,
+                    const OpticalProperties &absorber,
+                    const OpticalProperties &envelop_outer,
+                    const OpticalProperties &envelop_inner);
+    void set_receiver_height(double height);
+    void set_receiver_dimensions(double absorber_diameter,
+                                 double envelop_diameter,
+                                 double envelop_thickness);
+
+    virtual void enforce_user_fields_set() const;
+
+    void create_geometry();
+    void update_geometry();
+
+private:
+    bool initialized;
+
+    // Global Characteristics
+    double reciever_height;
+    double azimuth;
+    double tilt;
+
+    // Mirror Characteristics
+    bool focused_panels;
+    double aperture_size_x;
+    double aperture_size_y;
+    int_fast64_t num_panels_x;
+    int_fast64_t num_panels_y;
+    double gap_x;
+    double gap_y;
+    double gap_center;
+    OpticalProperties optics_mirror;
+
+    // Receiver Characteristics
+    double abs_diameter;
+    double env_diameter;
+    double env_thickness;
+    // double receiver_length;
+    OpticalProperties optics_absorber;
+    OpticalProperties optics_env_out;
+    OpticalProperties optics_env_in;
+
+    std::vector<single_element_ptr> mirrors;
+    std::vector<single_element_ptr> absorbers;
+    std::vector<single_element_ptr> envelope;
+};
+
+#endif

@@ -16,6 +16,7 @@ set(SIMDATA_SRC
     virtual_element.cpp
     vector3d.cpp
     cst_templates/heliostat.cpp
+    cst_templates/linear_fresnel.cpp
     cst_templates/parabolic_dish.cpp
     cst_templates/parabolic_trough.cpp
 )

@@ -6,9 +6,9 @@
 #include <simulation_data.hpp>
 #include <sun.hpp>
 
-#include <cst_templates/parabolic_trough.hpp>
+#include <cst_templates/linear_fresnel.hpp>
 
-TEST(ParabolicTrough, Build)
+TEST(LinearFresnel, Build)
 {
     OpticalProperties mirror;
     mirror.set_ideal_reflection();
@@ -26,32 +26,34 @@ TEST(ParabolicTrough, Build)
     envelop_in.refraction_index_front = 1.0;
     envelop_in.refraction_index_back = 1.46;
 
-    auto pt = make_element<ParabolicTrough>();
-    pt->set_optics(mirror, absorber, envelop_out, envelop_in);
-    pt->set_origin(20.0, -20.0, 30.0);
-    pt->set_aperture_size(5.774, 11.96);
-    pt->set_number_panels(4, 7);
-    pt->set_gaps(0.02, 0.01, 0.08);
-    pt->set_focal_length(1.71);
-    pt->set_receiver_dimensions(0.07, 0.115, 0.003);
-    pt->set_angles(0.0, 0.0);
-    pt->create_geometry();
+    auto lf = make_element<LinearFresnel>();
+    lf->set_optics(mirror, absorber, envelop_out, envelop_in);
+    lf->set_origin(10.0, -10.0, 0.0);
+    lf->set_aperture_size(6.0, 12.0);
+    lf->set_number_panels(10, 4);
+    lf->set_gaps(0.15, 0.02, 0.15);
+    lf->set_focused_panels(true);
+    lf->set_receiver_height(2.0);
+    lf->set_receiver_dimensions(0.07, 0.115, 0.003);
+    lf->set_angles(0.0, 0.0);
+    lf->create_geometry();
 
-    pt = make_element<ParabolicTrough>();
-    pt->set_optics(mirror, absorber, envelop_out, envelop_in);
-    pt->set_origin(20.0, -20.0, 30.0);
-    pt->set_aperture_size(5.774, 11.96);
-    pt->set_number_panels(1, 7);
-    pt->set_gaps(0.0, 0.01, 0.0);
-    pt->set_focal_length(1.71);
-    pt->set_receiver_dimensions(0.07, 0.115, 0.003);
-    pt->set_angles(0.0, 0.0);
-    pt->create_geometry();
+    lf = make_element<LinearFresnel>();
+    lf->set_optics(mirror, absorber, envelop_out, envelop_in);
+    lf->set_origin(10.0, -10.0, 0.0);
+    lf->set_aperture_size(6.0, 12.0);
+    lf->set_number_panels(1, 1);
+    lf->set_gaps(0.0, 0.01, 0.0);
+    lf->set_focused_panels(false);
+    lf->set_receiver_height(2.0);
+    lf->set_receiver_dimensions(0.07, 0.115, 0.003);
+    lf->set_angles(0.0, 0.0);
+    lf->create_geometry();
 
     // TODO: Check that everything ends up in the proper position
 }
 
-TEST(ParabolicTrough, Tracing)
+TEST(LinearFresnel, Tracing)
 {
     const uint_fast64_t NRAYS = 10000;
 
@@ -92,32 +94,33 @@ TEST(ParabolicTrough, Tracing)
     envelop_in.slope_error = 1e-4;
     envelop_out.specularity_error = 1e-4;
 
-    auto pt = make_element<ParabolicTrough>();
-    pt->set_optics(mirror, absorber, envelop_out, envelop_in);
-    pt->set_origin(20.0, -20.0, 30.0);
-    pt->set_angles(0.0, 0.0);
-    pt->set_aperture_size(6.0, 12.0);
-    pt->set_number_panels(4, 7);
-    pt->set_focal_length(1.71);
-    pt->set_gaps(0.02, 0.01, 0.08);
-    pt->set_receiver_dimensions(0.07, 0.115, 0.003);
-    pt->create_geometry();
-    pt->set_name("Parabolic Trough");
+    auto lf = make_element<LinearFresnel>();
+    lf->set_optics(mirror, absorber, envelop_out, envelop_in);
+    lf->set_origin(10.0, -10.0, 0.0);
+    lf->set_aperture_size(6.0, 12.0);
+    lf->set_number_panels(2, 2);
+    lf->set_gaps(0.05, 0.02, 0.15);
+    lf->set_focused_panels(true);
+    lf->set_receiver_height(2.0);
+    lf->set_receiver_dimensions(0.07, 0.115, 0.003);
+    lf->set_angles(0.0, 0.0);
+    lf->create_geometry();
+    lf->set_name("LinearFresnel");
 
     auto sun = make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 1000.0);
-    sun->set_shape(DistributionType::PILLBOX);
+    sun->set_shape(DistributionType::GAUSSIAN);
     my_sim.add_ray_source(sun);
     
     // Assumes that reference and global coordinates are the same
     // Vector3d pt_aim_point;
-    // vector_add(1.0, sun->get_position(), -1.0, pt->get_origin_ref(), pt_aim_point);
-    // pt->set_aim_vector(pt_aim_point);
-    pt->set_aim_vector(sun->get_position());
-    pt->set_zrot(0.0);
-    pt->compute_coordinate_rotations();
-    pt->enable();
-    my_sim.add_element(pt);
+    // vector_add(1.0, sun->get_position(), -1.0, lf->get_origin_ref(), pt_aim_point);
+    // lf->set_aim_vector(pt_aim_point);
+    lf->set_aim_vector(sun->get_position());
+    lf->set_zrot(0.0);
+    lf->compute_coordinate_rotations();
+    lf->enable();
+    my_sim.add_element(lf);
 
     // // We can go over all the elements added
     // for (auto iter = my_sim.get_iterator();

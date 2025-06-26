@@ -2,6 +2,7 @@
 #include "parabolic_trough.hpp"
 
 #include <algorithm>
+#include <sstream>
 #include <stdexcept>
 
 #include "aperture.hpp"
@@ -13,22 +14,22 @@
 ParabolicTrough::ParabolicTrough()
     : initialized(false),
       //   ready_to_add_self(false),
-      azimuth(0.0),
-      tilt(0.0),
-      aperture_size_x(1.0),
-      aperture_size_y(1.0),
-      focal_length(1.0),
-      gap_x(0.0),
-      gap_y(0.0),
-      gap_center(0.0),
-      num_panels_x(1),
-      num_panels_y(1),
-      absorber_diameter(0.1),
-      envelope_diameter(0.25),
-      envelope_thickness(0.05),
+      azimuth(-1.0),
+      tilt(-1.0),
+      aperture_size_x(-1.0),
+      aperture_size_y(-1.0),
+      focal_length(-1.0),
+      gap_x(-1.0),
+      gap_y(-1.0),
+      gap_center(-1.0),
+      num_panels_x(-1),
+      num_panels_y(-1),
+      absorber_diameter(-1.0),
+      envelope_diameter(-1.0),
+      envelope_thickness(-1.0),
       //   length(1.0),
-      tracking_limit_lower(0.0),
-      tracking_limit_upper(180.0)
+      tracking_limit_lower(-1.0),
+      tracking_limit_upper(-1.0)
 {
     // TODO: Initialize to nonsense and enforce user setting of values
     // TODO: Need to do something similar for elements totally
@@ -49,6 +50,8 @@ void ParabolicTrough::create_geometry()
 
     if (initialized)
         return;
+
+    this->enforce_user_fields_set();
 
     this->absorbers.clear();
     this->mirrors.clear();
@@ -215,16 +218,20 @@ double ParabolicTrough::calculate_receiver_power()
 
 void ParabolicTrough::set_angles(double az, double tilt)
 {
-    if (az < -180.0 || az > 180)
+    if (az < -180.0 || az > 180.0)
     {
-        throw std::invalid_argument(
-            "Azimuth must be within -180 and 180 degrees");
+        std::stringstream ss;
+        ss << "ParabolicTrough::set_angles: Invalid azimuth angle ("
+           << az << "). Must be between -180 and 180 degrees.";
+        throw std::invalid_argument(ss.str());
     }
 
     if (tilt < 0.0 || tilt > 90.0)
     {
-        throw std::invalid_argument(
-            "Tilt angle should be between 0 and 90 degress");
+        std::stringstream ss;
+        ss << "ParabolicTrough::set_angles: Invalid tilt angle ("
+           << tilt << "). Must be between 0 and 90 degrees.";
+        throw std::invalid_argument(ss.str());
     }
 
     // this->initialized = false;
@@ -239,8 +246,11 @@ void ParabolicTrough::set_aperture_size(double size_x,
 {
     if (size_x <= 0.0 || size_y <= 0.0)
     {
-        throw std::invalid_argument(
-            "Aperture sizes must be strictly positive");
+        std::stringstream ss;
+        ss << "ParabolicTrough::set_aperture_size: Invalid aperture "
+           << "dimensions. size_x (" << size_x << ") and size_y ("
+           << size_y << ") must be positive.";
+        throw std::invalid_argument(ss.str());
     }
 
     this->initialized = false;
@@ -254,9 +264,10 @@ void ParabolicTrough::set_focal_length(double flen)
 {
     if (flen <= 0.0)
     {
-        // TODO: Custom exception type here?
-        throw std::invalid_argument(
-            "Focal length must be strictly positive");
+        std::stringstream ss;
+        ss << "ParabolicTrough::set_focal_length: Invalid focal length ("
+           << flen << "). Must be positive.";
+        throw std::invalid_argument(ss.str());
     }
 
     this->initialized = false;
@@ -272,8 +283,12 @@ void ParabolicTrough::set_gaps(double gap_x,
 {
     if (gap_x < 0.0 || gap_y < 0.0 || gap_center < 0.0)
     {
-        throw std::invalid_argument(
-            "All gap values must be nonnegative");
+        std::stringstream ss;
+        ss << "ParabolicTrough::set_gaps: Invalid gap dimensions. "
+           << "gap_x (" << gap_x << "), gap_y (" << gap_y
+           << "), and gap_center (" << gap_center
+           << ") must be non-negative.";
+        throw std::invalid_argument(ss.str());
     }
 
     this->initialized = false;
@@ -284,19 +299,25 @@ void ParabolicTrough::set_gaps(double gap_x,
     return;
 }
 
-void ParabolicTrough::set_number_panels(uint_fast64_t num_x,
-                                        uint_fast64_t num_y)
+void ParabolicTrough::set_number_panels(int_fast64_t num_x,
+                                        int_fast64_t num_y)
 {
     if (num_x < 1 || num_y < 1)
     {
-        throw std::invalid_argument(
-            "Number of panels must be greater than one");
+        std::stringstream ss;
+        ss << "ParabolicTrough::set_number_panels: Invalid panel count. "
+           << "num_x (" << num_x << ") and num_y (" << num_y
+           << ") must be at least 1.";
+        throw std::invalid_argument(ss.str());
     }
 
     if (num_x != 1 && num_x % 2 != 0)
     {
-        throw std::invalid_argument(
-            "Number of panels x direction must be either one or even");
+        std::stringstream ss;
+        ss << "ParabolicTrough::set_number_panels: Invalid panel count "
+           << "in x direction (" << num_x
+           << "). Must be either 1 or an even number.";
+        throw std::invalid_argument(ss.str());
     }
 
     this->initialized = false;
@@ -324,36 +345,45 @@ void ParabolicTrough::set_receiver_dimensions(double abs_diam,
 {
     if (abs_diam <= 0.0)
     {
-        throw std::invalid_argument(
-            "Absorber diameter must be strictly positive");
+        std::stringstream ss;
+        ss << "ParabolicTrough::set_receiver_dimensions: "
+           << "Invalid absorber diameter (" << abs_diam
+           << "). Must be positive.";
+        throw std::invalid_argument(ss.str());
     }
 
     if (env_diam <= 0.0)
     {
-        throw std::invalid_argument(
-            "Envelope diameter must be strictly positive");
+        std::stringstream ss;
+        ss << "ParabolicTrough::set_receiver_dimensions: "
+           << "Invalid envelope diameter (" << env_diam
+           << "). Must be positive.";
+        throw std::invalid_argument(ss.str());
     }
 
     if (env_thick <= 0.0)
     {
-        throw std::invalid_argument(
-            "Envelope thickness must be strictly positive");
+        std::stringstream ss;
+        ss << "ParabolicTrough::set_receiver_dimensions: "
+           << "Invalid envelope thickness (" << env_thick
+           << "). Must be positive.";
+        throw std::invalid_argument(ss.str());
     }
-
-    // if (length <= 0.0)
-    // {
-    //     throw std::invalid_argument(
-    //         "Receiver length must be strictly positive");
-    // }
 
     if (env_diam - 2 * env_thick < abs_diam)
     {
-        // TODO: Seems like this should be an error.
-        throw std::invalid_argument(
-            "Envelope is too small for the given absorber diameter");
+        std::stringstream ss;
+        ss << "ParabolicTrough::set_receiver_dimensions: "
+           << "Envelope inner diameter (" << (env_diam - 2 * env_thick)
+           << ") is smaller than absorber diameter (" << abs_diam
+           << "). Envelope is too small for the given absorber.";
+        throw std::invalid_argument(ss.str());
     }
 
     this->initialized = false;
+    this->absorber_diameter = abs_diam;
+    this->envelope_diameter = env_diam;
+    this->envelope_thickness = env_thick;
 
     return;
 }
@@ -362,8 +392,12 @@ void ParabolicTrough::set_tracking_limits(double lower, double upper)
 {
     if (lower > upper)
     {
-        throw std::invalid_argument(
-            "Upper tracking limit must be greater than lower limit");
+        std::stringstream ss;
+        ss << "ParabolicTrough::set_tracking_limits: Invalid tracking "
+           << "limits. Lower limit (" << lower
+           << ") must be less than or equal to upper limit ("
+           << upper << ").";
+        throw std::invalid_argument(ss.str());
     }
 
     this->tracking_limit_lower = lower;
@@ -380,9 +414,42 @@ double ParabolicTrough::determine_x_coordinate(double x0,
 
 void ParabolicTrough::enforce_user_fields_set() const
 {
-    CompositeElement::enforce_user_fields_set();
+    if (this->initialized)
+    {
+        // If we have created subelements, do composite element checks
+        CompositeElement::enforce_user_fields_set();
+    }
 
-    // TODO: Add required fields here
+    // Validate that all required parameters have been set
+    if (this->aperture_size_x <= 0.0 || this->aperture_size_y <= 0.0)
+    {
+        throw std::invalid_argument(
+            "ParabolicTrough: Aperture size must be set "
+            "before creating geometry.");
+    }
+
+    if (this->focal_length <= 0.0)
+    {
+        throw std::invalid_argument(
+            "ParabolicTrough: Focal length must be set "
+            "before creating geometry.");
+    }
+
+    if (this->num_panels_x <= 0 || this->num_panels_y <= 0)
+    {
+        throw std::invalid_argument(
+            "ParabolicTrough: Number of panels must be set "
+            "before creating geometry.");
+    }
+
+    if (this->absorber_diameter <= 0.0 ||
+        this->envelope_diameter <= 0.0 ||
+        this->envelope_thickness <= 0.0)
+    {
+        throw std::invalid_argument(
+            "ParabolicTrough: Receiver dimensions must be set "
+            "before creating geometry.");
+    }
 
     return;
 }
