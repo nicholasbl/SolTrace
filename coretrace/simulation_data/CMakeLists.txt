@@ -2,21 +2,22 @@
 Project(simdata)
 
 include_directories(.)
+include_directories(cst_templates)
 
 set(SIMDATA_SRC
     aperture.cpp
     arclength.cpp
     composite_element.cpp
     element.cpp
-    heliostat.cpp
     matvec.cpp
-    parabolic_dish.cpp
-    parabolic_trough.cpp
     simulation_data.cpp
     single_element.cpp
     stage_element.cpp
     virtual_element.cpp
     vector3d.cpp
+    cst_templates/heliostat.cpp
+    cst_templates/parabolic_dish.cpp
+    cst_templates/parabolic_trough.cpp
 )
 
 set(POSITION_INDEPENDENT_CODE ON)

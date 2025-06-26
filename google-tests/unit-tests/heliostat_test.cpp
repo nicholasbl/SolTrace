@@ -1,13 +1,12 @@
 #include <gtest/gtest.h>
 
-#include <heliostat.hpp>
 #include <native_runner.hpp>
 #include <native_runner_types.hpp>
 #include <simulation_data.hpp>
 #include <stage_element.hpp>
 #include <sun.hpp>
 
-// #include "common.hpp"
+#include <cst_templates/heliostat.hpp>
 
 TEST(HeliotStat, BuildParabolaNone)
 {

@@ -1,5 +1,7 @@
 #include "stage_element.hpp"
 
+#include "element.hpp"
+
 StageElement::StageElement(int_fast64_t stage) : CompositeElement()
 {
     this->set_stage(stage);

@@ -3,11 +3,10 @@
 #include <arclength.hpp>
 #include <native_runner.hpp>
 #include <native_runner_types.hpp>
-#include <parabolic_dish.hpp>
 #include <simulation_data.hpp>
 #include <sun.hpp>
 
-// #include "common.hpp"
+#include <cst_templates/parabolic_dish.hpp>
 
 TEST(ParabolicDish, ArcLength)
 {
