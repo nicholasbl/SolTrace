@@ -8,6 +8,133 @@
 
 #include <cst_templates/linear_fresnel.hpp>
 
+// Error Checking Tests for LinearFresnel
+TEST(LinearFresnel, ErrorChecking_SetApertureSize)
+{
+    auto lf = make_element<LinearFresnel>();
+
+    // Test negative aperture size
+    EXPECT_THROW(lf->set_aperture_size(-1.0, 5.0), std::invalid_argument);
+    EXPECT_THROW(lf->set_aperture_size(5.0, -1.0), std::invalid_argument);
+    EXPECT_THROW(lf->set_aperture_size(-1.0, -1.0), std::invalid_argument);
+
+    // Test zero aperture size
+    EXPECT_THROW(lf->set_aperture_size(0.0, 5.0), std::invalid_argument);
+    EXPECT_THROW(lf->set_aperture_size(5.0, 0.0), std::invalid_argument);
+
+    // Test valid aperture sizes
+    EXPECT_NO_THROW(lf->set_aperture_size(1.0, 2.0));
+    EXPECT_NO_THROW(lf->set_aperture_size(10.5, 15.3));
+}
+
+TEST(LinearFresnel, ErrorChecking_SetAngles)
+{
+    auto lf = make_element<LinearFresnel>();
+
+    // Test invalid azimuth angles
+    EXPECT_THROW(lf->set_angles(-181.0, 45.0), std::invalid_argument);
+    EXPECT_THROW(lf->set_angles(181.0, 45.0), std::invalid_argument);
+
+    // Test invalid tilt angles
+    EXPECT_THROW(lf->set_angles(0.0, -1.0), std::invalid_argument);
+    EXPECT_THROW(lf->set_angles(0.0, 91.0), std::invalid_argument);
+
+    // Test valid angles
+    EXPECT_NO_THROW(lf->set_angles(-180.0, 0.0));
+    EXPECT_NO_THROW(lf->set_angles(180.0, 90.0));
+    EXPECT_NO_THROW(lf->set_angles(0.0, 45.0));
+}
+
+TEST(LinearFresnel, ErrorChecking_SetGaps)
+{
+    auto lf = make_element<LinearFresnel>();
+
+    // Test negative gap values
+    EXPECT_THROW(lf->set_gaps(-0.1, 0.1, 0.1), std::invalid_argument);
+    EXPECT_THROW(lf->set_gaps(0.1, -0.1, 0.1), std::invalid_argument);
+    EXPECT_THROW(lf->set_gaps(0.1, 0.1, -0.1), std::invalid_argument);
+
+    // Test valid gap values (including zero)
+    EXPECT_NO_THROW(lf->set_gaps(0.0, 0.0, 0.0));
+    EXPECT_NO_THROW(lf->set_gaps(0.1, 0.2, 0.3));
+}
+
+TEST(LinearFresnel, ErrorChecking_SetNumberPanels)
+{
+    auto lf = make_element<LinearFresnel>();
+
+    // Test invalid panel counts
+    EXPECT_THROW(lf->set_number_panels(0, 5), std::invalid_argument);
+    EXPECT_THROW(lf->set_number_panels(5, 0), std::invalid_argument);
+    EXPECT_THROW(lf->set_number_panels(-1, 5), std::invalid_argument);
+    EXPECT_THROW(lf->set_number_panels(5, -1), std::invalid_argument);
+
+    // Test valid panel counts
+    EXPECT_NO_THROW(lf->set_number_panels(1, 1));
+    EXPECT_NO_THROW(lf->set_number_panels(10, 20));
+}
+
+TEST(LinearFresnel, ErrorChecking_SetReceiverHeight)
+{
+    auto lf = make_element<LinearFresnel>();
+
+    // Test invalid receiver heights
+    EXPECT_THROW(lf->set_receiver_height(0.0), std::invalid_argument);
+    EXPECT_THROW(lf->set_receiver_height(-1.0), std::invalid_argument);
+
+    // Test valid receiver heights
+    EXPECT_NO_THROW(lf->set_receiver_height(0.1));
+    EXPECT_NO_THROW(lf->set_receiver_height(10.0));
+}
+
+TEST(LinearFresnel, ErrorChecking_SetReceiverDimensions)
+{
+    auto lf = make_element<LinearFresnel>();
+
+    // Test invalid absorber diameter
+    EXPECT_THROW(lf->set_receiver_dimensions(0.0, 1.0, 0.1), std::invalid_argument);
+    EXPECT_THROW(lf->set_receiver_dimensions(-0.5, 1.0, 0.1), std::invalid_argument);
+
+    // Test invalid envelope diameter
+    EXPECT_THROW(lf->set_receiver_dimensions(0.5, 0.0, 0.1), std::invalid_argument);
+    EXPECT_THROW(lf->set_receiver_dimensions(0.5, -1.0, 0.1), std::invalid_argument);
+
+    // Test invalid envelope thickness
+    EXPECT_THROW(lf->set_receiver_dimensions(0.5, 1.0, -0.1), std::invalid_argument);
+
+    // Test absorber diameter >= envelope diameter
+    EXPECT_THROW(lf->set_receiver_dimensions(1.0, 1.0, 0.1), std::invalid_argument);
+    EXPECT_THROW(lf->set_receiver_dimensions(1.5, 1.0, 0.1), std::invalid_argument);
+
+    // Test valid receiver dimensions
+    EXPECT_NO_THROW(lf->set_receiver_dimensions(0.5, 1.0, 0.0));
+    EXPECT_NO_THROW(lf->set_receiver_dimensions(0.07, 0.115, 0.003));
+}
+
+TEST(LinearFresnel, ErrorChecking_CreateGeometryWithoutParameters)
+{
+    auto lf = make_element<LinearFresnel>();
+
+    // Test create_geometry without setting required parameters
+    EXPECT_THROW(lf->create_geometry(), std::invalid_argument);
+
+    // Set aperture size and test again
+    lf->set_aperture_size(5.0, 10.0);
+    EXPECT_THROW(lf->create_geometry(), std::invalid_argument);
+
+    // Set number of panels and test again
+    lf->set_number_panels(5, 2);
+    EXPECT_THROW(lf->create_geometry(), std::invalid_argument);
+
+    // Set receiver height and test again
+    lf->set_receiver_height(3.0);
+    EXPECT_THROW(lf->create_geometry(), std::invalid_argument);
+
+    // Set receiver dimensions and it should work
+    lf->set_receiver_dimensions(0.07, 0.115, 0.003);
+    EXPECT_NO_THROW(lf->create_geometry());
+}
+
 TEST(LinearFresnel, Build)
 {
     OpticalProperties mirror;
@@ -65,7 +192,7 @@ TEST(LinearFresnel, Tracing)
     params.include_optical_errors = true;
     params.include_sun_shape_errors = true;
     params.seed = 123;
-    
+
     NativeRunner my_runner;
     my_runner.disable_power_tower();
     my_runner.disable_point_focus();
@@ -111,7 +238,7 @@ TEST(LinearFresnel, Tracing)
     sun->set_position(0.0, 0.0, 1000.0);
     sun->set_shape(DistributionType::GAUSSIAN);
     my_sim.add_ray_source(sun);
-    
+
     // Assumes that reference and global coordinates are the same
     // Vector3d pt_aim_point;
     // vector_add(1.0, sun->get_position(), -1.0, lf->get_origin_ref(), pt_aim_point);

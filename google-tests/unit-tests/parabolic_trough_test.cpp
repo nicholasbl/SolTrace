@@ -8,6 +8,123 @@
 
 #include <cst_templates/parabolic_trough.hpp>
 
+// Error Checking Tests for ParabolicTrough
+TEST(ParabolicTrough, ErrorChecking_SetApertureSize)
+{
+    auto pt = make_element<ParabolicTrough>();
+
+    // Test negative aperture size
+    EXPECT_THROW(pt->set_aperture_size(-1.0, 5.0), std::invalid_argument);
+    EXPECT_THROW(pt->set_aperture_size(5.0, -1.0), std::invalid_argument);
+    EXPECT_THROW(pt->set_aperture_size(-1.0, -1.0), std::invalid_argument);
+
+    // Test zero aperture size
+    EXPECT_THROW(pt->set_aperture_size(0.0, 5.0), std::invalid_argument);
+    EXPECT_THROW(pt->set_aperture_size(5.0, 0.0), std::invalid_argument);
+
+    // Test valid aperture sizes
+    EXPECT_NO_THROW(pt->set_aperture_size(5.774, 11.96));
+    EXPECT_NO_THROW(pt->set_aperture_size(10.5, 15.3));
+}
+
+TEST(ParabolicTrough, ErrorChecking_SetFocalLength)
+{
+    auto pt = make_element<ParabolicTrough>();
+
+    // Test negative focal length
+    EXPECT_THROW(pt->set_focal_length(-1.71), std::invalid_argument);
+    EXPECT_THROW(pt->set_focal_length(-0.1), std::invalid_argument);
+
+    // Test zero focal length
+    EXPECT_THROW(pt->set_focal_length(0.0), std::invalid_argument);
+
+    // Test valid focal lengths
+    EXPECT_NO_THROW(pt->set_focal_length(1.71));
+    EXPECT_NO_THROW(pt->set_focal_length(5.0));
+}
+
+TEST(ParabolicTrough, ErrorChecking_SetNumberPanels)
+{
+    auto pt = make_element<ParabolicTrough>();
+
+    // Test invalid panel counts
+    EXPECT_THROW(pt->set_number_panels(0, 7), std::invalid_argument);
+    EXPECT_THROW(pt->set_number_panels(4, 0), std::invalid_argument);
+    EXPECT_THROW(pt->set_number_panels(-1, 7), std::invalid_argument);
+    EXPECT_THROW(pt->set_number_panels(4, -1), std::invalid_argument);
+
+    // Test odd number of panels in x direction (not allowed)
+    EXPECT_THROW(pt->set_number_panels(3, 7), std::invalid_argument);
+    EXPECT_THROW(pt->set_number_panels(5, 7), std::invalid_argument);
+
+    // Test valid panel counts
+    EXPECT_NO_THROW(pt->set_number_panels(2, 7));
+    EXPECT_NO_THROW(pt->set_number_panels(4, 1));
+    EXPECT_NO_THROW(pt->set_number_panels(6, 10));
+}
+
+TEST(ParabolicTrough, ErrorChecking_SetGaps)
+{
+    auto pt = make_element<ParabolicTrough>();
+
+    // Test negative gap values
+    EXPECT_THROW(pt->set_gaps(-0.02, 0.01, 0.08), std::invalid_argument);
+    EXPECT_THROW(pt->set_gaps(0.02, -0.01, 0.08), std::invalid_argument);
+    EXPECT_THROW(pt->set_gaps(0.02, 0.01, -0.08), std::invalid_argument);
+
+    // Test valid gap values (including zero)
+    EXPECT_NO_THROW(pt->set_gaps(0.0, 0.0, 0.0));
+    EXPECT_NO_THROW(pt->set_gaps(0.02, 0.01, 0.08));
+}
+
+TEST(ParabolicTrough, ErrorChecking_SetReceiverDimensions)
+{
+    auto pt = make_element<ParabolicTrough>();
+
+    // Test invalid absorber diameter
+    EXPECT_THROW(pt->set_receiver_dimensions(0.0, 0.115, 0.003), std::invalid_argument);
+    EXPECT_THROW(pt->set_receiver_dimensions(-0.07, 0.115, 0.003), std::invalid_argument);
+
+    // Test invalid envelope diameter
+    EXPECT_THROW(pt->set_receiver_dimensions(0.07, 0.0, 0.003), std::invalid_argument);
+    EXPECT_THROW(pt->set_receiver_dimensions(0.07, -0.115, 0.003), std::invalid_argument);
+
+    // Test invalid envelope thickness
+    EXPECT_THROW(pt->set_receiver_dimensions(0.07, 0.115, -0.003), std::invalid_argument);
+    EXPECT_THROW(pt->set_receiver_dimensions(0.07, 0.115, 0.0), std::invalid_argument);
+
+    // Test absorber diameter >= envelope diameter
+    EXPECT_THROW(pt->set_receiver_dimensions(0.115, 0.115, 0.003), std::invalid_argument);
+    EXPECT_THROW(pt->set_receiver_dimensions(0.12, 0.115, 0.003), std::invalid_argument);
+
+    // Test valid receiver dimensions
+    EXPECT_NO_THROW(pt->set_receiver_dimensions(0.07, 0.115, 0.003));
+}
+
+TEST(ParabolicTrough, ErrorChecking_CreateGeometryWithoutParameters)
+{
+    auto pt = make_element<ParabolicTrough>();
+
+    // Test create_geometry without setting required parameters
+    EXPECT_THROW(pt->create_geometry(), std::invalid_argument);
+
+    // Set aperture size and test again
+    pt->set_aperture_size(5.774, 11.96);
+    EXPECT_THROW(pt->create_geometry(), std::invalid_argument);
+
+    // Set focal length and test again
+    pt->set_focal_length(1.71);
+    EXPECT_THROW(pt->create_geometry(), std::invalid_argument);
+
+    // Set number of panels and test again
+    pt->set_number_panels(4, 7);
+    EXPECT_THROW(pt->create_geometry(), std::invalid_argument);
+
+    // Set receiver dimensions and it should work
+    pt->set_receiver_dimensions(0.07, 0.115, 0.003);
+    EXPECT_NO_THROW(pt->create_geometry());
+}
+
 TEST(ParabolicTrough, Build)
 {
     OpticalProperties mirror;
@@ -63,7 +180,7 @@ TEST(ParabolicTrough, Tracing)
     params.include_optical_errors = true;
     params.include_sun_shape_errors = true;
     params.seed = 123;
-    
+
     NativeRunner my_runner;
     my_runner.disable_power_tower();
     my_runner.disable_point_focus();
@@ -108,7 +225,7 @@ TEST(ParabolicTrough, Tracing)
     sun->set_position(0.0, 0.0, 1000.0);
     sun->set_shape(DistributionType::PILLBOX);
     my_sim.add_ray_source(sun);
-    
+
     // Assumes that reference and global coordinates are the same
     // Vector3d pt_aim_point;
     // vector_add(1.0, sun->get_position(), -1.0, pt->get_origin_ref(), pt_aim_point);

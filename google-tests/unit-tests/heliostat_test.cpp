@@ -8,6 +8,121 @@
 
 #include <cst_templates/heliostat.hpp>
 
+// Error Checking Tests for Heliostat
+TEST(Heliostat, ErrorChecking_SetApertureSize)
+{
+    auto hs = make_element<Heliostat>();
+
+    // Test negative aperture size
+    EXPECT_THROW(hs->set_aperture_size(-12.0, 12.0), std::invalid_argument);
+    EXPECT_THROW(hs->set_aperture_size(12.0, -12.0), std::invalid_argument);
+    EXPECT_THROW(hs->set_aperture_size(-12.0, -12.0), std::invalid_argument);
+
+    // Test zero aperture size
+    EXPECT_THROW(hs->set_aperture_size(0.0, 12.0), std::invalid_argument);
+    EXPECT_THROW(hs->set_aperture_size(12.0, 0.0), std::invalid_argument);
+
+    // Test valid aperture sizes
+    EXPECT_NO_THROW(hs->set_aperture_size(12.0, 12.0));
+    EXPECT_NO_THROW(hs->set_aperture_size(15.5, 10.3));
+}
+
+TEST(Heliostat, ErrorChecking_SetFocalLength)
+{
+    auto hs = make_element<Heliostat>();
+
+    // Test negative focal length
+    EXPECT_THROW(hs->set_focal_length(-156.06), std::invalid_argument);
+    EXPECT_THROW(hs->set_focal_length(-0.1), std::invalid_argument);
+
+    // Test valid focal lengths (including zero for flat heliostat)
+    EXPECT_NO_THROW(hs->set_focal_length(0.0));
+    EXPECT_NO_THROW(hs->set_focal_length(156.06));
+    EXPECT_NO_THROW(hs->set_focal_length(250.0));
+}
+
+TEST(Heliostat, ErrorChecking_SetFocalLengthXY)
+{
+    auto hs = make_element<Heliostat>();
+
+    // Test negative focal lengths
+    EXPECT_THROW(hs->set_focal_length(-156.06, 156.06), std::invalid_argument);
+    EXPECT_THROW(hs->set_focal_length(156.06, -156.06), std::invalid_argument);
+    EXPECT_THROW(hs->set_focal_length(-156.06, -156.06), std::invalid_argument);
+
+    // Test valid focal lengths (including zero for flat heliostat)
+    EXPECT_NO_THROW(hs->set_focal_length(0.0, 0.0));
+    EXPECT_NO_THROW(hs->set_focal_length(156.06, 156.06));
+    EXPECT_NO_THROW(hs->set_focal_length(200.0, 250.0));
+}
+
+TEST(Heliostat, ErrorChecking_SetNumberPanels)
+{
+    auto hs = make_element<Heliostat>();
+
+    // Test invalid panel counts
+    EXPECT_THROW(hs->set_number_panels(0, 4), std::invalid_argument);
+    EXPECT_THROW(hs->set_number_panels(3, 0), std::invalid_argument);
+    // Note: negative values would be caught by uint_fast64_t type
+
+    // Test valid panel counts
+    EXPECT_NO_THROW(hs->set_number_panels(1, 1));
+    EXPECT_NO_THROW(hs->set_number_panels(3, 4));
+    EXPECT_NO_THROW(hs->set_number_panels(10, 20));
+}
+
+TEST(Heliostat, ErrorChecking_SetGaps)
+{
+    auto hs = make_element<Heliostat>();
+
+    // Test negative gap values
+    EXPECT_THROW(hs->set_gaps(-0.1, 0.1), std::invalid_argument);
+    EXPECT_THROW(hs->set_gaps(0.1, -0.1), std::invalid_argument);
+
+    // Test valid gap values (including zero)
+    EXPECT_NO_THROW(hs->set_gaps(0.0, 0.0));
+    EXPECT_NO_THROW(hs->set_gaps(0.1, 0.1));
+}
+
+TEST(Heliostat, ErrorChecking_SetCanting)
+{
+    auto hs = make_element<Heliostat>();
+
+    // Test valid canting types
+    EXPECT_NO_THROW(hs->set_canting(Heliostat::NONE, 0.0, 0.0));
+    EXPECT_NO_THROW(hs->set_canting(Heliostat::ON_AXIS, 100.0, 0.0));
+    EXPECT_NO_THROW(hs->set_canting(Heliostat::OFF_AXIS, 45.0, 30.0));
+
+    // Test invalid canting parameters
+    EXPECT_THROW(hs->set_canting(Heliostat::ON_AXIS, -100.0, 0.0), std::invalid_argument);
+    EXPECT_THROW(hs->set_canting(Heliostat::OFF_AXIS, -1.0, 30.0), std::invalid_argument);
+    EXPECT_THROW(hs->set_canting(Heliostat::OFF_AXIS, 45.0, -1.0), std::invalid_argument);
+}
+
+TEST(Heliostat, ErrorChecking_CreateGeometryWithoutParameters)
+{
+    auto hs = make_element<Heliostat>();
+
+    // Test create_geometry without setting required parameters
+    EXPECT_THROW(hs->create_geometry(), std::invalid_argument);
+
+    // Set aperture size and test again
+    hs->set_aperture_size(12.0, 12.0);
+    EXPECT_THROW(hs->create_geometry(), std::invalid_argument);
+
+    // Set focal length and test again
+    hs->set_focal_length(156.06);
+    EXPECT_THROW(hs->create_geometry(), std::invalid_argument);
+
+    // Set number of panels and test again
+    hs->set_number_panels(3, 4);
+    EXPECT_THROW(hs->create_geometry(), std::invalid_argument);
+
+    // Set canting and it should work
+    hs->set_canting(Heliostat::NONE, 0.0, 0.0);
+    EXPECT_NO_THROW(hs->create_geometry());
+}
+
 TEST(HeliotStat, BuildParabolaNone)
 {
     OpticalProperties mirror;

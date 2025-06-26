@@ -166,3 +166,107 @@ TEST(ParabolicDish, Tracing)
     EXPECT_TRUE(n >= NRAYS);
     EXPECT_TRUE(num_absorbed > 0);
 }
+
+// Error Checking Tests for ParabolicDish
+TEST(ParabolicDish, ErrorChecking_SetApertureSize)
+{
+    auto dish = make_element<ParabolicDish>();
+
+    // Test negative aperture size
+    EXPECT_THROW(dish->set_aperture_size(-10.0), std::invalid_argument);
+    EXPECT_THROW(dish->set_aperture_size(-1.0), std::invalid_argument);
+
+    // Test zero aperture size
+    EXPECT_THROW(dish->set_aperture_size(0.0), std::invalid_argument);
+
+    // Test valid aperture sizes
+    EXPECT_NO_THROW(dish->set_aperture_size(10.0));
+    EXPECT_NO_THROW(dish->set_aperture_size(15.5));
+}
+
+TEST(ParabolicDish, ErrorChecking_SetFocalLength)
+{
+    auto dish = make_element<ParabolicDish>();
+
+    // Test negative focal length
+    EXPECT_THROW(dish->set_focal_length(-7.5), std::invalid_argument);
+    EXPECT_THROW(dish->set_focal_length(-0.1), std::invalid_argument);
+
+    // Test zero focal length
+    EXPECT_THROW(dish->set_focal_length(0.0), std::invalid_argument);
+
+    // Test valid focal lengths
+    EXPECT_NO_THROW(dish->set_focal_length(7.5));
+    EXPECT_NO_THROW(dish->set_focal_length(15.0));
+}
+
+TEST(ParabolicDish, ErrorChecking_SetNumberPanels)
+{
+    auto dish = make_element<ParabolicDish>();
+
+    // Test invalid panel counts
+    EXPECT_THROW(dish->set_number_of_panels(0, 2), std::invalid_argument);
+    EXPECT_THROW(dish->set_number_of_panels(2, 0), std::invalid_argument);
+    EXPECT_THROW(dish->set_number_of_panels(-1, 2), std::invalid_argument);
+    EXPECT_THROW(dish->set_number_of_panels(2, -1), std::invalid_argument);
+
+    // Test valid panel counts
+    EXPECT_NO_THROW(dish->set_number_of_panels(1, 1));
+    EXPECT_NO_THROW(dish->set_number_of_panels(2, 2));
+    EXPECT_NO_THROW(dish->set_number_of_panels(10, 20));
+}
+
+TEST(ParabolicDish, ErrorChecking_SetGaps)
+{
+    auto dish = make_element<ParabolicDish>();
+
+    // Test negative gap values
+    EXPECT_THROW(dish->set_gaps(-0.02, 0.01, 0.5), std::invalid_argument);
+    EXPECT_THROW(dish->set_gaps(0.02, -0.01, 0.5), std::invalid_argument);
+    // Note: center_radius can be negative (meaning no center gap)
+
+    // Test valid gap values (including zero)
+    EXPECT_NO_THROW(dish->set_gaps(0.0, 0.0, 0.0));
+    EXPECT_NO_THROW(dish->set_gaps(0.02, 0.01, 0.5));
+    EXPECT_NO_THROW(dish->set_gaps(0.02, 0.01, -1.0)); // Negative center gap is valid
+}
+
+TEST(ParabolicDish, ErrorChecking_SetReceiverDimensions)
+{
+    auto dish = make_element<ParabolicDish>();
+
+    // Test invalid receiver diameter
+    EXPECT_THROW(dish->set_receiver_dimensions(0.0, 7.25), std::invalid_argument);
+    EXPECT_THROW(dish->set_receiver_dimensions(-0.25, 7.25), std::invalid_argument);
+
+    // Test invalid receiver distance
+    EXPECT_THROW(dish->set_receiver_dimensions(0.25, -7.25), std::invalid_argument);
+
+    // Test valid receiver dimensions
+    EXPECT_NO_THROW(dish->set_receiver_dimensions(0.25, 0.0)); // Zero distance is valid
+    EXPECT_NO_THROW(dish->set_receiver_dimensions(0.25, 7.25));
+}
+
+TEST(ParabolicDish, ErrorChecking_CreateGeometryWithoutParameters)
+{
+    auto dish = make_element<ParabolicDish>();
+
+    // Test create_geometry without setting required parameters
+    EXPECT_THROW(dish->create_geometry(), std::invalid_argument);
+
+    // Set aperture size and test again
+    dish->set_aperture_size(10.0);
+    EXPECT_THROW(dish->create_geometry(), std::invalid_argument);
+
+    // Set focal length and test again
+    dish->set_focal_length(7.5);
+    EXPECT_THROW(dish->create_geometry(), std::invalid_argument);
+
+    // Set number of panels and test again
+    dish->set_number_of_panels(2, 2);
+    EXPECT_THROW(dish->create_geometry(), std::invalid_argument);
+
+    // Set receiver dimensions and it should work
+    dish->set_receiver_dimensions(0.25, 7.25);
+    EXPECT_NO_THROW(dish->create_geometry());
+}
