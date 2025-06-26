@@ -2,6 +2,7 @@
 #include "arclength.hpp"
 
 #include <cmath>
+#include <cstdint>
 
 double parabolic_arc_length(double cx, double x)
 {
