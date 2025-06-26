@@ -6,10 +6,24 @@
 
 Heliostat::Heliostat()
     : CompositeElement(),
-      initialized(false)
+      initialized(false),
+      aperture_size_x(-1.0),
+      aperture_size_y(-1.0),
+      focal_length_x(-1.0),
+      focal_length_y(-1.0),
+      gap_x(-1.0),
+      gap_y(-1.0),
+      num_panels_x(-1),
+      num_panels_y(-1),
+      canting_method(UNSET),
+      onaxis_canting_distance(-1.0),
+      offaxis_canting_sun_position_azimuth(-1.0),
+      offaxis_canting_sun_position_zenith(-1.0),
+      heliostat_area(-1.0),
+      tracking_azimuth(-1.0),
+      tracking_elevation(-1.0)
 {
-    // TODO: Initialize to nonsense and enforce user setting of values
-    // TODO: Need to do something similar for elements totally
+    this->optics_mirror.set_ideal_reflection();
     return;
 }
 
