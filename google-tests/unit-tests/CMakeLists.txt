@@ -11,6 +11,9 @@ include_directories(
 	../../coretrace/simulation_runner/native_runner
 )
 
+# Add CST template tests subdirectory
+add_subdirectory(cst-templates)
+
 # file(GLOB UNIT_TEST_SRC *.cpp)
 
 # Add test files below as needed. Add more basic ones earlier in the list
@@ -29,10 +32,6 @@ set(UNIT_TEST_SRC
 	parabola_calculator_test.cpp
 	native_runner_test.cpp
 	tower_demo.cpp
-	parabolic_trough_test.cpp
-	heliostat_test.cpp
-	parabolic_dish_test.cpp
-	linear_fresnel_test.cpp
 )
 
 add_executable(UnitTests

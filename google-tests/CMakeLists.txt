@@ -63,4 +63,5 @@ add_definitions(-DPROJECT_DIR="${CMAKE_CURRENT_BINARY_DIR}")
 enable_testing()
 add_test(NAME Test COMMAND Test)
 add_test(NAME UnitTests COMMAND UnitTests)
+add_test(NAME CSTTests COMMAND CSTTests)
 
