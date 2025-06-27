@@ -155,6 +155,8 @@ STCORE_API int st_sim_params(st_context_t pcxt, int raycount, int maxcount, int 
 STCORE_API int st_sim_errors(st_context_t pcxt, int include_sun_shape, int include_optics);
 STCORE_API int st_sim_run( st_context_t pcxt, unsigned int seed,
 						  int (*callback)(st_uint_t ntracedtotal, st_uint_t ntraced, st_uint_t ntotrace, st_uint_t curstage, st_uint_t nstages, void *data), void *data);
+STCORE_API int st_sim_run_with_refactor(st_context_t pcxt, unsigned int seed,
+	int (*callback)(st_uint_t ntracedtotal, st_uint_t ntraced, st_uint_t ntotrace, st_uint_t curstage, st_uint_t nstages, void* data), void* data, bool use_refactor_trace);
 
 /*
 STCORE_API int st_sim_run_data( st_context_t pcxt, unsigned int seed, std::vector<std::vector< double > > *data_s1, std::vector<std::vector< double > > *data_s2, bool save_stage_data,

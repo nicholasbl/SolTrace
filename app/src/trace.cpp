@@ -71,7 +71,7 @@
 static wxThreadProgressDialog *g_currentThreadProgress = NULL;
 
 enum{ ID_NUM_RAYS = wxID_HIGHEST+923,
-	  ID_NUM_RAYS_SUN, ID_NUM_CPU, ID_SEED, ID_INCL_SUNSHAPE, ID_INCL_ERRORS, ID_INCL_POINTFOCUS};
+	  ID_NUM_RAYS_SUN, ID_NUM_CPU, ID_SEED, ID_INCL_SUNSHAPE, ID_INCL_ERRORS, ID_INCL_POINTFOCUS, ID_USE_REFACTOR};
 
 BEGIN_EVENT_TABLE( TraceForm, wxPanel )
 	EVT_BUTTON( wxID_SETUP, TraceForm::OnCommand )
@@ -83,6 +83,7 @@ BEGIN_EVENT_TABLE( TraceForm, wxPanel )
 	EVT_CHECKBOX( ID_INCL_SUNSHAPE, TraceForm::OnCommand)
 	EVT_CHECKBOX( ID_INCL_ERRORS, TraceForm::OnCommand)
 	EVT_CHECKBOX( ID_INCL_POINTFOCUS, TraceForm::OnCommand)
+	EVT_CHECKBOX( ID_USE_REFACTOR, TraceForm::OnCommand)
 
 
 END_EVENT_TABLE()
@@ -113,6 +114,8 @@ TraceForm::TraceForm( wxWindow *parent, Project &prj )
 	flxsizer->AddStretchSpacer();
 	flxsizer->Add( m_asPowerTower = new wxCheckBox( sizer1->GetStaticBox(), ID_INCL_POINTFOCUS, "Point-focus system" ), 0, wxALL|wxALIGN_CENTER_VERTICAL, 3 );
 	flxsizer->AddStretchSpacer();
+	flxsizer->Add(m_use_refactor_trace = new wxCheckBox(sizer1->GetStaticBox(), ID_USE_REFACTOR, "Use refactor trace"), 0, wxALL | wxALIGN_CENTER_VERTICAL, 3);
+
 
 	sizer1->Add( flxsizer, 0, wxALL, 5 );
 
@@ -169,11 +172,12 @@ void TraceForm::UpdateFromData()
 	m_inclSunShape->SetValue(T.is_include_sunshape);
 	m_inclOpticalErrors->SetValue(T.is_include_errors);
 	m_asPowerTower->SetValue(T.is_point_focus);
+	m_use_refactor_trace->SetValue(T.use_refactor_trace);
 }
 
 
 void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed,
-	bool sunshape, bool opterr, bool aspowertower )
+	bool sunshape, bool opterr, bool aspowertower, bool use_refactor_trace )
 {
 	m_numRays->SetValue( nrays );
 	m_numMaxSunRays->SetValue( nmaxsunrays );
@@ -182,6 +186,7 @@ void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed
 	m_inclSunShape->SetValue( sunshape );
 	m_inclOpticalErrors->SetValue( opterr );
     m_asPowerTower->SetValue( aspowertower );
+	m_use_refactor_trace->SetValue( use_refactor_trace );
 
 	TraceSettings& T = m_prj.Trace_Settings;
 	T.n_rays = m_numRays->AsUnsigned();
@@ -191,10 +196,11 @@ void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed
 	T.is_include_sunshape = m_inclSunShape->GetValue();
 	T.is_include_errors = m_inclOpticalErrors->GetValue();
 	T.is_point_focus = m_asPowerTower->GetValue();
+	T.use_refactor_trace = m_use_refactor_trace->GetValue();
 }
 
 void TraceForm::GetOptions( size_t *nrays, size_t *nmaxsunrays, int *ncpu, int *seed,
-	bool *sunshape, bool *opterr, bool *aspowertower )
+	bool *sunshape, bool *opterr, bool *aspowertower, bool *use_refactor_trace )
 {
 	if ( nrays ) *nrays = m_numRays->AsUnsigned();
 	if ( nmaxsunrays ) *nmaxsunrays = m_numMaxSunRays->AsUnsigned();
@@ -203,6 +209,7 @@ void TraceForm::GetOptions( size_t *nrays, size_t *nmaxsunrays, int *ncpu, int *
 	if ( sunshape ) *sunshape = m_inclSunShape->GetValue();
 	if ( opterr ) *opterr = m_inclOpticalErrors->GetValue();
     if ( aspowertower ) *aspowertower = m_asPowerTower->GetValue();
+	if ( use_refactor_trace ) *use_refactor_trace = m_use_refactor_trace->GetValue();
 }
 
 
@@ -245,7 +252,9 @@ void TraceForm::OnCommand( wxCommandEvent &evt )
 	case ID_INCL_POINTFOCUS:
 		T.is_point_focus = m_asPowerTower->GetValue();
 		break;
-
+	case ID_USE_REFACTOR:
+		T.use_refactor_trace = m_use_refactor_trace->GetValue();
+		break;
 	case wxID_EXECUTE:
 		StartTrace();
 		break;
@@ -585,7 +594,7 @@ private:
 
 	wxMutex m_statusLock;
 public:
-	TraceThread( Project* system, st_context_t spcxt, wxArrayString* errmsg, int ithread, int seed, bool aspowertower, int nrays, int nmaxrays, bool sunshape, bool opterrs )
+	TraceThread( Project* system, st_context_t spcxt, wxArrayString* errmsg, int ithread, int seed, bool aspowertower, int nrays, int nmaxrays, bool sunshape, bool opterrs)
 		: wxThread( wxTHREAD_JOINABLE ), m_cancelFlag( false )
 	{
 		m_iThread = ithread;
@@ -656,9 +665,13 @@ public:
 		::st_sim_errors(m_contextId, m_sunshape ? 1 : 0, m_opterrs ? 1 : 0);
 		::st_sim_params(m_contextId, m_nrays, m_nmaxrays, m_asPowerTower);
 
-		m_resultCode = ::st_sim_run( m_contextId, 
+		/*m_resultCode = ::st_sim_run( m_contextId, 
 			(unsigned int) m_seedVal,
-			trace_callback_multi_thread, this );
+			trace_callback_multi_thread, this );*/
+
+		m_resultCode = ::st_sim_run_with_refactor(m_contextId,
+			(unsigned int)m_seedVal,
+			trace_callback_multi_thread, this, this->m_system->Trace_Settings.use_refactor_trace);
 
 		return 0;
 	}
