@@ -132,7 +132,7 @@ void irradiate_single_axis(TElement* element, const double(&min_bbox_coord)[3], 
 	double area_gen = j_dist * k_dist;
 
 	double gen_hitrate = (double)NHit / (double)NRays;
-	bbox_hitrate = gen_hitrate * (area_bbox / area_gen);
+	bbox_hitrate = gen_hitrate * (area_gen / area_bbox);
 }
 
 void bbox_test_single_element(TElement* element, double gen_size_factor, int N_grid)
@@ -291,6 +291,15 @@ TEST(BoundingBoxTests, ApertureSampleExternal)
 {
 	// Pulling in path variable from CMake and creating path to .stinput sample file
 	string sample_path = string(PROJECT_DIR) + string("/Aperture Sample-External Files.stinput");
+
+	// Compare runs with and without embree to saved raydata
+	file_bbox_test(sample_path);
+}
+
+TEST(BoundingBoxTests, FlatTest)
+{
+	// Pulling in path variable from CMake and creating path to .stinput sample file
+	string sample_path = string(PROJECT_DIR) + string("/flat_test.stinput");
 
 	// Compare runs with and without embree to saved raydata
 	file_bbox_test(sample_path);
