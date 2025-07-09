@@ -57,10 +57,6 @@ public:
     }
     virtual void set_back_optical_properties(const OpticalProperties &) {};
 
-    virtual int update_orientation(const DateTime &,
-                                   const Vector3d &source,
-                                   const Vector3d &target);
-
     // CompositeElement accessors
     element_id add_element(element_ptr el);
     uint_fast64_t remove_element(element_id id);

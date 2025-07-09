@@ -396,6 +396,7 @@ void LinearFresnel::update_geometry()
     {
         // Create geometry if not initialized
         this->create_geometry();
+        // TODO: Add some aim settings here...
     }
 
     return;

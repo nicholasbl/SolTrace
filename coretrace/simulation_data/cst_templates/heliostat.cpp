@@ -236,6 +236,7 @@ void Heliostat::set_number_panels(uint_fast64_t num_x,
 void Heliostat::set_optics(const OpticalProperties &optics)
 {
     this->optics_mirror = optics;
+    // TODO: Need to update the subelements!
     return;
 }
 

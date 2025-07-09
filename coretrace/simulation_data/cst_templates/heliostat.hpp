@@ -60,6 +60,8 @@ private:
     double tracking_elevation;
 
     std::vector<single_element_ptr> facets;
+
+    // TODO: Need to add an absorber element here?
 };
 
 #endif

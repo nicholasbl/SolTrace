@@ -27,15 +27,6 @@ SingleElement::~SingleElement()
     return;
 }
 
-int SingleElement::update_orientation(const DateTime &dt,
-                                      const Vector3d &source,
-                                      const Vector3d &target)
-{
-    int sts = 0;
-    // TODO: Implment this
-    return sts;
-}
-
 void SingleElement::enforce_user_fields_set()
 {
     ElementBase::enforce_user_fields_set();

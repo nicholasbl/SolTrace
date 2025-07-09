@@ -120,15 +120,6 @@ void CompositeElement::clear()
     return;
 }
 
-int CompositeElement::update_orientation(const DateTime &dt,
-                                         const Vector3d &source,
-                                         const Vector3d &target)
-{
-    // TODO: Implement this
-    int sts = 0;
-    return sts;
-}
-
 void CompositeElement::enforce_user_fields_set() const
 {
     ElementBase::enforce_user_fields_set();

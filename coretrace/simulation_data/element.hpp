@@ -160,10 +160,6 @@ public:
 
   // Other routines
   virtual int compute_coordinate_rotations() = 0;
-  // virtual int set_bounding_box() = 0;
-  // virtual int update_orientation(const DateTime &,
-  //                                const Vector3d &source,
-  //                                const Vector3d &target) = 0;
 
   // WARNING: The below Accessors should be used with EXTREME caution!!!
   // These are used by other classes to set things up correctly and
