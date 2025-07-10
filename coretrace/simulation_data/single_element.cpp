@@ -27,7 +27,7 @@ SingleElement::~SingleElement()
     return;
 }
 
-void SingleElement::enforce_user_fields_set()
+void SingleElement::enforce_user_fields_set() const
 {
     ElementBase::enforce_user_fields_set();
 

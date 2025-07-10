@@ -63,19 +63,13 @@ element_id CompositeElement::add_element(element_ptr el)
         return ELEMENT_INVALID_SETUP;
     }
 
+    el->enforce_user_fields_set();
+
     element_id id = this->my_elements.add_item(el);
     if (is_success(id))
     {
-        // el->set_stage(this->stage);
         this->number_of_elements += el->get_number_of_elements();
         el->set_reference_element(this);
-
-        // TODO: Is the below the correct behavior?
-        // // Force active/inactive to match with CompositeElement state
-        // if (this->is_enabled())
-        //     el->enable();
-        // else
-        //     el->disable();
     }
     return id;
 }

@@ -29,12 +29,11 @@ element_id SimulationData::add_element(element_ptr el)
         id = this->my_elements.add_item(el);
         if (Element::is_success(id))
         {
-            // Set id now so it can be used in error messages to user
-            el->set_id(id);
             // Check that all fields required from the user have been specified
             el->enforce_user_fields_set();
             // Make sure coordinate stuff has been computed
             el->compute_coordinate_rotations();
+            el->set_id(id);
             if (el->is_composite())
             {
                 // The CompositeElement itself does not count toward the
