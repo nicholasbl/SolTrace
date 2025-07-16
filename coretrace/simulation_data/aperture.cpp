@@ -1,6 +1,7 @@
 
 #include "aperture.hpp"
 
+#include <algorithm>
 #include <cmath>
 
 double Annulus::aperture_area() const
@@ -143,7 +144,7 @@ bool Hexagon::is_in(double x, double y) const
     //    xl = sqrt(ro^2 - ri^2)
     // where `ro` is the radius of the circumscribing circle and `ri` is
     // the radius of the inscribing circle. But this is equivalent to
-    //    xi = 0.5 * ro
+    //    xl = 0.5 * ro
 
     double xl = 0.5 * this->radius_circumscribed_circle();
     double y1, y2;
@@ -174,22 +175,132 @@ aperture_ptr Hexagon::make_copy() const
     return make_aperture<Hexagon>(*this);
 }
 
-// int intri(double x1, double y1,
-//           double x2, double y2,
-//           double x3, double y3,
-//           double xt, double yt)
-// {
-//     double a = (x1 - xt) * (y2 - yt) - (x2 - xt) * (y1 - yt);
-//     double b = (x2 - xt) * (y3 - yt) - (x3 - xt) * (y2 - yt);
-//     double c = (x3 - xt) * (y1 - yt) - (x1 - xt) * (y3 - yt);
-//     return (sign(a) == sign(b) && sign(b) == sign(c));
-// }
+IrregularTriangle::IrregularTriangle(double x1, double y1,
+                                     double x2, double y2,
+                                     double x3, double y3)
+    : Aperture(IRREGULAR_TRIANGLE),
+      x1(x1), y1(y1),
+      x2(x2), y2(y2),
+      x3(x3), y3(y3)
+{
+}
 
-// int inquad(double x1, double y1,
-//            double x2, double y2,
-//            double x3, double y3,
-//            double x4, double y4,
-//            double xt, double yt)
-// {
-//     return intri(x1, y1, x2, y2, x3, y3, xt, yt) || intri(x1, y1, x3, y3, x4, y4, xt, yt);
-// }
+double IrregularTriangle::aperture_area() const
+{
+    double v11 = this->x1 - this->x2;
+    double v12 = this->y1 - this->y2;
+    double v21 = this->x3 - this->x2;
+    double v22 = this->y3 - this->y2;
+
+    double v1m = sqrt(v11 * v11 + v12 * v12);
+    double v2m = sqrt(v21 * v21 + v22 * v22);
+
+    double theta = acos((v11 * v21 + v12 * v22) / (v1m * v2m));
+    double area = 0.5 * v1m * v2m * sin(theta);
+
+    return area;
+}
+
+double IrregularTriangle::diameter_circumscribed_circle() const
+{
+    // TODO: Not sure this is exact. Is that a problem?
+    double xmax = std::max(std::max(x1, x2), x3);
+    double ymax = std::max(std::max(y1, y2), y3);
+    double xmin = std::min(std::min(x1, x2), x3);
+    double ymin = std::min(std::min(y1, y2), y3);
+    double dx = xmax - xmin;
+    double dy = ymax - ymin;
+    return sqrt(dx * dx + dy * dy);
+}
+
+bool IrregularTriangle::is_in(double x, double y) const
+{
+    return intri(x1, y1, x2, y2, x3, y3, x, y);
+}
+
+aperture_ptr IrregularTriangle::make_copy() const
+{
+    // Invokes the implicit copy constructor
+    return make_aperture<IrregularTriangle>(*this);
+}
+
+IrregularQuadrilateral::IrregularQuadrilateral(double x1, double y1,
+                                               double x2, double y2,
+                                               double x3, double y3,
+                                               double x4, double y4)
+    : Aperture(IRREGULAR_QUADRILATERAL),
+      x1(x1), y1(y1),
+      x2(x2), y2(y2),
+      x3(x3), y3(y3),
+      x4(x4), y4(y4)
+{
+}
+
+double IrregularQuadrilateral::aperture_area() const
+{
+    double v11 = this->x1 - this->x2;
+    double v12 = this->y1 - this->y2;
+    double v21 = this->x3 - this->x2;
+    double v22 = this->y3 - this->y2;
+    double v31 = this->x3 - this->x4;
+    double v32 = this->y3 - this->y4;
+    double v41 = this->x1 - this->x4;
+    double v42 = this->y1 - this->y4;
+
+    double v1m = sqrt(v11 * v11 + v12 * v12);
+    double v2m = sqrt(v21 * v21 + v22 * v22);
+    double v3m = sqrt(v31 * v31 + v32 * v32);
+    double v4m = sqrt(v41 * v41 + v42 * v42);
+
+    double theta1 = acos((v11 * v21 + v12 * v22) / (v1m * v2m));
+    double theta2 = acos((v31 * v41 + v32 * v42) / (v3m * v4m));
+
+    double area = 0.5 * (v1m * v2m * sin(theta1) + v3m * v4m * sin(theta2));
+    return area;
+}
+
+double IrregularQuadrilateral::diameter_circumscribed_circle() const
+{
+    // TODO: Not sure this is exact. Is that a problem?
+    double xmax = std::max(std::max(x1, x2), std::max(x3, x4));
+    double ymax = std::max(std::max(y1, y2), std::max(y3, y4));
+    double xmin = std::min(std::min(x1, x2), std::min(x3, x4));
+    double ymin = std::min(std::min(y1, y2), std::min(y3, y4));
+    double dx = xmax - xmin;
+    double dy = ymax - ymin;
+    return sqrt(dx * dx + dy * dy);
+}
+
+bool IrregularQuadrilateral::is_in(double x, double y) const
+{
+    return inquad(x1, y1, x2, y2, x3, y3, x4, y4, x, y);
+}
+
+aperture_ptr IrregularQuadrilateral::make_copy() const
+{
+    // Invokes the implicit copy constructor
+    return make_aperture<IrregularQuadrilateral>(*this);
+}
+
+bool intri(double x1, double y1,
+           double x2, double y2,
+           double x3, double y3,
+           double xt, double yt)
+{
+    double a = (x1 - xt) * (y2 - yt) - (x2 - xt) * (y1 - yt);
+    double b = (x2 - xt) * (y3 - yt) - (x3 - xt) * (y2 - yt);
+    double c = (x3 - xt) * (y1 - yt) - (x1 - xt) * (y3 - yt);
+    return (std::signbit(a) == std::signbit(b) &&
+            std::signbit(b) == std::signbit(c));
+    // return (sign(a) == sign(b) && sign(b) == sign(c));
+}
+
+bool inquad(double x1, double y1,
+           double x2, double y2,
+           double x3, double y3,
+           double x4, double y4,
+           double xt, double yt)
+{
+    return (intri(x1, y1, x2, y2, x3, y3, xt, yt) ||
+            intri(x1, y1, x3, y3, x4, y4, xt, yt));
+}

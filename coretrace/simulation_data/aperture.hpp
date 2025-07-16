@@ -177,29 +177,65 @@ struct Rectangle : public Aperture
     }
 };
 
-// TODO: Implement the below cases
-
 struct SingleAxisCurvatureSection : public Aperture
 {
+    // TODO: Implement this?
 };
 
 struct IrregularTriangle : public Aperture
 {
+    // Locations of the 3 vertices
+    double x1;
+    double y1;
+    double x2;
+    double y2;
+    double x3;
+    double y3;
+
+    IrregularTriangle(double x1, double y1,
+                      double x2, double y2,
+                      double x3, double y3);
+    ~IrregularTriangle() {}
+
+    virtual double aperture_area() const;
+    virtual double diameter_circumscribed_circle() const;
+    virtual bool is_in(double x, double y) const;
+    virtual aperture_ptr make_copy() const;
 };
 
 struct IrregularQuadrilateral : public Aperture
 {
+    // Locations of the 4 vertices
+    double x1;
+    double y1;
+    double x2;
+    double y2;
+    double x3;
+    double y3;
+    double x4;
+    double y4;
+
+    IrregularQuadrilateral(double x1, double y1,
+                           double x2, double y2,
+                           double x3, double y3,
+                           double x4, double y4);
+    ~IrregularQuadrilateral() {}
+
+    virtual double aperture_area() const;
+    virtual double diameter_circumscribed_circle() const;
+    virtual bool is_in(double x, double y) const;
+    virtual aperture_ptr make_copy() const;
 };
 
-// int intri(double x1, double y1,
-//           double x2, double y2,
-//           double x3, double y3,
-//           double xt, double yt);
+bool intri(double x1, double y1,
+           double x2, double y2,
+           double x3, double y3,
+           double xt, double yt);
 
-// int inquad(double x1, double y1,
-//            double x2, double y2,
-//            double x3, double y3,
-//            double x4, double y4,
-//            double xt, double yt);
+bool inquad(double x1, double y1,
+            double x2, double y2,
+            double x3, double y3,
+            double x4, double y4,
+            double xt, double yt);
 
 #endif

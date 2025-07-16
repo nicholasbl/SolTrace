@@ -159,7 +159,6 @@ Matrix3d ElementBase::get_local_to_reference() const
 
 Matrix3d ElementBase::get_local_to_stage() const
 {
-    // TODO: Implement this
     Matrix3d local_to_stage;
     if (this->is_stage())
     {
@@ -237,7 +236,6 @@ int ElementBase::convert_reference_to_local(Vector3d &local,
 int ElementBase::convert_stage_to_local(Vector3d &local,
                                         const Vector3d &stage)
 {
-    // TODO: Implement this!
     if (this->is_stage())
     {
         // We are in the stage coordinate frame so the local coordinates

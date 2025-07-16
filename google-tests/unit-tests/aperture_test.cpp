@@ -314,3 +314,44 @@ TEST(Aperture, Rectangle)
     EXPECT_TRUE(ap_shift->is_in(X6, Y6));
     EXPECT_FALSE(ap_shift->is_in(X8, Y8));
 }
+
+TEST(Aperture, IrregularTriangle)
+{
+    const double TOL = 1e-12;
+    const double x1 = 0.0, x2 = 1.0, x3 = 2.0 * x2;
+    const double y1 = 0.0, y2 = 2.0, y3 = y1;
+    auto tri = make_aperture<IrregularTriangle>(x1, y1, x2, y2, x3, y3);
+
+    EXPECT_NEAR(tri->aperture_area(), 0.5 * y2 * (x3 - x1), TOL);
+
+    EXPECT_TRUE(tri->is_in(1.0, 1.0));
+    EXPECT_FALSE(tri->is_in(1.5, 2.0));
+
+    auto ap = tri->make_copy();
+    EXPECT_NEAR(ap->aperture_area(), 0.5 * y2 * (x3 - x1), TOL);
+    EXPECT_TRUE(ap->is_in(1.0, 1.0));
+    EXPECT_FALSE(ap->is_in(1.5, 2.0));
+}
+
+TEST(Aperture, IrregularQuadrilateral)
+{
+    const double TOL = 1e-12;
+    // Parallelogram
+    const double x1 = 0.0, x2 = 3.0, x3 = (x2 - x1) + 1.0, x4 = x3 - x2 + x1;
+    const double y1 = 0.0, y2 = y1, y3 = 2.0, y4 = y3;
+    auto quad = make_aperture<IrregularQuadrilateral>(
+        x1, y1, x2, y2, x3, y3, x4, y4);
+
+    // EXPECT_NEAR(quad->aperture_area(), (y2 - y1) * (x3 - x1), TOL);
+    EXPECT_NEAR(quad->aperture_area(), (x3 - x4) * (y3 - y1), TOL);
+
+    EXPECT_TRUE(quad->is_in(3.0, 1.0));
+    EXPECT_TRUE(quad->is_in(1.0, 1.5));
+    EXPECT_FALSE(quad->is_in(4.0, 1.0));
+
+    auto ap = quad->make_copy();
+    EXPECT_NEAR(ap->aperture_area(), (x3 - x4) * (y3 - y1), TOL);
+    EXPECT_TRUE(quad->is_in(3.0, 1.0));
+    EXPECT_TRUE(quad->is_in(1.0, 1.5));
+    EXPECT_FALSE(quad->is_in(4.0, 1.0));
+}

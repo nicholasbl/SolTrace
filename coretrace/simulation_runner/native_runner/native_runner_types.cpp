@@ -516,8 +516,6 @@ telement_ptr make_telement(element_ptr el,
     matrix_copy(telem->RLocToRef, el->get_local_to_stage());
 
     telem->aperture = el->get_aperture()->make_copy();
-    // TODO: Do we need to pass aperture or other element properties to the
-    // intersection calculator?
     telem->icalc =
         CalculatorFactory::get()->make_calculator(telem->aperture,
                                                   el->get_surface(),

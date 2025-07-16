@@ -35,6 +35,8 @@ struct Cone : public Surface
 
 struct Cylinder : public Surface
 {
+    // x^2 + (z - r)^2 = r^2
+    // where r = radius
     double radius;
     Cylinder(double r) : Surface(CYLINDER), radius(r)
     {
@@ -89,7 +91,14 @@ struct Sphere : public Surface
     virtual ~Sphere() {}
 };
 
-// TODO: Add other surface types.
+// TODO: Add other surface types. Documentation has the following:
+// 1. Hyperboloid/Ellipsoid
+// 2. Zernike Series
+// 3. VSHOT data
+// 4. Finite Element data
+// 5. General Spencer & Murty Equation
+// 6. Polynomial Series (rotationally symmetric)
+// 7. Cubic Spline Interpolation (rotationally symmetric)
 
 using surface_ptr = std::shared_ptr<Surface>;
 
