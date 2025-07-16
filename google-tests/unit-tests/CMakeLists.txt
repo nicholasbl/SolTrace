@@ -30,6 +30,7 @@ set(UNIT_TEST_SRC
 	flat_calculator_test.cpp
 	newton_calculator_test.cpp
 	parabola_calculator_test.cpp
+	sphere_calculator_test.cpp
 	native_runner_test.cpp
 	tower_demo.cpp
 )

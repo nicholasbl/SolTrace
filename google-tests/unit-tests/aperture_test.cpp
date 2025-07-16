@@ -351,7 +351,7 @@ TEST(Aperture, IrregularQuadrilateral)
 
     auto ap = quad->make_copy();
     EXPECT_NEAR(ap->aperture_area(), (x3 - x4) * (y3 - y1), TOL);
-    EXPECT_TRUE(quad->is_in(3.0, 1.0));
-    EXPECT_TRUE(quad->is_in(1.0, 1.5));
-    EXPECT_FALSE(quad->is_in(4.0, 1.0));
+    EXPECT_TRUE(ap->is_in(3.0, 1.0));
+    EXPECT_TRUE(ap->is_in(1.0, 1.5));
+    EXPECT_FALSE(ap->is_in(4.0, 1.0));
 }

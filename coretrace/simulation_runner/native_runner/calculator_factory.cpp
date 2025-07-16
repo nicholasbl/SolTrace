@@ -6,7 +6,7 @@
 #include "native_runner_types.hpp"
 #include "newton_calculator.hpp"
 #include "parabola_calculator.hpp"
-// #include "quadric_calculator.hpp"
+#include "sphere_calculator.hpp"
 #include "surface.hpp"
 
 // std::map<SurfaceType,
@@ -33,6 +33,10 @@ calculator_ptr CalculatorFactory::make_calculator(
     else if (st == CYLINDER)
     {
         calc = std::make_shared<CylinderCalculator>(surf, ap);
+    }
+    else if (st == SPHERE)
+    {
+        calc = std::make_shared<SphereCalculator>(surf);
     }
     else
     {

@@ -28,7 +28,6 @@ struct Cone : public Surface
     // z(x,y) = sqrt(x^2 + y^2) / tan(theta)
     // where theta = half_angle
     double half_angle;
-    // Cone() : Surface(CONE), half_angle(0.0) {}
     Cone(double ha) : Surface(CONE), half_angle(ha) {}
     virtual ~Cone() {}
 };
@@ -58,11 +57,6 @@ struct Parabola : public Surface
     double focal_length_x;
     double focal_length_y;
 
-    // Parabola() : Surface(PARABOLA),
-    //              vertex_x_curv(0.0),
-    //              vertex_y_curv(0.0)
-    // {
-    // }
     Parabola(double focal_x, double focal_y) : Surface(PARABOLA),
                                                focal_length_x(focal_x),
                                                focal_length_y(focal_y)
@@ -77,13 +71,15 @@ struct Sphere : public Surface
 {
     // z(x,y) = c(x^2 + y^2) / [1 + sqrt(1 - c^2{x^2 + y^2})]
     // where c = 1/R.
-    // TODO: Assume vertex_curv gives 1/R.
+    // TODO: This form seems to be unnecessarily complicated
+    // and also gives only the bottom half of the sphere.
+    // Could easily just use one of equation
+    // z(x,y) = (1 - sqrt(1 - c^2 (x^2 + y^2))) / c
+    //        = R * (1 - sqrt(R^2 - (x^2 + y^2)))
+    // Need to check on this.
+    // TODO: Do we need the top half of the sphere?
     double vertex_curv;
 
-    // Sphere() : Surface(SPHERE),
-    //            vertex_curv(0.0)
-    // {
-    // }
     Sphere(double curv) : Surface(SPHERE),
                           vertex_curv(curv)
     {

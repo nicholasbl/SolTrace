@@ -77,7 +77,6 @@ int ParabolaCalculator::intersect(const double PosLoc[3],
         {
             *PathLength = t1;
             SetVec3(PosXYZ, x0 + t1 * mx, y0 + t1 * my, z0 + t1 * mz);
-            this->surface_normal(PosXYZ, DFXYZ);
         }
     }
     else
@@ -106,13 +105,11 @@ int ParabolaCalculator::intersect(const double PosLoc[3],
             {
                 *PathLength = t1;
                 SetVec3(PosXYZ, x0 + t1 * mx, y0 + t1 * my, z0 + t1 * mz);
-                this->surface_normal(PosXYZ, DFXYZ);
             }
             else if (t2 > 0.0)
             {
                 *PathLength = t2;
                 SetVec3(PosXYZ, x0 + t2 * mx, y0 + t2 * my, z0 + t2 * mz);
-                this->surface_normal(PosXYZ, DFXYZ);
             }
             else
             {
@@ -123,7 +120,10 @@ int ParabolaCalculator::intersect(const double PosLoc[3],
     }
 
     if (sts == 0)
+    {
+        this->surface_normal(PosXYZ, DFXYZ);
         CopyVec3(CosKLM, CosLoc);
+    }
 
     // std::cout << "Exiting with status: " << sts << std::endl;
 

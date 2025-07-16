@@ -23,6 +23,7 @@ set(NATIVE_RUNNER_SRC
     pt_optimizations.cpp
     # quadric_calculator.cpp
     # root432.cpp
+    sphere_calculator.cpp
     sun_to_primary_stage.cpp
     trace.cpp
     treemesh.cpp

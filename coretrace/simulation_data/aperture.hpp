@@ -9,6 +9,10 @@
 #define M_PI 3.141592653589793238462643
 #endif
 
+// TODO: For apertures that do not include the origin, should the
+// "circumscribing" circle be centered at the origin? Or should it
+// be the actual circumscribed circle.
+
 enum ApertureType
 {
     ANNULUS,
