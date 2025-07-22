@@ -3,6 +3,8 @@
 
 #include <cassert>
 #include <cmath>
+#include <stdexcept>
+#include <sstream>
 
 #include "matvec.hpp"
 #include "surface.hpp"
@@ -10,6 +12,16 @@
 FlatCalculator::FlatCalculator(surface_ptr surf)
     : SurfaceIntersectionCalculator()
 {
+    if (surf == nullptr)
+    {
+        throw std::invalid_argument("FlatCalculator: Surface pointer cannot be null");
+    }
+
+    auto flat = std::dynamic_pointer_cast<Flat>(surf);
+    if (flat == nullptr)
+    {
+        throw std::invalid_argument("FlatCalculator: Surface must be of type Flat");
+    }
 }
 
 FlatCalculator::~FlatCalculator() {}

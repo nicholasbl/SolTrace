@@ -4,6 +4,8 @@
 #include <cassert>
 #include <cmath>
 #include <memory>
+#include <stdexcept>
+#include <sstream>
 
 #include "matvec.hpp"
 #include "surface.hpp"
@@ -11,11 +13,16 @@
 
 ParabolaCalculator::ParabolaCalculator(surface_ptr surf)
 {
-    auto para = std::dynamic_pointer_cast<Parabola>(surf);
+    if (surf == nullptr)
+    {
+        throw std::invalid_argument("ParabolaCalculator: Surface pointer cannot be null");
+    }
 
-    // TODO: This is an error but should never happen!
-    // How to handle it?
-    assert(para != nullptr);
+    auto para = std::dynamic_pointer_cast<Parabola>(surf);
+    if (para == nullptr)
+    {
+        throw std::invalid_argument("ParabolaCalculator: Surface must be of type Parabola");
+    }
 
     // TODO: Check that this is the correct thing to do
     // this->cx = para->vertex_x_curv;
@@ -23,6 +30,13 @@ ParabolaCalculator::ParabolaCalculator(surface_ptr surf)
 
     double fx = para->focal_length_x;
     double fy = para->focal_length_y;
+
+    // Validate focal lengths
+    if (std::isnan(fx) || std::isnan(fy) || std::isinf(fx) || std::isinf(fy))
+    {
+        throw std::invalid_argument("ParabolaCalculator: Focal lengths cannot be NaN or infinite");
+    }
+
     this->cx = fabs(fx) < 1e-12 ? 0.0 : 0.5 / fx;
     this->cy = fabs(fy) < 1e-12 ? 0.0 : 0.5 / fy;
 

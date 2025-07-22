@@ -9,6 +9,9 @@
 #include "sphere_calculator.hpp"
 #include "surface.hpp"
 
+#include <stdexcept>
+#include <sstream>
+
 // std::map<SurfaceType,
 
 CalculatorFactory *CalculatorFactory::instance = nullptr;
@@ -18,12 +21,24 @@ calculator_ptr CalculatorFactory::make_calculator(
     surface_ptr surf,
     const ElementParameters &eparams)
 {
-    // TODO: Rework without an if-else tree?
+    // Input validation
+    if (surf == nullptr)
+    {
+        throw std::invalid_argument(
+            "CalculatorFactory::make_calculator: Surface pointer cannot be null");
+    }
+
+    if (ap == nullptr)
+    {
+        throw std::invalid_argument(
+            "CalculatorFactory::make_calculator: Aperture pointer cannot be null");
+    }
+
     SurfaceType st = surf->get_type();
     calculator_ptr calc = nullptr;
+
     if (st == PARABOLA)
     {
-        // calc = std::make_shared<QuadricCalculator>(surf);
         calc = std::make_shared<ParabolaCalculator>(surf);
     }
     else if (st == FLAT)
@@ -40,8 +55,20 @@ calculator_ptr CalculatorFactory::make_calculator(
     }
     else
     {
-        // TODO: Error message here!
-        assert(false);
+        std::stringstream ss;
+        ss << "CalculatorFactory::make_calculator: Unsupported surface type: "
+           << static_cast<int>(st);
+        throw std::invalid_argument(ss.str());
     }
+
+    // This should never happen but just in case...
+    if (calc == nullptr)
+    {
+        std::stringstream ss;
+        ss << "CalculatorFactory::make_calculator: Failed to create calculator for surface type "
+           << static_cast<int>(st);
+        throw std::runtime_error(ss.str());
+    }
+
     return calc;
 }

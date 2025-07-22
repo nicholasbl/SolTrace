@@ -9,6 +9,37 @@
 
 // NOTE: Equation for the plane is always z=0
 
+// Helper function to create flat surface
+std::shared_ptr<Flat> create_flat_surface()
+{
+    auto flat = std::make_shared<Flat>();
+    return flat;
+}
+
+// Constructor validation tests
+TEST(FlatCalculator, ConstructorNullSurfaceThrows)
+{
+    EXPECT_THROW({
+        FlatCalculator calc(nullptr);
+    }, std::invalid_argument);
+}
+
+TEST(FlatCalculator, ConstructorWrongSurfaceTypeThrows)
+{
+    auto parabola = std::make_shared<Parabola>(1.0, 1.0);
+    EXPECT_THROW({
+        FlatCalculator calc(parabola);
+    }, std::invalid_argument);
+}
+
+TEST(FlatCalculator, ConstructorValidSurface)
+{
+    auto valid_surface = create_flat_surface();
+    EXPECT_NO_THROW({
+        FlatCalculator calc(valid_surface);
+    });
+}
+
 TEST(FlatCalculator, Case1)
 {
     // Case: mz = 0, parallel to plane -- returns no solution
@@ -25,7 +56,7 @@ TEST(FlatCalculator, Case1)
     Vector3d mt;
     Vector3d gradf;
 
-    FlatCalculator fcalc(nullptr);
+    FlatCalculator fcalc(create_flat_surface());
     int sts = fcalc.intersect(x0.data, m.data,
                               xt.data, mt.data, gradf.data, &t);
     EXPECT_EQ(sts, 1);
@@ -51,7 +82,7 @@ TEST(FlatCalculator, Case2)
     Vector3d mt;
     Vector3d gradf;
 
-    FlatCalculator fcalc(nullptr);
+    FlatCalculator fcalc(create_flat_surface());
     int sts = fcalc.intersect(x0.data, m.data,
                               xt.data, mt.data, gradf.data, &t);
     EXPECT_EQ(sts, 1);
@@ -80,7 +111,7 @@ TEST(FlatCalculator, Case3)
     Vector3d mt;
     Vector3d gradf;
 
-    FlatCalculator fcalc(nullptr);
+    FlatCalculator fcalc(create_flat_surface());
     int sts = fcalc.intersect(x0.data, m.data,
                               xt.data, mt.data, gradf.data, &t);
     EXPECT_EQ(sts, 0);
@@ -97,6 +128,6 @@ TEST(FlatCalculator, Case3)
 
 TEST(FlatCalculator, ZAperture)
 {
-    FlatCalculator fcalc(nullptr);
+    FlatCalculator fcalc(create_flat_surface());
     EXPECT_EQ(fcalc.compute_z_aperture(nullptr), 0.0);
 }

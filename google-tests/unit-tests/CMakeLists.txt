@@ -31,6 +31,8 @@ set(UNIT_TEST_SRC
 	newton_calculator_test.cpp
 	parabola_calculator_test.cpp
 	sphere_calculator_test.cpp
+	cylinder_calculator_test.cpp
+	calculator_factory_test.cpp
 	native_runner_test.cpp
 	tower_demo.cpp
 )

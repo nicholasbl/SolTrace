@@ -10,6 +10,7 @@ enum SurfaceType
     FLAT,
     PARABOLA,
     SPHERE,
+    UNKNOWN
 };
 
 struct Surface

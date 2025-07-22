@@ -27,6 +27,69 @@ double focal_length(double c)
     return 0.5 / c;
 }
 
+// Helper function to create parabola surface
+std::shared_ptr<Parabola> create_parabola_surface(double focal_length = 1.0)
+{
+    auto parabola = std::make_shared<Parabola>(focal_length, focal_length);
+    return parabola;
+}
+
+// Constructor validation tests
+TEST(ParabolaCalculator, ConstructorNullSurfaceThrows)
+{
+    EXPECT_THROW({
+        ParabolaCalculator calc(nullptr);
+    }, std::invalid_argument);
+}
+
+TEST(ParabolaCalculator, ConstructorWrongSurfaceTypeThrows)
+{
+    auto flat = std::make_shared<Flat>();
+    EXPECT_THROW({
+        ParabolaCalculator calc(flat);
+    }, std::invalid_argument);
+}
+
+TEST(ParabolaCalculator, ConstructorZeroFocalLengthAllowed)
+{
+    auto zero_focal_surface = create_parabola_surface(0.0);
+    EXPECT_NO_THROW({
+        ParabolaCalculator calc(zero_focal_surface);
+    });
+}
+
+TEST(ParabolaCalculator, ConstructorNegativeFocalLengthAllowed)
+{
+    auto negative_focal_surface = create_parabola_surface(-1.0);
+    EXPECT_NO_THROW({
+        ParabolaCalculator calc(negative_focal_surface);
+    });
+}
+
+TEST(ParabolaCalculator, ConstructorNaNFocalLengthThrows)
+{
+    auto nan_focal_surface = create_parabola_surface(std::nan(""));
+    EXPECT_THROW({
+        ParabolaCalculator calc(nan_focal_surface);
+    }, std::invalid_argument);
+}
+
+TEST(ParabolaCalculator, ConstructorInfiniteFocalLengthThrows)
+{
+    auto inf_focal_surface = create_parabola_surface(std::numeric_limits<double>::infinity());
+    EXPECT_THROW({
+        ParabolaCalculator calc(inf_focal_surface);
+    }, std::invalid_argument);
+}
+
+TEST(ParabolaCalculator, ConstructorValidFocalLength)
+{
+    auto valid_surface = create_parabola_surface(1.0);
+    EXPECT_NO_THROW({
+        ParabolaCalculator calc(valid_surface);
+    });
+}
+
 TEST(ParabolaCalculator, Case1)
 {
     // Case: a == 0, t <= 0 -- returns no solution

@@ -3,6 +3,8 @@
 
 #include <cassert>
 #include <cmath>
+#include <stdexcept>
+#include <sstream>
 
 #include "aperture.hpp"
 #include "matvec.hpp"
@@ -10,16 +12,29 @@
 
 SphereCalculator::SphereCalculator(surface_ptr surf)
 {
+    if (surf == nullptr)
+    {
+        throw std::invalid_argument("SphereCalculator: Surface pointer cannot be null");
+    }
+
     auto sph = std::dynamic_pointer_cast<Sphere>(surf);
+    if (sph == nullptr)
+    {
+        throw std::invalid_argument("SphereCalculator: Surface must be of type Sphere");
+    }
 
-    // TODO: This is an error but should never happen!
-    // How to handle it?
-    assert(sph != nullptr);
+    // Validate vertex curvature
+    if (sph->vertex_curv <= 0.0)
+    {
+        std::stringstream ss;
+        ss << "SphereCalculator: Vertex curvature must be positive, got: " << sph->vertex_curv;
+        throw std::invalid_argument(ss.str());
+    }
 
-    // TODO: This is also an error that should be handled
-    // but that should probably be caught upstream when
-    // creating the surface object.
-    assert(sph->vertex_curv > 0.0);
+    if (std::isnan(sph->vertex_curv) || std::isinf(sph->vertex_curv))
+    {
+        throw std::invalid_argument("SphereCalculator: Vertex curvature cannot be NaN or infinite");
+    }
 
     this->curvature = sph->vertex_curv;
     this->radius = 1.0 / this->curvature;

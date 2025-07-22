@@ -3,6 +3,8 @@
 
 #include <cassert>
 #include <memory>
+#include <stdexcept>
+#include <sstream>
 
 #include "aperture.hpp"
 #include "matvec.hpp"
@@ -10,17 +12,59 @@
 
 CylinderCalculator::CylinderCalculator(surface_ptr surf, aperture_ptr ap)
 {
+    if (surf == nullptr)
+    {
+        throw std::invalid_argument("CylinderCalculator: Surface pointer cannot be null");
+    }
+
+    if (ap == nullptr)
+    {
+        throw std::invalid_argument("CylinderCalculator: Aperture pointer cannot be null");
+    }
+
     auto cylinder = std::dynamic_pointer_cast<Cylinder>(surf);
-    // TODO: This is an error but should never happen!
-    // How to handle it?
-    assert(cylinder != nullptr);
+    if (cylinder == nullptr)
+    {
+        throw std::invalid_argument("CylinderCalculator: Surface must be of type Cylinder");
+    }
 
     auto rect = std::dynamic_pointer_cast<Rectangle>(ap);
-    // TODO: This is an error but could happen.
-    // How to handle it?
-    assert(rect != nullptr);
+    if (rect == nullptr)
+    {
+        throw std::invalid_argument("CylinderCalculator: Aperture must be of type Rectangle");
+    }
 
-    assert(fabs(2.0 * cylinder->radius - rect->x_length) < 1e-8);
+    // Validate cylinder radius
+    if (cylinder->radius <= 0.0)
+    {
+        std::stringstream ss;
+        ss << "CylinderCalculator: Cylinder radius must be positive, got: " << cylinder->radius;
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (std::isnan(cylinder->radius) || std::isinf(cylinder->radius))
+    {
+        throw std::invalid_argument("CylinderCalculator: Cylinder radius cannot be NaN or infinite");
+    }
+
+    // Validate rectangle dimensions
+    if (rect->x_length <= 0.0 || rect->y_length <= 0.0)
+    {
+        std::stringstream ss;
+        ss << "CylinderCalculator: Rectangle dimensions must be positive, got: ("
+           << rect->x_length << ", " << rect->y_length << ")";
+        throw std::invalid_argument(ss.str());
+    }
+
+    // Validate that rectangle x_length matches cylinder diameter
+    double expected_x_length = 2.0 * cylinder->radius;
+    if (fabs(expected_x_length - rect->x_length) > 1e-8)
+    {
+        std::stringstream ss;
+        ss << "CylinderCalculator: Rectangle x_length (" << rect->x_length
+           << ") must equal cylinder diameter (" << expected_x_length << ")";
+        throw std::invalid_argument(ss.str());
+    }
 
     this->radius = cylinder->radius;
     this->length_y = rect->y_length;
@@ -47,7 +91,6 @@ int CylinderCalculator::intersect(const double PosLoc[3],
                                   double DFXYZ[3],
                                   double *PathLength)
 {
-
     // std::cout << "Computing cylinder intersection" << std::endl;
 
     int sts = 0;

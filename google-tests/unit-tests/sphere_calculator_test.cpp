@@ -25,6 +25,68 @@
 //    z2 = z(t2)
 // From these last two, we always have t1 < t2.
 
+// Helper function to create sphere surface
+std::shared_ptr<Sphere> create_sphere_surface(double vertex_curvature = 0.1)
+{
+    auto sphere = std::make_shared<Sphere>(vertex_curvature);
+    return sphere;
+}
+
+// Constructor validation tests
+TEST(SphereCalculator, ConstructorNullSurfaceThrows)
+{
+    EXPECT_THROW({
+        SphereCalculator calc(nullptr);
+    }, std::invalid_argument);
+}
+
+TEST(SphereCalculator, ConstructorWrongSurfaceTypeThrows)
+{
+    auto flat = std::make_shared<Flat>();
+    EXPECT_THROW({
+        SphereCalculator calc(flat);
+    }, std::invalid_argument);
+}
+
+TEST(SphereCalculator, ConstructorZeroVertexCurvatureThrows)
+{
+    auto zero_curvature_surface = create_sphere_surface(0.0);
+    EXPECT_THROW({
+        SphereCalculator calc(zero_curvature_surface);
+    }, std::invalid_argument);
+}
+
+TEST(SphereCalculator, ConstructorNegativeVertexCurvatureThrows)
+{
+    auto negative_curvature_surface = create_sphere_surface(-0.1);
+    EXPECT_THROW({
+        SphereCalculator calc(negative_curvature_surface);
+    }, std::invalid_argument);
+}
+
+TEST(SphereCalculator, ConstructorNaNVertexCurvatureThrows)
+{
+    auto nan_curvature_surface = create_sphere_surface(std::nan(""));
+    EXPECT_THROW({
+        SphereCalculator calc(nan_curvature_surface);
+    }, std::invalid_argument);
+}
+
+TEST(SphereCalculator, ConstructorInfiniteVertexCurvatureThrows)
+{
+    auto inf_curvature_surface = create_sphere_surface(std::numeric_limits<double>::infinity());
+    EXPECT_THROW({
+        SphereCalculator calc(inf_curvature_surface);
+    }, std::invalid_argument);
+}
+
+TEST(SphereCalculator, ConstructorValidVertexCurvature)
+{
+    auto valid_surface = create_sphere_surface(0.1);
+    EXPECT_NO_THROW({
+        SphereCalculator calc(valid_surface);
+    });
+}
 
 TEST(SphereCalculator, Case1)
 {
