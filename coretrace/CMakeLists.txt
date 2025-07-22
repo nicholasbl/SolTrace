@@ -111,29 +111,30 @@ endif(MSVC)
 # CMake Targets
 #
 #####################################################################################################################
-add_library(coretrace_api SHARED ${CORETRACE_SRC} ${CORETRACE_HEADERS})
-set_target_properties(coretrace_api
-    PROPERTIES
-    DEBUG_POSTFIX "d"
-	PREFIX ""
-	)
-if(MSVC)
-	target_compile_definitions(coretrace_api PRIVATE STCORE_API_EXPORTS _STCOREDLL_)
-endif()
-add_custom_command(
-	TARGET coretrace_api
-	POST_BUILD
-	COMMAND ${CMAKE_COMMAND}
-	ARGS -E copy $<TARGET_FILE:coretrace_api> ${CMAKE_CURRENT_SOURCE_DIR}/../app/deploy/api
-	)
-	
-add_library(coretrace STATIC ${CORETRACE_SRC} ${CORETRACE_HEADERS})
-set_target_properties(coretrace
-    PROPERTIES
-    DEBUG_POSTFIX "d"
-	PREFIX ""
-	)
 
+if(SOLTRACE_BUILD_CORETRACE)
+	add_library(coretrace_api SHARED ${CORETRACE_SRC} ${CORETRACE_HEADERS})
+	set_target_properties(coretrace_api
+		PROPERTIES
+		DEBUG_POSTFIX "d"
+		PREFIX ""
+		)
+	if(MSVC)
+		target_compile_definitions(coretrace_api PRIVATE STCORE_API_EXPORTS _STCOREDLL_)
+	endif()
+	add_custom_command(
+		TARGET coretrace_api
+		POST_BUILD
+		COMMAND ${CMAKE_COMMAND}
+		ARGS -E copy $<TARGET_FILE:coretrace_api> ${CMAKE_CURRENT_SOURCE_DIR}/../app/deploy/api
+		)
+
+	add_library(coretrace STATIC ${CORETRACE_SRC} ${CORETRACE_HEADERS})
+	set_target_properties(coretrace
+		PROPERTIES
+		DEBUG_POSTFIX "d"
+		PREFIX ""
+		)
 
 #####################################################################################################################
 #
@@ -141,11 +142,13 @@ set_target_properties(coretrace
 #
 #####################################################################################################################
 
-if (MSVC)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
-endif()
+	if (MSVC)
+		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
+	endif()
 
-add_subdirectory(strace)
+	add_subdirectory(strace)
+
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug"
        AND ENABLE_COVERAGE

@@ -4,7 +4,6 @@ include_directories(
 	.
 	../
 	../../app/deploy/samples
-	../../../coretrace
 	../../../coretrace/simulation_data
 	../../../coretrace/simulation_results
 	../../../coretrace/simulation_runner
@@ -13,7 +12,6 @@ include_directories(
 
 # CST Template test files
 set(CST_TEST_SRC
-	# ../common.cpp
 	linear_fresnel_test.cpp
 	parabolic_trough_test.cpp
 	parabolic_dish_test.cpp
@@ -28,7 +26,6 @@ target_link_libraries(
 	CSTTests
 	simdata
 	native_runner
-	coretrace
 	GTest::gtest_main
 )
 

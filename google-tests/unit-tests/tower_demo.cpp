@@ -234,7 +234,6 @@ TEST(TowerDemo, NativeRunnerWithoutStages)
     // Set parameters
     SimulationParameters &params = sd.get_simulation_parameters();
     params.number_of_rays = 100000;
-    // params.number_of_rays = 10; // Above takes too long
     params.max_number_of_rays = params.number_of_rays * 100;
     params.include_optical_errors = false;
     params.include_sun_shape_errors = false;

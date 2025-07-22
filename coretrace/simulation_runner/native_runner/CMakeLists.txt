@@ -2,27 +2,21 @@ Project(native_runner)
 
 include_directories(
     .
-    # ${CMAKE_SOURCE_DIR}/coretrace
     ${CMAKE_SOURCE_DIR}/coretrace/simulation_data
     ${CMAKE_SOURCE_DIR}/coretrace/simulation_results
     ${CMAKE_SOURCE_DIR}/coretrace/simulation_runner
 )
 
 set(NATIVE_RUNNER_SRC
-    # ${CMAKE_SOURCE_DIR}/coretrace/treemesh.cpp
-    # ${CMAKE_SOURCE_DIR}/coretrace/types.cpp
     calculator_factory.cpp
     cylinder_calculator.cpp
     determine_element_intersection_new.cpp
-    # element_intersection.cpp
     flat_calculator.cpp
     native_runner.cpp
     native_runner_types.cpp
     newton_calculator.cpp
     parabola_calculator.cpp
     pt_optimizations.cpp
-    # quadric_calculator.cpp
-    # root432.cpp
     sphere_calculator.cpp
     sun_to_primary_stage.cpp
     trace.cpp

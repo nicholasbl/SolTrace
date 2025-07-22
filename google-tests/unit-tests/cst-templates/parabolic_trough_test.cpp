@@ -207,7 +207,7 @@ TEST(ParabolicTrough, Tracing)
     envelop_in.refraction_index_front = 1.0;
     envelop_in.refraction_index_back = 1.46;
     envelop_in.slope_error = 1e-4;
-    envelop_out.specularity_error = 1e-4;
+    envelop_in.specularity_error = 1e-4;
 
     auto pt = make_element<ParabolicTrough>();
     pt->set_optics(mirror, absorber, envelop_out, envelop_in);

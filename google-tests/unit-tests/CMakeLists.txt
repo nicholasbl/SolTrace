@@ -4,7 +4,6 @@ Project(UnitTests)
 include_directories(
 	.
 	../app/deploy/samples
-	../../coretrace
 	../../coretrace/simulation_data
 	../../coretrace/simulation_results
 	../../coretrace/simulation_runner
@@ -45,7 +44,7 @@ target_link_libraries(
     UnitTests
     simdata
 	native_runner
-	coretrace
+	# coretrace
 	GTest::gtest_main
 )
 
