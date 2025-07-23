@@ -207,7 +207,7 @@ void bbox_test_single_element(TElement* element, double gen_size_factor, int N_g
 
 
 // Get geometries from file
-void file_bbox_test(string sample_path)
+void file_bbox_test(string sample_path, bool check_enabled = false)
 {
 	// Soltrace case parameters
 	const char* file = sample_path.data();
@@ -257,6 +257,12 @@ void file_bbox_test(string sample_path)
 		// Loop through elements
 		for (st_uint_t j = 0; j < stage->ElementList.size(); j++)
 		{
+			// Check if enabled
+			if( check_enabled && !stage->ElementList[j]->Enabled)
+			{
+				continue;
+			}
+
 			// Assign parent stage (for embree purposes)
 			TElement* element = stage->ElementList[j];
 			element->parent_stage = stage;
@@ -274,7 +280,7 @@ TEST(BoundingBoxTests, ApertureExamples)
 	// Pulling in path variable from CMake and creating path to .stinput sample file
 	string sample_path = string(PROJECT_DIR) + string("/Aperture Examples.stinput");
 
-	// Compare runs with and without embree to saved raydata
+	// Perform bounding box test
 	file_bbox_test(sample_path);
 }
 
@@ -283,7 +289,7 @@ TEST(BoundingBoxTests, ApertureSampleBuiltIn)
 	// Pulling in path variable from CMake and creating path to .stinput sample file
 	string sample_path = string(PROJECT_DIR) + string("/Aperture Sample-Built In.stinput");
 
-	// Compare runs with and without embree to saved raydata
+	// Perform bounding box test
 	file_bbox_test(sample_path);
 }
 
@@ -292,7 +298,7 @@ TEST(BoundingBoxTests, ApertureSampleExternal)
 	// Pulling in path variable from CMake and creating path to .stinput sample file
 	string sample_path = string(PROJECT_DIR) + string("/Aperture Sample-External Files.stinput");
 
-	// Compare runs with and without embree to saved raydata
+	// Perform bounding box test
 	file_bbox_test(sample_path);
 }
 
@@ -301,6 +307,27 @@ TEST(BoundingBoxTests, FlatTest)
 	// Pulling in path variable from CMake and creating path to .stinput sample file
 	string sample_path = string(PROJECT_DIR) + string("/flat_test.stinput");
 
-	// Compare runs with and without embree to saved raydata
+	// Perform bounding box test
 	file_bbox_test(sample_path);
+}
+
+TEST(BoundingBoxTests, ApertureCombos)
+{
+	// Define aperture_combo files
+	std::vector<string> file_list = { "Aperture_combos_conical.stinput", "Aperture_combos_cylindrical.stinput",
+		"Aperture_combos_flat.stinput", "Aperture_combos_hyperboloids.stinput", "Aperture_combos_parabolic.stinput",
+		"Aperture_combos_RSC.stinput", "Aperture_combos_RSP.stinput", "Aperture_combos_spherical.stinput",
+		"Aperture_combos_VSHOT.stinput", "Aperture_combos_zernike.stinput"};
+
+	// Pulling in path variable from CMake and creating path to .stinput sample file
+	string sample_path = string(PROJECT_DIR) + string("/flat_test.stinput");
+
+	for (const string file_name : file_list)
+	{
+		// Create sample path
+		sample_path = string(PROJECT_DIR) + string("/") + file_name;
+
+		// Perform bounding box test
+		file_bbox_test(sample_path, true);
+	}
 }
