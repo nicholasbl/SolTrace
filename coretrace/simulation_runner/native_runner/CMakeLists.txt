@@ -2,9 +2,9 @@ Project(native_runner)
 
 include_directories(
     .
-    ${CMAKE_SOURCE_DIR}/soltrace/coretrace/simulation_data
-    ${CMAKE_SOURCE_DIR}/soltrace/coretrace/simulation_results
-    ${CMAKE_SOURCE_DIR}/soltrace/coretrace/simulation_runner
+    ${CMAKE_SOURCE_DIR}/coretrace/simulation_data
+    ${CMAKE_SOURCE_DIR}/coretrace/simulation_results
+    ${CMAKE_SOURCE_DIR}/coretrace/simulation_runner
 )
 
 set(NATIVE_RUNNER_SRC
