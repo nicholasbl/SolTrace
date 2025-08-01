@@ -3,6 +3,7 @@
 #include <cassert>
 
 #include "composite_element.hpp"
+#include "simdata_io.hpp"
 
 SimulationData::SimulationData() : number_of_elements(0),
                                    my_elements(1),
@@ -252,9 +253,7 @@ int SimulationData::update_simulation_positions(const DateTime &dt)
 
 int SimulationData::import_from_file(const char *file_name)
 {
-    int sts = 0;
-    // TODO: Implement this
-    return sts;
+    return load_stinput_file(*this, file_name);
 }
 
 int SimulationData::import_from_file(const std::string file_name)

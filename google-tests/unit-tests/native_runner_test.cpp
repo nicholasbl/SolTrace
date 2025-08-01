@@ -12,6 +12,7 @@
 #include <single_element.hpp>
 #include <stage_element.hpp>
 #include <vector3d.hpp>
+#include <filesystem>
 
 TEST(RandomNumberGenerator, SingleNumberMersenneTwister)
 {
@@ -237,4 +238,32 @@ TEST(NativeRunner, PowerTowerSmokeTest)
     // const TSystem *sys = runner.get_system();
     // // auto ray_data = sys->AllRayData;
     // sys->AllRayData.Print();
+}
+
+TEST(NativeRunner, LegacyFileLoadTest)
+{
+    std::string project_path = std::string(PROJECT_DIR);
+    std::string parent_dir = std::filesystem::path(PROJECT_DIR).parent_path().string();
+    std::string sample_path = parent_dir + std::string("/simple_test_case.stinput");
+
+	// Load simulation data from file
+    SimulationData sd;
+    sd.import_from_file(sample_path);
+
+    // Set parameters
+    SimulationParameters& params = sd.get_simulation_parameters();
+    params.number_of_rays = 10000;
+    params.max_number_of_rays = params.number_of_rays * 100;
+    params.include_optical_errors = false;
+    params.include_sun_shape_errors = false;
+    params.seed = 12345;
+
+	// Create and run the native runner
+    NativeRunner runner;
+	RunnerStatus sts = runner.initialize();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 }

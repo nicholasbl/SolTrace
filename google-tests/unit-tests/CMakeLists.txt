@@ -1,6 +1,8 @@
 
 Project(UnitTests)
 
+add_definitions(-DPROJECT_DIR="${CMAKE_CURRENT_BINARY_DIR}")
+
 include_directories(
 	.
 	../app/deploy/samples

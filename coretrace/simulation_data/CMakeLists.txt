@@ -1,4 +1,3 @@
-
 Project(simdata)
 
 include_directories(.)
@@ -10,6 +9,7 @@ set(SIMDATA_SRC
     composite_element.cpp
     element.cpp
     matvec.cpp
+    simdata_io.cpp
     simulation_data.cpp
     single_element.cpp
     stage_element.cpp
@@ -33,6 +33,7 @@ set(SIMDATA_HDRS
     matvec.hpp
     optical_properties.hpp
     ray_source.hpp
+    simdata_io.hpp
     simulation_data.hpp
     simulation_parameters.hpp
     single_element.hpp

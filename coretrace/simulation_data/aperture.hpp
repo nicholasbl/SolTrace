@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <memory>
+#include <vector>
 
 // TODO: Make a header file for constants...
 #ifndef M_PI
@@ -42,6 +43,8 @@ public:
 
     Aperture(ApertureType type) : my_type(type) {}
     virtual ~Aperture() {}
+
+    static aperture_ptr make_aperture_from_type(ApertureType type, const std::vector<double>& args);
 
     inline ApertureType get_type() const
     {
