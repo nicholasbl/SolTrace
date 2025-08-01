@@ -1,3 +1,4 @@
+#include <cstring>
 #include "simdata_io.hpp"
 #include <ray_source.hpp>
 #include <simulation_data.hpp>
