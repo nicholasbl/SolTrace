@@ -63,6 +63,46 @@ RunnerStatus NativeRunner::setup_sun(const SimulationData *data)
     ray_source_ptr sun = data->get_ray_source();
     vector_copy(this->tsys.Sun.Origin, sun->get_position());
     this->tsys.Sun.ShapeIndex = sun->get_shape();
+
+    // Set sunshape data
+    switch (sun->get_shape())
+    {
+        case DistributionType::GAUSSIAN:
+            this->tsys.Sun.Sigma = sun->get_sigma();
+			break;
+		case DistributionType::PILLBOX:
+			this->tsys.Sun.Sigma = sun->get_half_width();
+            break;
+        case DistributionType::USER_DEFINED:
+			std::vector<double> angle, intensity;
+            sun->get_user_data(angle, intensity);
+            int npoints = angle.size();
+
+            // Set user data
+            this->tsys.Sun.MaxAngle = 0;
+            this->tsys.Sun.MaxIntensity = 0;
+
+            this->tsys.Sun.SunShapeAngle.resize(2 * npoints - 1);
+            this->tsys.Sun.SunShapeIntensity.resize(2 * npoints - 1);
+
+            for (int i = 0; i < npoints; i++)
+            {
+                this->tsys.Sun.SunShapeAngle[npoints + i - 1] = angle[i];
+                this->tsys.Sun.SunShapeIntensity[npoints + i - 1] = intensity[i];
+
+                if (angle[i] > this->tsys.Sun.MaxAngle) this->tsys.Sun.MaxAngle = angle[i];
+                if (intensity[i] > this->tsys.Sun.MaxIntensity) this->tsys.Sun.MaxIntensity = intensity[i];
+            }
+
+            // fill negative angle side of array
+            for (int i = 0; i < npoints - 1; i++)
+            {
+                this->tsys.Sun.SunShapeAngle[i] = -angle[npoints - i - 1];
+                this->tsys.Sun.SunShapeIntensity[i] = intensity[npoints - i - 1];
+            }
+            
+    }
+
     return RunnerStatus::SUCCESS;
 }
 

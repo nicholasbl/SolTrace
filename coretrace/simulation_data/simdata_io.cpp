@@ -216,26 +216,20 @@ bool process_sun(FILE* fp, SimulationData& sd)
 
 	read_line(buf, 1023, fp);
 	sscanf(buf, "USER SHAPE DATA\t%d", &count);
+	std::vector<double> angle_vec;
+	std::vector<double> intensity_vec;
 	if (count > 0)
 	{
-		double* angle = new double[count];
-		double* intensity = new double[count];
-
 		for (int i = 0; i < count; i++)
 		{
 			double x, y;
 			read_line(buf, 1023, fp);
 			sscanf(buf, "%lg\t%lg", &x, &y);
-			angle[i] = x;
-			intensity[i] = y;
+			angle_vec.push_back(x);
+			intensity_vec.push_back(y);
 		}
-
 		//st_sun_userdata(cxt, count, angle, intensity);
-
-		delete[] angle;
-		delete[] intensity;
 	}
-	
 
 	// Make sun
 	auto sun = make_ray_source<Sun>();
@@ -252,7 +246,9 @@ bool process_sun(FILE* fp, SimulationData& sd)
 
 	// Define sun shape (TODO: need to pass in sun shape parameters)
 	DistributionType sun_shape = char_to_distribution(cshape);
-	sun->set_shape(sun_shape);
+	sun->set_shape(sun_shape, Sigma, HalfWidth, angle_vec, intensity_vec);
+
+	// TODO set point source
 
 	// Attach sun to simulation data
 	sd.add_ray_source(sun);
@@ -526,8 +522,40 @@ bool process_stages(FILE* fp, SimulationData& sd, std::map<std::string, std::arr
 	return true;
 }
 
+bool process_sim_par(FILE* fp, SimulationData& sd)
+{
+	char buf[1024];
+
+	// Check if end of file
+	if (feof(fp))
+		return false;
+
+	// Check for simulation parameters
+	read_line(buf, 1023, fp);
+	if (strncmp(buf, "TRACE", 5) != 0)
+		return false;
+	
+	// Get simulation parameters
+	int n_rays, n_rays_sun, n_cpu, seed, ss, err, pf;
+	int n = sscanf(buf, "TRACE\tNRAY\t%d\tNSUN\t%d\tCPU\t%d\tSEED\t%d\tSUNSHAPE\t%d\tERRORS\t%d\tPTFOCUS\t%d",
+		&n_rays, &n_rays_sun, &n_cpu, &seed, &ss, &err, &pf);
+
+	// Assign simulation parameters
+	SimulationParameters &par = sd.get_simulation_parameters();
+	par.number_of_rays = n_rays;
+	par.max_number_of_rays = n_rays_sun;
+	par.seed = seed;
+	par.include_sun_shape_errors = ss;
+	par.include_optical_errors = err;
+	
+	// TODO Assign number CPUs, point focus?
+	return true;
+}
+
 bool load_stinput_file(SimulationData& sd, std::string filename)
 {
+	// TODO: Reset simulation data?
+
 	// Read in file
 	FILE* fp = fopen(filename.data(), "r");
 	if (!fp)
@@ -566,5 +594,8 @@ bool load_stinput_file(SimulationData& sd, std::string filename)
 	// Read in Stages
 	process_stages(fp, sd, optics_map);
 
-	return false;
+	// Read in simulation parameters (if any)
+	process_sim_par(fp, sd);
+
+	return true;
 }

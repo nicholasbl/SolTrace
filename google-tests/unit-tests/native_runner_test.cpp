@@ -29,7 +29,8 @@ TEST(NativeRunnerTypes, TSun)
     auto sun = make_ray_source<Sun>();
     Vector3d spos(1.0, 2.0, 3.0);
     sun->set_position(spos);
-    sun->set_shape(PILLBOX);
+    double NaN = std::numeric_limits<double>::quiet_NaN();
+    sun->set_shape(PILLBOX, NaN, NaN);
     my_sim.add_ray_source(sun);
 
     NativeRunner runner;
@@ -101,7 +102,8 @@ TEST(NativeRunner, SmokeTest)
 
     auto sun = make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 100.0);
-    sun->set_shape(DistributionType::GAUSSIAN);
+    double NaN = std::numeric_limits<double>::quiet_NaN();
+    sun->set_shape(DistributionType::GAUSSIAN, NaN, NaN);
     my_sim.add_ray_source(sun);
 
     auto my_st = make_stage(0);
