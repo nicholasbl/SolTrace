@@ -124,6 +124,7 @@ TEST(SphereCalculator, Case2)
     Vector3d rd(-3.0, 1.0, -0.5);
     double radius = 1.0;
     double T = 0.5 * (20 - sqrt(31)) / 10.25;
+    Vector3d s0(0.0, 0.0, radius);
 
     // Solution values
     int sts;
@@ -131,6 +132,7 @@ TEST(SphereCalculator, Case2)
     Vector3d xt;
     Vector3d mt;
     Vector3d gradf;
+    Vector3d r;
     
     surface_ptr sph = make_surface<Sphere>(1.0 / radius);
     SphereCalculator scalc(sph);
@@ -145,6 +147,9 @@ TEST(SphereCalculator, Case2)
     EXPECT_NEAR(gradf[0], -2.0 * (rd[0] * T + r0[0]), TOL);
     EXPECT_NEAR(gradf[1], -2.0 * (rd[1] * T + r0[1]), TOL);
     EXPECT_NEAR(gradf[2], -2.0 * (rd[2] * T + r0[2] - radius), TOL);
+
+    vector_add(1.0, xt, -1.0, s0, r);
+    EXPECT_NEAR(vector_norm(r), radius, TOL);
 }
 
 TEST(SphereCalculator, Case3)
@@ -156,6 +161,7 @@ TEST(SphereCalculator, Case3)
     Vector3d rd(-3.0, 1.0, -1.0);
     double radius = 1.0;
     double T = 0.5 * (22 + sqrt(44)) / 11;
+    Vector3d s0(0.0, 0.0, radius);
 
     // Solution values
     int sts;
@@ -163,6 +169,7 @@ TEST(SphereCalculator, Case3)
     Vector3d xt;
     Vector3d mt;
     Vector3d gradf;
+    Vector3d r;
     
     surface_ptr sph = make_surface<Sphere>(1.0 / radius);
     SphereCalculator scalc(sph);
@@ -177,6 +184,9 @@ TEST(SphereCalculator, Case3)
     EXPECT_NEAR(gradf[0], -2.0 * (rd[0] * T + r0[0]), TOL);
     EXPECT_NEAR(gradf[1], -2.0 * (rd[1] * T + r0[1]), TOL);
     EXPECT_NEAR(gradf[2], -2.0 * (rd[2] * T + r0[2] - radius), TOL);
+
+    vector_add(1.0, xt, -1.0, s0, r);
+    EXPECT_NEAR(vector_norm(r), radius, TOL);
 }
 
 TEST(SphereCalculator, Case4)

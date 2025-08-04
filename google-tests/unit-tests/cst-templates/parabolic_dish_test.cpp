@@ -134,10 +134,8 @@ TEST(ParabolicDish, Tracing)
 
     RunnerStatus sts = my_runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-    // Setup runs but is not complete
     sts = my_runner.setup_simulation(&my_sim);
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-    // Run simulation runs but returns RunnerStatus::ERROR
     sts = my_runner.run_simulation();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 

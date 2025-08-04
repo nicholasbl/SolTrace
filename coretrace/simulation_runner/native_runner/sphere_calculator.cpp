@@ -10,6 +10,8 @@
 #include "matvec.hpp"
 #include "surface.hpp"
 
+// #include "vector3d.hpp"
+
 SphereCalculator::SphereCalculator(surface_ptr surf)
 {
     if (surf == nullptr)
@@ -38,6 +40,10 @@ SphereCalculator::SphereCalculator(surface_ptr surf)
 
     this->curvature = sph->vertex_curv;
     this->radius = 1.0 / this->curvature;
+
+    // std::cout << "Curvature: " << this->curvature
+    //           << "\nRadius: " << this->radius
+    //           << std::endl;
 
     return;
 }
@@ -105,6 +111,15 @@ int SphereCalculator::intersect(const double PosLoc[3],
         this->surface_normal(PosXYZ, DFXYZ);
         CopyVec3(CosKLM, CosLoc);
     }
+
+    // Vector3d p0(PosLoc), v0(CosLoc);
+    // Vector3d p1(PosXYZ);
+
+    // std::cout << "Ray Position: " << p0
+    //           << "\nRay Direction: " << v0
+    //           << "\nIntersection: " << p1
+    //           << "\nDistance: " << *PathLength
+    //           << std::endl;
 
     return sts;
 }
