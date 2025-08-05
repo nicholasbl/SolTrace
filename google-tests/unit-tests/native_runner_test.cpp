@@ -285,7 +285,8 @@ TEST(NativeRunner, SingleRayValidationTest)
     // Sun
     auto sun = make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 100.0);
-    sun->set_shape(DistributionType::PILLBOX);
+	double NaN = std::numeric_limits<double>::quiet_NaN();
+    sun->set_shape(DistributionType::PILLBOX, NaN, NaN);
     sd.add_ray_source(sun);
 
     auto sph = make_element<SingleElement>();
