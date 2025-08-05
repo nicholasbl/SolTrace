@@ -499,7 +499,7 @@ bool process_stages(FILE* fp, SimulationData& sd, std::map<std::string, std::arr
 		read_line(buf, 1023, fp); // read name
 
 		// Make stage
-		stage_ptr stage = make_stage(0);
+		stage_ptr stage = make_stage(i_stage);
 		stage->set_origin(X, Y, Z);
 		stage->set_aim_vector(AX, AY, AZ);
 		stage->set_zrot(ZRot);
