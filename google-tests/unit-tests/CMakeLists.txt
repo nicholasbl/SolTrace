@@ -28,6 +28,7 @@ set(UNIT_TEST_SRC
     container_test.cpp
     element_test.cpp
     simulation_data_test.cpp
+	simulation_result_test.cpp
 	flat_calculator_test.cpp
 	newton_calculator_test.cpp
 	parabola_calculator_test.cpp
@@ -45,6 +46,7 @@ add_executable(UnitTests
 target_link_libraries(
     UnitTests
     simdata
+	simresult
 	native_runner
 	# coretrace
 	GTest::gtest_main

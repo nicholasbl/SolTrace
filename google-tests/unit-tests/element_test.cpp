@@ -417,8 +417,6 @@ TEST(Element, CoordinateComputations)
 
     // **** Setup Elements **** //
     auto el = make_configured_element();
-    el->set_aperture(make_aperture<Circle>(2.0));
-    el->set_surface(make_surface<Flat>());
     el->set_reference_frame_geometry(Origin1, aim1, zrot1);
 
     auto st = make_stage(0);
@@ -451,6 +449,9 @@ TEST(Element, CoordinateComputations)
     EXPECT_TRUE(is_identical(el->get_aim_vector_stage(), el->get_aim_vector_ref(), TOL));
     matrix_vector_product(Q2t, aim1, result_vec);
     EXPECT_TRUE(is_identical(el->get_aim_vector_global(), result_vec, TOL));
+
+    // TODO: Need test for convert_stage_to_local
+    // TODO: Need test for convert_global_to_local
 }
 
 TEST(Element, SingleElementEnforceUserFieldsSet)

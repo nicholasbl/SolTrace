@@ -78,13 +78,11 @@ struct Sphere : public Surface
 {
     // z(x,y) = c(x^2 + y^2) / [1 + sqrt(1 - c^2{x^2 + y^2})]
     // where c = 1/R.
-    // TODO: This form seems to be unnecessarily complicated
-    // and also gives only the bottom half of the sphere.
-    // Could easily just use one of equation
+    // TODO: This form seems to be unnecessarily complicated.
+    // Could easily just use one of the equations
     // z(x,y) = (1 - sqrt(1 - c^2 (x^2 + y^2))) / c
-    //        = R * (1 - sqrt(R^2 - (x^2 + y^2)))
+    //        = R - sqrt(R^2 - (x^2 + y^2))
     // Need to check on this.
-    // TODO: Do we need the top half of the sphere?
     double vertex_curv;
 
     Sphere(double curv) : Surface(SPHERE),

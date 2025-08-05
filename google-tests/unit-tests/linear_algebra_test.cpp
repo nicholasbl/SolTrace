@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
 
-#include <vector3d.hpp>
+#include <iomanip>
 #include <cmath>
+#include <sstream>
+
+#include <vector3d.hpp>
 
 #include "common.hpp"
 
@@ -141,4 +144,136 @@ TEST(LinearAlgebra, CoordinateTransforms)
     Matrix3d B;
 
     EXPECT_TRUE(is_identical(A, B));
+}
+
+TEST(LinearAlgebra, Vector3dOutputOperator)
+{
+    Vector3d v1(1.0, 2.0, 3.0);
+    Vector3d v2(-0.5, 0.0, 10.5);
+    Vector3d v3(0.0, 0.0, 0.0);
+
+    std::ostringstream oss1;
+    oss1 << v1;
+    EXPECT_EQ(oss1.str(), "[1, 2, 3]");
+
+    std::ostringstream oss2;
+    oss2 << v2;
+    EXPECT_EQ(oss2.str(), "[-0.5, 0, 10.5]");
+
+    std::ostringstream oss3;
+    oss3 << v3;
+    EXPECT_EQ(oss3.str(), "[0, 0, 0]");
+
+    // Test with different precision
+    Vector3d v4(1.23456789, -2.34567891, 3.45678912);
+    std::ostringstream oss4;
+    oss4 << std::fixed << std::setprecision(3) << v4;
+    EXPECT_EQ(oss4.str(), "[1.235, -2.346, 3.457]");
+}
+
+TEST(LinearAlgebra, Matrix3dOutputOperator)
+{
+    Matrix3d A;
+    A.zero();
+    A.set_value(0, 0, 1.0);
+    A.set_value(0, 1, 2.0);
+    A.set_value(0, 2, 3.0);
+    A.set_value(1, 0, 4.0);
+    A.set_value(1, 1, 5.0);
+    A.set_value(1, 2, 6.0);
+    A.set_value(2, 0, 7.0);
+    A.set_value(2, 1, 8.0);
+    A.set_value(2, 2, 9.0);
+
+    std::ostringstream oss;
+    oss << A;
+    EXPECT_EQ(oss.str(), "[1, 2, 3; 4, 5, 6; 7, 8, 9; ]");
+
+    // Test identity matrix
+    Matrix3d I;
+    I.identity();
+    std::ostringstream oss_identity;
+    oss_identity << I;
+    EXPECT_EQ(oss_identity.str(), "[1, 0, 0; 0, 1, 0; 0, 0, 1; ]");
+
+    // Test zero matrix
+    Matrix3d Z;
+    Z.zero();
+    std::ostringstream oss_zero;
+    oss_zero << Z;
+    EXPECT_EQ(oss_zero.str(), "[0, 0, 0; 0, 0, 0; 0, 0, 0; ]");
+
+    // Test with negative values and different precision
+    Matrix3d B;
+    B.set_value(0, 0, -1.5);
+    B.set_value(0, 1, 2.25);
+    B.set_value(0, 2, -3.75);
+    B.set_value(1, 0, 0.0);
+    B.set_value(1, 1, -0.5);
+    B.set_value(1, 2, 1.0);
+    B.set_value(2, 0, 10.0);
+    B.set_value(2, 1, -20.0);
+    B.set_value(2, 2, 30.0);
+
+    std::ostringstream oss_negative;
+    oss_negative << std::fixed << std::setprecision(2) << B;
+    EXPECT_EQ(oss_negative.str(), "[-1.50, 2.25, -3.75; 0.00, -0.50, 1.00; 10.00, -20.00, 30.00; ]");
+}
+
+TEST(LinearAlgebra, Matrix3dGetValue)
+{
+    Matrix3d A;
+    A.zero();
+    
+    // Test getting values from zero matrix
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            EXPECT_EQ(A.get_value(i, j), 0.0);
+        }
+    }
+
+    // Set specific values and test retrieval
+    A.set_value(0, 0, 1.5);
+    A.set_value(0, 1, -2.5);
+    A.set_value(0, 2, 3.7);
+    A.set_value(1, 0, -4.2);
+    A.set_value(1, 1, 5.8);
+    A.set_value(1, 2, -6.1);
+    A.set_value(2, 0, 7.9);
+    A.set_value(2, 1, -8.4);
+    A.set_value(2, 2, 9.6);
+
+    EXPECT_DOUBLE_EQ(A.get_value(0, 0), 1.5);
+    EXPECT_DOUBLE_EQ(A.get_value(0, 1), -2.5);
+    EXPECT_DOUBLE_EQ(A.get_value(0, 2), 3.7);
+    EXPECT_DOUBLE_EQ(A.get_value(1, 0), -4.2);
+    EXPECT_DOUBLE_EQ(A.get_value(1, 1), 5.8);
+    EXPECT_DOUBLE_EQ(A.get_value(1, 2), -6.1);
+    EXPECT_DOUBLE_EQ(A.get_value(2, 0), 7.9);
+    EXPECT_DOUBLE_EQ(A.get_value(2, 1), -8.4);
+    EXPECT_DOUBLE_EQ(A.get_value(2, 2), 9.6);
+
+    // Test identity matrix
+    Matrix3d I;
+    I.identity();
+    EXPECT_DOUBLE_EQ(I.get_value(0, 0), 1.0);
+    EXPECT_DOUBLE_EQ(I.get_value(0, 1), 0.0);
+    EXPECT_DOUBLE_EQ(I.get_value(0, 2), 0.0);
+    EXPECT_DOUBLE_EQ(I.get_value(1, 0), 0.0);
+    EXPECT_DOUBLE_EQ(I.get_value(1, 1), 1.0);
+    EXPECT_DOUBLE_EQ(I.get_value(1, 2), 0.0);
+    EXPECT_DOUBLE_EQ(I.get_value(2, 0), 0.0);
+    EXPECT_DOUBLE_EQ(I.get_value(2, 1), 0.0);
+    EXPECT_DOUBLE_EQ(I.get_value(2, 2), 1.0);
+
+    // Test very small and very large values
+    A.set_value(0, 0, 1e-15);
+    A.set_value(1, 1, 1e15);
+    A.set_value(2, 2, -1e-10);
+    
+    EXPECT_DOUBLE_EQ(A.get_value(0, 0), 1e-15);
+    EXPECT_DOUBLE_EQ(A.get_value(1, 1), 1e15);
+    EXPECT_DOUBLE_EQ(A.get_value(2, 2), -1e-10);
 }

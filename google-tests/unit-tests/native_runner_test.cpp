@@ -13,6 +13,7 @@
 #include <stage_element.hpp>
 #include <vector3d.hpp>
 #include <filesystem>
+#include <virtual_element.hpp>
 
 TEST(RandomNumberGenerator, SingleNumberMersenneTwister)
 {
@@ -113,7 +114,7 @@ TEST(NativeRunner, SmokeTest)
     OpticalProperties optics(InteractionType::REFLECTION,
                              DistributionType::GAUSSIAN,
                              0.0, 1.0, 0.0, 0.0, 1.0, 1.0);
-                            //  0.0, 0.0, 0.0, 0.0, 1.0, 1.0);
+    //  0.0, 0.0, 0.0, 0.0, 1.0, 1.0);
     for (int k = 0; k < NUM_ELEMENTS; ++k)
     {
         element_ptr el = make_element<SingleElement>();
@@ -218,8 +219,9 @@ TEST(NativeRunner, PowerTowerSmokeTest)
     EXPECT_EQ(sd.get_number_of_elements(), NUM_ELEMENTS + 1);
 
     // Set parameters
+    const uint_fast64_t NRAYS = 10000;
     SimulationParameters &params = sd.get_simulation_parameters();
-    params.number_of_rays = 10000;
+    params.number_of_rays = NRAYS;
     params.max_number_of_rays = params.number_of_rays * 100;
     params.include_optical_errors = false;
     params.include_sun_shape_errors = false;
@@ -228,10 +230,8 @@ TEST(NativeRunner, PowerTowerSmokeTest)
     NativeRunner runner;
     RunnerStatus sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-    // Setup runs but is not complete
     sts = runner.setup_simulation(&sd);
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-    // Run simulation runs but returns RunnerStatus::ERROR
     sts = runner.run_simulation();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 
@@ -240,6 +240,104 @@ TEST(NativeRunner, PowerTowerSmokeTest)
     // const TSystem *sys = runner.get_system();
     // // auto ray_data = sys->AllRayData;
     // sys->AllRayData.Print();
+
+    const TSystem *sys = runner.get_system();
+    // sys->AllRayData.Print();
+    const TRayData *ray_data = &(sys->AllRayData);
+    size_t n = ray_data->Count();
+    uint_fast64_t num_absorbed = 0;
+    for (size_t i = 0; i < n; i++)
+    {
+        double pos[3], cos[3];
+        int elm, stage;
+        unsigned int ray;
+        if (ray_data->Query(i, pos, cos, &elm, &stage, &ray))
+        {
+            if (elm < 0)
+                ++num_absorbed;
+        }
+    }
+
+    std::cout << "Number Absorbed: " << num_absorbed << std::endl;
+    std::cout << "Number Interactions: " << n << std::endl;
+
+    // ray_data->Print();
+
+    EXPECT_TRUE(n >= NRAYS);
+    EXPECT_TRUE(num_absorbed > 0);
+}
+
+TEST(NativeRunner, SingleRayValidationTest)
+{
+    const double TOL = 5e-5;
+    SimulationData sd;
+    // NativeRunner runner;
+
+    // Set parameters
+    const uint_fast64_t NRAYS = 1;
+    SimulationParameters &params = sd.get_simulation_parameters();
+    params.number_of_rays = NRAYS;
+    params.max_number_of_rays = params.number_of_rays * 100;
+    params.include_optical_errors = false;
+    params.include_sun_shape_errors = false;
+    params.seed = 1;
+
+    // Sun
+    auto sun = make_ray_source<Sun>();
+    sun->set_position(0.0, 0.0, 100.0);
+    sun->set_shape(DistributionType::PILLBOX);
+    sd.add_ray_source(sun);
+
+    auto sph = make_element<SingleElement>();
+    Vector3d origin(0.0, 0.0, 15.0);
+    Vector3d aim(0.0, 0.0, -1.0);
+    double zrot = 0.0;
+    sph->set_reference_frame_geometry(origin, aim, zrot);
+    sph->set_aperture(make_aperture<Hexagon>(20.0));
+    sph->set_surface(make_surface<Sphere>(0.09));
+    sph->get_front_optical_properties()->set_ideal_reflection();
+    sph->get_back_optical_properties()->set_ideal_reflection();
+    sd.add_element(sph);
+
+    auto para = make_element<VirtualElement>();
+    origin.set_values(0.0, 0.0, -1.0);
+    aim.set_values(0.0, 0.0, 0.0);
+    zrot = 0.0;
+    para->set_reference_frame_geometry(origin, aim, zrot);
+    para->set_aperture(make_aperture<Rectangle>(31.0, 31.0));
+    para->set_surface(make_surface<Parabola>(0.5 / 0.03, 0.5 / 0.03));
+    sd.add_element(para);
+
+    NativeRunner runner;
+    RunnerStatus sts = runner.initialize();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    const TSystem *sys = runner.get_system();
+    // sys->AllRayData.Print();
+    const TRayData *ray_data = &(sys->AllRayData);
+    size_t n = ray_data->Count();
+
+    sys->AllRayData.Print();
+
+    EXPECT_EQ(n, 1);
+
+    Vector3d ipoint, idir;
+    int element, stage;
+    unsigned int raynum;
+    sys->AllRayData.Query(0, ipoint.data, idir.data,
+                          &element, &stage, &raynum);
+
+    EXPECT_NEAR(ipoint[0], -3.06214, TOL);
+	EXPECT_NEAR(ipoint[1], 5.92862, TOL);
+	EXPECT_NEAR(ipoint[2], 12.7732, TOL);
+
+	EXPECT_NEAR(idir[0], 0.0, TOL);
+	EXPECT_NEAR(idir[1], 0.0, TOL);
+	EXPECT_NEAR(idir[2], -1.0, TOL);
 }
 
 TEST(NativeRunner, LegacyFileLoadTest)

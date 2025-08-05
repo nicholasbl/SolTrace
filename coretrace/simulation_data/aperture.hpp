@@ -139,50 +139,15 @@ struct Rectangle : public Aperture
     // lower left hand corner of the rectangle in the xy-plane.
     double x_coord;
     double y_coord;
-    Rectangle(double xlen, double ylen)
-        : Aperture(RECTANGLE),
-          x_length(xlen),
-          y_length(ylen)
-    {
-        // Default to rectangle centered at the origin.
-        this->x_coord = -0.5 * this->x_length;
-        this->y_coord = -0.5 * this->y_length;
-        return;
-    }
-    Rectangle(double xlen, double ylen, double xl, double yl)
-        : Aperture(RECTANGLE),
-          x_length(xlen),
-          y_length(ylen),
-          x_coord(xl),
-          y_coord(yl)
-    {
-    }
+    
+    Rectangle(double xlen, double ylen);
+    Rectangle(double xlen, double ylen, double xl, double yl);
     virtual ~Rectangle() {}
 
-    virtual double aperture_area() const
-    {
-        return this->x_length * this->y_length;
-    }
-
-    virtual double diameter_circumscribed_circle() const
-    {
-        return sqrt(x_length * x_length + y_length * y_length);
-    }
-
-    virtual bool is_in(double x, double y) const
-    {
-        double xl = this->x_coord;
-        double yl = this->y_coord;
-        double xu = xl + this->x_length;
-        double yu = yl + this->y_length;
-        return (xl <= x && x <= xu && yl <= y && y <= yu);
-    }
-
-    virtual aperture_ptr make_copy() const
-    {
-        // Invokes the implicit copy constructor
-        return make_aperture<Rectangle>(*this);
-    }
+    virtual double aperture_area() const;
+    virtual double diameter_circumscribed_circle() const;
+    virtual bool is_in(double x, double y) const;
+    virtual aperture_ptr make_copy() const;
 };
 
 struct SingleAxisCurvatureSection : public Aperture

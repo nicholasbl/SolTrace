@@ -315,6 +315,7 @@ bool trace_native(
 	}
 
 	// Initialize variables
+	// std::cout << "Seed: " << seed << std::endl;
 	MTRand myrng(seed);
 	int myrng_counter = 0;
 
@@ -982,6 +983,16 @@ void GenerateRay(
 
 		XRaySun = Sun->MinXSun + (Sun->MaxXSun - Sun->MinXSun) * myrng(); // uses a rectangular region of interest about the primary
 		YRaySun = Sun->MinYSun + (Sun->MaxYSun - Sun->MinYSun) * myrng(); // stage. Added 09/26/05
+
+		// std::cout << "MinXSun: " << Sun->MinXSun
+		// 		  << "\nMaxXSun: " << Sun->MaxXSun
+		// 		  << "\nMinYSun: " << Sun->MinYSun
+		// 		  << "\nMaxYSun: " << Sun->MaxYSun
+		// 		  << "\nXRaySun: " << XRaySun
+		// 		  << "\nYRaySun:" << YRaySun
+		// 		  << "\nR1: " << (XRaySun - Sun->MinXSun) / (Sun->MaxXSun - Sun->MinXSun)
+		// 		  << "\nR2: " << (YRaySun - Sun->MinYSun) / (Sun->MaxYSun - Sun->MinXSun)
+		// 		  << std::endl;
 
 		//{Offload ray location and direction cosines into sun array}
 		PosRaySun[0] = XRaySun;

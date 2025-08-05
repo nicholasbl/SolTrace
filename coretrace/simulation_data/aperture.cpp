@@ -322,6 +322,51 @@ aperture_ptr IrregularQuadrilateral::make_copy() const
     return make_aperture<IrregularQuadrilateral>(*this);
 }
 
+Rectangle::Rectangle(double xlen, double ylen)
+    : Aperture(RECTANGLE),
+      x_length(xlen),
+      y_length(ylen)
+{
+    // Default to rectangle centered at the origin.
+    this->x_coord = -0.5 * this->x_length;
+    this->y_coord = -0.5 * this->y_length;
+    return;
+}
+
+double Rectangle::aperture_area() const
+{
+    return this->x_length * this->y_length;
+}
+
+double Rectangle::diameter_circumscribed_circle() const
+{
+    return sqrt(x_length * x_length + y_length * y_length);
+}
+
+aperture_ptr Rectangle::make_copy() const
+{
+    // Invokes the implicit copy constructor
+    return make_aperture<Rectangle>(*this);
+}
+
+bool Rectangle::is_in(double x, double y) const
+{
+    double xl = this->x_coord;
+    double yl = this->y_coord;
+    double xu = xl + this->x_length;
+    double yu = yl + this->y_length;
+    return (xl <= x && x <= xu && yl <= y && y <= yu);
+}
+
+Rectangle::Rectangle(double xlen, double ylen, double xl, double yl)
+    : Aperture(RECTANGLE),
+      x_length(xlen),
+      y_length(ylen),
+      x_coord(xl),
+      y_coord(yl)
+{
+}
+
 bool intri(double x1, double y1,
            double x2, double y2,
            double x3, double y3,
@@ -336,10 +381,10 @@ bool intri(double x1, double y1,
 }
 
 bool inquad(double x1, double y1,
-           double x2, double y2,
-           double x3, double y3,
-           double x4, double y4,
-           double xt, double yt)
+            double x2, double y2,
+            double x3, double y3,
+            double x4, double y4,
+            double xt, double yt)
 {
     return (intri(x1, y1, x2, y2, x3, y3, xt, yt) ||
             intri(x1, y1, x3, y3, x4, y4, xt, yt));
