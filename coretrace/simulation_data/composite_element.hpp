@@ -57,15 +57,12 @@ public:
     }
     virtual void set_back_optical_properties(const OpticalProperties &) {};
 
-    virtual int update_orientation(const DateTime &,
-                                   const Vector3d &source,
-                                   const Vector3d &target);
-
     // CompositeElement accessors
     element_id add_element(element_ptr el);
     uint_fast64_t remove_element(element_id id);
     element_ptr get_element(element_id id);
     bool replace_element(element_id id, element_ptr el);
+    void clear();
 
     // uint64_t get_total_number_of_elements() const
     // {
@@ -89,28 +86,13 @@ public:
         return this->my_elements.is_at_end(citer);
     }
 
+    virtual void enforce_user_fields_set() const;
+
 private:
     uint_fast64_t number_of_elements;
     ElementContainer my_elements;
 };
 
 using composite_element_ptr = std::shared_ptr<CompositeElement>;
-
-class StageElement: public CompositeElement
-{
-public:
-    StageElement(int_fast64_t stage);
-    ~StageElement();
-    virtual bool is_stage() const { return true; }
-    virtual element_id add_element(element_ptr el);
-private:
-};
-
-using stage_ptr = std::shared_ptr<StageElement>;
-template <typename... Args>
-inline auto make_stage(Args &&...args)
-{
-    return make_element<StageElement>(std::forward<Args>(args)...);
-}
 
 #endif

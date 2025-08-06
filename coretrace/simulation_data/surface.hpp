@@ -10,6 +10,7 @@ enum SurfaceType
     FLAT,
     PARABOLA,
     SPHERE,
+    UNKNOWN
 };
 
 struct Surface
@@ -25,17 +26,21 @@ public:
 
 struct Cone : public Surface
 {
+    // z(x,y) = sqrt(x^2 + y^2) / tan(theta)
+    // where theta = half_angle
     double half_angle;
-    Cone() : Surface(CONE), half_angle(0.0) {}
     Cone(double ha) : Surface(CONE), half_angle(ha) {}
     virtual ~Cone() {}
 };
 
-// TODO: Add needed subfields
-
 struct Cylinder : public Surface
 {
-    Cylinder() : Surface(CYLINDER) {}
+    // x^2 + (z - r)^2 = r^2
+    // where r = radius
+    double radius;
+    Cylinder(double r) : Surface(CYLINDER), radius(r)
+    {
+    }
     virtual ~Cylinder() {}
 };
 
@@ -47,29 +52,48 @@ struct Flat : public Surface
 
 struct Parabola : public Surface
 {
-    double vertex_x_curv;
-    double vertex_y_curv;
+    // z(x,y) = (cx * x^2 + cy * y^2) / 2
+    // TODO: Assuming that vertex_x_curv gives cx and
+    // that vertex_y_curv gives cy
+    double focal_length_x;
+    double focal_length_y;
 
-    Parabola() : Surface(PARABOLA),
-                  vertex_x_curv(0.0),
-                  vertex_y_curv(0.0)
+    Parabola(double focal_x, double focal_y) : Surface(PARABOLA),
+                                               focal_length_x(focal_x),
+                                               focal_length_y(focal_y)
     {
     }
     virtual ~Parabola() {}
 };
 
+// TODO: Add needed subfields
+
 struct Sphere : public Surface
 {
+    // z(x,y) = c(x^2 + y^2) / [1 + sqrt(1 - c^2{x^2 + y^2})]
+    // where c = 1/R.
+    // TODO: This form seems to be unnecessarily complicated.
+    // Could easily just use one of the equations
+    // z(x,y) = (1 - sqrt(1 - c^2 (x^2 + y^2))) / c
+    //        = R - sqrt(R^2 - (x^2 + y^2))
+    // Need to check on this.
     double vertex_curv;
 
-    Sphere() : Surface(SPHERE),
-                  vertex_curv(0.0)
+    Sphere(double curv) : Surface(SPHERE),
+                          vertex_curv(curv)
     {
     }
     virtual ~Sphere() {}
 };
 
-// TODO: Add other surface types.
+// TODO: Add other surface types. Documentation has the following:
+// 1. Hyperboloid/Ellipsoid
+// 2. Zernike Series
+// 3. VSHOT data
+// 4. Finite Element data
+// 5. General Spencer & Murty Equation
+// 6. Polynomial Series (rotationally symmetric)
+// 7. Cubic Spline Interpolation (rotationally symmetric)
 
 using surface_ptr = std::shared_ptr<Surface>;
 

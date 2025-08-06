@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 option(SOLTRACE_BUILD_GUI "Build the GUI parts of Soltrace" ON)
+option(SOLTRACE_BUILD_CORETRACE "Build the coretrace library (ray tracing core)" ON)
+
+enable_testing()
 
 add_subdirectory(coretrace)
 add_subdirectory(google-tests)

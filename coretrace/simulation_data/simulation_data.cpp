@@ -4,7 +4,9 @@
 
 #include "composite_element.hpp"
 
-SimulationData::SimulationData() : number_of_elements(0)
+SimulationData::SimulationData() : number_of_elements(0),
+                                   my_elements(1),
+                                   my_sources(0)
 {
     return;
 }
@@ -27,6 +29,10 @@ element_id SimulationData::add_element(element_ptr el)
         id = this->my_elements.add_item(el);
         if (Element::is_success(id))
         {
+            // Check that all fields required from the user have been specified
+            el->enforce_user_fields_set();
+            // Make sure coordinate stuff has been computed
+            el->compute_coordinate_rotations();
             el->set_id(id);
             if (el->is_composite())
             {
@@ -73,6 +79,8 @@ uint_fast64_t SimulationData::add_subelements(element_ptr el)
     {
         auto id = this->add_element(iter->second);
         assert(Element::is_success(id));
+        // // Make sure coordinate stuff has been computed
+        // iter->second->compute_coordinate_rotations();
         ++iter;
     }
 
@@ -98,6 +106,8 @@ bool SimulationData::replace_element(element_id id, element_ptr el)
             {
                 this->number_of_elements--;
             }
+            // Make sure coordinate stuff has been computed
+            el->compute_coordinate_rotations();
             el->set_id(id);
             if (el->is_composite())
             {

@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include <composite_element.hpp>
 #include <element.hpp>
 #include <native_runner.hpp>
 #include <sun.hpp>
 #include <simulation_data.hpp>
 #include <single_element.hpp>
+#include <stage_element.hpp>
 #include <vector3d.hpp>
 
 #include <cmath>
@@ -25,7 +25,9 @@ TEST(TowerDemo, NativeRunnerWithStages)
     auto absorber = make_element<SingleElement>();
     absorber->set_origin(0.0, 0.0, 10.0);
     absorber->set_aim_vector(0.0, 5.0, 0.0);
-    absorber->set_surface(make_surface<Flat>());
+    absorber->set_zrot(0.0);
+    absorber->compute_coordinate_rotations();
+    absorber->set_surface(make_surface<Flat>()); // surface(nullptr)
     absorber->set_aperture(make_aperture<Rectangle>(2.0, 2.0));
     OpticalProperties *foptics = absorber->get_front_optical_properties();
     foptics->my_type = REFLECTION;
@@ -52,6 +54,8 @@ TEST(TowerDemo, NativeRunnerWithStages)
     st1->set_origin(0.0, 0.0, 0.0);
     // Set aim vector so stage and global coordinates are identical
     st1->set_aim_vector(0.0, 0.0, 1.0);
+    st1->set_zrot(0.0);
+    st1->compute_coordinate_rotations();
     st1->add_element(absorber);
     // Optional -- to help the user identify things
     st1->set_name("Stage 1--Absorber");
@@ -60,6 +64,8 @@ TEST(TowerDemo, NativeRunnerWithStages)
     auto st0 = make_stage(0);
     st0->set_origin(0.0, 0.0, 0.0);
     st0->set_aim_vector(0.0, 0.0, 1.0);
+    st0->set_zrot(0.0);
+    st0->compute_coordinate_rotations();
     st0->set_name("Stage 0--Reflectors");
 
     Vector3d rvec, svec, avec;
@@ -90,6 +96,7 @@ TEST(TowerDemo, NativeRunnerWithStages)
         el->set_zrot(30.0 * i);
         // // Could also be set in radians
         // el->set_zrot_radians(M_PI / 3.0 * i);
+        el->compute_coordinate_rotations();
 
         el->set_surface(make_surface<Flat>());
         el->set_aperture(make_aperture<Rectangle>(1.0, 1.95));
@@ -107,11 +114,11 @@ TEST(TowerDemo, NativeRunnerWithStages)
 
     // Set parameters
     SimulationParameters &params = sd.get_simulation_parameters();
-    // params.number_of_rays = 1000000;
-    params.number_of_rays = 100; // Above takes too long
+    params.number_of_rays = 100000;
+    // params.number_of_rays = 10; // Above takes too long
     params.max_number_of_rays = params.number_of_rays * 100;
-    params.include_optical_errors = true;
-    params.include_sun_shape_errors = true;
+    params.include_optical_errors = false;
+    params.include_sun_shape_errors = false;
     params.seed = 12345;
 
     // // We can go over all the elements added
@@ -153,8 +160,212 @@ TEST(TowerDemo, NativeRunnerWithStages)
     // Run simulation runs but returns RunnerStatus::ERROR
     sts = runner.run_simulation();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    // TODO: Do some post processing tests here
+
+    // const TSystem *sys = runner.get_system();
+    // // auto ray_data = sys->AllRayData;
+    // sys->AllRayData.Print();
 }
 
 TEST(TowerDemo, NativeRunnerWithoutStages)
 {
+    SimulationData sd;
+
+    // Sun
+    auto sun = make_ray_source<Sun>();
+    sun->set_position(0.0, 0.0, 100.0);
+    sd.add_ray_source(sun);
+
+    // Absorber -- Flat
+    auto absorber = make_element<SingleElement>();
+    absorber->set_origin(0.0, 0.0, 10.0);
+    absorber->set_aim_vector(0.0, 5.0, 0.0);
+    absorber->set_zrot(0.0);
+    absorber->compute_coordinate_rotations();
+    absorber->set_surface(make_surface<Flat>()); // surface(nullptr)
+    absorber->set_aperture(make_aperture<Rectangle>(2.0, 2.0));
+    OpticalProperties *foptics = absorber->get_front_optical_properties();
+    foptics->my_type = REFLECTION;
+    foptics->reflectivity = 0.0;
+    absorber->set_name("Absorber");
+    sd.add_element(absorber);
+
+    Vector3d rvec, svec, avec;
+    Vector3d aim, pos;
+
+    for (int i = -1; i < 2; ++i)
+    {
+        auto el = make_element<SingleElement>();
+        foptics = el->get_front_optical_properties();
+        foptics->reflectivity = 1.0;
+
+        pos.set_values(5 * sin(i * M_PI / 2.0),
+                       5 * cos(i * M_PI / 2.0),
+                       0.0);
+        el->set_origin(pos);
+        vector_add(1.0, absorber->get_origin_global(),
+                   -1.0, pos,
+                   rvec);
+        make_unit_vector(rvec);
+        svec = sun->get_position();
+        make_unit_vector(svec);
+        vector_add(0.5, rvec, 0.5, svec, avec);
+
+        vector_add(1.0, pos, 100.0, avec, aim);
+        el->set_aim_vector(aim);
+
+        // TODO: Set zrot as in python file?
+        el->set_zrot(30.0 * i);
+        // // Could also be set in radians
+        // el->set_zrot_radians(M_PI / 3.0 * i);
+        el->compute_coordinate_rotations();
+
+        el->set_surface(make_surface<Flat>());
+        el->set_aperture(make_aperture<Rectangle>(1.0, 1.95));
+
+        std::stringstream name;
+        name << "Reflector " << i;
+        el->set_name(name.str());
+
+        sd.add_element(el);
+    }
+
+    // Set parameters
+    SimulationParameters &params = sd.get_simulation_parameters();
+    params.number_of_rays = 100000;
+    params.max_number_of_rays = params.number_of_rays * 100;
+    params.include_optical_errors = false;
+    params.include_sun_shape_errors = false;
+    params.seed = 12345;
+
+    NativeRunner runner;
+    RunnerStatus sts = runner.initialize();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    // Setup runs but is not complete
+    sts = runner.setup_simulation(&sd);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    // Run simulation runs but returns RunnerStatus::ERROR
+    sts = runner.run_simulation();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    // TODO: Do some post processing tests here
+
+    // const TSystem *sys = runner.get_system();
+    // // auto ray_data = sys->AllRayData;
+    // sys->AllRayData.Print();
+
+}
+
+TEST(TowerDemo, NativeRunnerWithErrors)
+{
+    SimulationData sd;
+
+    // Sun
+    auto sun = make_ray_source<Sun>();
+    sun->set_position(0.0, 0.0, 100.0);
+    sd.add_ray_source(sun);
+
+    // Absorber -- Flat
+    auto absorber = make_element<SingleElement>();
+    absorber->set_origin(0.0, 0.0, 10.0);
+    absorber->set_aim_vector(0.0, 5.0, 0.0);
+    absorber->set_zrot(0.0);
+    absorber->compute_coordinate_rotations();
+    absorber->set_surface(make_surface<Flat>()); // surface(nullptr)
+    absorber->set_aperture(make_aperture<Rectangle>(2.0, 2.0));
+    OpticalProperties *foptics = absorber->get_front_optical_properties();
+    foptics->my_type = REFLECTION;
+    foptics->reflectivity = 0.0;
+    absorber->set_name("Absorber");
+
+    // Make stage 1 -- second stage -- these can be added to SimulationData
+    // in any order but should be numbered in the desired order
+    auto st1 = make_stage(1);
+    // Origin is initialized to zero but set it explicitly
+    st1->set_origin(0.0, 0.0, 0.0);
+    // Set aim vector so stage and global coordinates are identical
+    st1->set_aim_vector(0.0, 0.0, 1.0);
+    st1->set_zrot(0.0);
+    st1->compute_coordinate_rotations();
+    st1->add_element(absorber);
+    // Optional -- to help the user identify things
+    st1->set_name("Stage 1--Absorber");
+
+    // Make stage 0 -- this will be the first stage if the runner uses stages
+    auto st0 = make_stage(0);
+    st0->set_origin(0.0, 0.0, 0.0);
+    st0->set_aim_vector(0.0, 0.0, 1.0);
+    st0->set_zrot(0.0);
+    st0->compute_coordinate_rotations();
+    st0->set_name("Stage 0--Reflectors");
+
+    Vector3d rvec, svec, avec;
+    Vector3d aim, pos;
+
+    for (int i = -1; i < 2; ++i)
+    {
+        auto el = make_element<SingleElement>();
+        foptics = el->get_front_optical_properties();
+        foptics->reflectivity = 1.0;
+
+        pos.set_values(5 * sin(i * M_PI / 2.0),
+                       5 * cos(i * M_PI / 2.0),
+                       0.0);
+        el->set_origin(pos);
+        vector_add(1.0, absorber->get_origin_global(),
+                   -1.0, pos,
+                   rvec);
+        make_unit_vector(rvec);
+        svec = sun->get_position();
+        make_unit_vector(svec);
+        vector_add(0.5, rvec, 0.5, svec, avec);
+
+        vector_add(1.0, pos, 100.0, avec, aim);
+        el->set_aim_vector(aim);
+
+        // TODO: Set zrot as in python file?
+        el->set_zrot(30.0 * i);
+        // // Could also be set in radians
+        // el->set_zrot_radians(M_PI / 3.0 * i);
+        el->compute_coordinate_rotations();
+
+        el->set_surface(make_surface<Flat>());
+        el->set_aperture(make_aperture<Rectangle>(1.0, 1.95));
+
+        std::stringstream name;
+        name << "Reflector " << i;
+        el->set_name(name.str());
+
+        st0->add_element(el);
+    }
+
+    // Stages must have all elements present before adding to SimulationData!!
+    sd.add_stage(st0);
+    sd.add_stage(st1);
+
+    // Set parameters
+    SimulationParameters &params = sd.get_simulation_parameters();
+    params.number_of_rays = 100000;
+    // params.number_of_rays = 10; // Above takes too long
+    params.max_number_of_rays = params.number_of_rays * 100;
+    params.include_optical_errors = true;
+    params.include_sun_shape_errors = true;
+    params.seed = 12345;
+
+    NativeRunner runner;
+    RunnerStatus sts = runner.initialize();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    // Setup runs but is not complete
+    sts = runner.setup_simulation(&sd);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    // Run simulation runs but returns RunnerStatus::ERROR
+    sts = runner.run_simulation();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    // TODO: Do some post processing tests here
+
+    // const TSystem *sys = runner.get_system();
+    // // auto ray_data = sys->AllRayData;
+    // sys->AllRayData.Print();
 }

@@ -12,6 +12,8 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/coretrace
     ${CMAKE_SOURCE_DIR}/coretrace/simulation_data
     ${CMAKE_SOURCE_DIR}/coretrace/simulation_runner
+    ${CMAKE_SOURCE_DIR}/coretrace/simulation_results
+
 )
 
 set(OPTIX_RUNNER_SRC

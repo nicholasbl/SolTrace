@@ -1,7 +1,7 @@
 #ifndef SOLTRACE_SIMULATION_RUNNER_H
 #define SOLTRACE_SIMULATION_RUNNER_H
 
-#include "simulation_data/simulation_data.hpp"
+#include "simulation_data.hpp"
 #include "simulation_result.hpp"
 
 enum RunnerStatus

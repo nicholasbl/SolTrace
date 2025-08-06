@@ -2,10 +2,11 @@ add_subdirectory(native_runner)
 option(USE_OPTIX_SUPPORT "use optxi backend" ON)
 
 
-
+# find cuda and optix libraries, if found then add optix_runner
 if (USE_OPTIX_SUPPORT)
 
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/SolTrace/cmake/")
+    # list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/SolTrace/cmake/")
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
 
     find_package(CUDAToolkit)
     find_package(OptiX)
@@ -34,5 +35,3 @@ if (USE_OPTIX_SUPPORT)
 
 
 endif()
-
-# find cuda and optix libraries, if found then add optix_runner

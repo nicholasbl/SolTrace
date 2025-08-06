@@ -53,110 +53,95 @@
 #include <stdarg.h>
 
 #include "calculator_factory.hpp"
-#include "simulation_data/composite_element.hpp"
-#include "simulation_data/matvec.hpp"
+#include "matvec.hpp"
 #include "native_runner_types.hpp"
-#include "simulation_data/vector3d.hpp"
+#include "stage_element.hpp"
+#include "vector3d.hpp"
 
-TOpticalProperties::TOpticalProperties()
+// TOpticalProperties::TOpticalProperties()
+// {
+//     for (int i = 0; i < 4; i++)
+//         RefractiveIndex[i] = AB12[i] = 0;
+
+//     // OpticSurfNumber = 1;
+//     // ApertureStopOrGratingType = 0;
+//     // DiffractionOrder = 0;
+//     Reflectivity = 0;
+//     Transmissivity = 0;
+//     RMSSlopeError = 0;
+//     RMSSpecError = 0;
+//     DistributionType = 'g';
+//     UseReflectivityTable = false;
+//     UseTransmissivityTable = false;
+// }
+
+// TOpticalProperties &TOpticalProperties::operator=(const TOpticalProperties &rhs)
+// {
+//     DistributionType = rhs.DistributionType;
+//     // OpticSurfNumber = rhs.OpticSurfNumber;
+//     // ApertureStopOrGratingType = rhs.ApertureStopOrGratingType;
+//     // DiffractionOrder = rhs.DiffractionOrder;
+//     Reflectivity = rhs.Reflectivity;
+//     Transmissivity = rhs.Transmissivity;
+//     RMSSlopeError = rhs.RMSSlopeError;
+//     RMSSpecError = rhs.RMSSpecError;
+//     UseReflectivityTable = rhs.UseReflectivityTable;
+//     UseTransmissivityTable = rhs.UseTransmissivityTable;
+
+//     for (int i = 0; i < 4; i++)
+//     {
+//         RefractiveIndex[i] = rhs.RefractiveIndex[i];
+//         AB12[i] = rhs.AB12[i];
+//     }
+
+//     ReflectivityTable.resize(rhs.ReflectivityTable.size());
+//     for (size_t i = 0; i < rhs.ReflectivityTable.size(); i++)
+//     {
+//         ReflectivityTable[i].angle = rhs.ReflectivityTable[i].angle;
+//         ReflectivityTable[i].refl = rhs.ReflectivityTable[i].refl;
+//     }
+//     TransmissivityTable.resize(rhs.TransmissivityTable.size());
+//     for (size_t i = 0; i < rhs.TransmissivityTable.size(); i++)
+//     {
+//         TransmissivityTable[i].angle = rhs.TransmissivityTable[i].angle;
+//         TransmissivityTable[i].trans = rhs.TransmissivityTable[i].trans;
+//     }
+
+//     return *this;
+// }
+
+ElementParameters::ElementParameters()
+    : newton_tolerance(1e-6),
+      newton_max_iters(20)
 {
-    for (int i = 0; i < 4; i++)
-        RefractiveIndex[i] = AB12[i] = 0;
-
-    // OpticSurfNumber = 1;
-    // ApertureStopOrGratingType = 0;
-    // DiffractionOrder = 0;
-    Reflectivity = 0;
-    Transmissivity = 0;
-    RMSSlopeError = 0;
-    RMSSpecError = 0;
-    DistributionType = 'g';
-    UseReflectivityTable = false;
-    UseTransmissivityTable = false;
 }
 
-TOpticalProperties &TOpticalProperties::operator=(const TOpticalProperties &rhs)
+ElementParameters::~ElementParameters()
 {
-    DistributionType = rhs.DistributionType;
-    // OpticSurfNumber = rhs.OpticSurfNumber;
-    // ApertureStopOrGratingType = rhs.ApertureStopOrGratingType;
-    // DiffractionOrder = rhs.DiffractionOrder;
-    Reflectivity = rhs.Reflectivity;
-    Transmissivity = rhs.Transmissivity;
-    RMSSlopeError = rhs.RMSSlopeError;
-    RMSSpecError = rhs.RMSSpecError;
-    UseReflectivityTable = rhs.UseReflectivityTable;
-    UseTransmissivityTable = rhs.UseTransmissivityTable;
-
-    for (int i = 0; i < 4; i++)
-    {
-        RefractiveIndex[i] = rhs.RefractiveIndex[i];
-        AB12[i] = rhs.AB12[i];
-    }
-
-    ReflectivityTable.resize(rhs.ReflectivityTable.size());
-    for (size_t i = 0; i < rhs.ReflectivityTable.size(); i++)
-    {
-        ReflectivityTable[i].angle = rhs.ReflectivityTable[i].angle;
-        ReflectivityTable[i].refl = rhs.ReflectivityTable[i].refl;
-    }
-    TransmissivityTable.resize(rhs.TransmissivityTable.size());
-    for (size_t i = 0; i < rhs.TransmissivityTable.size(); i++)
-    {
-        TransmissivityTable[i].angle = rhs.TransmissivityTable[i].angle;
-        TransmissivityTable[i].trans = rhs.TransmissivityTable[i].trans;
-    }
-
-    return *this;
 }
 
-TElement::TElement() : aperture(nullptr), Optics()
+TElement::TElement() : aperture(nullptr),
+                       icalc(nullptr),
+                       Optics()
 {
     int i, j;
     for (i = 0; i < 3; i++)
     {
         // Origin[i] = AimPoint[i] = Euler[i] = PosSunCoords[i] = 0;
         Origin[i] = AimPoint[i] = PosSunCoords[i] = 0;
+        // PosSunCoords[i] = 0;
     }
     for (i = 0; i < 3; i++)
         for (j = 0; j < 3; j++)
             RRefToLoc[i][j] = RLocToRef[i][j] = 0;
-    for (i = 0; i < 5; i++)
-        Alpha[i] = 0;
 
-    // Enabled = true;
-    ZRot = 0;
-    // ShapeIndex = ' ';
-    // ParameterA = ParameterB = ParameterC = ParameterD = 0;
-    // ParameterE = ParameterF = ParameterG = ParameterH = 0;
-    // ApertureArea = 0;
-    Kappa = 0;
-    VertexCurvX = 0;
-    VertexCurvY = 0;
-    AnnularRadius = 0;
-    CrossSectionRadius = 0;
-    ConeHalfAngle = 0;
-    CurvOfRev = 0;
-    // SurfaceIndex = ' ';
-    // SurfaceType = 0;
-
-    // FitOrder = 0;
-
-    // CubicSplineDYDXbc1 = 0;
-    // CubicSplineDYDXbcN = 0;
-
-    // VSHOTRMSSlope = 0;
-    // VSHOTRMSScale = 0;
-    // VSHOTRadius = 0;
-    // VSHOTFocLen = 0;
-    // VSHOTTarDis = 0;
-
-    // InteractionType = 0;
-
+    // ZRot = 0;
     ZAperture = 0;
 
     // Optics = nullptr;
     element_number = -1; // mjw nonsense
+    sim_data_id = ELEMENT_ID_UNASSIGNED;
+    // stage_index = -1;
 }
 
 TElement::~TElement()
@@ -195,16 +180,15 @@ void TSun::Reset()
     MinYSun = 0;
 }
 
-void TSun::set_values(ray_source_ptr rsrc)
-{
-    CopyVec3(this->Origin, rsrc->get_position().data);
+// void TSun::set_values(ray_source_ptr rsrc)
+// {
+//     CopyVec3(this->Origin, rsrc->get_position().data);
 
-    // TODO: Need to get sun parameters here too. For now make everything
-    // a point source
-    this->PointSource = true;
+//     // TODO: Need to get sun parameters here too.
+//     this->PointSource = false;
 
-    return;
-}
+//     return;
+// }
 
 /*
  // Small program to test TRayData memory block allocation scheme
@@ -315,7 +299,7 @@ bool TRayData::Query(unsigned int idx,
                      double cos[3],
                      int *element,
                      int *stage,
-                     unsigned int *raynum)
+                     unsigned int *raynum) const
 {
     ray_t *r = Index(idx, false);
     if (r != 0)
@@ -391,12 +375,12 @@ void TRayData::Clear()
     m_dataCapacity = 0;
 }
 
-uint_fast64_t TRayData::Count()
+uint_fast64_t TRayData::Count() const
 {
     return m_dataCount;
 }
 
-TRayData::ray_t *TRayData::Index(uint_fast64_t i, bool write_access)
+TRayData::ray_t *TRayData::Index(uint_fast64_t i, bool write_access) const
 {
     if (i >= m_dataCapacity)
         return 0;
@@ -419,7 +403,7 @@ TRayData::ray_t *TRayData::Index(uint_fast64_t i, bool write_access)
     return &(b->data[block_idx]);
 }
 
-void TRayData::Print()
+void TRayData::Print() const
 {
     printf("[ blocks: %zu count: %u capacity: %u ]\n",
            m_blockList.size(),
@@ -434,7 +418,8 @@ void TRayData::Print()
         unsigned int ray;
         if (Query(i, pos, cos, &elm, &stage, &ray))
         {
-            printf("   [%zu] = { [%lg,%lg,%lg][%lg,%lg,%lg] %d %d %u }\n", i,
+            printf("   [%zu] = { [%lg,%lg,%lg][%lg,%lg,%lg] %d %d %u }\n",
+                   i,
                    pos[0], pos[1], pos[2],
                    cos[0], cos[1], cos[2],
                    elm, stage, ray);
@@ -463,8 +448,6 @@ TStage::TStage()
 
 TStage::~TStage()
 {
-    // for (uint_fast64_t i = 0; i < ElementList.size(); i++)
-    //     delete ElementList[i];
     ElementList.clear();
 }
 
@@ -474,7 +457,7 @@ TSystem::TSystem()
 
     sim_raycount = 1000;
     sim_raymax = 100000;
-    sim_dynamic_group = false;
+    sim_dynamic_group = true;
     sim_errors_sunshape = true;
     sim_errors_optical = true;
 
@@ -483,20 +466,26 @@ TSystem::TSystem()
 
 TSystem::~TSystem()
 {
-    // for (uint_fast64_t i = 0; i < StageList.size(); i++)
-    //     delete StageList[i];
     StageList.clear();
 }
 
 void TSystem::ClearAll()
 {
-    for (uint_fast64_t i = 0; i < OpticsList.size(); i++)
-        delete OpticsList[i];
-    OpticsList.clear();
-
-    // for (uint_fast64_t i = 0; i < StageList.size(); i++)
-    //     delete StageList[i];
     StageList.clear();
+    Sun.Reset();
+    this->AllRayData.Clear();
+}
+
+void TSystem::CollectResults()
+{
+    // Collect the ray data from the stages
+    // tstage_ptr st;
+    for (auto iter = this->StageList.cbegin();
+         iter != this->StageList.cend();
+         ++iter)
+    {
+        this->AllRayData.Merge((*iter)->RayData);
+    }
 }
 
 void TSystem::errlog(const char *fmt, ...)
@@ -513,7 +502,9 @@ void TSystem::errlog(const char *fmt, ...)
     messages.push_back(buf);
 }
 
-telement_ptr make_telement(element_ptr el)
+telement_ptr make_telement(element_ptr el,
+                           int_fast64_t el_num,
+                           const ElementParameters &eparams)
 {
     telement_ptr telem = std::make_shared<TElement>();
     vector_copy(telem->Origin, el->get_origin_stage());
@@ -525,18 +516,39 @@ telement_ptr make_telement(element_ptr el)
     matrix_copy(telem->RLocToRef, el->get_local_to_stage());
 
     telem->aperture = el->get_aperture()->make_copy();
-    // TODO: Do we need to pass aperture or other element properties to the
-    // intersection calculator?
-    telem->sic = CalculatorFactory::get()->make_calculator(el->get_surface());
+    telem->icalc =
+        CalculatorFactory::get()->make_calculator(telem->aperture,
+                                                  el->get_surface(),
+                                                  eparams);
 
     // How to handle optical properties?
     telem->Optics.Front = *el->get_front_optical_properties();
     telem->Optics.Back = *el->get_back_optical_properties();
 
+    // telem->element_number = el->get_id();
+    telem->sim_data_id = el->get_id();
+    telem->element_number = el_num;
+
     return telem;
 }
 
-tstage_ptr make_tstage(element_ptr el)
+tstage_ptr make_tstage(const ElementParameters &eparams)
+{
+    tstage_ptr my_stage = std::make_shared<TStage>();
+
+    // Use global coordinates as stage coordinates
+    ZeroVec3(my_stage->Origin);
+    ZeroVec3(my_stage->AimPoint);
+    my_stage->AimPoint[2] = 1.0;
+    my_stage->ZRot = 0.0;
+    IdentityMat3(my_stage->RRefToLoc);
+    IdentityMat3(my_stage->RLocToRef);
+
+    return my_stage;
+}
+
+tstage_ptr make_tstage(element_ptr el,
+                       const ElementParameters &eparams)
 {
     tstage_ptr my_stage = std::make_shared<TStage>();
     auto stage_el = std::dynamic_pointer_cast<StageElement>(el);
@@ -546,6 +558,7 @@ tstage_ptr make_tstage(element_ptr el)
     my_stage->MultiHitsPerRay = true;
     my_stage->Virtual = false;
     my_stage->TraceThrough = false;
+    my_stage->stage_id = stage_el->get_stage();
 
     // Add coordinate stuff
     vector_copy(my_stage->Origin, stage_el->get_origin_global());
@@ -553,20 +566,6 @@ tstage_ptr make_tstage(element_ptr el)
     my_stage->ZRot = stage_el->get_zrot();
     matrix_copy(my_stage->RRefToLoc, stage_el->get_global_to_local());
     matrix_copy(my_stage->RLocToRef, stage_el->get_local_to_global());
-
-    // Add elements to the stage
-    for (auto iter = stage_el->get_iterator();
-         !stage_el->is_at_end(iter);
-         ++iter)
-    {
-        element_ptr el = iter->second;
-        // Ignore CompositeElements and those that are disabled
-        if (el->is_enabled() && el->is_single())
-        {
-            telement_ptr elem = make_telement(iter->second);
-            my_stage->ElementList.push_back(elem);
-        }
-    }
 
     return my_stage;
 }

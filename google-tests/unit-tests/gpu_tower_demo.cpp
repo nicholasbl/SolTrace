@@ -6,6 +6,7 @@
 #include <sun.hpp>
 #include <simulation_data.hpp>
 #include <single_element.hpp>
+#include <stage_element.hpp>
 #include <vector3d.hpp>
 
 #include <cmath>

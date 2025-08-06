@@ -83,6 +83,14 @@ void CopyMat3(double dest[3][3], const double src[3][3])
 	return;
 }
 
+void IdentityMat3(double mat[3][3])
+{
+	for (int i = 0; i < 3; ++i)
+		for (int j = 0; j < 3; ++j)
+			mat[i][j] = i == j ? 1.0 : 0.0;
+	return;
+}
+
 void MatrixVectorMult(const double M[3][3], const double V[3], double MxV[3])
 {
 	/*{Purpose: To perform multiplication of a matrix (3,3) and a vector (3) to result
@@ -113,12 +121,12 @@ void MatrixMatrixMult(const double A[3][3],
 					  double C[3][3])
 {
 	double sum;
-	for (int i=0; i<3; ++i)
+	for (int i = 0; i < 3; ++i)
 	{
-		for (int j=0; j<3; ++j)
+		for (int j = 0; j < 3; ++j)
 		{
 			sum = 0.0;
-			for (int k=0; k<3; ++k)
+			for (int k = 0; k < 3; ++k)
 			{
 				sum += A[i][k] * B[k][j];
 			}

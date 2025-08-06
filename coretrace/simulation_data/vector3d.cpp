@@ -18,6 +18,135 @@
 //     return;
 // }
 
+Vector3d::Vector3d()
+{
+    this->zero();
+    return;
+}
+
+Vector3d::Vector3d(const double data[3])
+{
+    for (int i = 0; i < 3; ++i)
+        this->data[i] = data[i];
+    return;
+}
+Vector3d::Vector3d(double x, double y, double z)
+{
+    this->data[0] = x;
+    this->data[1] = y;
+    this->data[2] = z;
+    return;
+}
+Vector3d::~Vector3d()
+{
+    return;
+}
+
+void Vector3d::zero()
+{
+    for (int i = 0; i < 3; ++i)
+        this->data[i] = 0.0;
+    return;
+}
+
+void Vector3d::set_values(double x, double y, double z)
+{
+    this->data[0] = x;
+    this->data[1] = y;
+    this->data[2] = z;
+    return;
+}
+
+void Vector3d::scalar_mult(double alpha)
+{
+    for (int i = 0; i < 3; ++i)
+        this->data[i] *= alpha;
+    return;
+}
+
+const double &Vector3d::operator[](int idx) const
+{
+    assert(idx >= 0 && idx < 3);
+    return this->data[idx];
+}
+
+double &Vector3d::operator[](int idx)
+{
+    assert(idx >= 0 && idx < 3);
+    return this->data[idx];
+}
+
+std::ostream &operator<<(std::ostream &os, const Vector3d &x)
+{
+    os << "[" << x.data[0] << ", "
+       << x.data[1] << ", "
+       << x.data[2] << "]";
+    return os;
+}
+
+Matrix3d::Matrix3d()
+{
+    // for (int i = 0; i < 3; ++i)
+    //     for (int j = 0; j < 3; ++j)
+    //         this->data[i][j] = 0.0;
+    this->zero();
+}
+Matrix3d::~Matrix3d() {}
+
+void Matrix3d::set_value(int i, int j, double val)
+{
+    assert(i >= 0 && i < 3);
+    assert(j >= 0 && j < 3);
+    this->data[i][j] = val;
+}
+
+double Matrix3d::get_value(int i, int j) const
+{
+    assert(i >= 0 && i < 3);
+    assert(j >= 0 && j < 3);
+    return this->data[i][j];
+}
+
+void Matrix3d::zero()
+{
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            data[i][j] = 0.0;
+        }
+    }
+}
+
+void Matrix3d::identity()
+{
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            data[i][j] = (i == j ? 1.0 : 0.0);
+        }
+    }
+}
+
+std::ostream &operator<<(std::ostream &os, const Matrix3d &A)
+{
+    // os << "[" << x.data[0] << ", "
+    //    << x.data[1] << ", "
+    //    << x.data[2] << "]";
+    os << "[";
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            os << A.data[i][j]
+               << (j < 2 ? ", " : "; ");
+        }
+    }
+    os << "]";
+    return os;
+}
+
 // Compute y = A*x placing the result in y
 void matrix_vector_product(const Matrix3d &A, const Vector3d &x, Vector3d &y)
 {
@@ -85,10 +214,11 @@ void make_unit_vector(Vector3d &x)
 {
     double mag = vector_norm(x);
     assert(mag > 0.0);
-    for (int i = 0; i < 3; ++i)
-    {
-        x.data[i] /= mag;
-    }
+    x.scalar_mult(1.0 / mag);
+    // for (int i = 0; i < 3; ++i)
+    // {
+    //     x.data[i] /= mag;
+    // }
     return;
 }
 

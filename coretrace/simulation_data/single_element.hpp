@@ -69,9 +69,7 @@ public:
         this->optics_back = op;
     }
 
-    virtual int update_orientation(const DateTime &dt,
-                                   const Vector3d &source,
-                                   const Vector3d &target);
+    virtual void enforce_user_fields_set() const;
 
 protected:
     aperture_ptr aperture;

@@ -1,17 +1,19 @@
 #ifndef SOLTRACE_OPTICAL_PROPERTIES_H
 #define SOLTRACE_OPTICAL_PROPERTIES_H
 
+#include "error_distributions.hpp"
+
 enum InteractionType
 {
     REFLECTION,
     REFRACTION
 };
 
-enum DistributionType
-{
-    GAUSSIAN,
-    PILLBOX
-};
+// enum DistributionType
+// {
+//     GAUSSIAN,
+//     PILLBOX
+// };
 
 struct OpticalProperties
 {
@@ -49,6 +51,38 @@ struct OpticalProperties
           refraction_index_front(ri_front),
           refraction_index_back(ri_back)
     {
+    }
+
+    // TODO: What should the error settings be with the below?
+
+    void set_ideal_absorption()
+    {
+        this->my_type = REFLECTION;
+        this->transmitivity = 0.0;
+        this->reflectivity = 0.0;
+        return;
+    }
+    void set_ideal_reflection()
+    {
+        this->my_type = REFLECTION;
+        this->transmitivity = 0.0;
+        this->reflectivity = 1.0;
+        return;
+    }
+    void set_ideal_transmission()
+    {
+        this->my_type = REFRACTION;
+        this->transmitivity = 1.0;
+        this->reflectivity = 0.0;
+        return;
+    }
+    void set_ideal_transmission(double refraction_index_front,
+                                double refraction_index_back)
+    {
+        this->set_ideal_transmission();
+        this->refraction_index_front = refraction_index_front;
+        this->refraction_index_back = refraction_index_back;
+        return;
     }
 
     // OpticalProperties &operator=(const OpticalProperties &rhs)

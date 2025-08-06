@@ -209,6 +209,7 @@ public:
     void set_simulation_date(const Date &d)
     {
         this->my_parameters.sim_dt.my_date = d;
+        return;
     }
     const Date &get_simulation_date() const
     {

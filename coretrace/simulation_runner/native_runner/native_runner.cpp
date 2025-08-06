@@ -1,23 +1,24 @@
 
-#include "simulation_runner/native_runner/native_runner.hpp"
-#include "simulation_data/simulation_parameters.hpp"
-#include "simulation_data/simulation_data.hpp"
+#include "native_runner.hpp"
+
+#include <exception>
+#include <map>
+// #include <algorithm>
+
+#include "composite_element.hpp"
+#include "element.hpp"
+#include "simulation_parameters.hpp"
+#include "simulation_data.hpp"
 #include "trace.hpp"
 
 NativeRunner::NativeRunner() : SimulationRunner(),
                                as_power_tower(false),
-                               number_of_threads(1),
-                               newton_tolerance(1e-6),
-                               newton_max_iters(20)
+                               number_of_threads(1)
 {
 }
 
 NativeRunner::~NativeRunner()
 {
-    // if (this->simdata != nullptr)
-    // {
-    //     this->simdata = nullptr;
-    // }
 }
 
 RunnerStatus NativeRunner::initialize()
@@ -30,14 +31,13 @@ RunnerStatus NativeRunner::setup_simulation(const SimulationData *data)
 
     RunnerStatus sts;
 
-    // this->simdata = data;
+    sts = this->setup_parameters(data);
 
-    this->setup_parameters(data);
-    this->setup_sun(data);
-    sts = this->setup_elements(data);
+    if (sts == RunnerStatus::SUCCESS)
+        sts = this->setup_sun(data);
 
-    // std::cout << "Number of stages: " << this->tsys.StageList.size()
-    //           << std::endl;
+    if (sts == RunnerStatus::SUCCESS)
+        sts = this->setup_elements(data);
 
     return sts;
 }
@@ -59,12 +59,24 @@ RunnerStatus NativeRunner::setup_sun(const SimulationData *data)
 {
     // Get RaySource data (this runner assumes there is only the Sun)
     assert(data->get_number_of_ray_sources() == 1);
-    this->tsys.Sun.set_values(data->get_ray_source());
+    // this->tsys.Sun.set_values(data->get_ray_source());
+    ray_source_ptr sun = data->get_ray_source();
+    vector_copy(this->tsys.Sun.Origin, sun->get_position());
+    this->tsys.Sun.ShapeIndex = sun->get_shape();
     return RunnerStatus::SUCCESS;
 }
 
 RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
 {
+    // TODO: Improve error messages from this function.
+
+    RunnerStatus sts = RunnerStatus::SUCCESS;
+    auto my_map = std::map<int_fast64_t, tstage_ptr>();
+    // int_fast64_t current_stage_id = -1;
+    tstage_ptr current_stage = nullptr;
+    int_fast64_t element_number = 1;
+    bool element_found_before_stage = false;
+
     for (auto iter = data->get_const_iterator();
          !data->is_at_end(iter);
          ++iter)
@@ -72,19 +84,111 @@ RunnerStatus NativeRunner::setup_elements(const SimulationData *data)
         element_ptr el = iter->second;
         if (el->is_enabled() && el->is_stage())
         {
-            tstage_ptr stage = make_tstage(el);
-            this->tsys.StageList.push_back(stage);
-            // TODO: Need to put these in sorted order...
+            tstage_ptr stage = make_tstage(el, this->eparams);
+            auto retval = my_map.insert(
+                std::make_pair(el->get_stage(), stage));
+
+            // current_stage_id = stage->stage_id;
+
+            // std::cout << "Created stage " << el->get_stage()
+            //           << " with " << stage->ElementList.size() << " elements"
+            //           << std::endl;
+
+            if (retval.second == false)
+            {
+                // TODO: Duplicate stage numbers. Need to make an error
+                // message.
+                sts = RunnerStatus::ERROR;
+            }
+
+            current_stage = stage;
+            element_number = 1;
+        }
+        else if (el->is_enabled() && el->is_single())
+        {
+            if (current_stage == nullptr)
+            {
+                // throw std::runtime_error("No stage to add element to");
+                element_found_before_stage = true;
+                continue;
+            }
+            else if (el->get_stage() != current_stage->stage_id)
+            {
+                throw std::runtime_error(
+                    "Element does not match current stage");
+            }
+
+            telement_ptr elem = make_telement(iter->second,
+                                              element_number,
+                                              this->eparams);
+            ++element_number;
+            current_stage->ElementList.push_back(elem);
         }
     }
-    // std::cout << "Number of stages: " << sys.StageList.size() << std::endl;
-    return RunnerStatus::SUCCESS;
+
+    if (my_map.size() != 0 && element_found_before_stage)
+    {
+        throw std::runtime_error("Element found without a stage");
+    }
+
+    if (my_map.size() == 0)
+    {
+        // No stage elements found in the passed in data. However,
+        // the runner requires stages. So make a single stage
+        // and put everything there. Note that the coordinates are
+        // set to correspond to global coordinates. This is necessary
+        // so that the element coordinate setup in make_element are
+        // correct.
+        int_fast64_t element_number = 1;
+        auto stage = make_tstage(this->eparams);
+        stage->ElementList.reserve(data->get_number_of_elements());
+        for (auto iter = data->get_const_iterator();
+             !data->is_at_end(iter);
+             ++iter)
+        {
+            element_ptr el = iter->second;
+            if (el->is_enabled() && el->is_single())
+            {
+                telement_ptr tel = make_telement(el,
+                                                 element_number,
+                                                 this->eparams);
+                stage->ElementList.push_back(tel);
+                ++element_number;
+            }
+        }
+        my_map.insert(std::make_pair(0, stage));
+    }
+
+    // std::map (according to the documentation) is automatically
+    // ordered by the keys so inserting into a map will sort the stages
+    // and we can just transfer the pointers, in order, to the StageList
+    // simply by pulling them out of the map.
+    int_fast64_t last_stage_id = -1;
+    for (auto iter = my_map.cbegin();
+         iter != my_map.cend();
+         ++iter)
+    {
+        assert(last_stage_id < iter->first);
+        last_stage_id = iter->first;
+        this->tsys.StageList.push_back(iter->second);
+    }
+
+    if (sts == RunnerStatus::SUCCESS)
+    {
+        // std::cout << "Setting ZAperture..." << std::endl;
+        // Compute and set ZAperture field in each element
+        bool success = set_aperture_planes(&this->tsys);
+        sts = success ? RunnerStatus::SUCCESS : RunnerStatus::ERROR;
+    }
+
+    return sts;
 }
 
 RunnerStatus NativeRunner::update_simulation(const SimulationData *data)
 {
+    // TODO: Do a more efficient implementation of this?
+    this->tsys.ClearAll();
     this->setup_simulation(data);
-    // TODO: Implement this
     return RunnerStatus::SUCCESS;
 }
 
@@ -98,6 +202,9 @@ RunnerStatus NativeRunner::run_simulation()
         this->tsys.sim_errors_sunshape,
         this->tsys.sim_errors_optical,
         this->as_power_tower);
+
+    this->tsys.CollectResults();
+
     return trace_return ? RunnerStatus::SUCCESS : RunnerStatus::ERROR;
 }
 
@@ -106,4 +213,53 @@ RunnerStatus NativeRunner::report_simulation(SimulationResult *result,
 {
     // TODO: Implement this
     return RunnerStatus::SUCCESS;
+}
+
+bool NativeRunner::set_aperture_planes(TSystem *tsys)
+{
+    bool retval;
+
+    for (auto iter = tsys->StageList.cbegin();
+         iter != tsys->StageList.cend();
+         ++iter)
+    {
+        retval = this->set_aperture_planes(*iter);
+        if (!retval)
+            break;
+    }
+
+    return retval;
+}
+
+bool NativeRunner::set_aperture_planes(tstage_ptr stage)
+{
+    bool retval;
+
+    for (auto eiter = stage->ElementList.begin();
+         eiter != stage->ElementList.end();
+         ++eiter)
+    {
+        retval = aperture_plane(*eiter);
+        if (!retval)
+            break;
+    }
+
+    return retval;
+}
+
+bool NativeRunner::aperture_plane(telement_ptr Element)
+{
+    /*{Calculates the aperture plane of the element in element coord system.
+    Applicable to rotationally symmetric apertures surfaces with small
+    curvature: g, s, p, o, c, v, m, e, r, i.
+      input - Element = Element record containing geometry of element
+      output -
+             - Element.ZAperture  where ZAperture is the distance from
+               the origin to the plane.
+    }*/
+
+    Element->ZAperture =
+        Element->icalc->compute_z_aperture(Element->aperture);
+
+    return true;
 }

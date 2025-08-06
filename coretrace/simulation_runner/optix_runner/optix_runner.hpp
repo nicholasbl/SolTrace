@@ -1,8 +1,7 @@
 #ifndef SOLTRACE_OPTIX_RUNNER_H
 #define SOLTRACE_OPTIX_RUNNER_H
-
 #include "simulation_result.hpp"
-#include "simulation_runner/simulation_runner.hpp"
+#include "simulation_runner.hpp"
 #include "core/soltrace_system.h"
 
 class OptixRunner : public SimulationRunner

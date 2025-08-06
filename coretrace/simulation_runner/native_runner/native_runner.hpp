@@ -1,9 +1,9 @@
 #ifndef SOLTRACE_NATIVE_RUNNER_H
 #define SOLTRACE_NATIVE_RUNNER_H
 
-#include "simulation_runner/native_runner/native_runner_types.hpp"
+#include "native_runner_types.hpp"
+#include "simulation_runner.hpp"
 #include "simulation_result.hpp"
-#include "simulation_runner/simulation_runner.hpp"
 
 class NativeRunner : public SimulationRunner
 {
@@ -19,17 +19,33 @@ public:
                                            int level_spec);
 
     // Runner options
-    // void disable_sun_shape_errors() { this->include_sun_shape_errors = false; }
-    // void enable_sun_shape_errors() { this->include_sun_shape_errors = true; }
-    // void disable_errors() { this->include_errors = false; }
-    // void enable_errors() { this->include_errors = true; }
     void disable_power_tower() { this->as_power_tower = false; }
     void enable_power_tower() { this->as_power_tower = true; }
+    void disable_point_focus() { this->tsys.sim_dynamic_group = false; }
+    void enable_point_focus() { this->tsys.sim_dynamic_group = true; }
+    void set_newton_tolerance(double tol)
+    {
+        this->eparams.newton_tolerance = tol;
+        return;
+    }
 
-    void set_number_of_threads(uint_fast64_t nthr);
+    void set_newton_max_iters(uint_fast64_t max_iters)
+    {
+        this->eparams.newton_max_iters = max_iters;
+        return;
+    }
 
-    // Runner accessors
+    void set_number_of_threads(uint_fast64_t nthr)
+    {
+        this->number_of_threads = nthr;
+        return;
+    }
+
     const TSystem *get_system() const { return &this->tsys; }
+
+    RunnerStatus setup_parameters(const SimulationData *data);
+    RunnerStatus setup_sun(const SimulationData *data);
+    RunnerStatus setup_elements(const SimulationData *data);
 
 private:
     // Use power tower speed ups
@@ -38,17 +54,13 @@ private:
     // Number of threads to use when tracing
     uint_fast64_t number_of_threads;
 
-    // Newton's method controls
-    double newton_tolerance;
-    uint_fast64_t newton_max_iters;
+    ElementParameters eparams;
     
-    // // SimulationData to use for ray tracing computations
-    // const SimulationData *simdata;
     TSystem tsys;
 
-    RunnerStatus setup_parameters(const SimulationData *data);
-    RunnerStatus setup_sun(const SimulationData *data);
-    RunnerStatus setup_elements(const SimulationData *data);
+    bool set_aperture_planes(TSystem *tsys);
+    bool set_aperture_planes(tstage_ptr stage);
+    bool aperture_plane(telement_ptr Element);
 };
 
 #endif

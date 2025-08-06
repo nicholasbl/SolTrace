@@ -6,9 +6,10 @@
 void SetupPTOptimizations(
 	// system info
 	TSystem *System, const bool AsPowerTower,
-
 	// outputs
-	st_hash_tree &sun_hash, st_hash_tree &rec_hash, double (&reccm_helio)[3])
+	st_hash_tree &sun_hash, 
+	st_hash_tree &rec_hash, 
+	double (&reccm_helio)[3])
 {
 	// Calculate the center of mass of the receiver stage (StageList[1]) in
 	// heliostat stage coordinates.
@@ -38,28 +39,28 @@ void SetupPTOptimizations(
 		TransformToReference(reccm, dum1, System->StageList[1]->Origin,
 							 System->StageList[1]->RLocToRef, reccm_global, dum2);
 
-		// Transform to local (heliostat). reccm_helio is the x,y,z position 
-        // of the receiver centroid in heliostat stage coordinates.
+		// Transform to local (heliostat). reccm_helio is the x,y,z position
+		// of the receiver centroid in heliostat stage coordinates.
 		TransformToLocal(reccm_global, dum1, System->StageList[0]->Origin,
 						 System->StageList[0]->RRefToLoc, reccm_helio, dum2);
 	}
-	// Create an array that stores the element address and the projected size 
-    // in polar coordinates
+	// Create an array that stores the element address and the projected size
+	// in polar coordinates
 	std::vector<eprojdat> el_proj_dat;
 	el_proj_dat.reserve(System->StageList[0]->ElementList.size());
 
-	// calculate the smallest zone size. This should be on the order of the 
-    // largest element in the stage. load stage 0 elements into the mesh
+	// calculate the smallest zone size. This should be on the order of the
+	// largest element in the stage. load stage 0 elements into the mesh
 	double d_elm_max = -9.e9;
-    double d_elm;
+	double d_elm;
 
 	for (uint_fast64_t i = 0; i < System->StageList[0]->ElementList.size(); i++)
 	{
 		TElement *el = System->StageList[0]->ElementList.at(i).get();
 
-		el->element_number = i + 1; // use index for element number
+		// el->element_number = i + 1; // use index for element number
 
-        d_elm = el->aperture->diameter_circumscribed_circle();
+		d_elm = el->aperture->diameter_circumscribed_circle();
 
 		// double d_elm;
 

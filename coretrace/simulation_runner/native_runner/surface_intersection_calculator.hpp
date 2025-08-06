@@ -3,18 +3,25 @@
 
 #include <memory>
 
+#include "aperture.hpp"
+
 class SurfaceIntersectionCalculator
 {
 public:
     SurfaceIntersectionCalculator() {}
     ~SurfaceIntersectionCalculator() {}
 
+    // TODO: Should probably move these to using Vector3d rather
+    // than arrays of doubles...
+    // TODO: Not sure what purpose CosKLM serves here. Investigate...
     virtual int intersect(const double PosLoc[3],
                           const double CosLoc[3],
                           double PosXYZ[3],
                           double CosKLM[3],
                           double DFXYZ[3],
                           double *PathLength) = 0;
+
+    virtual double compute_z_aperture(aperture_ptr ap) = 0;
 
 private:
 };

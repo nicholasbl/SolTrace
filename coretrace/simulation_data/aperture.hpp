@@ -9,6 +9,10 @@
 #define M_PI 3.141592653589793238462643
 #endif
 
+// TODO: For apertures that do not include the origin, should the
+// "circumscribing" circle be centered at the origin? Or should it
+// be the actual circumscribed circle.
+
 enum ApertureType
 {
     ANNULUS,
@@ -50,14 +54,7 @@ public:
     virtual double aperture_area() const = 0;
     virtual double diameter_circumscribed_circle() const = 0;
     virtual bool is_in(double x, double y) const = 0;
-
     virtual aperture_ptr make_copy() const = 0;
-
-    // virtual Aperture& operator=(const Aperture &rhs)
-    // {
-    //     this->my_type = rhs.my_type;
-    //     return *this;
-    // }
 };
 
 struct Annulus : public Aperture
@@ -66,11 +63,11 @@ struct Annulus : public Aperture
     double outer_radius;
     double arc_angle;
 
-    Annulus()
-        : Aperture(ANNULUS),
-          inner_radius(0.0), outer_radius(0.0), arc_angle(0.0)
-    {
-    }
+    // Annulus()
+    //     : Aperture(ANNULUS),
+    //       inner_radius(0.0), outer_radius(0.0), arc_angle(0.0)
+    // {
+    // }
     Annulus(double ri, double ro, double arc)
         : Aperture(ANNULUS),
           inner_radius(ri), outer_radius(ro), arc_angle(arc)
@@ -78,232 +75,136 @@ struct Annulus : public Aperture
     }
     virtual ~Annulus() {}
 
-    virtual double aperture_area() const
-    {
-        // TODO: input.cpp on line 219 uses the formula
-        //    elm->ParameterC*(ACOSM1O180)*(elm->ParameterB - elm->ParameterA);
-        //    = \theta * (r - R)
-        // This seems to be wrong...
-        double R = this->outer_radius;
-        double r = this->inner_radius;
-        // Convert to radians
-        double arc = this->arc_angle * M_PI / 180.0;
-        return 0.5 * arc * (R * R - r * r);
-    }
-
-    virtual double diameter_circumscribed_circle() const
-    {
-        return 2.0 * this->outer_radius;
-    }
-
-    virtual bool is_in(double x, double y) const
-    {
-        double r = sqrt(x * x + y * y);
-        double theta = atan2(y, x);
-        if (theta < 0)
-            theta += 2.0 * M_PI;
-        double arc = this->arc_angle * M_PI / 180.0;
-        // Below assumes that the arc begins at the (local) x-axis
-        return (this->inner_radius <= r &&
-                r <= this->outer_radius &&
-                theta <= arc);
-    }
-
-    virtual aperture_ptr make_copy() const
-    {
-        // Invokes the implicit copy constructor
-        return make_aperture<Annulus>(*this);
-    }
-
-    // virtual Annulus& operator=(const Annulus &rhs)
-    // {
-    //     Aperture::operator=(rhs);
-    //     this->inner_radius = rhs.inner_radius;
-    //     this->outer_radius = rhs.outer_radius;
-    //     this->arc_angle = rhs.arc_angle;
-    //     return *this;
-    // }
+    virtual double aperture_area() const;
+    virtual double diameter_circumscribed_circle() const;
+    virtual bool is_in(double x, double y) const;
+    virtual aperture_ptr make_copy() const;
 };
 
 struct Circle : public Aperture
 {
     double diameter;
 
-    Circle() : Aperture(CIRCLE), diameter(0.0) {}
+    // Circle() : Aperture(CIRCLE), diameter(0.0) {}
     Circle(double d) : Aperture(CIRCLE), diameter(d) {}
     virtual ~Circle() {}
 
-    virtual double aperture_area() const
-    {
-        return 0.25 * M_PI * this->diameter * this->diameter;
-    }
-
-    virtual double diameter_circumscribed_circle() const
-    {
-        return this->diameter;
-    }
-
-    virtual bool is_in(double x, double y) const
-    {
-        double r = sqrt(x * x + y * y);
-        return r <= this->radius_circumscribed_circle();
-    }
-
-    virtual aperture_ptr make_copy() const
-    {
-        // Invokes the implicit copy constructor
-        return make_aperture<Circle>(*this);
-    }
-
-    // virtual Circle& operator=(const Circle &rhs)
-    // {
-    //     Aperture::operator=(rhs);
-    //     this->diameter = rhs.diameter;
-    //     return *this;
-    // }
+    virtual double aperture_area() const;
+    virtual double diameter_circumscribed_circle() const;
+    virtual bool is_in(double x, double y) const;
+    virtual aperture_ptr make_copy() const;
 };
 
 struct EqualateralTriangle : public Aperture
 {
     double circumscribe_diameter;
-    EqualateralTriangle() : Aperture(EQUILATERAL_TRIANGLE),
-                            circumscribe_diameter(0.0)
-    {
-    }
+    // EqualateralTriangle() : Aperture(EQUILATERAL_TRIANGLE),
+    //                         circumscribe_diameter(0.0)
+    // {
+    // }
     EqualateralTriangle(double cd) : Aperture(EQUILATERAL_TRIANGLE),
                                      circumscribe_diameter(cd)
     {
     }
     virtual ~EqualateralTriangle() {}
 
-    virtual double aperture_area() const
-    {
-        double r = 0.5 * this->circumscribe_diameter;
-        return 0.75 * sqrt(3) * r * r;
-    }
-
-    virtual double diameter_circumscribed_circle() const
-    {
-        return this->circumscribe_diameter;
-    }
-
+    virtual double aperture_area() const;
+    virtual double diameter_circumscribed_circle() const;
     virtual bool is_in(double x, double y) const;
-
-    virtual aperture_ptr make_copy() const
-    {
-        // Invokes the implicit copy constructor
-        return make_aperture<EqualateralTriangle>(*this);
-    }
-
-    // virtual EqualateralTriangle& operator=(const EqualateralTriangle &rhs)
-    // {
-    //     Aperture::operator=(rhs);
-    //     this->circumscribe_diameter = rhs.circumscribe_diameter;
-    //     return *this;
-    // }
+    virtual aperture_ptr make_copy() const;
 };
 
 struct Hexagon : public Aperture
 {
     double circumscribe_diameter;
 
-    Hexagon() : Aperture(HEXAGON), circumscribe_diameter(0.0) {}
+    // Hexagon() : Aperture(HEXAGON), circumscribe_diameter(0.0) {}
     Hexagon(double d) : Aperture(HEXAGON), circumscribe_diameter(d) {}
     virtual ~Hexagon() {}
-    virtual double aperture_area() const
-    {
-        // TODO: input.cpp on line 210 uses the formula
-        //    5*sqr(elm->ParameterA/2.0)*cos(30.0*(ACOSM1O180))*sin(30.0*(ACOSM1O180));
-        //    = 5*(d/2)^2*cos(pi/6)*sin(pi/6)
-        //    = 5*(d/2)^2*sqrt(3)/2*1/2
-        //    = 5*sqrt(3)/4 * (d/2)^2
-        //    = 1.25*sqrt(3) * (d/2)^2
-        // This seems to be wrong...
-        double r = 0.5 * this->circumscribe_diameter;
-        return 1.5 * sqrt(3) * r * r;
-    }
-
-    virtual double diameter_circumscribed_circle() const
-    {
-        return circumscribe_diameter;
-    }
-
+    virtual double aperture_area() const;
+    virtual double diameter_circumscribed_circle() const;
     virtual bool is_in(double x, double y) const;
-
-    virtual aperture_ptr make_copy() const
-    {
-        // Invokes the implicit copy constructor
-        return make_aperture<Hexagon>(*this);
-    }
-
-    // virtual Hexagon& operator=(const Hexagon &rhs)
-    // {
-    //     Aperture::operator=(rhs);
-    //     this->circumscribe_diameter = rhs.circumscribe_diameter;
-    //     return *this;
-    // }
+    virtual aperture_ptr make_copy() const;
 };
 
 struct Rectangle : public Aperture
 {
     double x_length;
     double y_length;
-    Rectangle() : Aperture(RECTANGLE),
-                  x_length(0.0),
-                  y_length(0.0)
-    {
-    }
-    Rectangle(double xlen, double ylen) : Aperture(RECTANGLE),
-                                          x_length(xlen),
-                                          y_length(ylen)
-    {
-    }
+    // NOTE: The point (x_coord, y_coord) gives the location of the
+    // lower left hand corner of the rectangle in the xy-plane.
+    double x_coord;
+    double y_coord;
+    
+    Rectangle(double xlen, double ylen);
+    Rectangle(double xlen, double ylen, double xl, double yl);
     virtual ~Rectangle() {}
 
-    virtual double aperture_area() const
-    {
-        return this->x_length * this->y_length;
-    }
-
-    virtual double diameter_circumscribed_circle() const
-    {
-        return sqrt(x_length * x_length + y_length * y_length);
-    }
-
-    virtual bool is_in(double x, double y) const
-    {
-        double xh = 0.5 * this->x_length;
-        double yh = 0.5 * this->y_length;
-        return (-xh <= x && x <= xh && -yh <= y && y <= yh);
-    }
-
-    virtual aperture_ptr make_copy() const
-    {
-        // Invokes the implicit copy constructor
-        return make_aperture<Rectangle>(*this);
-    }
-
-    // virtual Rectangle& operator=(const Rectangle &rhs)
-    // {
-    //     Aperture::operator=(rhs);
-    //     this->x_length = rhs.x_length;
-    //     this->y_length = rhs.y_length;
-    //     return *this;
-    // }
+    virtual double aperture_area() const;
+    virtual double diameter_circumscribed_circle() const;
+    virtual bool is_in(double x, double y) const;
+    virtual aperture_ptr make_copy() const;
 };
-
-// TODO: Implement the below cases
 
 struct SingleAxisCurvatureSection : public Aperture
 {
+    // TODO: Implement this?
 };
 
 struct IrregularTriangle : public Aperture
 {
+    // Locations of the 3 vertices
+    double x1;
+    double y1;
+    double x2;
+    double y2;
+    double x3;
+    double y3;
+
+    IrregularTriangle(double x1, double y1,
+                      double x2, double y2,
+                      double x3, double y3);
+    ~IrregularTriangle() {}
+
+    virtual double aperture_area() const;
+    virtual double diameter_circumscribed_circle() const;
+    virtual bool is_in(double x, double y) const;
+    virtual aperture_ptr make_copy() const;
 };
 
 struct IrregularQuadrilateral : public Aperture
 {
+    // Locations of the 4 vertices
+    double x1;
+    double y1;
+    double x2;
+    double y2;
+    double x3;
+    double y3;
+    double x4;
+    double y4;
+
+    IrregularQuadrilateral(double x1, double y1,
+                           double x2, double y2,
+                           double x3, double y3,
+                           double x4, double y4);
+    ~IrregularQuadrilateral() {}
+
+    virtual double aperture_area() const;
+    virtual double diameter_circumscribed_circle() const;
+    virtual bool is_in(double x, double y) const;
+    virtual aperture_ptr make_copy() const;
 };
+
+bool intri(double x1, double y1,
+           double x2, double y2,
+           double x3, double y3,
+           double xt, double yt);
+
+bool inquad(double x1, double y1,
+            double x2, double y2,
+            double x3, double y3,
+            double x4, double y4,
+            double xt, double yt);
 
 #endif

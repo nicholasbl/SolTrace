@@ -5,19 +5,128 @@
 #include <sun.hpp>
 #include <simulation_data.hpp>
 
-TEST(SimulationData, AddRemoveGetElements)
+#include "common.hpp"
+
+TEST(SimulationData, AddUnconfiguredSingleElementThrowsError)
 {
-    // auto my_reflector = std::make_shared<PlaneReflector>();
     SimulationData my_sim;
 
-    auto my_reflector = make_element<SingleElement>();
+    // Create an unconfigured SingleElement (no aperture or surface set)
+    auto unconfigured_element = make_element<SingleElement>();
+
+    // Adding an unconfigured element should throw an exception
+    EXPECT_THROW(my_sim.add_element(unconfigured_element), std::invalid_argument);
+
+    // The element should not be added to the simulation
+    EXPECT_EQ(my_sim.get_number_of_elements(), 0);
+
+    // The element should not have been assigned an ID
+    EXPECT_EQ(unconfigured_element->get_id(), ELEMENT_ID_UNASSIGNED);
+}
+
+TEST(SimulationData, AddPartiallyConfiguredSingleElementThrowsError)
+{
+    SimulationData my_sim;
+
+    // Create a SingleElement with only aperture set (missing surface)
+    auto partially_configured = make_element<SingleElement>();
+    auto aperture = make_aperture<Rectangle>(1.0, 1.0);
+    partially_configured->set_aperture(aperture);
+
+    // Adding a partially configured element should throw an exception
+    EXPECT_THROW(my_sim.add_element(partially_configured), std::invalid_argument);
+
+    // The element should not be added to the simulation
+    EXPECT_EQ(my_sim.get_number_of_elements(), 0);
+
+    // The element should not have been assigned an ID
+    EXPECT_EQ(partially_configured->get_id(), ELEMENT_ID_UNASSIGNED);
+}
+
+TEST(SimulationData, AddUnconfiguredCompositeElementThrowsError)
+{
+    SimulationData my_sim;
+
+    // Create an empty CompositeElement (no subelements)
+    auto empty_composite = make_element<CompositeElement>();
+
+    // Adding an empty composite element should throw an exception
+    EXPECT_THROW(my_sim.add_element(empty_composite), std::invalid_argument);
+
+    // The element should not be added to the simulation
+    EXPECT_EQ(my_sim.get_number_of_elements(), 0);
+
+    // The element should not have been assigned an ID
+    EXPECT_EQ(empty_composite->get_id(), ELEMENT_ID_UNASSIGNED);
+}
+
+TEST(SimulationData, AddProperlyConfiguredElementsSucceeds)
+{
+    SimulationData my_sim;
+
+    // Create a properly configured SingleElement
+    auto configured_single = make_element<SingleElement>();
+    auto aperture = make_aperture<Rectangle>(1.0, 1.0);
+    auto surface = make_surface<Flat>();
+    configured_single->set_aperture(aperture);
+    configured_single->set_surface(surface);
+
+    // Adding a properly configured element should succeed
+    EXPECT_NO_THROW(my_sim.add_element(configured_single));
+    EXPECT_EQ(my_sim.get_number_of_elements(), 1);
+    EXPECT_NE(configured_single->get_id(), ELEMENT_ID_UNASSIGNED);
+
+    // Create a properly configured CompositeElement
+    auto configured_composite = make_element<CompositeElement>();
+    auto configured_sub1 = make_element<SingleElement>();
+    auto aperture2 = make_aperture<Rectangle>(2.0, 2.0);
+    auto surface2 = make_surface<Flat>();
+    configured_sub1->set_aperture(aperture2);
+    configured_sub1->set_surface(surface2);
+    configured_composite->add_element(configured_sub1);
+
+    // Adding a properly configured composite should succeed
+    EXPECT_NO_THROW(my_sim.add_element(configured_composite));
+    EXPECT_EQ(my_sim.get_number_of_elements(), 2); // 1 + 1 subelement
+    EXPECT_NE(configured_composite->get_id(), ELEMENT_ID_UNASSIGNED);
+    EXPECT_NE(configured_sub1->get_id(), ELEMENT_ID_UNASSIGNED);
+}
+
+TEST(SimulationData, ValidationErrorPreservesSimulationState)
+{
+    SimulationData my_sim;
+
+    // Add a properly configured element first
+    auto good_element = make_configured_element();
+    my_sim.add_element(good_element);
+
+    EXPECT_EQ(my_sim.get_number_of_elements(), 1);
+    auto initial_count = my_sim.get_number_of_elements();
+
+    // Try to add an unconfigured element
+    auto bad_element = make_element<SingleElement>();
+    EXPECT_THROW(my_sim.add_element(bad_element), std::invalid_argument);
+
+    // The simulation state should be unchanged
+    EXPECT_EQ(my_sim.get_number_of_elements(), initial_count);
+    EXPECT_EQ(bad_element->get_id(), ELEMENT_ID_UNASSIGNED);
+
+    // The good element should still be accessible
+    EXPECT_EQ(my_sim.get_element(good_element->get_id()), good_element);
+}
+
+TEST(SimulationData, AddRemoveGetElements)
+{
+    SimulationData my_sim;
+
+    auto my_reflector = make_configured_element();
     auto id1 = my_sim.add_element(my_reflector);
     EXPECT_EQ(id1, my_reflector->get_id());
     EXPECT_EQ(my_sim.get_number_of_elements(), 1);
 
     auto my_comp = make_element<CompositeElement>();
-    auto sub1 = make_element<SingleElement>();
-    auto sub2 = make_element<SingleElement>();
+    auto sub1 = make_configured_element();
+    auto sub2 = make_configured_element();
     my_comp->add_element(sub1);
     my_comp->add_element(sub2);
     EXPECT_EQ(my_comp->get_number_of_elements(), 2);
@@ -57,17 +166,17 @@ TEST(SimulationData, AddRemoveGetElements)
 
 TEST(SimulationData, ReplaceElement)
 {
-    auto el1 = make_element<SingleElement>();
-    auto el2 = make_element<SingleElement>();
+    auto el1 = make_configured_element();
+    auto el2 = make_configured_element();
     auto cmp1 = make_element<CompositeElement>();
-    auto sub1 = make_element<SingleElement>();
-    auto sub2 = make_element<SingleElement>();
+    auto sub1 = make_configured_element();
+    auto sub2 = make_configured_element();
     cmp1->add_element(sub1);
     cmp1->add_element(sub2);
     auto cmp2 = make_element<CompositeElement>();
-    auto sub3 = make_element<SingleElement>();
-    auto sub4 = make_element<SingleElement>();
-    auto sub5 = make_element<SingleElement>();
+    auto sub3 = make_configured_element();
+    auto sub4 = make_configured_element();
+    auto sub5 = make_configured_element();
     cmp2->add_element(sub3);
     cmp2->add_element(sub4);
     cmp2->add_element(sub5);
@@ -117,17 +226,17 @@ TEST(SimulationData, ReplaceElement)
 
 TEST(SimulationData, IteratorElement)
 {
-    auto el1 = make_element<SingleElement>();
-    auto el2 = make_element<SingleElement>();
+    auto el1 = make_configured_element();
+    auto el2 = make_configured_element();
     auto cmp1 = make_element<CompositeElement>();
-    auto sub1 = make_element<SingleElement>();
-    auto sub2 = make_element<SingleElement>();
+    auto sub1 = make_configured_element();
+    auto sub2 = make_configured_element();
     cmp1->add_element(sub1);
     cmp1->add_element(sub2);
     auto cmp2 = make_element<CompositeElement>();
-    auto sub3 = make_element<SingleElement>();
-    auto sub4 = make_element<SingleElement>();
-    auto sub5 = make_element<SingleElement>();
+    auto sub3 = make_configured_element();
+    auto sub4 = make_configured_element();
+    auto sub5 = make_configured_element();
     cmp2->add_element(sub3);
     cmp2->add_element(sub4);
     cmp2->add_element(sub5);

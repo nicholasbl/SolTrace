@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include <composite_element.hpp>
 #include <element.hpp>
 #include <single_element.hpp>
+#include <stage_element.hpp>
 #include <virtual_element.hpp>
 #include <vector3d.hpp>
 
@@ -69,7 +69,7 @@ TEST(Element, SingleElementAccessors)
     auto sp = make_surface<Cone>(HA);
     ref.set_surface(sp);
     auto rsp = std::dynamic_pointer_cast<Cone>(ref.get_surface());
-    EXPECT_FALSE(rsp == nullptr);
+    EXPECT_NE(rsp, nullptr);
     EXPECT_EQ(rsp->half_angle, HA);
 
     auto opf = ref.get_front_optical_properties();
@@ -92,11 +92,6 @@ TEST(Element, SingleElementAccessors)
     EXPECT_EQ(opb->reflectivity, op.reflectivity);
     EXPECT_EQ(opb->slope_error, op.slope_error);
     EXPECT_EQ(opb->specularity_error, op.specularity_error);
-}
-
-TEST(Element, SingleElementOrientationUpdate)
-{
-    // TODO: Implement this test.
 }
 
 TEST(Element, VirtualElement)
@@ -165,9 +160,9 @@ TEST(Element, VirtualPlane)
     }
 
     // These functions should have no effects
-    vp.set_aperture(make_aperture<Circle>());
+    vp.set_aperture(make_aperture<Circle>(2.0));
     EXPECT_EQ(vp.get_aperture()->get_type(), RECTANGLE);
-    vp.set_surface(make_surface<Parabola>());
+    vp.set_surface(make_surface<Parabola>(1.0, 1.0));
     EXPECT_EQ(vp.get_surface()->get_type(), FLAT);
 
     return;
@@ -200,7 +195,7 @@ TEST(Element, CompositeElementAccessors)
     const int NUM_ELEMENTS = 4;
     for (int i = 0; i < NUM_ELEMENTS; ++i)
     {
-        auto elem = make_element<SingleElement>();
+        auto elem = make_configured_element();
         cmp->add_element(elem);
         // EXPECT_EQ(elem->get_stage(), STAGE);
     }
@@ -210,11 +205,11 @@ TEST(Element, CompositeElementAccessors)
     cmp->remove_element(0);
     EXPECT_EQ(cmp->get_number_of_elements(), NUM_ELEMENTS - 1);
     EXPECT_EQ(cmp->get_element(0), nullptr);
-    auto elem = make_element<SingleElement>();
+    auto elem = make_configured_element();
     auto id = cmp->add_element(elem);
     EXPECT_EQ(cmp->get_element(id).get(), elem.get());
 
-    auto elem2 = make_element<SingleElement>();
+    auto elem2 = make_configured_element();
     EXPECT_NE(elem.get(), elem2.get());
     cmp->replace_element(id, elem2);
     EXPECT_EQ(cmp->get_element(id).get(), elem2.get());
@@ -256,11 +251,11 @@ TEST(Element, StageElementAccessors)
     const int_fast64_t RESET_STAGE = 20;
     auto st1 = make_stage(10);
 
-    auto el1 = make_element<SingleElement>();
+    auto el1 = make_configured_element();
     auto cmp1 = make_element<CompositeElement>();
-    auto sub1 = make_element<SingleElement>();
-    auto sub2 = make_element<VirtualElement>();
-    auto sub3 = make_element<SingleElement>();
+    auto sub1 = make_configured_element();
+    auto sub2 = make_element<VirtualPlane>(10.0, 10.0);
+    auto sub3 = make_configured_element();
     EXPECT_TRUE(Element::is_success(cmp1->add_element(sub1)));
     EXPECT_TRUE(Element::is_success(cmp1->add_element(sub2)));
     EXPECT_TRUE(Element::is_success(cmp1->add_element(sub3)));
@@ -283,7 +278,7 @@ TEST(Element, StageElementAccessors)
 
 TEST(Element, CoordinateComputationsIdentity)
 {
-    auto el = make_element<SingleElement>();
+    auto el = make_configured_element();
     auto st = make_stage(0);
     Vector3d origin(0.0, 0.0, 0.0);
     Vector3d aim(0.0, 0.0, 1.0);
@@ -421,9 +416,7 @@ TEST(Element, CoordinateComputations)
     const double zrot2 = 60.0;
 
     // **** Setup Elements **** //
-    auto el = make_element<SingleElement>();
-    el->set_aperture(make_aperture<Circle>(2.0));
-    el->set_surface(make_surface<Flat>());
+    auto el = make_configured_element();
     el->set_reference_frame_geometry(Origin1, aim1, zrot1);
 
     auto st = make_stage(0);
@@ -456,4 +449,54 @@ TEST(Element, CoordinateComputations)
     EXPECT_TRUE(is_identical(el->get_aim_vector_stage(), el->get_aim_vector_ref(), TOL));
     matrix_vector_product(Q2t, aim1, result_vec);
     EXPECT_TRUE(is_identical(el->get_aim_vector_global(), result_vec, TOL));
+
+    // TODO: Need test for convert_stage_to_local
+    // TODO: Need test for convert_global_to_local
+}
+
+TEST(Element, SingleElementEnforceUserFieldsSet)
+{
+    auto elem = make_element<SingleElement>();
+
+    // SingleElement requires aperture and surface to be set
+    // Test that it throws when aperture is missing
+    EXPECT_THROW(elem->enforce_user_fields_set(), std::invalid_argument);
+
+    // Set aperture but not surface - should still throw
+    elem->set_aperture(make_aperture<Circle>(1.0));
+    EXPECT_THROW(elem->enforce_user_fields_set(), std::invalid_argument);
+
+    // Set both aperture and surface - should not throw
+    elem->set_surface(make_surface<Flat>());
+    EXPECT_NO_THROW(elem->enforce_user_fields_set());
+
+    // Test with optical properties set as well
+    OpticalProperties op(REFLECTION, GAUSSIAN, 0.75, 0.25, 0.1, 0.001, 1.0, 1.0);
+    elem->set_front_optical_properties(op);
+    elem->set_back_optical_properties(op);
+
+    // Should still not throw
+    EXPECT_NO_THROW(elem->enforce_user_fields_set());
+}
+
+TEST(Element, CompositeElementEnforceUserFieldsSet)
+{
+    auto comp = make_element<CompositeElement>();
+
+    // CompositeElement requires at least one subelement
+    // Test that it throws when no subelements are present
+    EXPECT_THROW(comp->enforce_user_fields_set(), std::invalid_argument);
+
+    // Add a child element that is not properly configured
+    auto elem1 = make_element<SingleElement>();
+    EXPECT_THROW(comp->add_element(elem1), std::invalid_argument);
+
+    // Add properly configured child elements
+    auto elem2 = make_element<SingleElement>();
+    elem2->set_aperture(make_aperture<Rectangle>(2.0, 3.0));
+    elem2->set_surface(make_surface<Parabola>(1.0, 2.0));
+    EXPECT_NO_THROW(comp->add_element(elem2));
+
+    // Should still not throw for the CompositeElement
+    EXPECT_NO_THROW(comp->enforce_user_fields_set());
 }

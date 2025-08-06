@@ -38,7 +38,7 @@ bool SunToPrimaryStage(
 	double Xsum = 0.0, Ysum = 0.0, xminsun = 0.0, yminsun = 0.0, xmaxsun = 0.0, ymaxsun = 0.0;
 	double XLegofRadius = 0.0;
 
-    double element_radius;
+	double element_radius;
 
 	// PosSunGlob[0] = Sun.Origin[0];//Position of sun coord. system origin in global system
 	// PosSunGlob[1] = Sun.Origin[1]; //changed 5/1/00 to place sun at primary stage origin; direction vector
@@ -101,26 +101,50 @@ bool SunToPrimaryStage(
 	//{Now calculate center of mass of projected distribution. Added 09/26/05}
 	Xsum = 0.0;
 	Ysum = 0.0;
-	for (i = 0; i < Stage->ElementList.size(); i++)
+	// for (i = 0; i < Stage->ElementList.size(); i++)
+	// {
+	// 	// if (!Stage->ElementList[i]->Enabled)
+	// 	// 	continue;
+	// 	TransformToLocal(Stage->ElementList[i]->Origin, CosDum, Origin, RRefToLoc, PosLoc, CosLoc);
+	// 	// Now have PosLoc which is the projected position of element[i] in xy plane of sun coord. system
+	// 	Xsum = Xsum + PosLoc[0];
+	// 	Ysum = Ysum + PosLoc[1];
+	// }
+
+	telement_ptr elem;
+	for (auto iter = Stage->ElementList.cbegin();
+		 iter != Stage->ElementList.cend();
+		 ++iter)
 	{
-		// if (!Stage->ElementList[i]->Enabled)
-		// 	continue;
-		TransformToLocal(Stage->ElementList[i]->Origin, CosDum, Origin, RRefToLoc, PosLoc, CosLoc);
-		// Now have PosLoc which is the projected position of element[i] in xy plane of sun coord. system
-		Xsum = Xsum + PosLoc[0];
-		Ysum = Ysum + PosLoc[1];
+		// TransformToLocal(iter->second->Origin, CosDum, Origin,
+		// 				 RRefToLoc, PosLoc, CosLoc);
+		elem = *iter;
+		TransformToLocal(elem->Origin, CosDum, Origin,
+						 RRefToLoc, PosLoc, CosLoc);
+		Xsum += PosLoc[0];
+		Ysum += PosLoc[1];
 	}
+
 	Sun->Xcm = Xsum / Stage->ElementList.size(); // center of mass of distribution of element locations as projected in sun coord.
 	Sun->Ycm = Ysum / Stage->ElementList.size(); // system.   Added 09/26/05
 
 	size_t nelements = 0;
+	elem = nullptr;
 
-	for (i = 0; i < Stage->ElementList.size(); i++)
+	// for (i = 0; i < Stage->ElementList.size(); i++)
+	for (auto iter = Stage->ElementList.cbegin();
+		 iter != Stage->ElementList.cend();
+		 ++iter)
 	{
 		// if (!Stage->ElementList[i]->Enabled)
 		// 	continue;
 
-		TransformToLocal(Stage->ElementList[i]->Origin, CosDum, Origin, RRefToLoc, PosLoc, CosLoc);
+		// elem = iter->second;
+		elem = *iter;
+
+		// TransformToLocal(Stage->ElementList[i]->Origin, CosDum, Origin, RRefToLoc, PosLoc, CosLoc);
+		TransformToLocal(elem->Origin, CosDum, Origin,
+						 RRefToLoc, PosLoc, CosLoc);
 		// Now have PosLoc which is the projected position of element[i] in xy plane of sun coord. system
 		x = PosLoc[0] - Sun->Xcm; // changes origin to center of mass of all elements  09/26/05
 		y = PosLoc[1] - Sun->Ycm;
@@ -132,16 +156,20 @@ bool SunToPrimaryStage(
 		ymaxsun = PosLoc[1];
 
 		// save the projected position of the element on the sun coordinate plane
-		Stage->ElementList[i]->PosSunCoords[0] = PosLoc[0];
-		Stage->ElementList[i]->PosSunCoords[1] = PosLoc[1];
-		Stage->ElementList[i]->PosSunCoords[2] = PosLoc[2];
+		// Stage->ElementList[i]->PosSunCoords[0] = PosLoc[0];
+		// Stage->ElementList[i]->PosSunCoords[1] = PosLoc[1];
+		// Stage->ElementList[i]->PosSunCoords[2] = PosLoc[2];
+		elem->PosSunCoords[0] = PosLoc[0];
+		elem->PosSunCoords[1] = PosLoc[1];
+		elem->PosSunCoords[2] = PosLoc[2];
 
-        element_radius = 0.5 * Stage->ElementList[i]->aperture->diameter_circumscribed_circle();
-        radius += element_radius;
-        xminsun -= element_radius;
-        yminsun -= element_radius;
-        xmaxsun += element_radius;
-        ymaxsun += element_radius;
+		// element_radius = 0.5 * Stage->ElementList[i]->aperture->diameter_circumscribed_circle();
+		element_radius = elem->aperture->radius_circumscribed_circle();
+		radius += element_radius;
+		xminsun -= element_radius;
+		yminsun -= element_radius;
+		xmaxsun += element_radius;
+		ymaxsun += element_radius;
 
 		if (radius > Sun->MaxRad)
 			Sun->MaxRad = radius; // establishes a circular region

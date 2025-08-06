@@ -1,6 +1,8 @@
 
 #include "composite_element.hpp"
 
+#include <sstream>
+
 CompositeElement::CompositeElement() : ElementBase(),
                                        number_of_elements(0),
                                        my_elements()
@@ -10,7 +12,7 @@ CompositeElement::CompositeElement() : ElementBase(),
 
 CompositeElement::~CompositeElement()
 {
-    // NOTE: ElementContainer should handle all the necessary tear down here
+    this->clear();
     return;
 }
 
@@ -61,19 +63,13 @@ element_id CompositeElement::add_element(element_ptr el)
         return ELEMENT_INVALID_SETUP;
     }
 
+    el->enforce_user_fields_set();
+
     element_id id = this->my_elements.add_item(el);
     if (is_success(id))
     {
-        // el->set_stage(this->stage);
         this->number_of_elements += el->get_number_of_elements();
         el->set_reference_element(this);
-
-        // TODO: Is the below the correct behavior?
-        // // Force active/inactive to match with CompositeElement state
-        // if (this->is_enabled())
-        //     el->enable();
-        // else
-        //     el->disable();
     }
     return id;
 }
@@ -111,32 +107,24 @@ bool CompositeElement::replace_element(element_id id, element_ptr el)
     return replaced;
 }
 
-int CompositeElement::update_orientation(const DateTime &dt,
-                                         const Vector3d &source,
-                                         const Vector3d &target)
+void CompositeElement::clear()
 {
-    // TODO: Implement this
-    int sts = 0;
-    return sts;
-}
-
-StageElement::StageElement(int_fast64_t stage) : CompositeElement()
-{
-    this->set_stage(stage);
+    this->number_of_elements = 0;
+    this->my_elements.clear();
     return;
 }
 
-StageElement::~StageElement()
+void CompositeElement::enforce_user_fields_set() const
 {
-    return;
-}
+    ElementBase::enforce_user_fields_set();
 
-element_id StageElement::add_element(element_ptr el)
-{
-    element_id id = this->CompositeElement::add_element(el);
-    if (Element::is_success(id))
+    if (this->number_of_elements == 0)
     {
-        el->set_stage(this->stage);
+        std::stringstream ss;
+        ss << "CompositeElement (Name: " << this->get_name()
+           << ", UUID: " << this->get_id()
+           << ") has no subelements.";
+        throw std::invalid_argument(ss.str());
     }
-    return id;
+    return;
 }

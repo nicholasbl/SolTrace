@@ -14,7 +14,7 @@
 
 // TODO: Make a header file for constants...
 #ifndef M_PI
-	#define M_PI 3.141592653589793238462643
+#define M_PI 3.141592653589793238462643
 #endif
 
 using element_id = std::int_fast64_t;
@@ -76,8 +76,6 @@ public:
    * is a subelement of a CompositeElement the reference coordinates are the
    * CompositeElements even if that CompositeElement is then stored in a stage.
    ***************************************************************************/
-
-  // TODO: get_xxxx_local should probably be get_xxxx_reference...
 
   virtual Vector3d get_origin_ref() const = 0;
   virtual Vector3d get_origin_stage() const = 0;
@@ -162,10 +160,6 @@ public:
 
   // Other routines
   virtual int compute_coordinate_rotations() = 0;
-  // virtual int set_bounding_box() = 0;
-  // virtual int update_orientation(const DateTime &,
-  //                                const Vector3d &source,
-  //                                const Vector3d &target) = 0;
 
   // WARNING: The below Accessors should be used with EXTREME caution!!!
   // These are used by other classes to set things up correctly and
@@ -183,6 +177,9 @@ public:
   virtual void set_euler_angles(double, double, double) = 0;
   virtual void set_reference_to_local(const Matrix3d &) = 0;
   virtual void set_local_to_reference(const Matrix3d &) = 0;
+
+  // Check that all required fields have been set
+  virtual void enforce_user_fields_set() const = 0;
 
 protected:
   // virtual int set_bounding_box() = 0;
@@ -242,11 +239,13 @@ public:
   virtual Vector3d get_origin_global() const;
   virtual void set_origin(const Vector3d &point)
   {
+    this->coordinates_initialized = false;
     this->origin = point;
     return;
   }
   virtual void set_origin(double x, double y, double z)
   {
+    this->coordinates_initialized = false;
     this->origin.set_values(x, y, z);
     return;
   }
@@ -255,11 +254,13 @@ public:
   virtual Vector3d get_aim_vector_global() const;
   virtual void set_aim_vector(const Vector3d &direction)
   {
+    this->coordinates_initialized = false;
     this->aim = direction;
     return;
   }
   virtual void set_aim_vector(double x, double y, double z)
   {
+    this->coordinates_initialized = false;
     this->aim.set_values(x, y, z);
     return;
   }
@@ -275,6 +276,7 @@ public:
   virtual double get_zrot() const { return this->zrot; }
   virtual void set_zrot(double rot)
   {
+    this->coordinates_initialized = false;
     this->zrot = rot;
     return;
   }
@@ -285,6 +287,7 @@ public:
   }
   virtual void set_zrot_radians(double zrad)
   {
+    this->coordinates_initialized = false;
     this->zrot = zrad * 180.0 / M_PI;
     return;
   }
@@ -333,10 +336,14 @@ public:
     this->local_to_reference = ltor;
   }
 
+  virtual void enforce_user_fields_set() const;
+
 protected:
   // TODO: Do these need to be mutable?
   mutable bool active;
   mutable element_id my_id;
+
+  bool coordinates_initialized;
 
   int_fast64_t stage;
   std::string my_name;

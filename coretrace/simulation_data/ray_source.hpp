@@ -5,6 +5,7 @@
 
 #include "container.hpp"
 #include "datetime.hpp"
+#include "error_distributions.hpp"
 #include "vector3d.hpp"
 
 class RaySource
@@ -18,8 +19,8 @@ public:
     virtual void set_position(const Vector3d &) = 0;
     virtual void set_position(double, double, double) = 0;
     virtual void set_position(const DateTime &, double lat, double long) = 0;
-    virtual void get_shape() = 0;
-    virtual void set_shape() = 0;
+    virtual DistributionType get_shape() const = 0;
+    virtual void set_shape(DistributionType shape) = 0;
 
 private:
 };

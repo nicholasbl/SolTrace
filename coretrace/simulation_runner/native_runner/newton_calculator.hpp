@@ -1,14 +1,16 @@
 #ifndef SOLTRACE_NEWTON_CALCULATOR_H
 #define SOLTRACE_NEWTON_CALCULATOR_H
 
+#include <cstdint>
+
 #include "surface_intersection_calculator.hpp"
 
-#include "simulation_data/surface.hpp"
+// #include "surface.hpp"
 
 class NewtonCalculator : public SurfaceIntersectionCalculator
 {
 public:
-    NewtonCalculator(surface_ptr surf);
+    NewtonCalculator(double tol=1e-6, uint_fast64_t max_iters=20);
     virtual ~NewtonCalculator() {}
 
     virtual int intersect(const double PosLoc[3],
@@ -18,10 +20,21 @@ public:
                           double DFXYZ[3],
                           double *PathLength);
 
-    virtual void set_zstart() = 0;
+    // For x = PosXYZ[0], y = PosXYZ[1], make a guess at
+    // value of z and place in PosXYZ[2].
+    virtual void set_zstart(double PosXYZ[3]) = 0;
     virtual void surface_and_jacobian(const double PosXYZ[3],
                                       double *F,
                                       double DFXYZ[3]) = 0;
+
+    inline double get_tolerance() const
+    {
+        return this->tolerance;
+    }
+    inline uint_fast64_t get_max_iters() const
+    {
+        return this->max_iters;
+    }
 
 private:
     double tolerance;

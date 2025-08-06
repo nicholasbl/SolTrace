@@ -1,32 +1,74 @@
 
 #include "calculator_factory.hpp"
 
-#include "simulation_data/surface.hpp"
-
+#include "cylinder_calculator.hpp"
 #include "flat_calculator.hpp"
+#include "native_runner_types.hpp"
 #include "newton_calculator.hpp"
-#include "quadric_calculator.hpp"
+#include "parabola_calculator.hpp"
+#include "sphere_calculator.hpp"
+#include "surface.hpp"
+
+#include <stdexcept>
+#include <sstream>
 
 // std::map<SurfaceType,
 
-CalculatorFactory* CalculatorFactory::instance = nullptr;
+CalculatorFactory *CalculatorFactory::instance = nullptr;
 
-calculator_ptr CalculatorFactory::make_calculator(surface_ptr surf)
+calculator_ptr CalculatorFactory::make_calculator(
+    aperture_ptr ap,
+    surface_ptr surf,
+    const ElementParameters &eparams)
 {
-    // TODO: Rework without a if-else tree?
+    // Input validation
+    if (surf == nullptr)
+    {
+        throw std::invalid_argument(
+            "CalculatorFactory::make_calculator: Surface pointer cannot be null");
+    }
+
+    if (ap == nullptr)
+    {
+        throw std::invalid_argument(
+            "CalculatorFactory::make_calculator: Aperture pointer cannot be null");
+    }
+
     SurfaceType st = surf->get_type();
     calculator_ptr calc = nullptr;
+
     if (st == PARABOLA)
     {
-        calc = std::make_shared<QuadricCalculator>(surf);
+        calc = std::make_shared<ParabolaCalculator>(surf);
     }
-    else if(st == FLAT)
+    else if (st == FLAT)
     {
         calc = std::make_shared<FlatCalculator>(surf);
     }
+    else if (st == CYLINDER)
+    {
+        calc = std::make_shared<CylinderCalculator>(surf, ap);
+    }
+    else if (st == SPHERE)
+    {
+        calc = std::make_shared<SphereCalculator>(surf);
+    }
     else
     {
-        // TODO: Error message here?
+        std::stringstream ss;
+        ss << "CalculatorFactory::make_calculator: Unsupported surface type: "
+           << static_cast<int>(st);
+        throw std::invalid_argument(ss.str());
     }
+
+    // This should never happen but just in case...
+    if (calc == nullptr)
+    {
+        std::stringstream ss;
+        ss << "CalculatorFactory::make_calculator: Failed to create calculator for surface type "
+           << static_cast<int>(st);
+        throw std::runtime_error(ss.str());
+    }
+
     return calc;
 }
