@@ -158,7 +158,7 @@ RunnerStatus OptixRunner::run_simulation()
 {
 
     m_sys.run();
-    m_sys.write_output("output.txt");
+    m_sys.write_hp_output("output.txt");
     return RunnerStatus::SUCCESS;
 }
 
