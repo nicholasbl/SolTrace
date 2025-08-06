@@ -1,12 +1,5 @@
 Project(optix_runner)
 
-find_package(CUDAToolkit REQUIRED)
-
-# TODO: this part should not be hardcoded 
-# add a way for user to specify the build path to OptixCSP
-set(OptixCSP_DIR "/Users/fang/Documents/NREL_SOLAR/optix/cmake_refactor/build/cmake")
-find_package(OptixCSP REQUIRED)
-
 include_directories(
     .
     ${CMAKE_SOURCE_DIR}/coretrace
