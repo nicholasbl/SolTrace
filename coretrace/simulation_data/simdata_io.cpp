@@ -32,7 +32,7 @@ static surface_ptr make_surface_from_type(SurfaceType type, const std::vector<do
     }
 }
 
-DistributionType char_to_distribution(char dist_char)
+DistributionType char_to_distribution(const char dist_char)
 {
 	switch (dist_char)
 	{
@@ -56,7 +56,7 @@ DistributionType char_to_distribution(char dist_char)
 	}
 }
 
-InteractionType int_to_interaction(int interaction_int)
+InteractionType int_to_interaction(const int interaction_int)
 {
 	switch (interaction_int)
 	{
@@ -75,7 +75,7 @@ InteractionType int_to_interaction(int interaction_int)
 	}
 }
 
-ApertureType char_to_aperture(char aperture_char)
+ApertureType char_to_aperture(const char aperture_char)
 {
 	switch (aperture_char)
 	{
@@ -118,7 +118,7 @@ ApertureType char_to_aperture(char aperture_char)
 	}
 }
 
-SurfaceType char_to_surface(char surface_char)
+SurfaceType char_to_surface(const char surface_char)
 {
 	switch (surface_char) 
 	{
@@ -228,7 +228,6 @@ bool process_sun(FILE* fp, SimulationData& sd)
 			angle_vec.push_back(x);
 			intensity_vec.push_back(y);
 		}
-		//st_sun_userdata(cxt, count, angle, intensity);
 	}
 
 	// Make sun
@@ -244,7 +243,7 @@ bool process_sun(FILE* fp, SimulationData& sd)
 		sun->set_position(X, Y, Z);
 	}
 
-	// Define sun shape (TODO: need to pass in sun shape parameters)
+	// Define sun shape
 	DistributionType sun_shape = char_to_distribution(cshape);
 	sun->set_shape(sun_shape, Sigma, HalfWidth, angle_vec, intensity_vec);
 
@@ -442,9 +441,7 @@ bool read_element(FILE* fp, std::map<std::string, std::array<OpticalProperties, 
 
 	// Skipping surface file for now
 	std::string SurfaceFile = tok[26];
-
 	std::string optics_name = tok[27].c_str();
-
 	InteractionType interaction = int_to_interaction(atoi(tok[28].c_str()));
 
 	// Create element
@@ -464,12 +461,15 @@ bool read_element(FILE* fp, std::map<std::string, std::array<OpticalProperties, 
 	el->set_reference_frame_geometry(Vector3d(xyz[0], xyz[1], xyz[2]),
 		Vector3d(aim[0], aim[1], aim[2]), zrot);
 	
-	// TODO Set optics interaction type
-	
-	auto optics_front = optics_map[optics_name][0];
-	auto optics_back = optics_map[optics_name][1];
+	// Set optical properties
+	OpticalProperties optics_front = optics_map[optics_name][0];
+	OpticalProperties optics_back = optics_map[optics_name][1];
 	el->set_front_optical_properties(optics_front);
 	el->set_back_optical_properties(optics_back);
+	
+	// Set optical interaction type
+	el->get_front_optical_properties()->my_type = interaction;
+	el->get_back_optical_properties()->my_type = interaction;
 
 	return true;
 }

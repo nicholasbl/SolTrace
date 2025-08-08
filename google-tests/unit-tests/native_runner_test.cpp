@@ -351,14 +351,6 @@ TEST(NativeRunner, LegacyFileLoadTest)
     SimulationData sd;
     sd.import_from_file(sample_path);
 
-    // Set parameters
-    SimulationParameters& params = sd.get_simulation_parameters();
-    params.number_of_rays = 10000;
-    params.max_number_of_rays = params.number_of_rays * 100;
-    params.include_optical_errors = false;
-    params.include_sun_shape_errors = false;
-    params.seed = 12345;
-
 	// Create and run the native runner
     NativeRunner runner;
 	RunnerStatus sts = runner.initialize();
