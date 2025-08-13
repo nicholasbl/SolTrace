@@ -20,9 +20,29 @@ public:
     virtual void set_position(double, double, double) = 0;
     virtual void set_position(const DateTime &, double lat, double long) = 0;
     virtual DistributionType get_shape() const = 0;
-    virtual void set_shape(DistributionType shape) = 0;
+    virtual void set_shape(DistributionType shape, double _sigma, double _half_width,
+        std::vector<double> _user_angle = {}, std::vector<double> _user_intensity = {}) = 0;
 
-private:
+    double get_sigma()
+    {
+        return this->sigma;
+	}
+    double get_half_width()
+    {
+        return this->half_width;
+    }
+    void get_user_data(std::vector<double> &angle, std::vector<double> &intensity)
+    {
+        angle = this->user_angle;
+        intensity = this->user_intensity;
+        return;
+	}
+
+protected:
+	double sigma = std::numeric_limits<double>::quiet_NaN();
+	double half_width = std::numeric_limits<double>::quiet_NaN();
+	std::vector<double> user_angle;
+	std::vector<double> user_intensity;
 };
 
 using ray_source_id = std::int_fast64_t;

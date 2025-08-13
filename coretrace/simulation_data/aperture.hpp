@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <memory>
+#include <vector>
 
 // TODO: Make a header file for constants...
 #ifndef M_PI
@@ -22,7 +23,8 @@ enum ApertureType
     EQUILATERAL_TRIANGLE,
     SINGLE_AXIS_CURVATURE_SECTION,
     IRREGULAR_TRIANGLE,
-    IRREGULAR_QUADRILATERAL
+    IRREGULAR_QUADRILATERAL,
+    APERTURE_UNKNOWN
 };
 
 struct Aperture;
@@ -41,6 +43,8 @@ public:
 
     Aperture(ApertureType type) : my_type(type) {}
     virtual ~Aperture() {}
+
+    static aperture_ptr make_aperture_from_type(ApertureType type, const std::vector<double>& args);
 
     inline ApertureType get_type() const
     {

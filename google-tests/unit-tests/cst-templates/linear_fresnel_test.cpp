@@ -236,7 +236,8 @@ TEST(LinearFresnel, Tracing)
 
     auto sun = make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 1000.0);
-    sun->set_shape(DistributionType::GAUSSIAN);
+    double NaN = std::numeric_limits<double>::quiet_NaN();
+    sun->set_shape(DistributionType::GAUSSIAN, NaN, NaN);
     my_sim.add_ray_source(sun);
 
     // Assumes that reference and global coordinates are the same

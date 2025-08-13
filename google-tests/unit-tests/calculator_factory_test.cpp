@@ -30,7 +30,7 @@ protected:
 
 struct UnknownSurface : public Surface
 {
-    UnknownSurface() : Surface(SurfaceType::UNKNOWN){}
+    UnknownSurface() : Surface(SurfaceType::SURFACE_UNKNOWN){}
     ~UnknownSurface() {}
 };
 

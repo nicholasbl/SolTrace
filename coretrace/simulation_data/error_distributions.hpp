@@ -4,7 +4,8 @@
 enum DistributionType
 {
     GAUSSIAN,
-    PILLBOX
+    PILLBOX,
+    USER_DEFINED
 };
 
 #endif

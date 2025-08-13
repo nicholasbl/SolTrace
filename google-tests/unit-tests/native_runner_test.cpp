@@ -12,6 +12,7 @@
 #include <single_element.hpp>
 #include <stage_element.hpp>
 #include <vector3d.hpp>
+#include <filesystem>
 #include <virtual_element.hpp>
 
 TEST(RandomNumberGenerator, SingleNumberMersenneTwister)
@@ -29,7 +30,8 @@ TEST(NativeRunnerTypes, TSun)
     auto sun = make_ray_source<Sun>();
     Vector3d spos(1.0, 2.0, 3.0);
     sun->set_position(spos);
-    sun->set_shape(PILLBOX);
+    double NaN = std::numeric_limits<double>::quiet_NaN();
+    sun->set_shape(PILLBOX, NaN, NaN);
     my_sim.add_ray_source(sun);
 
     NativeRunner runner;
@@ -101,7 +103,8 @@ TEST(NativeRunner, SmokeTest)
 
     auto sun = make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 100.0);
-    sun->set_shape(DistributionType::GAUSSIAN);
+    double NaN = std::numeric_limits<double>::quiet_NaN();
+    sun->set_shape(DistributionType::GAUSSIAN, NaN, NaN);
     my_sim.add_ray_source(sun);
 
     auto my_st = make_stage(0);
@@ -282,7 +285,8 @@ TEST(NativeRunner, SingleRayValidationTest)
     // Sun
     auto sun = make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 100.0);
-    sun->set_shape(DistributionType::PILLBOX);
+    double NaN = std::numeric_limits<double>::quiet_NaN();
+    sun->set_shape(DistributionType::PILLBOX, NaN, NaN);
     sd.add_ray_source(sun);
 
     auto sph = make_element<SingleElement>();
@@ -335,4 +339,24 @@ TEST(NativeRunner, SingleRayValidationTest)
 	EXPECT_NEAR(idir[0], 0.0, TOL);
 	EXPECT_NEAR(idir[1], 0.0, TOL);
 	EXPECT_NEAR(idir[2], -1.0, TOL);
+}
+
+TEST(NativeRunner, LegacyFileLoadTest)
+{
+    std::string project_path = std::string(PROJECT_DIR);
+    std::string parent_dir = std::filesystem::path(PROJECT_DIR).parent_path().string();
+    std::string sample_path = parent_dir + std::string("/simple_test_case.stinput");
+
+	// Load simulation data from file
+    SimulationData sd;
+    sd.import_from_file(sample_path);
+
+	// Create and run the native runner
+    NativeRunner runner;
+	RunnerStatus sts = runner.initialize();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 }

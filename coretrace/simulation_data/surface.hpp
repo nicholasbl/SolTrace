@@ -10,7 +10,12 @@ enum SurfaceType
     FLAT,
     PARABOLA,
     SPHERE,
-    UNKNOWN
+
+    HYPER,
+	GENERAL_SPENCER_MURTY,
+    TORUS,
+
+    SURFACE_UNKNOWN
 };
 
 struct Surface
@@ -22,6 +27,7 @@ public:
     virtual ~Surface() {}
 
     SurfaceType get_type() { return my_type; }
+
 };
 
 struct Cone : public Surface
