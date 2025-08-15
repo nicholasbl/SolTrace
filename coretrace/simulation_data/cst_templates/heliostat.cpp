@@ -101,15 +101,17 @@ void Heliostat::create_geometry()
                 throw std::runtime_error("Unknown canting method");
             }
 
-            elem->set_reference_frame_geometry(origin,
-                                               aim,
-                                               0.0);
-
             ap = make_aperture<Rectangle>(panel_len_x, panel_len_y);
             elem->set_aperture(ap);
+
+            // // TODO: Is this the correct thing to do here?
+            // vector_add(1.0, this->focal_point, -1.0, origin, aim);
+
             if (this->focal_length_x <= 0.0 && this->focal_length_y <= 0.0)
             {
                 surf = make_surface<Flat>();
+                // Vector3d khat(0.0, 0.0, 1.0);
+                // vector_add(0.5, khat, 0.5, aim);
             }
             else
             {
@@ -117,6 +119,10 @@ void Heliostat::create_geometry()
                                               this->focal_length_y);
             }
             elem->set_surface(surf);
+
+            elem->set_reference_frame_geometry(origin,
+                                               aim,
+                                               0.0);
 
             elem->set_front_optical_properties(this->optics_mirror);
             elem->set_back_optical_properties(this->optics_mirror);
@@ -194,6 +200,20 @@ void Heliostat::set_focal_length(double fx, double fy)
 
     return;
 }
+
+// void Heliostat::set_focal_point(double x, double y, double z)
+// {
+//     this->initialized = false;
+//     this->focal_point.set_values(x, y, z);
+//     return;
+// }
+
+// void Heliostat::set_focal_point(const Vector3d &fp)
+// {
+//     this->initialized = false;
+//     this->focal_point = fp;
+//     return;
+// }
 
 void Heliostat::set_gaps(double gap_x,
                          double gap_y)

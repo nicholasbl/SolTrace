@@ -73,6 +73,7 @@ void LinearFresnel::set_aperture_size(double len_x, double len_y)
         throw std::invalid_argument(ss.str());
     }
 
+    this->initialized = false;
     this->aperture_size_x = len_x;
     this->aperture_size_y = len_y;
 

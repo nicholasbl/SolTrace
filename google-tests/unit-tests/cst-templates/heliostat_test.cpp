@@ -136,6 +136,7 @@ TEST(HeliotStat, BuildParabolaNone)
     hs->set_number_panels(3, 4);
     hs->set_gaps(0.1, 0.1);
     hs->set_focal_length(156.06);
+    // hs->set_focal_point(0.0, 0.0, 156.06);
     hs->set_canting(Heliostat::NONE, 0.0, 0.0);
     hs->create_geometry();
 
@@ -155,6 +156,7 @@ TEST(HeliotStat, BuildFlatOnAxis)
     hs->set_number_panels(3, 4);
     hs->set_gaps(0.1, 0.1);
     hs->set_focal_length(0.0);
+    // hs->set_focal_point(Vector3d(0.0, 0.0, 10.0));
     hs->set_canting(Heliostat::NONE, 0.0, 0.0);
     hs->create_geometry();
 
@@ -206,7 +208,7 @@ TEST(HelioStat, Trace)
     // hs->set_aim_vector(0.0, 0.0, 2.0);
     // hs->set_zrot(0.0);
     // hs->compute_coordinate_rotations();
-    hs->convert_global_to_local(aim, abs_origin);
+    // hs->convert_global_to_local(aim, abs_origin);
     hs->set_reference_frame_geometry(hs_origin, aim, 0.0);
     hs->set_aperture_size(12.0, 12.0);
     hs->set_number_panels(3, 4);

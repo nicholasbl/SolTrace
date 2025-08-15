@@ -552,6 +552,7 @@ tstage_ptr make_tstage(element_ptr el,
 {
     tstage_ptr my_stage = std::make_shared<TStage>();
     auto stage_el = std::dynamic_pointer_cast<StageElement>(el);
+    // TODO: Throw an error...
     assert(stage_el != nullptr);
 
     // TODO: What to do with these fields?

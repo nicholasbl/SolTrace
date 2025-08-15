@@ -57,6 +57,7 @@ RunnerStatus NativeRunner::setup_parameters(const SimulationData *data)
 
 RunnerStatus NativeRunner::setup_sun(const SimulationData *data)
 {
+    // TODO: This should throw an error...
     // Get RaySource data (this runner assumes there is only the Sun)
     assert(data->get_number_of_ray_sources() == 1);
     // this->tsys.Sun.set_values(data->get_ray_source());
