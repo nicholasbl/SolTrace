@@ -560,7 +560,7 @@ bool load_stinput_file(SimulationData& sd, std::string filename)
 	FILE* fp = fopen(filename.data(), "r");
 	if (!fp)
 	{
-		printf("failed to open system input file\n");
+		printf("failed to open system input file: %s\n", filename.data());
 		return false;
 	}
 	

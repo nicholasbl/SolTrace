@@ -7,9 +7,16 @@ FetchContent_Declare(
 )
 
 add_subdirectory(unit-tests)
+add_subdirectory(regression-tests)
 
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
+
+file(GLOB SAMPLE_FILES ../app/deploy/samples/*.stinput ../app/deploy/samples/*.mon)
+file(GLOB GROUND_FILES ./ground_results/*.csv)
+
+file(COPY ${SAMPLE_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${GROUND_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 if(SOLTRACE_BUILD_CORETRACE)
 
@@ -22,8 +29,6 @@ if(SOLTRACE_BUILD_CORETRACE)
 		../coretrace/simulation_data
 	)
 
-	file(GLOB SAMPLE_FILES ../app/deploy/samples/*.stinput ../app/deploy/samples/*.mon)
-	file(GLOB GROUND_FILES ./ground_results/*.csv)
 	file(GLOB SOLTRACE_EXAMPLE_TESTS soltrace_example_tests/*.cpp)
 	file(GLOB CSV_TOOL csv_tools/*.cpp csv_tools/*.h)
 
@@ -31,10 +36,6 @@ if(SOLTRACE_BUILD_CORETRACE)
 	set(CORETRACE ../coretrace/stapi.cpp)
 	set(STRACE ../coretrace/strace/strace.cpp)
 	set(ENV{SOLTRACE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
-
-
-	file(COPY ${SAMPLE_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-	file(COPY ${GROUND_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 	message("Binary dir: ${CMAKE_CURRENT_BINARY_DIR}")
 	message("Source dir: ${CMAKE_CURRENT_SOURCE_DIR}")
