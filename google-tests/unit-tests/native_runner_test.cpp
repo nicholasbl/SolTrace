@@ -349,7 +349,11 @@ TEST(NativeRunner, LegacyFileLoadTest)
 
 	// Load simulation data from file
     SimulationData sd;
-    sd.import_from_file(sample_path);
+    bool success = sd.import_from_file(sample_path);
+    EXPECT_TRUE(success);
+
+    EXPECT_EQ(sd.get_number_of_ray_sources(), 1);
+    EXPECT_EQ(sd.get_number_of_elements(), 2);
 
 	// Create and run the native runner
     NativeRunner runner;
