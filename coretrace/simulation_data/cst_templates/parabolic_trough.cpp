@@ -215,13 +215,13 @@ double ParabolicTrough::calculate_receiver_power()
     return 0.0;
 }
 
-void ParabolicTrough::set_angles(double az, double tilt)
+void ParabolicTrough::set_angles(double azimuth, double tilt)
 {
-    if (az < -180.0 || az > 180.0)
+    if (azimuth < -180.0 || azimuth > 180.0)
     {
         std::stringstream ss;
         ss << "ParabolicTrough::set_angles: Invalid azimuth angle ("
-           << az << "). Must be between -180 and 180 degrees.";
+           << azimuth << "). Must be between -180 and 180 degrees.";
         throw std::invalid_argument(ss.str());
     }
 
@@ -234,7 +234,7 @@ void ParabolicTrough::set_angles(double az, double tilt)
     }
 
     // this->initialized = false;
-    this->azimuth = az;
+    this->azimuth = azimuth;
     this->tilt = tilt;
 
     double az = this->azimuth * M_PI / 180.0;
