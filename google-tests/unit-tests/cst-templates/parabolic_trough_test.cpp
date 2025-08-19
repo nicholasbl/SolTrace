@@ -27,6 +27,24 @@ TEST(ParabolicTrough, ErrorChecking_SetApertureSize)
     EXPECT_NO_THROW(pt->set_aperture_size(10.5, 15.3));
 }
 
+TEST(ParabolicTrough, ErrorChecking_SetAngles)
+{
+    auto pt = make_element<ParabolicTrough>();
+
+    // Test invalid azimuth angles
+    EXPECT_THROW(pt->set_angles(-181.0, 45.0), std::invalid_argument);
+    EXPECT_THROW(pt->set_angles(181.0, 45.0), std::invalid_argument);
+
+    // Test invalid tilt angles
+    EXPECT_THROW(pt->set_angles(0.0, -91.0), std::invalid_argument);
+    EXPECT_THROW(pt->set_angles(0.0, 91.0), std::invalid_argument);
+
+    // Test valid angles
+    EXPECT_NO_THROW(pt->set_angles(-180.0, 0.0));
+    EXPECT_NO_THROW(pt->set_angles(180.0, 90.0));
+    EXPECT_NO_THROW(pt->set_angles(0.0, 45.0));
+}
+
 TEST(ParabolicTrough, ErrorChecking_SetFocalLength)
 {
     auto pt = make_element<ParabolicTrough>();

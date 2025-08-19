@@ -31,8 +31,7 @@ ParabolicTrough::ParabolicTrough()
       tracking_limit_lower(-1.0),
       tracking_limit_upper(-1.0)
 {
-    // TODO: Initialize to nonsense and enforce user setting of values
-    // TODO: Need to do something similar for elements totally
+    this->rotation_axis.set_values(1.0, 0.0, 0.0);
     return;
 }
 
@@ -226,17 +225,24 @@ void ParabolicTrough::set_angles(double az, double tilt)
         throw std::invalid_argument(ss.str());
     }
 
-    if (tilt < 0.0 || tilt > 90.0)
+    if (tilt < -90.0 || tilt > 90.0)
     {
         std::stringstream ss;
         ss << "ParabolicTrough::set_angles: Invalid tilt angle ("
-           << tilt << "). Must be between 0 and 90 degrees.";
+           << tilt << "). Must be between -90 and 90 degrees.";
         throw std::invalid_argument(ss.str());
     }
 
     // this->initialized = false;
     this->azimuth = az;
     this->tilt = tilt;
+
+    double az = this->azimuth * M_PI / 180.0;
+    double inc = this->tilt * M_PI / 180.0;
+
+    this->rotation_axis.set_values(sin(inc) * cos(az),
+                                   sin(inc) * sin(az),
+                                   cos(az));
 
     return;
 }

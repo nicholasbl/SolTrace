@@ -27,6 +27,8 @@ LinearFresnel::LinearFresnel()
     this->optics_mirror.set_ideal_reflection();
     this->optics_env_out.set_ideal_transmission();
     this->optics_env_in.set_ideal_transmission();
+
+    rotation_axis.set_values(0.0, 1.0, 0.0);
 }
 
 LinearFresnel::~LinearFresnel()
@@ -49,16 +51,24 @@ void LinearFresnel::set_angles(double azimuth, double tilt)
         throw std::invalid_argument(ss.str());
     }
 
-    if (tilt < 0.0 || tilt > 90.0)
+    if (tilt < -90.0 || tilt > 90.0)
     {
         std::stringstream ss;
         ss << "LinearFresnel::set_angles: Invalid tilt angle ("
-           << tilt << "). Must be between 0 and 90 degrees.";
+           << tilt << "). Must be between -90 and 90 degrees.";
         throw std::invalid_argument(ss.str());
     }
 
     this->azimuth = azimuth;
     this->tilt = tilt;
+
+    double az = this->azimuth * M_PI / 180.0;
+    double inc = this->tilt * M_PI / 180.0;
+
+    this->rotation_axis.set_values(sin(inc) * cos(az),
+                                   sin(inc) * sin(az),
+                                   cos(az));
+
     return;
 }
 
@@ -87,7 +97,9 @@ void LinearFresnel::set_focused_panels(bool focused)
     return;
 }
 
-void LinearFresnel::set_gaps(double gap_x, double gap_y, double gap_center)
+void LinearFresnel::set_gaps(double gap_x,
+                             double gap_y,
+                             double gap_center)
 {
     if (gap_x < 0.0 || gap_y < 0.0 || gap_center < 0.0)
     {
@@ -107,7 +119,8 @@ void LinearFresnel::set_gaps(double gap_x, double gap_y, double gap_center)
     return;
 }
 
-void LinearFresnel::set_number_panels(int_fast64_t num_x, int_fast64_t num_y)
+void LinearFresnel::set_number_panels(int_fast64_t num_x,
+                                      int_fast64_t num_y)
 {
     if (num_x <= 0 || num_y <= 0)
     {

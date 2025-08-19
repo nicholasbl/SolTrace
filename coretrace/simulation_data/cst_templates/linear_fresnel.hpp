@@ -40,6 +40,7 @@ private:
     double reciever_height;
     double azimuth;
     double tilt;
+    Vector3d rotation_axis;
 
     // Mirror Characteristics
     bool focused_panels;

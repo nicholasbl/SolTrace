@@ -59,9 +59,9 @@ private:
     // bool ready_to_add_self;
 
     // Global Characteristics
-    Vector3d track_axis;
     double azimuth;
     double tilt;
+    Vector3d rotation_axis;
 
     // Reflector(s) Characteristic(s)
     double aperture_size_x;

@@ -36,7 +36,7 @@ TEST(LinearFresnel, ErrorChecking_SetAngles)
     EXPECT_THROW(lf->set_angles(181.0, 45.0), std::invalid_argument);
 
     // Test invalid tilt angles
-    EXPECT_THROW(lf->set_angles(0.0, -1.0), std::invalid_argument);
+    EXPECT_THROW(lf->set_angles(0.0, -91.0), std::invalid_argument);
     EXPECT_THROW(lf->set_angles(0.0, 91.0), std::invalid_argument);
 
     // Test valid angles
@@ -188,7 +188,7 @@ TEST(LinearFresnel, Tracing)
     // Set parameters
     SimulationParameters &params = my_sim.get_simulation_parameters();
     params.number_of_rays = NRAYS;
-    params.max_number_of_rays = params.number_of_rays * 100;
+    params.max_number_of_rays = params.number_of_rays * 1000;
     params.include_optical_errors = true;
     params.include_sun_shape_errors = true;
     params.seed = 123;
