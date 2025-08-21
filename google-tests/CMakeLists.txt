@@ -6,6 +6,10 @@ FetchContent_Declare(
 	GIT_TAG main
 )
 
+# Common for all tests
+add_definitions(-DPROJECT_DIR="${CMAKE_CURRENT_BINARY_DIR}")
+file(GLOB CSV_TOOL csv_tools/*.cpp csv_tools/*.h)
+
 add_subdirectory(unit-tests)
 add_subdirectory(regression-tests)
 
@@ -30,7 +34,6 @@ if(SOLTRACE_BUILD_CORETRACE)
 	)
 
 	file(GLOB SOLTRACE_EXAMPLE_TESTS soltrace_example_tests/*.cpp)
-	file(GLOB CSV_TOOL csv_tools/*.cpp csv_tools/*.h)
 
 	set(STRACE_SRC ../coretrace/strace)
 	set(CORETRACE ../coretrace/stapi.cpp)
@@ -59,14 +62,9 @@ if(SOLTRACE_BUILD_CORETRACE)
 		target_link_libraries(Test pthread)
 	endif()
 
-	add_definitions(-DPROJECT_DIR="${CMAKE_CURRENT_BINARY_DIR}")
-
 endif()
 
 enable_testing()
-
-add_test(NAME UnitTests COMMAND UnitTests)
-add_test(NAME CSTTests COMMAND CSTTests)
 
 if(SOLTRACE_BUILD_CORETRACE)
 	add_test(NAME Test COMMAND Test)

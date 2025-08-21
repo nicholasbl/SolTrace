@@ -37,3 +37,6 @@ endif()
 if(UNIX)
 	target_link_libraries(CSTTests pthread)
 endif()
+
+add_test(NAME CSTTests COMMAND CSTTests)
+

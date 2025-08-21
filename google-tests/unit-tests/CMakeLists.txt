@@ -1,8 +1,6 @@
 
 Project(UnitTests)
 
-add_definitions(-DPROJECT_DIR="${CMAKE_CURRENT_BINARY_DIR}")
-
 include_directories(
 	.
 	../app/deploy/samples
@@ -62,3 +60,5 @@ endif()
 if(UNIX)
 	target_link_libraries(UnitTests pthread)
 endif()
+
+add_test(NAME UnitTests COMMAND UnitTests)

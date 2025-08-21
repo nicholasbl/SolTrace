@@ -333,21 +333,21 @@ TEST(NativeRunner, SingleRayValidationTest)
                           &element, &stage, &raynum);
 
     EXPECT_NEAR(ipoint[0], -3.06214, TOL);
-	EXPECT_NEAR(ipoint[1], 5.92862, TOL);
-	EXPECT_NEAR(ipoint[2], 12.7732, TOL);
+    EXPECT_NEAR(ipoint[1], 5.92862, TOL);
+    EXPECT_NEAR(ipoint[2], 12.7732, TOL);
 
-	EXPECT_NEAR(idir[0], 0.0, TOL);
-	EXPECT_NEAR(idir[1], 0.0, TOL);
-	EXPECT_NEAR(idir[2], -1.0, TOL);
+    EXPECT_NEAR(idir[0], 0.0, TOL);
+    EXPECT_NEAR(idir[1], 0.0, TOL);
+    EXPECT_NEAR(idir[2], -1.0, TOL);
 }
 
 TEST(NativeRunner, LegacyFileLoadTest)
 {
     std::string project_path = std::string(PROJECT_DIR);
-    std::string parent_dir = std::filesystem::path(PROJECT_DIR).parent_path().string();
-    std::string sample_path = parent_dir + std::string("/simple_test_case.stinput");
+    std::string sample_path = project_path +
+                              std::string("/simple_test_case.stinput");
 
-	// Load simulation data from file
+    // Load simulation data from file
     SimulationData sd;
     bool success = sd.import_from_file(sample_path);
     EXPECT_TRUE(success);
@@ -355,9 +355,9 @@ TEST(NativeRunner, LegacyFileLoadTest)
     EXPECT_EQ(sd.get_number_of_ray_sources(), 1);
     EXPECT_EQ(sd.get_number_of_elements(), 2);
 
-	// Create and run the native runner
+    // Create and run the native runner
     NativeRunner runner;
-	RunnerStatus sts = runner.initialize();
+    RunnerStatus sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.setup_simulation(&sd);
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);

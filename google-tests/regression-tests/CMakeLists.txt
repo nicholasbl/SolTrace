@@ -4,6 +4,7 @@ Project(RegressionTests)
 include_directories(
 	.
 	# ../app/deploy/samples
+	../csv_tools
 	../../coretrace/simulation_data
 	../../coretrace/simulation_data/cst_templates
 	../../coretrace/simulation_results
@@ -17,10 +18,12 @@ include_directories(
 # so those tests run prior to the more complicated ones.
 # common.hpp and common.cpp contain helper methods used in multiple files.
 set(REGRESSION_TEST_SRC
+	native_runner_validation_test.cpp
 	native_runner_performance_test.cpp
 )
 
 add_executable(RegressionTests
+	${CSV_TOOL}
     ${REGRESSION_TEST_SRC}
 )
 
@@ -42,3 +45,5 @@ endif()
 if(UNIX)
 	target_link_libraries(UnitTests pthread)
 endif()
+
+add_test(NAME RegressionTests COMMAND RegressionTests)
