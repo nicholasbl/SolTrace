@@ -82,7 +82,7 @@ public:
         this->optics_back = op;
     }
 
-    virtual void enforce_user_fields_set() const;
+    virtual void enforce_user_fields_set() const override;
 
 protected:
     aperture_ptr aperture;

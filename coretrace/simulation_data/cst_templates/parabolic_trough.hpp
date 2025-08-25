@@ -64,7 +64,7 @@ public:
                                  double env_thick);
     void set_tracking_limits(double lower, double upper);
 
-    virtual void enforce_user_fields_set() const;
+    virtual void enforce_user_fields_set() const override;
 
 private:
     // Flags

@@ -209,7 +209,7 @@ public:
         return this->my_elements.is_at_end(citer);
     }
 
-    virtual void enforce_user_fields_set() const;
+    virtual void enforce_user_fields_set() const override;
 
 private:
     uint_fast64_t number_of_elements;

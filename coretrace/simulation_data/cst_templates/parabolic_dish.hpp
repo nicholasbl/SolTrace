@@ -38,7 +38,7 @@ public:
     void create_geometry();
     void update_geometry();
 
-    virtual void enforce_user_fields_set() const;
+    virtual void enforce_user_fields_set() const override;
 
 private:
     bool initialized;

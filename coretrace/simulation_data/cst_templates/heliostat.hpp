@@ -46,7 +46,7 @@ public:
     // void set_offaxis_canting_sun_position(double azimuth, double zenith);
     void set_canting(CantingType ct, double val1, double val2);
 
-    virtual void enforce_user_fields_set() const;
+    virtual void enforce_user_fields_set() const override;
 
 private:
     bool initialized;

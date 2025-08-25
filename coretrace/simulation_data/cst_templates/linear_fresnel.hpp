@@ -41,7 +41,7 @@ public:
                                  double envelop_diameter,
                                  double envelop_thickness);
 
-    virtual void enforce_user_fields_set() const;
+    virtual void enforce_user_fields_set() const override;
 
     void create_geometry();
     void update_geometry();
