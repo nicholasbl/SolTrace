@@ -1,3 +1,12 @@
+/**
+ * @file optical_properties.hpp
+ * @brief Optical properties definitions for materials
+ *
+ * Defines optical properties (reflectivity, transmissivity, refractive index)
+ * and interaction types for optical surfaces and materials. Includes error
+ * distribution parameters for modeling surface imperfections and optical errors.
+ */
+
 #ifndef SOLTRACE_OPTICAL_PROPERTIES_H
 #define SOLTRACE_OPTICAL_PROPERTIES_H
 

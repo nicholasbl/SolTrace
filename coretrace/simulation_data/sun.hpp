@@ -1,3 +1,13 @@
+/**
+ * @file sun.hpp
+ * @brief Solar source modeling and sun shape definitions
+ *
+ * Defines solar source properties including sun shape models,
+ * solar position calculations, and ray generation from solar disk.
+ * Includes models for different sun shape distributions and
+ * solar tracking calculations for CST systems.
+ */
+
 #ifndef SOLTRACE_SUN_H
 #define SOLTRACE_SUN_H
 
@@ -52,8 +62,8 @@ public:
                 sigma = _sigma;
                 break;
             case(DistributionType::PILLBOX):
-				half_width = _half_width;
-				break;
+                half_width = _half_width;
+                break;
             case(DistributionType::USER_DEFINED):
                 user_angle = std::move(_user_angle);
                 user_intensity = std::move(_user_intensity);

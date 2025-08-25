@@ -5,7 +5,7 @@
 #include <cmath>
 #include <vector>
 
-aperture_ptr Aperture::make_aperture_from_type(ApertureType type, 
+aperture_ptr Aperture::make_aperture_from_type(ApertureType type,
     const std::vector<double>& args)
 {
     switch (type)
@@ -21,7 +21,7 @@ aperture_ptr Aperture::make_aperture_from_type(ApertureType type,
             return std::make_shared<Hexagon>(args[0]);
         case ApertureType::RECTANGLE:
             if (args.size() < 2) break;
-			return std::make_shared<Rectangle>(args[0], args[1]);   // This is assuming centered around the origin
+            return std::make_shared<Rectangle>(args[0], args[1]);   // This is assuming centered around the origin
         case ApertureType::EQUILATERAL_TRIANGLE:
             if (args.size() < 1) break;
             return std::make_shared<EqualateralTriangle>(args[0]);
@@ -30,7 +30,7 @@ aperture_ptr Aperture::make_aperture_from_type(ApertureType type,
             return std::make_shared<IrregularTriangle>(args[0], args[1], args[2], args[3], args[4], args[5]);
         case ApertureType::IRREGULAR_QUADRILATERAL:
             if (args.size() < 8) break;
-            return std::make_shared<IrregularQuadrilateral>(args[0], args[1], args[2], args[3], 
+            return std::make_shared<IrregularQuadrilateral>(args[0], args[1], args[2], args[3],
                 args[4], args[5], args[6], args[7]);
         default:
             // TODO handle error

@@ -46,6 +46,16 @@
  *  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************************************/
 
+/**
+ * @file matvec.hpp
+ * @brief Matrix and vector mathematical operations
+ *
+ * Provides fundamental matrix and vector operations required for
+ * coordinate transformations and geometric calculations in ray tracing.
+ * Includes legacy matrix/vector classes and utility functions for
+ * compatibility with original SolTrace algorithms.
+ */
+
 #ifndef SOLTRACE_MATVEC_H
 #define SOLTRACE_MATVEC_H
 

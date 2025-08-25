@@ -1,3 +1,16 @@
+/**
+ * @file parabolic_trough.hpp
+ * @brief Parabolic trough CST template for linear concentrator systems
+ *
+ * Defines the ParabolicTrough class which generates parabolic trough
+ * solar collector systems with configurable mirror panels, receiver tubes,
+ * and single-axis tracking capabilities. Supports various collector
+ * configurations including heat collection elements and glass envelopes.
+ *
+ * @defgroup cst_templates CST Templates
+ * @{
+ */
+
 #ifndef SOLTRACE_PARABOLIC_TROUGH_H
 #define SOLTRACE_PARABOLIC_TROUGH_H
 
@@ -96,5 +109,9 @@ private:
 
     double determine_x_coordinate(double x0, double arc_length);
 };
+
+/**
+ * @}
+ */
 
 #endif

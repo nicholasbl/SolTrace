@@ -1,3 +1,13 @@
+/**
+ * @file ray_source.hpp
+ * @brief Ray source definitions and solar models
+ *
+ * Defines ray source properties including sun shape models,
+ * solar disk properties, and ray generation parameters. Provides
+ * base classes for different types of ray sources used in
+ * concentrated solar power simulations.
+ */
+
 #ifndef SOLTRACE_RAY_SOURCE_H
 #define SOLTRACE_RAY_SOURCE_H
 
@@ -26,7 +36,7 @@ public:
     double get_sigma()
     {
         return this->sigma;
-	}
+    }
     double get_half_width()
     {
         return this->half_width;
@@ -36,13 +46,13 @@ public:
         angle = this->user_angle;
         intensity = this->user_intensity;
         return;
-	}
+    }
 
 protected:
-	double sigma = std::numeric_limits<double>::quiet_NaN();
-	double half_width = std::numeric_limits<double>::quiet_NaN();
-	std::vector<double> user_angle;
-	std::vector<double> user_intensity;
+    double sigma = std::numeric_limits<double>::quiet_NaN();
+    double half_width = std::numeric_limits<double>::quiet_NaN();
+    std::vector<double> user_angle;
+    std::vector<double> user_intensity;
 };
 
 using ray_source_id = std::int_fast64_t;

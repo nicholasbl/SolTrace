@@ -1,3 +1,13 @@
+/**
+ * @file container.hpp
+ * @brief Generic container utilities for simulation data
+ *
+ * Provides template-based container classes and utilities for
+ * managing collections of simulation objects. Includes specialized
+ * containers for elements, apertures, surfaces, and other components
+ * with shared pointer management.
+ */
+
 #ifndef SOLTRACE_ELEMENT_CONTAINER_H
 #define SOLTRACE_ELEMENT_CONTAINER_H
 
@@ -13,21 +23,47 @@ public:
     using iterator = typename std::map<K, value_pointer>::iterator;
     using const_iterator = typename std::map<K, value_pointer>::const_iterator;
 
+    /**
+     * @brief Create a shared pointer to value type V
+     * @tparam Args Constructor argument types
+     * @param args Constructor arguments
+     * @return Shared pointer to constructed object
+     */
     template<typename... Args>
     inline static value_pointer make_pointer(Args&&... args)
     {
         return std::make_shared<V>(std::forward<Args>(args)...);
     }
 
+    /**
+     * @brief Create a shared pointer to derived type C
+     * @tparam C Derived type to construct
+     * @tparam Args Constructor argument types
+     * @param args Constructor arguments
+     * @return Shared pointer to constructed object of type C
+     */
     template<typename C, typename... Args>
     inline static std::shared_ptr<C> make_pointer(Args&&... args)
     {
         return std::make_shared<C>(std::forward<Args>(args)...);
     }
 
+    /**
+     * @brief Constructor with starting ID
+     * @param start Starting value for ID assignment (default 0)
+     */
     Container(K start=0) : next_id(start) {}
+
+    /**
+     * @brief Destructor - clears all items
+     */
     ~Container() { this->clear(); }
 
+    /**
+     * @brief Add an item to the container
+     * @param item Shared pointer to item to add
+     * @return Assigned key/ID for the item (-1 if insertion failed)
+     */
     K add_item(value_pointer item)
     {
         auto key = this->next_id;
@@ -48,10 +84,22 @@ public:
         }
         return key;
     }
+
+    /**
+     * @brief Remove an item from the container by key
+     * @param id Key of item to remove
+     * @return Number of items removed (0 or 1)
+     */
     auto remove_item(K id)
     {
         return this->container.erase(id);
     }
+
+    /**
+     * @brief Get an item from the container by key
+     * @param id Key of item to retrieve
+     * @return Shared pointer to item, or nullptr if not found
+     */
     value_pointer get_item(K id) const
     {
         // return this->container[id];

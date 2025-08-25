@@ -1,3 +1,16 @@
+/**
+ * @file heliostat.hpp
+ * @brief Heliostat CST template for power tower systems
+ *
+ * Defines the Heliostat class which generates heliostat field elements
+ * with configurable facet layouts, canting methods, and tracking capabilities
+ * for concentrated solar power tower applications. Supports various canting
+ * strategies and geometric configurations.
+ *
+ * @defgroup cst_templates CST Templates
+ * @{
+ */
+
 #ifndef SOLTRACE_HELIOSTAT_H
 #define SOLTRACE_HELIOSTAT_H
 
@@ -63,5 +76,9 @@ private:
 
     // TODO: Need to add an absorber element here?
 };
+
+/**
+ * @}
+ */
 
 #endif

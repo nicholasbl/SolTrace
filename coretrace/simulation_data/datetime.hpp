@@ -1,3 +1,13 @@
+/**
+ * @file datetime.hpp
+ * @brief Date and time utilities for solar position calculations
+ *
+ * Provides date/time handling functions used in solar tracking
+ * and sun position calculations for CST systems. Currently contains
+ * placeholder structures for future implementation of comprehensive
+ * date/time functionality.
+ */
+
 #ifndef SOLTRACE_DATETIME_H
 #define SOLTRACE_DATETIME_H
 

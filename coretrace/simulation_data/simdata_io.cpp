@@ -276,7 +276,7 @@ bool process_sun(FILE *fp, SimulationData &sd)
     sun->set_position(X, Y, Z);
     // else
     // {
-    // 	sun->set_position(X, Y, Z);
+    //  sun->set_position(X, Y, Z);
     // }
 
     // Define sun shape

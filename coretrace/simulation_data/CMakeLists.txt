@@ -61,10 +61,10 @@ endif()
 set_target_properties(simdata
     PROPERTIES
     DEBUG_POSTFIX "d"
-	PREFIX ""
+    PREFIX ""
 )
 
 if (NOT APPLE AND ENABLE_COVERAGE)
-	# SET(CMAKE_CXX_FLAGS "-O0 -coverage -fkeep-inline-functions")
+    # SET(CMAKE_CXX_FLAGS "-O0 -coverage -fkeep-inline-functions")
     SET(CMAKE_CXX_FLAGS "-O0 -coverage")
 endif()

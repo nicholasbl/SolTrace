@@ -1,3 +1,15 @@
+/**
+ * @file element.hpp
+ * @brief Base element class and element management
+ *
+ * Defines the base ElementBase class and element management utilities.
+ * All optical elements in SolTrace derive from this base class, providing
+ * common functionality for positioning, orientation, and optical properties.
+ *
+ * @defgroup elements Optical Elements
+ * @{
+ */
+
 #ifndef SOLTRACE_ELEMENT_H
 #define SOLTRACE_ELEMENT_H
 
@@ -62,12 +74,26 @@ public:
   /// @return true if VirtualElement, false otherwise
   virtual bool is_virtual() const = 0;
 
-  /// @brief Get the element id assigned when registerd with SimulationData
+  /// @brief Get the element id assigned when registered with SimulationData
   /// @return id if registered with SimulationData, ELEMENT_ID_UNASSIGNED if not
   virtual element_id get_id() const = 0;
+
+  /**
+   * @brief Get the stage number this element belongs to
+   * @return Stage number
+   */
   virtual int_fast64_t get_stage() = 0;
 
+  /**
+   * @brief Get the element name
+   * @return Reference to element name string
+   */
   virtual const std::string &get_name() const = 0;
+
+  /**
+   * @brief Set the element name
+   * @param name New name for the element
+   */
   virtual void set_name(const std::string &name) = 0;
 
   /****************************************************************************
@@ -77,14 +103,45 @@ public:
    * CompositeElements even if that CompositeElement is then stored in a stage.
    ***************************************************************************/
 
+  /**
+   * @brief Get origin position in reference coordinates
+   * @return Origin position vector in reference frame
+   */
   virtual Vector3d get_origin_ref() const = 0;
+
+  /**
+   * @brief Get origin position in stage coordinates
+   * @return Origin position vector in stage frame
+   */
   virtual Vector3d get_origin_stage() const = 0;
+
+  /**
+   * @brief Get origin position in global coordinates
+   * @return Origin position vector in global frame
+   */
   virtual Vector3d get_origin_global() const = 0;
-  // Always the location of the origin with respect the reference coordinates
+
+  /**
+   * @brief Set origin position (always relative to reference coordinates)
+   * @param origin New origin position vector
+   */
   virtual void set_origin(const Vector3d &) = 0;
+
+  /**
+   * @brief Set origin position (always relative to reference coordinates)
+   * @param x X coordinate
+   * @param y Y coordinate
+   * @param z Z coordinate
+   */
   virtual void set_origin(double, double, double) = 0;
+
   // virtual const Vector3d &get_global_origin() const = 0;
   // virtual void set_global_origin(const Vector3d &) = 0;
+
+  /**
+   * @brief Get aim vector in reference coordinates
+   * @return Aim direction vector in reference frame
+   */
   virtual Vector3d get_aim_vector_ref() const = 0;
   virtual Vector3d get_aim_vector_stage() const = 0;
   virtual Vector3d get_aim_vector_global() const = 0;
@@ -375,5 +432,9 @@ inline auto make_element(Args &&...args)
 {
   return ElementContainer::make_pointer<C>(std::forward<Args>(args)...);
 }
+
+/**
+ * @}
+ */
 
 #endif

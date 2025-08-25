@@ -1,3 +1,16 @@
+/**
+ * @file simulation_data.hpp
+ * @brief Main simulation data container and management
+ *
+ * Defines the SimulationData class which serves as the main container
+ * for all optical elements, stages, and simulation parameters.
+ * Manages the complete optical system definition and provides
+ * interfaces for ray tracing execution.
+ *
+ * @defgroup simulation Simulation Management
+ * @{
+ */
+
 #ifndef SOLTRACE_SIMULATION_DATA_H
 #define SOLTRACE_SIMULATION_DATA_H
 
@@ -277,5 +290,9 @@ private:
     uint_fast64_t add_subelements(element_ptr el);
     uint_fast64_t remove_subelements(element_ptr el);
 };
+
+/**
+ * @}
+ */
 
 #endif

@@ -1,3 +1,13 @@
+/**
+ * @file virtual_element.hpp
+ * @brief Virtual element for non-interacting ray tracking
+ *
+ * Defines virtual elements that can track rays without optical
+ * interaction, useful for coordinate system definitions and ray tracking.
+ * Virtual elements allow rays to pass through without reflection,
+ * refraction, or absorption, while still recording ray intersections.
+ */
+
 #ifndef SOLTRACE_VIRTUAL_ELEMENT_H
 #define SOLTRACE_VIRTUAL_ELEMENT_H
 
@@ -11,10 +21,10 @@ public:
     VirtualElement();
     virtual ~VirtualElement();
 
-    virtual bool is_virtual() const { return true; }
+    virtual bool is_virtual() const override { return true; }
 
-    void set_front_optical_properties(const OpticalProperties &op) {}
-    void set_back_optical_properties(const OpticalProperties &op) {}
+    void set_front_optical_properties(const OpticalProperties &op) override {}
+    void set_back_optical_properties(const OpticalProperties &op) override {}
 
 private:
 };

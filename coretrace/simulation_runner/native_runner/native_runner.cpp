@@ -302,7 +302,7 @@ RunnerStatus NativeRunner::report_simulation(SimulationResult *result,
 
         intr = make_interaction_record(elid, itype, point);
         rec->add_interaction_record(intr);
-        // Overwrite last cosines every time -- this is wrong.
+        // TODO: Overwrite last cosines every time -- this is wrong.
         // Gives the incoming direction cosines for last interaction.
         rec->set_last_cosines(cosines);
     }

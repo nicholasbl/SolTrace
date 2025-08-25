@@ -683,9 +683,7 @@ bool trace_native(
 					}
 				}
 
-				// // TODO: Make sure below maps to correct element...
-				// // Process Interaction
-				// int k = abs(p_ray->element) - 1;
+				// Process Interaction
 				int_fast64_t k = abs(p_ray->element) - 1;
 				ProcessInteraction(System, myrng, IncludeSunShape,
 								   optics,

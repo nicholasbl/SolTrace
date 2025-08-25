@@ -1,3 +1,13 @@
+/**
+ * @file simulation_parameters.hpp
+ * @brief Simulation parameter definitions and validation
+ *
+ * Defines parameters that control ray tracing simulation behavior,
+ * including ray counts, error modeling options, output settings,
+ * and convergence criteria. Provides validation and default values
+ * for simulation configuration.
+ */
+
 #ifndef SOLTRACE_SIMULATION_PARAMETERS_H
 #define SOLTRACE_SIMULATION_PARAMETERS_H
 

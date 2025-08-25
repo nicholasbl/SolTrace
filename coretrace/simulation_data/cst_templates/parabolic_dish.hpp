@@ -1,3 +1,16 @@
+/**
+ * @file parabolic_dish.hpp
+ * @brief Parabolic dish CST template for dish-Stirling systems
+ *
+ * Defines the ParabolicDish class which generates parabolic dish
+ * concentrator systems with configurable panel layouts, focal receivers,
+ * and tracking capabilities for dish-Stirling solar applications.
+ * Supports radial and angular panel subdivision strategies.
+ *
+ * @defgroup cst_templates CST Templates
+ * @{
+ */
+
 #ifndef SOLTRACE_PARABOLIC_DISH_H
 #define SOLTRACE_PARABOLIC_DISH_H
 
@@ -57,5 +70,9 @@ private:
     double determine_x_coordinate(double x0, double arc_length);
 
 };
+
+/**
+ * @}
+ */
 
 #endif

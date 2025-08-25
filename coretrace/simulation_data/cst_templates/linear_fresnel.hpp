@@ -1,3 +1,16 @@
+/**
+ * @file linear_fresnel.hpp
+ * @brief Linear Fresnel reflector CST template
+ *
+ * Defines the LinearFresnel class which generates linear Fresnel
+ * reflector systems with configurable mirror panels, receiver geometry,
+ * and tracking capabilities for concentrated solar thermal applications.
+ * Supports both focused and flat panel configurations.
+ *
+ * @defgroup cst_templates CST Templates
+ * @{
+ */
+
 #ifndef SOLTRACE_LINEAR_FRESNEL_H
 #define SOLTRACE_LINEAR_FRESNEL_H
 
@@ -66,5 +79,9 @@ private:
     std::vector<single_element_ptr> absorbers;
     std::vector<single_element_ptr> envelope;
 };
+
+/**
+ * @}
+ */
 
 #endif
