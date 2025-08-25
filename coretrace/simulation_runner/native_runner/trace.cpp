@@ -1422,6 +1422,9 @@ Label_9:
 		} while (theta2 > (delop * delop));
 
 		break;
+	default:
+		// TODO: Need an error here.
+		break;
 	}
 
 	/* {Transform to local coordinate system of ray to set up rotation matrices for coord and inverse
@@ -1592,6 +1595,9 @@ Label_50:
 		// case 'F':
 		// 	theta2 = pow(asin(sqrt(myrng())), 2);
 		// 	break;
+	default:
+		// TODO: Add error message here.
+		break;
 	}
 
 	/*{Transform to local coordinate system of ray to set up rotation matrices for coord and inverse

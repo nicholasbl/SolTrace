@@ -36,14 +36,14 @@ target_link_libraries(
 )
 
 if (ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-	target_link_options(UnitTests PRIVATE --coverage)
-	target_link_libraries(UnitTests gcov)
+	target_link_options(RegressionTests PRIVATE --coverage)
+	target_link_libraries(RegressionTests gcov)
 # else()
-# 	target_link_libraries(UnitTests coretrace GTest::gtest_main)
+# 	target_link_libraries(RegressionTests coretrace GTest::gtest_main)
 endif()
 
 if(UNIX)
-	target_link_libraries(UnitTests pthread)
+	target_link_libraries(RegressionTests pthread)
 endif()
 
 add_test(NAME RegressionTests COMMAND RegressionTests)
