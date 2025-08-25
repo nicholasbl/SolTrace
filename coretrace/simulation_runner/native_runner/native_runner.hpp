@@ -2,8 +2,8 @@
 #define SOLTRACE_NATIVE_RUNNER_H
 
 #include "native_runner_types.hpp"
-#include "simulation_result.hpp"
 #include "simulation_runner.hpp"
+#include "simulation_result.hpp"
 
 class NativeRunner : public SimulationRunner
 {

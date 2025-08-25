@@ -56,9 +56,14 @@
 #include <limits>
 #include <vector>
 
+//<<<<<<< HEAD
+//#include "simulation_data/matvec.hpp"
+//#include "element_intersection.hpp"
+//=======
 #include "matvec.hpp"
 #include "determine_element_intersection_new.hpp"
 // #include "element_intersection.hpp"
+//>>>>>>> jm-dev-branch
 #include "native_runner_backend.hpp"
 #include "native_runner_types.hpp"
 #include "treemesh.hpp"

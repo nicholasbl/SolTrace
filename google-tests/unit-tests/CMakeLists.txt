@@ -8,6 +8,7 @@ include_directories(
 	../../coretrace/simulation_results
 	../../coretrace/simulation_runner
 	../../coretrace/simulation_runner/native_runner
+	../../coretrace/simulation_runner/optix_runner
 )
 
 # Add CST template tests subdirectory
@@ -35,6 +36,7 @@ set(UNIT_TEST_SRC
 	calculator_factory_test.cpp
 	native_runner_test.cpp
 	tower_demo.cpp
+	gpu_tower_demo.cpp
 )
 
 add_executable(UnitTests
@@ -46,6 +48,7 @@ target_link_libraries(
     simdata
 	simresult
 	native_runner
+	optix_runner
 	# coretrace
 	GTest::gtest_main
 )
