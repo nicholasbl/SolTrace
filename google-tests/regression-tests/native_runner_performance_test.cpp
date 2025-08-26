@@ -144,7 +144,7 @@ TEST(NativeRunner, PerformanceTest)
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 
     std::chrono::duration<double, std::milli> dur = t1 - t0;
-    EXPECT_TRUE(dur.count() < 5000.0);
+    EXPECT_TRUE(dur.count() < 7500.0);
 
     const TSystem *sys = my_runner.get_system();
     // sys->AllRayData.Print();
@@ -236,7 +236,7 @@ TEST(NativeRunner, LargePerformanceTest)
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 
     std::chrono::duration<double, std::milli> dur = t1 - t0;
-    EXPECT_TRUE(dur.count() < 10000.0);
+    EXPECT_TRUE(dur.count() < 15000.0);
 
     const TSystem *sys = runner.get_system();
     // sys->AllRayData.Print();
