@@ -1,13 +1,17 @@
-#include <cstring>
-#include "simdata_io.hpp"
-#include <ray_source.hpp>
-#include <simulation_data.hpp>
-#include <sun.hpp>
-#include <stage_element.hpp>
-#include <single_element.hpp>
 
-#include <string>
+#include "simdata_io.hpp"
+#include "ray_source.hpp"
+#include "simulation_data.hpp"
+#include "single_element.hpp"
+#include "stage_element.hpp"
+#include "sun.hpp"
+#include "surface.hpp"
+
 #include <array>
+#include <cstring>
+#include <exception>
+#include <sstream>
+#include <string>
 
 int st_sun_position(double lat, double day, double hour,
                     double *x, double *y, double *z)
@@ -39,29 +43,6 @@ int st_sun_position(double lat, double day, double hour,
     *z = cos(Azimuth * deg_to_rad) * cos(Elevation * deg_to_rad);
 
     return 1;
-}
-
-// TODO move to somewhere more appropriate (didn't want to put in surface.cpp)
-static surface_ptr make_surface_from_type(SurfaceType type, const std::vector<double> &args)
-{
-    switch (type)
-    {
-    case CONE:
-        return std::make_shared<Cone>(args[0]);
-    case CYLINDER:
-        return std::make_shared<Cylinder>(args[0]);
-    case FLAT:
-        return std::make_shared<Flat>();
-    case PARABOLA:
-        return std::make_shared<Parabola>(args[0], args[1]);
-    case SPHERE:
-        return std::make_shared<Sphere>(args[0]);
-    case HYPER:
-    case GENERAL_SPENCER_MURTY:
-    case TORUS:
-    default:
-        return nullptr; // TODO Not implemented yet
-    }
 }
 
 DistributionType char_to_distribution(const char dist_char)
@@ -425,7 +406,8 @@ bool process_optics(
 
 bool read_element(
     FILE *fp,
-    std::map<std::string, std::array<OpticalProperties, 2>> &optics_map, element_ptr &el)
+    std::map<std::string, std::array<OpticalProperties, 2>> &optics_map,
+    element_ptr &el)
 {
     char buf[1024];
     read_line(buf, 1023, fp);
@@ -493,14 +475,55 @@ bool read_element(
 
     // Make aperture
     ApertureType aperture_type = char_to_aperture(ShapeIndex);
+    if (aperture_type == ApertureType::APERTURE_UNKNOWN)
+    {
+        std::stringstream ss;
+        ss << "Aperture character " << ShapeIndex
+           << " returned unknown aperture type " << aperture_type;
+        throw std::invalid_argument(ss.str());
+    }
+    
     aperture_ptr ap_ptr = Aperture::make_aperture_from_type(
         aperture_type, aperture_params);
+    if (ap_ptr == nullptr)
+    {
+        std::stringstream ss;
+        ss << "Unable to make aperture pointer -- "
+           << "\nChar: " << ShapeIndex
+           << "\nType: " << aperture_type
+           << "\nParams: [";
+        for (auto cit = aperture_params.cbegin();
+             cit != aperture_params.cend();
+             ++cit)
+        {
+            ss << *cit << ", ";
+        }
+        ss << "]" << std::endl;
+        throw std::runtime_error(ss.str());
+    }
     el->set_aperture(ap_ptr);
 
     // Make surface
     SurfaceType surface_type = char_to_surface(SurfaceIndex);
+    if (surface_type == SurfaceType::SURFACE_UNKNOWN)
+    {
+        std::stringstream ss;
+        ss << "Unknown surface type " << surface_type;
+        throw std::invalid_argument(ss.str());
+    }
     surface_ptr surf_ptr = make_surface_from_type(surface_type, surface_params);
     el->set_surface(surf_ptr);
+    if (surface_type == SurfaceType::CYLINDER)
+    {
+        ap_ptr = el->get_aperture();
+        auto rect = std::dynamic_pointer_cast<Rectangle>(ap_ptr);
+        auto cyl = std::dynamic_pointer_cast<Cylinder>(surf_ptr);
+        if (rect == nullptr || cyl == nullptr)
+        {
+            throw std::invalid_argument("This should not happen!");
+        }
+        rect->x_length = 2.0 * cyl->radius;
+    }
 
     // Set element position and orientation
     el->set_reference_frame_geometry(Vector3d(xyz),
@@ -561,6 +584,7 @@ bool process_stages(
         {
             element_ptr el;
             read_element(fp, optics_map, el);
+            el->set_name(std::to_string(i_element));
             // TODO make virtual if stage is virtual?
 
             if (!Element::is_success(stage->add_element(el)))

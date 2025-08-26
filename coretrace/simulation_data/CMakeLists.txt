@@ -13,6 +13,7 @@ set(SIMDATA_SRC
     simulation_data.cpp
     single_element.cpp
     stage_element.cpp
+    surface.cpp
     virtual_element.cpp
     vector3d.cpp
     cst_templates/heliostat.cpp

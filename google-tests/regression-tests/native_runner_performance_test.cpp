@@ -6,11 +6,13 @@
 #include <native_runner.hpp>
 #include <simulation_data.hpp>
 #include <simulation_result.hpp>
-// #include <parabolic_trough.hpp>
-// #include <single_element.hpp>
 #include <stage_element.hpp>
 #include <sun.hpp>
 #include <surface.hpp>
+
+// #include "split_csv.h"
+
+#include <chrono>
 
 TEST(NativeRunner, PerformanceTest)
 {
@@ -136,8 +138,13 @@ TEST(NativeRunner, PerformanceTest)
     sts = my_runner.setup_simulation(&sdata);
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     // Run simulation runs but returns RunnerStatus::ERROR
+    auto t0 = std::chrono::high_resolution_clock::now();
     sts = my_runner.run_simulation();
+    auto t1 = std::chrono::high_resolution_clock::now();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    std::chrono::duration<double, std::milli> dur = t1 - t0;
+    EXPECT_TRUE(dur.count() < 5000.0);
 
     const TSystem *sys = my_runner.get_system();
     // sys->AllRayData.Print();
@@ -156,6 +163,7 @@ TEST(NativeRunner, PerformanceTest)
         }
     }
 
+    std::cout << "Time: " << dur.count() << " ms" << std::endl;
     std::cout << "Number Absorbed: " << num_absorbed << std::endl;
     std::cout << "Number Interactions: " << n << std::endl;
 
@@ -163,4 +171,136 @@ TEST(NativeRunner, PerformanceTest)
     EXPECT_TRUE(num_absorbed > 0);
 
     // sys->AllRayData.Print();
+}
+
+TEST(NativeRunner, LargePerformanceTest)
+{
+    // Pulling in path variable from CMake and creating path to .stinput sample file
+    std::string sample_path = std::string(PROJECT_DIR) +
+                              std::string("/Power-tower-surround_singlefacet.stinput");
+
+    // Path to .csv exported from Soltrace as ground truth
+    std::string ground_csv_path = PROJECT_DIR +
+                                  std::string("/powertower_example_raydata.csv");
+
+    // std::ifstream csv_file(ground_csv_path);
+    // std::vector<std::vector<std::string>> ground_raydata = split_csv(
+    //     ground_csv_path);
+
+    // const char *file = sample_path.data();
+
+    // // Soltrace case parameters
+    // int nrays = 50000;
+    // int maxrays = 5000000;
+    // int seed = 1; // Any positive integer will produce the same results each time, -1 will be a random seed
+    // int sunshape = 0;
+    // int errors = 0;
+    // int powertower = 0; // Toggles optimizations for power tower cases
+
+    // Create Simuluation Data
+    SimulationData sd;
+
+    // Constants
+    const uint_fast64_t NRAYS = 50000;
+    const double TOL = 1e-4;
+
+    // Read Input File
+    bool success = sd.import_from_file(sample_path);
+    EXPECT_TRUE(success);
+    EXPECT_TRUE(sd.get_number_of_elements() > 0);
+    EXPECT_TRUE(sd.get_number_of_ray_sources() > 0);
+
+    std::cout << "Num Elements: " << sd.get_number_of_elements() << std::endl;
+
+    // Parameters
+    SimulationParameters &params = sd.get_simulation_parameters();
+    params.include_optical_errors = false;
+    params.include_sun_shape_errors = false;
+    params.max_number_of_rays = NRAYS * 100;
+    params.number_of_rays = NRAYS;
+    params.seed = 1;
+
+    // Run Ray Trace
+    NativeRunner runner;
+    runner.disable_point_focus();
+    runner.disable_power_tower();
+    int sts;
+    sts = runner.initialize();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    
+    auto t0 = std::chrono::high_resolution_clock::now();
+    sts = runner.run_simulation();
+    auto t1 = std::chrono::high_resolution_clock::now();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    std::chrono::duration<double, std::milli> dur = t1 - t0;
+    EXPECT_TRUE(dur.count() < 10000.0);
+
+    const TSystem *sys = runner.get_system();
+    // sys->AllRayData.Print();
+    const TRayData *ray_data = &(sys->AllRayData);
+    size_t n = ray_data->Count();
+    uint_fast64_t num_absorbed = 0;
+    for (size_t i = 0; i < n; i++)
+    {
+        double pos[3], cos[3];
+        int elm, stage;
+        unsigned int ray;
+        if (ray_data->Query(i, pos, cos, &elm, &stage, &ray))
+        {
+            if (elm < 0)
+                ++num_absorbed;
+        }
+    }
+
+    std::cout << "Time: " << dur.count() << " ms" << std::endl;
+    std::cout << "Number Absorbed: " << num_absorbed << std::endl;
+    std::cout << "Number Interactions: " << n << std::endl;
+
+    EXPECT_TRUE(n >= NRAYS);
+    EXPECT_TRUE(num_absorbed > 0);
+
+    // const TSystem *sys = runner.get_system();
+    // const TRayData *ray_data = &(sys->AllRayData);
+    // size_t nrdata = ray_data->Count();
+
+    // Vector3d point, cosines;
+    // int element;
+    // int stage;
+    // unsigned int raynum;
+
+    // // Retrieving data from Runner
+    // for (size_t i = 0; i < nrdata; i++)
+    // {
+    //     EXPECT_TRUE(ray_data->Query(i, point.data, cosines.data,
+    //                                 &element, &stage, &raynum));
+
+    //     EXPECT_EQ(element, stoi(ground_raydata[6][i + 1]));
+    //     EXPECT_EQ(stage, stoi(ground_raydata[7][i + 1]));
+    //     EXPECT_EQ(raynum, stoul(ground_raydata[8][i + 1]));
+
+    //     if (element == stoi(ground_raydata[6][i + 1]) &&
+    //         stage == stoi(ground_raydata[7][i + 1]) &&
+    //         raynum == stoul(ground_raydata[8][i + 1]))
+    //     {
+    //         EXPECT_NEAR(point[0], stod(ground_raydata[0][i + 1]), TOL);
+    //         EXPECT_NEAR(point[1], stod(ground_raydata[1][i + 1]), TOL);
+    //         EXPECT_NEAR(point[2], stod(ground_raydata[2][i + 1]), TOL);
+
+    //         EXPECT_NEAR(cosines[0], stod(ground_raydata[3][i + 1]), TOL);
+    //         EXPECT_NEAR(cosines[1], stod(ground_raydata[4][i + 1]), TOL);
+    //         EXPECT_NEAR(cosines[2], stod(ground_raydata[5][i + 1]), TOL);
+    //     }
+    //     else
+    //     {
+    //         std::cout << "Line: " << i
+    //                   << "\nElement: " << element
+    //                   << "\nStage: " << stage
+    //                   << "\nRay Number: " << raynum
+    //                   << std::endl;
+    //         break;
+    //     }
+    // }
 }

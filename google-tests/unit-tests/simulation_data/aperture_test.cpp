@@ -355,3 +355,69 @@ TEST(Aperture, IrregularQuadrilateral)
     EXPECT_TRUE(ap->is_in(1.0, 1.5));
     EXPECT_FALSE(ap->is_in(4.0, 1.0));
 }
+
+TEST(Aperture, MakeApertureFromType)
+{
+    const double TOL = 1e-12;
+    
+    // Test Circle creation
+    std::vector<double> circle_args = {2.0}; // diameter
+    auto circle_ap = Aperture::make_aperture_from_type(ApertureType::CIRCLE, circle_args);
+    ASSERT_TRUE(circle_ap != nullptr);
+    EXPECT_EQ(circle_ap->get_type(), ApertureType::CIRCLE);
+    EXPECT_EQ(circle_ap->diameter_circumscribed_circle(), 2.0);
+    EXPECT_NEAR(circle_ap->aperture_area(), M_PI, TOL);
+    
+    // Test Rectangle creation
+    std::vector<double> rect_args = {3.0, 2.0}; // width, height
+    auto rect_ap = Aperture::make_aperture_from_type(ApertureType::RECTANGLE, rect_args);
+    ASSERT_TRUE(rect_ap != nullptr);
+    EXPECT_EQ(rect_ap->get_type(), ApertureType::RECTANGLE);
+    EXPECT_NEAR(rect_ap->aperture_area(), 6.0, TOL);
+    EXPECT_TRUE(rect_ap->is_in(0.0, 0.0)); // Center should be inside
+    
+    // Test Annulus creation
+    std::vector<double> annulus_args = {1.0, 3.0, 180.0}; // inner_radius, outer_radius, arc_angle
+    auto annulus_ap = Aperture::make_aperture_from_type(ApertureType::ANNULUS, annulus_args);
+    ASSERT_TRUE(annulus_ap != nullptr);
+    EXPECT_EQ(annulus_ap->get_type(), ApertureType::ANNULUS);
+    EXPECT_EQ(annulus_ap->diameter_circumscribed_circle(), 6.0);
+    EXPECT_NEAR(annulus_ap->aperture_area(), 0.5 * M_PI * (9.0 - 1.0), TOL);
+    
+    // Test Hexagon creation
+    std::vector<double> hex_args = {4.0}; // circumscribe_diameter
+    auto hex_ap = Aperture::make_aperture_from_type(ApertureType::HEXAGON, hex_args);
+    ASSERT_TRUE(hex_ap != nullptr);
+    EXPECT_EQ(hex_ap->get_type(), ApertureType::HEXAGON);
+    EXPECT_EQ(hex_ap->diameter_circumscribed_circle(), 4.0);
+    
+    // Test Equilateral Triangle creation
+    std::vector<double> tri_args = {2.0}; // circumscribe_diameter
+    auto tri_ap = Aperture::make_aperture_from_type(ApertureType::EQUILATERAL_TRIANGLE, tri_args);
+    ASSERT_TRUE(tri_ap != nullptr);
+    EXPECT_EQ(tri_ap->get_type(), ApertureType::EQUILATERAL_TRIANGLE);
+    EXPECT_EQ(tri_ap->diameter_circumscribed_circle(), 2.0);
+    
+    // Test Irregular Triangle creation
+    std::vector<double> irregular_tri_args = {0.0, 0.0, 1.0, 2.0, 2.0, 0.0}; // x1,y1, x2,y2, x3,y3
+    auto irregular_tri_ap = Aperture::make_aperture_from_type(ApertureType::IRREGULAR_TRIANGLE, irregular_tri_args);
+    ASSERT_TRUE(irregular_tri_ap != nullptr);
+    EXPECT_EQ(irregular_tri_ap->get_type(), ApertureType::IRREGULAR_TRIANGLE);
+    EXPECT_NEAR(irregular_tri_ap->aperture_area(), 2.0, TOL);
+    
+    // Test Irregular Quadrilateral creation
+    std::vector<double> quad_args = {0.0, 0.0, 3.0, 0.0, 4.0, 2.0, 1.0, 2.0}; // x1,y1, x2,y2, x3,y3, x4,y4
+    auto quad_ap = Aperture::make_aperture_from_type(ApertureType::IRREGULAR_QUADRILATERAL, quad_args);
+    ASSERT_TRUE(quad_ap != nullptr);
+    EXPECT_EQ(quad_ap->get_type(), ApertureType::IRREGULAR_QUADRILATERAL);
+    
+    // Test insufficient arguments - should return null pointer
+    std::vector<double> insufficient_args = {1.0}; // Not enough args for annulus
+    auto null_ap = Aperture::make_aperture_from_type(ApertureType::ANNULUS, insufficient_args);
+    EXPECT_TRUE(null_ap == nullptr);
+    
+    // Test empty arguments
+    std::vector<double> empty_args;
+    auto null_ap2 = Aperture::make_aperture_from_type(ApertureType::CIRCLE, empty_args);
+    EXPECT_TRUE(null_ap2 == nullptr);
+}

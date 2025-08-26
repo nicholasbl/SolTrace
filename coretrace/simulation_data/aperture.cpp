@@ -5,43 +5,64 @@
 #include <cmath>
 #include <vector>
 
+#include <iostream>
+
 aperture_ptr Aperture::make_aperture_from_type(ApertureType type,
-    const std::vector<double>& args)
+                                               const std::vector<double> &args)
 {
+    // std::cout << "Type: " << type
+    //           << " NArgs: " << args.size()
+    //           << std::endl;
     switch (type)
     {
-        case ApertureType::ANNULUS:
-            if (args.size() < 3) break;
-            return std::make_shared<Annulus>(args[0], args[1], args[2]);
-        case ApertureType::CIRCLE:
-            if (args.size() < 1) break;
-            return std::make_shared<Circle>(args[0]);
-        case ApertureType::HEXAGON:
-            if (args.size() < 1) break;
-            return std::make_shared<Hexagon>(args[0]);
-        case ApertureType::RECTANGLE:
-            if (args.size() < 2) break;
-            return std::make_shared<Rectangle>(args[0], args[1]);   // This is assuming centered around the origin
-        case ApertureType::EQUILATERAL_TRIANGLE:
-            if (args.size() < 1) break;
-            return std::make_shared<EqualateralTriangle>(args[0]);
-        case ApertureType::IRREGULAR_TRIANGLE:
-            if (args.size() < 6) break;
-            return std::make_shared<IrregularTriangle>(args[0], args[1], args[2], args[3], args[4], args[5]);
-        case ApertureType::IRREGULAR_QUADRILATERAL:
-            if (args.size() < 8) break;
-            return std::make_shared<IrregularQuadrilateral>(args[0], args[1], args[2], args[3],
-                args[4], args[5], args[6], args[7]);
-        default:
-            // TODO handle error
-            // Unsupported case
+    case ApertureType::ANNULUS:
+        if (args.size() < 3)
             break;
+        return make_aperture<Annulus>(args[0], args[1], args[2]);
+    case ApertureType::CIRCLE:
+        if (args.size() < 1)
+            break;
+        return make_aperture<Circle>(args[0]);
+    case ApertureType::HEXAGON:
+        if (args.size() < 1)
+            break;
+        return make_aperture<Hexagon>(args[0]);
+    case ApertureType::RECTANGLE:
+        if (args.size() < 2)
+            break;
+        return make_aperture<Rectangle>(args[0], args[1]); // This is assuming centered around the origin
+    case ApertureType::EQUILATERAL_TRIANGLE:
+        if (args.size() < 1)
+            break;
+        return make_aperture<EqualateralTriangle>(args[0]);
+    case ApertureType::SINGLE_AXIS_CURVATURE_SECTION:
+        if (args.size() < 3)
+            break;
+        return make_aperture<Rectangle>(
+            args[1] - args[0], args[2], args[0], 0.5 * args[2]);
+    case ApertureType::IRREGULAR_TRIANGLE:
+        if (args.size() < 6)
+            break;
+        return make_aperture<IrregularTriangle>(
+            args[0], args[1], args[2], args[3], args[4], args[5]);
+    case ApertureType::IRREGULAR_QUADRILATERAL:
+        if (args.size() < 8)
+            break;
+        return make_aperture<IrregularQuadrilateral>(
+            args[0], args[1], args[2], args[3],
+            args[4], args[5], args[6], args[7]);
+    default:
+        // TODO handle error
+        // Unsupported case
+        return nullptr;
+        // break;
     }
 
     // TODO handle error
     // Wrong number of arguments
 
-    return aperture_ptr();
+    return nullptr;
+    // return aperture_ptr();
 }
 
 double Annulus::aperture_area() const
@@ -389,5 +410,3 @@ bool inquad(double x1, double y1,
     return (intri(x1, y1, x2, y2, x3, y3, xt, yt) ||
             intri(x1, y1, x3, y3, x4, y4, xt, yt));
 }
-
-
