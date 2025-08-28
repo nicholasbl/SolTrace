@@ -223,7 +223,7 @@ TEST(LinearFresnel, Tracing)
 
     auto lf = make_element<LinearFresnel>();
     lf->set_optics(mirror, absorber, envelop_out, envelop_in);
-    lf->set_origin(10.0, -10.0, 0.0);
+    lf->set_origin(0.0, 0.0, 0.0);
     lf->set_aperture_size(6.0, 12.0);
     lf->set_number_panels(2, 2);
     lf->set_gaps(0.05, 0.02, 0.15);
@@ -236,8 +236,8 @@ TEST(LinearFresnel, Tracing)
 
     auto sun = make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 1000.0);
-    double NaN = std::numeric_limits<double>::quiet_NaN();
-    sun->set_shape(DistributionType::GAUSSIAN, NaN, NaN);
+    // double NaN = std::numeric_limits<double>::quiet_NaN();
+    sun->set_shape(DistributionType::GAUSSIAN, 1.0, 0.0);
     my_sim.add_ray_source(sun);
 
     // Assumes that reference and global coordinates are the same

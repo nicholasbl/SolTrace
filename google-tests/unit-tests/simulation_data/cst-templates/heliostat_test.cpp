@@ -245,8 +245,7 @@ TEST(HelioStat, Trace)
 
     auto sun = make_ray_source<Sun>();
     sun->set_position(sun_pos);
-    double NaN = std::numeric_limits<double>::quiet_NaN();
-    sun->set_shape(DistributionType::PILLBOX, NaN, NaN);
+    sun->set_shape(DistributionType::GAUSSIAN, 1.0, 0.0);
     my_sim.add_ray_source(sun);
 
     // // We can go over all the elements added

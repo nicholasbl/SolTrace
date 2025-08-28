@@ -276,9 +276,10 @@ void LinearFresnel::create_geometry()
         {
             mirror = make_element<SingleElement>();
 
-            // TODO: Need to adjust aim point when using flat panels
             origin.set_values(panel_x, panel_y, 0.0);
             vector_add(1.0, receiver_pos, -1.0, origin, aim);
+            vector_add(0.5, khat, 0.5, aim);
+            vector_add(1.0, origin, 1.0, aim);
             mirror->set_reference_frame_geometry(origin, aim, 0.0);
 
             ap = make_aperture<Rectangle>(panel_len_x, panel_len_y);
@@ -309,7 +310,7 @@ void LinearFresnel::create_geometry()
             if (!Element::is_success(sts))
             {
                 // TODO: Make this more helpful
-                throw std::runtime_error("Failed to add absorber element");
+                throw std::runtime_error("Failed to add mirror element");
             }
 
             panel_y += panel_len_y + this->gap_y;

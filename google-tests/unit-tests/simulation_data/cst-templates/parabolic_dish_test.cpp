@@ -97,8 +97,8 @@ TEST(ParabolicDish, Tracing)
 
     auto sun = make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 1000.0);
-    double NaN = std::numeric_limits<double>::quiet_NaN();
-    sun->set_shape(DistributionType::PILLBOX, NaN, NaN);
+    // double NaN = std::numeric_limits<double>::quiet_NaN();
+    sun->set_shape(DistributionType::PILLBOX, 0.0, 1.0);
     my_sim.add_ray_source(sun);
     
     // Assumes that reference and global coordinates are the same
