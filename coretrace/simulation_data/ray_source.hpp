@@ -11,6 +11,7 @@
 #ifndef SOLTRACE_RAY_SOURCE_H
 #define SOLTRACE_RAY_SOURCE_H
 
+#include <limits>
 #include <map>
 
 #include "container.hpp"
