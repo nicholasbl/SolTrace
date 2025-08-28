@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <arclength.hpp>
+#include <cst_templates/arclength.hpp>
 #include <native_runner.hpp>
 #include <native_runner_types.hpp>
 #include <simulation_data.hpp>
@@ -268,4 +268,21 @@ TEST(ParabolicDish, ErrorChecking_CreateGeometryWithoutParameters)
     // Set receiver dimensions and it should work
     dish->set_receiver_dimensions(0.25, 7.25);
     EXPECT_NO_THROW(dish->create_geometry());
+}
+
+TEST(ParabolicDish, ErrorChecking_UpdateGeometry)
+{
+    auto dish = make_element<ParabolicDish>();
+    dish->set_aperture_size(10.0);
+    dish->set_number_of_panels(2, 2);
+    dish->set_gaps(0.02, 0.01, 0.5);
+    dish->set_focal_length(7.5);
+    dish->set_receiver_dimensions(0.25, 7.25);
+
+    EXPECT_THROW(dish->update_geometry(20.0, 30.0), std::invalid_argument);
+    
+    dish->create_geometry();
+    EXPECT_THROW(dish->update_geometry(20.0, -30.0), std::invalid_argument);
+
+    EXPECT_NO_THROW(dish->update_geometry(20.0, 30.0));
 }

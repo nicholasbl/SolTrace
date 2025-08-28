@@ -210,6 +210,8 @@ int ElementBase::compute_coordinate_rotations()
         compute_transform_matrices(this->euler_angles,
                                    this->reference_to_local,
                                    this->local_to_reference);
+
+        this->coordinates_initialized = true;
     }
 
     return sts;

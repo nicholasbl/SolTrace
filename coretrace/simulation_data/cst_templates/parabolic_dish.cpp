@@ -7,6 +7,7 @@
 #include <stdexcept>
 
 #include "arclength.hpp"
+#include "sun_utilities.hpp"
 
 ParabolicDish::ParabolicDish() : CompositeElement(),
                                  initialized(false),
@@ -21,9 +22,14 @@ ParabolicDish::ParabolicDish() : CompositeElement(),
                                  num_panels_a(-1),
                                  abs_diameter(-1.0),
                                  abs_distance(-1.0),
-                                 tracking_elevation(-1.0),
-                                 tracking_azimuth(-1.0)
+                                 tracking_elevation(90.0),
+                                 tracking_azimuth(90.0)
 {
+    // Default position is pointing straight up and facing the east
+    this->elevation_axis.set_values(1.0, 0.0, 0.0);
+    sun_position_vector_degrees(this->sun_position,
+                                this->tracking_azimuth,
+                                this->tracking_elevation);
 }
 
 ParabolicDish::~ParabolicDish()
@@ -148,9 +154,55 @@ void ParabolicDish::create_geometry()
     return;
 }
 
-void ParabolicDish::update_geometry()
+void ParabolicDish::update_geometry(double azimuth, double elevation)
 {
-    // TODO: Implment this
+    if (elevation < 0.0)
+    {
+        // TODO: Is this the right thing to do here?
+        std::stringstream ss;
+        ss << "ParabolicDish::update_geometry: Invalid elevation ("
+           << elevation << "). Sun below the horizon.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (!this->initialized)
+    {
+        // TODO: Is this the right thing to do here?
+        // this->create_geometry();
+        std::stringstream ss;
+        ss << "ParabolicDish::update_geometry: Uninitialized. "
+           << "Call create_geometry() first.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    this->coordinates_initialized = false;
+
+    // double prev_az = this->tracking_azimuth;
+    // double prev_el = this->tracking_elevation;
+    this->tracking_azimuth = azimuth;
+    this->tracking_elevation = elevation;
+
+    // z rotation is rotation about z-axis measured counterclockwise from
+    // x-axis. Azimuth is rotation about z-axis measured clockwise from
+    // y-axis.
+    this->set_zrot(90.0 - azimuth);
+
+    sun_position_vector_degrees(this->sun_position, azimuth, elevation);
+    if (this->reference_element == nullptr)
+    {
+        // Reference coordinates are global -- just point at the sun
+        this->set_aim_vector(this->sun_position);
+    }
+    else
+    {
+        // Need to convert global sun position to reference coordinates
+        // and then set the aim point
+        this->reference_element->convert_global_to_local(
+            this->aim, this->sun_position);
+    }
+
+    this->compute_coordinate_rotations();
+
     return;
 }
 

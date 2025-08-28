@@ -35,8 +35,10 @@ public:
                     const OpticalProperties &absorber);
     void set_receiver_dimensions(double diameter, double distance);
 
+    // Call before adding element to simulation data or stage
     void create_geometry();
-    void update_geometry();
+    // Call after adding element to simulation data or stage
+    void update_geometry(double azimuth, double elevation);
 
     virtual void enforce_user_fields_set() const override;
 
@@ -60,9 +62,14 @@ private:
     double abs_distance;
     OpticalProperties optics_absorber;
 
+    // Follows solar azimuth, elevation convention:
+    // Azimuth is angle clockwise from north (y-axis) in degrees
+    // Elevation is angle above the horizon (xy-plane) in degrees
     double tracking_elevation;
     double tracking_azimuth;
+    // Defines the direction about which the dish can change its elevation
     Vector3d elevation_axis;
+    Vector3d sun_position;
 
     std::vector<single_element_ptr> mirrors;
     std::vector<single_element_ptr> absorbers;

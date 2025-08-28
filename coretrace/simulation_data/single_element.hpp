@@ -54,6 +54,7 @@ public:
     virtual void set_surface(surface_ptr sp) override
     {
         this->surface = sp;
+        return;
     }
 
     const OpticalProperties *get_front_optical_properties() const override
@@ -67,6 +68,7 @@ public:
     void set_front_optical_properties(const OpticalProperties &op) override
     {
         this->optics_front = op;
+        return;
     }
 
     const OpticalProperties *get_back_optical_properties() const override

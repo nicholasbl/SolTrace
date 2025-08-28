@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <arclength.hpp>
+#include <cst_templates/arclength.hpp>
 #include <native_runner.hpp>
 #include <native_runner_types.hpp>
 #include <simulation_data.hpp>
