@@ -121,9 +121,10 @@ Matrix3d ElementBase::get_stage_to_local() const
     Matrix3d stage_to_local;
     if (this->is_stage())
     {
-        stage_to_local.set_value(0, 0, 1.0);
-        stage_to_local.set_value(1, 1, 1.0);
-        stage_to_local.set_value(2, 2, 1.0);
+        // stage_to_local.set_value(0, 0, 1.0);
+        // stage_to_local.set_value(1, 1, 1.0);
+        // stage_to_local.set_value(2, 2, 1.0);
+        stage_to_local.identity();
     }
     else if (this->reference_element == nullptr)
     {
@@ -231,7 +232,9 @@ int ElementBase::set_reference_frame_geometry(const Vector3d &origin,
 int ElementBase::convert_reference_to_local(Vector3d &local,
                                             const Vector3d &ref)
 {
-    matrix_vector_product(this->reference_to_local, ref, local);
+    Vector3d temp;
+    vector_add(1.0, ref, -1.0, this->origin, temp);
+    matrix_vector_product(this->reference_to_local, temp, local);
     return 0;
 }
 
@@ -280,7 +283,9 @@ int ElementBase::convert_global_to_local(Vector3d &local,
 int ElementBase::convert_local_to_reference(Vector3d &ref,
                                             const Vector3d &local)
 {
-    matrix_vector_product(this->local_to_reference, local, ref);
+    Vector3d temp;
+    matrix_vector_product(this->local_to_reference, local, temp);
+    vector_add(1.0, temp, 1.0, this->origin, ref);
     return 0;
 }
 

@@ -448,10 +448,37 @@ TEST(Element, CoordinateComputations)
     EXPECT_TRUE(is_identical(el->get_aim_vector_ref(), aim1, TOL));
     EXPECT_TRUE(is_identical(el->get_aim_vector_stage(), el->get_aim_vector_ref(), TOL));
     matrix_vector_product(Q2t, aim1, result_vec);
+    vector_add(1.0, Origin2, 1.0, result_vec);
     EXPECT_TRUE(is_identical(el->get_aim_vector_global(), result_vec, TOL));
 
     // TODO: Need test for convert_stage_to_local
     // TODO: Need test for convert_global_to_local
+
+    Vector3d v_local(-1.0, 2.0, 4.0);
+    Vector3d v_stage;
+    Vector3d v_global;
+    matrix_vector_product(Q1t, v_local, v_stage);
+    vector_add(1.0, Origin1, 1.0, v_stage);
+    matrix_vector_product(Q2t, v_stage, v_global);
+    vector_add(1.0, Origin2, 1.0, v_global);
+
+    Vector3d result;
+    
+    el->convert_local_to_stage(result, v_local);
+    EXPECT_TRUE(is_identical(result, v_stage, TOL));
+    result.zero();
+
+    el->convert_stage_to_local(result, v_stage);
+    EXPECT_TRUE(is_identical(result, v_local, TOL));
+    result.zero();
+    
+    el->convert_local_to_global(result, v_local);
+    EXPECT_TRUE(is_identical(result, v_global, TOL));
+    result.zero();
+
+    el->convert_global_to_local(result, v_global);
+    EXPECT_TRUE(is_identical(result, v_local, TOL));
+
 }
 
 TEST(Element, SingleElementEnforceUserFieldsSet)
