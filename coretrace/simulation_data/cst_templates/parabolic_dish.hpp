@@ -42,6 +42,11 @@ public:
 
     virtual void enforce_user_fields_set() const override;
 
+    const Vector3d& get_elevation_axis() const
+    {
+        return this->elevation_axis;
+    }
+
 private:
     bool initialized;
 

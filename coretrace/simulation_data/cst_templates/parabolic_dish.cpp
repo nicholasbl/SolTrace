@@ -56,7 +56,7 @@ void ParabolicDish::create_geometry()
     /**** Create mirror elements ****/
     double r = this->aperture_radius;
     double cx = this->cx;
-    double arc_length = r * sqrt(cx * r * cx * r) + asinh(r * cx) / cx;
+    double arc_length = r * sqrt(cx * r * cx * r + 1.0) + asinh(r * cx) / cx;
     double panel_arc_length = 0.5 * arc_length -
                               this->gap_r * (this->num_panels_r - 1);
 
@@ -82,7 +82,7 @@ void ParabolicDish::create_geometry()
 
     single_element_ptr mirror;
     Vector3d origin(0.0, 0.0, 0.0);
-    Vector3d aim(0.0, 0.0, 100.0);
+    Vector3d aim(0.0, 0.0, 1000.0);
     double zrot = 0.0;
 
     if (this->gap_center <= 0.0 &&
@@ -182,12 +182,8 @@ void ParabolicDish::update_geometry(double azimuth, double elevation)
     this->tracking_azimuth = azimuth;
     this->tracking_elevation = elevation;
 
-    // z rotation is rotation about z-axis measured counterclockwise from
-    // x-axis. Azimuth is rotation about z-axis measured clockwise from
-    // y-axis.
-    this->set_zrot(90.0 - azimuth);
-
     sun_position_vector_degrees(this->sun_position, azimuth, elevation);
+    this->sun_position.scalar_mult(1000.0);
     if (this->reference_element == nullptr)
     {
         // Reference coordinates are global -- just point at the sun
@@ -200,6 +196,14 @@ void ParabolicDish::update_geometry(double azimuth, double elevation)
         this->reference_element->convert_global_to_local(
             this->aim, this->sun_position);
     }
+
+    Vector3d aim_proj;
+    // Get aim direction (not point)
+    vector_add(-1.0, this->origin, 1.0, this->aim, aim_proj);
+    // Project into reference xy-plane
+    aim_proj[2] = 0.0;
+    double theta = acos(aim_proj[0] / vector_norm(aim_proj));
+    this->set_zrot_radians(theta);
 
     this->compute_coordinate_rotations();
 

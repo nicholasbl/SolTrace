@@ -76,7 +76,7 @@ void Heliostat::create_geometry()
             if (this->canting_method == NONE)
             {
                 origin.set_values(panel_x, panel_y, 0.0);
-                aim.set_values(panel_x, panel_y, 1.0);
+                aim.set_values(panel_x, panel_y, 1000.0);
             }
             else if (this->canting_method == ON_AXIS)
             {

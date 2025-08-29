@@ -278,8 +278,11 @@ void LinearFresnel::create_geometry()
 
             origin.set_values(panel_x, panel_y, 0.0);
             vector_add(1.0, receiver_pos, -1.0, origin, aim);
+            make_unit_vector(aim);
             vector_add(0.5, khat, 0.5, aim);
             vector_add(1.0, origin, 1.0, aim);
+            make_unit_vector(aim);
+            aim.scalar_mult(1000.0);
             mirror->set_reference_frame_geometry(origin, aim, 0.0);
 
             ap = make_aperture<Rectangle>(panel_len_x, panel_len_y);

@@ -57,9 +57,7 @@ Vector3d ElementBase::get_origin_stage() const
     }
     else
     {
-        vector_add(1.0, ref_el->get_origin_stage(),
-                   1.0, this->origin,
-                   origin_stage);
+        ref_el->convert_local_to_stage(origin_stage, this->origin);
     }
     return origin_stage;
 }
@@ -74,9 +72,7 @@ Vector3d ElementBase::get_origin_global() const
     }
     else
     {
-        vector_add(1.0, ref_el->get_origin_global(),
-                   1.0, this->origin,
-                   origin_global);
+        ref_el->convert_local_to_global(origin_global, this->origin);
     }
     return origin_global;
 }

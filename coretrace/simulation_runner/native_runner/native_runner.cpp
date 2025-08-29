@@ -60,7 +60,7 @@ RunnerStatus NativeRunner::setup_sun(const SimulationData *data)
     // TODO: This should throw an error...
     // Get RaySource data (this runner assumes there is only the Sun)
     assert(data->get_number_of_ray_sources() == 1);
-    // this->tsys.Sun.set_values(data->get_ray_source());
+
     ray_source_ptr sun = data->get_ray_source();
     vector_copy(this->tsys.Sun.Origin, sun->get_position());
     this->tsys.Sun.ShapeIndex = sun->get_shape();

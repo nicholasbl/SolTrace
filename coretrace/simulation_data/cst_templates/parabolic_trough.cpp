@@ -101,7 +101,7 @@ void ParabolicTrough::create_geometry()
             //           << std::endl;
 
             origin.set_values(0.0, ycoord, 0.0);
-            aim.set_values(0.0, ycoord, 1.0);
+            aim.set_values(0.0, ycoord, 1000.0);
 
             panel = make_element<SingleElement>();
             panel->set_name("ParabolicMirror");
