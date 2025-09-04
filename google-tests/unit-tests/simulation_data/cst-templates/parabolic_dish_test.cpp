@@ -7,7 +7,7 @@
 
 #include <cst_templates/arclength.hpp>
 #include <cst_templates/parabolic_dish.hpp>
-#include <cst_templates/sun_utilities.hpp>
+#include <cst_templates/utilities.hpp>
 
 TEST(ParabolicDish, ArcLength)
 {
@@ -170,6 +170,7 @@ TEST(ParabolicDish, Tracing)
 TEST(ParabolicDish, UpdateGeometry)
 {
     const uint_fast64_t NRAYS = 10000;
+    const uint_fast64_t N_ABS_THRESH = 1000;
     const double sun_az = 180.0;
     const double sun_el = 45.0;
 
@@ -298,7 +299,7 @@ TEST(ParabolicDish, UpdateGeometry)
     // ray_data->Print();
 
     EXPECT_TRUE(n >= NRAYS);
-    EXPECT_TRUE(num_absorbed > 0);
+    EXPECT_TRUE(num_absorbed >= N_ABS_THRESH);
 }
 
 // Error Checking Tests for ParabolicDish

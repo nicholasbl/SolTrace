@@ -8,7 +8,9 @@
 #include "aperture.hpp"
 #include "arclength.hpp"
 #include "composite_element.hpp"
+#include "constants.hpp"
 #include "element.hpp"
+#include "utilities.hpp"
 #include "surface.hpp"
 
 ParabolicTrough::ParabolicTrough()
@@ -27,11 +29,12 @@ ParabolicTrough::ParabolicTrough()
       absorber_diameter(-1.0),
       envelope_diameter(-1.0),
       envelope_thickness(-1.0),
-      //   length(1.0),
+      tracking_angle(90.0),
       tracking_limit_lower(-1.0),
       tracking_limit_upper(-1.0)
 {
-    this->rotation_axis.set_values(1.0, 0.0, 0.0);
+    this->rotation_axis.set_values(0.0, 1.0, 0.0);
+    this->neutral_normal.set_values(0.0, 0.0, 1.0);
     return;
 }
 
@@ -197,15 +200,77 @@ void ParabolicTrough::create_geometry()
     }
 
     this->enable();
+
+    this->rotation_axis.make_unit();
+    this->neutral_normal.make_unit();
+
+    rotate_vector_degrees(this->rotation_axis,
+                          this->neutral_normal,
+                          this->tracking_limit_lower,
+                          this->normal_lower_limit);
+    this->normal_lower_limit.make_unit();
+
+    rotate_vector_degrees(this->rotation_axis,
+                          this->neutral_normal,
+                          this->tracking_limit_upper,
+                          this->normal_upper_limit);
+    this->normal_upper_limit.make_unit();
+
     this->initialized = true;
 
     return;
 }
 
-void ParabolicTrough::update_geometry(double solar_azimuth,
-                                      double solar_elevetion)
+void ParabolicTrough::update_geometry(double azimuth,
+                                      double elevation)
 {
-    // TODO: Implement...
+
+    Vector3d sun_pos;
+    sun_position_vector_degrees(sun_pos, azimuth, elevation);
+    make_unit_vector(sun_pos);
+    // this->convert_global_to_reference(sun_pos_ref, sun_pos_global);
+    // make_unit_vector(sun_pos_ref);
+
+    // Project into the plane defined by rotation axis as the normal
+    Vector3d sun_proj;
+    project_onto_plane(this->rotation_axis, sun_pos, sun_proj);
+    make_unit_vector(sun_proj);
+
+    assert(dot_product(sun_proj, this->rotation_axis) < 1e-12);
+
+    double theta = acos(dot_product(sun_proj, this->neutral_normal));
+    theta = theta * R2D + 90.0;
+    if (theta < this->tracking_limit_lower)
+    {
+        this->tracking_angle = this->tracking_limit_lower;
+        this->convert_global_to_reference(this->aim,
+                                          this->normal_lower_limit);
+    }
+    else if (theta > this->tracking_limit_upper)
+    {
+        this->tracking_angle = this->tracking_limit_upper;
+        this->convert_global_to_reference(this->aim,
+                                          this->normal_upper_limit);
+    }
+    else
+    {
+        this->tracking_angle = theta;
+        this->convert_global_to_reference(this->aim, sun_proj);
+    }
+
+    Vector3d rotation_axis_ref;
+    this->aim.make_unit();
+    double beta = asin(this->aim[1]);
+    this->convert_global_to_reference(rotation_axis_ref,
+                                      this->rotation_axis);
+    double gamma = acos(rotation_axis_ref[2] / cos(beta));
+
+    this->set_zrot_radians(gamma);
+    this->aim.scalar_mult(1000.0);
+    vector_add(1.0, this->origin, 1.0, this->aim);
+
+    this->compute_coordinate_rotations();
+
     return;
 }
 
@@ -213,6 +278,16 @@ double ParabolicTrough::calculate_receiver_power()
 {
     // TODO: Implement...
     return 0.0;
+}
+
+double ParabolicTrough::get_tracking_angle_degrees() const
+{
+    return this->tracking_angle;
+}
+
+double ParabolicTrough::get_tracking_angle_radians() const
+{
+    return D2R * this->get_tracking_angle_degrees();
 }
 
 void ParabolicTrough::set_angles(double azimuth, double tilt)
@@ -225,24 +300,48 @@ void ParabolicTrough::set_angles(double azimuth, double tilt)
         throw std::invalid_argument(ss.str());
     }
 
-    if (tilt < -90.0 || tilt > 90.0)
+    if (tilt < 0.0 || tilt > 90.0)
     {
         std::stringstream ss;
         ss << "ParabolicTrough::set_angles: Invalid tilt angle ("
-           << tilt << "). Must be between -90 and 90 degrees.";
+           << tilt << "). Must be between 0 and 90 degrees.";
         throw std::invalid_argument(ss.str());
     }
 
     // this->initialized = false;
+    this->coordinates_initialized = false;
     this->azimuth = azimuth;
     this->tilt = tilt;
 
-    double az = this->azimuth * M_PI / 180.0;
-    double inc = this->tilt * M_PI / 180.0;
+    Vector3d xaxis(1.0, 0.0, 0.0);
+    Vector3d yaxis(0.0, 1.0, 0.0);
+    Vector3d zaxis(0.0, 0.0, 1.0);
+    Vector3d temp;
 
-    this->rotation_axis.set_values(sin(inc) * cos(az),
-                                   sin(inc) * sin(az),
-                                   cos(az));
+    // Convert input angles to spherical coordinate angles
+    double az = azimuth * D2R;
+    double el = tilt * D2R;
+    double pol = 0.5 * PI - az;
+    double inc = 0.5 * PI - el;
+
+    // Convert spherical coordinates to cartesian coordinates
+    // y-axis
+    this->rotation_axis.set_values(sin(inc) * cos(pol),
+                                   sin(inc) * sin(pol),
+                                   cos(inc));
+
+    // z-axis
+    inc -= 0.5 * PI;
+    this->neutral_normal.set_values(sin(inc) * cos(pol),
+                                    sin(inc) * sin(pol),
+                                    cos(inc));
+
+    // // x-axis -- not checked
+    // inc += 0.5 * PI;
+    // pol -= 0.5 * PI;
+    // this->neutral_normal.set_values(sin(inc) * cos(pol),
+    //                                 sin(inc) * sin(pol),
+    //                                 cos(inc));
 
     return;
 }

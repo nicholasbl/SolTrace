@@ -62,6 +62,17 @@ public:
     void scalar_mult(double alpha);
 
     /**
+     * @brief Make the vector a unit vector
+     */
+    void make_unit();
+
+    /**
+     * @brief Compute Euclidean vector norm
+     * @return Euclidean norm
+     */
+    double norm() const;
+
+    /**
      * @brief Const access operator
      * @param idx Component index (0=x, 1=y, 2=z)
      * @return Const reference to component
@@ -190,6 +201,14 @@ void vector_min(const Vector3d &x, const Vector3d &y, Vector3d &min);
  * @return Dot product x·y
  */
 double dot_product(const Vector3d &x, const Vector3d &y);
+
+/**
+ * @brief Compute standard Euclidean cross product
+ * @param u First vector
+ * @param v Second vector
+ * @param w Result vector
+ */
+void cross_product(const Vector3d &u, const Vector3d &v, Vector3d &w);
 
 /**
  * @brief Compute Euclidean norm (length) of vector

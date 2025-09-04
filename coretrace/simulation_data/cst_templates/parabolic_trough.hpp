@@ -41,7 +41,7 @@ public:
     // void remove_self(SimulationData &sd);
 
     void create_geometry();
-    void update_geometry(double solar_azimuth, double solar_elevation);
+    void update_geometry(double azimuth, double elevation);
 
     double calculate_receiver_power();
 
@@ -66,15 +66,31 @@ public:
 
     virtual void enforce_user_fields_set() const override;
 
+    Vector3d get_rotation_vector() const
+    {
+        return this->rotation_axis;
+    }
+    Vector3d get_neutral_normal() const
+    {
+        return this->neutral_normal;
+    }
+
+    double get_tracking_angle_degrees() const;
+    double get_tracking_angle_radians() const;
+
 private:
     // Flags
     bool initialized;
     // bool ready_to_add_self;
 
     // Global Characteristics
+    // Degrees from north (GLOBAL y-axis)
     double azimuth;
+    // Degrees from ground plane (GLOBAL z-axis)
     double tilt;
+    // Axis trough rotates about in GLOBAL coordinates
     Vector3d rotation_axis;
+    Vector3d neutral_normal;
 
     // Reflector(s) Characteristic(s)
     double aperture_size_x;
@@ -98,8 +114,13 @@ private:
     OpticalProperties optics_envelope_outer;
 
     // Solar Tracking
+    double tracking_angle;
     double tracking_limit_lower;
     double tracking_limit_upper;
+    // Aperture normal at lower limit in global coordinate
+    Vector3d normal_lower_limit;
+    // Aperture normal at upper limit in global coordinate
+    Vector3d normal_upper_limit;
 
     // Element Management
     // composite_element_ptr elements;

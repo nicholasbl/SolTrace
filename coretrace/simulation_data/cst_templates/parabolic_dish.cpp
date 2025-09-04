@@ -6,8 +6,12 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "aperture.hpp"
 #include "arclength.hpp"
-#include "sun_utilities.hpp"
+#include "composite_element.hpp"
+#include "element.hpp"
+#include "utilities.hpp"
+#include "surface.hpp"
 
 ParabolicDish::ParabolicDish() : CompositeElement(),
                                  initialized(false),
@@ -156,12 +160,19 @@ void ParabolicDish::create_geometry()
 
 void ParabolicDish::update_geometry(double azimuth, double elevation)
 {
-    if (elevation < 0.0)
+    if (elevation < 0.0 || elevation > 90.0)
     {
-        // TODO: Is this the right thing to do here?
         std::stringstream ss;
         ss << "ParabolicDish::update_geometry: Invalid elevation ("
-           << elevation << "). Sun below the horizon.";
+           << elevation << "). Elevation must lie between 0 and 90 degrees.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (azimuth < 0.0 || azimuth > 360.0)
+    {
+        std::stringstream ss;
+        ss << "ParabolicDish::update_geometry: Invalid azimuth ("
+           << elevation << "). Azimuth must lie between 0 and 360 degrees.";
         throw std::invalid_argument(ss.str());
     }
 
@@ -184,18 +195,7 @@ void ParabolicDish::update_geometry(double azimuth, double elevation)
 
     sun_position_vector_degrees(this->sun_position, azimuth, elevation);
     this->sun_position.scalar_mult(1000.0);
-    if (this->reference_element == nullptr)
-    {
-        // Reference coordinates are global -- just point at the sun
-        this->set_aim_vector(this->sun_position);
-    }
-    else
-    {
-        // Need to convert global sun position to reference coordinates
-        // and then set the aim point
-        this->reference_element->convert_global_to_local(
-            this->aim, this->sun_position);
-    }
+    this->convert_global_to_reference(this->aim, this->sun_position);
 
     Vector3d aim_proj;
     // Get aim direction (not point)

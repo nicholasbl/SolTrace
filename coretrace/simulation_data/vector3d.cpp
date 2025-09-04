@@ -64,6 +64,17 @@ void Vector3d::scalar_mult(double alpha)
     return;
 }
 
+void Vector3d::make_unit()
+{
+    make_unit_vector(*this);
+    return;
+}
+
+double Vector3d::norm() const
+{
+    return vector_norm(*this);
+}
+
 const double &Vector3d::operator[](int idx) const
 {
     assert(idx >= 0 && idx < 3);
@@ -203,6 +214,15 @@ void vector_min(const Vector3d &x, const Vector3d &y, Vector3d &min)
 double dot_product(const Vector3d &x, const Vector3d &y)
 {
     return DOT(x.data, y.data);
+}
+
+void cross_product(const Vector3d &u, const Vector3d &v, Vector3d &w)
+{
+    double w0 = u[1] * v[2] - u[2] * v[1];
+    double w1 = u[2] * v[0] - u[0] * v[2];
+    double w2 = u[0] * v[1] - u[1] * v[0];
+    w.set_values(w0, w1, w2);
+    return;
 }
 
 double vector_norm(const Vector3d &x)

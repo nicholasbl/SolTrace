@@ -21,13 +21,14 @@ set(SIMDATA_SRC
     cst_templates/linear_fresnel.cpp
     cst_templates/parabolic_dish.cpp
     cst_templates/parabolic_trough.cpp
-    cst_templates/sun_utilities.cpp
+    cst_templates/utilities.cpp
 )
 
 # Only headers in simulation_data (including cst_templates subfolder)
 set(SIMDATA_HDRS
     aperture.hpp
     composite_element.hpp
+    constants.hpp
     container.hpp
     datetime.hpp
     element.hpp
@@ -49,7 +50,7 @@ set(SIMDATA_HDRS
     cst_templates/linear_fresnel.hpp
     cst_templates/parabolic_dish.hpp
     cst_templates/parabolic_trough.hpp
-    cst_templates/sun_utilities.hpp
+    cst_templates/utilities.hpp
 )
 
 source_group("Header Files" FILES ${SIMDATA_HDRS})

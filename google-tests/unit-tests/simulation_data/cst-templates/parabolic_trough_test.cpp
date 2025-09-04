@@ -7,6 +7,7 @@
 #include <sun.hpp>
 
 #include <cst_templates/parabolic_trough.hpp>
+#include <cst_templates/utilities.hpp>
 
 // Error Checking Tests for ParabolicTrough
 TEST(ParabolicTrough, ErrorChecking_SetApertureSize)
@@ -241,7 +242,7 @@ TEST(ParabolicTrough, Tracing)
 
     auto sun = make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 1000.0);
-	// double NaN = std::numeric_limits<double>::quiet_NaN();
+    // double NaN = std::numeric_limits<double>::quiet_NaN();
     sun->set_shape(DistributionType::PILLBOX, 0.0, 1.0);
     my_sim.add_ray_source(sun);
 
@@ -314,4 +315,144 @@ TEST(ParabolicTrough, Tracing)
 
     EXPECT_TRUE(n >= NRAYS);
     EXPECT_TRUE(num_absorbed > 0);
+}
+
+TEST(ParabolicTrough, UpdateGeometry)
+{
+    constexpr uint_fast64_t NRAYS = 10000;
+    constexpr uint_fast64_t N_ABSORBED_THRESH = NRAYS / 10;
+
+    const double sun_az = 180.0;
+    const double sun_el = 45.0;
+
+    SimulationData my_sim;
+    // Set parameters
+    SimulationParameters &params = my_sim.get_simulation_parameters();
+    params.number_of_rays = NRAYS;
+    params.max_number_of_rays = params.number_of_rays * 100;
+    params.include_optical_errors = true;
+    params.include_sun_shape_errors = true;
+    params.seed = 123;
+
+    NativeRunner my_runner;
+    my_runner.disable_power_tower();
+    my_runner.disable_point_focus();
+
+    OpticalProperties mirror;
+    mirror.set_ideal_reflection();
+    mirror.slope_error = 1.5;
+    mirror.specularity_error = 0.5;
+
+    OpticalProperties absorber;
+    absorber.set_ideal_absorption();
+    absorber.slope_error = 1e-5;
+    absorber.specularity_error = 1e-5;
+
+    OpticalProperties envelop_out;
+    envelop_out.set_ideal_transmission();
+    envelop_out.refraction_index_front = 1.46;
+    envelop_out.refraction_index_back = 1.0;
+    envelop_out.slope_error = 1e-4;
+    envelop_out.specularity_error = 1e-4;
+
+    OpticalProperties envelop_in;
+    envelop_in.set_ideal_transmission();
+    envelop_in.refraction_index_front = 1.0;
+    envelop_in.refraction_index_back = 1.46;
+    envelop_in.slope_error = 1e-4;
+    envelop_in.specularity_error = 1e-4;
+
+    auto pt = make_element<ParabolicTrough>();
+    pt->set_optics(mirror, absorber, envelop_out, envelop_in);
+    pt->set_origin(10.0, 0.0, 0.0);
+    // pt->set_origin(0.0, 0.0, 0.0);
+    pt->set_angles(30.0, 10.0);
+    pt->set_tracking_limits(0.0, 180.0);
+    pt->set_aperture_size(6.0, 12.0);
+    pt->set_number_panels(2, 2);
+    pt->set_focal_length(1.71);
+    pt->set_gaps(0.02, 0.01, 0.08);
+    pt->set_receiver_dimensions(0.07, 0.115, 0.003);
+    pt->create_geometry();
+    pt->set_name("Parabolic Trough");
+
+    pt->enable();
+    my_sim.add_element(pt);
+
+    pt->update_geometry(sun_az, sun_el);
+
+    Vector3d sun_pos;
+    sun_position_vector_degrees(sun_pos, sun_az, sun_el);
+    sun_pos.scalar_mult(1000.0);
+    auto sun = make_ray_source<Sun>();
+    sun->set_position(sun_pos);
+    sun->set_shape(DistributionType::PILLBOX, 0.0, 1.0);
+    my_sim.add_ray_source(sun);
+
+    std::cout << "Sun Position: " << sun_pos
+              << "\nAim Point: " << pt->get_aim_vector_ref()
+              << "\nNeutral Normal: " << pt->get_neutral_normal()
+              << "\nRotation Vector: " << pt->get_rotation_vector()
+              << "\nTracking Angle: " << pt->get_tracking_angle_degrees()
+              << std::endl;
+
+    // // We can go over all the elements added
+    // for (auto iter = my_sim.get_iterator();
+    //      !my_sim.is_at_end(iter);
+    //      ++iter)
+    // {
+    //     // iter is a iterator over the storing container which is a map
+    //     // so that the iterator gives the key value pair
+    //     element_id id = iter->first;
+    //     // `element_ptr` is a std::shared_pointer to an Element
+    //     element_ptr el = iter->second;
+    //     std::cout << "------------\n"
+    //               << "Element ID: " << id
+    //               << "\nElement name: " << el->get_name()
+    //               << "\nIs Stage: " << el->is_stage()
+    //               << "\nIs Composite: " << el->is_composite()
+    //               << "\nIs Single: " << el->is_single()
+    //               // Below are all the same in this case
+    //               << "\nOrigin (ref): " << el->get_origin_ref()
+    //               << "\nOrigin (stage): " << el->get_origin_stage()
+    //               << "\nOrigin (global): " << el->get_origin_global()
+    //               << "\nAim (ref): " << el->get_aim_vector_ref()
+    //               << "\nAim (stage): " << el->get_aim_vector_stage()
+    //               << "\nAim (global): " << el->get_aim_vector_global()
+    //               << "\n";
+    // }
+
+    RunnerStatus sts = my_runner.initialize();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    // Setup runs but is not complete
+    sts = my_runner.setup_simulation(&my_sim);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    // Run simulation runs but returns RunnerStatus::ERROR
+    sts = my_runner.run_simulation();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    const TSystem *sys = my_runner.get_system();
+    // sys->AllRayData.Print();
+    const TRayData *ray_data = &(sys->AllRayData);
+    size_t n = ray_data->Count();
+    uint_fast64_t num_absorbed = 0;
+    for (size_t i = 0; i < n; i++)
+    {
+        double pos[3], cos[3];
+        int elm, stage;
+        unsigned int ray;
+        if (ray_data->Query(i, pos, cos, &elm, &stage, &ray))
+        {
+            if (elm < 0)
+                ++num_absorbed;
+        }
+    }
+
+    std::cout << "Number Absorbed: " << num_absorbed << std::endl;
+    std::cout << "Number Interactions: " << n << std::endl;
+
+    // ray_data->Print();
+
+    EXPECT_TRUE(n >= NRAYS);
+    EXPECT_TRUE(num_absorbed > N_ABSORBED_THRESH);
 }

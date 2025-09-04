@@ -196,6 +196,14 @@ public:
   virtual int set_reference_frame_geometry(const Vector3d &origin,
                                            const Vector3d &aim,
                                            double zrot) = 0;
+
+  /****************************************************************
+   * These are point coordinate conversion routines. They convert a point
+   * from one coordinate system to another. Assumes that the element
+   * hierarchy is set and that `compute_coordinate_rotations` has been
+   * called.
+   ****************************************************************/
+
   // Convert `ref` to local coordinates and store the result in `local`
   virtual int convert_reference_to_local(Vector3d &local,
                                          const Vector3d &ref) = 0;
@@ -215,7 +223,49 @@ public:
   virtual int convert_local_to_global(Vector3d &global,
                                       const Vector3d &local) = 0;
 
+  // Convert global coordinates to reference coordinates
+  virtual int convert_global_to_reference(Vector3d &ref,
+                                          const Vector3d &global) = 0;
+  // Convert reference coordinates to global
+  virtual int convert_reference_to_global(Vector3d &global,
+                                          const Vector3d &ref) = 0;
+
+  /****************************************************************
+   * These are vector coordinate conversion routines. They convert a
+   * vector (i.e. origin is always the same) from one coordinate
+   * system to another. Assumes that the element hierarchy is set
+   * and that `compute_coordinate_rotations` has been called.
+   ****************************************************************/
+
+  // Convert `ref` to local coordinates and store the result in `local`
+  virtual int convert_vector_reference_to_local(Vector3d &local,
+                                                const Vector3d &ref) = 0;
+  // Convert `stage` to local coordinates and store the result in `local`
+  virtual int convert_vector_stage_to_local(Vector3d &local,
+                                            const Vector3d &stage) = 0;
+  // Convert `global` to local coordinates and store the result in `local`
+  virtual int convert_vector_global_to_local(Vector3d &local,
+                                             const Vector3d &global) = 0;
+  // Convert `local` to reference coordinates and store the result in `ref`
+  virtual int convert_vector_local_to_reference(Vector3d &ref,
+                                                const Vector3d &local) = 0;
+  // Convert `local` to stage coordinates and store the result in `stage`
+  virtual int convert_vector_local_to_stage(Vector3d &stage,
+                                            const Vector3d &local) = 0;
+  // Convert `local` to global coordinates and store the result in `global`
+  virtual int convert_vector_local_to_global(Vector3d &global,
+                                             const Vector3d &local) = 0;
+
+  // Convert global coordinates to reference coordinates
+  virtual int convert_vector_global_to_reference(Vector3d &ref,
+                                                 const Vector3d &global) = 0;
+  // Convert reference coordinates to global
+  virtual int convert_vector_reference_to_global(Vector3d &global,
+                                                 const Vector3d &ref) = 0;
+
   // Other routines
+  // Computes necessary coordinate transformation data. Expects
+  // that the element hierarchy is set above this element.
   virtual int compute_coordinate_rotations() = 0;
 
   // WARNING: The below Accessors should be used with EXTREME caution!!!
@@ -362,17 +412,56 @@ public:
                                            double zrot) override;
 
   // Convert `ref` to local coordinates and store the result in `local`
-  virtual int convert_reference_to_local(Vector3d &local, const Vector3d &ref) override;
+  virtual int convert_reference_to_local(Vector3d &local,
+                                         const Vector3d &ref) override;
   // Convert `stage` to local coordinates and store the result in `local`
-  virtual int convert_stage_to_local(Vector3d &local, const Vector3d &stage) override;
+  virtual int convert_stage_to_local(Vector3d &local,
+                                     const Vector3d &stage) override;
   // Convert `global` to local coordinates and store the result in `local`
-  virtual int convert_global_to_local(Vector3d &local, const Vector3d &global) override;
+  virtual int convert_global_to_local(Vector3d &local,
+                                      const Vector3d &global) override;
   // Convert `local` to reference coordinates and store the result in `ref`
-  virtual int convert_local_to_reference(Vector3d &ref, const Vector3d &local) override;
+  virtual int convert_local_to_reference(Vector3d &ref,
+                                         const Vector3d &local) override;
   // Convert `local` to stage coordinates and store the result in `stage`
-  virtual int convert_local_to_stage(Vector3d &stage, const Vector3d &local) override;
+  virtual int convert_local_to_stage(Vector3d &stage,
+                                     const Vector3d &local) override;
   // Convert `local` to global coordinates and store the result in `global`
-  virtual int convert_local_to_global(Vector3d &global, const Vector3d &local) override;
+  virtual int convert_local_to_global(Vector3d &global,
+                                      const Vector3d &local) override;
+
+  // Convert global coordinates to reference coordinates
+  virtual int convert_global_to_reference(Vector3d &ref,
+                                          const Vector3d &global) override;
+  // Convert reference coordinates to global
+  virtual int convert_reference_to_global(Vector3d &global,
+                                          const Vector3d &ref) override;
+
+  // Convert `ref` to local coordinates and store the result in `local`
+  virtual int convert_vector_reference_to_local(Vector3d &local,
+                                                const Vector3d &ref) override;
+  // Convert `stage` to local coordinates and store the result in `local`
+  virtual int convert_vector_stage_to_local(Vector3d &local,
+                                            const Vector3d &stage) override;
+  // Convert `global` to local coordinates and store the result in `local`
+  virtual int convert_vector_global_to_local(Vector3d &local,
+                                             const Vector3d &global) override;
+  // Convert `local` to reference coordinates and store the result in `ref`
+  virtual int convert_vector_local_to_reference(Vector3d &ref,
+                                                const Vector3d &local) override;
+  // Convert `local` to stage coordinates and store the result in `stage`
+  virtual int convert_vector_local_to_stage(Vector3d &stage,
+                                            const Vector3d &local) override;
+  // Convert `local` to global coordinates and store the result in `global`
+  virtual int convert_vector_local_to_global(Vector3d &global,
+                                             const Vector3d &local) override;
+
+  // Convert global coordinates to reference coordinates
+  virtual int convert_vector_global_to_reference(Vector3d &ref,
+                                                 const Vector3d &global) override;
+  // Convert reference coordinates to global
+  virtual int convert_vector_reference_to_global(Vector3d &global,
+                                                 const Vector3d &ref) override;
 
   // WARNING: The below Accessors should be used with care. They set
   // values that are set automatically -- these are here just in case...

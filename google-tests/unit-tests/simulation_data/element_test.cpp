@@ -451,7 +451,7 @@ TEST(Element, CoordinateComputationsRotations)
     matrix_vector_product(Q2t, v_stage, v_global);
 
     Vector3d result;
-    
+
     el->convert_local_to_stage(result, v_local);
     EXPECT_TRUE(is_identical(result, v_stage, TOL));
     result.zero();
@@ -459,14 +459,13 @@ TEST(Element, CoordinateComputationsRotations)
     el->convert_stage_to_local(result, v_stage);
     EXPECT_TRUE(is_identical(result, v_local, TOL));
     result.zero();
-    
+
     el->convert_local_to_global(result, v_local);
     EXPECT_TRUE(is_identical(result, v_global, TOL));
     result.zero();
 
     el->convert_global_to_local(result, v_global);
     EXPECT_TRUE(is_identical(result, v_local, TOL));
-
 }
 
 TEST(Element, CoordinateComputationsTranslations)
@@ -534,7 +533,7 @@ TEST(Element, CoordinateComputationsTranslations)
     vector_add(1.0, Origin2, 1.0, v_stage, v_global);
 
     Vector3d result;
-    
+
     el->convert_local_to_stage(result, v_local);
     EXPECT_TRUE(is_identical(result, v_stage, TOL));
     result.zero();
@@ -542,14 +541,13 @@ TEST(Element, CoordinateComputationsTranslations)
     el->convert_stage_to_local(result, v_stage);
     EXPECT_TRUE(is_identical(result, v_local, TOL));
     result.zero();
-    
+
     el->convert_local_to_global(result, v_local);
     EXPECT_TRUE(is_identical(result, v_global, TOL));
     result.zero();
 
     el->convert_global_to_local(result, v_global);
     EXPECT_TRUE(is_identical(result, v_local, TOL));
-
 }
 
 TEST(Element, CoordinateComputations)
@@ -657,7 +655,7 @@ TEST(Element, CoordinateComputations)
     vector_add(1.0, Origin2, 1.0, v_global);
 
     Vector3d result;
-    
+
     el->convert_local_to_stage(result, v_local);
     EXPECT_TRUE(is_identical(result, v_stage, TOL));
     result.zero();
@@ -665,14 +663,165 @@ TEST(Element, CoordinateComputations)
     el->convert_stage_to_local(result, v_stage);
     EXPECT_TRUE(is_identical(result, v_local, TOL));
     result.zero();
-    
+
     el->convert_local_to_global(result, v_local);
     EXPECT_TRUE(is_identical(result, v_global, TOL));
     result.zero();
 
     el->convert_global_to_local(result, v_global);
     EXPECT_TRUE(is_identical(result, v_local, TOL));
+    result.zero();
 
+    // Note: Global to reference and reference to global
+    // use other conversion routines so just need to test
+    // that the if-else statement is correct.
+
+    // Stage coordinates are the reference coordinates
+    el->convert_global_to_reference(result, v_global);
+    EXPECT_TRUE(is_identical(result, v_stage, TOL));
+    result.zero();
+
+    el->convert_reference_to_global(result, v_stage);
+    EXPECT_TRUE(is_identical(result, v_global, TOL));
+    result.zero();
+
+    // Global coordinates are reference coordinates
+    st->convert_global_to_reference(result, v_global);
+    EXPECT_TRUE(is_identical(result, v_global, TOL));
+    result.zero();
+
+    st->convert_reference_to_global(result, v_global);
+    EXPECT_TRUE(is_identical(result, v_global, TOL));
+    result.zero();
+}
+
+TEST(Element, VectorCoordinateComputations)
+{
+    // **** Setup Answers **** //
+    // Origin
+    Vector3d Origin1(1.0, 2.0, 3.0);
+    // Coordinate transform matrix -- stage to local
+    Matrix3d Q1;
+    Q1.set_value(0, 0, 0.5);
+    Q1.set_value(1, 0, sqrt(3.0) / 2.0);
+    Q1.set_value(2, 0, 0.0);
+    Q1.set_value(0, 1, -1.0 / sqrt(2.0));
+    Q1.set_value(1, 1, 1.0 / sqrt(6.0));
+    Q1.set_value(2, 1, -1.0 / sqrt(3.0));
+    Q1.set_value(0, 2, -0.5);
+    Q1.set_value(1, 2, sqrt(3.0) / 6.0);
+    Q1.set_value(2, 2, sqrt(6.0) / 3.0);
+    // Local to stage matrix
+    Matrix3d Q1t;
+    MatrixTranspose(Q1.data, 3, Q1t.data);
+    // Corresponding Euler angles in radians
+    const double a1 = 0.0;
+    const double b1 = asin(-1.0 / sqrt(3.0));
+    const double g1 = acos(1.0 / cos(b1) * 1.0 / sqrt(6.0)); // approximately 0.615
+    // Corresponding aim vector (local z-axis in reference coordinates)
+    // Vector3d aim1(0.0, -sqrt(3.0) / 2.0, sqrt(2.0 / 3.0));
+    Vector3d aim1(0.0, -1.0 / sqrt(3.0), sqrt(2.0 / 3.0));
+    vector_add(1.0, Origin1, 1.0, aim1);
+
+    // Z-Rotation is the last of the Euler angles but in degrees
+    const double zrot1 = g1 * 180.0 / M_PI;
+
+    // Origin
+    Vector3d Origin2(-3.0, 1.0, -5.0);
+    // Global to stage matrix
+    Matrix3d Q2;
+    Q2.set_value(0, 0, (sqrt(8.0) + sqrt(6.0)) / 8.0);
+    Q2.set_value(0, 1, -0.75);
+    Q2.set_value(0, 2, (sqrt(6.0) - sqrt(8.0)) / 8.0);
+    Q2.set_value(1, 0, (2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0);
+    Q2.set_value(1, 1, sqrt(3.0) / 4.0);
+    Q2.set_value(1, 2, (-2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0);
+    Q2.set_value(2, 0, sqrt(6.0) / 4.0);
+    Q2.set_value(2, 1, 0.5);
+    Q2.set_value(2, 2, sqrt(6.0) / 4.0);
+    // Stage to global matrix
+    Matrix3d Q2t;
+    MatrixTranspose(Q2.data, 3, Q2t.data);
+    // Corresponding Euler angles in radians
+    const double a2 = M_PI / 4.0;
+    const double b2 = M_PI / 6.0;
+    const double g2 = M_PI / 3.0;
+    // Corresponding aim vector (local z-axis in reference coordinates)
+    Vector3d aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
+    vector_add(1.0, Origin2, 1.0, aim2);
+
+    // Z-Rotation is the last of the Euler angles but in degrees
+    const double zrot2 = 60.0;
+
+    // **** Setup Elements **** //
+    auto el = make_configured_element();
+    el->set_reference_frame_geometry(Origin1, aim1, zrot1);
+
+    auto st = make_stage(0);
+    st->set_reference_frame_geometry(Origin2, aim2, zrot2);
+    st->add_element(el);
+
+    // **** Tests **** //
+    const double TOL = 1e-12;
+    Vector3d scratch;
+    Vector3d result_vec;
+    Matrix3d result_mat;
+
+    // Euler angles tests
+    result_vec = el->get_euler_angles();
+    EXPECT_NEAR(result_vec[0], a1, TOL);
+    EXPECT_NEAR(result_vec[1], b1, TOL);
+    EXPECT_NEAR(result_vec[2], g1, TOL);
+    result_vec = st->get_euler_angles();
+    EXPECT_NEAR(result_vec[0], a2, TOL);
+    EXPECT_NEAR(result_vec[1], b2, TOL);
+    EXPECT_NEAR(result_vec[2], g2, TOL);
+
+    Vector3d v_local(-1.0, 2.0, 4.0);
+    Vector3d v_stage;
+    Vector3d v_global;
+    matrix_vector_product(Q1t, v_local, v_stage);
+    matrix_vector_product(Q2t, v_stage, v_global);
+
+    Vector3d result;
+
+    el->convert_vector_local_to_stage(result, v_local);
+    EXPECT_TRUE(is_identical(result, v_stage, TOL));
+    result.zero();
+
+    el->convert_vector_stage_to_local(result, v_stage);
+    EXPECT_TRUE(is_identical(result, v_local, TOL));
+    result.zero();
+
+    el->convert_vector_local_to_global(result, v_local);
+    EXPECT_TRUE(is_identical(result, v_global, TOL));
+    result.zero();
+
+    el->convert_vector_global_to_local(result, v_global);
+    EXPECT_TRUE(is_identical(result, v_local, TOL));
+    result.zero();
+
+    // Note: Global to reference and reference to global
+    // use other conversion routines so just need to test
+    // that the if-else statement is correct.
+
+    // Stage coordinates are the reference coordinates
+    el->convert_vector_global_to_reference(result, v_global);
+    EXPECT_TRUE(is_identical(result, v_stage, TOL));
+    result.zero();
+
+    el->convert_vector_reference_to_global(result, v_stage);
+    EXPECT_TRUE(is_identical(result, v_global, TOL));
+    result.zero();
+
+    // Global coordinates are reference coordinates
+    st->convert_vector_global_to_reference(result, v_global);
+    EXPECT_TRUE(is_identical(result, v_global, TOL));
+    result.zero();
+
+    st->convert_vector_reference_to_global(result, v_global);
+    EXPECT_TRUE(is_identical(result, v_global, TOL));
+    result.zero();
 }
 
 TEST(Element, SingleElementEnforceUserFieldsSet)
