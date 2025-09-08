@@ -189,7 +189,8 @@ TEST(ParabolicTrough, Build)
 
 TEST(ParabolicTrough, Tracing)
 {
-    const uint_fast64_t NRAYS = 10000;
+    constexpr uint_fast64_t NRAYS = 10000;
+    constexpr uint_fast64_t N_ABSORBED_THRESH = NRAYS / 10;
 
     SimulationData my_sim;
     // Set parameters
@@ -314,7 +315,7 @@ TEST(ParabolicTrough, Tracing)
     // ray_data->Print();
 
     EXPECT_TRUE(n >= NRAYS);
-    EXPECT_TRUE(num_absorbed > 0);
+    EXPECT_TRUE(num_absorbed > N_ABSORBED_THRESH);
 }
 
 TEST(ParabolicTrough, UpdateGeometry)

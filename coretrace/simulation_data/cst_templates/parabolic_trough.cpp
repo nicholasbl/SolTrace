@@ -225,6 +225,32 @@ void ParabolicTrough::update_geometry(double azimuth,
                                       double elevation)
 {
 
+    if (elevation < 0.0 || elevation > 90.0)
+    {
+        std::stringstream ss;
+        ss << "ParabolicTrough::update_geometry: Invalid elevation ("
+           << elevation << "). Elevation must lie between 0 and 90 degrees.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (azimuth < -180.0 || azimuth > 180.0)
+    {
+        std::stringstream ss;
+        ss << "ParabolicTrough::update_geometry: Invalid azimuth ("
+           << elevation << "). Azimuth must lie between -180 and 180 degrees.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (!this->initialized)
+    {
+        std::stringstream ss;
+        ss << "ParabolicTrough::update_geometry: Uninitialized. "
+           << "Call create_geometry() first.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    this->coordinates_initialized = false;
+
     Vector3d sun_pos;
     sun_position_vector_degrees(sun_pos, azimuth, elevation);
     make_unit_vector(sun_pos);
@@ -312,11 +338,6 @@ void ParabolicTrough::set_angles(double azimuth, double tilt)
     this->coordinates_initialized = false;
     this->azimuth = azimuth;
     this->tilt = tilt;
-
-    Vector3d xaxis(1.0, 0.0, 0.0);
-    Vector3d yaxis(0.0, 1.0, 0.0);
-    Vector3d zaxis(0.0, 0.0, 1.0);
-    Vector3d temp;
 
     // Convert input angles to spherical coordinate angles
     double az = azimuth * D2R;

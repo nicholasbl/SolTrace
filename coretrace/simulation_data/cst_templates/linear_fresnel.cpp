@@ -3,7 +3,12 @@
 #include <stdexcept>
 #include <sstream>
 
+#include "aperture.hpp"
+#include "constants.hpp"
 #include "element.hpp"
+#include "surface.hpp"
+
+#include "cst_templates/utilities.hpp"
 
 LinearFresnel::LinearFresnel()
     : CompositeElement(),
@@ -21,14 +26,18 @@ LinearFresnel::LinearFresnel()
       gap_center(-1.0),
       abs_diameter(-1.0),
       env_diameter(-1.0),
-      env_thickness(-1.0)
+      env_thickness(-1.0),
+      // tracking_angle(0.0),
+      tracking_limit_lower(0.0),
+      tracking_limit_upper(180.0)
 {
     this->optics_absorber.set_ideal_absorption();
     this->optics_mirror.set_ideal_reflection();
     this->optics_env_out.set_ideal_transmission();
     this->optics_env_in.set_ideal_transmission();
 
-    rotation_axis.set_values(0.0, 1.0, 0.0);
+    this->rotation_axis.set_values(0.0, 1.0, 0.0);
+    this->neutral_normal.set_values(0.0, 0.0, 1.0);
 }
 
 LinearFresnel::~LinearFresnel()
@@ -41,6 +50,16 @@ LinearFresnel::~LinearFresnel()
     return;
 }
 
+// double LinearFresnel::get_tracking_angle_degrees() const
+// {
+//     return this->tracking_angle;
+// }
+
+// double LinearFresnel::get_tracking_angle_radians() const
+// {
+//     return D2R * this->get_tracking_angle_degrees();
+// }
+
 void LinearFresnel::set_angles(double azimuth, double tilt)
 {
     if (azimuth < -180.0 || azimuth > 180.0)
@@ -51,23 +70,34 @@ void LinearFresnel::set_angles(double azimuth, double tilt)
         throw std::invalid_argument(ss.str());
     }
 
-    if (tilt < -90.0 || tilt > 90.0)
+    if (tilt < 0.0 || tilt > 90.0)
     {
         std::stringstream ss;
         ss << "LinearFresnel::set_angles: Invalid tilt angle ("
-           << tilt << "). Must be between -90 and 90 degrees.";
+           << tilt << "). Must be between 0 and 90 degrees.";
         throw std::invalid_argument(ss.str());
     }
 
+    this->coordinates_initialized = false;
     this->azimuth = azimuth;
     this->tilt = tilt;
 
-    double az = this->azimuth * M_PI / 180.0;
-    double inc = this->tilt * M_PI / 180.0;
+    // Convert input angles to spherical coordinate angles
+    double az = azimuth * D2R;
+    double el = tilt * D2R;
+    double pol = 0.5 * PI - az;
+    double inc = 0.5 * PI - el;
 
-    this->rotation_axis.set_values(sin(inc) * cos(az),
-                                   sin(inc) * sin(az),
-                                   cos(az));
+    // Convert spherical coordinates to cartesian coordinates
+    // y-axis
+    this->rotation_axis.set_values(sin(inc) * cos(pol),
+                                   sin(inc) * sin(pol),
+                                   cos(inc));
+
+    // z-axis
+    this->neutral_normal.set_values(sin(-el) * cos(pol),
+                                    sin(-el) * sin(pol),
+                                    cos(-el));
 
     return;
 }
@@ -197,15 +227,6 @@ void LinearFresnel::set_receiver_dimensions(double absorber_diameter,
         throw std::invalid_argument(ss.str());
     }
 
-    // if (length <= 0.0)
-    // {
-    //     std::stringstream ss;
-    //     ss << "LinearFresnel::set_receiver_dimensions: "
-    //        << "Invalid receiver length (" << length
-    //        << "). Must be positive.";
-    //     throw std::invalid_argument(ss.str());
-    // }
-
     if (absorber_diameter >= envelop_diameter)
     {
         std::stringstream ss;
@@ -220,6 +241,24 @@ void LinearFresnel::set_receiver_dimensions(double absorber_diameter,
     this->abs_diameter = absorber_diameter;
     this->env_diameter = envelop_diameter;
     this->env_thickness = envelop_thickness;
+
+    return;
+}
+
+void LinearFresnel::set_tracking_limits(double lower, double upper)
+{
+    if (lower > upper)
+    {
+        std::stringstream ss;
+        ss << "ParabolicTrough::set_tracking_limits: Invalid tracking "
+           << "limits. Lower limit (" << lower
+           << ") must be less than or equal to upper limit ("
+           << upper << ").";
+        throw std::invalid_argument(ss.str());
+    }
+
+    this->tracking_limit_lower = lower;
+    this->tracking_limit_upper = upper;
 
     return;
 }
@@ -399,22 +438,102 @@ void LinearFresnel::create_geometry()
     }
 
     this->initialized = true;
+
     return;
 }
 
-void LinearFresnel::update_geometry()
+void LinearFresnel::update_geometry(double azimuth, double elevation)
 {
-    // TODO: Implement geometry update for linear Fresnel system
-    // This should update existing geometry based on current parameters
-    if (this->initialized)
+    if (elevation < 0.0 || elevation > 90.0)
     {
-        // Update existing geometry
+        std::stringstream ss;
+        ss << "LinearFresnel::update_geometry: Invalid elevation ("
+           << elevation << "). Elevation must lie between 0 and 90 degrees.";
+        throw std::invalid_argument(ss.str());
     }
-    else
+
+    if (azimuth < -180.0 || azimuth > 180.0)
     {
-        // Create geometry if not initialized
-        this->create_geometry();
-        // TODO: Add some aim settings here...
+        std::stringstream ss;
+        ss << "LinearFresnel::update_geometry: Invalid azimuth ("
+           << elevation << "). Azimuth must lie between -180 and 180 degrees.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (!this->initialized)
+    {
+        std::stringstream ss;
+        ss << "LinearFresnel::update_geometry: Uninitialized. "
+           << "Call create_geometry() first.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    // NOTE: Setting the aim point and z-rotation only need to be done
+    // once. But they need to be done after the LinearFresnel object
+    // has been added to its reference element (if any) so we do it 
+    // here at the cost of repeating ourselves.
+
+    // Set aim point
+    Vector3d z_axis_ref, y_axis_ref;
+    this->convert_global_to_reference(z_axis_ref, this->neutral_normal);
+    this->convert_global_to_reference(y_axis_ref, this->rotation_axis);
+    vector_add(1000.0, z_axis_ref, 1.0, this->origin, this->aim);
+
+    // Set z-rotation
+    double beta = asin(z_axis_ref[1]);
+    double gamma = acos(y_axis_ref[2] / cos(beta));
+    this->set_zrot_radians(gamma);
+
+    // Update coordinate conversions so we can use them below
+    this->coordinates_initialized = false;
+    this->compute_coordinate_rotations();
+
+    // Sun position projected into rotation plane and converted
+    // to LinearFresnel object coordinates
+    Vector3d sun_pos, sun_proj, sun_proj_local;
+    sun_position_vector_degrees(sun_pos, azimuth, elevation);
+    project_onto_plane(this->rotation_axis, sun_pos, sun_proj);
+    sun_proj.make_unit();
+    this->convert_global_to_local(sun_proj_local, sun_proj);
+    sun_proj_local.make_unit();
+
+    // std::cout << "Sun Position: " << sun_pos
+    //           << "\nSun Proj Global: " << sun_proj
+    //           << "\nSun Proj Local: " << sun_proj_local
+    //           << std::endl;
+
+    // Set aimpoint for mirrors
+    Vector3d aim_mirror_ref;
+    // Absorber position projected into the plane of rotation (the xz-plane)
+    Vector3d origin_abs_proj(0.0, 0.0, this->reciever_height);
+    origin_abs_proj.make_unit();
+    for (auto iter : this->mirrors)
+    {
+        // Get mirror to to receiver vector
+        vector_add(1.0, origin_abs_proj,
+                   -1.0, iter->get_origin_ref(),
+                   aim_mirror_ref);
+
+        // Project onto the rotation plane
+        aim_mirror_ref[1] = 0.0;
+        aim_mirror_ref.make_unit();
+        // std::cout << "Origin: " << iter->get_origin_ref()
+        //           << "\nMirror to Receiver: " << aim_mirror_ref
+        //           << std::endl;
+
+        // Take bisector vector with the sun
+        vector_add(0.5, sun_proj_local, 0.5, aim_mirror_ref);
+        // std::cout << "Aim Mirror Ref: " << aim_mirror_ref
+        //           << std::endl;
+
+        // TODO: Need tracking limits here?
+
+        // Add origin of mirror
+        vector_add(1.0, iter->get_origin_ref(), 1000.0, aim_mirror_ref);
+
+        // Set aim point
+        iter->set_aim_vector(aim_mirror_ref);
+        iter->compute_coordinate_rotations();
     }
 
     return;

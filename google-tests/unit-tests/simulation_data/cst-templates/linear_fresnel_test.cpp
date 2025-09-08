@@ -1,12 +1,13 @@
 #include <gtest/gtest.h>
 
-#include <cst_templates/arclength.hpp>
 #include <native_runner.hpp>
 #include <native_runner_types.hpp>
 #include <simulation_data.hpp>
 #include <sun.hpp>
 
+#include <cst_templates/arclength.hpp>
 #include <cst_templates/linear_fresnel.hpp>
+#include <cst_templates/utilities.hpp>
 
 // Error Checking Tests for LinearFresnel
 TEST(LinearFresnel, ErrorChecking_SetApertureSize)
@@ -182,7 +183,8 @@ TEST(LinearFresnel, Build)
 
 TEST(LinearFresnel, Tracing)
 {
-    const uint_fast64_t NRAYS = 10000;
+    constexpr uint_fast64_t NRAYS = 10000;
+    constexpr uint_fast64_t N_ABSORBED_THRESH = NRAYS / 10;
 
     SimulationData my_sim;
     // Set parameters
@@ -308,5 +310,143 @@ TEST(LinearFresnel, Tracing)
     // ray_data->Print();
 
     EXPECT_TRUE(n >= NRAYS);
-    EXPECT_TRUE(num_absorbed > 0);
+    EXPECT_TRUE(num_absorbed > N_ABSORBED_THRESH);
+}
+
+TEST(LinearFresnel, UpdateGeometry)
+{
+    constexpr uint_fast64_t NRAYS = 10000;
+    constexpr uint_fast64_t N_ABSORBED_THRESH = NRAYS / 10;
+
+    const double sun_az = 180.0;
+    const double sun_el = 45.0;
+
+    SimulationData my_sim;
+    // Set parameters
+    SimulationParameters &params = my_sim.get_simulation_parameters();
+    params.number_of_rays = NRAYS;
+    params.max_number_of_rays = params.number_of_rays * 1000;
+    params.include_optical_errors = true;
+    params.include_sun_shape_errors = true;
+    params.seed = 123;
+
+    NativeRunner my_runner;
+    my_runner.disable_power_tower();
+    my_runner.disable_point_focus();
+
+    OpticalProperties mirror;
+    mirror.set_ideal_reflection();
+    mirror.slope_error = 1.5;
+    mirror.specularity_error = 0.5;
+
+    OpticalProperties absorber;
+    absorber.set_ideal_absorption();
+    absorber.slope_error = 1e-5;
+    absorber.specularity_error = 1e-5;
+
+    OpticalProperties envelop_out;
+    envelop_out.set_ideal_transmission();
+    envelop_out.refraction_index_front = 1.46;
+    envelop_out.refraction_index_back = 1.0;
+    envelop_out.slope_error = 1e-4;
+    envelop_out.specularity_error = 1e-4;
+
+    OpticalProperties envelop_in;
+    envelop_in.set_ideal_transmission();
+    envelop_in.refraction_index_front = 1.0;
+    envelop_in.refraction_index_back = 1.46;
+    envelop_in.slope_error = 1e-4;
+    envelop_in.specularity_error = 1e-4;
+
+    auto sun = make_ray_source<Sun>();
+    Vector3d sun_pos;
+    sun_position_vector_degrees(sun_pos, sun_az, sun_el);
+    sun_pos.scalar_mult(1000.0);
+    sun->set_position(sun_pos);
+    sun->set_shape(DistributionType::GAUSSIAN, 1.0, 0.0);
+    my_sim.add_ray_source(sun);
+
+    auto lf = make_element<LinearFresnel>();
+    lf->set_optics(mirror, absorber, envelop_out, envelop_in);
+    lf->set_origin(10.0, 0.0, 0.0);
+    lf->set_aperture_size(6.0, 12.0);
+    lf->set_number_panels(2, 2);
+    lf->set_gaps(0.05, 0.02, 0.15);
+    lf->set_focused_panels(true);
+    lf->set_receiver_height(2.0);
+    lf->set_receiver_dimensions(0.07, 0.115, 0.003);
+    lf->set_angles(0.0, 15.0);
+    lf->create_geometry();
+    lf->set_name("LinearFresnel");
+    lf->update_geometry(sun_az, sun_el);
+    lf->enable();
+    my_sim.add_element(lf);
+
+    EXPECT_NEAR(dot_product(lf->get_rotation_vector(),
+                            lf->get_neutral_normal()),
+                0.0, 1e-12);
+
+    // std::cout << "Rotation Axis: " << lf->get_rotation_vector()
+    //           << "\nNeutral Normal: " << lf->get_neutral_normal()
+    //           << std::endl;
+
+    // // We can go over all the elements added
+    // for (auto iter = my_sim.get_iterator();
+    //      !my_sim.is_at_end(iter);
+    //      ++iter)
+    // {
+    //     // iter is a iterator over the storing container which is a map
+    //     // so that the iterator gives the key value pair
+    //     element_id id = iter->first;
+    //     // `element_ptr` is a std::shared_pointer to an Element
+    //     element_ptr el = iter->second;
+    //     std::cout << "------------\n"
+    //               << "Element ID: " << id
+    //               << "\nElement name: " << el->get_name()
+    //               << "\nIs Stage: " << el->is_stage()
+    //               << "\nIs Composite: " << el->is_composite()
+    //               << "\nIs Single: " << el->is_single()
+    //               // Below are all the same in this case
+    //               << "\nOrigin (ref): " << el->get_origin_ref()
+    //               << "\nOrigin (stage): " << el->get_origin_stage()
+    //               << "\nOrigin (global): " << el->get_origin_global()
+    //               << "\nAim (ref): " << el->get_aim_vector_ref()
+    //               << "\nAim (stage): " << el->get_aim_vector_stage()
+    //               << "\nAim (global): " << el->get_aim_vector_global()
+    //               << "\n";
+    // }
+
+    RunnerStatus sts = my_runner.initialize();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    // Setup runs but is not complete
+    sts = my_runner.setup_simulation(&my_sim);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    // Run simulation runs but returns RunnerStatus::ERROR
+    sts = my_runner.run_simulation();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    const TSystem *sys = my_runner.get_system();
+    // sys->AllRayData.Print();
+    const TRayData *ray_data = &(sys->AllRayData);
+    size_t n = ray_data->Count();
+    uint_fast64_t num_absorbed = 0;
+    for (size_t i = 0; i < n; i++)
+    {
+        double pos[3], cos[3];
+        int elm, stage;
+        unsigned int ray;
+        if (ray_data->Query(i, pos, cos, &elm, &stage, &ray))
+        {
+            if (elm < 0)
+                ++num_absorbed;
+        }
+    }
+
+    std::cout << "Number Absorbed: " << num_absorbed << std::endl;
+    std::cout << "Number Interactions: " << n << std::endl;
+
+    // ray_data->Print();
+
+    EXPECT_TRUE(n >= NRAYS);
+    EXPECT_TRUE(num_absorbed > N_ABSORBED_THRESH);
 }

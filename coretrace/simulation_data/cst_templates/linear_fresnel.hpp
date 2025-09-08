@@ -27,6 +27,19 @@ class LinearFresnel : public CompositeElement
 public:
     LinearFresnel();
     ~LinearFresnel();
+
+    Vector3d get_rotation_vector() const
+    {
+        return this->rotation_axis;
+    }
+    Vector3d get_neutral_normal() const
+    {
+        return this->neutral_normal;
+    }
+
+    // double get_tracking_angle_degrees() const;
+    // double get_tracking_angle_radians() const;
+
     void set_angles(double azimuth, double tilt);
     void set_aperture_size(double len_x, double len_y);
     void set_focused_panels(bool focused);
@@ -40,11 +53,12 @@ public:
     void set_receiver_dimensions(double absorber_diameter,
                                  double envelop_diameter,
                                  double envelop_thickness);
+    void set_tracking_limits(double lower, double upper);
 
     virtual void enforce_user_fields_set() const override;
 
     void create_geometry();
-    void update_geometry();
+    void update_geometry(double azimuth, double elevation);
 
 private:
     bool initialized;
@@ -53,7 +67,6 @@ private:
     double reciever_height;
     double azimuth;
     double tilt;
-    Vector3d rotation_axis;
 
     // Mirror Characteristics
     bool focused_panels;
@@ -74,6 +87,13 @@ private:
     OpticalProperties optics_absorber;
     OpticalProperties optics_env_out;
     OpticalProperties optics_env_in;
+
+    // Solar Tracking
+    // double tracking_angle;
+    double tracking_limit_lower;
+    double tracking_limit_upper;
+    Vector3d rotation_axis;
+    Vector3d neutral_normal;
 
     std::vector<single_element_ptr> mirrors;
     std::vector<single_element_ptr> absorbers;

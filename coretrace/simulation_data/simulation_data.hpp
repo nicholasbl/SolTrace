@@ -271,14 +271,6 @@ private:
 
     uint_fast64_t number_of_elements;
 
-    // // DESIGN NOTE:
-    // // CompositeElements are collections of elements and knowledge of them
-    // // is not needed by the ray tracing computations. To facilitate simple
-    // // passing of element data to the runners, CompositeElements are stored
-    // // separately. Adding/removing/replacing a CompositeElement adds/removes/
-    // // replaces all elements that belong to the CompositeElement collection.
-    // SingleElementMap my_elements;
-    // CompositeElementMap composite_elements;
     ElementContainer my_elements;
     RaySourceContainer my_sources;
     SimulationParameters my_parameters;

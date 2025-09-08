@@ -49,6 +49,10 @@ element_id SimulationData::add_element(element_ptr el)
                 this->number_of_elements++;
             }
         }
+        else
+        {
+            // TODO: Throw an error here
+        }
     }
 
     return id;
