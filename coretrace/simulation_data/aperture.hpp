@@ -17,10 +17,7 @@
 #include <memory>
 #include <vector>
 
-// TODO: Make a header file for constants...
-#ifndef M_PI
-#define M_PI 3.141592653589793238462643
-#endif
+#include "constants.hpp"
 
 // TODO: For apertures that do not include the origin, should the
 // "circumscribing" circle be centered at the origin? Or should it

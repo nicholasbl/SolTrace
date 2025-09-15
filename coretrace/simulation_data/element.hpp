@@ -17,17 +17,13 @@
 #include <string>
 
 #include "aperture.hpp"
+#include "constants.hpp"
 #include "container.hpp"
 #include "datetime.hpp"
 #include "optical_properties.hpp"
 #include "ray_source.hpp"
 #include "surface.hpp"
 #include "vector3d.hpp"
-
-// TODO: Make a header file for constants...
-#ifndef M_PI
-#define M_PI 3.141592653589793238462643
-#endif
 
 using element_id = std::int_fast64_t;
 const element_id ELEMENT_ERROR = -1;
@@ -390,12 +386,12 @@ public:
 
   virtual double get_zrot_radians() const override
   {
-    return this->zrot * M_PI / 180.0;
+    return this->zrot * PI / 180.0;
   }
   virtual void set_zrot_radians(double zrad) override
   {
     this->coordinates_initialized = false;
-    this->zrot = zrad * 180.0 / M_PI;
+    this->zrot = zrad * 180.0 / PI;
     return;
   }
 

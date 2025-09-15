@@ -5,7 +5,9 @@
 #include <cmath>
 #include <vector>
 
-#include <iostream>
+// #include <iostream>
+
+#include "constants.hpp"
 
 aperture_ptr Aperture::make_aperture_from_type(ApertureType type,
                                                const std::vector<double> &args)
@@ -74,7 +76,7 @@ double Annulus::aperture_area() const
     double R = this->outer_radius;
     double r = this->inner_radius;
     // Convert to radians
-    double arc = this->arc_angle * M_PI / 180.0;
+    double arc = this->arc_angle * D2R;
     return 0.5 * arc * (R * R - r * r);
 }
 
@@ -92,7 +94,7 @@ bool Annulus::is_in(double x, double y) const
     {
         double theta = atan2(y, x);
         // Arc is split across x-axis, hence the 0.5
-        double arc = 0.5 * this->arc_angle * M_PI / 180.0;
+        double arc = 0.5 * this->arc_angle * D2R;
         inside = (-arc <= theta && theta <= arc);
     }
     return inside;
@@ -106,7 +108,7 @@ aperture_ptr Annulus::make_copy() const
 
 double Circle::aperture_area() const
 {
-    return 0.25 * M_PI * this->diameter * this->diameter;
+    return 0.25 * PI * this->diameter * this->diameter;
 }
 
 double Circle::diameter_circumscribed_circle() const

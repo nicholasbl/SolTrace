@@ -1,4 +1,3 @@
-
 #include "parabolic_dish.hpp"
 
 #include <algorithm>
@@ -9,6 +8,7 @@
 #include "aperture.hpp"
 #include "arclength.hpp"
 #include "composite_element.hpp"
+#include "constants.hpp"
 #include "element.hpp"
 #include "utilities.hpp"
 #include "surface.hpp"
@@ -79,7 +79,7 @@ void ParabolicDish::create_geometry()
     {
         // this->gap_a gives the gap as a length -- convert to angle
         // so that the average gap is the value this->gap_a.
-        gap_angle = this->gap_a * 360.0 / (M_PI * this->aperture_radius);
+        gap_angle = this->gap_a * 360.0 / (PI * this->aperture_radius);
         panel_angle = 360.0 - gap_angle * this->num_panels_a;
         panel_angle /= this->num_panels_a;
     }

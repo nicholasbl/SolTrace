@@ -4,10 +4,6 @@
 
 #include "vector3d.hpp"
 
-// #ifndef M_PI
-// #define M_PI 3.141592653589793238462643
-// #endif
-
 void project_onto_plane(const Vector3d &n,
                         const Vector3d &u,
                         Vector3d &uproj);

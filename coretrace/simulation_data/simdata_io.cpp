@@ -1,17 +1,19 @@
 
 #include "simdata_io.hpp"
-#include "ray_source.hpp"
-#include "simulation_data.hpp"
-#include "single_element.hpp"
-#include "stage_element.hpp"
-#include "sun.hpp"
-#include "surface.hpp"
 
 #include <array>
 #include <cstring>
 #include <exception>
 #include <sstream>
 #include <string>
+
+#include "constants.hpp"
+#include "ray_source.hpp"
+#include "simulation_data.hpp"
+#include "single_element.hpp"
+#include "stage_element.hpp"
+#include "sun.hpp"
+#include "surface.hpp"
 
 int st_sun_position(double lat, double day, double hour,
                     double *x, double *y, double *z)
@@ -29,8 +31,9 @@ int st_sun_position(double lat, double day, double hour,
     */
 
     double Declination, HourAngle, Elevation, Azimuth;
-    double deg_to_rad = M_PI / 180.0;
-    double rad_to_deg = 180.0 / M_PI;
+    // Use D2R and R2D from constants.hpp
+    constexpr double deg_to_rad = D2R;
+    constexpr double rad_to_deg = R2D;
 
     Declination = rad_to_deg * asin(0.39795 * cos(0.98563 * deg_to_rad * (day - 173)));
     HourAngle = 15 * (hour - 12);
