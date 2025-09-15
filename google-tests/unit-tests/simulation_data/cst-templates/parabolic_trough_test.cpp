@@ -326,6 +326,8 @@ TEST(ParabolicTrough, UpdateGeometry)
     const double sun_az = 180.0;
     const double sun_el = 45.0;
 
+    const double TOL = 1e-12;
+
     SimulationData my_sim;
     // Set parameters
     SimulationParameters &params = my_sim.get_simulation_parameters();
@@ -368,6 +370,7 @@ TEST(ParabolicTrough, UpdateGeometry)
     pt->set_origin(10.0, 0.0, 0.0);
     // pt->set_origin(0.0, 0.0, 0.0);
     pt->set_angles(30.0, 10.0);
+    // pt->set_angles(30.0, 0.0);
     pt->set_tracking_limits(0.0, 180.0);
     pt->set_aperture_size(6.0, 12.0);
     pt->set_number_panels(2, 2);
@@ -392,10 +395,43 @@ TEST(ParabolicTrough, UpdateGeometry)
 
     std::cout << "Sun Position: " << sun_pos
               << "\nAim Point: " << pt->get_aim_vector_ref()
-              << "\nNeutral Normal: " << pt->get_neutral_normal()
+              << "\nTracking Origin: " << pt->get_tracking_origin()
               << "\nRotation Vector: " << pt->get_rotation_vector()
+              << "\nNeutral Normal: " << pt->get_neutral_normal()
               << "\nTracking Angle: " << pt->get_tracking_angle_degrees()
+              << "\nZ-Rotation: " << pt->get_zrot()
               << std::endl;
+
+    EXPECT_NEAR(dot_product(pt->get_tracking_origin(), pt->get_rotation_vector()), 0.0, TOL);
+    EXPECT_NEAR(dot_product(pt->get_tracking_origin(), pt->get_neutral_normal()), 0.0, TOL);
+    EXPECT_NEAR(dot_product(pt->get_rotation_vector(), pt->get_neutral_normal()), 0.0, TOL);
+
+    Vector3d temp, result;
+    rotate_vector_degrees(pt->get_rotation_vector(),
+                          pt->get_tracking_origin(),
+                          -pt->get_tracking_angle_degrees(),
+                          temp);
+    pt->convert_vector_global_to_local(result, temp);
+    std::cout << "Result: " << result << std::endl;
+    EXPECT_NEAR(result[0], 0.0, TOL);
+    EXPECT_NEAR(result[1], 0.0, TOL);
+    EXPECT_NEAR(result[2], 1.0, TOL);
+
+    pt->convert_vector_global_to_local(result, pt->get_rotation_vector());
+    std::cout << "Result: " << result << std::endl;
+    EXPECT_NEAR(result[0], 0.0, TOL);
+    EXPECT_NEAR(result[1], 1.0, TOL);
+    EXPECT_NEAR(result[2], 0.0, TOL);
+
+    rotate_vector_degrees(pt->get_rotation_vector(),
+                          pt->get_neutral_normal(),
+                          -pt->get_tracking_angle_degrees(),
+                          temp);
+    pt->convert_vector_global_to_local(result, temp);
+    std::cout << "Result: " << result << std::endl;
+    EXPECT_NEAR(result[0], -1.0, TOL);
+    EXPECT_NEAR(result[1], 0.0, TOL);
+    EXPECT_NEAR(result[2], 0.0, TOL);
 
     // // We can go over all the elements added
     // for (auto iter = my_sim.get_iterator();

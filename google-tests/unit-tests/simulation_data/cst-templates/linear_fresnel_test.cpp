@@ -320,6 +320,8 @@ TEST(LinearFresnel, UpdateGeometry)
 
     const double sun_az = 180.0;
     const double sun_el = 45.0;
+    // const double sun_az = 90.0;
+    // const double sun_el = 00.0;
 
     SimulationData my_sim;
     // Set parameters
@@ -369,6 +371,7 @@ TEST(LinearFresnel, UpdateGeometry)
     auto lf = make_element<LinearFresnel>();
     lf->set_optics(mirror, absorber, envelop_out, envelop_in);
     lf->set_origin(10.0, 0.0, 0.0);
+    // lf->set_origin(0.0, 0.0, 0.0);
     lf->set_aperture_size(6.0, 12.0);
     lf->set_number_panels(2, 2);
     lf->set_gaps(0.05, 0.02, 0.15);
@@ -376,6 +379,8 @@ TEST(LinearFresnel, UpdateGeometry)
     lf->set_receiver_height(2.0);
     lf->set_receiver_dimensions(0.07, 0.115, 0.003);
     lf->set_angles(0.0, 15.0);
+    // lf->set_angles(0.0, 0.0);
+    lf->set_tracking_limits(10.0, 170.0);
     lf->create_geometry();
     lf->set_name("LinearFresnel");
     lf->update_geometry(sun_az, sun_el);

@@ -66,6 +66,10 @@ public:
 
     virtual void enforce_user_fields_set() const override;
 
+    Vector3d get_tracking_origin() const
+    {
+        return this->tracking_origin;
+    }
     Vector3d get_rotation_vector() const
     {
         return this->rotation_axis;
@@ -81,15 +85,17 @@ public:
 private:
     // Flags
     bool initialized;
-    // bool ready_to_add_self;
 
     // Global Characteristics
     // Degrees from north (GLOBAL y-axis)
     double azimuth;
     // Degrees from ground plane (GLOBAL z-axis)
     double tilt;
-    // Axis trough rotates about in GLOBAL coordinates
+    // Aperture normal when tracking angle is 0.0 (GLOBAL coordinates)
+    Vector3d tracking_origin;
+    // Axis trough rotates about (GLOBAL coordinates)
     Vector3d rotation_axis;
+    // Aperture normal when tracking angle is 90.0 (GLOBAL coordinates)
     Vector3d neutral_normal;
 
     // Reflector(s) Characteristic(s)
@@ -118,9 +124,9 @@ private:
     double tracking_limit_lower;
     double tracking_limit_upper;
     // Aperture normal at lower limit in global coordinate
-    Vector3d normal_lower_limit;
+    Vector3d vector_lower_limit;
     // Aperture normal at upper limit in global coordinate
-    Vector3d normal_upper_limit;
+    Vector3d vector_upper_limit;
 
     // Element Management
     // composite_element_ptr elements;

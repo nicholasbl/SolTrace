@@ -470,7 +470,7 @@ void LinearFresnel::update_geometry(double azimuth, double elevation)
 
     // NOTE: Setting the aim point and z-rotation only need to be done
     // once. But they need to be done after the LinearFresnel object
-    // has been added to its reference element (if any) so we do it 
+    // has been added to its reference element (if any) so we do it
     // here at the cost of repeating ourselves.
 
     // Set aim point
@@ -481,24 +481,38 @@ void LinearFresnel::update_geometry(double azimuth, double elevation)
 
     // Set z-rotation
     double beta = asin(z_axis_ref[1]);
-    double gamma = acos(y_axis_ref[2] / cos(beta));
+    double gamma = acos(y_axis_ref[1] / cos(beta));
     this->set_zrot_radians(gamma);
 
     // Update coordinate conversions so we can use them below
     this->coordinates_initialized = false;
     this->compute_coordinate_rotations();
 
+    // std::cout << "Rotation axis: " << this->rotation_axis
+    //           << "\nNeutral normal: " << this->neutral_normal
+    //           << std::endl;
+
+    // std::cout << "Global to Local: " << this->get_global_to_local()
+    //           << std::endl;
+
+    // std::cout << "z axis ref: " << z_axis_ref
+    //           << "\ny axis ref: " << y_axis_ref
+    //           << "\nBeta: " << beta
+    //           << "\nGamma: " << gamma
+    //           << std::endl;
+
     // Sun position projected into rotation plane and converted
     // to LinearFresnel object coordinates
-    Vector3d sun_pos, sun_proj, sun_proj_local;
+    Vector3d sun_pos, sun_proj_local;
     sun_position_vector_degrees(sun_pos, azimuth, elevation);
-    project_onto_plane(this->rotation_axis, sun_pos, sun_proj);
-    sun_proj.make_unit();
-    this->convert_global_to_local(sun_proj_local, sun_proj);
+    this->convert_global_to_local(sun_proj_local, sun_pos);
+    // Project to rotation plane
+    sun_proj_local[1] = 0.0;
     sun_proj_local.make_unit();
 
     // std::cout << "Sun Position: " << sun_pos
-    //           << "\nSun Proj Global: " << sun_proj
+    //           //   << "\nSun Proj Global: " << sun_proj
+    //           //   << "\nSun Proj Local: " << temp
     //           << "\nSun Proj Local: " << sun_proj_local
     //           << std::endl;
 
@@ -523,10 +537,25 @@ void LinearFresnel::update_geometry(double azimuth, double elevation)
 
         // Take bisector vector with the sun
         vector_add(0.5, sun_proj_local, 0.5, aim_mirror_ref);
+        aim_mirror_ref.make_unit();
         // std::cout << "Aim Mirror Ref: " << aim_mirror_ref
         //           << std::endl;
 
-        // TODO: Need tracking limits here?
+        // Dot product with [1, 0, 0]
+        double theta = acos(aim_mirror_ref[0]) * R2D;
+
+        // std::cout << "Theta: " << theta << std::endl;
+
+        if (theta < this->tracking_limit_lower)
+        {
+            theta = this->tracking_limit_lower * D2R;
+            aim_mirror_ref.set_values(cos(theta), 0.0, sin(theta));
+        }
+        else if (theta > this->tracking_limit_upper)
+        {
+            theta = this->tracking_limit_upper * D2R;
+            aim_mirror_ref.set_values(cos(theta), 0.0, sin(theta));
+        }
 
         // Add origin of mirror
         vector_add(1.0, iter->get_origin_ref(), 1000.0, aim_mirror_ref);

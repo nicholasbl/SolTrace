@@ -33,6 +33,7 @@ ParabolicTrough::ParabolicTrough()
       tracking_limit_lower(-1.0),
       tracking_limit_upper(-1.0)
 {
+    this->tracking_origin.set_values(1.0, 0.0, 0.0);
     this->rotation_axis.set_values(0.0, 1.0, 0.0);
     this->neutral_normal.set_values(0.0, 0.0, 1.0);
     return;
@@ -202,19 +203,19 @@ void ParabolicTrough::create_geometry()
     this->enable();
 
     this->rotation_axis.make_unit();
-    this->neutral_normal.make_unit();
+    this->tracking_origin.make_unit();
 
     rotate_vector_degrees(this->rotation_axis,
-                          this->neutral_normal,
+                          this->tracking_origin,
                           this->tracking_limit_lower,
-                          this->normal_lower_limit);
-    this->normal_lower_limit.make_unit();
+                          this->vector_lower_limit);
+    this->vector_lower_limit.make_unit();
 
     rotate_vector_degrees(this->rotation_axis,
-                          this->neutral_normal,
+                          this->tracking_origin,
                           this->tracking_limit_upper,
-                          this->normal_upper_limit);
-    this->normal_upper_limit.make_unit();
+                          this->vector_upper_limit);
+    this->vector_upper_limit.make_unit();
 
     this->initialized = true;
 
@@ -254,8 +255,6 @@ void ParabolicTrough::update_geometry(double azimuth,
     Vector3d sun_pos;
     sun_position_vector_degrees(sun_pos, azimuth, elevation);
     make_unit_vector(sun_pos);
-    // this->convert_global_to_reference(sun_pos_ref, sun_pos_global);
-    // make_unit_vector(sun_pos_ref);
 
     // Project into the plane defined by rotation axis as the normal
     Vector3d sun_proj;
@@ -264,19 +263,18 @@ void ParabolicTrough::update_geometry(double azimuth,
 
     assert(dot_product(sun_proj, this->rotation_axis) < 1e-12);
 
-    double theta = acos(dot_product(sun_proj, this->neutral_normal));
-    theta = theta * R2D + 90.0;
+    double theta = acos(dot_product(sun_proj, this->tracking_origin)) * R2D;
     if (theta < this->tracking_limit_lower)
     {
         this->tracking_angle = this->tracking_limit_lower;
         this->convert_global_to_reference(this->aim,
-                                          this->normal_lower_limit);
+                                          this->vector_lower_limit);
     }
     else if (theta > this->tracking_limit_upper)
     {
         this->tracking_angle = this->tracking_limit_upper;
         this->convert_global_to_reference(this->aim,
-                                          this->normal_upper_limit);
+                                          this->vector_upper_limit);
     }
     else
     {
@@ -289,7 +287,7 @@ void ParabolicTrough::update_geometry(double azimuth,
     double beta = asin(this->aim[1]);
     this->convert_global_to_reference(rotation_axis_ref,
                                       this->rotation_axis);
-    double gamma = acos(rotation_axis_ref[2] / cos(beta));
+    double gamma = acos(rotation_axis_ref[1] / cos(beta));
 
     this->set_zrot_radians(gamma);
     this->aim.scalar_mult(1000.0);
@@ -334,7 +332,6 @@ void ParabolicTrough::set_angles(double azimuth, double tilt)
         throw std::invalid_argument(ss.str());
     }
 
-    // this->initialized = false;
     this->coordinates_initialized = false;
     this->azimuth = azimuth;
     this->tilt = tilt;
@@ -352,17 +349,14 @@ void ParabolicTrough::set_angles(double azimuth, double tilt)
                                    cos(inc));
 
     // z-axis
-    inc -= 0.5 * PI;
-    this->neutral_normal.set_values(sin(inc) * cos(pol),
-                                    sin(inc) * sin(pol),
-                                    cos(inc));
+    this->neutral_normal.set_values(sin(-el) * cos(pol),
+                                    sin(-el) * sin(pol),
+                                    cos(-el));
 
-    // // x-axis -- not checked
-    // inc += 0.5 * PI;
-    // pol -= 0.5 * PI;
-    // this->neutral_normal.set_values(sin(inc) * cos(pol),
-    //                                 sin(inc) * sin(pol),
-    //                                 cos(inc));
+    // x-axis
+    cross_product(this->rotation_axis,
+                  this->neutral_normal,
+                  this->tracking_origin);
 
     return;
 }
