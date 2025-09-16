@@ -1,6 +1,8 @@
+
 #include <gtest/gtest.h>
 
 #include <aperture.hpp>
+#include <constants.hpp>
 
 #include "common.hpp"
 
@@ -71,7 +73,7 @@ TEST(Aperture, Annulus)
     EXPECT_EQ(ann1->radius_circumscribed_circle(), RO);
     EXPECT_EQ(ann2->radius_circumscribed_circle(), RO);
 
-    EXPECT_EQ(ann2->aperture_area(), M_PI * (RO * RO - RI * RI));
+    EXPECT_EQ(ann2->aperture_area(), PI * (RO * RO - RI * RI));
     EXPECT_EQ(ann1->aperture_area(), 0.25 * ann2->aperture_area());
 
     EXPECT_TRUE(ann1->is_in(X1, Y1));
@@ -112,7 +114,7 @@ TEST(Aperture, Circle)
 
     EXPECT_EQ(cir->diameter_circumscribed_circle(), D);
     EXPECT_EQ(cir->radius_circumscribed_circle(), 0.5 * D);
-    EXPECT_EQ(cir->aperture_area(), M_PI * 0.25 * D * D);
+    EXPECT_EQ(cir->aperture_area(), PI * 0.25 * D * D);
 
     EXPECT_TRUE(cir->is_in(X1, Y1));
     EXPECT_FALSE(cir->is_in(X2, Y2));
@@ -366,7 +368,7 @@ TEST(Aperture, MakeApertureFromType)
     ASSERT_TRUE(circle_ap != nullptr);
     EXPECT_EQ(circle_ap->get_type(), ApertureType::CIRCLE);
     EXPECT_EQ(circle_ap->diameter_circumscribed_circle(), 2.0);
-    EXPECT_NEAR(circle_ap->aperture_area(), M_PI, TOL);
+    EXPECT_NEAR(circle_ap->aperture_area(), PI, TOL);
     
     // Test Rectangle creation
     std::vector<double> rect_args = {3.0, 2.0}; // width, height
@@ -382,7 +384,7 @@ TEST(Aperture, MakeApertureFromType)
     ASSERT_TRUE(annulus_ap != nullptr);
     EXPECT_EQ(annulus_ap->get_type(), ApertureType::ANNULUS);
     EXPECT_EQ(annulus_ap->diameter_circumscribed_circle(), 6.0);
-    EXPECT_NEAR(annulus_ap->aperture_area(), 0.5 * M_PI * (9.0 - 1.0), TOL);
+    EXPECT_NEAR(annulus_ap->aperture_area(), 0.5 * PI * (9.0 - 1.0), TOL);
     
     // Test Hexagon creation
     std::vector<double> hex_args = {4.0}; // circumscribe_diameter

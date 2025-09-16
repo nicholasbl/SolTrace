@@ -3,6 +3,8 @@
 
 #include <algorithm>
 
+#include "constants.hpp"
+
 void SetupPTOptimizations(
 	// system info
 	TSystem *System, const bool AsPowerTower,
@@ -178,10 +180,10 @@ void SetupPTOptimizations(
 	{
 		// Set things up for the polar coordinate tree
 		KDLayoutData rec_ld;
-		rec_ld.xlim[0] = -M_PI;
-		rec_ld.xlim[1] = M_PI;
-		rec_ld.ylim[0] = -M_PI / 2.;
-		rec_ld.ylim[1] = M_PI / 2.;
+		rec_ld.xlim[0] = -PI;
+		rec_ld.xlim[1] = PI;
+		rec_ld.ylim[0] = -PI / 2.;
+		rec_ld.ylim[1] = PI / 2.;
 		// use smallest element to set the minimum size
 		rec_ld.min_unit_dx = rec_ld.min_unit_dy = el_proj_dat.back().d_proj; // radians at equator
 

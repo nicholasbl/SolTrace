@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <constants.hpp>
 #include <element.hpp>
 #include <single_element.hpp>
 #include <stage_element.hpp>
@@ -386,7 +387,7 @@ TEST(Element, CoordinateComputationsRotations)
     Vector3d aim1(0.0, -1.0 / sqrt(3.0), sqrt(2.0 / 3.0));
 
     // Z-Rotation is the last of the Euler angles but in degrees
-    const double zrot1 = g1 * 180.0 / M_PI;
+    const double zrot1 = g1 * 180.0 / PI;
 
     Matrix3d Q2;
     Q2.set_value(0, 0, (sqrt(8.0) + sqrt(6.0)) / 8.0);
@@ -401,9 +402,9 @@ TEST(Element, CoordinateComputationsRotations)
     Matrix3d Q2t;
     MatrixTranspose(Q2.data, 3, Q2t.data);
     // Corresponding Euler angles in radians
-    const double a2 = M_PI / 4.0;
-    const double b2 = M_PI / 6.0;
-    const double g2 = M_PI / 3.0;
+    const double a2 = PI / 4.0;
+    const double b2 = PI / 6.0;
+    const double g2 = PI / 3.0;
     // Corresponding aim vector (local z-axis in reference coordinates)
     Vector3d aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
 

@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <common.hpp>
-
+#include <constants.hpp>
 #include <error_distributions.hpp>
 #include <mtrand.hpp>
 #include <native_runner.hpp>
@@ -14,6 +13,8 @@
 #include <vector3d.hpp>
 #include <filesystem>
 #include <virtual_element.hpp>
+
+#include "common.hpp"
 
 TEST(RandomNumberGenerator, SingleNumberMersenneTwister)
 {
@@ -57,13 +58,13 @@ TEST(NativeRunnerTypes, TElement)
     // vector_add(1.0, Origin1, 1.0, aim1);
 
     // // Z-Rotation is the last of the Euler angles but in degrees
-    // const double zrot1 = g1 * 180.0 / M_PI;
+    // const double zrot1 = g1 * 180.0 / PI;
 
     // // Origin
     // Vector3d Origin2(-3.0, 1.0, -5.0);
-    // const double a2 = M_PI / 4.0;
-    // const double b2 = M_PI / 6.0;
-    // const double g2 = M_PI / 3.0;
+    // const double a2 = PI / 4.0;
+    // const double b2 = PI / 6.0;
+    // const double g2 = PI / 3.0;
     // // Corresponding aim vector (local z-axis in reference coordinates)
     // Vector3d aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
     // vector_add(1.0, Origin2, 1.0, aim2);
@@ -191,8 +192,8 @@ TEST(NativeRunner, PowerTowerSmokeTest)
         foptics = el->get_front_optical_properties();
         foptics->reflectivity = 1.0;
 
-        pos.set_values(5 * sin(k * M_PI * 2.0 / NUM_ELEMENTS),
-                       5 * cos(k * M_PI * 2.0 / NUM_ELEMENTS),
+    pos.set_values(5 * sin(k * PI * 2.0 / NUM_ELEMENTS),
+                       5 * cos(k * PI * 2.0 / NUM_ELEMENTS),
                        0.0);
         vector_add(1.0, absorber->get_origin_global(),
                    -1.0, pos,

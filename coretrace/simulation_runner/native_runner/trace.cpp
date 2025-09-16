@@ -49,21 +49,13 @@
 
 #include "trace.hpp"
 
-// #include <algorithm>
 #include <cmath>
-// #include <ctime>
-// #include <string>
 #include <limits>
 #include <vector>
 
-//<<<<<<< HEAD
-//#include "simulation_data/matvec.hpp"
-//#include "element_intersection.hpp"
-//=======
-#include "matvec.hpp"
+#include "constants.hpp"
 #include "determine_element_intersection_new.hpp"
-// #include "element_intersection.hpp"
-//>>>>>>> jm-dev-branch
+#include "matvec.hpp"
 #include "native_runner_backend.hpp"
 #include "native_runner_types.hpp"
 #include "treemesh.hpp"
@@ -1372,12 +1364,12 @@ void SurfaceNormalErrors(MTRand &myrng,
 		if (CosIn[0] == 0.0)
 		{
 			Euler[0] = 0.0;
-			Euler[1] = M_PI / 2.0;
+			Euler[1] = PI / 2.0;
 			goto Label_9;
 		}
 		else
 		{
-			Euler[0] = M_PI / 2.0;
+			Euler[0] = PI / 2.0;
 			goto Label_8;
 		}
 	}
@@ -1501,12 +1493,12 @@ void Errors(
 		if (CosIn[0] == 0.0)
 		{
 			Euler[0] = 0.0;
-			Euler[1] = M_PI / 2.0;
+			Euler[1] = PI / 2.0;
 			goto Label_9;
 		}
 		else
 		{
-			Euler[0] = M_PI / 2.0;
+			Euler[0] = PI / 2.0;
 			goto Label_8;
 		}
 	}

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <composite_element.hpp>
+#include <constants.hpp>
 #include <element.hpp>
 #include <optix_runner.hpp>
 #include <sun.hpp>
@@ -28,7 +29,7 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
     absorber->set_aim_vector(0.0, 5.0, 0.0);
     absorber->set_surface(make_surface<Flat>());
     absorber->set_aperture(make_aperture<Rectangle>(2.0, 2.0));
-    OpticalProperties* foptics = absorber->get_front_optical_properties();
+    OpticalProperties *foptics = absorber->get_front_optical_properties();
     foptics->my_type = REFLECTION;
     foptics->reflectivity = 0.0;
     absorber->set_name("Absorber");
@@ -66,7 +67,7 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
     Vector3d rvec, svec, avec;
     Vector3d aim, pos;
 
-	double spacing = M_PI / 4.0; 
+    double spacing = PI / 4.0;
 
     for (int i = -1; i < 4; ++i)
     {
@@ -75,12 +76,12 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
         foptics->reflectivity = 1.0;
 
         pos.set_values(5 * sin(i * spacing),
-            5 * cos(i * spacing),
-            0.0);
+                       5 * cos(i * spacing),
+                       0.0);
         el->set_origin(pos);
         vector_add(1.0, absorber->get_origin_global(),
-            -1.0, pos,
-            rvec);
+                   -1.0, pos,
+                   rvec);
         make_unit_vector(rvec);
         svec = sun->get_position();
         make_unit_vector(svec);
@@ -92,7 +93,7 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
         // TODO: Set zrot as in python file?
         el->set_zrot(30.0 * i);
         // // Could also be set in radians
-        // el->set_zrot_radians(M_PI / 3.0 * i);
+        // el->set_zrot_radians(PI / 3.0 * i);
 
         el->set_surface(make_surface<Flat>());
         el->set_aperture(make_aperture<Rectangle>(1.0, 1.95));
@@ -109,7 +110,7 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
     sd.add_stage(st1);
 
     // Set parameters
-    SimulationParameters& params = sd.get_simulation_parameters();
+    SimulationParameters &params = sd.get_simulation_parameters();
     // params.number_of_rays = 1000000;
     params.number_of_rays = 100; // Above takes too long
     params.max_number_of_rays = params.number_of_rays * 100;
@@ -157,7 +158,6 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
     sts = runner.run_simulation();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 
-    //sts = runner.report_simulation();
+    // sts = runner.report_simulation();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-
 }
