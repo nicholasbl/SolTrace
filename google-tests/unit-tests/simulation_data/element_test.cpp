@@ -580,7 +580,7 @@ TEST(Element, CoordinateComputations)
     vector_add(1.0, Origin1, 1.0, aim1);
 
     // Z-Rotation is the last of the Euler angles but in degrees
-    const double zrot1 = g1 * 180.0 / M_PI;
+    const double zrot1 = g1 * 180.0 / PI;
 
     // Origin
     Vector3d Origin2(-3.0, 1.0, -5.0);
@@ -599,9 +599,9 @@ TEST(Element, CoordinateComputations)
     Matrix3d Q2t;
     MatrixTranspose(Q2.data, 3, Q2t.data);
     // Corresponding Euler angles in radians
-    const double a2 = M_PI / 4.0;
-    const double b2 = M_PI / 6.0;
-    const double g2 = M_PI / 3.0;
+    const double a2 = PI / 4.0;
+    const double b2 = PI / 6.0;
+    const double g2 = PI / 3.0;
     // Corresponding aim vector (local z-axis in reference coordinates)
     Vector3d aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
     vector_add(1.0, Origin2, 1.0, aim2);
@@ -725,7 +725,7 @@ TEST(Element, VectorCoordinateComputations)
     vector_add(1.0, Origin1, 1.0, aim1);
 
     // Z-Rotation is the last of the Euler angles but in degrees
-    const double zrot1 = g1 * 180.0 / M_PI;
+    const double zrot1 = g1 * 180.0 / PI;
 
     // Origin
     Vector3d Origin2(-3.0, 1.0, -5.0);
@@ -744,9 +744,9 @@ TEST(Element, VectorCoordinateComputations)
     Matrix3d Q2t;
     MatrixTranspose(Q2.data, 3, Q2t.data);
     // Corresponding Euler angles in radians
-    const double a2 = M_PI / 4.0;
-    const double b2 = M_PI / 6.0;
-    const double g2 = M_PI / 3.0;
+    const double a2 = PI / 4.0;
+    const double b2 = PI / 6.0;
+    const double g2 = PI / 3.0;
     // Corresponding aim vector (local z-axis in reference coordinates)
     Vector3d aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
     vector_add(1.0, Origin2, 1.0, aim2);
