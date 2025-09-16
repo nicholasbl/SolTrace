@@ -29,9 +29,9 @@ ParabolicTrough::ParabolicTrough()
       absorber_diameter(-1.0),
       envelope_diameter(-1.0),
       envelope_thickness(-1.0),
-      tracking_angle(90.0),
-      tracking_limit_lower(-1.0),
-      tracking_limit_upper(-1.0)
+      tracking_angle(0.0),
+      tracking_limit_lower(-180.0),
+      tracking_limit_upper(180.0)
 {
     this->tracking_origin.set_values(1.0, 0.0, 0.0);
     this->rotation_axis.set_values(0.0, 1.0, 0.0);
@@ -207,13 +207,13 @@ void ParabolicTrough::create_geometry()
 
     rotate_vector_degrees(this->rotation_axis,
                           this->tracking_origin,
-                          this->tracking_limit_lower,
+                          -this->tracking_limit_lower,
                           this->vector_lower_limit);
     this->vector_lower_limit.make_unit();
 
     rotate_vector_degrees(this->rotation_axis,
                           this->tracking_origin,
-                          this->tracking_limit_upper,
+                          -this->tracking_limit_upper,
                           this->vector_upper_limit);
     this->vector_upper_limit.make_unit();
 
@@ -263,7 +263,11 @@ void ParabolicTrough::update_geometry(double azimuth,
 
     assert(dot_product(sun_proj, this->rotation_axis) < 1e-12);
 
-    double theta = acos(dot_product(sun_proj, this->tracking_origin)) * R2D;
+    // double theta = acos(dot_product(sun_proj, this->tracking_origin)) * R2D;
+    double theta = acos(dot_product(sun_proj, this->neutral_normal)) * R2D;
+    if (dot_product(sun_proj, this->tracking_origin) < 0.0)
+        theta = -theta;
+
     if (theta < this->tracking_limit_lower)
     {
         this->tracking_angle = this->tracking_limit_lower;

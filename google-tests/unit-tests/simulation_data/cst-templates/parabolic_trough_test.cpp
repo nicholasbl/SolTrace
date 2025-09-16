@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include <cst_templates/arclength.hpp>
 #include <native_runner.hpp>
 #include <native_runner_types.hpp>
 #include <simulation_data.hpp>
 #include <sun.hpp>
 
+#include <cst_templates/arclength.hpp>
 #include <cst_templates/parabolic_trough.hpp>
 #include <cst_templates/utilities.hpp>
 
@@ -371,7 +371,7 @@ TEST(ParabolicTrough, UpdateGeometry)
     // pt->set_origin(0.0, 0.0, 0.0);
     pt->set_angles(30.0, 10.0);
     // pt->set_angles(30.0, 0.0);
-    pt->set_tracking_limits(0.0, 180.0);
+    pt->set_tracking_limits(-90.0, 90.0);
     pt->set_aperture_size(6.0, 12.0);
     pt->set_number_panels(2, 2);
     pt->set_focal_length(1.71);
@@ -409,29 +409,29 @@ TEST(ParabolicTrough, UpdateGeometry)
     Vector3d temp, result;
     rotate_vector_degrees(pt->get_rotation_vector(),
                           pt->get_tracking_origin(),
-                          -pt->get_tracking_angle_degrees(),
+                          pt->get_tracking_angle_degrees(),
                           temp);
     pt->convert_vector_global_to_local(result, temp);
-    std::cout << "Result: " << result << std::endl;
-    EXPECT_NEAR(result[0], 0.0, TOL);
+    // std::cout << "Result: " << result << std::endl;
+    EXPECT_NEAR(result[0], 1.0, TOL);
     EXPECT_NEAR(result[1], 0.0, TOL);
-    EXPECT_NEAR(result[2], 1.0, TOL);
+    EXPECT_NEAR(result[2], 0.0, TOL);
 
     pt->convert_vector_global_to_local(result, pt->get_rotation_vector());
-    std::cout << "Result: " << result << std::endl;
+    // std::cout << "Result: " << result << std::endl;
     EXPECT_NEAR(result[0], 0.0, TOL);
     EXPECT_NEAR(result[1], 1.0, TOL);
     EXPECT_NEAR(result[2], 0.0, TOL);
 
     rotate_vector_degrees(pt->get_rotation_vector(),
                           pt->get_neutral_normal(),
-                          -pt->get_tracking_angle_degrees(),
+                          pt->get_tracking_angle_degrees(),
                           temp);
     pt->convert_vector_global_to_local(result, temp);
-    std::cout << "Result: " << result << std::endl;
-    EXPECT_NEAR(result[0], -1.0, TOL);
+    // std::cout << "Result: " << result << std::endl;
+    EXPECT_NEAR(result[0], 0.0, TOL);
     EXPECT_NEAR(result[1], 0.0, TOL);
-    EXPECT_NEAR(result[2], 0.0, TOL);
+    EXPECT_NEAR(result[2], 1.0, TOL);
 
     // // We can go over all the elements added
     // for (auto iter = my_sim.get_iterator();
@@ -492,4 +492,95 @@ TEST(ParabolicTrough, UpdateGeometry)
 
     EXPECT_TRUE(n >= NRAYS);
     EXPECT_TRUE(num_absorbed > N_ABSORBED_THRESH);
+}
+
+TEST(ParabolicTrough, UpdateGeometry_TrackingLimits)
+{
+    constexpr uint_fast64_t NRAYS = 10000;
+    constexpr uint_fast64_t N_ABSORBED_THRESH = NRAYS / 10;
+
+    const double TOL = 1e-12;
+    const double LOWER = -5.0;
+    const double UPPER = 10.0;
+
+    auto pt = make_element<ParabolicTrough>();
+    pt->set_origin(0.0, 0.0, 0.0);
+    pt->set_angles(0.0, 0.0);
+    pt->set_tracking_limits(LOWER, UPPER);
+    pt->set_aperture_size(6.0, 12.0);
+    pt->set_number_panels(2, 2);
+    pt->set_focal_length(1.71);
+    pt->set_gaps(0.02, 0.01, 0.08);
+    pt->set_receiver_dimensions(0.07, 0.115, 0.003);
+    pt->create_geometry();
+    pt->set_name("Parabolic Trough");
+    pt->enable();
+
+    double sun_az = 90.0;
+    double sun_el = 20.0;
+    pt->update_geometry(sun_az, sun_el);
+    // std::cout << "Aim Point: " << pt->get_aim_vector_ref()
+    //           << "\nTracking Lower: " << pt->get_tracking_limit_lower()
+    //           << "\nTracking Upper: " << pt->get_tracking_limit_upper()
+    //           << "\nTracking Origin: " << pt->get_tracking_origin()
+    //           << "\nRotation Vector: " << pt->get_rotation_vector()
+    //           << "\nNeutral Normal: " << pt->get_neutral_normal()
+    //           << "\nTracking Angle: " << pt->get_tracking_angle_degrees()
+    //           << "\nZ-Rotation: " << pt->get_zrot()
+    //           << std::endl;
+    EXPECT_NEAR(pt->get_tracking_angle_degrees(), UPPER, TOL);
+    Vector3d normal = pt->get_aim_vector_global();
+    normal.make_unit();
+    EXPECT_NEAR(normal[0], cos(UPPER * D2R), TOL);
+    EXPECT_NEAR(normal[1], 0.0, TOL);
+    EXPECT_NEAR(normal[2], sin(UPPER * D2R), TOL);
+    Vector3d upper = pt->get_tracking_limit_upper();
+    for (unsigned k = 0; k < 3; ++k)
+    {
+        EXPECT_NEAR(normal[k], upper[k], TOL);
+    }
+
+    pt->update_geometry(-sun_az, sun_el);
+    EXPECT_NEAR(pt->get_tracking_angle_degrees(), LOWER, TOL);
+    normal = pt->get_aim_vector_global();
+    normal.make_unit();
+    EXPECT_NEAR(normal[0], cos(LOWER * D2R), TOL);
+    EXPECT_NEAR(normal[1], 0.0, TOL);
+    EXPECT_NEAR(normal[2], sin(LOWER * D2R), TOL);
+    Vector3d lower = pt->get_tracking_limit_lower();
+    for (unsigned k = 0; k < 3; ++k)
+    {
+        EXPECT_NEAR(normal[k], lower[k], TOL);
+    }
+}
+
+TEST(ParabolicTrough, ErrorChecking_UpdateGeometry)
+{
+    auto pt = make_element<ParabolicTrough>();
+    pt->set_origin(10.0, 0.0, 0.0);
+    pt->set_angles(30.0, 10.0);
+    pt->set_tracking_limits(-90.0, 90.0);
+    pt->set_aperture_size(6.0, 12.0);
+    pt->set_number_panels(2, 2);
+    pt->set_focal_length(1.71);
+    pt->set_gaps(0.02, 0.01, 0.08);
+    pt->set_receiver_dimensions(0.07, 0.115, 0.003);
+    pt->set_name("Parabolic Trough");
+
+    EXPECT_THROW(pt->update_geometry(0.0, 0.0), std::invalid_argument);
+
+    pt->create_geometry();
+    pt->enable();
+
+    EXPECT_THROW(pt->update_geometry(-720.0, 45.0), std::invalid_argument);
+    EXPECT_THROW(pt->update_geometry(720.0, 45.0), std::invalid_argument);
+    EXPECT_THROW(pt->update_geometry(0.0, 101.0), std::invalid_argument);
+    EXPECT_THROW(pt->update_geometry(0.0, -1.0), std::invalid_argument);
+}
+
+TEST(ParabolicTrough, ErrorChecking_InvalidTrackingLimits)
+{
+    auto pt = make_element<ParabolicTrough>();
+    // Lower limit > upper limit
+    EXPECT_THROW(pt->set_tracking_limits(90.0, 0.0), std::invalid_argument);
 }

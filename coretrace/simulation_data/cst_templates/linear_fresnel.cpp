@@ -13,7 +13,7 @@
 LinearFresnel::LinearFresnel()
     : CompositeElement(),
       initialized(false),
-      reciever_height(-1.0),
+      receiver_height(-1.0),
       azimuth(-1.0),
       tilt(-1.0),
       focused_panels(false),
@@ -28,7 +28,7 @@ LinearFresnel::LinearFresnel()
       env_diameter(-1.0),
       env_thickness(-1.0),
       // tracking_angle(0.0),
-      tracking_limit_lower(0.0),
+      tracking_limit_lower(-180.0),
       tracking_limit_upper(180.0)
 {
     this->optics_absorber.set_ideal_absorption();
@@ -36,6 +36,7 @@ LinearFresnel::LinearFresnel()
     this->optics_env_out.set_ideal_transmission();
     this->optics_env_in.set_ideal_transmission();
 
+    this->tracking_origin.set_values(1.0, 0.0, 0.0);
     this->rotation_axis.set_values(0.0, 1.0, 0.0);
     this->neutral_normal.set_values(0.0, 0.0, 1.0);
 }
@@ -98,6 +99,10 @@ void LinearFresnel::set_angles(double azimuth, double tilt)
     this->neutral_normal.set_values(sin(-el) * cos(pol),
                                     sin(-el) * sin(pol),
                                     cos(-el));
+
+    cross_product(this->rotation_axis,
+                  this->neutral_normal,
+                  this->tracking_origin);
 
     return;
 }
@@ -191,7 +196,7 @@ void LinearFresnel::set_receiver_height(double height)
     }
 
     this->initialized = false;
-    this->reciever_height = height;
+    this->receiver_height = height;
 
     return;
 }
@@ -301,7 +306,7 @@ void LinearFresnel::create_geometry()
     // TODO: Should mirrors aim at the receiver center or origin?
     Vector3d receiver_pos(0.0,
                           0.0,
-                          this->reciever_height - 0.5 * this->abs_diameter);
+                          this->receiver_height - 0.5 * this->abs_diameter);
     double panel_y, flen;
     single_element_ptr mirror;
     aperture_ptr ap;
@@ -330,7 +335,7 @@ void LinearFresnel::create_geometry()
             if (this->focused_panels)
             {
                 flen = sqrt(panel_x * panel_x +
-                            this->reciever_height * this->reciever_height);
+                            this->receiver_height * this->receiver_height);
                 surf = make_surface<Parabola>(flen, 0.0);
             }
             else
@@ -373,7 +378,7 @@ void LinearFresnel::create_geometry()
     auto abs = make_element<SingleElement>();
     abs->set_name("Absorber");
     origin.set_values(0.0, 0.0,
-                      this->reciever_height - 0.5 * this->abs_diameter);
+                      this->receiver_height - 0.5 * this->abs_diameter);
     aim.set_values(0.0, 0.0, 1.0);
     vector_add(1.0, origin, 1.0, aim);
     abs->set_reference_frame_geometry(origin, aim, 0.0);
@@ -396,7 +401,7 @@ void LinearFresnel::create_geometry()
     auto envout = make_element<SingleElement>();
     envout->set_name("EnvelopeOuter");
     origin.set_values(0.0, 0.0,
-                      this->reciever_height - 0.5 * this->env_diameter);
+                      this->receiver_height - 0.5 * this->env_diameter);
     aim.set_values(0.0, 0.0, 1.0);
     vector_add(1.0, origin, 1.0, aim);
     envout->set_reference_frame_geometry(origin, aim, 0.0);
@@ -418,7 +423,7 @@ void LinearFresnel::create_geometry()
     auto envin = make_element<SingleElement>();
     envin->set_name("EnvelopeInner");
     origin.set_values(0.0, 0.0,
-                      this->reciever_height -
+                      this->receiver_height -
                           0.5 * this->env_diameter + this->env_thickness);
     aim.set_values(0.0, 0.0, 1.0);
     vector_add(1.0, origin, 1.0, aim);
@@ -519,8 +524,10 @@ void LinearFresnel::update_geometry(double azimuth, double elevation)
     // Set aimpoint for mirrors
     Vector3d aim_mirror_ref;
     // Absorber position projected into the plane of rotation (the xz-plane)
-    Vector3d origin_abs_proj(0.0, 0.0, this->reciever_height);
-    origin_abs_proj.make_unit();
+    Vector3d origin_abs_proj(0.0,
+                             0.0,
+                             this->receiver_height - 0.5 * this->abs_diameter);
+    // origin_abs_proj.make_unit();
     for (auto iter : this->mirrors)
     {
         // Get mirror to to receiver vector
@@ -536,29 +543,37 @@ void LinearFresnel::update_geometry(double azimuth, double elevation)
         //           << std::endl;
 
         // Take bisector vector with the sun
-        vector_add(0.5, sun_proj_local, 0.5, aim_mirror_ref);
+        vector_add(1.0, sun_proj_local, 1.0, aim_mirror_ref);
         aim_mirror_ref.make_unit();
-        // std::cout << "Aim Mirror Ref: " << aim_mirror_ref
+        // std::cout << "Sun Proj Local: " << sun_proj_local
+        //           << "\nAim Mirror Ref: " << aim_mirror_ref
         //           << std::endl;
 
+        // Dot product with [0, 0, 1]
+        double theta = acos(aim_mirror_ref[2]) * R2D;
         // Dot product with [1, 0, 0]
-        double theta = acos(aim_mirror_ref[0]) * R2D;
-
+        if (aim_mirror_ref[0] < 0)
+            theta = -theta;
         // std::cout << "Theta: " << theta << std::endl;
 
         if (theta < this->tracking_limit_lower)
         {
             theta = this->tracking_limit_lower * D2R;
-            aim_mirror_ref.set_values(cos(theta), 0.0, sin(theta));
+            aim_mirror_ref.set_values(sin(theta), 0.0, cos(theta));
         }
         else if (theta > this->tracking_limit_upper)
         {
             theta = this->tracking_limit_upper * D2R;
-            aim_mirror_ref.set_values(cos(theta), 0.0, sin(theta));
+            aim_mirror_ref.set_values(sin(theta), 0.0, cos(theta));
         }
+
+        // std::cout << "Theta 2: " << theta * R2D
+        //           << "\nAim Mirror Ref: " << aim_mirror_ref
+        //           << std::endl;
 
         // Add origin of mirror
         vector_add(1.0, iter->get_origin_ref(), 1000.0, aim_mirror_ref);
+        // aim_mirror_ref.scalar_mult(1000.0);
 
         // Set aim point
         iter->set_aim_vector(aim_mirror_ref);
@@ -590,7 +605,7 @@ void LinearFresnel::enforce_user_fields_set() const
             "before creating geometry.");
     }
 
-    if (this->reciever_height <= 0.0)
+    if (this->receiver_height <= 0.0)
     {
         throw std::invalid_argument(
             "LinearFresnel: Receiver height must be set "

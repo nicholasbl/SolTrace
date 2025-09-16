@@ -28,18 +28,6 @@ public:
     LinearFresnel();
     ~LinearFresnel();
 
-    Vector3d get_rotation_vector() const
-    {
-        return this->rotation_axis;
-    }
-    Vector3d get_neutral_normal() const
-    {
-        return this->neutral_normal;
-    }
-
-    // double get_tracking_angle_degrees() const;
-    // double get_tracking_angle_radians() const;
-
     void set_angles(double azimuth, double tilt);
     void set_aperture_size(double len_x, double len_y);
     void set_focused_panels(bool focused);
@@ -60,11 +48,34 @@ public:
     void create_geometry();
     void update_geometry(double azimuth, double elevation);
 
+    Vector3d get_tracking_origin() const
+    {
+        return this->tracking_origin;
+    }
+    Vector3d get_rotation_vector() const
+    {
+        return this->rotation_axis;
+    }
+    Vector3d get_neutral_normal() const
+    {
+        return this->neutral_normal;
+    }
+
+    const std::vector<single_element_ptr>& get_mirrors() const
+    {
+        return this->mirrors;
+    }
+
+    const std::vector<single_element_ptr>& get_absorbers() const
+    {
+        return this->absorbers;
+    }
+
 private:
     bool initialized;
 
     // Global Characteristics
-    double reciever_height;
+    double receiver_height;
     double azimuth;
     double tilt;
 
@@ -94,6 +105,7 @@ private:
     double tracking_limit_upper;
     Vector3d rotation_axis;
     Vector3d neutral_normal;
+    Vector3d tracking_origin;
 
     std::vector<single_element_ptr> mirrors;
     std::vector<single_element_ptr> absorbers;

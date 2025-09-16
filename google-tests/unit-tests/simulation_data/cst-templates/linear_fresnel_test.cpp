@@ -320,6 +320,7 @@ TEST(LinearFresnel, UpdateGeometry)
 
     const double sun_az = 180.0;
     const double sun_el = 45.0;
+    const double TOL = 1e-12;
     // const double sun_az = 90.0;
     // const double sun_el = 00.0;
 
@@ -387,9 +388,19 @@ TEST(LinearFresnel, UpdateGeometry)
     lf->enable();
     my_sim.add_element(lf);
 
+    // EXPECT_NEAR(dot_product(lf->get_rotation_vector(),
+    //                         lf->get_neutral_normal()),
+    //             0.0, 1e-12);
+
+    EXPECT_NEAR(dot_product(lf->get_tracking_origin(),
+                            lf->get_rotation_vector()),
+                0.0, TOL);
+    EXPECT_NEAR(dot_product(lf->get_tracking_origin(),
+                            lf->get_neutral_normal()),
+                0.0, TOL);
     EXPECT_NEAR(dot_product(lf->get_rotation_vector(),
                             lf->get_neutral_normal()),
-                0.0, 1e-12);
+                0.0, TOL);
 
     // std::cout << "Rotation Axis: " << lf->get_rotation_vector()
     //           << "\nNeutral Normal: " << lf->get_neutral_normal()
@@ -454,4 +465,106 @@ TEST(LinearFresnel, UpdateGeometry)
 
     EXPECT_TRUE(n >= NRAYS);
     EXPECT_TRUE(num_absorbed > N_ABSORBED_THRESH);
+}
+
+TEST(LinearFresnel, UpdateGeometry_TrackingLimits)
+{
+    const double sun_az = 90.0;
+    const double sun_el = 0.0;
+    // const double sun_az = 90.0;
+    // const double sun_el = 00.0;
+    const double LOWER = -30.0;
+    const double UPPER = 25.0;
+    const double TOL = 1e-12;
+
+    auto lf = make_element<LinearFresnel>();
+    lf->set_origin(0.0, 0.0, 0.0);
+    lf->set_aperture_size(4.0, 8.0);
+    lf->set_number_panels(2, 1);
+    lf->set_gaps(0.0, 0.0, 0.0);
+    lf->set_focused_panels(false);
+    lf->set_receiver_height(2.0);
+    lf->set_receiver_dimensions(0.07, 0.115, 0.003);
+    lf->set_angles(0.0, 0.0);
+    lf->set_tracking_limits(LOWER, UPPER);
+    lf->create_geometry();
+    lf->set_name("LinearFresnel");
+    lf->enable();
+
+    Vector3d normal;
+    double theta;
+
+    lf->update_geometry(-sun_az, sun_el);
+
+    for (auto citer : lf->get_mirrors())
+    {
+        vector_add(1.0, citer->get_aim_vector_global(),
+                   -1.0, citer->get_origin_global(),
+                   normal);
+        normal.make_unit();
+        // Dot product with [0, 0, 1]
+        theta = acos(normal[2]);
+        if (normal[0] < 0.0)
+            theta = -theta;
+
+        EXPECT_NEAR(theta, LOWER * D2R, TOL);
+        EXPECT_NEAR(normal[0], sin(LOWER * D2R), TOL);
+        EXPECT_NEAR(normal[1], 0.0, TOL);
+        EXPECT_NEAR(normal[2], cos(LOWER * D2R), TOL);
+    }
+
+    lf->update_geometry(sun_az, sun_el);
+    for (auto citer : lf->get_mirrors())
+    {
+        vector_add(1.0, citer->get_aim_vector_global(),
+                   -1.0, citer->get_origin_global(),
+                   normal);
+        normal.make_unit();
+        // Dot product with [1, 0, 0]
+        theta = acos(normal[2]);
+        if (normal[0] < 0.0)
+            theta = -theta;
+
+        EXPECT_NEAR(theta, UPPER * D2R, TOL);
+        EXPECT_NEAR(normal[0], sin(UPPER * D2R), TOL);
+        EXPECT_NEAR(normal[1], 0.0, TOL);
+        EXPECT_NEAR(normal[2], cos(UPPER * D2R), TOL);
+    }
+}
+
+// Additional error condition tests for LinearFresnel
+TEST(LinearFresnel, ErrorChecking_SetTrackingLimits)
+{
+    auto lf = make_element<LinearFresnel>();
+    // Lower limit > upper limit
+    EXPECT_THROW(lf->set_tracking_limits(90.0, 0.0), std::invalid_argument);
+    // Lower limit == upper limit (should be allowed, so no throw)
+    EXPECT_NO_THROW(lf->set_tracking_limits(45.0, 45.0));
+}
+
+TEST(LinearFresnel, ErrorChecking_UpdateGeometryInvalidArgs)
+{
+    auto lf = make_element<LinearFresnel>();
+    lf->set_aperture_size(5.0, 10.0);
+    lf->set_number_panels(2, 2);
+    lf->set_receiver_height(3.0);
+    lf->set_receiver_dimensions(0.07, 0.115, 0.003);
+    lf->create_geometry();
+    // Elevation out of range
+    EXPECT_THROW(lf->update_geometry(0.0, -1.0), std::invalid_argument);
+    EXPECT_THROW(lf->update_geometry(0.0, 91.0), std::invalid_argument);
+    // Azimuth out of range
+    EXPECT_THROW(lf->update_geometry(-181.0, 45.0), std::invalid_argument);
+    EXPECT_THROW(lf->update_geometry(181.0, 45.0), std::invalid_argument);
+}
+
+TEST(LinearFresnel, ErrorChecking_UpdateGeometryBeforeCreate)
+{
+    auto lf = make_element<LinearFresnel>();
+    lf->set_aperture_size(5.0, 10.0);
+    lf->set_number_panels(2, 2);
+    lf->set_receiver_height(3.0);
+    lf->set_receiver_dimensions(0.07, 0.115, 0.003);
+    // Do not call create_geometry
+    EXPECT_THROW(lf->update_geometry(0.0, 45.0), std::invalid_argument);
 }

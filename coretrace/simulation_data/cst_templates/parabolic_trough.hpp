@@ -78,6 +78,14 @@ public:
     {
         return this->neutral_normal;
     }
+    Vector3d get_tracking_limit_lower() const
+    {
+        return this->vector_lower_limit;
+    }
+    Vector3d get_tracking_limit_upper() const
+    {
+        return this->vector_upper_limit;
+    }
 
     double get_tracking_angle_degrees() const;
     double get_tracking_angle_radians() const;
