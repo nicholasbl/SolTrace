@@ -169,8 +169,8 @@ TEST(ParabolicDish, Tracing)
 
 TEST(ParabolicDish, UpdateGeometry)
 {
-    const uint_fast64_t NRAYS = 10000;
-    const uint_fast64_t N_ABS_THRESH = 1000;
+    constexpr uint_fast64_t NRAYS = 10000;
+    constexpr uint_fast64_t N_ABSORBED_THRESH = NRAYS / 10;
     const double sun_az = 180.0;
     const double sun_el = 45.0;
 
@@ -299,7 +299,7 @@ TEST(ParabolicDish, UpdateGeometry)
     // ray_data->Print();
 
     EXPECT_TRUE(n >= NRAYS);
-    EXPECT_TRUE(num_absorbed >= N_ABS_THRESH);
+    EXPECT_TRUE(num_absorbed >= N_ABSORBED_THRESH);
 }
 
 // Error Checking Tests for ParabolicDish

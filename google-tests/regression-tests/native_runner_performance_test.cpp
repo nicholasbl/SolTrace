@@ -77,23 +77,29 @@ TEST(NativeRunner, PerformanceTest)
             ypos = dy * jy - LY;
             hs_origin.set_values(xpos, ypos, 0.0);
 
-            vector_add(1.0, sun_pos, -1.0, hs_origin, v1);
-            vector_add(1.0, abs_origin, -1.0, hs_origin, v2);
-            vector_add(0.5, v1, 0.5, v2, aim);
+            // vector_add(1.0, sun_pos, -1.0, hs_origin, v1);
+            // vector_add(1.0, abs_origin, -1.0, hs_origin, v2);
+            // vector_add(0.5, v1, 0.5, v2, aim);
             // std::cout << aim << std::endl;
-            vector_add(1.0, hs_origin, 1.0, aim, aim_point);
+            // vector_add(1.0, hs_origin, 1.0, aim, aim_point);
 
             auto hs = make_element<Heliostat>();
             hs->set_optics(mirror);
-            hs->set_reference_frame_geometry(hs_origin, aim, 0.0);
+            // hs->set_reference_frame_geometry(hs_origin, aim, 0.0);
+            hs->set_origin(hs_origin);
             hs->set_aperture_size(2.0 * dx, 2.0 * dy);
             hs->set_number_panels(NX, NY);
             hs->set_gaps(0.0, 0.0);
             hs->set_focal_length(0.0);
             hs->set_canting(Heliostat::NONE, 0.0, 0.0);
-            hs->create_geometry();
+            hs->set_target_position(abs_origin);
             hs->set_name("Heliostat");
             hs->enable();
+
+            hs->create_geometry();
+            auto ret = st1->add_element(hs);
+            EXPECT_TRUE(Element::is_success(ret));
+            hs->update_geometry(0.0, 90.0);
 
             // std::cout << "****************"
             //           << "\nix = " << ix << "  jy = " << jy
@@ -103,9 +109,6 @@ TEST(NativeRunner, PerformanceTest)
             //           << "\nv1: " << v1
             //           << "\nv2: " << v2
             //           << std::endl;
-
-            auto ret = st1->add_element(hs);
-            EXPECT_TRUE(Element::is_success(ret));
         }
     }
 
@@ -229,7 +232,7 @@ TEST(NativeRunner, LargePerformanceTest)
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.setup_simulation(&sd);
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-    
+
     auto t0 = std::chrono::high_resolution_clock::now();
     sts = runner.run_simulation();
     auto t1 = std::chrono::high_resolution_clock::now();

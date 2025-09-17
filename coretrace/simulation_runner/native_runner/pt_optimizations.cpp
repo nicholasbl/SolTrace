@@ -198,8 +198,8 @@ void SetupPTOptimizations(
 			double angspan[2];
 			double adjmult = 1.5;
 			angspan[0] = D->d_proj / cos(fabs(D->zen)) * adjmult; // azimuthal span
-			angspan[0] = fmin(angspan[0], 2. * M_PI);			  // limit to circumference
-			angspan[1] = D->d_proj / M_PI * adjmult;			  // zenithal span
+			angspan[0] = fmin(angspan[0], 2. * PI);			  // limit to circumference
+			angspan[1] = D->d_proj / PI * adjmult;			  // zenithal span
 			rec_hash.add_object((void *)D->el_addr, D->az, D->zen, angspan);
 		}
 
