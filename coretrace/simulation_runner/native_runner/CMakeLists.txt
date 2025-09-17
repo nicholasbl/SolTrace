@@ -42,6 +42,7 @@ set_target_properties(
 target_link_libraries(
     native_runner
     simdata
+    simresult
 )
 
 if (NOT APPLE AND ENABLE_COVERAGE)

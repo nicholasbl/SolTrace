@@ -55,15 +55,14 @@
 #include <string>
 #include <vector>
 
+#include "constants.hpp"
 #include "element.hpp"
 #include "optical_properties.hpp"
 #include "ray_source.hpp"
 #include "surface_intersection_calculator.hpp"
 
-#define ACOSM1O180 0.017453292519943295 // acos(-1)/180.0
-#ifndef M_PI
-#define M_PI 3.141592653589793238462643
-#endif
+// #define ACOSM1O180 0.017453292519943295 // acos(-1)/180.0
+// #endif
 
 // class nanexcept : public std::exception
 // {

@@ -1,4 +1,3 @@
-
 add_subdirectory(native_runner)
 
 # find cuda and optix libraries, if found then add optix_runner

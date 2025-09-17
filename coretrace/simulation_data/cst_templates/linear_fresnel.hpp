@@ -1,3 +1,16 @@
+/**
+ * @file linear_fresnel.hpp
+ * @brief Linear Fresnel reflector CST template
+ *
+ * Defines the LinearFresnel class which generates linear Fresnel
+ * reflector systems with configurable mirror panels, receiver geometry,
+ * and tracking capabilities for concentrated solar thermal applications.
+ * Supports both focused and flat panel configurations.
+ *
+ * @defgroup cst_templates CST Templates
+ * @{
+ */
+
 #ifndef SOLTRACE_LINEAR_FRESNEL_H
 #define SOLTRACE_LINEAR_FRESNEL_H
 
@@ -14,6 +27,7 @@ class LinearFresnel : public CompositeElement
 public:
     LinearFresnel();
     ~LinearFresnel();
+
     void set_angles(double azimuth, double tilt);
     void set_aperture_size(double len_x, double len_y);
     void set_focused_panels(bool focused);
@@ -27,17 +41,41 @@ public:
     void set_receiver_dimensions(double absorber_diameter,
                                  double envelop_diameter,
                                  double envelop_thickness);
+    void set_tracking_limits(double lower, double upper);
 
-    virtual void enforce_user_fields_set() const;
+    virtual void enforce_user_fields_set() const override;
 
     void create_geometry();
-    void update_geometry();
+    void update_geometry(double azimuth, double elevation);
+
+    Vector3d get_tracking_origin() const
+    {
+        return this->tracking_origin;
+    }
+    Vector3d get_rotation_vector() const
+    {
+        return this->rotation_axis;
+    }
+    Vector3d get_neutral_normal() const
+    {
+        return this->neutral_normal;
+    }
+
+    const std::vector<single_element_ptr>& get_mirrors() const
+    {
+        return this->mirrors;
+    }
+
+    const std::vector<single_element_ptr>& get_absorbers() const
+    {
+        return this->absorbers;
+    }
 
 private:
     bool initialized;
 
     // Global Characteristics
-    double reciever_height;
+    double receiver_height;
     double azimuth;
     double tilt;
 
@@ -61,9 +99,21 @@ private:
     OpticalProperties optics_env_out;
     OpticalProperties optics_env_in;
 
+    // Solar Tracking
+    // double tracking_angle;
+    double tracking_limit_lower;
+    double tracking_limit_upper;
+    Vector3d rotation_axis;
+    Vector3d neutral_normal;
+    Vector3d tracking_origin;
+
     std::vector<single_element_ptr> mirrors;
     std::vector<single_element_ptr> absorbers;
     std::vector<single_element_ptr> envelope;
 };
+
+/**
+ * @}
+ */
 
 #endif

@@ -49,16 +49,13 @@
 
 #include "trace.hpp"
 
-// #include <algorithm>
 #include <cmath>
-// #include <ctime>
-// #include <string>
 #include <limits>
 #include <vector>
 
-#include "matvec.hpp"
+#include "constants.hpp"
 #include "determine_element_intersection_new.hpp"
-// #include "element_intersection.hpp"
+#include "matvec.hpp"
 #include "native_runner_backend.hpp"
 #include "native_runner_types.hpp"
 #include "treemesh.hpp"
@@ -678,9 +675,7 @@ bool trace_native(
 					}
 				}
 
-				// // TODO: Make sure below maps to correct element...
-				// // Process Interaction
-				// int k = abs(p_ray->element) - 1;
+				// Process Interaction
 				int_fast64_t k = abs(p_ray->element) - 1;
 				ProcessInteraction(System, myrng, IncludeSunShape,
 								   optics,
@@ -1369,12 +1364,12 @@ void SurfaceNormalErrors(MTRand &myrng,
 		if (CosIn[0] == 0.0)
 		{
 			Euler[0] = 0.0;
-			Euler[1] = M_PI / 2.0;
+			Euler[1] = PI / 2.0;
 			goto Label_9;
 		}
 		else
 		{
-			Euler[0] = M_PI / 2.0;
+			Euler[0] = PI / 2.0;
 			goto Label_8;
 		}
 	}
@@ -1418,6 +1413,9 @@ Label_9:
 			theta2 = thetax * thetax + thetay * thetay;
 		} while (theta2 > (delop * delop));
 
+		break;
+	default:
+		// TODO: Need an error here.
 		break;
 	}
 
@@ -1495,12 +1493,12 @@ void Errors(
 		if (CosIn[0] == 0.0)
 		{
 			Euler[0] = 0.0;
-			Euler[1] = M_PI / 2.0;
+			Euler[1] = PI / 2.0;
 			goto Label_9;
 		}
 		else
 		{
-			Euler[0] = M_PI / 2.0;
+			Euler[0] = PI / 2.0;
 			goto Label_8;
 		}
 	}
@@ -1589,6 +1587,9 @@ Label_50:
 		// case 'F':
 		// 	theta2 = pow(asin(sqrt(myrng())), 2);
 		// 	break;
+	default:
+		// TODO: Add error message here.
+		break;
 	}
 
 	/*{Transform to local coordinate system of ray to set up rotation matrices for coord and inverse

@@ -3,12 +3,17 @@
 #include <stdexcept>
 #include <sstream>
 
+#include "aperture.hpp"
+#include "constants.hpp"
 #include "element.hpp"
+#include "surface.hpp"
+
+#include "cst_templates/utilities.hpp"
 
 LinearFresnel::LinearFresnel()
     : CompositeElement(),
       initialized(false),
-      reciever_height(-1.0),
+      receiver_height(-1.0),
       azimuth(-1.0),
       tilt(-1.0),
       focused_panels(false),
@@ -21,12 +26,19 @@ LinearFresnel::LinearFresnel()
       gap_center(-1.0),
       abs_diameter(-1.0),
       env_diameter(-1.0),
-      env_thickness(-1.0)
+      env_thickness(-1.0),
+      // tracking_angle(0.0),
+      tracking_limit_lower(-180.0),
+      tracking_limit_upper(180.0)
 {
     this->optics_absorber.set_ideal_absorption();
     this->optics_mirror.set_ideal_reflection();
     this->optics_env_out.set_ideal_transmission();
     this->optics_env_in.set_ideal_transmission();
+
+    this->tracking_origin.set_values(1.0, 0.0, 0.0);
+    this->rotation_axis.set_values(0.0, 1.0, 0.0);
+    this->neutral_normal.set_values(0.0, 0.0, 1.0);
 }
 
 LinearFresnel::~LinearFresnel()
@@ -38,6 +50,16 @@ LinearFresnel::~LinearFresnel()
 
     return;
 }
+
+// double LinearFresnel::get_tracking_angle_degrees() const
+// {
+//     return this->tracking_angle;
+// }
+
+// double LinearFresnel::get_tracking_angle_radians() const
+// {
+//     return D2R * this->get_tracking_angle_degrees();
+// }
 
 void LinearFresnel::set_angles(double azimuth, double tilt)
 {
@@ -57,8 +79,31 @@ void LinearFresnel::set_angles(double azimuth, double tilt)
         throw std::invalid_argument(ss.str());
     }
 
+    this->coordinates_initialized = false;
     this->azimuth = azimuth;
     this->tilt = tilt;
+
+    // Convert input angles to spherical coordinate angles
+    double az = azimuth * D2R;
+    double el = tilt * D2R;
+    double pol = 0.5 * PI - az;
+    double inc = 0.5 * PI - el;
+
+    // Convert spherical coordinates to cartesian coordinates
+    // y-axis
+    this->rotation_axis.set_values(sin(inc) * cos(pol),
+                                   sin(inc) * sin(pol),
+                                   cos(inc));
+
+    // z-axis
+    this->neutral_normal.set_values(sin(-el) * cos(pol),
+                                    sin(-el) * sin(pol),
+                                    cos(-el));
+
+    cross_product(this->rotation_axis,
+                  this->neutral_normal,
+                  this->tracking_origin);
+
     return;
 }
 
@@ -73,6 +118,7 @@ void LinearFresnel::set_aperture_size(double len_x, double len_y)
         throw std::invalid_argument(ss.str());
     }
 
+    this->initialized = false;
     this->aperture_size_x = len_x;
     this->aperture_size_y = len_y;
 
@@ -86,7 +132,9 @@ void LinearFresnel::set_focused_panels(bool focused)
     return;
 }
 
-void LinearFresnel::set_gaps(double gap_x, double gap_y, double gap_center)
+void LinearFresnel::set_gaps(double gap_x,
+                             double gap_y,
+                             double gap_center)
 {
     if (gap_x < 0.0 || gap_y < 0.0 || gap_center < 0.0)
     {
@@ -106,7 +154,8 @@ void LinearFresnel::set_gaps(double gap_x, double gap_y, double gap_center)
     return;
 }
 
-void LinearFresnel::set_number_panels(int_fast64_t num_x, int_fast64_t num_y)
+void LinearFresnel::set_number_panels(int_fast64_t num_x,
+                                      int_fast64_t num_y)
 {
     if (num_x <= 0 || num_y <= 0)
     {
@@ -147,7 +196,7 @@ void LinearFresnel::set_receiver_height(double height)
     }
 
     this->initialized = false;
-    this->reciever_height = height;
+    this->receiver_height = height;
 
     return;
 }
@@ -183,15 +232,6 @@ void LinearFresnel::set_receiver_dimensions(double absorber_diameter,
         throw std::invalid_argument(ss.str());
     }
 
-    // if (length <= 0.0)
-    // {
-    //     std::stringstream ss;
-    //     ss << "LinearFresnel::set_receiver_dimensions: "
-    //        << "Invalid receiver length (" << length
-    //        << "). Must be positive.";
-    //     throw std::invalid_argument(ss.str());
-    // }
-
     if (absorber_diameter >= envelop_diameter)
     {
         std::stringstream ss;
@@ -206,6 +246,24 @@ void LinearFresnel::set_receiver_dimensions(double absorber_diameter,
     this->abs_diameter = absorber_diameter;
     this->env_diameter = envelop_diameter;
     this->env_thickness = envelop_thickness;
+
+    return;
+}
+
+void LinearFresnel::set_tracking_limits(double lower, double upper)
+{
+    if (lower > upper)
+    {
+        std::stringstream ss;
+        ss << "ParabolicTrough::set_tracking_limits: Invalid tracking "
+           << "limits. Lower limit (" << lower
+           << ") must be less than or equal to upper limit ("
+           << upper << ").";
+        throw std::invalid_argument(ss.str());
+    }
+
+    this->tracking_limit_lower = lower;
+    this->tracking_limit_upper = upper;
 
     return;
 }
@@ -248,7 +306,7 @@ void LinearFresnel::create_geometry()
     // TODO: Should mirrors aim at the receiver center or origin?
     Vector3d receiver_pos(0.0,
                           0.0,
-                          this->reciever_height - 0.5 * this->abs_diameter);
+                          this->receiver_height - 0.5 * this->abs_diameter);
     double panel_y, flen;
     single_element_ptr mirror;
     aperture_ptr ap;
@@ -262,9 +320,13 @@ void LinearFresnel::create_geometry()
         {
             mirror = make_element<SingleElement>();
 
-            // TODO: Need to adjust aim point when using flat panels
             origin.set_values(panel_x, panel_y, 0.0);
             vector_add(1.0, receiver_pos, -1.0, origin, aim);
+            make_unit_vector(aim);
+            vector_add(0.5, khat, 0.5, aim);
+            vector_add(1.0, origin, 1.0, aim);
+            make_unit_vector(aim);
+            aim.scalar_mult(1000.0);
             mirror->set_reference_frame_geometry(origin, aim, 0.0);
 
             ap = make_aperture<Rectangle>(panel_len_x, panel_len_y);
@@ -273,7 +335,7 @@ void LinearFresnel::create_geometry()
             if (this->focused_panels)
             {
                 flen = sqrt(panel_x * panel_x +
-                            this->reciever_height * this->reciever_height);
+                            this->receiver_height * this->receiver_height);
                 surf = make_surface<Parabola>(flen, 0.0);
             }
             else
@@ -295,7 +357,7 @@ void LinearFresnel::create_geometry()
             if (!Element::is_success(sts))
             {
                 // TODO: Make this more helpful
-                throw std::runtime_error("Failed to add absorber element");
+                throw std::runtime_error("Failed to add mirror element");
             }
 
             panel_y += panel_len_y + this->gap_y;
@@ -316,7 +378,7 @@ void LinearFresnel::create_geometry()
     auto abs = make_element<SingleElement>();
     abs->set_name("Absorber");
     origin.set_values(0.0, 0.0,
-                      this->reciever_height - 0.5 * this->abs_diameter);
+                      this->receiver_height - 0.5 * this->abs_diameter);
     aim.set_values(0.0, 0.0, 1.0);
     vector_add(1.0, origin, 1.0, aim);
     abs->set_reference_frame_geometry(origin, aim, 0.0);
@@ -339,7 +401,7 @@ void LinearFresnel::create_geometry()
     auto envout = make_element<SingleElement>();
     envout->set_name("EnvelopeOuter");
     origin.set_values(0.0, 0.0,
-                      this->reciever_height - 0.5 * this->env_diameter);
+                      this->receiver_height - 0.5 * this->env_diameter);
     aim.set_values(0.0, 0.0, 1.0);
     vector_add(1.0, origin, 1.0, aim);
     envout->set_reference_frame_geometry(origin, aim, 0.0);
@@ -361,7 +423,7 @@ void LinearFresnel::create_geometry()
     auto envin = make_element<SingleElement>();
     envin->set_name("EnvelopeInner");
     origin.set_values(0.0, 0.0,
-                      this->reciever_height -
+                      this->receiver_height -
                           0.5 * this->env_diameter + this->env_thickness);
     aim.set_values(0.0, 0.0, 1.0);
     vector_add(1.0, origin, 1.0, aim);
@@ -381,22 +443,141 @@ void LinearFresnel::create_geometry()
     }
 
     this->initialized = true;
+
     return;
 }
 
-void LinearFresnel::update_geometry()
+void LinearFresnel::update_geometry(double azimuth, double elevation)
 {
-    // TODO: Implement geometry update for linear Fresnel system
-    // This should update existing geometry based on current parameters
-    if (this->initialized)
+    if (elevation < 0.0 || elevation > 90.0)
     {
-        // Update existing geometry
+        std::stringstream ss;
+        ss << "LinearFresnel::update_geometry: Invalid elevation ("
+           << elevation << "). Elevation must lie between 0 and 90 degrees.";
+        throw std::invalid_argument(ss.str());
     }
-    else
+
+    if (azimuth < -180.0 || azimuth > 180.0)
     {
-        // Create geometry if not initialized
-        this->create_geometry();
-        // TODO: Add some aim settings here...
+        std::stringstream ss;
+        ss << "LinearFresnel::update_geometry: Invalid azimuth ("
+           << elevation << "). Azimuth must lie between -180 and 180 degrees.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (!this->initialized)
+    {
+        std::stringstream ss;
+        ss << "LinearFresnel::update_geometry: Uninitialized. "
+           << "Call create_geometry() first.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    // NOTE: Setting the aim point and z-rotation only need to be done
+    // once. But they need to be done after the LinearFresnel object
+    // has been added to its reference element (if any) so we do it
+    // here at the cost of repeating ourselves.
+
+    // Set aim point
+    Vector3d z_axis_ref, y_axis_ref;
+    this->convert_global_to_reference(z_axis_ref, this->neutral_normal);
+    this->convert_global_to_reference(y_axis_ref, this->rotation_axis);
+    vector_add(1000.0, z_axis_ref, 1.0, this->origin, this->aim);
+
+    // Set z-rotation
+    double beta = asin(z_axis_ref[1]);
+    double gamma = acos(y_axis_ref[1] / cos(beta));
+    this->set_zrot_radians(gamma);
+
+    // Update coordinate conversions so we can use them below
+    this->coordinates_initialized = false;
+    this->compute_coordinate_rotations();
+
+    // std::cout << "Rotation axis: " << this->rotation_axis
+    //           << "\nNeutral normal: " << this->neutral_normal
+    //           << std::endl;
+
+    // std::cout << "Global to Local: " << this->get_global_to_local()
+    //           << std::endl;
+
+    // std::cout << "z axis ref: " << z_axis_ref
+    //           << "\ny axis ref: " << y_axis_ref
+    //           << "\nBeta: " << beta
+    //           << "\nGamma: " << gamma
+    //           << std::endl;
+
+    // Sun position projected into rotation plane and converted
+    // to LinearFresnel object coordinates
+    Vector3d sun_pos, sun_proj_local;
+    sun_position_vector_degrees(sun_pos, azimuth, elevation);
+    this->convert_global_to_local(sun_proj_local, sun_pos);
+    // Project to rotation plane
+    sun_proj_local[1] = 0.0;
+    sun_proj_local.make_unit();
+
+    // std::cout << "Sun Position: " << sun_pos
+    //           //   << "\nSun Proj Global: " << sun_proj
+    //           //   << "\nSun Proj Local: " << temp
+    //           << "\nSun Proj Local: " << sun_proj_local
+    //           << std::endl;
+
+    // Set aimpoint for mirrors
+    Vector3d aim_mirror_ref;
+    // Absorber position projected into the plane of rotation (the xz-plane)
+    Vector3d origin_abs_proj(0.0,
+                             0.0,
+                             this->receiver_height - 0.5 * this->abs_diameter);
+    // origin_abs_proj.make_unit();
+    for (auto iter : this->mirrors)
+    {
+        // Get mirror to to receiver vector
+        vector_add(1.0, origin_abs_proj,
+                   -1.0, iter->get_origin_ref(),
+                   aim_mirror_ref);
+
+        // Project onto the rotation plane
+        aim_mirror_ref[1] = 0.0;
+        aim_mirror_ref.make_unit();
+        // std::cout << "Origin: " << iter->get_origin_ref()
+        //           << "\nMirror to Receiver: " << aim_mirror_ref
+        //           << std::endl;
+
+        // Take bisector vector with the sun
+        vector_add(1.0, sun_proj_local, 1.0, aim_mirror_ref);
+        aim_mirror_ref.make_unit();
+        // std::cout << "Sun Proj Local: " << sun_proj_local
+        //           << "\nAim Mirror Ref: " << aim_mirror_ref
+        //           << std::endl;
+
+        // Dot product with [0, 0, 1]
+        double theta = acos(aim_mirror_ref[2]) * R2D;
+        // Dot product with [1, 0, 0]
+        if (aim_mirror_ref[0] < 0)
+            theta = -theta;
+        // std::cout << "Theta: " << theta << std::endl;
+
+        if (theta < this->tracking_limit_lower)
+        {
+            theta = this->tracking_limit_lower * D2R;
+            aim_mirror_ref.set_values(sin(theta), 0.0, cos(theta));
+        }
+        else if (theta > this->tracking_limit_upper)
+        {
+            theta = this->tracking_limit_upper * D2R;
+            aim_mirror_ref.set_values(sin(theta), 0.0, cos(theta));
+        }
+
+        // std::cout << "Theta 2: " << theta * R2D
+        //           << "\nAim Mirror Ref: " << aim_mirror_ref
+        //           << std::endl;
+
+        // Add origin of mirror
+        vector_add(1.0, iter->get_origin_ref(), 1000.0, aim_mirror_ref);
+        // aim_mirror_ref.scalar_mult(1000.0);
+
+        // Set aim point
+        iter->set_aim_vector(aim_mirror_ref);
+        iter->compute_coordinate_rotations();
     }
 
     return;
@@ -424,7 +605,7 @@ void LinearFresnel::enforce_user_fields_set() const
             "before creating geometry.");
     }
 
-    if (this->reciever_height <= 0.0)
+    if (this->receiver_height <= 0.0)
     {
         throw std::invalid_argument(
             "LinearFresnel: Receiver height must be set "

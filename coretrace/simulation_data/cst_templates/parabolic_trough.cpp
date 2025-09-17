@@ -8,7 +8,9 @@
 #include "aperture.hpp"
 #include "arclength.hpp"
 #include "composite_element.hpp"
+#include "constants.hpp"
 #include "element.hpp"
+#include "utilities.hpp"
 #include "surface.hpp"
 
 ParabolicTrough::ParabolicTrough()
@@ -27,12 +29,13 @@ ParabolicTrough::ParabolicTrough()
       absorber_diameter(-1.0),
       envelope_diameter(-1.0),
       envelope_thickness(-1.0),
-      //   length(1.0),
-      tracking_limit_lower(-1.0),
-      tracking_limit_upper(-1.0)
+      tracking_angle(0.0),
+      tracking_limit_lower(-180.0),
+      tracking_limit_upper(180.0)
 {
-    // TODO: Initialize to nonsense and enforce user setting of values
-    // TODO: Need to do something similar for elements totally
+    this->tracking_origin.set_values(1.0, 0.0, 0.0);
+    this->rotation_axis.set_values(0.0, 1.0, 0.0);
+    this->neutral_normal.set_values(0.0, 0.0, 1.0);
     return;
 }
 
@@ -102,7 +105,7 @@ void ParabolicTrough::create_geometry()
             //           << std::endl;
 
             origin.set_values(0.0, ycoord, 0.0);
-            aim.set_values(0.0, ycoord, 1.0);
+            aim.set_values(0.0, ycoord, 1000.0);
 
             panel = make_element<SingleElement>();
             panel->set_name("ParabolicMirror");
@@ -198,15 +201,104 @@ void ParabolicTrough::create_geometry()
     }
 
     this->enable();
+
+    this->rotation_axis.make_unit();
+    this->tracking_origin.make_unit();
+
+    rotate_vector_degrees(this->rotation_axis,
+                          this->tracking_origin,
+                          -this->tracking_limit_lower,
+                          this->vector_lower_limit);
+    this->vector_lower_limit.make_unit();
+
+    rotate_vector_degrees(this->rotation_axis,
+                          this->tracking_origin,
+                          -this->tracking_limit_upper,
+                          this->vector_upper_limit);
+    this->vector_upper_limit.make_unit();
+
     this->initialized = true;
 
     return;
 }
 
-void ParabolicTrough::update_geometry(double solar_azimuth,
-                                      double solar_elevetion)
+void ParabolicTrough::update_geometry(double azimuth,
+                                      double elevation)
 {
-    // TODO: Implement...
+
+    if (elevation < 0.0 || elevation > 90.0)
+    {
+        std::stringstream ss;
+        ss << "ParabolicTrough::update_geometry: Invalid elevation ("
+           << elevation << "). Elevation must lie between 0 and 90 degrees.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (azimuth < -180.0 || azimuth > 180.0)
+    {
+        std::stringstream ss;
+        ss << "ParabolicTrough::update_geometry: Invalid azimuth ("
+           << elevation << "). Azimuth must lie between -180 and 180 degrees.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (!this->initialized)
+    {
+        std::stringstream ss;
+        ss << "ParabolicTrough::update_geometry: Uninitialized. "
+           << "Call create_geometry() first.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    this->coordinates_initialized = false;
+
+    Vector3d sun_pos;
+    sun_position_vector_degrees(sun_pos, azimuth, elevation);
+    make_unit_vector(sun_pos);
+
+    // Project into the plane defined by rotation axis as the normal
+    Vector3d sun_proj;
+    project_onto_plane(this->rotation_axis, sun_pos, sun_proj);
+    make_unit_vector(sun_proj);
+
+    assert(dot_product(sun_proj, this->rotation_axis) < 1e-12);
+
+    // double theta = acos(dot_product(sun_proj, this->tracking_origin)) * R2D;
+    double theta = acos(dot_product(sun_proj, this->neutral_normal)) * R2D;
+    if (dot_product(sun_proj, this->tracking_origin) < 0.0)
+        theta = -theta;
+
+    if (theta < this->tracking_limit_lower)
+    {
+        this->tracking_angle = this->tracking_limit_lower;
+        this->convert_global_to_reference(this->aim,
+                                          this->vector_lower_limit);
+    }
+    else if (theta > this->tracking_limit_upper)
+    {
+        this->tracking_angle = this->tracking_limit_upper;
+        this->convert_global_to_reference(this->aim,
+                                          this->vector_upper_limit);
+    }
+    else
+    {
+        this->tracking_angle = theta;
+        this->convert_global_to_reference(this->aim, sun_proj);
+    }
+
+    Vector3d rotation_axis_ref;
+    this->aim.make_unit();
+    double beta = asin(this->aim[1]);
+    this->convert_global_to_reference(rotation_axis_ref,
+                                      this->rotation_axis);
+    double gamma = acos(rotation_axis_ref[1] / cos(beta));
+
+    this->set_zrot_radians(gamma);
+    this->aim.scalar_mult(1000.0);
+    vector_add(1.0, this->origin, 1.0, this->aim);
+
+    this->compute_coordinate_rotations();
+
     return;
 }
 
@@ -216,13 +308,23 @@ double ParabolicTrough::calculate_receiver_power()
     return 0.0;
 }
 
-void ParabolicTrough::set_angles(double az, double tilt)
+double ParabolicTrough::get_tracking_angle_degrees() const
 {
-    if (az < -180.0 || az > 180.0)
+    return this->tracking_angle;
+}
+
+double ParabolicTrough::get_tracking_angle_radians() const
+{
+    return D2R * this->get_tracking_angle_degrees();
+}
+
+void ParabolicTrough::set_angles(double azimuth, double tilt)
+{
+    if (azimuth < -180.0 || azimuth > 180.0)
     {
         std::stringstream ss;
         ss << "ParabolicTrough::set_angles: Invalid azimuth angle ("
-           << az << "). Must be between -180 and 180 degrees.";
+           << azimuth << "). Must be between -180 and 180 degrees.";
         throw std::invalid_argument(ss.str());
     }
 
@@ -234,9 +336,31 @@ void ParabolicTrough::set_angles(double az, double tilt)
         throw std::invalid_argument(ss.str());
     }
 
-    // this->initialized = false;
-    this->azimuth = az;
+    this->coordinates_initialized = false;
+    this->azimuth = azimuth;
     this->tilt = tilt;
+
+    // Convert input angles to spherical coordinate angles
+    double az = azimuth * D2R;
+    double el = tilt * D2R;
+    double pol = 0.5 * PI - az;
+    double inc = 0.5 * PI - el;
+
+    // Convert spherical coordinates to cartesian coordinates
+    // y-axis
+    this->rotation_axis.set_values(sin(inc) * cos(pol),
+                                   sin(inc) * sin(pol),
+                                   cos(inc));
+
+    // z-axis
+    this->neutral_normal.set_values(sin(-el) * cos(pol),
+                                    sin(-el) * sin(pol),
+                                    cos(-el));
+
+    // x-axis
+    cross_product(this->rotation_axis,
+                  this->neutral_normal,
+                  this->tracking_origin);
 
     return;
 }

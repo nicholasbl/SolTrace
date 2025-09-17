@@ -1,3 +1,16 @@
+/**
+ * @file parabolic_trough.hpp
+ * @brief Parabolic trough CST template for linear concentrator systems
+ *
+ * Defines the ParabolicTrough class which generates parabolic trough
+ * solar collector systems with configurable mirror panels, receiver tubes,
+ * and single-axis tracking capabilities. Supports various collector
+ * configurations including heat collection elements and glass envelopes.
+ *
+ * @defgroup cst_templates CST Templates
+ * @{
+ */
+
 #ifndef SOLTRACE_PARABOLIC_TROUGH_H
 #define SOLTRACE_PARABOLIC_TROUGH_H
 
@@ -28,7 +41,7 @@ public:
     // void remove_self(SimulationData &sd);
 
     void create_geometry();
-    void update_geometry(double solar_azimuth, double solar_elevation);
+    void update_geometry(double azimuth, double elevation);
 
     double calculate_receiver_power();
 
@@ -51,17 +64,47 @@ public:
                                  double env_thick);
     void set_tracking_limits(double lower, double upper);
 
-    virtual void enforce_user_fields_set() const;
+    virtual void enforce_user_fields_set() const override;
+
+    Vector3d get_tracking_origin() const
+    {
+        return this->tracking_origin;
+    }
+    Vector3d get_rotation_vector() const
+    {
+        return this->rotation_axis;
+    }
+    Vector3d get_neutral_normal() const
+    {
+        return this->neutral_normal;
+    }
+    Vector3d get_tracking_limit_lower() const
+    {
+        return this->vector_lower_limit;
+    }
+    Vector3d get_tracking_limit_upper() const
+    {
+        return this->vector_upper_limit;
+    }
+
+    double get_tracking_angle_degrees() const;
+    double get_tracking_angle_radians() const;
 
 private:
     // Flags
     bool initialized;
-    // bool ready_to_add_self;
 
     // Global Characteristics
-    Vector3d track_axis;
+    // Degrees from north (GLOBAL y-axis)
     double azimuth;
+    // Degrees from ground plane (GLOBAL z-axis)
     double tilt;
+    // Aperture normal when tracking angle is 0.0 (GLOBAL coordinates)
+    Vector3d tracking_origin;
+    // Axis trough rotates about (GLOBAL coordinates)
+    Vector3d rotation_axis;
+    // Aperture normal when tracking angle is 90.0 (GLOBAL coordinates)
+    Vector3d neutral_normal;
 
     // Reflector(s) Characteristic(s)
     double aperture_size_x;
@@ -85,8 +128,13 @@ private:
     OpticalProperties optics_envelope_outer;
 
     // Solar Tracking
+    double tracking_angle;
     double tracking_limit_lower;
     double tracking_limit_upper;
+    // Aperture normal at lower limit in global coordinate
+    Vector3d vector_lower_limit;
+    // Aperture normal at upper limit in global coordinate
+    Vector3d vector_upper_limit;
 
     // Element Management
     // composite_element_ptr elements;
@@ -96,5 +144,9 @@ private:
 
     double determine_x_coordinate(double x0, double arc_length);
 };
+
+/**
+ * @}
+ */
 
 #endif

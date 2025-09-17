@@ -1,3 +1,15 @@
+/**
+ * @file element.hpp
+ * @brief Base element class and element management
+ *
+ * Defines the base ElementBase class and element management utilities.
+ * All optical elements in SolTrace derive from this base class, providing
+ * common functionality for positioning, orientation, and optical properties.
+ *
+ * @defgroup elements Optical Elements
+ * @{
+ */
+
 #ifndef SOLTRACE_ELEMENT_H
 #define SOLTRACE_ELEMENT_H
 
@@ -5,17 +17,13 @@
 #include <string>
 
 #include "aperture.hpp"
+#include "constants.hpp"
 #include "container.hpp"
 #include "datetime.hpp"
 #include "optical_properties.hpp"
 #include "ray_source.hpp"
 #include "surface.hpp"
 #include "vector3d.hpp"
-
-// TODO: Make a header file for constants...
-#ifndef M_PI
-#define M_PI 3.141592653589793238462643
-#endif
 
 using element_id = std::int_fast64_t;
 const element_id ELEMENT_ERROR = -1;
@@ -62,12 +70,26 @@ public:
   /// @return true if VirtualElement, false otherwise
   virtual bool is_virtual() const = 0;
 
-  /// @brief Get the element id assigned when registerd with SimulationData
+  /// @brief Get the element id assigned when registered with SimulationData
   /// @return id if registered with SimulationData, ELEMENT_ID_UNASSIGNED if not
   virtual element_id get_id() const = 0;
+
+  /**
+   * @brief Get the stage number this element belongs to
+   * @return Stage number
+   */
   virtual int_fast64_t get_stage() = 0;
 
+  /**
+   * @brief Get the element name
+   * @return Reference to element name string
+   */
   virtual const std::string &get_name() const = 0;
+
+  /**
+   * @brief Set the element name
+   * @param name New name for the element
+   */
   virtual void set_name(const std::string &name) = 0;
 
   /****************************************************************************
@@ -77,14 +99,45 @@ public:
    * CompositeElements even if that CompositeElement is then stored in a stage.
    ***************************************************************************/
 
+  /**
+   * @brief Get origin position in reference coordinates
+   * @return Origin position vector in reference frame
+   */
   virtual Vector3d get_origin_ref() const = 0;
+
+  /**
+   * @brief Get origin position in stage coordinates
+   * @return Origin position vector in stage frame
+   */
   virtual Vector3d get_origin_stage() const = 0;
+
+  /**
+   * @brief Get origin position in global coordinates
+   * @return Origin position vector in global frame
+   */
   virtual Vector3d get_origin_global() const = 0;
-  // Always the location of the origin with respect the reference coordinates
+
+  /**
+   * @brief Set origin position (always relative to reference coordinates)
+   * @param origin New origin position vector
+   */
   virtual void set_origin(const Vector3d &) = 0;
+
+  /**
+   * @brief Set origin position (always relative to reference coordinates)
+   * @param x X coordinate
+   * @param y Y coordinate
+   * @param z Z coordinate
+   */
   virtual void set_origin(double, double, double) = 0;
+
   // virtual const Vector3d &get_global_origin() const = 0;
   // virtual void set_global_origin(const Vector3d &) = 0;
+
+  /**
+   * @brief Get aim vector in reference coordinates
+   * @return Aim direction vector in reference frame
+   */
   virtual Vector3d get_aim_vector_ref() const = 0;
   virtual Vector3d get_aim_vector_stage() const = 0;
   virtual Vector3d get_aim_vector_global() const = 0;
@@ -139,6 +192,14 @@ public:
   virtual int set_reference_frame_geometry(const Vector3d &origin,
                                            const Vector3d &aim,
                                            double zrot) = 0;
+
+  /****************************************************************
+   * These are point coordinate conversion routines. They convert a point
+   * from one coordinate system to another. Assumes that the element
+   * hierarchy is set and that `compute_coordinate_rotations` has been
+   * called.
+   ****************************************************************/
+
   // Convert `ref` to local coordinates and store the result in `local`
   virtual int convert_reference_to_local(Vector3d &local,
                                          const Vector3d &ref) = 0;
@@ -158,7 +219,49 @@ public:
   virtual int convert_local_to_global(Vector3d &global,
                                       const Vector3d &local) = 0;
 
+  // Convert global coordinates to reference coordinates
+  virtual int convert_global_to_reference(Vector3d &ref,
+                                          const Vector3d &global) = 0;
+  // Convert reference coordinates to global
+  virtual int convert_reference_to_global(Vector3d &global,
+                                          const Vector3d &ref) = 0;
+
+  /****************************************************************
+   * These are vector coordinate conversion routines. They convert a
+   * vector (i.e. origin is always the same) from one coordinate
+   * system to another. Assumes that the element hierarchy is set
+   * and that `compute_coordinate_rotations` has been called.
+   ****************************************************************/
+
+  // Convert `ref` to local coordinates and store the result in `local`
+  virtual int convert_vector_reference_to_local(Vector3d &local,
+                                                const Vector3d &ref) = 0;
+  // Convert `stage` to local coordinates and store the result in `local`
+  virtual int convert_vector_stage_to_local(Vector3d &local,
+                                            const Vector3d &stage) = 0;
+  // Convert `global` to local coordinates and store the result in `local`
+  virtual int convert_vector_global_to_local(Vector3d &local,
+                                             const Vector3d &global) = 0;
+  // Convert `local` to reference coordinates and store the result in `ref`
+  virtual int convert_vector_local_to_reference(Vector3d &ref,
+                                                const Vector3d &local) = 0;
+  // Convert `local` to stage coordinates and store the result in `stage`
+  virtual int convert_vector_local_to_stage(Vector3d &stage,
+                                            const Vector3d &local) = 0;
+  // Convert `local` to global coordinates and store the result in `global`
+  virtual int convert_vector_local_to_global(Vector3d &global,
+                                             const Vector3d &local) = 0;
+
+  // Convert global coordinates to reference coordinates
+  virtual int convert_vector_global_to_reference(Vector3d &ref,
+                                                 const Vector3d &global) = 0;
+  // Convert reference coordinates to global
+  virtual int convert_vector_reference_to_global(Vector3d &global,
+                                                 const Vector3d &ref) = 0;
+
   // Other routines
+  // Computes necessary coordinate transformation data. Expects
+  // that the element hierarchy is set above this element.
   virtual int compute_coordinate_rotations() = 0;
 
   // WARNING: The below Accessors should be used with EXTREME caution!!!
@@ -194,77 +297,77 @@ public:
   // ElementBase(const Vector3d &origin, const Vector3d &aim);
   virtual ~ElementBase();
 
-  virtual inline void disable() const { this->active = false; }
-  virtual inline void enable() const { this->active = true; }
-  virtual bool is_enabled() const { return this->active; }
+  virtual inline void disable() const override { this->active = false; }
+  virtual inline void enable() const override { this->active = true; }
+  virtual bool is_enabled() const override { return this->active; }
 
-  virtual bool is_composite() const { return false; }
-  virtual bool is_single() const { return false; }
-  virtual bool is_stage() const { return false; }
+  virtual bool is_composite() const override { return false; }
+  virtual bool is_single() const override { return false; }
+  virtual bool is_stage() const override { return false; }
   // TODO: Do we need this?
-  virtual bool is_virtual() const { return false; }
+  virtual bool is_virtual() const override { return false; }
 
   // virtual ElementContainer::iterator get_iterator();
   // virtual ElementContainer::const_iterator get_const_iterator();
   // virtual bool is_at_end(ElementContainer::iterator iter) { return true; }
   // virtual bool is_at_end(ElementContainer::const_iterator iter) { return true; }
-  virtual void set_reference_element(Element *reference)
+  virtual void set_reference_element(Element *reference) override
   {
     this->reference_element = reference;
   }
 
-  virtual uint_fast64_t get_number_of_elements() const { return 1; }
+  virtual uint_fast64_t get_number_of_elements() const override { return 1; }
 
-  virtual element_id get_id() const { return this->my_id; }
-  virtual void set_id(element_id id)
+  virtual element_id get_id() const override { return this->my_id; }
+  virtual void set_id(element_id id) override
   {
     this->my_id = id;
     return;
   }
 
-  virtual int_fast64_t get_stage() { return this->stage; }
-  virtual void set_stage(int_fast64_t stage) { this->stage = stage; }
+  virtual int_fast64_t get_stage() override { return this->stage; }
+  virtual void set_stage(int_fast64_t stage) override { this->stage = stage; }
 
-  virtual const std::string &get_name() const
+  virtual const std::string &get_name() const override
   {
     return this->my_name;
   }
-  virtual void set_name(const std::string &name)
+  virtual void set_name(const std::string &name) override
   {
     this->my_name = name;
   }
 
-  virtual Vector3d get_origin_ref() const { return this->origin; }
-  virtual Vector3d get_origin_stage() const;
-  virtual Vector3d get_origin_global() const;
-  virtual void set_origin(const Vector3d &point)
+  virtual Vector3d get_origin_ref() const override { return this->origin; }
+  virtual Vector3d get_origin_stage() const override;
+  virtual Vector3d get_origin_global() const override;
+  virtual void set_origin(const Vector3d &point) override
   {
     this->coordinates_initialized = false;
     this->origin = point;
     return;
   }
-  virtual void set_origin(double x, double y, double z)
+  virtual void set_origin(double x, double y, double z) override
   {
     this->coordinates_initialized = false;
     this->origin.set_values(x, y, z);
     return;
   }
-  virtual Vector3d get_aim_vector_ref() const { return this->aim; }
-  virtual Vector3d get_aim_vector_stage() const;
-  virtual Vector3d get_aim_vector_global() const;
-  virtual void set_aim_vector(const Vector3d &direction)
+  virtual Vector3d get_aim_vector_ref() const override { return this->aim; }
+  virtual Vector3d get_aim_vector_stage() const override;
+  virtual Vector3d get_aim_vector_global() const override;
+  virtual void set_aim_vector(const Vector3d &direction) override
   {
     this->coordinates_initialized = false;
     this->aim = direction;
     return;
   }
-  virtual void set_aim_vector(double x, double y, double z)
+  virtual void set_aim_vector(double x, double y, double z) override
   {
     this->coordinates_initialized = false;
     this->aim.set_values(x, y, z);
     return;
   }
-  virtual const Vector3d &get_euler_angles() const
+  virtual const Vector3d &get_euler_angles() const override
   {
     return this->euler_angles;
   }
@@ -273,70 +376,109 @@ public:
   //   this->euler_angles = angles;
   //   return;
   // }
-  virtual double get_zrot() const { return this->zrot; }
-  virtual void set_zrot(double rot)
+  virtual double get_zrot() const override { return this->zrot; }
+  virtual void set_zrot(double rot) override
   {
     this->coordinates_initialized = false;
     this->zrot = rot;
     return;
   }
 
-  virtual double get_zrot_radians() const
+  virtual double get_zrot_radians() const override
   {
-    return this->zrot * M_PI / 180.0;
+    return this->zrot * PI / 180.0;
   }
-  virtual void set_zrot_radians(double zrad)
+  virtual void set_zrot_radians(double zrad) override
   {
     this->coordinates_initialized = false;
-    this->zrot = zrad * 180.0 / M_PI;
+    this->zrot = zrad * 180.0 / PI;
     return;
   }
 
-  virtual Matrix3d get_reference_to_local() const;
-  virtual Matrix3d get_stage_to_local() const;
-  virtual Matrix3d get_global_to_local() const;
-  virtual Matrix3d get_local_to_reference() const;
-  virtual Matrix3d get_local_to_stage() const;
-  virtual Matrix3d get_local_to_global() const;
+  virtual Matrix3d get_reference_to_local() const override;
+  virtual Matrix3d get_stage_to_local() const override;
+  virtual Matrix3d get_global_to_local() const override;
+  virtual Matrix3d get_local_to_reference() const override;
+  virtual Matrix3d get_local_to_stage() const override;
+  virtual Matrix3d get_local_to_global() const override;
 
-  virtual int compute_coordinate_rotations();
+  virtual int compute_coordinate_rotations() override;
   virtual int set_reference_frame_geometry(const Vector3d &origin,
                                            const Vector3d &aim,
-                                           double zrot);
+                                           double zrot) override;
 
   // Convert `ref` to local coordinates and store the result in `local`
-  virtual int convert_reference_to_local(Vector3d &local, const Vector3d &ref);
+  virtual int convert_reference_to_local(Vector3d &local,
+                                         const Vector3d &ref) override;
   // Convert `stage` to local coordinates and store the result in `local`
-  virtual int convert_stage_to_local(Vector3d &local, const Vector3d &stage);
+  virtual int convert_stage_to_local(Vector3d &local,
+                                     const Vector3d &stage) override;
   // Convert `global` to local coordinates and store the result in `local`
-  virtual int convert_global_to_local(Vector3d &local, const Vector3d &global);
+  virtual int convert_global_to_local(Vector3d &local,
+                                      const Vector3d &global) override;
   // Convert `local` to reference coordinates and store the result in `ref`
-  virtual int convert_local_to_reference(Vector3d &ref, const Vector3d &local);
+  virtual int convert_local_to_reference(Vector3d &ref,
+                                         const Vector3d &local) override;
   // Convert `local` to stage coordinates and store the result in `stage`
-  virtual int convert_local_to_stage(Vector3d &stage, const Vector3d &local);
+  virtual int convert_local_to_stage(Vector3d &stage,
+                                     const Vector3d &local) override;
   // Convert `local` to global coordinates and store the result in `global`
-  virtual int convert_local_to_global(Vector3d &global, const Vector3d &local);
+  virtual int convert_local_to_global(Vector3d &global,
+                                      const Vector3d &local) override;
+
+  // Convert global coordinates to reference coordinates
+  virtual int convert_global_to_reference(Vector3d &ref,
+                                          const Vector3d &global) override;
+  // Convert reference coordinates to global
+  virtual int convert_reference_to_global(Vector3d &global,
+                                          const Vector3d &ref) override;
+
+  // Convert `ref` to local coordinates and store the result in `local`
+  virtual int convert_vector_reference_to_local(Vector3d &local,
+                                                const Vector3d &ref) override;
+  // Convert `stage` to local coordinates and store the result in `local`
+  virtual int convert_vector_stage_to_local(Vector3d &local,
+                                            const Vector3d &stage) override;
+  // Convert `global` to local coordinates and store the result in `local`
+  virtual int convert_vector_global_to_local(Vector3d &local,
+                                             const Vector3d &global) override;
+  // Convert `local` to reference coordinates and store the result in `ref`
+  virtual int convert_vector_local_to_reference(Vector3d &ref,
+                                                const Vector3d &local) override;
+  // Convert `local` to stage coordinates and store the result in `stage`
+  virtual int convert_vector_local_to_stage(Vector3d &stage,
+                                            const Vector3d &local) override;
+  // Convert `local` to global coordinates and store the result in `global`
+  virtual int convert_vector_local_to_global(Vector3d &global,
+                                             const Vector3d &local) override;
+
+  // Convert global coordinates to reference coordinates
+  virtual int convert_vector_global_to_reference(Vector3d &ref,
+                                                 const Vector3d &global) override;
+  // Convert reference coordinates to global
+  virtual int convert_vector_reference_to_global(Vector3d &global,
+                                                 const Vector3d &ref) override;
 
   // WARNING: The below Accessors should be used with care. They set
   // values that are set automatically -- these are here just in case...
-  virtual void set_euler_angles(const Vector3d &ea)
+  virtual void set_euler_angles(const Vector3d &ea) override
   {
     this->euler_angles = ea;
   }
-  virtual void set_euler_angles(double alpha, double beta, double gamma)
+  virtual void set_euler_angles(double alpha, double beta, double gamma) override
   {
     this->euler_angles.set_values(alpha, beta, gamma);
   }
-  virtual void set_reference_to_local(const Matrix3d &rtol)
+  virtual void set_reference_to_local(const Matrix3d &rtol) override
   {
     this->reference_to_local = rtol;
   }
-  virtual void set_local_to_reference(const Matrix3d &ltor)
+  virtual void set_local_to_reference(const Matrix3d &ltor) override
   {
     this->local_to_reference = ltor;
   }
 
-  virtual void enforce_user_fields_set() const;
+  virtual void enforce_user_fields_set() const override;
 
 protected:
   // TODO: Do these need to be mutable?
@@ -375,5 +517,9 @@ inline auto make_element(Args &&...args)
 {
   return ElementContainer::make_pointer<C>(std::forward<Args>(args)...);
 }
+
+/**
+ * @}
+ */
 
 #endif

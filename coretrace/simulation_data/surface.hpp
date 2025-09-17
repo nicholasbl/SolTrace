@@ -1,7 +1,21 @@
+/**
+ * @file surface.hpp
+ * @brief Optical surface geometry definitions
+ *
+ * Defines various optical surface types (flat, parabolic, spherical, etc.)
+ * and their mathematical representations for ray-surface intersection
+ * calculations. Provides the foundation for ray tracing on different
+ * geometric surface types used in concentrated solar power systems.
+ *
+ * @defgroup surfaces Optical Surfaces
+ * @{
+ */
+
 #ifndef SOLTRACE_SURFACE_H
 #define SOLTRACE_SURFACE_H
 
 #include <memory>
+#include <vector>
 
 enum SurfaceType
 {
@@ -12,7 +26,7 @@ enum SurfaceType
     SPHERE,
 
     HYPER,
-	GENERAL_SPENCER_MURTY,
+    GENERAL_SPENCER_MURTY,
     TORUS,
 
     SURFACE_UNKNOWN
@@ -27,7 +41,6 @@ public:
     virtual ~Surface() {}
 
     SurfaceType get_type() { return my_type; }
-
 };
 
 struct Cone : public Surface
@@ -72,8 +85,6 @@ struct Parabola : public Surface
     virtual ~Parabola() {}
 };
 
-// TODO: Add needed subfields
-
 struct Sphere : public Surface
 {
     // z(x,y) = c(x^2 + y^2) / [1 + sqrt(1 - c^2{x^2 + y^2})]
@@ -108,5 +119,12 @@ inline auto make_surface(Args &&...args)
 {
     return std::make_shared<S>(std::forward<Args>(args)...);
 }
+
+surface_ptr make_surface_from_type(SurfaceType type,
+                                   const std::vector<double> &args);
+
+/**
+ * @}
+ */
 
 #endif

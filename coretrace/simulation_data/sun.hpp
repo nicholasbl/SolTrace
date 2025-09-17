@@ -1,3 +1,13 @@
+/**
+ * @file sun.hpp
+ * @brief Solar source modeling and sun shape definitions
+ *
+ * Defines solar source properties including sun shape models,
+ * solar position calculations, and ray generation from solar disk.
+ * Includes models for different sun shape distributions and
+ * solar tracking calculations for CST systems.
+ */
+
 #ifndef SOLTRACE_SUN_H
 #define SOLTRACE_SUN_H
 
@@ -35,38 +45,18 @@ public:
     {
         return this->my_shape;
     }
-    virtual void set_shape(DistributionType shape, double _sigma, double _half_width,
-        std::vector<double> _user_angle = {}, std::vector<double> _user_intensity = {})
-    {
-        this->my_shape = shape;
-
-        // Clear arguments
-        sigma = std::numeric_limits<double>::quiet_NaN();
-        half_width = std::numeric_limits<double>::quiet_NaN();
-        user_angle.clear();
-        user_intensity.clear();
-
-        switch (shape)
-        {
-            case(DistributionType::GAUSSIAN):
-                sigma = _sigma;
-                break;
-            case(DistributionType::PILLBOX):
-				half_width = _half_width;
-				break;
-            case(DistributionType::USER_DEFINED):
-                user_angle = std::move(_user_angle);
-                user_intensity = std::move(_user_intensity);
-                break;
-            default:
-                // TODO throw error
-                break;
-        }
-
-        return;
-    }
+    virtual void set_shape(DistributionType shape,
+                           double _sigma,
+                           double _half_width,
+                           std::vector<double> _user_angle = {},
+                           std::vector<double> _user_intensity = {});
 
 private:
+    void set_gaussian_distribution(double _sigma);
+    void set_pillbox_distribution(double _half_width);
+    void set_user_defined_distribution(std::vector<double> _user_angle,
+                                       std::vector<double> _user_intensity);
+
     DistributionType my_shape;
     Vector3d my_position;
 };

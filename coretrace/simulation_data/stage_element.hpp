@@ -1,3 +1,13 @@
+/**
+ * @file stage_element.hpp
+ * @brief Stage-based element organization
+ *
+ * Defines stage-based organization of optical elements,
+ * allowing for multi-stage optical system modeling.
+ * Stages provide logical grouping and sequential processing
+ * of optical elements in ray tracing simulations.
+ */
+
 #ifndef SOLTRACE_STAGE_ELEMENT_H
 #define SOLTRACE_STAGE_ELEMENT_H
 
@@ -10,7 +20,7 @@ class StageElement: public CompositeElement
 public:
     StageElement(int_fast64_t stage);
     ~StageElement();
-    virtual bool is_stage() const { return true; }
+    virtual bool is_stage() const override { return true; }
     virtual element_id add_element(element_ptr el);
 private:
 };

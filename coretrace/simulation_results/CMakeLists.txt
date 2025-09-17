@@ -8,7 +8,7 @@ include_directories(
 # include_directories(cst_templates)
 
 set(SIMRES_SRC
-    simulation_results.cpp
+    simulation_result.cpp
 )
 
 set(POSITION_INDEPENDENT_CODE ON)

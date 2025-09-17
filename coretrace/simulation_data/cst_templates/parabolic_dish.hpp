@@ -1,3 +1,16 @@
+/**
+ * @file parabolic_dish.hpp
+ * @brief Parabolic dish CST template for dish-Stirling systems
+ *
+ * Defines the ParabolicDish class which generates parabolic dish
+ * concentrator systems with configurable panel layouts, focal receivers,
+ * and tracking capabilities for dish-Stirling solar applications.
+ * Supports radial and angular panel subdivision strategies.
+ *
+ * @defgroup cst_templates CST Templates
+ * @{
+ */
+
 #ifndef SOLTRACE_PARABOLIC_DISH_H
 #define SOLTRACE_PARABOLIC_DISH_H
 
@@ -22,10 +35,17 @@ public:
                     const OpticalProperties &absorber);
     void set_receiver_dimensions(double diameter, double distance);
 
+    // Call before adding element to simulation data or stage
     void create_geometry();
-    void update_geometry();
+    // Call after adding element to simulation data or stage
+    void update_geometry(double azimuth, double elevation);
 
-    virtual void enforce_user_fields_set() const;
+    virtual void enforce_user_fields_set() const override;
+
+    const Vector3d& get_elevation_axis() const
+    {
+        return this->elevation_axis;
+    }
 
 private:
     bool initialized;
@@ -47,9 +67,14 @@ private:
     double abs_distance;
     OpticalProperties optics_absorber;
 
+    // Follows solar azimuth, elevation convention:
+    // Azimuth is angle clockwise from north (y-axis) in degrees
+    // Elevation is angle above the horizon (xy-plane) in degrees
     double tracking_elevation;
     double tracking_azimuth;
+    // Defines the direction about which the dish can change its elevation
     Vector3d elevation_axis;
+    Vector3d sun_position;
 
     std::vector<single_element_ptr> mirrors;
     std::vector<single_element_ptr> absorbers;
@@ -57,5 +82,9 @@ private:
     double determine_x_coordinate(double x0, double arc_length);
 
 };
+
+/**
+ * @}
+ */
 
 #endif

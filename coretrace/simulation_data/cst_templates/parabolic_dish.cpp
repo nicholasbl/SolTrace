@@ -1,4 +1,3 @@
-
 #include "parabolic_dish.hpp"
 
 #include <algorithm>
@@ -6,7 +5,13 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "aperture.hpp"
 #include "arclength.hpp"
+#include "composite_element.hpp"
+#include "constants.hpp"
+#include "element.hpp"
+#include "utilities.hpp"
+#include "surface.hpp"
 
 ParabolicDish::ParabolicDish() : CompositeElement(),
                                  initialized(false),
@@ -21,9 +26,14 @@ ParabolicDish::ParabolicDish() : CompositeElement(),
                                  num_panels_a(-1),
                                  abs_diameter(-1.0),
                                  abs_distance(-1.0),
-                                 tracking_elevation(-1.0),
-                                 tracking_azimuth(-1.0)
+                                 tracking_elevation(90.0),
+                                 tracking_azimuth(90.0)
 {
+    // Default position is pointing straight up and facing the east
+    this->elevation_axis.set_values(1.0, 0.0, 0.0);
+    sun_position_vector_degrees(this->sun_position,
+                                this->tracking_azimuth,
+                                this->tracking_elevation);
 }
 
 ParabolicDish::~ParabolicDish()
@@ -50,7 +60,7 @@ void ParabolicDish::create_geometry()
     /**** Create mirror elements ****/
     double r = this->aperture_radius;
     double cx = this->cx;
-    double arc_length = r * sqrt(cx * r * cx * r) + asinh(r * cx) / cx;
+    double arc_length = r * sqrt(cx * r * cx * r + 1.0) + asinh(r * cx) / cx;
     double panel_arc_length = 0.5 * arc_length -
                               this->gap_r * (this->num_panels_r - 1);
 
@@ -69,14 +79,14 @@ void ParabolicDish::create_geometry()
     {
         // this->gap_a gives the gap as a length -- convert to angle
         // so that the average gap is the value this->gap_a.
-        gap_angle = this->gap_a * 360.0 / (M_PI * this->aperture_radius);
+        gap_angle = this->gap_a * 360.0 / (PI * this->aperture_radius);
         panel_angle = 360.0 - gap_angle * this->num_panels_a;
         panel_angle /= this->num_panels_a;
     }
 
     single_element_ptr mirror;
     Vector3d origin(0.0, 0.0, 0.0);
-    Vector3d aim(0.0, 0.0, 100.0);
+    Vector3d aim(0.0, 0.0, 1000.0);
     double zrot = 0.0;
 
     if (this->gap_center <= 0.0 &&
@@ -148,9 +158,55 @@ void ParabolicDish::create_geometry()
     return;
 }
 
-void ParabolicDish::update_geometry()
+void ParabolicDish::update_geometry(double azimuth, double elevation)
 {
-    // TODO: Implment this
+    if (elevation < 0.0 || elevation > 90.0)
+    {
+        std::stringstream ss;
+        ss << "ParabolicDish::update_geometry: Invalid elevation ("
+           << elevation << "). Elevation must lie between 0 and 90 degrees.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (azimuth < 0.0 || azimuth > 360.0)
+    {
+        std::stringstream ss;
+        ss << "ParabolicDish::update_geometry: Invalid azimuth ("
+           << elevation << "). Azimuth must lie between 0 and 360 degrees.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (!this->initialized)
+    {
+        // TODO: Is this the right thing to do here?
+        // this->create_geometry();
+        std::stringstream ss;
+        ss << "ParabolicDish::update_geometry: Uninitialized. "
+           << "Call create_geometry() first.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    this->coordinates_initialized = false;
+
+    // double prev_az = this->tracking_azimuth;
+    // double prev_el = this->tracking_elevation;
+    this->tracking_azimuth = azimuth;
+    this->tracking_elevation = elevation;
+
+    sun_position_vector_degrees(this->sun_position, azimuth, elevation);
+    this->sun_position.scalar_mult(1000.0);
+    this->convert_global_to_reference(this->aim, this->sun_position);
+
+    Vector3d aim_proj;
+    // Get aim direction (not point)
+    vector_add(-1.0, this->origin, 1.0, this->aim, aim_proj);
+    // Project into reference xy-plane
+    aim_proj[2] = 0.0;
+    double theta = acos(aim_proj[0] / vector_norm(aim_proj));
+    this->set_zrot_radians(theta);
+
+    this->compute_coordinate_rotations();
+
     return;
 }
 

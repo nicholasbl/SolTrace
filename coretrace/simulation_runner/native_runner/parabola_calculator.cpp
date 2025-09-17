@@ -161,10 +161,6 @@ void ParabolaCalculator::surface_normal(const double PosXYZ[3],
 double ParabolaCalculator::compute_z_aperture(aperture_ptr ap)
 {
     // z(x,y) = 1/2 * (cx * x^2 + cy * y^2)
-
-    // TODO: Check that the below is correct and make tests
-    // TODO: aperplane.cpp line 215 -- seems to ignore the y direction for
-    // this computation...
     double r = ap->radius_circumscribed_circle();
     double c = std::max(this->cx, this->cy);
     double zmax = 0.5 * c * r * r;

@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <common.hpp>
-
+#include <constants.hpp>
 #include <error_distributions.hpp>
 #include <mtrand.hpp>
 #include <native_runner.hpp>
@@ -14,6 +13,8 @@
 #include <vector3d.hpp>
 #include <filesystem>
 #include <virtual_element.hpp>
+
+#include "common.hpp"
 
 TEST(RandomNumberGenerator, SingleNumberMersenneTwister)
 {
@@ -30,8 +31,7 @@ TEST(NativeRunnerTypes, TSun)
     auto sun = make_ray_source<Sun>();
     Vector3d spos(1.0, 2.0, 3.0);
     sun->set_position(spos);
-    double NaN = std::numeric_limits<double>::quiet_NaN();
-    sun->set_shape(PILLBOX, NaN, NaN);
+    sun->set_shape(PILLBOX, -1.0, 1.0);
     my_sim.add_ray_source(sun);
 
     NativeRunner runner;
@@ -58,13 +58,13 @@ TEST(NativeRunnerTypes, TElement)
     // vector_add(1.0, Origin1, 1.0, aim1);
 
     // // Z-Rotation is the last of the Euler angles but in degrees
-    // const double zrot1 = g1 * 180.0 / M_PI;
+    // const double zrot1 = g1 * 180.0 / PI;
 
     // // Origin
     // Vector3d Origin2(-3.0, 1.0, -5.0);
-    // const double a2 = M_PI / 4.0;
-    // const double b2 = M_PI / 6.0;
-    // const double g2 = M_PI / 3.0;
+    // const double a2 = PI / 4.0;
+    // const double b2 = PI / 6.0;
+    // const double g2 = PI / 3.0;
     // // Corresponding aim vector (local z-axis in reference coordinates)
     // Vector3d aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
     // vector_add(1.0, Origin2, 1.0, aim2);
@@ -103,8 +103,7 @@ TEST(NativeRunner, SmokeTest)
 
     auto sun = make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 100.0);
-    double NaN = std::numeric_limits<double>::quiet_NaN();
-    sun->set_shape(DistributionType::GAUSSIAN, NaN, NaN);
+    sun->set_shape(DistributionType::GAUSSIAN, 1.0, -5.0);
     my_sim.add_ray_source(sun);
 
     auto my_st = make_stage(0);
@@ -193,8 +192,8 @@ TEST(NativeRunner, PowerTowerSmokeTest)
         foptics = el->get_front_optical_properties();
         foptics->reflectivity = 1.0;
 
-        pos.set_values(5 * sin(k * M_PI * 2.0 / NUM_ELEMENTS),
-                       5 * cos(k * M_PI * 2.0 / NUM_ELEMENTS),
+    pos.set_values(5 * sin(k * PI * 2.0 / NUM_ELEMENTS),
+                       5 * cos(k * PI * 2.0 / NUM_ELEMENTS),
                        0.0);
         vector_add(1.0, absorber->get_origin_global(),
                    -1.0, pos,
@@ -285,8 +284,7 @@ TEST(NativeRunner, SingleRayValidationTest)
     // Sun
     auto sun = make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 100.0);
-    double NaN = std::numeric_limits<double>::quiet_NaN();
-    sun->set_shape(DistributionType::PILLBOX, NaN, NaN);
+    sun->set_shape(DistributionType::PILLBOX, -1.0, 1.0);
     sd.add_ray_source(sun);
 
     auto sph = make_element<SingleElement>();
@@ -333,27 +331,31 @@ TEST(NativeRunner, SingleRayValidationTest)
                           &element, &stage, &raynum);
 
     EXPECT_NEAR(ipoint[0], -3.06214, TOL);
-	EXPECT_NEAR(ipoint[1], 5.92862, TOL);
-	EXPECT_NEAR(ipoint[2], 12.7732, TOL);
+    EXPECT_NEAR(ipoint[1], 5.92862, TOL);
+    EXPECT_NEAR(ipoint[2], 12.7732, TOL);
 
-	EXPECT_NEAR(idir[0], 0.0, TOL);
-	EXPECT_NEAR(idir[1], 0.0, TOL);
-	EXPECT_NEAR(idir[2], -1.0, TOL);
+    EXPECT_NEAR(idir[0], 0.0, TOL);
+    EXPECT_NEAR(idir[1], 0.0, TOL);
+    EXPECT_NEAR(idir[2], -1.0, TOL);
 }
 
 TEST(NativeRunner, LegacyFileLoadTest)
 {
     std::string project_path = std::string(PROJECT_DIR);
-    std::string parent_dir = std::filesystem::path(PROJECT_DIR).parent_path().string();
-    std::string sample_path = parent_dir + std::string("/simple_test_case.stinput");
+    std::string sample_path = project_path +
+                              std::string("/simple_test_case.stinput");
 
-	// Load simulation data from file
+    // Load simulation data from file
     SimulationData sd;
-    sd.import_from_file(sample_path);
+    bool success = sd.import_from_file(sample_path);
+    EXPECT_TRUE(success);
 
-	// Create and run the native runner
+    EXPECT_EQ(sd.get_number_of_ray_sources(), 1);
+    EXPECT_EQ(sd.get_number_of_elements(), 2);
+
+    // Create and run the native runner
     NativeRunner runner;
-	RunnerStatus sts = runner.initialize();
+    RunnerStatus sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.setup_simulation(&sd);
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);

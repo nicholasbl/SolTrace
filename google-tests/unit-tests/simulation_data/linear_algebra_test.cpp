@@ -47,23 +47,23 @@ TEST(LinearAlgebra, VectorBasics)
     EXPECT_NEAR(z[2], -1.5, TOL);
 
     double dp = dot_product(x, y);
-    EXPECT_NEAR(dp, -2.0, 1e-12);
+    EXPECT_NEAR(dp, -2.0, TOL);
 
     double mag = vector_norm(x);
-    EXPECT_NEAR(mag, sqrt(11.0), 1e-12);
+    EXPECT_NEAR(mag, sqrt(11.0), TOL);
 
     make_unit_vector(x);
-    EXPECT_NEAR(x[0], 1.0 / mag, 1e-12);
-    EXPECT_NEAR(x[1], 1.0 / mag, 1e-12);
-    EXPECT_NEAR(x[2], 3.0 / mag, 1e-12);
+    EXPECT_NEAR(x[0], 1.0 / mag, TOL);
+    EXPECT_NEAR(x[1], 1.0 / mag, TOL);
+    EXPECT_NEAR(x[2], 3.0 / mag, TOL);
 
     mag = vector_norm(y);
-    EXPECT_NEAR(mag, sqrt(6.0), 1e-12);
+    EXPECT_NEAR(mag, sqrt(6.0), TOL);
 
     make_unit_vector(y);
-    EXPECT_NEAR(y[0], -1.0 / mag, 1e-12);
-    EXPECT_NEAR(y[1], 2.0 / mag, 1e-12);
-    EXPECT_NEAR(y[2], -1.0 / mag, 1e-12);
+    EXPECT_NEAR(y[0], -1.0 / mag, TOL);
+    EXPECT_NEAR(y[1], 2.0 / mag, TOL);
+    EXPECT_NEAR(y[2], -1.0 / mag, TOL);
 
     z.zero();
     EXPECT_EQ(z[0], 0.0);
@@ -81,6 +81,28 @@ TEST(LinearAlgebra, VectorBasics)
     EXPECT_EQ(z[0], u[0]);
     EXPECT_EQ(z[1], u[1]);
     EXPECT_EQ(z[2], u[2]);
+
+    Vector3d ihat(1.0, 0.0, 0.0);
+    Vector3d jhat(0.0, 1.0, 0.0);
+    Vector3d khat(0.0, 0.0, 1.0);
+    Vector3d result;
+    cross_product(ihat, jhat, result);
+    EXPECT_NEAR(result[0], 0.0, TOL);
+    EXPECT_NEAR(result[1], 0.0, TOL);
+    EXPECT_NEAR(result[2], 1.0, TOL);
+    result.zero();
+
+    cross_product(ihat, khat, result);
+    EXPECT_NEAR(result[0], 0.0, TOL);
+    EXPECT_NEAR(result[1], -1.0, TOL);
+    EXPECT_NEAR(result[2], 0.0, TOL);
+    result.zero();
+
+    cross_product(jhat, khat, result);
+    EXPECT_NEAR(result[0], 1.0, TOL);
+    EXPECT_NEAR(result[1], 0.0, TOL);
+    EXPECT_NEAR(result[2], 0.0, TOL);
+    result.zero();
 }
 
 TEST(LinearAlgebra, MatrixVectorProduct)

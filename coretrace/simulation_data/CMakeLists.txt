@@ -5,7 +5,6 @@ include_directories(cst_templates)
 
 set(SIMDATA_SRC
     aperture.cpp
-    arclength.cpp
     composite_element.cpp
     element.cpp
     matvec.cpp
@@ -13,19 +12,23 @@ set(SIMDATA_SRC
     simulation_data.cpp
     single_element.cpp
     stage_element.cpp
+    sun.cpp
+    surface.cpp
     virtual_element.cpp
     vector3d.cpp
+    cst_templates/arclength.cpp
     cst_templates/heliostat.cpp
     cst_templates/linear_fresnel.cpp
     cst_templates/parabolic_dish.cpp
     cst_templates/parabolic_trough.cpp
+    cst_templates/utilities.cpp
 )
 
 # Only headers in simulation_data (including cst_templates subfolder)
 set(SIMDATA_HDRS
     aperture.hpp
-    arclength.hpp
     composite_element.hpp
+    constants.hpp
     container.hpp
     datetime.hpp
     element.hpp
@@ -42,10 +45,12 @@ set(SIMDATA_HDRS
     surface.hpp
     vector3d.hpp
     virtual_element.hpp
+    cst_templates/arclength.hpp
     cst_templates/heliostat.hpp
     cst_templates/linear_fresnel.hpp
     cst_templates/parabolic_dish.hpp
     cst_templates/parabolic_trough.hpp
+    cst_templates/utilities.hpp
 )
 
 source_group("Header Files" FILES ${SIMDATA_HDRS})
@@ -61,10 +66,10 @@ endif()
 set_target_properties(simdata
     PROPERTIES
     DEBUG_POSTFIX "d"
-	PREFIX ""
+    PREFIX ""
 )
 
 if (NOT APPLE AND ENABLE_COVERAGE)
-	# SET(CMAKE_CXX_FLAGS "-O0 -coverage -fkeep-inline-functions")
+    # SET(CMAKE_CXX_FLAGS "-O0 -coverage -fkeep-inline-functions")
     SET(CMAKE_CXX_FLAGS "-O0 -coverage")
 endif()

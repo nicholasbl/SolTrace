@@ -57,9 +57,10 @@ RunnerStatus NativeRunner::setup_parameters(const SimulationData *data)
 
 RunnerStatus NativeRunner::setup_sun(const SimulationData *data)
 {
+    // TODO: This should throw an error...
     // Get RaySource data (this runner assumes there is only the Sun)
     assert(data->get_number_of_ray_sources() == 1);
-    // this->tsys.Sun.set_values(data->get_ray_source());
+
     ray_source_ptr sun = data->get_ray_source();
     vector_copy(this->tsys.Sun.Origin, sun->get_position());
     this->tsys.Sun.ShapeIndex = sun->get_shape();
@@ -67,40 +68,41 @@ RunnerStatus NativeRunner::setup_sun(const SimulationData *data)
     // Set sunshape data
     switch (sun->get_shape())
     {
-        case DistributionType::GAUSSIAN:
-            this->tsys.Sun.Sigma = sun->get_sigma();
-			break;
-		case DistributionType::PILLBOX:
-			this->tsys.Sun.Sigma = sun->get_half_width();
-            break;
-        case DistributionType::USER_DEFINED:
-			std::vector<double> angle, intensity;
-            sun->get_user_data(angle, intensity);
-            int npoints = angle.size();
+    case DistributionType::GAUSSIAN:
+        this->tsys.Sun.Sigma = sun->get_sigma();
+        break;
+    case DistributionType::PILLBOX:
+        this->tsys.Sun.Sigma = sun->get_half_width();
+        break;
+    case DistributionType::USER_DEFINED:
+        std::vector<double> angle, intensity;
+        sun->get_user_data(angle, intensity);
+        int npoints = angle.size();
 
-            // Set user data
-            this->tsys.Sun.MaxAngle = 0;
-            this->tsys.Sun.MaxIntensity = 0;
+        // Set user data
+        this->tsys.Sun.MaxAngle = 0;
+        this->tsys.Sun.MaxIntensity = 0;
 
-            this->tsys.Sun.SunShapeAngle.resize(2 * npoints - 1);
-            this->tsys.Sun.SunShapeIntensity.resize(2 * npoints - 1);
+        this->tsys.Sun.SunShapeAngle.resize(2 * npoints - 1);
+        this->tsys.Sun.SunShapeIntensity.resize(2 * npoints - 1);
 
-            for (int i = 0; i < npoints; i++)
-            {
-                this->tsys.Sun.SunShapeAngle[npoints + i - 1] = angle[i];
-                this->tsys.Sun.SunShapeIntensity[npoints + i - 1] = intensity[i];
+        for (int i = 0; i < npoints; i++)
+        {
+            this->tsys.Sun.SunShapeAngle[npoints + i - 1] = angle[i];
+            this->tsys.Sun.SunShapeIntensity[npoints + i - 1] = intensity[i];
 
-                if (angle[i] > this->tsys.Sun.MaxAngle) this->tsys.Sun.MaxAngle = angle[i];
-                if (intensity[i] > this->tsys.Sun.MaxIntensity) this->tsys.Sun.MaxIntensity = intensity[i];
-            }
+            if (angle[i] > this->tsys.Sun.MaxAngle)
+                this->tsys.Sun.MaxAngle = angle[i];
+            if (intensity[i] > this->tsys.Sun.MaxIntensity)
+                this->tsys.Sun.MaxIntensity = intensity[i];
+        }
 
-            // fill negative angle side of array
-            for (int i = 0; i < npoints - 1; i++)
-            {
-                this->tsys.Sun.SunShapeAngle[i] = -angle[npoints - i - 1];
-                this->tsys.Sun.SunShapeIntensity[i] = intensity[npoints - i - 1];
-            }
-            
+        // fill negative angle side of array
+        for (int i = 0; i < npoints - 1; i++)
+        {
+            this->tsys.Sun.SunShapeAngle[i] = -angle[npoints - i - 1];
+            this->tsys.Sun.SunShapeIntensity[i] = intensity[npoints - i - 1];
+        }
     }
 
     return RunnerStatus::SUCCESS;
@@ -251,7 +253,60 @@ RunnerStatus NativeRunner::run_simulation()
 RunnerStatus NativeRunner::report_simulation(SimulationResult *result,
                                              int level)
 {
-    // TODO: Implement this
+    const TSystem *sys = this->get_system();
+    const TRayData ray_data = sys->AllRayData;
+    std::map<ray_id, ray_record_ptr> ray_records;
+    std::map<ray_id, ray_record_ptr>::iterator iter;
+    size_t ndata = ray_data.Count();
+
+    Vector3d point, cosines;
+    int element;
+    int stage;
+    unsigned int raynum;
+    telement_ptr el = nullptr;
+    element_id elid;
+    ray_record_ptr rec = nullptr;
+    interaction_ptr intr = nullptr;
+    InteractionRecord::InteractionType itype;
+
+    for (size_t ii = 0; ii < ndata; ++ii)
+    {
+        ray_data.Query(ii,
+                       point.data, cosines.data,
+                       &element, &stage, &raynum);
+
+        bool absorbed = element < 0;
+        element = abs(element);
+        el = sys->StageList[stage]->ElementList[element];
+        elid = el->sim_data_id;
+
+        iter = ray_records.find(raynum);
+        if (iter == ray_records.end())
+        {
+            rec = make_ray_record(raynum);
+        }
+        else
+        {
+            rec = iter->second;
+        }
+
+        if (absorbed)
+        {
+            itype = InteractionRecord::ABSORB;
+        }
+        else
+        {
+            // TODO: Set correct interaction type here
+            itype = InteractionRecord::REFLECT;
+        }
+
+        intr = make_interaction_record(elid, itype, point);
+        rec->add_interaction_record(intr);
+        // TODO: Overwrite last cosines every time -- this is wrong.
+        // Gives the incoming direction cosines for last interaction.
+        rec->set_last_cosines(cosines);
+    }
+
     return RunnerStatus::SUCCESS;
 }
 
