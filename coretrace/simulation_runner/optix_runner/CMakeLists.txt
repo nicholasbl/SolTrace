@@ -2,10 +2,10 @@ Project(optix_runner)
 
 include_directories(
     .
-    ${CMAKE_SOURCE_DIR}/coretrace
-    ${CMAKE_SOURCE_DIR}/coretrace/simulation_data
-    ${CMAKE_SOURCE_DIR}/coretrace/simulation_runner
-    ${CMAKE_SOURCE_DIR}/coretrace/simulation_results
+    ${CMAKE_CURRENT_SOURCE_DIR}/../..
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_data
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_runner
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_results
 
 )
 
