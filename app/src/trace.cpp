@@ -1,4 +1,3 @@
-
 /*******************************************************************************************************
 *  Copyright 2018 Alliance for Sustainable Energy, LLC
 *
@@ -71,7 +70,8 @@
 static wxThreadProgressDialog *g_currentThreadProgress = NULL;
 
 enum{ ID_NUM_RAYS = wxID_HIGHEST+923,
-	  ID_NUM_RAYS_SUN, ID_NUM_CPU, ID_SEED, ID_INCL_SUNSHAPE, ID_INCL_ERRORS, ID_INCL_POINTFOCUS, ID_USE_REFACTOR};
+	  ID_NUM_RAYS_SUN, ID_NUM_CPU, ID_SEED, ID_INCL_SUNSHAPE, ID_INCL_ERRORS, ID_INCL_POINTFOCUS, ID_USE_REFACTOR,
+	  ID_RUNNER_RADIO};
 
 BEGIN_EVENT_TABLE( TraceForm, wxPanel )
 	EVT_BUTTON( wxID_SETUP, TraceForm::OnCommand )
@@ -84,6 +84,7 @@ BEGIN_EVENT_TABLE( TraceForm, wxPanel )
 	EVT_CHECKBOX( ID_INCL_ERRORS, TraceForm::OnCommand)
 	EVT_CHECKBOX( ID_INCL_POINTFOCUS, TraceForm::OnCommand)
 	EVT_CHECKBOX( ID_USE_REFACTOR, TraceForm::OnCommand)
+	EVT_RADIOBOX( ID_RUNNER_RADIO, TraceForm::OnCommand)
 
 
 END_EVENT_TABLE()
@@ -115,6 +116,23 @@ TraceForm::TraceForm( wxWindow *parent, Project &prj )
 	flxsizer->Add( m_asPowerTower = new wxCheckBox( sizer1->GetStaticBox(), ID_INCL_POINTFOCUS, "Point-focus system" ), 0, wxALL|wxALIGN_CENTER_VERTICAL, 3 );
 	flxsizer->AddStretchSpacer();
 	flxsizer->Add(m_use_refactor_trace = new wxCheckBox(sizer1->GetStaticBox(), ID_USE_REFACTOR, "Use refactor trace"), 0, wxALL | wxALIGN_CENTER_VERTICAL, 3);
+	flxsizer->AddStretchSpacer();
+
+	// Add a radio box for runner selection
+	wxString runnerChoices[] = { "Legacy", "Native runner (cpu)", "OptiX runner (gpu)" };
+	m_runner_choice = new wxRadioBox(
+		sizer1->GetStaticBox(),
+		ID_RUNNER_RADIO,
+		"SolTrace 2.0 (pre-alpha)",
+		wxDefaultPosition,
+		wxDefaultSize,
+		WXSIZEOF(runnerChoices),
+		runnerChoices,
+		1, // 1 column
+		wxRA_SPECIFY_COLS
+	);
+	m_runner_choice->SetSelection(0); // Default to "None"
+	flxsizer->Add(m_runner_choice, 2, wxALL | wxEXPAND, 3);
 
 
 	sizer1->Add( flxsizer, 0, wxALL, 5 );
@@ -173,11 +191,20 @@ void TraceForm::UpdateFromData()
 	m_inclOpticalErrors->SetValue(T.is_include_errors);
 	m_asPowerTower->SetValue(T.is_point_focus);
 	m_use_refactor_trace->SetValue(T.use_refactor_trace);
+
+	// Set radio box selection
+	if (T.use_native_runner)
+		m_runner_choice->SetSelection(1);
+	else if (T.use_optix_runner)
+		m_runner_choice->SetSelection(2);
+	else
+		m_runner_choice->SetSelection(0);
 }
 
 
 void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed,
-	bool sunshape, bool opterr, bool aspowertower, bool use_refactor_trace )
+	bool sunshape, bool opterr, bool aspowertower, bool use_refactor_trace,
+	bool use_native_runner, bool use_optix_runner)
 {
 	m_numRays->SetValue( nrays );
 	m_numMaxSunRays->SetValue( nmaxsunrays );
@@ -187,6 +214,12 @@ void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed
 	m_inclOpticalErrors->SetValue( opterr );
     m_asPowerTower->SetValue( aspowertower );
 	m_use_refactor_trace->SetValue( use_refactor_trace );
+	if (use_native_runner)
+		m_runner_choice->SetSelection(1);
+	else if (use_optix_runner)
+		m_runner_choice->SetSelection(2);
+	else
+		m_runner_choice->SetSelection(0);
 
 	TraceSettings& T = m_prj.Trace_Settings;
 	T.n_rays = m_numRays->AsUnsigned();
@@ -197,10 +230,13 @@ void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed
 	T.is_include_errors = m_inclOpticalErrors->GetValue();
 	T.is_point_focus = m_asPowerTower->GetValue();
 	T.use_refactor_trace = m_use_refactor_trace->GetValue();
+	T.use_native_runner = (m_runner_choice->GetSelection() == 1);
+	T.use_optix_runner = (m_runner_choice->GetSelection() == 2);
 }
 
 void TraceForm::GetOptions( size_t *nrays, size_t *nmaxsunrays, int *ncpu, int *seed,
-	bool *sunshape, bool *opterr, bool *aspowertower, bool *use_refactor_trace )
+	bool *sunshape, bool *opterr, bool *aspowertower, bool *use_refactor_trace,
+	bool *use_native_runner, bool *use_optix_runner)
 {
 	if ( nrays ) *nrays = m_numRays->AsUnsigned();
 	if ( nmaxsunrays ) *nmaxsunrays = m_numMaxSunRays->AsUnsigned();
@@ -210,6 +246,8 @@ void TraceForm::GetOptions( size_t *nrays, size_t *nmaxsunrays, int *ncpu, int *
 	if ( opterr ) *opterr = m_inclOpticalErrors->GetValue();
     if ( aspowertower ) *aspowertower = m_asPowerTower->GetValue();
 	if ( use_refactor_trace ) *use_refactor_trace = m_use_refactor_trace->GetValue();
+	if ( use_native_runner ) *use_native_runner = (m_runner_choice->GetSelection() == 1);
+	if ( use_optix_runner ) *use_optix_runner = (m_runner_choice->GetSelection() == 2);
 }
 
 
@@ -255,6 +293,13 @@ void TraceForm::OnCommand( wxCommandEvent &evt )
 	case ID_USE_REFACTOR:
 		T.use_refactor_trace = m_use_refactor_trace->GetValue();
 		break;
+	case ID_RUNNER_RADIO:
+	{
+		int sel = m_runner_choice->GetSelection();
+		T.use_native_runner = (sel == 1);
+		T.use_optix_runner = (sel == 2);
+		break;
+	}
 	case wxID_EXECUTE:
 		StartTrace();
 		break;
@@ -282,7 +327,7 @@ int TraceForm::StartTrace( bool , bool quiet, wxArrayString *err )
 
 	m_lastSeedVal = m_seed->AsInteger();
 	
-static wxArrayString s_err;
+	static wxArrayString s_err;
 	wxArrayString &ref_errors = err ? *err : s_err;
 
 	ref_errors.clear();

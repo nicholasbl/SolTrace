@@ -210,6 +210,8 @@ public:
 	bool is_include_errors;
 	bool is_point_focus;
 	bool use_refactor_trace;
+	bool use_native_runner;
+	bool use_optix_runner;
 };
 
 
