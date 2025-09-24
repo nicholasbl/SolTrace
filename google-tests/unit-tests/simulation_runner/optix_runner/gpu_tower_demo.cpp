@@ -6,6 +6,7 @@
 #include <optix_runner.hpp>
 #include <sun.hpp>
 #include <simulation_data.hpp>
+#include <simulation_data_export.hpp>
 #include <single_element.hpp>
 #include <stage_element.hpp>
 #include <vector3d.hpp>
@@ -30,7 +31,7 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
     absorber->set_surface(make_surface<Flat>());
     absorber->set_aperture(make_aperture<Rectangle>(2.0, 2.0));
     OpticalProperties *foptics = absorber->get_front_optical_properties();
-    foptics->my_type = REFLECTION;
+    foptics->my_type = InteractionType::REFLECTION;
     foptics->reflectivity = 0.0;
     absorber->set_name("Absorber");
 

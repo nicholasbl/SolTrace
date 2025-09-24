@@ -1,5 +1,7 @@
 #ifndef SOLTRACE_OPTIX_RUNNER_H
 #define SOLTRACE_OPTIX_RUNNER_H
+
+#include "simulation_data.hpp"
 #include "simulation_result.hpp"
 #include "simulation_runner.hpp"
 #include "core/soltrace_system.h"
@@ -31,7 +33,7 @@ private:
 
     OptixCSP::SolTraceSystem m_sys;
 
-    const SimulationData *m_simdata;  
+    const SolTrace::Data::SimulationData *m_simdata;
     RunnerStatus setup_parameters(const SolTrace::Data::SimulationData *data);
     RunnerStatus setup_sun(const SolTrace::Data::SimulationData *data);
     RunnerStatus setup_elements(const SolTrace::Data::SimulationData *data);
