@@ -5,6 +5,8 @@
 #include <limits>
 #include <stdexcept>
 
+namespace SolTrace::Data {
+
 void Sun::set_gaussian_distribution(double _sigma)
 {
     if (_sigma <= 0.0)
@@ -117,3 +119,5 @@ void Sun::set_shape(DistributionType shape,
 
     return;
 }
+
+} // namespace SolTrace::Data

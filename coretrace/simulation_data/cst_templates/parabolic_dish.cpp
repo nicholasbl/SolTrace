@@ -13,6 +13,8 @@
 #include "utilities.hpp"
 #include "surface.hpp"
 
+namespace SolTrace::Data {
+
 ParabolicDish::ParabolicDish() : CompositeElement(),
                                  initialized(false),
                                  aperture_diameter(-1.0),
@@ -386,3 +388,5 @@ void ParabolicDish::enforce_user_fields_set() const
 
     return;
 }
+
+} // namespace SolTrace::Data

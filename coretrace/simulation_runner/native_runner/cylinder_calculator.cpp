@@ -8,6 +8,7 @@
 
 #include "aperture.hpp"
 #include "matvec.hpp"
+#include "simulation_data_export.hpp"
 #include "surface.hpp"
 
 CylinderCalculator::CylinderCalculator(surface_ptr surf, aperture_ptr ap)

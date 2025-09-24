@@ -2,6 +2,7 @@
 #include "sun_to_primary_stage.hpp"
 
 #include "native_runner_types.hpp"
+#include "simulation_data_export.hpp"
 
 bool SunToPrimaryStage(
     TSystem *System,

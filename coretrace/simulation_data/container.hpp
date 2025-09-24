@@ -15,6 +15,8 @@
 #include <map>
 #include <memory>
 
+namespace SolTrace::Data {
+
 template <typename K, typename V>
 class Container
 {
@@ -152,5 +154,7 @@ private:
     std::map<K, value_pointer> container;
     mutable K next_id;
 };
+
+} // namespace SolTrace::Data
 
 #endif

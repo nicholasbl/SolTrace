@@ -12,8 +12,8 @@ public:
     ~NativeRunner();
 
     virtual RunnerStatus initialize();
-    virtual RunnerStatus setup_simulation(const SimulationData *data);
-    virtual RunnerStatus update_simulation(const SimulationData *data);
+    virtual RunnerStatus setup_simulation(const SolTrace::Data::SimulationData *data);
+    virtual RunnerStatus update_simulation(const SolTrace::Data::SimulationData *data);
     virtual RunnerStatus run_simulation();
     virtual RunnerStatus report_simulation(SimulationResult *result,
                                            int level_spec);
@@ -43,9 +43,9 @@ public:
 
     const TSystem *get_system() const { return &this->tsys; }
 
-    RunnerStatus setup_parameters(const SimulationData *data);
-    RunnerStatus setup_sun(const SimulationData *data);
-    RunnerStatus setup_elements(const SimulationData *data);
+    RunnerStatus setup_parameters(const SolTrace::Data::SimulationData *data);
+    RunnerStatus setup_sun(const SolTrace::Data::SimulationData *data);
+    RunnerStatus setup_elements(const SolTrace::Data::SimulationData *data);
 
 private:
     // Use power tower speed ups

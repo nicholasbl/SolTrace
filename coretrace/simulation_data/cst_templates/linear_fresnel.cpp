@@ -10,6 +10,8 @@
 
 #include "cst_templates/utilities.hpp"
 
+namespace SolTrace::Data {
+
 LinearFresnel::LinearFresnel()
     : CompositeElement(),
       initialized(false),
@@ -622,3 +624,5 @@ void LinearFresnel::enforce_user_fields_set() const
 
     return;
 }
+
+} // namespace SolTrace::Data

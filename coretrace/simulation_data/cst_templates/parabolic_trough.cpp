@@ -13,6 +13,8 @@
 #include "utilities.hpp"
 #include "surface.hpp"
 
+namespace SolTrace::Data {
+
 ParabolicTrough::ParabolicTrough()
     : initialized(false),
       //   ready_to_add_self(false),
@@ -577,3 +579,5 @@ void ParabolicTrough::enforce_user_fields_set() const
 
     return;
 }
+
+} // namespace SolTrace::Data

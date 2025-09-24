@@ -4,6 +4,8 @@
 #include <cmath>
 #include <cstdint>
 
+namespace SolTrace::Data {
+
 double parabolic_arc_length(double cx, double x)
 {
     double cxx = cx * x;
@@ -59,3 +61,5 @@ double parabolic_determine_x_coordinate(double cx,
 
     return x1;
 }
+
+} // namespace SolTrace::Data

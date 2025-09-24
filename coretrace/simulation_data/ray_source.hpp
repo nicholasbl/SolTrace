@@ -19,6 +19,8 @@
 #include "error_distributions.hpp"
 #include "vector3d.hpp"
 
+namespace SolTrace::Data {
+
 class RaySource
 {
 public:
@@ -67,5 +69,7 @@ inline auto make_ray_source(Args&&... args)
 {
     return RaySourceContainer::make_pointer<C>(std::forward<Args>(args)...);
 }
+
+} // namespace SolTrace::Data
 
 #endif

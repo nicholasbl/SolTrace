@@ -40,8 +40,8 @@ bool is_identical(const Matrix3d &A, const Matrix3d &B)
 
 element_ptr make_configured_element()
 {
-    element_ptr el = make_element<SingleElement>();
-    el->set_aperture(make_aperture<Circle>(2.0));
-    el->set_surface(make_surface<Flat>());
+    element_ptr el = SolTrace::Data::make_element<SolTrace::Data::SingleElement>();
+    el->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Circle>(2.0));
+    el->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Flat>());
     return el;
 }

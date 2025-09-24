@@ -5,6 +5,8 @@
 #include "composite_element.hpp"
 #include "simdata_io.hpp"
 
+namespace SolTrace::Data {
+
 SimulationData::SimulationData() : number_of_elements(0),
                                    my_elements(1),
                                    my_sources(0)
@@ -264,3 +266,5 @@ int SimulationData::import_from_file(const std::string file_name)
 {
     return this->import_from_file(file_name.c_str());
 }
+
+} // namespace SolTrace::Data

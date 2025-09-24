@@ -14,6 +14,10 @@
 #include <string>
 #include "simulation_data.hpp"
 
+namespace SolTrace::Data {
+
 bool load_stinput_file(SimulationData& sd, std::string filename);
+
+} // namespace SolTrace::Data
 
 #endif

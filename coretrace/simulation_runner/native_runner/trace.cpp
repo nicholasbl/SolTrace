@@ -58,6 +58,7 @@
 #include "matvec.hpp"
 #include "native_runner_backend.hpp"
 #include "native_runner_types.hpp"
+#include "simulation_data_export.hpp"
 #include "treemesh.hpp"
 
 // #define   Order 3
@@ -596,7 +597,7 @@ bool trace_native(
 					// switch (optelm->InteractionType)
 					switch (optics->my_type)
 					{
-					case REFRACTION: // refraction
+					case InteractionType::REFRACTION: // refraction
 						// TODO: Implement transmissivity table?
 						// if (optics->UseTransmissivityTable)
 						// {
@@ -626,7 +627,7 @@ bool trace_native(
 						// 	TestValue = optics->Transmissivity;
 						TestValue = optics->transmitivity;
 						break;
-					case REFLECTION: // reflection
+					case InteractionType::REFLECTION: // reflection
 						// TODO: Implement reflectivity table?
 						// if (optics->UseReflectivityTable)
 						// {
@@ -1088,7 +1089,7 @@ void Interaction(
 
 		/*{  InteractionType = 1, Refraction
 		===============================================================================}*/
-	case REFRACTION:
+	case InteractionType::REFRACTION:
 	{
 		// TODO: Check that this grabs the correct/savem values
 		// as the commented out bit immediately below.
@@ -1160,7 +1161,7 @@ void Interaction(
 
 		/*{  InteractionType = 2, Reflection
 		===============================================================================}*/
-	case REFLECTION:
+	case InteractionType::REFLECTION:
 	{
 		A = DOT(CosKLM, DFXYZ) / DOT(DFXYZ, DFXYZ);
 		// Compute direction cosines for reflected ray
@@ -1393,7 +1394,7 @@ Label_9:
 	{
 	// case 'g':
 	// case 'G':
-	case GAUSSIAN:
+	case DistributionType::GAUSSIAN:
 		// gaussian distribution
 		thetax = myrng.randNorm(0., delop);
 		thetay = myrng.randNorm(0., delop);
@@ -1404,7 +1405,7 @@ Label_9:
 
 	// case 'p':
 	// case 'P':
-	case PILLBOX:
+	case DistributionType::PILLBOX:
 		// pillbox distribution
 		do
 		{
@@ -1480,7 +1481,7 @@ void Errors(
 	double PosIn[3] = {0.0, 0.0, 0.0};
 	double PosOut[3] = {0.0, 0.0, 0.0};
 	// char dist = 'g';
-	DistributionType dist = GAUSSIAN;
+	DistributionType dist = DistributionType::GAUSSIAN;
 	double delop = 0, delop3 = 0, thetax = 0, thetay = 0, ttheta = 0, theta2 = 0, phi = 0, theta = 0, stest = 0;
 	uint_fast64_t i;
 	double RRefToLoc[3][3] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
@@ -1536,7 +1537,7 @@ Label_50:
 	{
 	// case 'g':
 	// case 'G': // gaussian distribution
-	case GAUSSIAN:
+	case DistributionType::GAUSSIAN:
 		thetax = myrng.randNorm(0., delop);
 		thetay = myrng.randNorm(0., delop);
 
@@ -1546,7 +1547,7 @@ Label_50:
 
 	// case 'p':
 	// case 'P': // pillbox distribution
-	case PILLBOX:
+	case DistributionType::PILLBOX:
 	Label_200:
 		thetax = 2.0 * delop * myrng() - delop;
 		thetay = 2.0 * delop * myrng() - delop;
@@ -1620,7 +1621,7 @@ Label_50:
 	/*{If reflection error applicaton and new ray direction (after errors) physically goes through opaque surface,
 	then go back and get new perturbation 06-12-07}*/
 	if ((Source == 2) &&
-		(OptProperties->my_type == REFLECTION) &&
+		(OptProperties->my_type == InteractionType::REFLECTION) &&
 		(DOT(CosOut, DFXYZ) < 0) &&
 		maxcall++ < 50000)
 	{

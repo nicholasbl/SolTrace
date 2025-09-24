@@ -4,6 +4,7 @@
 
 #include <common.hpp>
 #include <sphere_calculator.hpp>
+#include <simulation_data_export.hpp>
 #include <surface.hpp>
 #include <vector3d.hpp>
 

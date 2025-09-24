@@ -4,6 +4,7 @@
 
 #include <common.hpp>
 #include <parabola_calculator.hpp>
+#include <simulation_data_export.hpp>
 #include <surface.hpp>
 #include <vector3d.hpp>
 
@@ -106,7 +107,7 @@ TEST(ParabolaCalculator, Case1)
     Vector3d mt;
     Vector3d gradf;
 
-    auto parabola = make_surface<Parabola>(0.5, 0.25);
+    auto parabola = SolTrace::Data::make_surface<Parabola>(0.5, 0.25);
     ParabolaCalculator pcalc(parabola);
     int sts = pcalc.intersect(x0.data, m.data,
                               xt.data, mt.data, gradf.data, &t);
@@ -138,7 +139,7 @@ TEST(ParabolaCalculator, Case2)
     Vector3d mt;
     Vector3d gradf;
 
-    auto parabola = make_surface<Parabola>(0.5, 0.25);
+    auto parabola = SolTrace::Data::make_surface<Parabola>(0.5, 0.25);
     ParabolaCalculator pcalc(parabola);
     int sts = pcalc.intersect(x0.data, m.data,
                               xt.data, mt.data, gradf.data, &t);
@@ -170,7 +171,7 @@ TEST(ParabolaCalculator, Case3)
     Vector3d mt;
     Vector3d gradf;
 
-    auto parabola = make_surface<Parabola>(0.5, 0.25);
+    auto parabola = SolTrace::Data::make_surface<Parabola>(0.5, 0.25);
     ParabolaCalculator pcalc(parabola);
     int sts = pcalc.intersect(x0.data, m.data,
                               xt.data, mt.data, gradf.data, &t);
@@ -201,7 +202,7 @@ TEST(ParabolaCalculator, Case4)
     Vector3d mt;
     Vector3d gradf;
 
-    auto parabola = make_surface<Parabola>(focal_length(cx),
+    auto parabola = SolTrace::Data::make_surface<Parabola>(focal_length(cx),
                                            focal_length(cy));
     ParabolaCalculator pcalc(parabola);
     int sts = pcalc.intersect(x0.data, m.data,
@@ -238,7 +239,7 @@ TEST(ParabolaCalculator, Case5)
     Vector3d mt;
     Vector3d gradf;
 
-    auto parabola = make_surface<Parabola>(focal_length(cx),
+    auto parabola = SolTrace::Data::make_surface<Parabola>(focal_length(cx),
                                            focal_length(cy));
     ParabolaCalculator pcalc(parabola);
     int sts = pcalc.intersect(x0.data, m.data,
@@ -277,7 +278,7 @@ TEST(ParabolaCalculator, Case6)
     Vector3d mt;
     Vector3d gradf;
 
-    auto parabola = make_surface<Parabola>(focal_length(cx),
+    auto parabola = SolTrace::Data::make_surface<Parabola>(focal_length(cx),
                                            focal_length(cy));
     ParabolaCalculator pcalc(parabola);
     int sts = pcalc.intersect(x0.data, m.data,
@@ -296,8 +297,8 @@ TEST(ParabolaCalculator, ZAperture)
     double cx = 1.0;
     double cy = 2.0;
     double r = 2.5;
-    auto ap = make_aperture<Circle>(2.0 * r);
-    auto parabola = make_surface<Parabola>(focal_length(cx),
+    auto ap = SolTrace::Data::make_aperture<Circle>(2.0 * r);
+    auto parabola = SolTrace::Data::make_surface<Parabola>(focal_length(cx),
                                            focal_length(cy));
     ParabolaCalculator pcalc(parabola);
     double zap = pcalc.compute_z_aperture(ap);
@@ -305,7 +306,7 @@ TEST(ParabolaCalculator, ZAperture)
     EXPECT_NEAR(zap, zmax, TOL);
 
     // Swap x and y coefficients
-    parabola = make_surface<Parabola>(focal_length(cy),
+    parabola = SolTrace::Data::make_surface<Parabola>(focal_length(cy),
                                       focal_length(cx));
     ParabolaCalculator pcalc_swap(parabola);
     zap = pcalc.compute_z_aperture(ap);

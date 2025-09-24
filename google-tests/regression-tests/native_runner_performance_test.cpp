@@ -5,6 +5,7 @@
 #include <heliostat.hpp>
 #include <native_runner.hpp>
 #include <simulation_data.hpp>
+#include <simulation_data_export.hpp>
 #include <simulation_result.hpp>
 #include <stage_element.hpp>
 #include <sun.hpp>
@@ -98,7 +99,7 @@ TEST(NativeRunner, PerformanceTest)
 
             hs->create_geometry();
             auto ret = st1->add_element(hs);
-            EXPECT_TRUE(Element::is_success(ret));
+            EXPECT_TRUE(SolTrace::Data::Element::is_success(ret));
             hs->update_geometry(0.0, 90.0);
 
             // std::cout << "****************"
@@ -125,7 +126,7 @@ TEST(NativeRunner, PerformanceTest)
     absorb->set_name("Absorber");
     absorb->enable();
     auto ret = st2->add_element(absorb);
-    EXPECT_TRUE(Element::is_success(ret));
+    EXPECT_TRUE(SolTrace::Data::Element::is_success(ret));
 
     sdata.add_stage(st1);
     sdata.add_stage(st2);

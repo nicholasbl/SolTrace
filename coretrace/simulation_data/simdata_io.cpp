@@ -15,6 +15,8 @@
 #include "sun.hpp"
 #include "surface.hpp"
 
+namespace SolTrace::Data {
+
 int st_sun_position(double lat, double day, double hour,
                     double *x, double *y, double *z)
 {
@@ -685,3 +687,5 @@ bool load_stinput_file(SimulationData &sd, std::string filename)
 
     return true;
 }
+
+} // namespace SolTrace::Data

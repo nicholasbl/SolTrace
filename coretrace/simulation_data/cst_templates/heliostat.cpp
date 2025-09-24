@@ -6,6 +6,8 @@
 
 #include "utilities.hpp"
 
+namespace SolTrace::Data {
+
 Heliostat::Heliostat()
     : CompositeElement(),
       initialized(false),
@@ -431,3 +433,5 @@ void Heliostat::enforce_user_fields_set() const
 
     return;
 }
+
+} // namespace SolTrace::Data

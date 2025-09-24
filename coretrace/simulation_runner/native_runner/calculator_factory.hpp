@@ -26,8 +26,8 @@ public:
     }
 
     // calculator_ptr make_calculator(aperture_ptr ap, surface_ptr surf);
-    calculator_ptr make_calculator(aperture_ptr ap,
-                                   surface_ptr surf,
+    calculator_ptr make_calculator(SolTrace::Data::aperture_ptr ap,
+                                   SolTrace::Data::surface_ptr surf,
                                    const ElementParameters &eparams);
 
 private:

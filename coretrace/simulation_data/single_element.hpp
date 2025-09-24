@@ -21,6 +21,8 @@
 #include "aperture.hpp"
 #include "surface.hpp"
 
+namespace SolTrace::Data {
+
 class SingleElement : public ElementBase
 {
 public:
@@ -95,6 +97,8 @@ protected:
 };
 
 using single_element_ptr = typename std::shared_ptr<SingleElement>;
+
+} // namespace SolTrace::Data
 
 /**
  * @}

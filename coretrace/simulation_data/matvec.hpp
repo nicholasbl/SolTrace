@@ -64,141 +64,7 @@
 #include <iostream>
 #include <fstream>
 
-// #include "types.h"
-// #include "mtrand.h"
-// #include "stapi.h"
-
-// // void Intersect(
-// //       double PosLoc[3],
-// //       double CosLoc[3],
-// //       TElement *Element,
-// //       double PosXYZ[3],
-// //       double CosKLM[3],
-// //       double DFXYZ[3],
-// //       double *PathLength,
-// //       int *ErrorFlag );
-
-// // void Surface(
-// //       double PosXYZ[3],
-// //       TElement *Element,
-// //       double *FXYZ,
-// //       double DFXYZ[3],
-// //       int *ErrorFlag );
-
-// // void QuadricSurfaceClosedForm(
-// //       TElement *Element,
-// //       double PosLoc[3],
-// //       double CosLoc[3],
-// //       double PosXYZ[3],
-// //       double DFXYZ[3],
-// //       double *PathLength,
-// //       int *ErrorFlag);
-
-// // void TorusClosedForm(
-// //       TElement *Element,
-// //       double PosLoc[3],
-// //       double CosLoc[3],
-// //       double PosXYZ[3],
-// //       double DFXYZ[3],
-// //       double *PathLength,
-// //       int *ErrorFlag);
-
-// // void SpencerandMurtySurfaceClosedForm(
-// //       TElement *Element,
-// //       double PosLoc[3],
-// //       double CosLoc[3],
-// //       double PosXYZ[3],
-// //       double DFXYZ[3],
-// //       double *PathLength,
-// //       int *ErrorFlag );
-
-// // void Interaction(
-// //       MTRand &myrng,
-// //       double PosXYZ[3],
-// //       double CosKLM[3],
-// //       double DFXYZ[3],
-// //       int InteractionType,
-// //       TOpticalProperties *Opticl,
-// //       double Wavelength,
-// //       double PosOut[3],
-// //       double CosOut[3],
-// //       int *ErrorFlag );
-
-// // void GenerateRay(
-// //       MTRand &myrng,
-// //       double PosSunStage[3],
-// //       double Origin[3],
-// //       double RLocToRef[3][3],
-// //       TSun *Sun,
-// //       double PosRayGlobal[3],
-// //       double CosRayGlobal[3],
-// //             double PosRaySun[3]
-// //             );
-
-// bool LoadExistingStage0Ray(
-//             int index,
-//             std::vector<std::vector< double> > *raydat,
-//       double PosRayGlobal[3],
-//             double CosRayGlobal[3],
-//             st_uint_t &ElementNum,
-//             st_uint_t &RayNum );
-
-// bool LoadExistingStage1Ray(
-//             int index,
-//             std::vector<std::vector< double> > *raydat,
-//       double PosRayGlobal[3],
-//             double CosRayGlobal[3],
-//             int &raynum);
-
-// bool SunToPrimaryStage(
-//         TSystem *System,
-//         TStage *Stage,
-//         TSun *Sun,
-//         double PosSunStage[3]);
-
-// bool AperturePlane(
-//       TElement *Element);
-
-// void Errors(
-//       MTRand &myrng,
-//       double CosIn[3],
-//       int Source,
-//       TSun *Sun,
-//       TElement *Element,
-//       TOpticalProperties *OptProperties,
-//       double CosOut[3],
-//       double DFXYZ[3] );
-
-// void SurfaceNormalErrors( MTRand &myrng, double CosIn[3],
-//                           TOpticalProperties *OptProperties,
-//                           double CosOut[3] )  noexcept(false); // throw(nanexcept);
-
-// void DetermineElementIntersectionNew(
-//       TElement *Element,
-//       double PosRayIn[3],
-//       double CosRayIn[3],
-//       double PosRayOut[3],
-//       double CosRayOut[3],
-//       double DFXYZ[3],
-//       double *PathLength,
-//       int *ErrorFlag,
-//       int *Intercept,
-//       int *BacksideFlag );
-
-// void NewZStartforCubicSplineSurf(
-//       double CRadius,
-//       double PosLoc[3],
-//       double CosLoc[3],
-//       char AperShapeIndex,
-//       double *NewZStart,
-//       double *PLength,
-//       int *EFlag );
-
-// void SurfaceZatXYPair(
-//       double PosXYZ[3],
-//       TElement *Element,
-//       double *FXYZ,
-//       int *ErrorFlag );
+namespace SolTrace::Data {
 
 void MatrixVectorMult(const double M[3][3],
                       const double V[3],
@@ -271,5 +137,7 @@ inline void CopyVec3(double dest[3], const double src[3])
 void CopyMat3(double dest[3][3], const double src[3][3]);
 
 void IdentityMat3(double mat[3][3]);
+
+} // namespace SolTrace::Data
 
 #endif

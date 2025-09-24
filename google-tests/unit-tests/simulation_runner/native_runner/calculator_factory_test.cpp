@@ -10,6 +10,8 @@
 #include <parabola_calculator.hpp>
 #include <sphere_calculator.hpp>
 
+#include "common.hpp"
+
 class CalculatorFactoryTest : public ::testing::Test
 {
 protected:
@@ -47,8 +49,8 @@ TEST_F(CalculatorFactoryTest, SingletonBehavior)
 TEST_F(CalculatorFactoryTest, CreateParabolaCalculator)
 {
     // Create a parabola surface
-    auto surf = make_surface<Parabola>(10.0, 10.0);
-    auto ap = make_aperture<Circle>(5.0);
+    auto surf = SolTrace::Data::make_surface<SolTrace::Data::Parabola>(10.0, 10.0);
+    auto ap = SolTrace::Data::make_aperture<SolTrace::Data::Circle>(5.0);
 
     // Create calculator
     auto calc = factory->make_calculator(ap, surf, eparams);
@@ -64,8 +66,8 @@ TEST_F(CalculatorFactoryTest, CreateParabolaCalculator)
 TEST_F(CalculatorFactoryTest, CreateFlatCalculator)
 {
     // Create a flat surface
-    auto surf = make_surface<Flat>();
-    auto ap = make_aperture<Rectangle>(2.0, 3.0);
+    auto surf = SolTrace::Data::make_surface<SolTrace::Data::Flat>();
+    auto ap = SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(2.0, 3.0);
 
     // Create calculator
     auto calc = factory->make_calculator(ap, surf, eparams);
@@ -81,9 +83,9 @@ TEST_F(CalculatorFactoryTest, CreateFlatCalculator)
 TEST_F(CalculatorFactoryTest, CreateCylinderCalculator)
 {
     // Create a cylinder surface
-    auto surf = make_surface<Cylinder>(5.0);
+    auto surf = SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(5.0);
     // CylinderCalculator specifically requires a Rectangle aperture
-    auto ap = make_aperture<Rectangle>(10.0, 8.0); // x_length should be 2*radius = 10.0
+    auto ap = SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(10.0, 8.0); // x_length should be 2*radius = 10.0
 
     // Create calculator
     auto calc = factory->make_calculator(ap, surf, eparams);
@@ -99,8 +101,8 @@ TEST_F(CalculatorFactoryTest, CreateCylinderCalculator)
 TEST_F(CalculatorFactoryTest, CreateSphereCalculator)
 {
     // Create a sphere surface
-    auto surf = make_surface<Sphere>(7.5);
-    auto ap = make_aperture<Hexagon>(4.0);
+    auto surf = SolTrace::Data::make_surface<SolTrace::Data::Sphere>(7.5);
+    auto ap = SolTrace::Data::make_aperture<SolTrace::Data::Hexagon>(4.0);
 
     // Create calculator
     auto calc = factory->make_calculator(ap, surf, eparams);
@@ -116,7 +118,7 @@ TEST_F(CalculatorFactoryTest, CreateSphereCalculator)
 TEST_F(CalculatorFactoryTest, ErrorHandling_NullSurface)
 {
     // Test with null surface pointer
-    auto ap = make_aperture<Circle>(5.0);
+    auto ap = SolTrace::Data::make_aperture<SolTrace::Data::Circle>(5.0);
     surface_ptr null_surf = nullptr;
 
     // Should throw std::invalid_argument
@@ -128,7 +130,7 @@ TEST_F(CalculatorFactoryTest, ErrorHandling_NullAperture)
 {
     // Test with null aperture pointer
     aperture_ptr null_ap = nullptr;
-    surface_ptr surf = make_surface<Flat>();
+    surface_ptr surf = SolTrace::Data::make_surface<SolTrace::Data::Flat>();
 
     // Should throw std::invalid_argument
     EXPECT_THROW(factory->make_calculator(null_ap, surf, eparams),
@@ -138,8 +140,8 @@ TEST_F(CalculatorFactoryTest, ErrorHandling_NullAperture)
 TEST_F(CalculatorFactoryTest, ErrorHandling_UnsupportedSurfaceType)
 {
     // Create a surface with an unsupported type (CONE is not handled)
-    auto cone_surf = make_surface<Cone>(0.5); // half angle
-    auto ap = make_aperture<Circle>(5.0);
+    auto cone_surf = SolTrace::Data::make_surface<SolTrace::Data::Cone>(0.5); // half angle
+    auto ap = SolTrace::Data::make_aperture<SolTrace::Data::Circle>(5.0);
 
     // Should throw std::invalid_argument for unsupported surface type
     EXPECT_THROW({ factory->make_calculator(ap, cone_surf, eparams); }, std::invalid_argument);
@@ -148,12 +150,12 @@ TEST_F(CalculatorFactoryTest, ErrorHandling_UnsupportedSurfaceType)
 TEST_F(CalculatorFactoryTest, MultipleCalculatorCreation)
 {
     // Test creating multiple calculators in sequence
-    auto ap = make_aperture<Rectangle>(2.0, 3.0);
+    auto ap = SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(2.0, 3.0);
 
     // Create multiple flat calculators
-    auto calc1 = factory->make_calculator(ap, make_surface<Flat>(), eparams);
-    auto calc2 = factory->make_calculator(ap, make_surface<Flat>(), eparams);
-    auto calc3 = factory->make_calculator(ap, make_surface<Flat>(), eparams);
+    auto calc1 = factory->make_calculator(ap, SolTrace::Data::make_surface<SolTrace::Data::Flat>(), eparams);
+    auto calc2 = factory->make_calculator(ap, SolTrace::Data::make_surface<SolTrace::Data::Flat>(), eparams);
+    auto calc3 = factory->make_calculator(ap, SolTrace::Data::make_surface<SolTrace::Data::Flat>(), eparams);
 
     // All should be valid but different instances
     EXPECT_NE(calc1, nullptr);
@@ -169,7 +171,7 @@ TEST_F(CalculatorFactoryTest, ExceptionMessageContent)
     // Test that exception messages contain useful information
 
     // Test null surface exception message
-    auto ap = make_aperture<Circle>(5.0);
+    auto ap = SolTrace::Data::make_aperture<SolTrace::Data::Circle>(5.0);
     try
     {
         factory->make_calculator(ap, nullptr, eparams);
@@ -183,7 +185,7 @@ TEST_F(CalculatorFactoryTest, ExceptionMessageContent)
     }
 
     // Test cylinder with null aperture exception message
-    auto cylinder_surf = make_surface<Cylinder>(5.0);
+    auto cylinder_surf = SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(5.0);
     try
     {
         factory->make_calculator(nullptr, cylinder_surf, eparams);
@@ -197,7 +199,7 @@ TEST_F(CalculatorFactoryTest, ExceptionMessageContent)
     }
 
     // Test unsupported surface type exception message
-    auto cone_surf = make_surface<UnknownSurface>();
+    auto cone_surf = SolTrace::Data::make_surface<UnknownSurface>();
     try
     {
         factory->make_calculator(ap, cone_surf, eparams);

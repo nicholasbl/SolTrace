@@ -21,13 +21,13 @@ struct InteractionRecord
     };
 
     int_fast64_t index;
-    element_id element;
+    SolTrace::Data::element_id element;
     InteractionType type;
-    Vector3d location;
+    SolTrace::Data::Vector3d location;
 
-    InteractionRecord(element_id el, InteractionType type,
-                      const Vector3d location);
-    InteractionRecord(element_id el, InteractionType type,
+    InteractionRecord(SolTrace::Data::element_id el, InteractionType type,
+                      const SolTrace::Data::Vector3d location);
+    InteractionRecord(SolTrace::Data::element_id el, InteractionType type,
                       double x, double y, double z);
     ~InteractionRecord();
 
@@ -46,18 +46,18 @@ struct RayRecord
 {
     ray_id id;
     std::vector<interaction_ptr> interactions;
-    Vector3d cos_last;
+    SolTrace::Data::Vector3d cos_last;
 
     RayRecord(ray_id id);
     ~RayRecord();
 
     // Assumes that interactions are added in order
     void add_interaction_record(interaction_ptr ip);
-    void set_last_cosines(const Vector3d &clast);
+    void set_last_cosines(const SolTrace::Data::Vector3d &clast);
     void set_last_cosines(double x, double y, double z);
 
-    void get_direction_cosines(const interaction_ptr ip, Vector3d &cos);
-    void get_direction_cosines(int_fast64_t idx, Vector3d &cos);
+    void get_direction_cosines(const interaction_ptr ip, SolTrace::Data::Vector3d &cos);
+    void get_direction_cosines(int_fast64_t idx, SolTrace::Data::Vector3d &cos);
     uint_fast64_t get_number_of_interactions()
     {
         return this->interactions.size();

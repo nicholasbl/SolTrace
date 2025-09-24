@@ -7,6 +7,7 @@
 #include "newton_calculator.hpp"
 #include "parabola_calculator.hpp"
 #include "sphere_calculator.hpp"
+#include "simulation_data_export.hpp"
 #include "surface.hpp"
 
 #include <stdexcept>
@@ -37,19 +38,19 @@ calculator_ptr CalculatorFactory::make_calculator(
     SurfaceType st = surf->get_type();
     calculator_ptr calc = nullptr;
 
-    if (st == PARABOLA)
+    if (st == SurfaceType::PARABOLA)
     {
         calc = std::make_shared<ParabolaCalculator>(surf);
     }
-    else if (st == FLAT)
+    else if (st == SurfaceType::FLAT)
     {
         calc = std::make_shared<FlatCalculator>(surf);
     }
-    else if (st == CYLINDER)
+    else if (st == SurfaceType::CYLINDER)
     {
         calc = std::make_shared<CylinderCalculator>(surf, ap);
     }
-    else if (st == SPHERE)
+    else if (st == SurfaceType::SPHERE)
     {
         calc = std::make_shared<SphereCalculator>(surf);
     }

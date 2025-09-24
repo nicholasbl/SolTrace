@@ -1,3 +1,6 @@
+#ifndef SOLTRACE_ARCLENGTH_H
+#define SOLTRACE_ARCLENGTH_H
+
 /**
  * @file arclength.hpp
  * @brief Arc length calculation utilities
@@ -7,8 +10,7 @@
  * Includes functions for parabolic arc length calculations and coordinate determination.
  */
 
-#ifndef SOLTRACE_ARCLENGTH_H
-#define SOLTRACE_ARCLENGTH_H
+namespace SolTrace::Data {
 
 /**
  * @brief Calculate arc length along parabola from origin to x
@@ -44,5 +46,7 @@ double parabolic_determine_x_coordinate(double cx,
                                         double x0,
                                         double arc_length,
                                         double dx = 1e-6);
+
+} // namespace SolTrace::Data
 
 #endif

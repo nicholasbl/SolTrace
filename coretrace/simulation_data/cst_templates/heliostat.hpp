@@ -19,6 +19,8 @@
 #include "composite_element.hpp"
 #include "single_element.hpp"
 
+namespace SolTrace::Data {
+
 class Heliostat : public CompositeElement
 {
 public:
@@ -87,6 +89,8 @@ private:
 
     std::vector<single_element_ptr> facets;
 };
+
+} // namespace SolTrace::Data
 
 /**
  * @}

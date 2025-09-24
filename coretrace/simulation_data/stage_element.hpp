@@ -15,6 +15,8 @@
 #include "composite_element.hpp"
 #include "element.hpp"
 
+namespace SolTrace::Data {
+
 class StageElement: public CompositeElement
 {
 public:
@@ -31,5 +33,7 @@ inline auto make_stage(Args &&...args)
 {
     return make_element<StageElement>(std::forward<Args>(args)...);
 }
+
+} // namespace SolTrace::Data
 
 #endif

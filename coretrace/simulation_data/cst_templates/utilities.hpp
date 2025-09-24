@@ -4,6 +4,8 @@
 
 #include "vector3d.hpp"
 
+namespace SolTrace::Data {
+
 void project_onto_plane(const Vector3d &n,
                         const Vector3d &u,
                         Vector3d &uproj);
@@ -35,5 +37,7 @@ void sun_position_vector_degrees(Vector3d &sun_pos,
 void sun_position_vector_radians(Vector3d &sun_pos,
                                  double azimuth,
                                  double elevation);
+
+} // namespace SolTrace::Data
 
 #endif

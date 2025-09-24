@@ -13,8 +13,11 @@
 
 #include "ray_source.hpp"
 
+#include "datetime.hpp"
 #include "error_distributions.hpp"
 #include "vector3d.hpp"
+
+namespace SolTrace::Data {
 
 class Sun : public RaySource
 {
@@ -60,5 +63,7 @@ private:
     DistributionType my_shape;
     Vector3d my_position;
 };
+
+} // namespace SolTrace::Data
 
 #endif

@@ -55,6 +55,7 @@
 #include "calculator_factory.hpp"
 #include "matvec.hpp"
 #include "native_runner_types.hpp"
+#include "simulation_data_export.hpp"
 #include "stage_element.hpp"
 #include "vector3d.hpp"
 
@@ -166,7 +167,7 @@ void TSun::Reset()
 
     PointSource = false;
     // ShapeIndex = ' ';
-    ShapeIndex = GAUSSIAN;
+    ShapeIndex = DistributionType::GAUSSIAN;
     Sigma = 0;
 
     MaxAngle = 0;

@@ -6,6 +6,9 @@
 #include "element.hpp"
 #include "vector3d.hpp"
 
+using element_id = SolTrace::Data::element_id;
+using Vector3d = SolTrace::Data::Vector3d;
+
 InteractionRecord::InteractionRecord(
     element_id el,
     InteractionRecord::InteractionType type,

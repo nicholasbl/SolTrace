@@ -7,6 +7,8 @@
 #include "constants.hpp"
 #include "vector3d.hpp"
 
+namespace SolTrace::Data {
+
 void project_onto_plane(const Vector3d &n,
                         const Vector3d &u,
                         Vector3d &uproj)
@@ -92,3 +94,5 @@ void sun_position_vector_radians(Vector3d &sun_pos,
     sun_pos.set_values(x, y, z);
     return;
 }
+
+} // namespace SolTrace::Data

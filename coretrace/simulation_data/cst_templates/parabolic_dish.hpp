@@ -21,6 +21,8 @@
 #include "single_element.hpp"
 #include "vector3d.hpp"
 
+namespace SolTrace::Data {
+
 class ParabolicDish : public CompositeElement
 {
 public:
@@ -83,6 +85,8 @@ private:
 
     double determine_x_coordinate(double x0, double arc_length);
 };
+
+} // namespace SolTrace::Data
 
 /**
  * @}

@@ -9,6 +9,7 @@
 #include "element.hpp"
 #include "simulation_parameters.hpp"
 #include "simulation_data.hpp"
+#include "simulation_data_export.hpp"
 #include "trace.hpp"
 
 NativeRunner::NativeRunner() : SimulationRunner(),

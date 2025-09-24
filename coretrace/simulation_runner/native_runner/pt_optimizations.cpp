@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include "constants.hpp"
+#include "simulation_data_export.hpp"
 
 void SetupPTOptimizations(
 	// system info

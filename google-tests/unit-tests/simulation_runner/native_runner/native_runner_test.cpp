@@ -8,6 +8,7 @@
 #include <ray_source.hpp>
 #include <sun.hpp>
 #include <simulation_data.hpp>
+#include <simulation_data_export.hpp>
 #include <single_element.hpp>
 #include <stage_element.hpp>
 #include <vector3d.hpp>
@@ -28,17 +29,17 @@ TEST(NativeRunnerTypes, TSun)
 {
 
     SimulationData my_sim;
-    auto sun = make_ray_source<Sun>();
+    auto sun = SolTrace::Data::make_ray_source<Sun>();
     Vector3d spos(1.0, 2.0, 3.0);
     sun->set_position(spos);
-    sun->set_shape(PILLBOX, -1.0, 1.0);
+    sun->set_shape(SolTrace::Data::PILLBOX, -1.0, 1.0);
     my_sim.add_ray_source(sun);
 
     NativeRunner runner;
     runner.setup_sun(&my_sim);
     auto sys = runner.get_system();
     EXPECT_TRUE(is_identical(sys->Sun.Origin, sun->get_position()));
-    EXPECT_EQ(sys->Sun.ShapeIndex, PILLBOX);
+    EXPECT_EQ(sys->Sun.ShapeIndex, SolTrace::Data::PILLBOX);
 }
 
 TEST(NativeRunnerTypes, TElement)
@@ -101,24 +102,24 @@ TEST(NativeRunner, SmokeTest)
     // my_sim.set_number_of_rays(10);
     // my_sim.set_max_rays_traced(100);
 
-    auto sun = make_ray_source<Sun>();
+    auto sun = SolTrace::Data::make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 100.0);
-    sun->set_shape(DistributionType::GAUSSIAN, 1.0, -5.0);
+    sun->set_shape(SolTrace::Data::DistributionType::GAUSSIAN, 1.0, -5.0);
     my_sim.add_ray_source(sun);
 
-    auto my_st = make_stage(0);
+    auto my_st = SolTrace::Data::make_stage(0);
     const int NUM_ELEMENTS = 4;
     double x[NUM_ELEMENTS] = {1.0, 0.0, -1.0, 0.0};
     double y[NUM_ELEMENTS] = {0.0, 1.0, 0.0, -1.0};
-    OpticalProperties optics(InteractionType::REFLECTION,
-                             DistributionType::GAUSSIAN,
+    OpticalProperties optics(SolTrace::Data::InteractionType::REFLECTION,
+                             SolTrace::Data::DistributionType::GAUSSIAN,
                              0.0, 1.0, 0.0, 0.0, 1.0, 1.0);
     //  0.0, 0.0, 0.0, 0.0, 1.0, 1.0);
     for (int k = 0; k < NUM_ELEMENTS; ++k)
     {
-        element_ptr el = make_element<SingleElement>();
-        el->set_aperture(make_aperture<Circle>(2.0));
-        el->set_surface(make_surface<Flat>());
+        element_ptr el = SolTrace::Data::make_element<SingleElement>();
+        el->set_aperture(SolTrace::Data::make_aperture<Circle>(2.0));
+        el->set_surface(SolTrace::Data::make_surface<Flat>());
         el->set_reference_frame_geometry(Vector3d(x[k], y[k], 0.0),
                                          Vector3d(-x[k], -y[k], 1.0),
                                          0.0);
@@ -144,28 +145,30 @@ TEST(NativeRunner, SmokeTest)
 
 TEST(NativeRunner, PowerTowerSmokeTest)
 {
+    using SolTrace::Data::PI;
+
     SimulationData sd;
 
     // Sun
-    auto sun = make_ray_source<Sun>();
+    auto sun = SolTrace::Data::make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 100.0);
     sd.add_ray_source(sun);
 
     // Absorber -- Flat
-    auto absorber = make_element<SingleElement>();
+    auto absorber = SolTrace::Data::make_element<SingleElement>();
     absorber->set_origin(0.0, 0.0, 10.0);
     absorber->set_aim_vector(0.0, 5.0, 0.0);
     absorber->set_zrot(0.0);
     absorber->compute_coordinate_rotations();
-    absorber->set_surface(make_surface<Flat>()); // surface(nullptr)
-    absorber->set_aperture(make_aperture<Rectangle>(2.0, 2.0));
+    absorber->set_surface(SolTrace::Data::make_surface<Flat>()); // surface(nullptr)
+    absorber->set_aperture(SolTrace::Data::make_aperture<Rectangle>(2.0, 2.0));
     OpticalProperties *foptics = absorber->get_front_optical_properties();
-    foptics->my_type = REFLECTION;
+    foptics->my_type = SolTrace::Data::REFLECTION;
     foptics->reflectivity = 0.0;
 
     // Make stage 1 -- second stage -- these can be added to SimulationData
     // in any order but should be numbered in the desired order
-    auto st1 = make_stage(1);
+    auto st1 = SolTrace::Data::make_stage(1);
     // Origin is initialized to zero but set it explicitly
     st1->set_origin(0.0, 0.0, 0.0);
     // Set aim vector so stage and global coordinates are identical
@@ -178,7 +181,7 @@ TEST(NativeRunner, PowerTowerSmokeTest)
     // Optional -- to help the user identify things
 
     // Make stage 0 -- this will be the first stage if the runner uses stages
-    auto st0 = make_stage(0);
+    auto st0 = SolTrace::Data::make_stage(0);
     st0->set_origin(0.0, 0.0, 0.0);
     st0->set_aim_vector(0.0, 0.0, 1.0);
 
@@ -188,7 +191,7 @@ TEST(NativeRunner, PowerTowerSmokeTest)
     const int NUM_ELEMENTS = 10;
     for (int k = 0; k < NUM_ELEMENTS; ++k)
     {
-        auto el = make_element<SingleElement>();
+        auto el = SolTrace::Data::make_element<SingleElement>();
         foptics = el->get_front_optical_properties();
         foptics->reflectivity = 1.0;
 
@@ -206,8 +209,8 @@ TEST(NativeRunner, PowerTowerSmokeTest)
 
         el->set_reference_frame_geometry(pos, aim, 0.0);
 
-        el->set_surface(make_surface<Flat>());
-        el->set_aperture(make_aperture<Circle>(2.0));
+        el->set_surface(SolTrace::Data::make_surface<Flat>());
+        el->set_aperture(SolTrace::Data::make_aperture<Circle>(2.0));
 
         st0->add_element(el);
     }
@@ -282,29 +285,29 @@ TEST(NativeRunner, SingleRayValidationTest)
     params.seed = 1;
 
     // Sun
-    auto sun = make_ray_source<Sun>();
+    auto sun = SolTrace::Data::make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 100.0);
-    sun->set_shape(DistributionType::PILLBOX, -1.0, 1.0);
+    sun->set_shape(SolTrace::Data::DistributionType::PILLBOX, -1.0, 1.0);
     sd.add_ray_source(sun);
 
-    auto sph = make_element<SingleElement>();
+    auto sph = SolTrace::Data::make_element<SingleElement>();
     Vector3d origin(0.0, 0.0, 15.0);
     Vector3d aim(0.0, 0.0, -1.0);
     double zrot = 0.0;
     sph->set_reference_frame_geometry(origin, aim, zrot);
-    sph->set_aperture(make_aperture<Hexagon>(20.0));
-    sph->set_surface(make_surface<Sphere>(0.09));
+    sph->set_aperture(SolTrace::Data::make_aperture<Hexagon>(20.0));
+    sph->set_surface(SolTrace::Data::make_surface<Sphere>(0.09));
     sph->get_front_optical_properties()->set_ideal_reflection();
     sph->get_back_optical_properties()->set_ideal_reflection();
     sd.add_element(sph);
 
-    auto para = make_element<VirtualElement>();
+    auto para = SolTrace::Data::make_element<SolTrace::Data::VirtualElement>();
     origin.set_values(0.0, 0.0, -1.0);
     aim.set_values(0.0, 0.0, 0.0);
     zrot = 0.0;
     para->set_reference_frame_geometry(origin, aim, zrot);
-    para->set_aperture(make_aperture<Rectangle>(31.0, 31.0));
-    para->set_surface(make_surface<Parabola>(0.5 / 0.03, 0.5 / 0.03));
+    para->set_aperture(SolTrace::Data::make_aperture<Rectangle>(31.0, 31.0));
+    para->set_surface(SolTrace::Data::make_surface<Parabola>(0.5 / 0.03, 0.5 / 0.03));
     sd.add_element(para);
 
     NativeRunner runner;
