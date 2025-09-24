@@ -2,6 +2,7 @@
 #include "simulation_runner/optix_runner/optix_runner.hpp"
 #include "simulation_data/simulation_parameters.hpp"
 #include "simulation_data/simulation_data.hpp"
+#include "simulation_data/simulation_data_export.hpp"
 
 OptixRunner::OptixRunner() : SimulationRunner(),
                              m_simdata(nullptr),    

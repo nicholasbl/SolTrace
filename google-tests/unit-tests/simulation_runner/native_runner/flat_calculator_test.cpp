@@ -2,10 +2,11 @@
 
 #include <cmath>
 
-#include <common.hpp>
 #include <flat_calculator.hpp>
 #include <surface.hpp>
 #include <vector3d.hpp>
+
+#include "common.hpp"
 
 // NOTE: Equation for the plane is always z=0
 

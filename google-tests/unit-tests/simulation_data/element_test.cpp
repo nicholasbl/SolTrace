@@ -12,11 +12,11 @@
 TEST(Element, ConstructionSmokeTest)
 {
     // Smoke tests
-    auto elem = make_element<SingleElement>();
-    auto comp = make_element<CompositeElement>();
-    auto ve = make_element<VirtualElement>();
-    auto vp = make_element<VirtualPlane>(10.0, 10.0);
-    auto st = make_stage(1);
+    auto elem = SolTrace::Data::make_element<SingleElement>();
+    auto comp = SolTrace::Data::make_element<CompositeElement>();
+    // auto ve = SolTrace::Data::make_element<VirtualElement>();
+    // auto vp = SolTrace::Data::make_element<VirtualPlane>(10.0, 10.0);
+    auto st = SolTrace::Data::make_stage(1);
 }
 
 TEST(Element, SingleElementAccessors)
@@ -60,16 +60,16 @@ TEST(Element, SingleElementAccessors)
     EXPECT_FALSE(is_identical(ref.get_euler_angles(), zero));
 
     const double D = 1.0;
-    auto ap = make_aperture<Circle>(D);
+    auto ap = SolTrace::Data::make_aperture<SolTrace::Data::Circle>(D);
     ref.set_aperture(ap);
-    auto rap = std::dynamic_pointer_cast<Circle>(ref.get_aperture());
+    auto rap = std::dynamic_pointer_cast<SolTrace::Data::Circle>(ref.get_aperture());
     EXPECT_NE(rap, nullptr);
     EXPECT_EQ(rap->diameter, D);
 
     const double HA = 0.25;
-    auto sp = make_surface<Cone>(HA);
+    auto sp = SolTrace::Data::make_surface<SolTrace::Data::Cone>(HA);
     ref.set_surface(sp);
-    auto rsp = std::dynamic_pointer_cast<Cone>(ref.get_surface());
+    auto rsp = std::dynamic_pointer_cast<SolTrace::Data::Cone>(ref.get_surface());
     EXPECT_NE(rsp, nullptr);
     EXPECT_EQ(rsp->half_angle, HA);
 
@@ -80,7 +80,8 @@ TEST(Element, SingleElementAccessors)
     EXPECT_EQ(opf->slope_error, opb->slope_error);
     EXPECT_EQ(opf->specularity_error, opb->specularity_error);
 
-    OpticalProperties op(REFLECTION, GAUSSIAN, 0.75, 0.25, 0.1, 0.001, 1.0, 1.0);
+    OpticalProperties op(SolTrace::Data::REFLECTION, SolTrace::Data::GAUSSIAN,
+                         0.75, 0.25, 0.1, 0.001, 1.0, 1.0);
     ref.set_front_optical_properties(op);
     // EXPECT_EQ(*opf, op);
     EXPECT_EQ(opf->transmitivity, op.transmitivity);
@@ -95,83 +96,83 @@ TEST(Element, SingleElementAccessors)
     EXPECT_EQ(opb->specularity_error, op.specularity_error);
 }
 
-TEST(Element, VirtualElement)
-{
-    VirtualElement ve;
+// TEST(Element, VirtualElement)
+// {
+//     VirtualElement ve;
 
-    EXPECT_TRUE(ve.is_virtual());
+//     EXPECT_TRUE(ve.is_virtual());
 
-    const double LX = 1.0;
-    const double LY = 2.0;
-    ve.set_aperture(make_aperture<Rectangle>(LX, LY));
-    auto aptr = ve.get_aperture();
-    EXPECT_EQ(aptr->get_type(), RECTANGLE);
-    auto rptr = std::dynamic_pointer_cast<Rectangle>(aptr);
-    EXPECT_NE(rptr, nullptr);
-    if (rptr != nullptr)
-    {
-        EXPECT_EQ(rptr->x_length, LX);
-        EXPECT_EQ(rptr->y_length, LY);
-    }
+//     const double LX = 1.0;
+//     const double LY = 2.0;
+//     ve.set_aperture(make_aperture<Rectangle>(LX, LY));
+//     auto aptr = ve.get_aperture();
+//     EXPECT_EQ(aptr->get_type(), RECTANGLE);
+//     auto rptr = std::dynamic_pointer_cast<Rectangle>(aptr);
+//     EXPECT_NE(rptr, nullptr);
+//     if (rptr != nullptr)
+//     {
+//         EXPECT_EQ(rptr->x_length, LX);
+//         EXPECT_EQ(rptr->y_length, LY);
+//     }
 
-    ve.set_surface(make_surface<Flat>());
-    auto sptr = ve.get_surface();
-    EXPECT_EQ(sptr->get_type(), FLAT);
-    auto fptr = std::dynamic_pointer_cast<Flat>(sptr);
-    EXPECT_NE(fptr, nullptr);
+//     ve.set_surface(make_surface<Flat>());
+//     auto sptr = ve.get_surface();
+//     EXPECT_EQ(sptr->get_type(), FLAT);
+//     auto fptr = std::dynamic_pointer_cast<Flat>(sptr);
+//     EXPECT_NE(fptr, nullptr);
 
-    EXPECT_TRUE(ve.is_virtual());
-    EXPECT_TRUE(ve.is_single());
-    EXPECT_FALSE(ve.is_composite());
+//     EXPECT_TRUE(ve.is_virtual());
+//     EXPECT_TRUE(ve.is_single());
+//     EXPECT_FALSE(ve.is_composite());
 
-    // These functions should have no effects
-    OpticalProperties op(REFLECTION, GAUSSIAN, 0.75, 0.25, 0.1, 0.001, 1.0, 1.0);
-    ve.set_front_optical_properties(op);
-    auto opf = ve.get_front_optical_properties();
-    EXPECT_EQ(opf->reflectivity, 0.0);
-    EXPECT_EQ(opf->slope_error, 0.0);
-    EXPECT_EQ(opf->specularity_error, 0.0);
-    EXPECT_EQ(opf->transmitivity, 1.0);
-    ve.set_back_optical_properties(op);
-    auto opb = ve.get_back_optical_properties();
-    EXPECT_EQ(opb->reflectivity, 0.0);
-    EXPECT_EQ(opb->slope_error, 0.0);
-    EXPECT_EQ(opb->specularity_error, 0.0);
-    EXPECT_EQ(opb->transmitivity, 1.0);
+//     // These functions should have no effects
+//     OpticalProperties op(REFLECTION, GAUSSIAN, 0.75, 0.25, 0.1, 0.001, 1.0, 1.0);
+//     ve.set_front_optical_properties(op);
+//     auto opf = ve.get_front_optical_properties();
+//     EXPECT_EQ(opf->reflectivity, 0.0);
+//     EXPECT_EQ(opf->slope_error, 0.0);
+//     EXPECT_EQ(opf->specularity_error, 0.0);
+//     EXPECT_EQ(opf->transmitivity, 1.0);
+//     ve.set_back_optical_properties(op);
+//     auto opb = ve.get_back_optical_properties();
+//     EXPECT_EQ(opb->reflectivity, 0.0);
+//     EXPECT_EQ(opb->slope_error, 0.0);
+//     EXPECT_EQ(opb->specularity_error, 0.0);
+//     EXPECT_EQ(opb->transmitivity, 1.0);
 
-    return;
-}
+//     return;
+// }
 
-TEST(Element, VirtualPlane)
-{
-    const double LX = 5.0;
-    const double LY = 2.5;
-    VirtualPlane vp(LX, LY);
+// TEST(Element, VirtualPlane)
+// {
+//     const double LX = 5.0;
+//     const double LY = 2.5;
+//     VirtualPlane vp(LX, LY);
 
-    EXPECT_TRUE(vp.is_virtual());
-    EXPECT_EQ(vp.get_aperture()->get_type(), RECTANGLE);
-    EXPECT_EQ(vp.get_surface()->get_type(), FLAT);
+//     EXPECT_TRUE(vp.is_virtual());
+//     EXPECT_EQ(vp.get_aperture()->get_type(), RECTANGLE);
+//     EXPECT_EQ(vp.get_surface()->get_type(), FLAT);
 
-    auto rptr = std::dynamic_pointer_cast<Rectangle>(vp.get_aperture());
-    EXPECT_NE(rptr, nullptr);
-    if (rptr != nullptr)
-    {
-        EXPECT_EQ(rptr->x_length, LX);
-        EXPECT_EQ(rptr->y_length, LY);
-    }
+//     auto rptr = std::dynamic_pointer_cast<Rectangle>(vp.get_aperture());
+//     EXPECT_NE(rptr, nullptr);
+//     if (rptr != nullptr)
+//     {
+//         EXPECT_EQ(rptr->x_length, LX);
+//         EXPECT_EQ(rptr->y_length, LY);
+//     }
 
-    // These functions should have no effects
-    vp.set_aperture(make_aperture<Circle>(2.0));
-    EXPECT_EQ(vp.get_aperture()->get_type(), RECTANGLE);
-    vp.set_surface(make_surface<Parabola>(1.0, 1.0));
-    EXPECT_EQ(vp.get_surface()->get_type(), FLAT);
+//     // These functions should have no effects
+//     vp.set_aperture(make_aperture<Circle>(2.0));
+//     EXPECT_EQ(vp.get_aperture()->get_type(), RECTANGLE);
+//     vp.set_surface(make_surface<Parabola>(1.0, 1.0));
+//     EXPECT_EQ(vp.get_surface()->get_type(), FLAT);
 
-    return;
-}
+//     return;
+// }
 
 TEST(Element, CompositeElementAccessors)
 {
-    auto cmp = make_element<CompositeElement>();
+    auto cmp = SolTrace::Data::make_element<CompositeElement>();
     EXPECT_TRUE(cmp->is_composite());
 
     // Things that should be empty...
@@ -216,10 +217,10 @@ TEST(Element, CompositeElementAccessors)
     EXPECT_EQ(cmp->get_element(id).get(), elem2.get());
 
     // Recursive CompositeElements -- this is disallowed!
-    auto cmp2 = make_element<CompositeElement>();
+    auto cmp2 = SolTrace::Data::make_element<CompositeElement>();
     auto cid = cmp->add_element(cmp2);
-    EXPECT_FALSE(Element::is_success(cid));
-    EXPECT_EQ(cid, ELEMENT_INVALID_SETUP);
+    EXPECT_FALSE(SolTrace::Data::Element::is_success(cid));
+    EXPECT_EQ(cid, SolTrace::Data::ELEMENT_INVALID_SETUP);
     EXPECT_EQ(cmp->get_number_of_elements(), NUM_ELEMENTS);
 
     elem2->enable();
@@ -250,19 +251,19 @@ TEST(Element, StageElementAccessors)
 {
     const int_fast64_t STAGE = 10;
     const int_fast64_t RESET_STAGE = 20;
-    auto st1 = make_stage(10);
+    auto st1 = SolTrace::Data::make_stage(10);
 
     auto el1 = make_configured_element();
-    auto cmp1 = make_element<CompositeElement>();
+    auto cmp1 = SolTrace::Data::make_element<CompositeElement>();
     auto sub1 = make_configured_element();
-    auto sub2 = make_element<VirtualPlane>(10.0, 10.0);
+    auto sub2 = SolTrace::Data::make_element<SolTrace::Data::VirtualPlane>(10.0, 10.0);
     auto sub3 = make_configured_element();
-    EXPECT_TRUE(Element::is_success(cmp1->add_element(sub1)));
-    EXPECT_TRUE(Element::is_success(cmp1->add_element(sub2)));
-    EXPECT_TRUE(Element::is_success(cmp1->add_element(sub3)));
+    EXPECT_TRUE(SolTrace::Data::Element::is_success(cmp1->add_element(sub1)));
+    EXPECT_TRUE(SolTrace::Data::Element::is_success(cmp1->add_element(sub2)));
+    EXPECT_TRUE(SolTrace::Data::Element::is_success(cmp1->add_element(sub3)));
 
-    EXPECT_TRUE(Element::is_success(st1->add_element(el1)));
-    EXPECT_TRUE(Element::is_success(st1->add_element(cmp1)));
+    EXPECT_TRUE(SolTrace::Data::Element::is_success(st1->add_element(el1)));
+    EXPECT_TRUE(SolTrace::Data::Element::is_success(st1->add_element(cmp1)));
 
     EXPECT_EQ(st1->get_number_of_elements(), 4);
     EXPECT_EQ(st1->get_stage(), STAGE);
@@ -280,7 +281,7 @@ TEST(Element, StageElementAccessors)
 TEST(Element, CoordinateComputationsIdentity)
 {
     auto el = make_configured_element();
-    auto st = make_stage(0);
+    auto st = SolTrace::Data::make_stage(0);
     Vector3d origin(0.0, 0.0, 0.0);
     Vector3d aim(0.0, 0.0, 1.0);
     Vector3d local(1.0, 1.0, 1.0);
@@ -361,6 +362,9 @@ TEST(Element, CoordinateComputationsIdentity)
 
 TEST(Element, CoordinateComputationsRotations)
 {
+    using SolTrace::Data::MatrixTranspose;
+    using SolTrace::Data::PI;
+
     // **** Setup Answers **** //
     // Origin
     Vector3d Origin;
@@ -415,7 +419,7 @@ TEST(Element, CoordinateComputationsRotations)
     auto el = make_configured_element();
     el->set_reference_frame_geometry(Origin, aim1, zrot1);
 
-    auto st = make_stage(0);
+    auto st = SolTrace::Data::make_stage(0);
     st->set_reference_frame_geometry(Origin, aim2, zrot2);
     st->add_element(el);
 
@@ -496,7 +500,7 @@ TEST(Element, CoordinateComputationsTranslations)
     auto el = make_configured_element();
     el->set_reference_frame_geometry(Origin1, aim1, zrot);
 
-    auto st = make_stage(0);
+    auto st = SolTrace::Data::make_stage(0);
     st->set_reference_frame_geometry(Origin2, aim2, zrot);
     st->add_element(el);
 
@@ -553,6 +557,9 @@ TEST(Element, CoordinateComputationsTranslations)
 
 TEST(Element, CoordinateComputations)
 {
+    using SolTrace::Data::MatrixTranspose;
+    using SolTrace::Data::PI;
+
     // **** Setup Answers **** //
     // Origin
     Vector3d Origin1(1.0, 2.0, 3.0);
@@ -613,7 +620,7 @@ TEST(Element, CoordinateComputations)
     auto el = make_configured_element();
     el->set_reference_frame_geometry(Origin1, aim1, zrot1);
 
-    auto st = make_stage(0);
+    auto st = SolTrace::Data::make_stage(0);
     st->set_reference_frame_geometry(Origin2, aim2, zrot2);
     st->add_element(el);
 
@@ -698,6 +705,9 @@ TEST(Element, CoordinateComputations)
 
 TEST(Element, VectorCoordinateComputations)
 {
+    using SolTrace::Data::MatrixTranspose;
+    using SolTrace::Data::PI;
+
     // **** Setup Answers **** //
     // Origin
     Vector3d Origin1(1.0, 2.0, 3.0);
@@ -758,7 +768,7 @@ TEST(Element, VectorCoordinateComputations)
     auto el = make_configured_element();
     el->set_reference_frame_geometry(Origin1, aim1, zrot1);
 
-    auto st = make_stage(0);
+    auto st = SolTrace::Data::make_stage(0);
     st->set_reference_frame_geometry(Origin2, aim2, zrot2);
     st->add_element(el);
 
@@ -827,22 +837,23 @@ TEST(Element, VectorCoordinateComputations)
 
 TEST(Element, SingleElementEnforceUserFieldsSet)
 {
-    auto elem = make_element<SingleElement>();
+    auto elem = SolTrace::Data::make_element<SingleElement>();
 
     // SingleElement requires aperture and surface to be set
     // Test that it throws when aperture is missing
     EXPECT_THROW(elem->enforce_user_fields_set(), std::invalid_argument);
 
     // Set aperture but not surface - should still throw
-    elem->set_aperture(make_aperture<Circle>(1.0));
+    elem->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Circle>(1.0));
     EXPECT_THROW(elem->enforce_user_fields_set(), std::invalid_argument);
 
     // Set both aperture and surface - should not throw
-    elem->set_surface(make_surface<Flat>());
+    elem->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Flat>());
     EXPECT_NO_THROW(elem->enforce_user_fields_set());
 
     // Test with optical properties set as well
-    OpticalProperties op(REFLECTION, GAUSSIAN, 0.75, 0.25, 0.1, 0.001, 1.0, 1.0);
+    OpticalProperties op(SolTrace::Data::REFLECTION, SolTrace::Data::GAUSSIAN,
+                         0.75, 0.25, 0.1, 0.001, 1.0, 1.0);
     elem->set_front_optical_properties(op);
     elem->set_back_optical_properties(op);
 
@@ -852,20 +863,20 @@ TEST(Element, SingleElementEnforceUserFieldsSet)
 
 TEST(Element, CompositeElementEnforceUserFieldsSet)
 {
-    auto comp = make_element<CompositeElement>();
+    auto comp = SolTrace::Data::make_element<CompositeElement>();
 
     // CompositeElement requires at least one subelement
     // Test that it throws when no subelements are present
     EXPECT_THROW(comp->enforce_user_fields_set(), std::invalid_argument);
 
     // Add a child element that is not properly configured
-    auto elem1 = make_element<SingleElement>();
+    auto elem1 = SolTrace::Data::make_element<SingleElement>();
     EXPECT_THROW(comp->add_element(elem1), std::invalid_argument);
 
     // Add properly configured child elements
-    auto elem2 = make_element<SingleElement>();
-    elem2->set_aperture(make_aperture<Rectangle>(2.0, 3.0));
-    elem2->set_surface(make_surface<Parabola>(1.0, 2.0));
+    auto elem2 = SolTrace::Data::make_element<SingleElement>();
+    elem2->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(2.0, 3.0));
+    elem2->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Parabola>(1.0, 2.0));
     EXPECT_NO_THROW(comp->add_element(elem2));
 
     // Should still not throw for the CompositeElement

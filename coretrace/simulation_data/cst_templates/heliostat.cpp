@@ -4,6 +4,10 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "utilities.hpp"
+
+namespace SolTrace::Data {
+
 Heliostat::Heliostat()
     : CompositeElement(),
       initialized(false),
@@ -21,8 +25,11 @@ Heliostat::Heliostat()
       offaxis_canting_sun_position_zenith(-1.0),
       heliostat_area(-1.0),
       tracking_azimuth(-1.0),
-      tracking_elevation(-1.0)
+      tracking_elevation(-1.0),
+      target_set(false)
 {
+    this->elevation_axis.set_values(1.0, 0.0, 0.0);
+    this->sun_position.set_values(0.0, 0.0, 1.0);
     this->optics_mirror.set_ideal_reflection();
     return;
 }
@@ -143,6 +150,65 @@ void Heliostat::create_geometry()
     }
 
     this->initialized = true;
+
+    return;
+}
+
+void Heliostat::update_geometry(double azimuth,
+                                double elevation)
+{
+
+    if (elevation < 0.0 || elevation > 90.0)
+    {
+        std::stringstream ss;
+        ss << "Heliostat::update_geometry: Invalid elevation ("
+           << elevation << "). Elevation must lie between 0 and 90 degrees.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    if (azimuth < -180.0 || azimuth > 180.0)
+    {
+        std::stringstream ss;
+        ss << "Heliostat::update_geometry: Invalid azimuth ("
+           << elevation << "). Azimuth must lie between -180 and 180 degrees.";
+        throw std::invalid_argument(ss.str());
+    }
+
+    this->coordinates_initialized = false;
+
+    this->tracking_azimuth = azimuth;
+    this->tracking_elevation = elevation;
+
+    sun_position_vector_degrees(this->sun_position, azimuth, elevation);
+    Vector3d target_dir;
+    vector_add(1.0, this->target_pos,
+               -1.0, this->get_origin_global(),
+               target_dir);
+
+    Vector3d aim_vector;
+    this->sun_position.make_unit();
+    target_dir.make_unit();
+    vector_add(1.0, target_dir, 1.0, this->sun_position, aim_vector);
+    aim_vector.make_unit();
+    this->convert_global_to_reference(this->aim, aim_vector);
+    aim_vector = this->aim;
+    vector_add(1.0, this->get_origin_ref(),
+               1000.0, this->aim);
+
+    // Project into xy-plane
+    aim_vector[2] = 0.0;
+    double theta = acos(aim_vector[0] / vector_norm(aim_vector));
+    this->set_zrot_radians(theta);
+
+    // std::cout << "Origin: " << this->origin
+    //           << "\nAim Point: " << this->aim
+    //           << "\nZ Rot: " << this->zrot
+    //           << "\nAim Vector: " << aim_vector
+    //           << "\nTarget: " << this->target_pos
+    //           << "\nTarget Vector: " << target_dir
+    //           << std::endl;
+
+    this->compute_coordinate_rotations();
 
     return;
 }
@@ -315,6 +381,20 @@ void Heliostat::set_canting(CantingType ct, double val1, double val2)
     return;
 }
 
+void Heliostat::set_target_position(const Vector3d &pos)
+{
+    this->target_pos = pos;
+    this->target_set = true;
+    return;
+}
+
+void Heliostat::set_tracking_limits(double az_lower, double az_upper,
+                                    double el_lower, double el_upper)
+{
+    // TODO: Implement this
+    return;
+}
+
 void Heliostat::enforce_user_fields_set() const
 {
     if (this->initialized)
@@ -344,5 +424,14 @@ void Heliostat::enforce_user_fields_set() const
             "before creating geometry.");
     }
 
+    if (!this->target_set)
+    {
+        throw std::invalid_argument(
+            "Heliostat: Target position must be set "
+            "before creating geometry.");
+    }
+
     return;
 }
+
+} // namespace SolTrace::Data

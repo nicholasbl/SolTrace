@@ -19,6 +19,8 @@
 
 #include "matvec.hpp"
 
+namespace SolTrace::Data {
+
 class Vector3d
 {
 public:
@@ -244,6 +246,8 @@ void make_unit_vector(Vector3d &x);
 void compute_transform_matrices(Vector3d &euler,
                                 Matrix3d &ref_to_local,
                                 Matrix3d &local_to_ref);
+
+} // namespace SolTrace::Data
 
 /**
  * @}

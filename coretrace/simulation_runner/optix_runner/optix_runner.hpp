@@ -1,5 +1,7 @@
 #ifndef SOLTRACE_OPTIX_RUNNER_H
 #define SOLTRACE_OPTIX_RUNNER_H
+
+#include "simulation_data.hpp"
 #include "simulation_result.hpp"
 #include "simulation_runner.hpp"
 #include "core/soltrace_system.h"
@@ -11,8 +13,8 @@ public:
     ~OptixRunner();
 
     virtual RunnerStatus initialize();
-    virtual RunnerStatus setup_simulation(const SimulationData *data);
-    virtual RunnerStatus update_simulation(const SimulationData *data);
+    virtual RunnerStatus setup_simulation(const SolTrace::Data::SimulationData *data);
+    virtual RunnerStatus update_simulation(const SolTrace::Data::SimulationData *data);
     virtual RunnerStatus run_simulation();
     virtual RunnerStatus report_simulation(SimulationResult *result,
                                            int level_spec);
@@ -31,13 +33,13 @@ private:
 
     OptixCSP::SolTraceSystem m_sys;
 
-    const SimulationData *m_simdata;  
-    RunnerStatus setup_parameters(const SimulationData *data);
-    RunnerStatus setup_sun(const SimulationData *data);
-    RunnerStatus setup_elements(const SimulationData *data);
+    const SolTrace::Data::SimulationData *m_simdata;
+    RunnerStatus setup_parameters(const SolTrace::Data::SimulationData *data);
+    RunnerStatus setup_sun(const SolTrace::Data::SimulationData *data);
+    RunnerStatus setup_elements(const SolTrace::Data::SimulationData *data);
 
     // helper function, convert Vector3d to Optix::Vec3d
-    OptixCSP::Vec3d ToVec3d(Vector3d v);
+    OptixCSP::Vec3d ToVec3d(SolTrace::Data::Vector3d v);
 };
 
 #endif

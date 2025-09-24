@@ -1,6 +1,8 @@
 
 #include "virtual_element.hpp"
 
+namespace SolTrace::Data {
+
 void VirtualElement::set_virtual_optics(OpticalProperties &op)
 {
     op.my_type = REFRACTION;
@@ -32,3 +34,5 @@ VirtualPlane::VirtualPlane(double x_len, double y_len) : VirtualElement()
 VirtualPlane::~VirtualPlane()
 {
 }
+
+} // namespace SolTrace::Data

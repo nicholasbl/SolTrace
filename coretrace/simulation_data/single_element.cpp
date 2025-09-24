@@ -9,6 +9,8 @@
 #include "element.hpp"
 #include "vector3d.hpp"
 
+namespace SolTrace::Data {
+
 SingleElement::SingleElement() : ElementBase(),
                                  aperture(nullptr),
                                  surface(nullptr),
@@ -53,3 +55,5 @@ void SingleElement::enforce_user_fields_set() const
 
     return;
 }
+
+} // namespace SolTrace::Data

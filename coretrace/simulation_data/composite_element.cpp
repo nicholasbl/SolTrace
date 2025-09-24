@@ -3,6 +3,8 @@
 
 #include <sstream>
 
+namespace SolTrace::Data {
+
 CompositeElement::CompositeElement() : ElementBase(),
                                        number_of_elements(0),
                                        my_elements()
@@ -128,3 +130,5 @@ void CompositeElement::enforce_user_fields_set() const
     }
     return;
 }
+
+} // namespace SolTrace::Data

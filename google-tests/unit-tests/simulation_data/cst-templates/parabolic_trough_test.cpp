@@ -9,10 +9,14 @@
 #include <cst_templates/parabolic_trough.hpp>
 #include <cst_templates/utilities.hpp>
 
+#include "common.hpp"
+
+using ParabolicTrough = SolTrace::Data::ParabolicTrough;
+
 // Error Checking Tests for ParabolicTrough
 TEST(ParabolicTrough, ErrorChecking_SetApertureSize)
 {
-    auto pt = make_element<ParabolicTrough>();
+    auto pt = SolTrace::Data::make_element<ParabolicTrough>();
 
     // Test negative aperture size
     EXPECT_THROW(pt->set_aperture_size(-1.0, 5.0), std::invalid_argument);
@@ -30,7 +34,7 @@ TEST(ParabolicTrough, ErrorChecking_SetApertureSize)
 
 TEST(ParabolicTrough, ErrorChecking_SetAngles)
 {
-    auto pt = make_element<ParabolicTrough>();
+    auto pt = SolTrace::Data::make_element<ParabolicTrough>();
 
     // Test invalid azimuth angles
     EXPECT_THROW(pt->set_angles(-181.0, 45.0), std::invalid_argument);
@@ -48,7 +52,7 @@ TEST(ParabolicTrough, ErrorChecking_SetAngles)
 
 TEST(ParabolicTrough, ErrorChecking_SetFocalLength)
 {
-    auto pt = make_element<ParabolicTrough>();
+    auto pt = SolTrace::Data::make_element<ParabolicTrough>();
 
     // Test negative focal length
     EXPECT_THROW(pt->set_focal_length(-1.71), std::invalid_argument);
@@ -64,7 +68,7 @@ TEST(ParabolicTrough, ErrorChecking_SetFocalLength)
 
 TEST(ParabolicTrough, ErrorChecking_SetNumberPanels)
 {
-    auto pt = make_element<ParabolicTrough>();
+    auto pt = SolTrace::Data::make_element<ParabolicTrough>();
 
     // Test invalid panel counts
     EXPECT_THROW(pt->set_number_panels(0, 7), std::invalid_argument);
@@ -84,7 +88,7 @@ TEST(ParabolicTrough, ErrorChecking_SetNumberPanels)
 
 TEST(ParabolicTrough, ErrorChecking_SetGaps)
 {
-    auto pt = make_element<ParabolicTrough>();
+    auto pt = SolTrace::Data::make_element<ParabolicTrough>();
 
     // Test negative gap values
     EXPECT_THROW(pt->set_gaps(-0.02, 0.01, 0.08), std::invalid_argument);
@@ -98,7 +102,7 @@ TEST(ParabolicTrough, ErrorChecking_SetGaps)
 
 TEST(ParabolicTrough, ErrorChecking_SetReceiverDimensions)
 {
-    auto pt = make_element<ParabolicTrough>();
+    auto pt = SolTrace::Data::make_element<ParabolicTrough>();
 
     // Test invalid absorber diameter
     EXPECT_THROW(pt->set_receiver_dimensions(0.0, 0.115, 0.003), std::invalid_argument);
@@ -122,7 +126,7 @@ TEST(ParabolicTrough, ErrorChecking_SetReceiverDimensions)
 
 TEST(ParabolicTrough, ErrorChecking_CreateGeometryWithoutParameters)
 {
-    auto pt = make_element<ParabolicTrough>();
+    auto pt = SolTrace::Data::make_element<ParabolicTrough>();
 
     // Test create_geometry without setting required parameters
     EXPECT_THROW(pt->create_geometry(), std::invalid_argument);
@@ -162,7 +166,7 @@ TEST(ParabolicTrough, Build)
     envelop_in.refraction_index_front = 1.0;
     envelop_in.refraction_index_back = 1.46;
 
-    auto pt = make_element<ParabolicTrough>();
+    auto pt = SolTrace::Data::make_element<ParabolicTrough>();
     pt->set_optics(mirror, absorber, envelop_out, envelop_in);
     pt->set_origin(20.0, -20.0, 30.0);
     pt->set_aperture_size(5.774, 11.96);
@@ -173,7 +177,7 @@ TEST(ParabolicTrough, Build)
     pt->set_angles(0.0, 0.0);
     pt->create_geometry();
 
-    pt = make_element<ParabolicTrough>();
+    pt = SolTrace::Data::make_element<ParabolicTrough>();
     pt->set_optics(mirror, absorber, envelop_out, envelop_in);
     pt->set_origin(20.0, -20.0, 30.0);
     pt->set_aperture_size(5.774, 11.96);
@@ -229,7 +233,7 @@ TEST(ParabolicTrough, Tracing)
     envelop_in.slope_error = 1e-4;
     envelop_in.specularity_error = 1e-4;
 
-    auto pt = make_element<ParabolicTrough>();
+    auto pt = SolTrace::Data::make_element<ParabolicTrough>();
     pt->set_optics(mirror, absorber, envelop_out, envelop_in);
     pt->set_origin(20.0, -20.0, 30.0);
     pt->set_angles(0.0, 0.0);
@@ -241,10 +245,10 @@ TEST(ParabolicTrough, Tracing)
     pt->create_geometry();
     pt->set_name("Parabolic Trough");
 
-    auto sun = make_ray_source<Sun>();
+    auto sun = SolTrace::Data::make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 1000.0);
     // double NaN = std::numeric_limits<double>::quiet_NaN();
-    sun->set_shape(DistributionType::PILLBOX, 0.0, 1.0);
+    sun->set_shape(SolTrace::Data::DistributionType::PILLBOX, 0.0, 1.0);
     my_sim.add_ray_source(sun);
 
     // Assumes that reference and global coordinates are the same
@@ -365,7 +369,7 @@ TEST(ParabolicTrough, UpdateGeometry)
     envelop_in.slope_error = 1e-4;
     envelop_in.specularity_error = 1e-4;
 
-    auto pt = make_element<ParabolicTrough>();
+    auto pt = SolTrace::Data::make_element<ParabolicTrough>();
     pt->set_optics(mirror, absorber, envelop_out, envelop_in);
     pt->set_origin(10.0, 0.0, 0.0);
     // pt->set_origin(0.0, 0.0, 0.0);
@@ -388,9 +392,9 @@ TEST(ParabolicTrough, UpdateGeometry)
     Vector3d sun_pos;
     sun_position_vector_degrees(sun_pos, sun_az, sun_el);
     sun_pos.scalar_mult(1000.0);
-    auto sun = make_ray_source<Sun>();
+    auto sun = SolTrace::Data::make_ray_source<Sun>();
     sun->set_position(sun_pos);
-    sun->set_shape(DistributionType::PILLBOX, 0.0, 1.0);
+    sun->set_shape(SolTrace::Data::DistributionType::PILLBOX, 0.0, 1.0);
     my_sim.add_ray_source(sun);
 
     std::cout << "Sun Position: " << sun_pos
@@ -496,6 +500,8 @@ TEST(ParabolicTrough, UpdateGeometry)
 
 TEST(ParabolicTrough, UpdateGeometry_TrackingLimits)
 {
+    using SolTrace::Data::D2R;
+
     constexpr uint_fast64_t NRAYS = 10000;
     constexpr uint_fast64_t N_ABSORBED_THRESH = NRAYS / 10;
 
@@ -503,7 +509,7 @@ TEST(ParabolicTrough, UpdateGeometry_TrackingLimits)
     const double LOWER = -5.0;
     const double UPPER = 10.0;
 
-    auto pt = make_element<ParabolicTrough>();
+    auto pt = SolTrace::Data::make_element<ParabolicTrough>();
     pt->set_origin(0.0, 0.0, 0.0);
     pt->set_angles(0.0, 0.0);
     pt->set_tracking_limits(LOWER, UPPER);
@@ -556,7 +562,7 @@ TEST(ParabolicTrough, UpdateGeometry_TrackingLimits)
 
 TEST(ParabolicTrough, ErrorChecking_UpdateGeometry)
 {
-    auto pt = make_element<ParabolicTrough>();
+    auto pt = SolTrace::Data::make_element<ParabolicTrough>();
     pt->set_origin(10.0, 0.0, 0.0);
     pt->set_angles(30.0, 10.0);
     pt->set_tracking_limits(-90.0, 90.0);
@@ -580,7 +586,7 @@ TEST(ParabolicTrough, ErrorChecking_UpdateGeometry)
 
 TEST(ParabolicTrough, ErrorChecking_InvalidTrackingLimits)
 {
-    auto pt = make_element<ParabolicTrough>();
+    auto pt = SolTrace::Data::make_element<ParabolicTrough>();
     // Lower limit > upper limit
     EXPECT_THROW(pt->set_tracking_limits(90.0, 0.0), std::invalid_argument);
 }

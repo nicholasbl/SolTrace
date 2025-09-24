@@ -16,7 +16,7 @@ TEST(Container, Interface)
         TestItem(key b) : a(b) {}
     };
 
-    using TestContainer = Container<key, TestItem>;
+    using TestContainer = SolTrace::Data::Container<key, TestItem>;
 
     TestContainer my_container;
     std::set<key> ids;

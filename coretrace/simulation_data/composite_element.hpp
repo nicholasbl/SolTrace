@@ -19,6 +19,8 @@
 #include "container.hpp"
 #include "element.hpp"
 
+namespace SolTrace::Data {
+
 class CompositeElement : public ElementBase
 {
 public:
@@ -217,6 +219,8 @@ private:
 };
 
 using composite_element_ptr = std::shared_ptr<CompositeElement>;
+
+} // namespace SolTrace::Data
 
 #endif
 

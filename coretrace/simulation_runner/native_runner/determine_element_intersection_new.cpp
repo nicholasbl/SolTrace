@@ -1,11 +1,6 @@
-
-// #include "element_intersection.hpp"
 #include "determine_element_intersection_new.hpp"
 
-// #include "quadric_calculator.hpp"
-
-// #define sign(x) (x >= 0)
-// #define sqr(x) (x * x)
+#include "simulation_data_export.hpp"
 
 void DetermineElementIntersectionNew(
     TElement *Element,

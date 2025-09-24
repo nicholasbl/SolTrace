@@ -13,7 +13,7 @@
 
 #include <cstdint>
 
-#include "datetime.hpp"
+namespace SolTrace::Data {
 
 struct SimulationParameters
 {
@@ -45,5 +45,7 @@ public:
 };
 
 // TODO: Implement the output stream operator.
+
+} // namespace SolTrace::Data
 
 #endif

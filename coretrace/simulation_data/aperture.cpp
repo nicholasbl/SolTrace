@@ -9,6 +9,8 @@
 
 #include "constants.hpp"
 
+namespace SolTrace::Data {
+
 aperture_ptr Aperture::make_aperture_from_type(ApertureType type,
                                                const std::vector<double> &args)
 {
@@ -412,3 +414,5 @@ bool inquad(double x1, double y1,
     return (intri(x1, y1, x2, y2, x3, y3, xt, yt) ||
             intri(x1, y1, x3, y3, x4, y4, xt, yt));
 }
+
+} // namespace SolTrace::Data

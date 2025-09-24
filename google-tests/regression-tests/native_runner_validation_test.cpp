@@ -2,6 +2,7 @@
 
 #include <native_runner.hpp>
 #include <simulation_data.hpp>
+#include <simulation_data_export.hpp>
 #include <vector3d.hpp>
 
 #include "split_csv.h"

@@ -12,6 +12,8 @@
 
 #include "error_distributions.hpp"
 
+namespace SolTrace::Data {
+
 enum InteractionType
 {
     REFLECTION,
@@ -106,5 +108,7 @@ struct OpticalProperties
     //     return *this;
     // }
 };
+
+} // namespace SolTrace::Data
 
 #endif

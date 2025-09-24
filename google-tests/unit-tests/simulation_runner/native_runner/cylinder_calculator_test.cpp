@@ -2,9 +2,11 @@
 #include <memory>
 #include <cmath>
 
+#include <aperture.hpp>
 #include <cylinder_calculator.hpp>
 #include <surface.hpp>
-#include <aperture.hpp>
+
+#include "common.hpp"
 
 // Helper functions to create surfaces and apertures
 std::shared_ptr<Cylinder> create_cylinder_surface(double radius = 1.0)

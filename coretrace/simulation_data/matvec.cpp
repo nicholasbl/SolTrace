@@ -54,6 +54,8 @@
 // #include "procs.h"
 #include "matvec.hpp"
 
+namespace SolTrace::Data {
+
 // inline void CopyVec3(double dest[3], const std::vector<double> &src)
 // {
 //  dest[0] = src[0];
@@ -407,3 +409,5 @@ void CalculateTransformMatrices(const double Euler[3],
 //  }
 // }
 // //end of procedure--------------------------------------------------------------
+
+} // namespace SolTrace::Data

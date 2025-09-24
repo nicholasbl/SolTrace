@@ -13,6 +13,8 @@
 
 #include "single_element.hpp"
 
+namespace SolTrace::Data {
+
 class VirtualElement : public SingleElement
 {
 public:
@@ -40,5 +42,7 @@ public:
 
 private:
 };
+
+} // namespace SolTrace::Data
 
 #endif

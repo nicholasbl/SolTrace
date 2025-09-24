@@ -18,17 +18,12 @@
 #include <map>
 #include <memory>
 
-// #include "composite_element.hpp"
 #include "container.hpp"
-#include "datetime.hpp"
 #include "element.hpp"
 #include "ray_source.hpp"
 #include "simulation_parameters.hpp"
-// #include "single_element.hpp"
 
-// using SingleElementMap = typename std::map<element_id, single_element_ptr>;
-// using CompositeElementMap = typename std::map<element_id,
-//                                               composite_element_ptr>;
+namespace SolTrace::Data {
 
 class SimulationData
 {
@@ -282,6 +277,8 @@ private:
     uint_fast64_t add_subelements(element_ptr el);
     uint_fast64_t remove_subelements(element_ptr el);
 };
+
+} // namespace SolTrace::Data
 
 /**
  * @}

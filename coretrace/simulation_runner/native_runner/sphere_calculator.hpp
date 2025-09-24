@@ -9,7 +9,7 @@
 class SphereCalculator : public SurfaceIntersectionCalculator
 {
 public:
-    SphereCalculator(surface_ptr surf);
+    SphereCalculator(SolTrace::Data::surface_ptr surf);
     virtual ~SphereCalculator() {}
     virtual int intersect(const double PosLoc[3],
                           const double CosLoc[3],
@@ -20,7 +20,7 @@ public:
 
     void surface_normal(const double PosXYZ[3], double DFXYZ[3]);
 
-    virtual double compute_z_aperture(aperture_ptr ap);
+    virtual double compute_z_aperture(SolTrace::Data::aperture_ptr ap);
 
 private:
     double radius;

@@ -24,8 +24,8 @@ TEST(Aperture, ApertureBase)
         }
     };
 
-    TestAperture ta1(1.2, CIRCLE);
-    TestAperture ta2(5.3, RECTANGLE);
+    TestAperture ta1(1.2, ApertureType::CIRCLE);
+    TestAperture ta2(5.3, ApertureType::RECTANGLE);
 
     ta1 = ta2;
     EXPECT_EQ(ta1.my_type, ta2.my_type);

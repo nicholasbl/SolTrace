@@ -59,6 +59,7 @@
 #include "element.hpp"
 #include "optical_properties.hpp"
 #include "ray_source.hpp"
+// #include "simulation_data_export.hpp"
 #include "surface_intersection_calculator.hpp"
 
 // #define ACOSM1O180 0.017453292519943295 // acos(-1)/180.0
@@ -130,8 +131,8 @@ public:
 	std::string Name;
 	// TOpticalProperties Front;
 	// TOpticalProperties Back;
-	OpticalProperties Front;
-	OpticalProperties Back;
+	SolTrace::Data::OpticalProperties Front;
+	SolTrace::Data::OpticalProperties Back;
 };
 
 struct TElement
@@ -151,7 +152,7 @@ struct TElement
 
 	/////////// APERTURE PARAMETERS //////////////
 	double ZAperture; // calculated
-	aperture_ptr aperture;
+	SolTrace::Data::aperture_ptr aperture;
 
 	/////////// SURFACE PARAMETERS ///////////////
 	calculator_ptr icalc;
@@ -172,11 +173,11 @@ struct TElement
 	// mjw element number in the stage - unique ID in order
 	// of addition to element list
 	int_fast64_t element_number;
-	element_id sim_data_id;
+	SolTrace::Data::element_id sim_data_id;
 };
 
 using telement_ptr = typename std::shared_ptr<TElement>;
-telement_ptr make_telement(element_ptr el,
+telement_ptr make_telement(SolTrace::Data::element_ptr el,
 						   int_fast64_t el_num,
 						   const ElementParameters &eparams);
 
@@ -187,7 +188,7 @@ struct TSun
 	// void set_values(ray_source_ptr rsrc);
 
 	// char ShapeIndex;
-	DistributionType ShapeIndex;
+	SolTrace::Data::DistributionType ShapeIndex;
 	double Sigma;
 	bool PointSource;
 
@@ -300,7 +301,7 @@ struct TStage
 
 using tstage_ptr = typename std::shared_ptr<TStage>;
 tstage_ptr make_tstage(const ElementParameters &eparams);
-tstage_ptr make_tstage(element_ptr el, const ElementParameters &eparams);
+tstage_ptr make_tstage(SolTrace::Data::element_ptr el, const ElementParameters &eparams);
 
 struct TSystem
 {

@@ -19,11 +19,12 @@
 #include "aperture.hpp"
 #include "constants.hpp"
 #include "container.hpp"
-#include "datetime.hpp"
 #include "optical_properties.hpp"
 #include "ray_source.hpp"
 #include "surface.hpp"
 #include "vector3d.hpp"
+
+namespace SolTrace::Data {
 
 using element_id = std::int_fast64_t;
 const element_id ELEMENT_ERROR = -1;
@@ -517,6 +518,8 @@ inline auto make_element(Args &&...args)
 {
   return ElementContainer::make_pointer<C>(std::forward<Args>(args)...);
 }
+
+} // namespace SolTrace::Data
 
 /**
  * @}

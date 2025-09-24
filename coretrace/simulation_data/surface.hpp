@@ -17,6 +17,8 @@
 #include <memory>
 #include <vector>
 
+namespace SolTrace::Data {
+
 enum SurfaceType
 {
     CONE,
@@ -122,6 +124,8 @@ inline auto make_surface(Args &&...args)
 
 surface_ptr make_surface_from_type(SurfaceType type,
                                    const std::vector<double> &args);
+
+} // namespace SolTrace::Data
 
 /**
  * @}

@@ -5,6 +5,8 @@
 
 #include "constants.hpp"
 
+namespace SolTrace::Data {
+
 // ElementContainer ElementBase::empty_container;
 
 ElementBase::ElementBase() : Element(),
@@ -499,3 +501,5 @@ void ElementBase::enforce_user_fields_set() const
 {
     return;
 }
+
+} // namespace SolTrace::Data

@@ -7,6 +7,8 @@
 
 #include "matvec.hpp"
 
+namespace SolTrace::Data {
+
 // inline void vector_copy(double data[3], const Vector3d &x)
 // {
 //     CopyVec3(data, x.data);
@@ -277,3 +279,5 @@ void compute_transform_matrices(Vector3d &euler,
                                local_to_ref.data);
     return;
 }
+
+} // namespace SolTrace::Data

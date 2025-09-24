@@ -13,6 +13,8 @@
 #include "utilities.hpp"
 #include "surface.hpp"
 
+namespace SolTrace::Data {
+
 ParabolicDish::ParabolicDish() : CompositeElement(),
                                  initialized(false),
                                  aperture_diameter(-1.0),
@@ -168,7 +170,7 @@ void ParabolicDish::update_geometry(double azimuth, double elevation)
         throw std::invalid_argument(ss.str());
     }
 
-    if (azimuth < 0.0 || azimuth > 360.0)
+    if (azimuth < -180.0 || azimuth > 180.0)
     {
         std::stringstream ss;
         ss << "ParabolicDish::update_geometry: Invalid azimuth ("
@@ -335,6 +337,13 @@ void ParabolicDish::set_receiver_dimensions(double diameter,
     return;
 }
 
+void ParabolicDish::set_tracking_limits(double az_lower, double az_upper,
+                                        double el_lower, double el_upper)
+{
+    // TODO: Implement this
+    return;
+}
+
 double ParabolicDish::determine_x_coordinate(double x0,
                                              double arc_length)
 {
@@ -379,3 +388,5 @@ void ParabolicDish::enforce_user_fields_set() const
 
     return;
 }
+
+} // namespace SolTrace::Data

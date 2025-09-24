@@ -3,6 +3,8 @@
 
 #include <vector>
 
+namespace SolTrace::Data {
+
 surface_ptr make_surface_from_type(SurfaceType type, const std::vector<double> &args)
 {
     surface_ptr retval = nullptr;
@@ -36,3 +38,4 @@ surface_ptr make_surface_from_type(SurfaceType type, const std::vector<double> &
     return retval;
 }
 
+} // namespace SolTrace::Data

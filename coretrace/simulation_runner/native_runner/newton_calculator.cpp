@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdint>
 
+#include "simulation_data_export.hpp"
 #include "vector3d.hpp"
 
 NewtonCalculator::NewtonCalculator(double tol, uint_fast64_t max_iters)

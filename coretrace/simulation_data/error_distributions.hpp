@@ -10,11 +10,15 @@
 #ifndef SOLTRACE_ERROR_DISTRIBUTIONS_H
 #define SOLTRACE_ERROR_DISTRIBUTIONS_H
 
+namespace SolTrace::Data {
+
 enum DistributionType
 {
     GAUSSIAN,
     PILLBOX,
     USER_DEFINED
 };
+
+} // namespace SolTrace::Data
 
 #endif

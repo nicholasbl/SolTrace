@@ -8,7 +8,7 @@
 class FlatCalculator : public SurfaceIntersectionCalculator
 {
 public:
-    FlatCalculator(surface_ptr surf);
+    FlatCalculator(SolTrace::Data::surface_ptr surf);
     virtual ~FlatCalculator();
     virtual int intersect(const double PosLoc[3],
                           const double CosLoc[3],
@@ -17,7 +17,7 @@ public:
                           double DFXYZ[3],
                           double *PathLength);
 
-    virtual double compute_z_aperture(aperture_ptr ap);
+    virtual double compute_z_aperture(SolTrace::Data::aperture_ptr ap);
 };
 
 #endif

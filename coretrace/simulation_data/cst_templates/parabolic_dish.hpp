@@ -21,6 +21,8 @@
 #include "single_element.hpp"
 #include "vector3d.hpp"
 
+namespace SolTrace::Data {
+
 class ParabolicDish : public CompositeElement
 {
 public:
@@ -34,6 +36,8 @@ public:
     void set_optics(const OpticalProperties &mirror,
                     const OpticalProperties &absorber);
     void set_receiver_dimensions(double diameter, double distance);
+    void set_tracking_limits(double az_lower, double az_upper,
+                             double el_lower, double el_upper);
 
     // Call before adding element to simulation data or stage
     void create_geometry();
@@ -42,7 +46,7 @@ public:
 
     virtual void enforce_user_fields_set() const override;
 
-    const Vector3d& get_elevation_axis() const
+    const Vector3d &get_elevation_axis() const
     {
         return this->elevation_axis;
     }
@@ -80,8 +84,9 @@ private:
     std::vector<single_element_ptr> absorbers;
 
     double determine_x_coordinate(double x0, double arc_length);
-
 };
+
+} // namespace SolTrace::Data
 
 /**
  * @}
