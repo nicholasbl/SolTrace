@@ -17,4 +17,8 @@ enum class ConversionErrors
 
 int convert_tsystem_to_sim_data(TSystem* sys, SolTrace::Data::SimulationData& sd);
 
+int run_native_runner(SolTrace::Data::SimulationData& sd);
+
+int run_optix_runner(SolTrace::Data::SimulationData& sd);
+
 #endif

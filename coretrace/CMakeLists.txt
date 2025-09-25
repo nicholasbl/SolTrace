@@ -23,7 +23,12 @@ add_subdirectory(simulation_runner)
 Project(coretrace)
 
 include_directories(.
-	./simulation_data)
+	./simulation_data
+	./simulation_results
+	./simulation_runner
+	./simulation_runner/native_runner
+	./simulation_runner/optix_runner
+)
 
 set(CORETRACE_SRC
 	interpolate.cpp
@@ -41,7 +46,6 @@ set(CORETRACE_SRC
 	raytrace.cpp
 	raytrace_refactored.cpp
 	root432.cpp
-	simdata_bridge.cpp
 	spencerandmurtysurfaceclosedform.cpp
 	stapi.cpp
 	suntoprimarystage.cpp
@@ -51,7 +55,10 @@ set(CORETRACE_SRC
 	torusclosedform.cpp
 	treemesh.cpp
 	types.cpp
-	vshot.cpp)
+	vshot.cpp
+
+	simdata_bridge.cpp
+)
 
 # Add header files for IDE visibility
 set(CORETRACE_HEADERS
@@ -122,7 +129,7 @@ if(SOLTRACE_BUILD_CORETRACE)
 		DEBUG_POSTFIX "d"
 		PREFIX ""
 		)
-	target_link_libraries(coretrace_api simdata)
+	target_link_libraries(coretrace_api simdata native_runner optix_runner simresult)
 
 	if(MSVC)
 		target_compile_definitions(coretrace_api PRIVATE STCORE_API_EXPORTS _STCOREDLL_)
@@ -140,7 +147,7 @@ if(SOLTRACE_BUILD_CORETRACE)
 		DEBUG_POSTFIX "d"
 		PREFIX ""
 		)
-	target_link_libraries(coretrace simdata)
+	target_link_libraries(coretrace simdata native_runner optix_runner simresult)
 
 #####################################################################################################################
 #

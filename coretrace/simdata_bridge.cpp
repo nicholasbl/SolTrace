@@ -5,6 +5,7 @@
 #include "sun.hpp"
 #include "stage_element.hpp"
 #include "single_element.hpp"
+#include <optix_runner.hpp>
 
 // Private
 
@@ -246,4 +247,23 @@ int convert_tsystem_to_sim_data(TSystem* sys, SolTrace::Data::SimulationData &sd
 	
 
 	return static_cast<int>(ConversionErrors::SUCCESS);;
+}
+
+int run_native_runner(SolTrace::Data::SimulationData& sd)
+{
+    //NativeRunner runner;
+    return -1;
+}
+
+int run_optix_runner(SolTrace::Data::SimulationData& sd)
+{
+    OptixRunner runner;
+    RunnerStatus sts = runner.initialize();
+    sts = runner.setup_simulation(&sd);
+    sts = runner.run_simulation_core(false);
+
+    std::vector<float4> hp_vec;
+    runner.get_hp_output(hp_vec);
+
+    return -1;
 }

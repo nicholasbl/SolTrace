@@ -767,6 +767,21 @@ STCORE_API int st_sim_run_SolTrace20(st_context_t pcxt, unsigned int seed, int r
 	if (err != 0)
 		return err;
 
+	// Run
+	switch (runner_type)
+	{
+		// Native runner
+		case(0):
+			run_native_runner(sd);
+			break;
+		// Optix runner
+		case(1):
+			run_optix_runner(sd);
+			break;
+		default:
+			return -1;
+	}
+
 	return 0;
 }
 
