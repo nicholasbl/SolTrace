@@ -31,6 +31,7 @@ if(SOLTRACE_BUILD_CORETRACE)
 		../coretrace/strace
 		../app/deploy/samples
 		../coretrace/simulation_data
+		../coretrace/simulation_results
 	)
 
 	file(GLOB SOLTRACE_EXAMPLE_TESTS soltrace_example_tests/*.cpp)
