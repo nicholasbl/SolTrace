@@ -539,7 +539,7 @@ def trace(PT: PySolTrace, dni: float = 1000.0, nrays: int = 1e6, plot_trace: boo
     PT.is_surface_errors = True
     PT.dni = dni
     
-    res = PT.run(123, nthread=nthreads, no_callback=True)
+    res = PT.run(123, nthread=nthreads, no_callback=True, use_embree=True)
     if plot_trace:
         PT.plot_trace()
 

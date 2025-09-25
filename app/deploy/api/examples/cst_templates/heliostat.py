@@ -404,11 +404,11 @@ if __name__ == "__main__":
     run_basic_setup = False
     catch_plane_on = False
 
-    solar_tracking_test = False
+    solar_tracking_test = True
     multi_rows_heliostats = True
     plot_efficiencies = True
 
-    run_canting_tests = True       # FIXME: off-axis canting center panel...
+    run_canting_tests = False       # FIXME: off-axis canting center panel...
 
 
     PT = PySolTrace()
