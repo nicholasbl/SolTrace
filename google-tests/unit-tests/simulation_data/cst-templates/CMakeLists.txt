@@ -4,6 +4,7 @@ include_directories(
 	.
 	../
 	../../common
+	../../../test_tools
 	../../../app/deploy/samples
 	../../../../coretrace/simulation_data
 	../../../../coretrace/simulation_results
@@ -28,6 +29,7 @@ target_link_libraries(
 	CSTUnitTests
 	simdata
 	native_runner
+	testtools
 	GTest::gtest_main
 )
 

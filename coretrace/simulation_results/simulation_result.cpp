@@ -9,26 +9,39 @@
 using element_id = SolTrace::Data::element_id;
 using Vector3d = SolTrace::Data::Vector3d;
 
+const std::string& ray_event_string(const RayEvent rev)
+{
+    auto item = REV_TO_STR.find(rev);
+    if (item != REV_TO_STR.cend())
+    {
+        return item->second;
+    }
+    else
+    {
+        return REV_TO_STR.find(RayEvent::UNKNOWN)->second;
+    }
+}
+
 InteractionRecord::InteractionRecord(
     element_id el,
-    InteractionRecord::InteractionType type,
+    RayEvent rev,
     const Vector3d location)
     : index(-1),
       element(el),
-      type(type),
+      event(rev),
       location(location)
 {
 }
 
 InteractionRecord::InteractionRecord(
     element_id el,
-    InteractionRecord::InteractionType type,
+    RayEvent rev,
     double x,
     double y,
     double z)
     : index(-1),
       element(el),
-      type(type),
+      event(rev),
       location(x, y, z)
 {
 }
@@ -42,7 +55,7 @@ std::ostream &operator<<(std::ostream &os, const InteractionRecord &rec)
     // TODO: Implement this
     os << "Element ID: " << rec.element
        << " Location: " << rec.location
-       << " Type: " << rec.type;
+       << " Event: " << ray_event_string(rec.event);
     return os;
 }
 

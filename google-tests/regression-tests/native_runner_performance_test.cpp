@@ -12,6 +12,7 @@
 #include <surface.hpp>
 
 // #include "split_csv.h"
+#include "count_absorbed_native.h"
 
 #include <chrono>
 
@@ -154,18 +155,7 @@ TEST(NativeRunner, PerformanceTest)
     // sys->AllRayData.Print();
     const TRayData *ray_data = &(sys->AllRayData);
     size_t n = ray_data->Count();
-    uint_fast64_t num_absorbed = 0;
-    for (size_t i = 0; i < n; i++)
-    {
-        double pos[3], cos[3];
-        int elm, stage;
-        unsigned int ray;
-        if (ray_data->Query(i, pos, cos, &elm, &stage, &ray))
-        {
-            if (elm < 0)
-                ++num_absorbed;
-        }
-    }
+    uint_fast64_t num_absorbed = count_absorbed_native(ray_data);
 
     std::cout << "Time: " << dur.count() << " ms" << std::endl;
     std::cout << "Number Absorbed: " << num_absorbed << std::endl;
@@ -246,18 +236,7 @@ TEST(NativeRunner, LargePerformanceTest)
     // sys->AllRayData.Print();
     const TRayData *ray_data = &(sys->AllRayData);
     size_t n = ray_data->Count();
-    uint_fast64_t num_absorbed = 0;
-    for (size_t i = 0; i < n; i++)
-    {
-        double pos[3], cos[3];
-        int elm, stage;
-        unsigned int ray;
-        if (ray_data->Query(i, pos, cos, &elm, &stage, &ray))
-        {
-            if (elm < 0)
-                ++num_absorbed;
-        }
-    }
+    uint_fast64_t num_absorbed = count_absorbed_native(ray_data);
 
     std::cout << "Time: " << dur.count() << " ms" << std::endl;
     std::cout << "Number Absorbed: " << num_absorbed << std::endl;

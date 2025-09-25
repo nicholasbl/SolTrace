@@ -73,12 +73,13 @@ TEST(NativeRunner, ValidationTest)
     int element;
     int stage;
     unsigned int raynum;
+    RayEvent rev;
 
     // Retrieving data from Runner
     for (size_t i = 0; i < nrdata; i++)
     {
         EXPECT_TRUE(ray_data->Query(i, point.data, cosines.data,
-                                    &element, &stage, &raynum));
+                                    &element, &stage, &raynum, &rev));
 
         // element = abs(element);
 
@@ -90,7 +91,7 @@ TEST(NativeRunner, ValidationTest)
             continue;
         }
 
-        EXPECT_EQ(element, stoi(ground_raydata[6][i + 1]));
+        EXPECT_EQ(element, abs(stoi(ground_raydata[6][i + 1])));
         EXPECT_EQ(stage, stoi(ground_raydata[7][i + 1]));
         EXPECT_EQ(raynum, stoul(ground_raydata[8][i + 1]));
 

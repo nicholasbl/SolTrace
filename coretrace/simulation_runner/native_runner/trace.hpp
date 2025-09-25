@@ -31,26 +31,6 @@ public:
 //                                       double *PathLength,
 //                                       int *ErrorFlag);
 
-void Interaction(MTRand &myrng,
-                 double PosXYZ[3],
-                 double CosKLM[3],
-                 double DFXYZ[3],
-                //  int InteractionType,
-                 const SolTrace::Data::OpticalProperties *Opticl,
-                 double Wavelength,
-                 double PosOut[3],
-                 double CosOut[3],
-                 int *ErrorFlag);
-
-void GenerateRay(MTRand &myrng,
-                 double PosSunStage[3],
-                 double Origin[3],
-                 double RLocToRef[3][3],
-                 TSun *Sun,
-                 double PosRayGlobal[3],
-                 double CosRayGlobal[3],
-                 double PosRaySun[3]);
-
 // bool LoadExistingStage0Ray(int index,
 //                            std::vector<std::vector<double>> *raydat,
 //                            double PosRayGlobal[3],
@@ -65,21 +45,6 @@ void GenerateRay(MTRand &myrng,
 //                            int &raynum);
 
 bool AperturePlane(TElement *Element);
-
-void Errors(MTRand &myrng,
-            double CosIn[3],
-            int Source,
-            TSun *Sun,
-            // TElement *Element,
-            // TOpticalProperties *OptProperties,
-            const SolTrace::Data::OpticalProperties *OptProperties,
-            double CosOut[3],
-            double DFXYZ[3]);
-
-void SurfaceNormalErrors(MTRand &myrng,
-                         double CosIn[3],
-                         const SolTrace::Data::OpticalProperties *OptProperties,
-                         double CosOut[3]) noexcept(false); // throw(nanexcept);
 
 // void NewZStartforCubicSplineSurf(double CRadius,
 //                                  double PosLoc[3],

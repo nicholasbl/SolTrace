@@ -8,8 +8,9 @@ FetchContent_Declare(
 
 # Common for all tests
 add_definitions(-DPROJECT_DIR="${CMAKE_CURRENT_BINARY_DIR}")
-file(GLOB CSV_TOOL csv_tools/*.cpp csv_tools/*.h)
+# file(GLOB CSV_TOOL test_tools/*.cpp test_tools/*.h)
 
+add_subdirectory(test_tools)
 add_subdirectory(unit-tests)
 add_subdirectory(regression-tests)
 
@@ -26,7 +27,7 @@ if(SOLTRACE_BUILD_CORETRACE)
 
 	include_directories(
 		soltrace_example_tests
-		csv_tools
+		test_tools
 		../coretrace
 		../coretrace/strace
 		../app/deploy/samples
@@ -45,17 +46,22 @@ if(SOLTRACE_BUILD_CORETRACE)
 	message("Build type: ${CMAKE_BUILD_TYPE}")
 
 	add_executable( Test
-		${CSV_TOOL}
+		# ${CSV_TOOL}
 		${SOLTRACE_EXAMPLE_TESTS}
 		${CORETRACE}
 		${STRACE}
 	)
 
+	target_link_libraries(
+		Test
+		coretrace
+		testtools
+		GTest::gtest_main
+	)
+
 	if (ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
 		target_link_options(Test PRIVATE --coverage)
-		target_link_libraries(Test coretrace gcov GTest::gtest_main)
-	else()
-		target_link_libraries(Test coretrace GTest::gtest_main)
+		target_link_libraries(Test gcov)
 	endif()
 
 	if(UNIX)

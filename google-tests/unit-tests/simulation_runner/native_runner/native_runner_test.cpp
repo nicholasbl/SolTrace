@@ -16,6 +16,7 @@
 #include <virtual_element.hpp>
 
 #include "common.hpp"
+#include "count_absorbed_native.h"
 
 TEST(RandomNumberGenerator, SingleNumberMersenneTwister)
 {
@@ -195,7 +196,7 @@ TEST(NativeRunner, PowerTowerSmokeTest)
         foptics = el->get_front_optical_properties();
         foptics->reflectivity = 1.0;
 
-    pos.set_values(5 * sin(k * PI * 2.0 / NUM_ELEMENTS),
+        pos.set_values(5 * sin(k * PI * 2.0 / NUM_ELEMENTS),
                        5 * cos(k * PI * 2.0 / NUM_ELEMENTS),
                        0.0);
         vector_add(1.0, absorber->get_origin_global(),
@@ -246,19 +247,8 @@ TEST(NativeRunner, PowerTowerSmokeTest)
     const TSystem *sys = runner.get_system();
     // sys->AllRayData.Print();
     const TRayData *ray_data = &(sys->AllRayData);
+    uint_fast64_t num_absorbed = count_absorbed_native(ray_data);
     size_t n = ray_data->Count();
-    uint_fast64_t num_absorbed = 0;
-    for (size_t i = 0; i < n; i++)
-    {
-        double pos[3], cos[3];
-        int elm, stage;
-        unsigned int ray;
-        if (ray_data->Query(i, pos, cos, &elm, &stage, &ray))
-        {
-            if (elm < 0)
-                ++num_absorbed;
-        }
-    }
 
     std::cout << "Number Absorbed: " << num_absorbed << std::endl;
     std::cout << "Number Interactions: " << n << std::endl;
@@ -330,8 +320,9 @@ TEST(NativeRunner, SingleRayValidationTest)
     Vector3d ipoint, idir;
     int element, stage;
     unsigned int raynum;
+    RayEvent rev;
     sys->AllRayData.Query(0, ipoint.data, idir.data,
-                          &element, &stage, &raynum);
+                          &element, &stage, &raynum, &rev);
 
     EXPECT_NEAR(ipoint[0], -3.06214, TOL);
     EXPECT_NEAR(ipoint[1], 5.92862, TOL);

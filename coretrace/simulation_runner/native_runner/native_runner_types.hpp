@@ -59,7 +59,7 @@
 #include "element.hpp"
 #include "optical_properties.hpp"
 #include "ray_source.hpp"
-// #include "simulation_data_export.hpp"
+#include "simulation_result.hpp"
 #include "surface_intersection_calculator.hpp"
 
 // #define ACOSM1O180 0.017453292519943295 // acos(-1)/180.0
@@ -226,27 +226,31 @@ public:
 		int element;
 		int stage;
 		unsigned int raynum;
+		RayEvent event;
 	};
 
 	ray_t *Append(double pos[3],
 				  double cos[3],
 				  int element,
 				  int stage,
-				  unsigned int raynum);
+				  unsigned int raynum,
+				  RayEvent it);
 
 	bool Overwrite(unsigned int idx,
 				   double pos[3],
 				   double cos[3],
 				   int element,
 				   int stage,
-				   unsigned int raynum);
+				   unsigned int raynum,
+				   RayEvent it);
 
 	bool Query(unsigned int idx,
 			   double pos[3],
 			   double cos[3],
 			   int *element,
 			   int *stage,
-			   unsigned int *raynum) const;
+			   unsigned int *raynum,
+			   RayEvent *it) const;
 
 	void Merge(TRayData &dest);
 

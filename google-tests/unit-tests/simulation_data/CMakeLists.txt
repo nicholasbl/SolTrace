@@ -29,6 +29,7 @@ add_executable(SimulationDataUnitTests
 target_link_libraries(
     SimulationDataUnitTests
     simdata
+    testtools
     GTest::gtest_main
 )
 

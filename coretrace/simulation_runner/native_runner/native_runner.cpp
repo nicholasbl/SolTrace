@@ -5,11 +5,15 @@
 #include <map>
 // #include <algorithm>
 
+// SimulationData headers
 #include "composite_element.hpp"
 #include "element.hpp"
 #include "simulation_parameters.hpp"
 #include "simulation_data.hpp"
 #include "simulation_data_export.hpp"
+
+// NativeRunner headers
+#include "native_runner_types.hpp"
 #include "trace.hpp"
 
 NativeRunner::NativeRunner() : SimulationRunner(),
@@ -268,16 +272,18 @@ RunnerStatus NativeRunner::report_simulation(SimulationResult *result,
     element_id elid;
     ray_record_ptr rec = nullptr;
     interaction_ptr intr = nullptr;
-    InteractionRecord::InteractionType itype;
+    RayEvent rev;
 
     for (size_t ii = 0; ii < ndata; ++ii)
     {
         ray_data.Query(ii,
-                       point.data, cosines.data,
-                       &element, &stage, &raynum);
+                       point.data,
+                       cosines.data,
+                       &element,
+                       &stage,
+                       &raynum,
+                       &rev);
 
-        bool absorbed = element < 0;
-        element = abs(element);
         el = sys->StageList[stage]->ElementList[element];
         elid = el->sim_data_id;
 
@@ -291,17 +297,7 @@ RunnerStatus NativeRunner::report_simulation(SimulationResult *result,
             rec = iter->second;
         }
 
-        if (absorbed)
-        {
-            itype = InteractionRecord::ABSORB;
-        }
-        else
-        {
-            // TODO: Set correct interaction type here
-            itype = InteractionRecord::REFLECT;
-        }
-
-        intr = make_interaction_record(elid, itype, point);
+        intr = make_interaction_record(elid, rev, point);
         rec->add_interaction_record(intr);
         // TODO: Overwrite last cosines every time -- this is wrong.
         // Gives the incoming direction cosines for last interaction.
