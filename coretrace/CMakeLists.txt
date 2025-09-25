@@ -22,7 +22,8 @@ add_subdirectory(simulation_runner)
 
 Project(coretrace)
 
-include_directories(.)
+include_directories(.
+	./simulation_data)
 
 set(CORETRACE_SRC
 	interpolate.cpp
@@ -40,6 +41,7 @@ set(CORETRACE_SRC
 	raytrace.cpp
 	raytrace_refactored.cpp
 	root432.cpp
+	simdata_bridge.cpp
 	spencerandmurtysurfaceclosedform.cpp
 	stapi.cpp
 	suntoprimarystage.cpp
@@ -120,6 +122,8 @@ if(SOLTRACE_BUILD_CORETRACE)
 		DEBUG_POSTFIX "d"
 		PREFIX ""
 		)
+	target_link_libraries(coretrace_api simdata)
+
 	if(MSVC)
 		target_compile_definitions(coretrace_api PRIVATE STCORE_API_EXPORTS _STCOREDLL_)
 	endif()
@@ -136,6 +140,7 @@ if(SOLTRACE_BUILD_CORETRACE)
 		DEBUG_POSTFIX "d"
 		PREFIX ""
 		)
+	target_link_libraries(coretrace simdata)
 
 #####################################################################################################################
 #

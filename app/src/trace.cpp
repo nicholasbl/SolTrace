@@ -332,14 +332,30 @@ int TraceForm::StartTrace( bool , bool quiet, wxArrayString *err )
 
 	ref_errors.clear();
 
-	int msec = RunTraceMultiThreaded( &m_prj, m_numRays->AsInteger(),
+	int msec = 0;
+	if (m_prj.Trace_Settings.use_native_runner || m_prj.Trace_Settings.use_optix_runner)
+	{
+		msec = RunSolTrace20(&m_prj, m_numRays->AsInteger(),
 			m_numMaxSunRays->AsInteger(),
 			m_numCpus->AsInteger(),
 			&m_lastSeedVal,
 			m_inclSunShape->GetValue(),
 			m_inclOpticalErrors->GetValue(),
-            m_asPowerTower->GetValue(),
-			ref_errors );
+			m_asPowerTower->GetValue(),
+			ref_errors, m_prj.Trace_Settings.use_native_runner,
+			m_prj.Trace_Settings.use_optix_runner);
+	}
+	else
+	{
+		msec = RunTraceMultiThreaded(&m_prj, m_numRays->AsInteger(),
+			m_numMaxSunRays->AsInteger(),
+			m_numCpus->AsInteger(),
+			&m_lastSeedVal,
+			m_inclSunShape->GetValue(),
+			m_inclOpticalErrors->GetValue(),
+			m_asPowerTower->GetValue(),
+			ref_errors);
+	}
 
 	if ( msec < 0 )
 		wxShowTextMessageDialog( wxJoin( ref_errors, '\n' ) );
@@ -907,6 +923,38 @@ int RunTraceMultiThreaded( Project *System, int nrays, int nmaxrays,
 	return errors_found ? -2 : millisec;
 }
 
+int RunSolTrace20(Project* System, int nrays, int nmaxrays,
+	int nmaxthreads, int* seed, bool sunshape, bool opterrs, bool aspowertower,
+	wxArrayString& errors, bool use_native_runner, bool use_optix_runner)
+{
+	// Call stapi directly for now
+	// Thread in the future potentially
+
+	st_context_t spcxt = ::st_create_context();
+
+	int result = LoadSystemIntoContext(System, spcxt, errors);
+	if (result < 0)
+	{
+		return -1;
+	}
+
+	::st_sim_errors(spcxt, sunshape ? 1 : 0, opterrs ? 1 : 0);
+	::st_sim_params(spcxt, nrays, nmaxrays, aspowertower);
+
+	/*m_resultCode = ::st_sim_run( m_contextId,
+		(unsigned int) m_seedVal,
+		trace_callback_multi_thread, this );*/
+
+	// 0 for native, 1 for optix
+	int runner_type = 0;
+	if (use_optix_runner == true)
+		runner_type = 1;
+
+	int err = ::st_sim_run_SolTrace20(spcxt, (unsigned int)seed, runner_type);
+
+
+	return 0;
+}
 
 /*
 int trace_callback_single_thread(st_uint_t ntracedtotal, st_uint_t ntraced,

@@ -52,6 +52,8 @@
 #include "procs.h"
 #include "stapi.h"
 #include "mtrand.h"
+#include "simdata_bridge.h"
+#include "simulation_data/simulation_data.hpp"
 
 #define SYSTEM(p,r) TSystem *sys = reinterpret_cast<TSystem*>(p); if(!sys) return r;
 #define SYSTEM_NR(p) TSystem *sys = reinterpret_cast<TSystem*>(p); if(!sys) return;
@@ -750,6 +752,22 @@ STCORE_API int st_sim_run_with_refactor(st_context_t pcxt, unsigned int seed,
 	bool use_refactor_trace)
 {
 	return st_sim_run_data(pcxt, seed, 0, 0, false, callback, cbdata, use_refactor_trace);
+}
+
+STCORE_API int st_sim_run_SolTrace20(st_context_t pcxt, unsigned int seed, int runner_type)
+{
+	SYSTEM(pcxt, -1);
+	if (!InitGeometries(sys))
+		return -1;
+
+	// Convert TSystem to SimulationData
+	SolTrace::Data::SimulationData sd = SolTrace::Data::SimulationData();
+	int err = convert_tsystem_to_sim_data(sys, sd);
+
+	if (err != 0)
+		return err;
+
+	return 0;
 }
 
 STCORE_API void st_calc_euler_angles( double origin[3], double aimpoint[3], double zrot, double euler[3] )
