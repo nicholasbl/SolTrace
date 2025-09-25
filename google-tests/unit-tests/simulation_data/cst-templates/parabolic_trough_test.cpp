@@ -14,6 +14,11 @@
 
 using ParabolicTrough = SolTrace::Data::ParabolicTrough;
 
+using SolTrace::Runner::RunnerStatus;
+using SolTrace::NativeRunner::NativeRunner;
+using SolTrace::NativeRunner::TRayData;
+using SolTrace::NativeRunner::TSystem;
+
 // Error Checking Tests for ParabolicTrough
 TEST(ParabolicTrough, ErrorChecking_SetApertureSize)
 {

@@ -6,6 +6,8 @@
 #include "aperture.hpp"
 #include "surface.hpp"
 
+namespace SolTrace::NativeRunner {
+
 class ParabolaCalculator : public SurfaceIntersectionCalculator
 {
 public:
@@ -26,5 +28,7 @@ private:
     double cx;
     double cy;
 };
+
+} // namespace SolTrace::NativeRunner
 
 #endif

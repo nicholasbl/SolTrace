@@ -9,6 +9,15 @@
 
 using namespace std;
 
+using SolTrace::Runner::RunnerStatus;
+
+using SolTrace::NativeRunner::NativeRunner;
+using SolTrace::NativeRunner::TRayData;
+using SolTrace::NativeRunner::TSystem;
+using SolTrace::NativeRunner::tstage_ptr;
+
+using SolTrace::Result::RayEvent;
+
 TEST(NativeRunner, ValidationTest)
 {
     // Pulling in path variable from CMake and creating path to .stinput sample file
@@ -45,7 +54,7 @@ TEST(NativeRunner, ValidationTest)
     NativeRunner runner;
     runner.disable_point_focus();
     runner.disable_power_tower();
-    int sts;
+    RunnerStatus sts;
     sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.setup_simulation(&sd);

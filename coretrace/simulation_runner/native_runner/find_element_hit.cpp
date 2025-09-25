@@ -5,6 +5,8 @@
 #include "find_element_hit.hpp"
 #include "native_runner_types.hpp"
 
+namespace SolTrace::NativeRunner {
+
 void FindElementHit(
 	// stage info
 	const int i,
@@ -139,3 +141,5 @@ void FindElementHit(
 		}
 	}
 }
+
+} // namespace SolTrace::NativeRunner

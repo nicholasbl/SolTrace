@@ -4,6 +4,8 @@
 #include "native_runner_types.hpp"
 #include "simulation_data_export.hpp"
 
+namespace SolTrace::NativeRunner {
+
 bool SunToPrimaryStage(
     TSystem *System,
     TStage *Stage,
@@ -193,3 +195,5 @@ bool SunToPrimaryStage(
 
     return (nelements > 0);
 }
+
+} // namespace SolTrace::NativeRunner

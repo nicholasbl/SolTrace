@@ -7,6 +7,8 @@
 
 // #include "surface.hpp"
 
+namespace SolTrace::NativeRunner {
+
 class NewtonCalculator : public SurfaceIntersectionCalculator
 {
 public:
@@ -40,5 +42,7 @@ private:
     double tolerance;
     uint_fast64_t max_iters;
 };
+
+} // namespace SolTrace::NativeRunner
 
 #endif

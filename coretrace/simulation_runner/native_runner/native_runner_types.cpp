@@ -112,6 +112,8 @@
 //     return *this;
 // }
 
+namespace SolTrace::NativeRunner {
+
 ElementParameters::ElementParameters()
     : newton_tolerance(1e-6),
       newton_max_iters(20)
@@ -250,7 +252,7 @@ TRayData::ray_t *TRayData::Append(double pos[3],
                                   int element,
                                   int stage,
                                   unsigned int raynum,
-                                  RayEvent it)
+                                  SolTrace::Result::RayEvent it)
 {
     if (m_dataCount == m_dataCapacity)
     {
@@ -283,7 +285,7 @@ bool TRayData::Overwrite(unsigned int idx,
                          int element,
                          int stage,
                          unsigned int raynum,
-                         RayEvent it)
+                         SolTrace::Result::RayEvent it)
 {
     ray_t *r = Index(idx, true);
     if (r != 0)
@@ -305,7 +307,7 @@ bool TRayData::Query(unsigned int idx,
                      int *element,
                      int *stage,
                      unsigned int *raynum,
-                     RayEvent *it) const
+                     SolTrace::Result::RayEvent *it) const
 {
     ray_t *r = Index(idx, false);
     if (r != 0)
@@ -424,7 +426,7 @@ void TRayData::Print() const
         double pos[3], cos[3];
         int elm, stage;
         unsigned int ray;
-        RayEvent rev;
+        SolTrace::Result::RayEvent rev;
         if (Query(i, pos, cos, &elm, &stage, &ray, &rev))
         {
             printf("   [%zu] = { [%lg,%lg,%lg][%lg,%lg,%lg] %d %d %u %s }\n",
@@ -580,3 +582,5 @@ tstage_ptr make_tstage(element_ptr el,
 
     return my_stage;
 }
+
+} // namespace SolTrace::NativeRunner

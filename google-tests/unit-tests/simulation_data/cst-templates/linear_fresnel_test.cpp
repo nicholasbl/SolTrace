@@ -12,7 +12,12 @@
 #include "common.hpp"
 #include "count_absorbed_native.h"
 
-using LinearFresnel = SolTrace::Data::LinearFresnel;
+using SolTrace::Data::LinearFresnel;
+
+using SolTrace::Runner::RunnerStatus;
+using SolTrace::NativeRunner::NativeRunner;
+using SolTrace::NativeRunner::TRayData;
+using SolTrace::NativeRunner::TSystem;
 
 // Error Checking Tests for LinearFresnel
 TEST(LinearFresnel, ErrorChecking_SetApertureSize)

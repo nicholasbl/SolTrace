@@ -6,6 +6,8 @@
 #include "mtrand.hpp"
 #include "native_runner_types.hpp"
 
+namespace SolTrace::NativeRunner {
+
 void Errors(MTRand &myrng,
             double CosIn[3],
             int Source,
@@ -21,5 +23,6 @@ void SurfaceNormalErrors(MTRand &myrng,
                          const SolTrace::Data::OpticalProperties *OptProperties,
                          double CosOut[3]) noexcept(false); // throw(nanexcept);
 
+} // namespace SolTrace::NativeRunner
 
 #endif

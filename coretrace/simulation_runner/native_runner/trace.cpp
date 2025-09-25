@@ -69,9 +69,13 @@
 #include "sun_to_primary_stage.hpp"
 #include "treemesh.hpp"
 
+namespace SolTrace::NativeRunner {
+
 // #define   Order 3
 // #define   NumIterations 20
 // #define   Epsilon 0.000001
+
+using SolTrace::Result::RayEvent;
 
 // Trace method
 bool trace_native(
@@ -675,3 +679,5 @@ bool trace_native(
 
 	return true;
 }
+
+} // namespace SolTrace::NativeRunner

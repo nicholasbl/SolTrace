@@ -53,6 +53,8 @@
 #include <vector>
 #include <string>
 
+namespace SolTrace::NativeRunner {
+
 struct KDLayoutData
 {
     double xlim[2];     //[min, max]
@@ -139,5 +141,6 @@ public:
     bool get_all_data_at_loc(std::vector<void*> &data, double locx, double locy);
 };
 
+} // namespace SolTrace::NativeRunner
 
 #endif

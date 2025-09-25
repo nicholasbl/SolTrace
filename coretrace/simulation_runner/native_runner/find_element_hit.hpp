@@ -1,6 +1,10 @@
 #ifndef SOLTRACE_FIND_ELEMENT_HIT_H
 #define SOLTRACE_FIND_ELEMENT_HIT_H
 
+#include "native_runner_types.hpp"
+
+namespace SolTrace::NativeRunner {
+
 void FindElementHit(
     // stage info
     const int i,
@@ -27,5 +31,7 @@ void FindElementHit(
     int &ErrorFlag,
     int &LastHitBackSide,
     bool &StageHit);
+
+} // namespace SolTrace::NativeRunner
 
 #endif

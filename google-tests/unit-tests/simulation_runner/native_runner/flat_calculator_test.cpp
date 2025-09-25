@@ -8,6 +8,8 @@
 
 #include "common.hpp"
 
+using SolTrace::NativeRunner::FlatCalculator;
+
 // NOTE: Equation for the plane is always z=0
 
 // Helper function to create flat surface

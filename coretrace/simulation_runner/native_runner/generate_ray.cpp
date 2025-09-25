@@ -3,6 +3,8 @@
 
 #include "simulation_data_export.hpp"
 
+namespace SolTrace::NativeRunner {
+
 void GenerateRay(
 	MTRand &myrng,
 	double PosSunStage[3],
@@ -118,3 +120,5 @@ void GenerateRay(
 
 	return;
 }
+
+} // namespace SolTrace::NativeRunner

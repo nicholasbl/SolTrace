@@ -9,6 +9,8 @@
 #include "surface.hpp"
 #include "surface_intersection_calculator.hpp"
 
+namespace SolTrace::NativeRunner {
+
 class CalculatorFactory
 {
 public:
@@ -38,5 +40,7 @@ private:
     CalculatorFactory() {}
     // ~CalculatorFactory(){}
 };
+
+} // namespace SolTrace::NativeRunner
 
 #endif

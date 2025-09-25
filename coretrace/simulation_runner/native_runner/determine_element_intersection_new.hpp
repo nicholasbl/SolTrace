@@ -3,6 +3,8 @@
 
 #include "native_runner_types.hpp"
 
+namespace SolTrace::NativeRunner {
+
 void DetermineElementIntersectionNew(TElement *Element,
                                      double PosRayIn[3],
                                      double CosRayIn[3],
@@ -57,5 +59,7 @@ void DetermineElementIntersectionNew(TElement *Element,
 //             double x,
 //             double *y,
 //             double *dydx);
+
+} // namespace SolTrace::NativeRunner
 
 #endif

@@ -6,6 +6,8 @@
 #include "constants.hpp"
 #include "simulation_data_export.hpp"
 
+namespace SolTrace::NativeRunner {
+
 void SetupPTOptimizations(
 	// system info
 	TSystem *System, const bool AsPowerTower,
@@ -271,3 +273,5 @@ uint_fast64_t GetPTElements(
 
 	return nintelements;
 }
+
+} // namespace SolTrace::NativeRunner

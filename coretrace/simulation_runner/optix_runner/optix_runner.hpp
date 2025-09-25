@@ -6,18 +6,23 @@
 #include "simulation_runner.hpp"
 #include "core/soltrace_system.h"
 
-class OptixRunner : public SimulationRunner
+// using SolTrace::Runner::RunnerStatus;
+
+class OptixRunner : public SolTrace::Runner::SimulationRunner
 {
 public:
     OptixRunner();
     ~OptixRunner();
 
-    virtual RunnerStatus initialize();
-    virtual RunnerStatus setup_simulation(const SolTrace::Data::SimulationData *data);
-    virtual RunnerStatus update_simulation(const SolTrace::Data::SimulationData *data);
-    virtual RunnerStatus run_simulation();
-    virtual RunnerStatus report_simulation(SimulationResult *result,
-                                           int level_spec);
+    virtual SolTrace::Runner::RunnerStatus initialize();
+    virtual SolTrace::Runner::RunnerStatus setup_simulation(
+        const SolTrace::Data::SimulationData *data);
+    virtual SolTrace::Runner::RunnerStatus update_simulation(
+        const SolTrace::Data::SimulationData *data);
+    virtual SolTrace::Runner::RunnerStatus run_simulation();
+    virtual SolTrace::Runner::RunnerStatus report_simulation(
+        SolTrace::Result::SimulationResult *result,
+        int level_spec);
 
     // Runner options
     // void disable_sun_shape_errors() { this->include_sun_shape_errors = false; }
@@ -25,18 +30,19 @@ public:
     // void disable_errors() { this->include_errors = false; }
     // void enable_errors() { this->include_errors = true; }
 
-
     // Runner accessors
-    //const TSystem *get_system() const { return &this->tsys; }
+    // const TSystem *get_system() const { return &this->tsys; }
 
 private:
-
     OptixCSP::SolTraceSystem m_sys;
 
     const SolTrace::Data::SimulationData *m_simdata;
-    RunnerStatus setup_parameters(const SolTrace::Data::SimulationData *data);
-    RunnerStatus setup_sun(const SolTrace::Data::SimulationData *data);
-    RunnerStatus setup_elements(const SolTrace::Data::SimulationData *data);
+    SolTrace::Runner::RunnerStatus setup_parameters(
+        const SolTrace::Data::SimulationData *data);
+    SolTrace::Runner::RunnerStatus setup_sun(
+        const SolTrace::Data::SimulationData *data);
+    SolTrace::Runner::RunnerStatus setup_elements(
+        const SolTrace::Data::SimulationData *data);
 
     // helper function, convert Vector3d to Optix::Vec3d
     OptixCSP::Vec3d ToVec3d(SolTrace::Data::Vector3d v);

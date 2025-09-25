@@ -8,6 +8,8 @@
 #include <surface.hpp>
 #include <vector3d.hpp>
 
+using SolTrace::NativeRunner::ParabolaCalculator;
+
 // NOTES: Equation for a parabola is z = (cx*x^2 + cy*y^2) / 2
 // Computing the intersection point comes down to solving
 // quadratic equation for a parameter t given by

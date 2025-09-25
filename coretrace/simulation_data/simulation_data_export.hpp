@@ -1,19 +1,7 @@
 #ifndef SOLTRACE_SIMDATA_EXPORT_H
 #define SOLTRACE_SIMDATA_EXPORT_H
 
-#include "aperture.hpp"
-#include "composite_element.hpp"
-#include "simulation_data.hpp"
-#include "simulation_parameters.hpp"
-#include "single_element.hpp"
-#include "stage_element.hpp"
-#include "sun.hpp"
-#include "surface.hpp"
-
-#include "cst_templates/heliostat.hpp"
-#include "cst_templates/linear_fresnel.hpp"
-#include "cst_templates/parabolic_dish.hpp"
-#include "cst_templates/parabolic_trough.hpp"
+#include "simulation_data_api.hpp"
 
 // Classes and Structs
 using SolTrace::Data::Annulus;

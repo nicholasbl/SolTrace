@@ -8,6 +8,8 @@
 #include "mtrand.hpp"
 #include "native_runner_types.hpp"
 
+namespace SolTrace::NativeRunner {
+
 void ProcessInteraction(
     // system info
     TSystem *System,
@@ -41,5 +43,7 @@ void Interaction(MTRand &myrng,
                  double PosOut[3],
                  double CosOut[3],
                  int *ErrorFlag);
+
+} // namespace SolTrace::NativeRunner
 
 #endif

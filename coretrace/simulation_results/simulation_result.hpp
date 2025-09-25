@@ -10,6 +10,8 @@
 #include "element.hpp"
 #include "vector3d.hpp"
 
+namespace SolTrace::Result {
+
 using ray_id = int_fast64_t;
 
 enum class RayEvent
@@ -124,5 +126,7 @@ public:
 private:
     RayRecordContainer ray_history;
 };
+
+} // namespace SolTrace::Result
 
 #endif

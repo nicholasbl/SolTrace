@@ -6,6 +6,8 @@
 #include <newton_calculator.hpp>
 #include <vector3d.hpp>
 
+using SolTrace::NativeRunner::NewtonCalculator;
+
 class ParabolaNewton : public NewtonCalculator
 {
 public:

@@ -7,6 +7,8 @@
 #include "simulation_data_export.hpp"
 #include "vector3d.hpp"
 
+namespace SolTrace::NativeRunner {
+
 NewtonCalculator::NewtonCalculator(double tol, uint_fast64_t max_iters)
     : SurfaceIntersectionCalculator(),
       tolerance(tol),
@@ -77,3 +79,5 @@ int NewtonCalculator::intersect(const double PosLoc[3],
 
     return sts;
 }
+
+} // namespace SolTrace::NativeRunner

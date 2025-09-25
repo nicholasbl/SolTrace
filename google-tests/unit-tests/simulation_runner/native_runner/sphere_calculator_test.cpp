@@ -8,6 +8,8 @@
 #include <surface.hpp>
 #include <vector3d.hpp>
 
+using SolTrace::NativeRunner::SphereCalculator;
+
 // NOTES: Equation for a sphere is x^2 + y^2 + (z - r)^2 = r^2
 // where r is the radius. Computing the intersection point 
 // comes down to solving quadratic equation for a parameter t 

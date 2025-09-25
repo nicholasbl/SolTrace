@@ -1,14 +1,14 @@
 #include <gtest/gtest.h>
 
-#include <constants.hpp>
-#include <element.hpp>
+// #include <constants.hpp>
+// #include <element.hpp>
 #include <native_runner.hpp>
-#include <sun.hpp>
-#include <simulation_data.hpp>
+// #include <sun.hpp>
+// #include <simulation_data.hpp>
 #include <simulation_data_export.hpp>
-#include <single_element.hpp>
-#include <stage_element.hpp>
-#include <vector3d.hpp>
+// #include <single_element.hpp>
+// #include <stage_element.hpp>
+// #include <vector3d.hpp>
 
 #include <cmath>
 #include <iostream>
@@ -16,6 +16,9 @@
 
 #include "common.hpp"
 #include "count_absorbed_native.h"
+
+using SolTrace::Runner::RunnerStatus;
+using SolTrace::NativeRunner::NativeRunner;
 
 TEST(TowerDemo, NativeRunnerWithStages)
 {

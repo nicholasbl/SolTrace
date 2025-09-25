@@ -18,6 +18,13 @@
 #include "common.hpp"
 #include "count_absorbed_native.h"
 
+using SolTrace::Runner::RunnerStatus;
+
+using SolTrace::NativeRunner::MTRand;
+using SolTrace::NativeRunner::NativeRunner;
+using SolTrace::NativeRunner::TRayData;
+using SolTrace::NativeRunner::TSystem;
+
 TEST(RandomNumberGenerator, SingleNumberMersenneTwister)
 {
     MTRand myrng(1);
@@ -320,7 +327,7 @@ TEST(NativeRunner, SingleRayValidationTest)
     Vector3d ipoint, idir;
     int element, stage;
     unsigned int raynum;
-    RayEvent rev;
+    SolTrace::Result::RayEvent rev;
     sys->AllRayData.Query(0, ipoint.data, idir.data,
                           &element, &stage, &raynum, &rev);
 

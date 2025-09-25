@@ -13,6 +13,8 @@
 
 // #include "vector3d.hpp"
 
+namespace SolTrace::NativeRunner {
+
 SphereCalculator::SphereCalculator(surface_ptr surf)
 {
     if (surf == nullptr)
@@ -157,3 +159,5 @@ double SphereCalculator::compute_z_aperture(aperture_ptr ap)
 
     return zmax;
 }
+
+} // namespace SolTrace::NativeRunner

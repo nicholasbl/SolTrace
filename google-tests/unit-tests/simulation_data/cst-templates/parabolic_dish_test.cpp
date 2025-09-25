@@ -14,6 +14,11 @@
 
 using ParabolicDish = SolTrace::Data::ParabolicDish;
 
+using SolTrace::Runner::RunnerStatus;
+using SolTrace::NativeRunner::NativeRunner;
+using SolTrace::NativeRunner::TRayData;
+using SolTrace::NativeRunner::TSystem;
+
 TEST(ParabolicDish, ArcLength)
 {
     const double TOL = 1e-6;

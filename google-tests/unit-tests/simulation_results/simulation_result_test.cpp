@@ -7,6 +7,17 @@
 
 #include "common.hpp"
 
+using SolTrace::Result::InteractionRecord;
+using SolTrace::Result::RayEvent;
+using SolTrace::Result::RayRecord;
+using SolTrace::Result::SimulationResult;
+
+using SolTrace::Result::interaction_ptr;
+using SolTrace::Result::ray_record_ptr;
+
+using SolTrace::Result::make_interaction_record;
+using SolTrace::Result::make_ray_record;
+
 TEST(InteractionRecord, Constructors)
 {
     element_id elid = 5;

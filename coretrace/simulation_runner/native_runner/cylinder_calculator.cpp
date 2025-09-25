@@ -11,6 +11,8 @@
 #include "simulation_data_export.hpp"
 #include "surface.hpp"
 
+namespace SolTrace::NativeRunner {
+
 CylinderCalculator::CylinderCalculator(surface_ptr surf, aperture_ptr ap)
 {
     if (surf == nullptr)
@@ -193,3 +195,5 @@ double CylinderCalculator::compute_z_aperture(aperture_ptr ap)
     double zmax = 2.0 * this->radius;
     return zmax;
 }
+
+} // namespace SolTrace::NativeRunner

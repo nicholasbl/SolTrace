@@ -4,6 +4,8 @@
 #include "simulation_data/simulation_data.hpp"
 #include "simulation_data/simulation_data_export.hpp"
 
+using SolTrace::Runner::SimulationRunner;
+
 OptixRunner::OptixRunner() : SimulationRunner(),
                              m_simdata(nullptr),    
                              m_sys(10000) {}

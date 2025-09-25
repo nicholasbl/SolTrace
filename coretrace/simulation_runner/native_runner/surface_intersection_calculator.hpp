@@ -5,6 +5,8 @@
 
 #include "aperture.hpp"
 
+namespace SolTrace::NativeRunner {
+
 class SurfaceIntersectionCalculator
 {
 public:
@@ -27,5 +29,7 @@ private:
 };
 
 using calculator_ptr = typename std::shared_ptr<SurfaceIntersectionCalculator>;
+
+} // namespace SolTrace::NativeRunner
 
 #endif

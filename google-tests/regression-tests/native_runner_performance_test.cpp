@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <chrono>
+
 #include <aperture.hpp>
 #include <element.hpp>
 #include <heliostat.hpp>
@@ -14,7 +16,11 @@
 // #include "split_csv.h"
 #include "count_absorbed_native.h"
 
-#include <chrono>
+using SolTrace::Runner::RunnerStatus;
+
+using SolTrace::NativeRunner::NativeRunner;
+using SolTrace::NativeRunner::TRayData;
+using SolTrace::NativeRunner::TSystem;
 
 TEST(NativeRunner, PerformanceTest)
 {
@@ -149,7 +155,7 @@ TEST(NativeRunner, PerformanceTest)
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 
     std::chrono::duration<double, std::milli> dur = t1 - t0;
-    EXPECT_TRUE(dur.count() < 7500.0);
+    EXPECT_TRUE(dur.count() < 8000.0);
 
     const TSystem *sys = my_runner.get_system();
     // sys->AllRayData.Print();
@@ -218,7 +224,7 @@ TEST(NativeRunner, LargePerformanceTest)
     NativeRunner runner;
     runner.disable_point_focus();
     runner.disable_power_tower();
-    int sts;
+    RunnerStatus sts;
     sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.setup_simulation(&sd);

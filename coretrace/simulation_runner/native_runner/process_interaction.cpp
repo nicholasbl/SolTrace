@@ -7,6 +7,8 @@
 // NativeRunner headers
 #include "tracing_errors.hpp"
 
+namespace SolTrace::NativeRunner {
+
 void ProcessInteraction(
     // system info
     TSystem *System,
@@ -418,3 +420,5 @@ void Interaction(
     }
     return;
 }
+
+} // namespace SolTrace::NativeRunner

@@ -117,6 +117,8 @@
 #include <iostream>
 #include <random>
 
+namespace SolTrace::NativeRunner {
+
 class MTRand {
 // Data
 public:
@@ -394,6 +396,8 @@ inline MTRand& MTRand::operator=( const MTRand& o )
 	pNext = &state[N-left];
 	return (*this);
 }
+
+} // namespace SolTrace::NativeRunner
 
 #endif  // MERSENNETWISTER_H
 

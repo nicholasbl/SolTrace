@@ -14,6 +14,11 @@
 
 using Heliostat = SolTrace::Data::Heliostat;
 
+using SolTrace::Runner::RunnerStatus;
+using SolTrace::NativeRunner::NativeRunner;
+using SolTrace::NativeRunner::TRayData;
+using SolTrace::NativeRunner::TSystem;
+
 // Error Checking Tests for Heliostat
 TEST(Heliostat, ErrorChecking_SetApertureSize)
 {

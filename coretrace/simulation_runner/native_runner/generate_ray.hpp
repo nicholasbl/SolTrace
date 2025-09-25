@@ -4,6 +4,8 @@
 #include "mtrand.hpp"
 #include "native_runner_types.hpp"
 
+namespace SolTrace::NativeRunner {
+
 void GenerateRay(MTRand &myrng,
                  double PosSunStage[3],
                  double Origin[3],
@@ -12,5 +14,7 @@ void GenerateRay(MTRand &myrng,
                  double PosRayGlobal[3],
                  double CosRayGlobal[3],
                  double PosRaySun[3]);
+
+} // namespace SolTrace::NativeRunner
 
 #endif

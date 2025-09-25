@@ -3,6 +3,7 @@
 
 #include <native_runner_types.hpp>
 
-uint_fast64_t count_absorbed_native(const TRayData *ray_data);
+uint_fast64_t count_absorbed_native(
+    const SolTrace::NativeRunner::TRayData *ray_data);
 
 #endif

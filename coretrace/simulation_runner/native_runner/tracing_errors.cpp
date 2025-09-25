@@ -3,6 +3,8 @@
 
 #include "simulation_data_export.hpp"
 
+namespace SolTrace::NativeRunner {
+
 void SurfaceNormalErrors(MTRand &myrng,
 						 double CosIn[3],
 						 //  TOpticalProperties *OptProperties,
@@ -306,3 +308,5 @@ Label_50:
 	}
 }
 // End of Procedure--------------------------------------------------------------
+
+} // namespace SolTrace::NativeRunner

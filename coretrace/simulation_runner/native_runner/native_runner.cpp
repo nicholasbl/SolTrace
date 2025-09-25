@@ -16,6 +16,8 @@
 #include "native_runner_types.hpp"
 #include "trace.hpp"
 
+namespace SolTrace::NativeRunner {
+
 NativeRunner::NativeRunner() : SimulationRunner(),
                                as_power_tower(false),
                                number_of_threads(1)
@@ -255,13 +257,13 @@ RunnerStatus NativeRunner::run_simulation()
     return trace_return ? RunnerStatus::SUCCESS : RunnerStatus::ERROR;
 }
 
-RunnerStatus NativeRunner::report_simulation(SimulationResult *result,
+RunnerStatus NativeRunner::report_simulation(SolTrace::Result::SimulationResult *result,
                                              int level)
 {
     const TSystem *sys = this->get_system();
     const TRayData ray_data = sys->AllRayData;
-    std::map<ray_id, ray_record_ptr> ray_records;
-    std::map<ray_id, ray_record_ptr>::iterator iter;
+    std::map<SolTrace::Result::ray_id, SolTrace::Result::ray_record_ptr> ray_records;
+    std::map<SolTrace::Result::ray_id, SolTrace::Result::ray_record_ptr>::iterator iter;
     size_t ndata = ray_data.Count();
 
     Vector3d point, cosines;
@@ -270,9 +272,9 @@ RunnerStatus NativeRunner::report_simulation(SimulationResult *result,
     unsigned int raynum;
     telement_ptr el = nullptr;
     element_id elid;
-    ray_record_ptr rec = nullptr;
-    interaction_ptr intr = nullptr;
-    RayEvent rev;
+    SolTrace::Result::ray_record_ptr rec = nullptr;
+    SolTrace::Result::interaction_ptr intr = nullptr;
+    SolTrace::Result::RayEvent rev;
 
     for (size_t ii = 0; ii < ndata; ++ii)
     {
@@ -290,7 +292,7 @@ RunnerStatus NativeRunner::report_simulation(SimulationResult *result,
         iter = ray_records.find(raynum);
         if (iter == ray_records.end())
         {
-            rec = make_ray_record(raynum);
+            rec = SolTrace::Result::make_ray_record(raynum);
         }
         else
         {
@@ -355,3 +357,5 @@ bool NativeRunner::aperture_plane(telement_ptr Element)
 
     return true;
 }
+
+} // namespace SolTrace::NativeRunner

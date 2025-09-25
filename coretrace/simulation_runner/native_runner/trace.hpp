@@ -8,6 +8,8 @@
 #include "simulation_data.hpp"
 // #include "types.h"
 
+namespace SolTrace::NativeRunner {
+
 class GlobalRay_refactored
 {
 public:
@@ -131,5 +133,7 @@ bool trace_native(TSystem *System,
                   bool IncludeSunShape,
                   bool IncludeErrors,
                   bool AsPowerTower);
+
+} // namespace SolTrace::NativeRunner
 
 #endif

@@ -6,6 +6,8 @@
 #include "element.hpp"
 #include "vector3d.hpp"
 
+namespace SolTrace::Result {
+
 using element_id = SolTrace::Data::element_id;
 using Vector3d = SolTrace::Data::Vector3d;
 
@@ -189,3 +191,5 @@ std::ostream &operator<<(std::ostream &os, const SimulationResult &simres)
     }
     return os;
 }
+
+} // namespace SolTrace::Result
