@@ -31,8 +31,8 @@ def no_api_callback(ntracedtotal, ntraced, ntotrace, curstage, nstages, thread_i
     return 1
 
 
-def _thread_func(pobj, as_pt, seed, id, no_callback):
-    pobj.run(seed, as_pt, 0, id, no_callback)
+def _thread_func(pobj, as_pt, seed, id, no_callback, use_embree):
+    pobj.run(seed, as_pt, 0, id, no_callback, use_embree)
     return copy.deepcopy(pobj.raydata), copy.copy(pobj.sunstats)
 
 # ==========================================================================================
@@ -1536,7 +1536,7 @@ class PySolTrace:
             print( 'Platform not supported ', sys.platform)
         return pdll
 
-    def run(self, seed : int = -1, as_power_tower = False, nthread=1, thread_id=0, no_callback=False):
+    def run(self, seed : int = -1, as_power_tower = False, nthread=1, thread_id=0, no_callback=False, use_embree=True):
         """
         Run SolTrace simulation.
 
@@ -1601,13 +1601,24 @@ class PySolTrace:
             if thread_id == 0:
                 tstart = time.time()
 
-            pdll.st_sim_run.restype = c_int
-            if no_callback:
-                res = pdll.st_sim_run( c_void_p(p_data), c_uint16(runseed), no_api_callback, thread_id)
+            # TODO: This needs to be cleaned up
+            if use_embree:
+                pdll.st_sim_run_with_refactor.restype = c_int
+                if no_callback:
+                    res = pdll.st_sim_run_with_refactor( c_void_p(p_data), c_uint16(runseed), no_api_callback, thread_id, c_int(True), c_int(True), c_void_p(0))
+                else:
+                    res = pdll.st_sim_run_with_refactor( c_void_p(p_data), c_uint16(runseed), api_callback, thread_id, c_int(True), c_int(True), c_void_p(0))
+                    if thread_id == 0:
+                        print("\nSimulation complete. Total simulation time {:.2f} seconds.".format(time.time()-tstart))
+
             else:
-                res = pdll.st_sim_run( c_void_p(p_data), c_uint16(runseed), api_callback, thread_id)
-                if thread_id == 0:
-                    print("\nSimulation complete. Total simulation time {:.2f} seconds.".format(time.time()-tstart))
+                pdll.st_sim_run.restype = c_int
+                if no_callback:
+                    res = pdll.st_sim_run( c_void_p(p_data), c_uint16(runseed), no_api_callback, thread_id)
+                else:
+                    res = pdll.st_sim_run( c_void_p(p_data), c_uint16(runseed), api_callback, thread_id)
+                    if thread_id == 0:
+                        print("\nSimulation complete. Total simulation time {:.2f} seconds.".format(time.time()-tstart))
 
             # Collect simulation output, including raw ray data and sunbox stats
             self.raydata = self.__get_ray_dataframe(pdll,p_data)
@@ -1622,7 +1633,7 @@ class PySolTrace:
         else:
             seeds = [seed + i*123 for i in range(nthread)]
 
-            P = [[self.copy(), as_power_tower, seeds[i], i+1, no_callback] for i in range(nthread)]
+            P = [[self.copy(), as_power_tower, seeds[i], i+1, no_callback, use_embree] for i in range(nthread)]
 
             # modify the number of rays to match the required totals
             nrpt = int(float(self.num_ray_hits)/float(nthread))
