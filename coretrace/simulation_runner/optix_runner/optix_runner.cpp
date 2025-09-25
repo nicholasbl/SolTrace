@@ -157,9 +157,17 @@ RunnerStatus OptixRunner::update_simulation(const SimulationData *data)
 
 RunnerStatus OptixRunner::run_simulation()
 {
+    return run_simulation_core(true);
+}
+
+RunnerStatus OptixRunner::run_simulation_core(bool write_output)
+{
 
     m_sys.run();
-    m_sys.write_hp_output("output.txt");
+
+    if (write_output)
+        m_sys.write_hp_output("output.txt");
+    
     return RunnerStatus::SUCCESS;
 }
 
@@ -171,6 +179,14 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     return RunnerStatus::SUCCESS;
 }
 
+// Temporary function to get hit points
+RunnerStatus OptixRunner::get_hp_output(std::vector<float4>& hp_vec)
+{
+    // for different levels of reporting, populate result accordingly 
+    // 
+    m_sys.get_hp_output(hp_vec);
+    return RunnerStatus::SUCCESS;
+}
 
 OptixCSP::Vec3d OptixRunner::ToVec3d(Vector3d v) {
 

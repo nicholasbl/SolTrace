@@ -16,9 +16,10 @@ public:
     virtual RunnerStatus setup_simulation(const SolTrace::Data::SimulationData *data);
     virtual RunnerStatus update_simulation(const SolTrace::Data::SimulationData *data);
     virtual RunnerStatus run_simulation();
+    RunnerStatus run_simulation_core(bool write_output);
     virtual RunnerStatus report_simulation(SimulationResult *result,
                                            int level_spec);
-
+    virtual RunnerStatus get_hp_output(std::vector<float4>& hp_vec);
     // Runner options
     // void disable_sun_shape_errors() { this->include_sun_shape_errors = false; }
     // void enable_sun_shape_errors() { this->include_sun_shape_errors = true; }
