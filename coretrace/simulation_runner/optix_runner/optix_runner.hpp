@@ -25,7 +25,7 @@ public:
         int level_spec);
 
     SolTrace::Runner::RunnerStatus run_simulation_core(bool write_output);
-    SolTrace::Runner::RunnerStatus get_hp_output(std::vector<float4>& hp_vec);
+    SolTrace::Runner::RunnerStatus get_hp_output(std::vector<float4>& hp_vec, std::vector<int>& raynumber_vec);
 
     // Runner options
     // void disable_sun_shape_errors() { this->include_sun_shape_errors = false; }

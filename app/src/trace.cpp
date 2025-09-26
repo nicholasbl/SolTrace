@@ -950,7 +950,15 @@ int RunSolTrace20(Project* System, int nrays, int nmaxrays,
 	if (use_optix_runner == true)
 		runner_type = 1;
 
-	int err = ::st_sim_run_SolTrace20(spcxt, (unsigned int)seed, runner_type);
+	// Run ray trace
+	int count_raydata = ::st_sim_run_SolTrace20(spcxt, (unsigned int)seed, runner_type);
+
+	System->RecomputeTransforms();
+
+	std::vector<st_context_t> ContextList;
+	ContextList.push_back(spcxt);
+	bool error = System->Results.ReadResultsFromContextList(ContextList);
+	CountRayHitsPerElement(System);
 
 
 	return 0;

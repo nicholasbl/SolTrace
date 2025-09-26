@@ -255,7 +255,7 @@ int run_native_runner(SolTrace::Data::SimulationData& sd)
     return -1;
 }
 
-int run_optix_runner(SolTrace::Data::SimulationData& sd)
+int run_optix_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
 {
     OptixRunner runner;
     SolTrace::Runner::RunnerStatus sts = runner.initialize();
@@ -263,7 +263,29 @@ int run_optix_runner(SolTrace::Data::SimulationData& sd)
     sts = runner.run_simulation_core(false);
 
     std::vector<float4> hp_vec;
-    runner.get_hp_output(hp_vec);
+    std::vector<int> raynumber_vec;
+    runner.get_hp_output(hp_vec, raynumber_vec);
 
-    return -1;
+    // Assign raydata to TSystem (for legacy GUI)
+    sys->AllRayData.Clear();
+    for (TStage* stage : sys->StageList)
+        sys->AllRayData.Merge(stage->RayData);
+    int i_element = 0;
+    for (float4 element : hp_vec)
+    {
+        double unknown = element.x; // This is *probably* which element the ray hits
+        double PosRaySurfStage[3] = {element.y, element.z, element.w};
+        double CosRaySurfStage[3] = { 0,0,0 };  // Don't have cos reported from optix
+        int element_number = 1; // Don't get element number from optix
+        int stage_number = 1;   // Don't get stage number from optix
+        int raynumber = raynumber_vec[i_element];
+        sys->StageList[0]->RayData.Append(PosRaySurfStage, CosRaySurfStage, element_number,
+            stage_number, raynumber);
+        i_element++;
+    }
+
+    for (TStage* stage : sys->StageList)
+        sys->AllRayData.Merge(stage->RayData);
+
+    return 0;
 }

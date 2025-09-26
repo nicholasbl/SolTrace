@@ -776,13 +776,15 @@ STCORE_API int st_sim_run_SolTrace20(st_context_t pcxt, unsigned int seed, int r
 			break;
 		// Optix runner
 		case(1):
-			run_optix_runner(sd);
+			run_optix_runner(sd, sys);
 			break;
 		default:
 			return -1;
 	}
 
-	return 0;
+	int count_raydata = sys->AllRayData.Count();
+
+	return count_raydata;
 }
 
 STCORE_API void st_calc_euler_angles( double origin[3], double aimpoint[3], double zrot, double euler[3] )
