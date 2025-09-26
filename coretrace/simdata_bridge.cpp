@@ -258,7 +258,7 @@ int run_native_runner(SolTrace::Data::SimulationData& sd)
 int run_optix_runner(SolTrace::Data::SimulationData& sd)
 {
     OptixRunner runner;
-    RunnerStatus sts = runner.initialize();
+    SolTrace::Runner::RunnerStatus sts = runner.initialize();
     sts = runner.setup_simulation(&sd);
     sts = runner.run_simulation_core(false);
 
