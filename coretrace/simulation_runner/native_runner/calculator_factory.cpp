@@ -13,7 +13,7 @@
 #include <stdexcept>
 #include <sstream>
 
-// std::map<SurfaceType,
+namespace SolTrace::NativeRunner {
 
 CalculatorFactory *CalculatorFactory::instance = nullptr;
 
@@ -73,3 +73,5 @@ calculator_ptr CalculatorFactory::make_calculator(
 
     return calc;
 }
+
+} // namespace SolTrace::NativeRunner

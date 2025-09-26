@@ -12,6 +12,8 @@
 #include "surface.hpp"
 // #include "vector3d.hpp"
 
+namespace SolTrace::NativeRunner {
+
 ParabolaCalculator::ParabolaCalculator(surface_ptr surf)
 {
     if (surf == nullptr)
@@ -167,3 +169,5 @@ double ParabolaCalculator::compute_z_aperture(aperture_ptr ap)
     double zmax = 0.5 * c * r * r;
     return zmax;
 }
+
+} // namespace SolTrace::NativeRunner

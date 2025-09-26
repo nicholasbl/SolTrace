@@ -5,12 +5,18 @@
 #include <map>
 // #include <algorithm>
 
+// SimulationData headers
 #include "composite_element.hpp"
 #include "element.hpp"
 #include "simulation_parameters.hpp"
 #include "simulation_data.hpp"
 #include "simulation_data_export.hpp"
+
+// NativeRunner headers
+#include "native_runner_types.hpp"
 #include "trace.hpp"
+
+namespace SolTrace::NativeRunner {
 
 NativeRunner::NativeRunner() : SimulationRunner(),
                                as_power_tower(false),
@@ -251,13 +257,13 @@ RunnerStatus NativeRunner::run_simulation()
     return trace_return ? RunnerStatus::SUCCESS : RunnerStatus::ERROR;
 }
 
-RunnerStatus NativeRunner::report_simulation(SimulationResult *result,
+RunnerStatus NativeRunner::report_simulation(SolTrace::Result::SimulationResult *result,
                                              int level)
 {
     const TSystem *sys = this->get_system();
     const TRayData ray_data = sys->AllRayData;
-    std::map<ray_id, ray_record_ptr> ray_records;
-    std::map<ray_id, ray_record_ptr>::iterator iter;
+    std::map<SolTrace::Result::ray_id, SolTrace::Result::ray_record_ptr> ray_records;
+    std::map<SolTrace::Result::ray_id, SolTrace::Result::ray_record_ptr>::iterator iter;
     size_t ndata = ray_data.Count();
 
     Vector3d point, cosines;
@@ -266,42 +272,34 @@ RunnerStatus NativeRunner::report_simulation(SimulationResult *result,
     unsigned int raynum;
     telement_ptr el = nullptr;
     element_id elid;
-    ray_record_ptr rec = nullptr;
-    interaction_ptr intr = nullptr;
-    InteractionRecord::InteractionType itype;
+    SolTrace::Result::ray_record_ptr rec = nullptr;
+    SolTrace::Result::interaction_ptr intr = nullptr;
+    SolTrace::Result::RayEvent rev;
 
     for (size_t ii = 0; ii < ndata; ++ii)
     {
         ray_data.Query(ii,
-                       point.data, cosines.data,
-                       &element, &stage, &raynum);
+                       point.data,
+                       cosines.data,
+                       &element,
+                       &stage,
+                       &raynum,
+                       &rev);
 
-        bool absorbed = element < 0;
-        element = abs(element);
         el = sys->StageList[stage]->ElementList[element];
         elid = el->sim_data_id;
 
         iter = ray_records.find(raynum);
         if (iter == ray_records.end())
         {
-            rec = make_ray_record(raynum);
+            rec = SolTrace::Result::make_ray_record(raynum);
         }
         else
         {
             rec = iter->second;
         }
 
-        if (absorbed)
-        {
-            itype = InteractionRecord::ABSORB;
-        }
-        else
-        {
-            // TODO: Set correct interaction type here
-            itype = InteractionRecord::REFLECT;
-        }
-
-        intr = make_interaction_record(elid, itype, point);
+        intr = make_interaction_record(elid, rev, point);
         rec->add_interaction_record(intr);
         // TODO: Overwrite last cosines every time -- this is wrong.
         // Gives the incoming direction cosines for last interaction.
@@ -359,3 +357,5 @@ bool NativeRunner::aperture_plane(telement_ptr Element)
 
     return true;
 }
+
+} // namespace SolTrace::NativeRunner

@@ -11,15 +11,19 @@ set(NATIVE_RUNNER_SRC
     calculator_factory.cpp
     cylinder_calculator.cpp
     determine_element_intersection_new.cpp
+    find_element_hit.cpp
     flat_calculator.cpp
+    generate_ray.cpp
     native_runner.cpp
     native_runner_types.cpp
     newton_calculator.cpp
     parabola_calculator.cpp
+    process_interaction.cpp
     pt_optimizations.cpp
     sphere_calculator.cpp
     sun_to_primary_stage.cpp
     trace.cpp
+    tracing_errors.cpp
     treemesh.cpp
 )
 

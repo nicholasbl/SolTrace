@@ -5,6 +5,8 @@
 #include "surface.hpp"
 #include "surface_intersection_calculator.hpp"
 
+namespace SolTrace::NativeRunner {
+
 class FlatCalculator : public SurfaceIntersectionCalculator
 {
 public:
@@ -19,5 +21,7 @@ public:
 
     virtual double compute_z_aperture(SolTrace::Data::aperture_ptr ap);
 };
+
+} // namespace SolTrace::NativeRunner
 
 #endif

@@ -5,6 +5,11 @@
 #include "simulation_runner.hpp"
 #include "simulation_result.hpp"
 
+namespace SolTrace::NativeRunner {
+
+using SolTrace::Runner::RunnerStatus;
+using SolTrace::Runner::SimulationRunner;
+
 class NativeRunner : public SimulationRunner
 {
 public:
@@ -15,7 +20,7 @@ public:
     virtual RunnerStatus setup_simulation(const SolTrace::Data::SimulationData *data);
     virtual RunnerStatus update_simulation(const SolTrace::Data::SimulationData *data);
     virtual RunnerStatus run_simulation();
-    virtual RunnerStatus report_simulation(SimulationResult *result,
+    virtual RunnerStatus report_simulation(SolTrace::Result::SimulationResult *result,
                                            int level_spec);
 
     // Runner options
@@ -62,5 +67,7 @@ private:
     bool set_aperture_planes(tstage_ptr stage);
     bool aperture_plane(telement_ptr Element);
 };
+
+} // namespace SolTrace::NativeRunner
 
 #endif

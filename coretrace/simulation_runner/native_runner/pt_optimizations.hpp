@@ -5,6 +5,8 @@
 #include "native_runner_types.hpp"
 #include "treemesh.hpp"
 
+namespace SolTrace::NativeRunner {
+
 struct eprojdat
 {
     TElement *el_addr;
@@ -44,5 +46,7 @@ uint_fast64_t GetPTElements(const bool AsPowerTower,
                             const std::vector<void *> &sunint_elements,
                             std::vector<void *> &reflint_elements,
                             bool &has_elements);
+
+} // namespace SolTrace::NativeRunner
 
 #endif

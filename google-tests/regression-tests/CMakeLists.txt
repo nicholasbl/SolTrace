@@ -4,7 +4,7 @@ Project(RegressionTests)
 include_directories(
 	.
 	# ../app/deploy/samples
-	../csv_tools
+	../test_tools
 	../../coretrace/simulation_data
 	../../coretrace/simulation_data/cst_templates
 	../../coretrace/simulation_results
@@ -32,6 +32,7 @@ target_link_libraries(
     simdata
 	simresult
 	native_runner
+	testtools
 	GTest::gtest_main
 )
 

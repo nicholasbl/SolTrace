@@ -1,20 +1,24 @@
 #include <gtest/gtest.h>
 
-#include <constants.hpp>
-#include <element.hpp>
+// #include <constants.hpp>
+// #include <element.hpp>
 #include <native_runner.hpp>
-#include <sun.hpp>
-#include <simulation_data.hpp>
+// #include <sun.hpp>
+// #include <simulation_data.hpp>
 #include <simulation_data_export.hpp>
-#include <single_element.hpp>
-#include <stage_element.hpp>
-#include <vector3d.hpp>
+// #include <single_element.hpp>
+// #include <stage_element.hpp>
+// #include <vector3d.hpp>
 
 #include <cmath>
 #include <iostream>
 #include <sstream>
 
 #include "common.hpp"
+#include "count_absorbed_native.h"
+
+using SolTrace::Runner::RunnerStatus;
+using SolTrace::NativeRunner::NativeRunner;
 
 TEST(TowerDemo, NativeRunnerWithStages)
 {
@@ -81,7 +85,7 @@ TEST(TowerDemo, NativeRunnerWithStages)
         foptics = el->get_front_optical_properties();
         foptics->reflectivity = 1.0;
 
-    pos.set_values(5 * sin(i * PI / 2.0),
+        pos.set_values(5 * sin(i * PI / 2.0),
                        5 * cos(i * PI / 2.0),
                        0.0);
         el->set_origin(pos);
@@ -99,7 +103,7 @@ TEST(TowerDemo, NativeRunnerWithStages)
         // TODO: Set zrot as in python file?
         el->set_zrot(30.0 * i);
         // // Could also be set in radians
-    // el->set_zrot_radians(PI / 3.0 * i);
+        // el->set_zrot_radians(PI / 3.0 * i);
         el->compute_coordinate_rotations();
 
         el->set_surface(make_surface<Flat>());
@@ -204,7 +208,7 @@ TEST(TowerDemo, NativeRunnerWithoutStages)
         foptics = el->get_front_optical_properties();
         foptics->reflectivity = 1.0;
 
-    pos.set_values(5 * sin(i * PI / 2.0),
+        pos.set_values(5 * sin(i * PI / 2.0),
                        5 * cos(i * PI / 2.0),
                        0.0);
         el->set_origin(pos);
@@ -222,7 +226,7 @@ TEST(TowerDemo, NativeRunnerWithoutStages)
         // TODO: Set zrot as in python file?
         el->set_zrot(30.0 * i);
         // // Could also be set in radians
-    // el->set_zrot_radians(PI / 3.0 * i);
+        // el->set_zrot_radians(PI / 3.0 * i);
         el->compute_coordinate_rotations();
 
         el->set_surface(make_surface<Flat>());
@@ -258,7 +262,6 @@ TEST(TowerDemo, NativeRunnerWithoutStages)
     // const TSystem *sys = runner.get_system();
     // // auto ray_data = sys->AllRayData;
     // sys->AllRayData.Print();
-
 }
 
 TEST(TowerDemo, NativeRunnerWithErrors)
@@ -313,7 +316,7 @@ TEST(TowerDemo, NativeRunnerWithErrors)
         foptics = el->get_front_optical_properties();
         foptics->reflectivity = 1.0;
 
-    pos.set_values(5 * sin(i * PI / 2.0),
+        pos.set_values(5 * sin(i * PI / 2.0),
                        5 * cos(i * PI / 2.0),
                        0.0);
         el->set_origin(pos);
@@ -331,7 +334,7 @@ TEST(TowerDemo, NativeRunnerWithErrors)
         // TODO: Set zrot as in python file?
         el->set_zrot(30.0 * i);
         // // Could also be set in radians
-    // el->set_zrot_radians(PI / 3.0 * i);
+        // el->set_zrot_radians(PI / 3.0 * i);
         el->compute_coordinate_rotations();
 
         el->set_surface(make_surface<Flat>());

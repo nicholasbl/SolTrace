@@ -1,18 +1,9 @@
 #ifndef SOLTRACE_SIMDATA_EXPORT_H
 #define SOLTRACE_SIMDATA_EXPORT_H
 
-#include "aperture.hpp"
-#include "composite_element.hpp"
-#include "simulation_data.hpp"
-#include "simulation_parameters.hpp"
-#include "single_element.hpp"
-#include "stage_element.hpp"
-#include "sun.hpp"
-#include "surface.hpp"
+#include "simulation_data_api.hpp"
 
-#include "cst_templates/heliostat.hpp"
-
-// Types
+// Classes and Structs
 using SolTrace::Data::Annulus;
 using SolTrace::Data::Aperture;
 using SolTrace::Data::ApertureType;
@@ -22,7 +13,6 @@ using SolTrace::Data::Cylinder;
 using SolTrace::Data::DistributionType;
 using SolTrace::Data::EqualateralTriangle;
 using SolTrace::Data::Flat;
-using SolTrace::Data::Heliostat;
 using SolTrace::Data::Hexagon;
 using SolTrace::Data::InteractionType;
 using SolTrace::Data::IrregularQuadrilateral;
@@ -41,7 +31,13 @@ using SolTrace::Data::Surface;
 using SolTrace::Data::SurfaceType;
 using SolTrace::Data::Vector3d;
 
-// Types
+// Template Types
+using SolTrace::Data::Heliostat;
+using SolTrace::Data::LinearFresnel;
+using SolTrace::Data::ParabolicDish;
+using SolTrace::Data::ParabolicTrough;
+
+// Other Types
 using SolTrace::Data::aperture_ptr;
 using SolTrace::Data::element_id;
 using SolTrace::Data::element_ptr;
@@ -75,6 +71,7 @@ using SolTrace::Data::ELEMENT_ERROR;
 using SolTrace::Data::ELEMENT_ID_UNASSIGNED;
 using SolTrace::Data::ELEMENT_ALREADY_REGISTERED;
 using SolTrace::Data::ELEMENT_INVALID_SETUP;
+using SolTrace::Data::ELEMENT_NULL;
 
 // Math Constants
 using SolTrace::Data::D2R;

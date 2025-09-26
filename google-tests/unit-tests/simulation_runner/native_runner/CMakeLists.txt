@@ -3,6 +3,7 @@ Project(NativeRunnerUnitTests)
 include_directories(
     .
     ../../common
+    ../../../test_tools
     ../../../app/deploy/samples
     ../../../../coretrace/simulation_data
     ../../../../coretrace/simulation_results
@@ -32,6 +33,7 @@ target_link_libraries(
     simdata
     simresult
     native_runner
+    testtools
     GTest::gtest_main
 )
 

@@ -7,10 +7,21 @@
 
 #include "common.hpp"
 
+using SolTrace::Result::InteractionRecord;
+using SolTrace::Result::RayEvent;
+using SolTrace::Result::RayRecord;
+using SolTrace::Result::SimulationResult;
+
+using SolTrace::Result::interaction_ptr;
+using SolTrace::Result::ray_record_ptr;
+
+using SolTrace::Result::make_interaction_record;
+using SolTrace::Result::make_ray_record;
+
 TEST(InteractionRecord, Constructors)
 {
     element_id elid = 5;
-    InteractionRecord::InteractionType it = InteractionRecord::ABSORB;
+    RayEvent it = RayEvent::ABSORB;
     Vector3d loc(-3.2, -2.5, 1.2);
     InteractionRecord ir1(elid, it, loc);
     InteractionRecord ir2(elid, it, loc);
@@ -18,7 +29,7 @@ TEST(InteractionRecord, Constructors)
     EXPECT_TRUE(ir1.index < 0);
     EXPECT_TRUE(ir2.index < 0);
     EXPECT_EQ(ir1.element, ir2.element);
-    EXPECT_EQ(ir1.type, ir2.type);
+    EXPECT_EQ(ir1.event, ir2.event);
     EXPECT_EQ(ir1.location[0], ir2.location[0]);
     EXPECT_EQ(ir1.location[1], ir2.location[1]);
     EXPECT_EQ(ir1.location[2], ir2.location[2]);
@@ -27,7 +38,7 @@ TEST(InteractionRecord, Constructors)
 TEST(InteractionRecord, OutputOperator)
 {
     element_id elid = 5;
-    InteractionRecord::InteractionType it = InteractionRecord::ABSORB;
+    RayEvent it = RayEvent::ABSORB;
     Vector3d loc(-3.2, -2.5, 1.2);
     InteractionRecord ir1(elid, it, loc);
 
@@ -42,20 +53,22 @@ TEST(RayRecord, Accessors)
 {
     // Test constants
     const double TOL = 1e-12;
-    const uint_fast32_t NINTER = 4;
+    const uint_fast32_t NINTER = 5;
     const int_fast64_t ID = 5;
-    InteractionRecord::InteractionType my_types[NINTER] = {
-        InteractionRecord::CREATE,
-        InteractionRecord::TRANSMIT,
-        InteractionRecord::REFLECT,
-        InteractionRecord::ABSORB};
+    RayEvent my_types[NINTER] = {
+        RayEvent::CREATE,
+        RayEvent::TRANSMIT,
+        RayEvent::REFLECT,
+        RayEvent::ABSORB,
+        RayEvent::EXIT
+    };
 
     // Adding records and sizing
     ray_record_ptr rr = make_ray_record(ID);
     for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
     {
         Vector3d loc(1.0 * ell * ell, 2.0 * ell * ell, 3.0 * ell * ell);
-        InteractionRecord::InteractionType it = my_types[ell];
+        RayEvent it = my_types[ell];
         interaction_ptr ir = make_interaction_record(ell, it, loc);
         rr->add_interaction_record(ir);
         EXPECT_EQ(rr->get_number_of_interactions(), ell + 1);
@@ -101,20 +114,22 @@ TEST(RayRecord, Accessors)
 TEST(RayRecord, OutputOperator)
 {
     // Test constants
-    const uint_fast32_t NINTER = 4;
+    const uint_fast32_t NINTER = 5;
     const int_fast64_t ID = 5;
-    InteractionRecord::InteractionType my_types[NINTER] = {
-        InteractionRecord::CREATE,
-        InteractionRecord::TRANSMIT,
-        InteractionRecord::REFLECT,
-        InteractionRecord::ABSORB};
+    RayEvent my_types[NINTER] = {
+        RayEvent::CREATE,
+        RayEvent::TRANSMIT,
+        RayEvent::REFLECT,
+        RayEvent::ABSORB,
+        RayEvent::EXIT
+    };
 
     // Adding records and sizing
     RayRecord rr(ID);
     for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
     {
         Vector3d loc(1.0 * ell * ell, 2.0 * ell * ell, 3.0 * ell * ell);
-        InteractionRecord::InteractionType it = my_types[ell];
+        RayEvent it = my_types[ell];
         interaction_ptr ir = make_interaction_record(ell, it, loc);
         rr.add_interaction_record(ir);
     }
@@ -128,12 +143,14 @@ TEST(SimulationResult, Accessors)
 {
     // Test constants
     const uint_fast32_t NRAYS = 3;
-    const uint_fast32_t NINTER = 4;
-    InteractionRecord::InteractionType my_types[NINTER] = {
-        InteractionRecord::REFLECT,
-        InteractionRecord::TRANSMIT,
-        InteractionRecord::REFLECT,
-        InteractionRecord::ABSORB};
+    const uint_fast32_t NINTER = 5;
+    RayEvent my_types[NINTER] = {
+        RayEvent::REFLECT,
+        RayEvent::TRANSMIT,
+        RayEvent::REFLECT,
+        RayEvent::ABSORB,
+        RayEvent::EXIT
+    };
 
     SimulationResult sr;
 
@@ -143,7 +160,7 @@ TEST(SimulationResult, Accessors)
         for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
         {
             Vector3d loc(1.0 * ell, 2.0 * ell, 3.0 * ell);
-            InteractionRecord::InteractionType it = my_types[ell];
+            RayEvent it = my_types[ell];
             interaction_ptr ir = make_interaction_record(ell, it, loc);
             rr->add_interaction_record(ir);
         }
@@ -166,12 +183,14 @@ TEST(SimulationResult, OstreamOperator)
 
     // Test constants
     const uint_fast32_t NRAYS = 3;
-    const uint_fast32_t NINTER = 4;
-    InteractionRecord::InteractionType my_types[NINTER] = {
-        InteractionRecord::REFLECT,
-        InteractionRecord::TRANSMIT,
-        InteractionRecord::REFLECT,
-        InteractionRecord::ABSORB};
+    const uint_fast32_t NINTER = 5;
+    RayEvent my_types[NINTER] = {
+        RayEvent::REFLECT,
+        RayEvent::TRANSMIT,
+        RayEvent::REFLECT,
+        RayEvent::ABSORB,
+        RayEvent::EXIT
+    };
 
     SimulationResult sr;
 
@@ -181,7 +200,7 @@ TEST(SimulationResult, OstreamOperator)
         for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
         {
             Vector3d loc(1.0 * ell, 2.0 * ell, 3.0 * ell);
-            InteractionRecord::InteractionType it = my_types[ell];
+            RayEvent it = my_types[ell];
             interaction_ptr ir = make_interaction_record(ell, it, loc);
             rr->add_interaction_record(ir);
         }

@@ -15,6 +15,8 @@
 #include <iostream>
 #include <sstream>
 
+using SolTrace::Runner::RunnerStatus;
+
 TEST(GpuTowerDemo, OptixRunnerWithStages)
 {
     SimulationData sd;

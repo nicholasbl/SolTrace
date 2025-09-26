@@ -6,6 +6,8 @@
 #include "aperture.hpp"
 #include "surface.hpp"
 
+namespace SolTrace::NativeRunner {
+
 class CylinderCalculator : public SurfaceIntersectionCalculator
 {
 public:
@@ -27,5 +29,7 @@ private:
     // double length_x;
     double length_y;
 };
+
+} // namespace SolTrace::NativeRunner
 
 #endif

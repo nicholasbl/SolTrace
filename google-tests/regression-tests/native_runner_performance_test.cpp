@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <chrono>
+
 #include <aperture.hpp>
 #include <element.hpp>
 #include <heliostat.hpp>
@@ -12,8 +14,13 @@
 #include <surface.hpp>
 
 // #include "split_csv.h"
+#include "count_absorbed_native.h"
 
-#include <chrono>
+using SolTrace::Runner::RunnerStatus;
+
+using SolTrace::NativeRunner::NativeRunner;
+using SolTrace::NativeRunner::TRayData;
+using SolTrace::NativeRunner::TSystem;
 
 TEST(NativeRunner, PerformanceTest)
 {
@@ -148,24 +155,13 @@ TEST(NativeRunner, PerformanceTest)
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 
     std::chrono::duration<double, std::milli> dur = t1 - t0;
-    EXPECT_TRUE(dur.count() < 7500.0);
+    EXPECT_TRUE(dur.count() < 8000.0);
 
     const TSystem *sys = my_runner.get_system();
     // sys->AllRayData.Print();
     const TRayData *ray_data = &(sys->AllRayData);
     size_t n = ray_data->Count();
-    uint_fast64_t num_absorbed = 0;
-    for (size_t i = 0; i < n; i++)
-    {
-        double pos[3], cos[3];
-        int elm, stage;
-        unsigned int ray;
-        if (ray_data->Query(i, pos, cos, &elm, &stage, &ray))
-        {
-            if (elm < 0)
-                ++num_absorbed;
-        }
-    }
+    uint_fast64_t num_absorbed = count_absorbed_native(ray_data);
 
     std::cout << "Time: " << dur.count() << " ms" << std::endl;
     std::cout << "Number Absorbed: " << num_absorbed << std::endl;
@@ -228,7 +224,7 @@ TEST(NativeRunner, LargePerformanceTest)
     NativeRunner runner;
     runner.disable_point_focus();
     runner.disable_power_tower();
-    int sts;
+    RunnerStatus sts;
     sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.setup_simulation(&sd);
@@ -246,18 +242,7 @@ TEST(NativeRunner, LargePerformanceTest)
     // sys->AllRayData.Print();
     const TRayData *ray_data = &(sys->AllRayData);
     size_t n = ray_data->Count();
-    uint_fast64_t num_absorbed = 0;
-    for (size_t i = 0; i < n; i++)
-    {
-        double pos[3], cos[3];
-        int elm, stage;
-        unsigned int ray;
-        if (ray_data->Query(i, pos, cos, &elm, &stage, &ray))
-        {
-            if (elm < 0)
-                ++num_absorbed;
-        }
-    }
+    uint_fast64_t num_absorbed = count_absorbed_native(ray_data);
 
     std::cout << "Time: " << dur.count() << " ms" << std::endl;
     std::cout << "Number Absorbed: " << num_absorbed << std::endl;

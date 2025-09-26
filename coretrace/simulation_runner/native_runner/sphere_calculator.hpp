@@ -6,6 +6,8 @@
 #include "aperture.hpp"
 #include "surface.hpp"
 
+namespace SolTrace::NativeRunner {
+
 class SphereCalculator : public SurfaceIntersectionCalculator
 {
 public:
@@ -26,5 +28,7 @@ private:
     double radius;
     double curvature;
 };
+
+} // namespace SolTrace::NativeRunner
 
 #endif

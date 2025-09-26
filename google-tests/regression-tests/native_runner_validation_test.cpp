@@ -9,6 +9,15 @@
 
 using namespace std;
 
+using SolTrace::Runner::RunnerStatus;
+
+using SolTrace::NativeRunner::NativeRunner;
+using SolTrace::NativeRunner::TRayData;
+using SolTrace::NativeRunner::TSystem;
+using SolTrace::NativeRunner::tstage_ptr;
+
+using SolTrace::Result::RayEvent;
+
 TEST(NativeRunner, ValidationTest)
 {
     // Pulling in path variable from CMake and creating path to .stinput sample file
@@ -45,7 +54,7 @@ TEST(NativeRunner, ValidationTest)
     NativeRunner runner;
     runner.disable_point_focus();
     runner.disable_power_tower();
-    int sts;
+    RunnerStatus sts;
     sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.setup_simulation(&sd);
@@ -73,12 +82,13 @@ TEST(NativeRunner, ValidationTest)
     int element;
     int stage;
     unsigned int raynum;
+    RayEvent rev;
 
     // Retrieving data from Runner
     for (size_t i = 0; i < nrdata; i++)
     {
         EXPECT_TRUE(ray_data->Query(i, point.data, cosines.data,
-                                    &element, &stage, &raynum));
+                                    &element, &stage, &raynum, &rev));
 
         // element = abs(element);
 
@@ -90,7 +100,7 @@ TEST(NativeRunner, ValidationTest)
             continue;
         }
 
-        EXPECT_EQ(element, stoi(ground_raydata[6][i + 1]));
+        EXPECT_EQ(element, abs(stoi(ground_raydata[6][i + 1])));
         EXPECT_EQ(stage, stoi(ground_raydata[7][i + 1]));
         EXPECT_EQ(raynum, stoul(ground_raydata[8][i + 1]));
 

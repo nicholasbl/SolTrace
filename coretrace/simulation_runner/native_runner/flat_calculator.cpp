@@ -10,6 +10,8 @@
 #include "simulation_data_export.hpp"
 #include "surface.hpp"
 
+namespace SolTrace::NativeRunner {
+
 FlatCalculator::FlatCalculator(surface_ptr surf)
     : SurfaceIntersectionCalculator()
 {
@@ -89,3 +91,5 @@ double FlatCalculator::compute_z_aperture(aperture_ptr ap)
 {
     return 0.0;
 }
+
+} // namespace SolTrace::NativeRunner

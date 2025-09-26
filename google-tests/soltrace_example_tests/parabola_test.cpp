@@ -4,6 +4,8 @@
 #include "stapi.h"
 #include "split_csv.h"
 
+#include <fstream>
+
 using namespace std;
 
 

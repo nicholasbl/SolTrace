@@ -8,6 +8,8 @@
 
 #include "common.hpp"
 
+using SolTrace::NativeRunner::CylinderCalculator;
+
 // Helper functions to create surfaces and apertures
 std::shared_ptr<Cylinder> create_cylinder_surface(double radius = 1.0)
 {

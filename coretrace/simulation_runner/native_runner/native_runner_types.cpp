@@ -56,6 +56,7 @@
 #include "matvec.hpp"
 #include "native_runner_types.hpp"
 #include "simulation_data_export.hpp"
+#include "simulation_result.hpp"
 #include "stage_element.hpp"
 #include "vector3d.hpp"
 
@@ -110,6 +111,8 @@
 
 //     return *this;
 // }
+
+namespace SolTrace::NativeRunner {
 
 ElementParameters::ElementParameters()
     : newton_tolerance(1e-6),
@@ -248,7 +251,8 @@ TRayData::ray_t *TRayData::Append(double pos[3],
                                   double cos[3],
                                   int element,
                                   int stage,
-                                  unsigned int raynum)
+                                  unsigned int raynum,
+                                  SolTrace::Result::RayEvent it)
 {
     if (m_dataCount == m_dataCapacity)
     {
@@ -260,18 +264,19 @@ TRayData::ray_t *TRayData::Append(double pos[3],
     }
 
     ray_t *r = Index(m_dataCount, true);
-    if (r != 0)
+    if (r != nullptr)
     {
         ::memcpy(&r->pos, pos, sizeof(double) * 3);
         ::memcpy(&r->cos, cos, sizeof(double) * 3);
         r->element = element;
         r->stage = stage;
         r->raynum = raynum;
+        r->event = it;
         m_dataCount++;
         return r;
     }
     else
-        return 0;
+        return nullptr;
 }
 
 bool TRayData::Overwrite(unsigned int idx,
@@ -279,7 +284,8 @@ bool TRayData::Overwrite(unsigned int idx,
                          double cos[3],
                          int element,
                          int stage,
-                         unsigned int raynum)
+                         unsigned int raynum,
+                         SolTrace::Result::RayEvent it)
 {
     ray_t *r = Index(idx, true);
     if (r != 0)
@@ -300,7 +306,8 @@ bool TRayData::Query(unsigned int idx,
                      double cos[3],
                      int *element,
                      int *stage,
-                     unsigned int *raynum) const
+                     unsigned int *raynum,
+                     SolTrace::Result::RayEvent *it) const
 {
     ray_t *r = Index(idx, false);
     if (r != 0)
@@ -315,6 +322,8 @@ bool TRayData::Query(unsigned int idx,
             *stage = r->stage;
         if (raynum)
             *raynum = r->raynum;
+        if (it)
+            *it = r->event;
         return true;
     }
     else
@@ -359,7 +368,7 @@ void TRayData::Merge(TRayData &src)
         for (size_t j = 0; j < b->count; j++)
         {
             ray_t &r = b->data[j];
-            Append(r.pos, r.cos, r.element, r.stage, r.raynum);
+            Append(r.pos, r.cos, r.element, r.stage, r.raynum, r.event);
         }
 
         delete b;
@@ -384,13 +393,13 @@ uint_fast64_t TRayData::Count() const
 TRayData::ray_t *TRayData::Index(uint_fast64_t i, bool write_access) const
 {
     if (i >= m_dataCapacity)
-        return 0;
+        return nullptr;
 
     size_t block_num = i / block_size;
     size_t block_idx = i % block_size;
 
     if (block_num >= m_blockList.size() || block_idx >= block_size)
-        return 0;
+        return nullptr;
 
     // update block.count to highest accessed index
     block_t *b = m_blockList[block_num];
@@ -399,7 +408,7 @@ TRayData::ray_t *TRayData::Index(uint_fast64_t i, bool write_access) const
         b->count = block_idx + 1;
 
     if (!write_access && block_idx >= b->count)
-        return 0;
+        return nullptr;
 
     return &(b->data[block_idx]);
 }
@@ -417,13 +426,15 @@ void TRayData::Print() const
         double pos[3], cos[3];
         int elm, stage;
         unsigned int ray;
-        if (Query(i, pos, cos, &elm, &stage, &ray))
+        SolTrace::Result::RayEvent rev;
+        if (Query(i, pos, cos, &elm, &stage, &ray, &rev))
         {
-            printf("   [%zu] = { [%lg,%lg,%lg][%lg,%lg,%lg] %d %d %u }\n",
+            printf("   [%zu] = { [%lg,%lg,%lg][%lg,%lg,%lg] %d %d %u %s }\n",
                    i,
                    pos[0], pos[1], pos[2],
                    cos[0], cos[1], cos[2],
-                   elm, stage, ray);
+                   elm, stage, ray,
+                   ray_event_string(rev).c_str());
         }
     }
 
@@ -571,3 +582,5 @@ tstage_ptr make_tstage(element_ptr el,
 
     return my_stage;
 }
+
+} // namespace SolTrace::NativeRunner

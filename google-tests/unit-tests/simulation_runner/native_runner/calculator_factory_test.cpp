@@ -12,6 +12,13 @@
 
 #include "common.hpp"
 
+using SolTrace::NativeRunner::CalculatorFactory;
+using SolTrace::NativeRunner::CylinderCalculator;
+using SolTrace::NativeRunner::ElementParameters;
+using SolTrace::NativeRunner::FlatCalculator;
+using SolTrace::NativeRunner::ParabolaCalculator;
+using SolTrace::NativeRunner::SphereCalculator;
+
 class CalculatorFactoryTest : public ::testing::Test
 {
 protected:

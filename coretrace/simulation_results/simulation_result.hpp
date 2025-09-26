@@ -2,32 +2,49 @@
 #define SOLTRACE_SIMULATION_RESULT_H
 
 #include <cstdint>
+#include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "element.hpp"
 #include "vector3d.hpp"
 
+namespace SolTrace::Result {
+
 using ray_id = int_fast64_t;
+
+enum class RayEvent
+{
+    CREATE = 0,
+    ABSORB = 1,
+    REFLECT = 2,
+    TRANSMIT = 3,
+    EXIT = 4,
+    UNKNOWN = 1000
+};
+
+const std::map<RayEvent, std::string> REV_TO_STR{
+    {RayEvent::CREATE, "CREATE"},
+    {RayEvent::ABSORB, "ABSORB"},
+    {RayEvent::REFLECT, "REFLECT"},
+    {RayEvent::TRANSMIT, "TRANSMIT"},
+    {RayEvent::EXIT, "EXIT"},
+    {RayEvent::UNKNOWN, "UNKNONWN"}
+};
+
+const std::string &ray_event_string(RayEvent rev);
 
 struct InteractionRecord
 {
-    enum InteractionType
-    {
-        CREATE,
-        ABSORB,
-        REFLECT,
-        TRANSMIT
-    };
-
     int_fast64_t index;
     SolTrace::Data::element_id element;
-    InteractionType type;
+    RayEvent event;
     SolTrace::Data::Vector3d location;
 
-    InteractionRecord(SolTrace::Data::element_id el, InteractionType type,
+    InteractionRecord(SolTrace::Data::element_id el, RayEvent rev,
                       const SolTrace::Data::Vector3d location);
-    InteractionRecord(SolTrace::Data::element_id el, InteractionType type,
+    InteractionRecord(SolTrace::Data::element_id el, RayEvent rev,
                       double x, double y, double z);
     ~InteractionRecord();
 
@@ -109,5 +126,7 @@ public:
 private:
     RayRecordContainer ray_history;
 };
+
+} // namespace SolTrace::Result
 
 #endif

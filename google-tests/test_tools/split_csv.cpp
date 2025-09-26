@@ -1,6 +1,13 @@
 #include "split_csv.h"
 
-//Make this more specific to raydata
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <vector>
+
+using namespace std;
+
 vector<vector<string>> split_csv(string path)
 {
 	ifstream file(path);

@@ -2,6 +2,8 @@
 
 #include "simulation_data_export.hpp"
 
+namespace SolTrace::NativeRunner {
+
 void DetermineElementIntersectionNew(
     TElement *Element,
     double PosRayIn[3],
@@ -85,3 +87,4 @@ void DetermineElementIntersectionNew(
 
 // #undef sign
 // #undef sqr
+} // namespace SolTrace::NativeRunner

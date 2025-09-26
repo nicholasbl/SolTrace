@@ -57,6 +57,8 @@
 #include <string>
 #include <unordered_map>
 
+namespace SolTrace::NativeRunner {
+
 //-------------------------------------------------------------------------------------------------
 
 inline bool binary_add(const std::string &key, std::string &modkey, int val[2])
@@ -891,3 +893,5 @@ void st_hash_tree::add_object(void *object, double locx, double locy, double *ob
     std::string tag = pos_to_binary_base(locx, locy);
     create_node(head_node, 0, tag, object, objsize);
 }
+
+} // namespace SolTrace::NativeRunner

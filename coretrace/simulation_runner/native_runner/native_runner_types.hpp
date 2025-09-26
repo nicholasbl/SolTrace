@@ -59,8 +59,10 @@
 #include "element.hpp"
 #include "optical_properties.hpp"
 #include "ray_source.hpp"
-// #include "simulation_data_export.hpp"
+#include "simulation_result.hpp"
 #include "surface_intersection_calculator.hpp"
+
+namespace SolTrace::NativeRunner {
 
 // #define ACOSM1O180 0.017453292519943295 // acos(-1)/180.0
 // #endif
@@ -226,27 +228,31 @@ public:
 		int element;
 		int stage;
 		unsigned int raynum;
+		SolTrace::Result::RayEvent event;
 	};
 
 	ray_t *Append(double pos[3],
 				  double cos[3],
 				  int element,
 				  int stage,
-				  unsigned int raynum);
+				  unsigned int raynum,
+				  SolTrace::Result::RayEvent it);
 
 	bool Overwrite(unsigned int idx,
 				   double pos[3],
 				   double cos[3],
 				   int element,
 				   int stage,
-				   unsigned int raynum);
+				   unsigned int raynum,
+				   SolTrace::Result::RayEvent it);
 
 	bool Query(unsigned int idx,
 			   double pos[3],
 			   double cos[3],
 			   int *element,
 			   int *stage,
-			   unsigned int *raynum) const;
+			   unsigned int *raynum,
+			   SolTrace::Result::RayEvent *it) const;
 
 	void Merge(TRayData &dest);
 
@@ -331,5 +337,7 @@ struct TSystem
 
 	void errlog(const char *fmt, ...);
 };
+
+} // namespace SolTrace::NativeRunner
 
 #endif
