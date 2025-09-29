@@ -9,6 +9,7 @@
 #include <sun.hpp>
 #include <simulation_data.hpp>
 #include <simulation_data_export.hpp>
+#include <simulation_result.hpp>
 #include <single_element.hpp>
 #include <stage_element.hpp>
 #include <vector3d.hpp>
@@ -24,6 +25,10 @@ using SolTrace::NativeRunner::MTRand;
 using SolTrace::NativeRunner::NativeRunner;
 using SolTrace::NativeRunner::TRayData;
 using SolTrace::NativeRunner::TSystem;
+
+using SolTrace::Result::ray_record_ptr;
+using SolTrace::Result::RayEvent;
+using SolTrace::Result::SimulationResult;
 
 TEST(RandomNumberGenerator, SingleNumberMersenneTwister)
 {
@@ -99,14 +104,15 @@ TEST(NativeRunnerTypes, TStage)
 
 TEST(NativeRunner, SmokeTest)
 {
+    const unsigned NRAYS = 10;
     NativeRunner runner;
     SimulationData my_sim;
 
     SimulationParameters &params = my_sim.get_simulation_parameters();
     params.include_optical_errors = false;
     params.include_sun_shape_errors = false;
-    params.number_of_rays = 10;
-    params.max_number_of_rays = 100;
+    params.number_of_rays = NRAYS;
+    params.max_number_of_rays = 10 * NRAYS;
     // my_sim.set_number_of_rays(10);
     // my_sim.set_max_rays_traced(100);
 
@@ -122,7 +128,7 @@ TEST(NativeRunner, SmokeTest)
     OpticalProperties optics(SolTrace::Data::InteractionType::REFLECTION,
                              SolTrace::Data::DistributionType::GAUSSIAN,
                              0.0, 1.0, 0.0, 0.0, 1.0, 1.0);
-    //  0.0, 0.0, 0.0, 0.0, 1.0, 1.0);
+
     for (int k = 0; k < NUM_ELEMENTS; ++k)
     {
         element_ptr el = SolTrace::Data::make_element<SingleElement>();
@@ -135,6 +141,7 @@ TEST(NativeRunner, SmokeTest)
         el->set_back_optical_properties(optics);
         my_st->add_element(el);
     }
+
     EXPECT_EQ(my_st->get_number_of_elements(), NUM_ELEMENTS);
     my_sim.add_stage(my_st);
     EXPECT_EQ(my_sim.get_number_of_elements(), NUM_ELEMENTS);
@@ -149,12 +156,43 @@ TEST(NativeRunner, SmokeTest)
 
     const TSystem *sys = runner.get_system();
     sys->AllRayData.Print();
+    const TRayData *ray_data = &(sys->AllRayData);
+    uint_fast64_t num_absorbed = count_absorbed_native(ray_data);
+    uint_fast64_t ncreate = count_event_native(ray_data, RayEvent::CREATE);
+    uint_fast64_t nexit = count_event_native(ray_data, RayEvent::EXIT);
+    size_t n = ray_data->Count();
+
+    std::cout << "Number Created: " << ncreate << std::endl;
+    std::cout << "Number Absorbed: " << num_absorbed << std::endl;
+    std::cout << "Number Interactions: " << n << std::endl;
+    std::cout << "Number Exit: " << nexit << std::endl;
+
+    EXPECT_EQ(ncreate, NRAYS);
+    EXPECT_EQ(num_absorbed + nexit, ncreate);
+    EXPECT_EQ(num_absorbed + nexit, NRAYS);
+
+    ray_data->Print();
+
+    EXPECT_TRUE(n >= NRAYS);
+
+    SimulationResult result;
+    sts = runner.report_simulation(&result, 0);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    EXPECT_EQ(result.get_number_of_records(), NRAYS);
+    for (int_fast64_t idx = 0; idx < result.get_number_of_records(); ++idx)
+    {
+        const ray_record_ptr rr = result[idx];
+        EXPECT_TRUE(rr->get_number_of_interactions() > 0);
+    }
+
+    std::cout << "Number of ray records: "
+              << result.get_number_of_records()
+              << std::endl;
 }
 
 TEST(NativeRunner, PowerTowerSmokeTest)
 {
-    using SolTrace::Data::PI;
-
     SimulationData sd;
 
     // Sun
@@ -165,7 +203,7 @@ TEST(NativeRunner, PowerTowerSmokeTest)
     // Absorber -- Flat
     auto absorber = SolTrace::Data::make_element<SingleElement>();
     absorber->set_origin(0.0, 0.0, 10.0);
-    absorber->set_aim_vector(0.0, 5.0, 0.0);
+    absorber->set_aim_vector(0.0, 0.0, 5.0);
     absorber->set_zrot(0.0);
     absorber->compute_coordinate_rotations();
     absorber->set_surface(SolTrace::Data::make_surface<Flat>()); // surface(nullptr)
@@ -245,32 +283,67 @@ TEST(NativeRunner, PowerTowerSmokeTest)
     sts = runner.run_simulation();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 
-    // TODO: Do some post processing tests here
-
-    // const TSystem *sys = runner.get_system();
-    // // auto ray_data = sys->AllRayData;
-    // sys->AllRayData.Print();
-
     const TSystem *sys = runner.get_system();
     // sys->AllRayData.Print();
     const TRayData *ray_data = &(sys->AllRayData);
     uint_fast64_t num_absorbed = count_absorbed_native(ray_data);
+    uint_fast64_t ncreate = count_event_native(ray_data, RayEvent::CREATE);
+    uint_fast64_t nexit = count_event_native(ray_data, RayEvent::EXIT);
     size_t n = ray_data->Count();
 
+    std::cout << "Number Created: " << ncreate << std::endl;
     std::cout << "Number Absorbed: " << num_absorbed << std::endl;
     std::cout << "Number Interactions: " << n << std::endl;
+    std::cout << "Number Exit: " << nexit << std::endl;
+
+    scan_events_native(ray_data);
+
+    EXPECT_EQ(ncreate, NRAYS);
+    EXPECT_EQ(num_absorbed + nexit, ncreate);
+    EXPECT_EQ(num_absorbed + nexit, NRAYS);
 
     // ray_data->Print();
 
     EXPECT_TRUE(n >= NRAYS);
     EXPECT_TRUE(num_absorbed > 0);
+
+    SimulationResult result;
+    sts = runner.report_simulation(&result, 0);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    EXPECT_EQ(result.get_number_of_records(), NRAYS);
+    for (int_fast64_t idx = 0; idx < result.get_number_of_records(); ++idx)
+    {
+        const ray_record_ptr rr = result[idx];
+        EXPECT_TRUE(rr->get_number_of_interactions() > 0);
+    }
+
+    std::cout << "Number of ray records: "
+              << result.get_number_of_records()
+              << std::endl;
 }
 
 TEST(NativeRunner, SingleRayValidationTest)
 {
-    const double TOL = 5e-5;
+    const double TOL = 5e-10;
+
+    constexpr double c = 0.09;
+    constexpr double R = 1.0 / c;
+    constexpr double x = -3.0621423346154577;
+    constexpr double y = 5.9286205128611948;
+    constexpr double z0 = 15.0;
+
+    double zref = R - sqrt(R * R - (x * x + y * y));
+    double z = z0 - zref;
+
+    Vector3d u(0.0, 0.0, -1.0);
+    Vector3d v(2.0 * x, 2.0 * y, -2.0 * (z0 - z - R));
+    v.make_unit();
+    Vector3d w;
+    double alpha = dot_product(u, v);
+    vector_add(1.0, u, -2.0 * alpha, v, w);
+
     SimulationData sd;
-    // NativeRunner runner;
 
     // Set parameters
     const uint_fast64_t NRAYS = 1;
@@ -288,12 +361,12 @@ TEST(NativeRunner, SingleRayValidationTest)
     sd.add_ray_source(sun);
 
     auto sph = SolTrace::Data::make_element<SingleElement>();
-    Vector3d origin(0.0, 0.0, 15.0);
+    Vector3d origin(0.0, 0.0, z0);
     Vector3d aim(0.0, 0.0, -1.0);
     double zrot = 0.0;
     sph->set_reference_frame_geometry(origin, aim, zrot);
     sph->set_aperture(SolTrace::Data::make_aperture<Hexagon>(20.0));
-    sph->set_surface(SolTrace::Data::make_surface<Sphere>(0.09));
+    sph->set_surface(SolTrace::Data::make_surface<Sphere>(c));
     sph->get_front_optical_properties()->set_ideal_reflection();
     sph->get_back_optical_properties()->set_ideal_reflection();
     sd.add_element(sph);
@@ -322,7 +395,7 @@ TEST(NativeRunner, SingleRayValidationTest)
 
     sys->AllRayData.Print();
 
-    EXPECT_EQ(n, 1);
+    EXPECT_EQ(n, 3);
 
     Vector3d ipoint, idir;
     int element, stage;
@@ -331,13 +404,30 @@ TEST(NativeRunner, SingleRayValidationTest)
     sys->AllRayData.Query(0, ipoint.data, idir.data,
                           &element, &stage, &raynum, &rev);
 
-    EXPECT_NEAR(ipoint[0], -3.06214, TOL);
-    EXPECT_NEAR(ipoint[1], 5.92862, TOL);
-    EXPECT_NEAR(ipoint[2], 12.7732, TOL);
+    EXPECT_EQ(raynum, 1);
+    EXPECT_EQ(rev, SolTrace::Result::RayEvent::CREATE);
 
-    EXPECT_NEAR(idir[0], 0.0, TOL);
-    EXPECT_NEAR(idir[1], 0.0, TOL);
-    EXPECT_NEAR(idir[2], -1.0, TOL);
+    EXPECT_NEAR(ipoint[0], x, TOL);
+    EXPECT_NEAR(ipoint[1], y, TOL);
+    EXPECT_NEAR(ipoint[2], 10000.0, TOL);
+
+    EXPECT_NEAR(idir[0], u[0], TOL);
+    EXPECT_NEAR(idir[1], u[1], TOL);
+    EXPECT_NEAR(idir[2], u[2], TOL);
+
+    sys->AllRayData.Query(1, ipoint.data, idir.data,
+                          &element, &stage, &raynum, &rev);
+
+    EXPECT_EQ(raynum, 1);
+    EXPECT_EQ(rev, SolTrace::Result::RayEvent::REFLECT);
+
+    EXPECT_NEAR(ipoint[0], x, TOL);
+    EXPECT_NEAR(ipoint[1], y, TOL);
+    EXPECT_NEAR(ipoint[2], z, TOL);
+
+    EXPECT_NEAR(idir[0], w[0], TOL);
+    EXPECT_NEAR(idir[1], w[1], TOL);
+    EXPECT_NEAR(idir[2], w[2], TOL);
 }
 
 TEST(NativeRunner, LegacyFileLoadTest)
@@ -363,3 +453,38 @@ TEST(NativeRunner, LegacyFileLoadTest)
     sts = runner.run_simulation();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 }
+
+// TEST(NativeRunner, SimulationResultSmokeTest)
+// {
+//     std::string project_path = std::string(PROJECT_DIR);
+//     std::string sample_path = project_path +
+//                               std::string("/simple_test_case.stinput");
+
+//     // Load simulation data from file
+//     SimulationData sd;
+//     bool success = sd.import_from_file(sample_path);
+//     EXPECT_TRUE(success);
+
+//     EXPECT_EQ(sd.get_number_of_ray_sources(), 1);
+//     EXPECT_EQ(sd.get_number_of_elements(), 2);
+
+//     // Create and run the native runner
+//     NativeRunner runner;
+//     RunnerStatus sts = runner.initialize();
+//     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+//     sts = runner.setup_simulation(&sd);
+//     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+//     sts = runner.run_simulation();
+//     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+//     SimulationResult result;
+//     sts = runner.report_simulation(&result, 0);
+//     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+//     EXPECT_TRUE(result.get_number_of_records() > 0);
+//     for (int_fast64_t idx=0; idx < result.get_number_of_records(); ++idx)
+//     {
+//         const ray_record_ptr rr = result[idx];
+//         EXPECT_TRUE(rr->get_number_of_interactions() > 0);
+//     }
+// }

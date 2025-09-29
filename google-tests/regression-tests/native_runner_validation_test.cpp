@@ -13,8 +13,8 @@ using SolTrace::Runner::RunnerStatus;
 
 using SolTrace::NativeRunner::NativeRunner;
 using SolTrace::NativeRunner::TRayData;
-using SolTrace::NativeRunner::TSystem;
 using SolTrace::NativeRunner::tstage_ptr;
+using SolTrace::NativeRunner::TSystem;
 
 using SolTrace::Result::RayEvent;
 
@@ -78,10 +78,13 @@ TEST(NativeRunner, ValidationTest)
     const TRayData *ray_data = &(sys->AllRayData);
     size_t nrdata = ray_data->Count();
 
+    // ray_data->Print();
+
     Vector3d point, cosines;
     int element;
     int stage;
     unsigned int raynum;
+    unsigned int lcsv = 0;
     RayEvent rev;
 
     // Retrieving data from Runner
@@ -100,21 +103,26 @@ TEST(NativeRunner, ValidationTest)
             continue;
         }
 
-        EXPECT_EQ(element, abs(stoi(ground_raydata[6][i + 1])));
-        EXPECT_EQ(stage, stoi(ground_raydata[7][i + 1]));
-        EXPECT_EQ(raynum, stoul(ground_raydata[8][i + 1]));
-
-        if (element == stoi(ground_raydata[6][i + 1]) &&
-            stage == stoi(ground_raydata[7][i + 1]) &&
-            raynum == stoul(ground_raydata[8][i + 1]))
+        if (rev == RayEvent::CREATE)
         {
-            EXPECT_NEAR(point[0], stod(ground_raydata[0][i + 1]), TOL);
-            EXPECT_NEAR(point[1], stod(ground_raydata[1][i + 1]), TOL);
-            EXPECT_NEAR(point[2], stod(ground_raydata[2][i + 1]), TOL);
+            continue;
+        }
 
-            EXPECT_NEAR(cosines[0], stod(ground_raydata[3][i + 1]), TOL);
-            EXPECT_NEAR(cosines[1], stod(ground_raydata[4][i + 1]), TOL);
-            EXPECT_NEAR(cosines[2], stod(ground_raydata[5][i + 1]), TOL);
+        EXPECT_EQ(element, abs(stoi(ground_raydata[6][lcsv + 1])));
+        EXPECT_EQ(stage, stoi(ground_raydata[7][lcsv + 1]));
+        EXPECT_EQ(raynum, stoul(ground_raydata[8][lcsv + 1]));
+
+        if (element == stoi(ground_raydata[6][lcsv + 1]) &&
+            stage == stoi(ground_raydata[7][lcsv + 1]) &&
+            raynum == stoul(ground_raydata[8][lcsv + 1]))
+        {
+            EXPECT_NEAR(point[0], stod(ground_raydata[0][lcsv + 1]), TOL);
+            EXPECT_NEAR(point[1], stod(ground_raydata[1][lcsv + 1]), TOL);
+            EXPECT_NEAR(point[2], stod(ground_raydata[2][lcsv + 1]), TOL);
+
+            EXPECT_NEAR(cosines[0], stod(ground_raydata[3][lcsv + 1]), TOL);
+            EXPECT_NEAR(cosines[1], stod(ground_raydata[4][lcsv + 1]), TOL);
+            EXPECT_NEAR(cosines[2], stod(ground_raydata[5][lcsv + 1]), TOL);
         }
         else
         {
@@ -125,5 +133,7 @@ TEST(NativeRunner, ValidationTest)
                       << std::endl;
             break;
         }
+
+        ++lcsv;
     }
 }

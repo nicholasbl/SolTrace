@@ -52,6 +52,7 @@
 #include <cstdint>
 #include <exception>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -62,281 +63,284 @@
 #include "simulation_result.hpp"
 #include "surface_intersection_calculator.hpp"
 
-namespace SolTrace::NativeRunner {
-
-// #define ACOSM1O180 0.017453292519943295 // acos(-1)/180.0
-// #endif
-
-// class nanexcept : public std::exception
-// {
-// 	std::string m_text;
-
-// public:
-// 	nanexcept(const char *text) : m_text(text) {}
-// 	virtual ~nanexcept() throw() {}
-// 	virtual const char *what() const throw() { return m_text.c_str(); }
-// };
-
-// class FEDataObj : public st_hash_tree
-// {
-// public:
-// 	MatDoub nodes;
-// };
-
-// class TOpticalProperties
-// {
-// public:
-// 	TOpticalProperties();
-// 	TOpticalProperties &operator=(const TOpticalProperties &rhs);
-
-// 	char DistributionType;
-// 	// int OpticSurfNumber;
-// 	// int ApertureStopOrGratingType;
-// 	// int DiffractionOrder;
-// 	double Reflectivity;
-// 	double Transmissivity;
-// 	double RMSSlopeError;
-// 	double RMSSpecError;
-
-// 	double RefractiveIndex[4];
-// 	double AB12[4];
-
-// 	bool UseReflectivityTable;
-// 	struct refldat
-// 	{
-// 		double angle;
-// 		double refl;
-// 	};
-// 	std::vector<refldat> ReflectivityTable;
-// 	bool UseTransmissivityTable;
-// 	struct transdat
-// 	{
-// 		double angle;
-// 		double trans;
-// 	};
-// 	std::vector<transdat> TransmissivityTable;
-// };
-
-// Struct for storing runner side only element parameters
-struct ElementParameters
+namespace SolTrace::NativeRunner
 {
-	ElementParameters();
-	~ElementParameters();
-	// Newton's method controls
-	double newton_tolerance;
-	uint_fast64_t newton_max_iters;
-};
 
-class TOpticalPropertySet
-{
-public:
-	std::string Name;
-	// TOpticalProperties Front;
-	// TOpticalProperties Back;
-	SolTrace::Data::OpticalProperties Front;
-	SolTrace::Data::OpticalProperties Back;
-};
+	// #define ACOSM1O180 0.017453292519943295 // acos(-1)/180.0
+	// #endif
 
-struct TElement
-{
-	TElement();
-	~TElement();
+	// class nanexcept : public std::exception
+	// {
+	// 	std::string m_text;
 
-	// bool Enabled;
+	// public:
+	// 	nanexcept(const char *text) : m_text(text) {}
+	// 	virtual ~nanexcept() throw() {}
+	// 	virtual const char *what() const throw() { return m_text.c_str(); }
+	// };
 
-	/////////// ORIENTATION PARAMETERS ///////////////
-	double Origin[3];
-	double AimPoint[3];
-	double ZRot;
-	double RRefToLoc[3][3];
-	double RLocToRef[3][3];
-	double PosSunCoords[3]; // calculated -- position in sun plane coordinates - mw
+	// class FEDataObj : public st_hash_tree
+	// {
+	// public:
+	// 	MatDoub nodes;
+	// };
 
-	/////////// APERTURE PARAMETERS //////////////
-	double ZAperture; // calculated
-	SolTrace::Data::aperture_ptr aperture;
+	// class TOpticalProperties
+	// {
+	// public:
+	// 	TOpticalProperties();
+	// 	TOpticalProperties &operator=(const TOpticalProperties &rhs);
 
-	/////////// SURFACE PARAMETERS ///////////////
-	calculator_ptr icalc;
+	// 	char DistributionType;
+	// 	// int OpticSurfNumber;
+	// 	// int ApertureStopOrGratingType;
+	// 	// int DiffractionOrder;
+	// 	double Reflectivity;
+	// 	double Transmissivity;
+	// 	double RMSSlopeError;
+	// 	double RMSSpecError;
 
-	// double Kappa;
-	// double Alpha[5];
-	// double VertexCurvX;
-	// double VertexCurvY;
-	// double AnnularRadius;
-	// double CrossSectionRadius;
-	// double ConeHalfAngle;
-	// double CurvOfRev;
+	// 	double RefractiveIndex[4];
+	// 	double AB12[4];
 
-	/////////// OPTICAL PARAMETERS ///////////////
-	TOpticalPropertySet Optics;
+	// 	bool UseReflectivityTable;
+	// 	struct refldat
+	// 	{
+	// 		double angle;
+	// 		double refl;
+	// 	};
+	// 	std::vector<refldat> ReflectivityTable;
+	// 	bool UseTransmissivityTable;
+	// 	struct transdat
+	// 	{
+	// 		double angle;
+	// 		double trans;
+	// 	};
+	// 	std::vector<transdat> TransmissivityTable;
+	// };
 
-	std::string Comment;
-	// mjw element number in the stage - unique ID in order
-	// of addition to element list
-	int_fast64_t element_number;
-	SolTrace::Data::element_id sim_data_id;
-};
-
-using telement_ptr = typename std::shared_ptr<TElement>;
-telement_ptr make_telement(SolTrace::Data::element_ptr el,
-						   int_fast64_t el_num,
-						   const ElementParameters &eparams);
-
-struct TSun
-{
-	TSun();
-	void Reset();
-	// void set_values(ray_source_ptr rsrc);
-
-	// char ShapeIndex;
-	SolTrace::Data::DistributionType ShapeIndex;
-	double Sigma;
-	bool PointSource;
-
-	std::vector<double> SunShapeAngle;
-	std::vector<double> SunShapeIntensity;
-	double MaxAngle;
-	double MaxIntensity;
-
-	double Origin[3];
-
-	// calculated
-	double Euler[3];
-	double RRefToLoc[3][3];
-	double RLocToRef[3][3];
-
-	double MaxRad;
-	double Xcm;
-	double Ycm;
-	double MinXSun;
-	double MaxXSun;
-	double MinYSun;
-	double MaxYSun;
-};
-
-class TRayData
-{
-public:
-	TRayData();
-	~TRayData();
-
-	struct ray_t
+	// Struct for storing runner side only element parameters
+	struct ElementParameters
 	{
-		double pos[3];
-		double cos[3];
-		int element;
-		int stage;
-		unsigned int raynum;
-		SolTrace::Result::RayEvent event;
+		ElementParameters();
+		~ElementParameters();
+		// Newton's method controls
+		double newton_tolerance;
+		uint_fast64_t newton_max_iters;
 	};
 
-	ray_t *Append(double pos[3],
-				  double cos[3],
-				  int element,
-				  int stage,
-				  unsigned int raynum,
-				  SolTrace::Result::RayEvent it);
+	class TOpticalPropertySet
+	{
+	public:
+		std::string Name;
+		// TOpticalProperties Front;
+		// TOpticalProperties Back;
+		SolTrace::Data::OpticalProperties Front;
+		SolTrace::Data::OpticalProperties Back;
+	};
 
-	bool Overwrite(unsigned int idx,
+	struct TElement
+	{
+		TElement();
+		~TElement();
+
+		// bool Enabled;
+
+		/////////// ORIENTATION PARAMETERS ///////////////
+		double Origin[3];
+		double AimPoint[3];
+		double ZRot;
+		double RRefToLoc[3][3];
+		double RLocToRef[3][3];
+		double PosSunCoords[3]; // calculated -- position in sun plane coordinates - mw
+
+		/////////// APERTURE PARAMETERS //////////////
+		double ZAperture; // calculated
+		SolTrace::Data::aperture_ptr aperture;
+
+		/////////// SURFACE PARAMETERS ///////////////
+		calculator_ptr icalc;
+
+		// double Kappa;
+		// double Alpha[5];
+		// double VertexCurvX;
+		// double VertexCurvY;
+		// double AnnularRadius;
+		// double CrossSectionRadius;
+		// double ConeHalfAngle;
+		// double CurvOfRev;
+
+		/////////// OPTICAL PARAMETERS ///////////////
+		TOpticalPropertySet Optics;
+
+		std::string Comment;
+		// mjw element number in the stage - unique ID in order
+		// of addition to element list
+		int_fast64_t element_number;
+		SolTrace::Data::element_id sim_data_id;
+	};
+
+	using telement_ptr = typename std::shared_ptr<TElement>;
+	telement_ptr make_telement(SolTrace::Data::element_ptr el,
+							   int_fast64_t el_num,
+							   const ElementParameters &eparams);
+
+	struct TSun
+	{
+		TSun();
+		void Reset();
+		// void set_values(ray_source_ptr rsrc);
+
+		// char ShapeIndex;
+		SolTrace::Data::DistributionType ShapeIndex;
+		double Sigma;
+		bool PointSource;
+
+		std::vector<double> SunShapeAngle;
+		std::vector<double> SunShapeIntensity;
+		double MaxAngle;
+		double MaxIntensity;
+
+		double Origin[3];
+
+		// calculated
+		double Euler[3];
+		double RRefToLoc[3][3];
+		double RLocToRef[3][3];
+
+		double MaxRad;
+		double Xcm;
+		double Ycm;
+		double MinXSun;
+		double MaxXSun;
+		double MinYSun;
+		double MaxYSun;
+	};
+
+	class TRayData
+	{
+	public:
+		TRayData();
+		~TRayData();
+
+		struct ray_t
+		{
+			double pos[3];
+			double cos[3];
+			int element;
+			int stage;
+			unsigned int raynum;
+			SolTrace::Result::RayEvent event;
+		};
+
+		ray_t *Append(double pos[3],
+					  double cos[3],
+					  int element,
+					  int stage,
+					  unsigned int raynum,
+					  SolTrace::Result::RayEvent it);
+
+		bool Overwrite(unsigned int idx,
+					   double pos[3],
+					   double cos[3],
+					   int element,
+					   int stage,
+					   unsigned int raynum,
+					   SolTrace::Result::RayEvent it);
+
+		bool Query(unsigned int idx,
 				   double pos[3],
 				   double cos[3],
-				   int element,
-				   int stage,
-				   unsigned int raynum,
-				   SolTrace::Result::RayEvent it);
+				   int *element,
+				   int *stage,
+				   unsigned int *raynum,
+				   SolTrace::Result::RayEvent *it) const;
 
-	bool Query(unsigned int idx,
-			   double pos[3],
-			   double cos[3],
-			   int *element,
-			   int *stage,
-			   unsigned int *raynum,
-			   SolTrace::Result::RayEvent *it) const;
+		void Merge(TRayData &dest);
 
-	void Merge(TRayData &dest);
+		void Clear();
 
-	void Clear();
+		void Print() const;
 
-	void Print() const;
+		uint_fast64_t Count() const;
 
-	uint_fast64_t Count() const;
+		ray_t *Index(uint_fast64_t i, bool write_access) const;
 
-	ray_t *Index(uint_fast64_t i, bool write_access) const;
+	private:
+		static const unsigned int block_size = 8192;
 
-private:
-	static const unsigned int block_size = 8192;
+		struct block_t
+		{
+			ray_t data[block_size];
+			uint_fast64_t count;
+		};
 
-	struct block_t
-	{
-		ray_t data[block_size];
-		uint_fast64_t count;
+		using block_t_ptr = std::shared_ptr<block_t>;
+
+		std::vector<block_t_ptr> m_blockList;
+		uint_fast64_t m_dataCount;
+		uint_fast64_t m_dataCapacity;
 	};
 
-	std::vector<block_t *> m_blockList;
-	uint_fast64_t m_dataCount;
-	uint_fast64_t m_dataCapacity;
-};
+	struct TStage
+	{
+		TStage();
+		~TStage();
 
-struct TStage
-{
-	TStage();
-	~TStage();
+		bool MultiHitsPerRay;
+		bool Virtual;
+		bool TraceThrough;
 
-	bool MultiHitsPerRay;
-	bool Virtual;
-	bool TraceThrough;
+		double Origin[3];
+		double AimPoint[3];
+		double ZRot;
 
-	double Origin[3];
-	double AimPoint[3];
-	double ZRot;
+		// std::vector<TElement*> ElementList;
+		std::vector<telement_ptr> ElementList;
+		// std::map<element_id, telement_ptr> ElementList;
 
-	// std::vector<TElement*> ElementList;
-	std::vector<telement_ptr> ElementList;
-	// std::map<element_id, telement_ptr> ElementList;
+		// calculated
+		double Euler[3];
+		double RRefToLoc[3][3];
+		double RLocToRef[3][3];
 
-	// calculated
-	double Euler[3];
-	double RRefToLoc[3][3];
-	double RLocToRef[3][3];
+		TRayData RayData;
 
-	TRayData RayData;
+		int_fast64_t stage_id;
+	};
 
-	int_fast64_t stage_id;
-};
+	using tstage_ptr = typename std::shared_ptr<TStage>;
+	tstage_ptr make_tstage(const ElementParameters &eparams);
+	tstage_ptr make_tstage(SolTrace::Data::element_ptr el, const ElementParameters &eparams);
 
-using tstage_ptr = typename std::shared_ptr<TStage>;
-tstage_ptr make_tstage(const ElementParameters &eparams);
-tstage_ptr make_tstage(SolTrace::Data::element_ptr el, const ElementParameters &eparams);
+	struct TSystem
+	{
+		TSystem();
+		~TSystem();
 
-struct TSystem
-{
-	TSystem();
-	~TSystem();
+		void ClearAll();
+		void CollectResults();
 
-	void ClearAll();
-	void CollectResults();
+		TSun Sun;
+		std::vector<tstage_ptr> StageList;
 
-	TSun Sun;
-	std::vector<tstage_ptr> StageList;
+		// system simulation context data
+		int sim_raycount;
+		int sim_raymax;
+		bool sim_dynamic_group; // point-focus heliostat dynamic grouping to reduce stage one computation
+		bool sim_errors_sunshape;
+		bool sim_errors_optical;
 
-	// system simulation context data
-	int sim_raycount;
-	int sim_raymax;
-	bool sim_dynamic_group; // point-focus heliostat dynamic grouping to reduce stage one computation
-	bool sim_errors_sunshape;
-	bool sim_errors_optical;
+		uint_fast64_t seed;
 
-	uint_fast64_t seed;
+		// simulation outputs
+		TRayData AllRayData;
+		uint_fast64_t SunRayCount;
 
-	// simulation outputs
-	TRayData AllRayData;
-	uint_fast64_t SunRayCount;
+		std::vector<std::string> messages;
 
-	std::vector<std::string> messages;
-
-	void errlog(const char *fmt, ...);
-};
+		void errlog(const char *fmt, ...);
+	};
 
 } // namespace SolTrace::NativeRunner
 

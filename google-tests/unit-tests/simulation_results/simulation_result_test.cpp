@@ -23,11 +23,14 @@ TEST(InteractionRecord, Constructors)
     element_id elid = 5;
     RayEvent it = RayEvent::ABSORB;
     Vector3d loc(-3.2, -2.5, 1.2);
-    InteractionRecord ir1(elid, it, loc);
-    InteractionRecord ir2(elid, it, loc);
+    Vector3d dir(-1.0, 1.5, -2.5);
+    InteractionRecord ir1(elid, it, loc, dir);
+    InteractionRecord ir2(elid, it,
+                          loc[0], loc[1], loc[2],
+                          dir[0], dir[1], dir[2]);
 
-    EXPECT_TRUE(ir1.index < 0);
-    EXPECT_TRUE(ir2.index < 0);
+    // EXPECT_TRUE(ir1.index < 0);
+    // EXPECT_TRUE(ir2.index < 0);
     EXPECT_EQ(ir1.element, ir2.element);
     EXPECT_EQ(ir1.event, ir2.event);
     EXPECT_EQ(ir1.location[0], ir2.location[0]);
@@ -40,7 +43,8 @@ TEST(InteractionRecord, OutputOperator)
     element_id elid = 5;
     RayEvent it = RayEvent::ABSORB;
     Vector3d loc(-3.2, -2.5, 1.2);
-    InteractionRecord ir1(elid, it, loc);
+    Vector3d dir(-1.0, 1.5, -2.5);
+    InteractionRecord ir1(elid, it, loc, dir);
 
     // Basic test to see that the output operator is there
     // and functioning.
@@ -60,53 +64,54 @@ TEST(RayRecord, Accessors)
         RayEvent::TRANSMIT,
         RayEvent::REFLECT,
         RayEvent::ABSORB,
-        RayEvent::EXIT
-    };
+        RayEvent::EXIT};
 
     // Adding records and sizing
     ray_record_ptr rr = make_ray_record(ID);
     for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
     {
         Vector3d loc(1.0 * ell * ell, 2.0 * ell * ell, 3.0 * ell * ell);
+        Vector3d dir(2.0 * ell + 1.0, 4.0 * ell + 2.0, 6.0 * ell + 3.0);
         RayEvent it = my_types[ell];
-        interaction_ptr ir = make_interaction_record(ell, it, loc);
+        interaction_ptr ir = make_interaction_record(ell, it, loc, dir);
         rr->add_interaction_record(ir);
         EXPECT_EQ(rr->get_number_of_interactions(), ell + 1);
     }
-
-    // Setting last direction cosines
-    Vector3d lcos(1.0, 2.0, 3.0);
-    rr->set_last_cosines(lcos[0], lcos[1], lcos[2]);
-    EXPECT_TRUE(is_identical(rr->cos_last, lcos));
-    lcos.set_values(3.0, 4.0, 5.0);
-    rr->set_last_cosines(lcos);
-    EXPECT_TRUE(is_identical(rr->cos_last, lcos));
 
     // Getting direction cosines and indexing
     int_fast64_t idx = 0;
     Vector3d ret1;
     Vector3d ret2;
+    Vector3d lcos;
     for (auto iter = rr->interactions.cbegin();
          iter != rr->interactions.cend();
          ++iter)
     {
         EXPECT_EQ(*iter, (*rr)[idx]);
-        rr->get_direction_cosines(idx, ret1);
-        rr->get_direction_cosines(*iter, ret2);
+
+        rr->get_direction(idx, ret1);
+        rr->get_direction(*iter, ret2);
         EXPECT_TRUE(is_identical(ret1, ret2));
-        if (idx + 1 == NINTER)
-        {
-            lcos.set_values(3.0, 4.0, 5.0);
-        }
-        else
-        {
-            lcos.set_values(1.0, 2.0, 3.0);
-            lcos.scalar_mult(2*idx + 1);
-        }
-        make_unit_vector(lcos);
+
+        lcos.set_values(1.0, 2.0, 3.0);
+        lcos.scalar_mult(2 * idx + 1);
+
+        SolTrace::Data::make_unit_vector(lcos);
         EXPECT_NEAR(ret1[0], lcos[0], TOL);
         EXPECT_NEAR(ret1[1], lcos[1], TOL);
         EXPECT_NEAR(ret1[2], lcos[2], TOL);
+
+        ret1.zero();
+        rr->get_position(idx, ret1);
+        rr->get_position(*iter, ret2);
+        EXPECT_TRUE(is_identical(ret1, ret2));
+
+        EXPECT_EQ(rr->get_element(idx), idx);
+        EXPECT_EQ(rr->get_element(*iter), idx);
+
+        EXPECT_EQ(rr->get_event(idx), my_types[idx]);
+        EXPECT_EQ(rr->get_event(*iter), my_types[idx]);
+
         ++idx;
     }
 }
@@ -121,16 +126,16 @@ TEST(RayRecord, OutputOperator)
         RayEvent::TRANSMIT,
         RayEvent::REFLECT,
         RayEvent::ABSORB,
-        RayEvent::EXIT
-    };
+        RayEvent::EXIT};
 
     // Adding records and sizing
     RayRecord rr(ID);
     for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
     {
         Vector3d loc(1.0 * ell * ell, 2.0 * ell * ell, 3.0 * ell * ell);
+        Vector3d dir(2.0 * ell + 1.0, 4.0 * ell + 2.0, 6.0 * ell + 3.0);
         RayEvent it = my_types[ell];
-        interaction_ptr ir = make_interaction_record(ell, it, loc);
+        interaction_ptr ir = make_interaction_record(ell, it, loc, dir);
         rr.add_interaction_record(ir);
     }
 
@@ -149,8 +154,7 @@ TEST(SimulationResult, Accessors)
         RayEvent::TRANSMIT,
         RayEvent::REFLECT,
         RayEvent::ABSORB,
-        RayEvent::EXIT
-    };
+        RayEvent::EXIT};
 
     SimulationResult sr;
 
@@ -160,8 +164,9 @@ TEST(SimulationResult, Accessors)
         for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
         {
             Vector3d loc(1.0 * ell, 2.0 * ell, 3.0 * ell);
+            Vector3d dir(1.0, 2.0, 3.0);
             RayEvent it = my_types[ell];
-            interaction_ptr ir = make_interaction_record(ell, it, loc);
+            interaction_ptr ir = make_interaction_record(ell, it, loc, dir);
             rr->add_interaction_record(ir);
         }
         sr.add_ray_record(rr);
@@ -189,8 +194,7 @@ TEST(SimulationResult, OstreamOperator)
         RayEvent::TRANSMIT,
         RayEvent::REFLECT,
         RayEvent::ABSORB,
-        RayEvent::EXIT
-    };
+        RayEvent::EXIT};
 
     SimulationResult sr;
 
@@ -200,8 +204,9 @@ TEST(SimulationResult, OstreamOperator)
         for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
         {
             Vector3d loc(1.0 * ell, 2.0 * ell, 3.0 * ell);
+            Vector3d dir(1.0, 2.0, 3.0);
             RayEvent it = my_types[ell];
-            interaction_ptr ir = make_interaction_record(ell, it, loc);
+            interaction_ptr ir = make_interaction_record(ell, it, loc, dir);
             rr->add_interaction_record(ir);
         }
         sr.add_ray_record(rr);
