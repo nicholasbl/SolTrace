@@ -66,7 +66,7 @@ int RunTraceMultiThreaded( Project *System, int nrays, int nmaxrays,
 
 int RunSolTrace20(Project* System, int nrays, int nmaxrays,
 	int nmaxthreads, int* seed, bool sunshape, bool opterrs, bool aspowertower,
-	wxArrayString& errors, bool use_native_runner, bool use_optix_runner);
+	wxArrayString& errors, int runner_type);
 
 class TraceForm : public wxPanel
 {

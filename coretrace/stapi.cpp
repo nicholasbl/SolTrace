@@ -754,7 +754,7 @@ STCORE_API int st_sim_run_with_refactor(st_context_t pcxt, unsigned int seed,
 	return st_sim_run_data(pcxt, seed, 0, 0, false, callback, cbdata, use_refactor_trace);
 }
 
-STCORE_API int st_sim_run_SolTrace20(st_context_t pcxt, unsigned int seed, int runner_type)
+STCORE_API int st_sim_run_SolTrace20(st_context_t pcxt, unsigned int seed, const int runner_type, const char* file_name)
 {
 	SYSTEM(pcxt, -1);
 	if (!InitGeometries(sys))
@@ -770,13 +770,20 @@ STCORE_API int st_sim_run_SolTrace20(st_context_t pcxt, unsigned int seed, int r
 	// Run
 	switch (runner_type)
 	{
-		// Native runner
+		// Legacy (wrong call)
 		case(0):
+			return -1;
+		// Native runner
+		case(1):
 			run_native_runner(sd, sys);
 			break;
 		// Optix runner
-		case(1):
+		case(2):
 			run_optix_runner(sd, sys);
+			break;
+		// Optix direct file load runner
+		case(3):
+			run_optix_file_runner(sys, file_name);
 			break;
 		default:
 			return -1;

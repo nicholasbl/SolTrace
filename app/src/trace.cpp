@@ -57,6 +57,7 @@
 #include <wx/time.h>
 #include <wx/datetime.h>
 #include <wx/thread.h>
+#include <wx/filefn.h>
 
 #include <wex/exttext.h>
 #include <wex/numeric.h>
@@ -119,7 +120,7 @@ TraceForm::TraceForm( wxWindow *parent, Project &prj )
 	flxsizer->AddStretchSpacer();
 
 	// Add a radio box for runner selection
-	wxString runnerChoices[] = { "Legacy", "Native runner (cpu)", "OptiX runner (gpu)" };
+	wxString runnerChoices[] = { "Legacy", "Native runner (cpu)", "OptiX runner (gpu)", "OptiX direct file (gpu)"};
 	m_runner_choice = new wxRadioBox(
 		sizer1->GetStaticBox(),
 		ID_RUNNER_RADIO,
@@ -193,12 +194,8 @@ void TraceForm::UpdateFromData()
 	m_use_refactor_trace->SetValue(T.use_refactor_trace);
 
 	// Set radio box selection
-	if (T.use_native_runner)
-		m_runner_choice->SetSelection(1);
-	else if (T.use_optix_runner)
-		m_runner_choice->SetSelection(2);
-	else
-		m_runner_choice->SetSelection(0);
+	m_runner_choice->SetSelection(T.runner_type);
+
 }
 
 
@@ -230,8 +227,7 @@ void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed
 	T.is_include_errors = m_inclOpticalErrors->GetValue();
 	T.is_point_focus = m_asPowerTower->GetValue();
 	T.use_refactor_trace = m_use_refactor_trace->GetValue();
-	T.use_native_runner = (m_runner_choice->GetSelection() == 1);
-	T.use_optix_runner = (m_runner_choice->GetSelection() == 2);
+	T.runner_type = m_runner_choice->GetSelection();
 }
 
 void TraceForm::GetOptions( size_t *nrays, size_t *nmaxsunrays, int *ncpu, int *seed,
@@ -295,9 +291,7 @@ void TraceForm::OnCommand( wxCommandEvent &evt )
 		break;
 	case ID_RUNNER_RADIO:
 	{
-		int sel = m_runner_choice->GetSelection();
-		T.use_native_runner = (sel == 1);
-		T.use_optix_runner = (sel == 2);
+		T.runner_type = m_runner_choice->GetSelection();
 		break;
 	}
 	case wxID_EXECUTE:
@@ -333,7 +327,7 @@ int TraceForm::StartTrace( bool , bool quiet, wxArrayString *err )
 	ref_errors.clear();
 
 	int msec = 0;
-	if (m_prj.Trace_Settings.use_native_runner || m_prj.Trace_Settings.use_optix_runner)
+	if (m_prj.Trace_Settings.runner_type > 0)
 	{
 		msec = RunSolTrace20(&m_prj, m_numRays->AsInteger(),
 			m_numMaxSunRays->AsInteger(),
@@ -342,8 +336,7 @@ int TraceForm::StartTrace( bool , bool quiet, wxArrayString *err )
 			m_inclSunShape->GetValue(),
 			m_inclOpticalErrors->GetValue(),
 			m_asPowerTower->GetValue(),
-			ref_errors, m_prj.Trace_Settings.use_native_runner,
-			m_prj.Trace_Settings.use_optix_runner);
+			ref_errors, m_prj.Trace_Settings.runner_type);
 	}
 	else
 	{
@@ -925,33 +918,52 @@ int RunTraceMultiThreaded( Project *System, int nrays, int nmaxrays,
 
 int RunSolTrace20(Project* System, int nrays, int nmaxrays,
 	int nmaxthreads, int* seed, bool sunshape, bool opterrs, bool aspowertower,
-	wxArrayString& errors, bool use_native_runner, bool use_optix_runner)
+	wxArrayString& errors, int runner_type)
 {
-	// Call stapi directly for now
-	// Thread in the future potentially
-
 	st_context_t spcxt = ::st_create_context();
 
 	int result = LoadSystemIntoContext(System, spcxt, errors);
 	if (result < 0)
-	{
 		return -1;
-	}
 
 	::st_sim_errors(spcxt, sunshape ? 1 : 0, opterrs ? 1 : 0);
 	::st_sim_params(spcxt, nrays, nmaxrays, aspowertower);
 
-	/*m_resultCode = ::st_sim_run( m_contextId,
-		(unsigned int) m_seedVal,
-		trace_callback_multi_thread, this );*/
+	// 0: legacy (shouldn't have called this), 1: native, 2: optix, 3: optix file
+	if (runner_type == 0)
+		return -1;
 
-	// 0 for native, 1 for optix
-	int runner_type = 0;
-	if (use_optix_runner == true)
-		runner_type = 1;
+	// Save temp stinput file if runner_type 3
+	wxString file_name = "";
+	if (runner_type == 3)
+	{
+		// Create a unique temp file (wx creates an empty file immediately)
+		wxString basePath = wxFileName::CreateTempFileName("soltrace_case");
+		if (basePath.IsEmpty())
+			return -1;
+
+		wxString finalPath = basePath + ".stinput";
+		wxRenameFile(basePath, finalPath, true);
+
+		// Write to file
+		FILE* fp = fopen(finalPath.c_str(), "w");
+		if (!fp)
+			return -1;
+
+		bool ok = System->Write(fp);
+		if (!ok)
+			return -1;
+		fclose(fp);
+
+		file_name = finalPath;
+	}
 
 	// Run ray trace
-	int count_raydata = ::st_sim_run_SolTrace20(spcxt, (unsigned int)seed, runner_type);
+	int count_raydata = ::st_sim_run_SolTrace20(spcxt, (unsigned int)seed, runner_type, file_name);
+
+	// Delete temporary stinput
+	if (runner_type == 3)
+		wxRemoveFile(file_name);
 
 	System->RecomputeTransforms();
 
