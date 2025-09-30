@@ -6,6 +6,7 @@
 #include "stage_element.hpp"
 #include "single_element.hpp"
 #include <optix_runner.hpp>
+#include <native_runner.hpp>
 
 // Private
 
@@ -249,9 +250,65 @@ int convert_tsystem_to_sim_data(TSystem* sys, SolTrace::Data::SimulationData &sd
 	return static_cast<int>(ConversionErrors::SUCCESS);;
 }
 
-int run_native_runner(SolTrace::Data::SimulationData& sd)
+int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
 {
-    //NativeRunner runner;
+    SolTrace::NativeRunner::NativeRunner runner;
+    SolTrace::Runner::RunnerStatus sts = runner.initialize();
+    sts = runner.setup_simulation(&sd);
+    sts = runner.run_simulation();
+
+    // Hack to get RayData out of native runner
+    const SolTrace::NativeRunner::TSystem* tsys_native = runner.get_system();
+
+    // Copy sun stats (needed for flux normalization)
+    sys->Sun.MinXSun = tsys_native->Sun.MinXSun;
+    sys->Sun.MaxXSun = tsys_native->Sun.MaxXSun;
+    sys->Sun.MinYSun = tsys_native->Sun.MinYSun;
+    sys->Sun.MaxYSun = tsys_native->Sun.MaxYSun;
+    sys->SunRayCount = static_cast<st_uint_t>(tsys_native->SunRayCount);
+
+    for (TStage* s : sys->StageList)
+        s->RayData.Clear();
+    sys->AllRayData.Clear();
+
+    // Copy from native TOTAL (aggregate) ray list instead of per stage
+    const auto nCount = tsys_native->AllRayData.Count();
+    for (uint_fast64_t i = 0; i < nCount; ++i)
+    {
+        // Native TRayData::ray_t layout (Query API)
+        double pos[3], dir[3];
+        int element = 0, stageIdx1 = 0;
+        unsigned int raynum = 0;
+
+        // Native runner TRayData::Query signature includes RayEvent;
+        // we only need the legacy fields, so pass nullptr for the event.
+        if (!tsys_native->AllRayData.Query(
+            (unsigned int)i,
+            pos,            // pos
+            dir,            // cos
+            &element,       // element
+            &stageIdx1,     // stage
+            &raynum,        // ray number
+            nullptr))       // event (ignored)
+        {
+            continue; // skip malformed entry
+        }
+
+        if (stageIdx1 < 1 || (size_t)stageIdx1 > sys->StageList.size())
+            continue; // out-of-range stage index, skip
+
+        // Append to that stage's RayData (stage-local coords assumed)
+        sys->StageList[stageIdx1 - 1]->RayData.Append(
+            pos,
+            dir,
+            element,        // negative if absorbed already encoded
+            stageIdx1,      // 1-based
+            raynum);
+    }
+
+    for (TStage* s : sys->StageList)
+        sys->AllRayData.Merge(s->RayData);
+
     return -1;
 }
 
@@ -286,6 +343,6 @@ int run_optix_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
 
     for (TStage* stage : sys->StageList)
         sys->AllRayData.Merge(stage->RayData);
-
+    
     return 0;
 }

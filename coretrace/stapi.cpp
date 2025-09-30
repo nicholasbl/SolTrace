@@ -772,7 +772,7 @@ STCORE_API int st_sim_run_SolTrace20(st_context_t pcxt, unsigned int seed, int r
 	{
 		// Native runner
 		case(0):
-			run_native_runner(sd);
+			run_native_runner(sd, sys);
 			break;
 		// Optix runner
 		case(1):
