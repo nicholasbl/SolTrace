@@ -7,130 +7,19 @@
 #include "single_element.hpp"
 #include <optix_runner.hpp>
 #include <native_runner.hpp>
+#include "simdata_io.hpp"
 
 // Private
-
-// TODO: These helper functions (except make_optics) are copied from simdata_io.cpp
-
-SolTrace::Data::DistributionType char_to_distribution(const char dist_char)
-{
-    switch (dist_char)
-    {
-        case ('g'):
-        {
-            return SolTrace::Data::DistributionType::GAUSSIAN;
-        }
-        case ('p'):
-        {
-            return SolTrace::Data::DistributionType::PILLBOX;
-        }
-        case ('d'):
-        {
-            return SolTrace::Data::DistributionType::USER_DEFINED;
-        }
-        default:
-        {
-            return SolTrace::Data::DistributionType::GAUSSIAN;
-        }
-    }
-}
-
-SolTrace::Data::ApertureType char_to_aperture(const char aperture_char)
-{
-    switch (aperture_char)
-    {
-        case ('c'):
-        {
-            return SolTrace::Data::ApertureType::CIRCLE;
-        }
-        case ('h'):
-        {
-            return SolTrace::Data::ApertureType::HEXAGON;
-        }
-        case ('t'):
-        {
-            return SolTrace::Data::ApertureType::EQUILATERAL_TRIANGLE;
-        }
-        case ('r'):
-        {
-            return SolTrace::Data::ApertureType::RECTANGLE;
-        }
-        case ('a'):
-        {
-            return SolTrace::Data::ApertureType::ANNULUS;
-        }
-        case ('l'):
-        {
-            return SolTrace::Data::ApertureType::SINGLE_AXIS_CURVATURE_SECTION;
-        }
-        case ('i'):
-        {
-            return SolTrace::Data::ApertureType::IRREGULAR_TRIANGLE;
-        }
-        case ('q'):
-        {
-            return SolTrace::Data::ApertureType::IRREGULAR_QUADRILATERAL;
-        }
-        default:
-        {
-            return SolTrace::Data::ApertureType::APERTURE_UNKNOWN;
-        }
-    }
-}
-
-SolTrace::Data::SurfaceType char_to_surface(const char surface_char)
-{
-    switch (surface_char)
-    {
-        case ('s'):
-            return SolTrace::Data::SurfaceType::SPHERE;
-        case ('p'):
-            return SolTrace::Data::SurfaceType::PARABOLA;
-        case ('o'):
-            return SolTrace::Data::SurfaceType::HYPER;
-        case ('g'):
-            return SolTrace::Data::SurfaceType::GENERAL_SPENCER_MURTY;
-        case ('f'):
-            return SolTrace::Data::SurfaceType::FLAT;
-        case ('c'):
-            return SolTrace::Data::SurfaceType::CONE;
-        case ('t'):
-            return SolTrace::Data::SurfaceType::CYLINDER;
-        case ('d'):
-            return SolTrace::Data::SurfaceType::TORUS;
-        default:
-            return SolTrace::Data::SurfaceType::SURFACE_UNKNOWN;
-    }
-}
-
-SolTrace::Data::InteractionType int_to_interaction(const int interaction_int)
-{
-    switch (interaction_int)
-    {
-        case (1):
-        {
-            return SolTrace::Data::InteractionType::REFRACTION;
-        }
-        case (2):
-        {
-            return SolTrace::Data::InteractionType::REFLECTION;
-        }
-        default:
-        {
-            return SolTrace::Data::InteractionType::REFLECTION;
-        }
-    }
-}
 
 SolTrace::Data::OpticalProperties make_optics(TOpticalProperties optics_legacy, int interaction_type_int)
 {
     // TODO: Not using any transmissivity or reflectivity tables
 
     // Get interaction type
-    SolTrace::Data::InteractionType interaction_type = int_to_interaction(interaction_type_int);
+    SolTrace::Data::InteractionType interaction_type = SolTrace::Data::int_to_interaction(interaction_type_int);
 
     // Get error distribution type
-    SolTrace::Data::DistributionType dist_type = char_to_distribution(optics_legacy.DistributionType);
+    SolTrace::Data::DistributionType dist_type = SolTrace::Data::char_to_distribution(optics_legacy.DistributionType);
 
     double transmissivity = optics_legacy.Transmissivity;
     double reflectivity = optics_legacy.Reflectivity;
@@ -164,7 +53,7 @@ int convert_tsystem_to_sim_data(TSystem* sys, SolTrace::Data::SimulationData &sd
 		sun->set_position(sys->Sun.Origin[0], sys->Sun.Origin[1], sys->Sun.Origin[2]);
 
         // Set sun shape
-        SolTrace::Data::DistributionType sun_shape = char_to_distribution(sys->Sun.ShapeIndex);
+        SolTrace::Data::DistributionType sun_shape = SolTrace::Data::char_to_distribution(sys->Sun.ShapeIndex);
         double Sigma = sys->Sun.Sigma;
         double HalfWidth = sys->Sun.Sigma;  // Gaussian and pillobox parameters are stored in Sun.Sigma
         sun->set_shape(sun_shape, Sigma, HalfWidth, sys->Sun.SunShapeAngle, sys->Sun.SunShapeIntensity);
@@ -194,7 +83,7 @@ int convert_tsystem_to_sim_data(TSystem* sys, SolTrace::Data::SimulationData &sd
                 SolTrace::Data::element_ptr element = SolTrace::Data::make_element<SolTrace::Data::SingleElement>();
 
                 // Make aperture
-                SolTrace::Data::ApertureType aperture_type = char_to_aperture(el_legacy->ShapeIndex);
+                SolTrace::Data::ApertureType aperture_type = SolTrace::Data::char_to_aperture(el_legacy->ShapeIndex);
                 if (aperture_type == SolTrace::Data::ApertureType::APERTURE_UNKNOWN)
                     return static_cast<int>(ConversionErrors::APERTURE_ERROR);
                 std::vector<double> aperture_args = { el_legacy->ParameterA, el_legacy->ParameterB,
@@ -207,7 +96,7 @@ int convert_tsystem_to_sim_data(TSystem* sys, SolTrace::Data::SimulationData &sd
                 element->set_aperture(aperture_ptr);
 
                 // Make surface
-                SolTrace::Data::SurfaceType surface_type = char_to_surface(el_legacy->SurfaceIndex);
+                SolTrace::Data::SurfaceType surface_type = SolTrace::Data::char_to_surface(el_legacy->SurfaceIndex);
                 if (surface_type == SolTrace::Data::SurfaceType::SURFACE_UNKNOWN)
                     return static_cast<int>(ConversionErrors::SURFACE_ERROR);
                 // TODO: validate surface args (more than just vertexcurv X and Y)
@@ -257,7 +146,6 @@ int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
     sts = runner.setup_simulation(&sd);
     sts = runner.run_simulation();
 
-    // Hack to get RayData out of native runner
     const SolTrace::NativeRunner::TSystem* tsys_native = runner.get_system();
 
     // Copy sun stats (needed for flux normalization)
