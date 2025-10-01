@@ -68,7 +68,7 @@ int assign_raydata_from_hitpoints(const std::vector<float4>& hp_vec, const std::
 
 // Public
 
-int convert_tsystem_to_sim_data(TSystem* sys, SolTrace::Data::SimulationData &sd)
+int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::SimulationData &sd)
 {
 	// Sun
 	{
@@ -166,6 +166,15 @@ int convert_tsystem_to_sim_data(TSystem* sys, SolTrace::Data::SimulationData &sd
         }
     }
 	
+    // Parameters
+    {
+        SolTrace::Data::SimulationParameters& par = sd.get_simulation_parameters();
+        par.number_of_rays = sys->sim_raycount;
+        par.max_number_of_rays = sys->sim_raymax;
+        par.seed = seed;
+        par.include_sun_shape_errors = sys->sim_errors_sunshape;
+        par.include_optical_errors = sys->sim_errors_optical;
+    }
 
 	return static_cast<int>(ConversionErrors::SUCCESS);;
 }

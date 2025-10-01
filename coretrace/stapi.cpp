@@ -762,7 +762,7 @@ STCORE_API int st_sim_run_SolTrace20(st_context_t pcxt, unsigned int seed, const
 
 	// Convert TSystem to SimulationData
 	SolTrace::Data::SimulationData sd = SolTrace::Data::SimulationData();
-	int err = convert_tsystem_to_sim_data(sys, sd);
+	int err = convert_tsystem_to_sim_data(sys, seed, sd);
 
 	if (err != 0)
 		return err;

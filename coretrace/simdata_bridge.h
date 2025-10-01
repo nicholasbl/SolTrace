@@ -15,7 +15,7 @@ enum class ConversionErrors
 	STAGE_ADD_ERROR
 };
 
-int convert_tsystem_to_sim_data(TSystem* sys, SolTrace::Data::SimulationData& sd);
+int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::SimulationData& sd);
 
 int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys);
 
