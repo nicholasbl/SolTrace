@@ -313,8 +313,8 @@ TEST(Heliostat, Trace)
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 
     const TSystem *sys = my_runner.get_system();
-    // sys->AllRayData.Print();
-    const TRayData *ray_data = &(sys->AllRayData);
+    // sys->RayData.Print();
+    const TRayData *ray_data = &(sys->RayData);
     size_t n = ray_data->Count();
     uint_fast64_t num_absorbed = count_absorbed_native(ray_data);
 
@@ -466,8 +466,8 @@ TEST(Heliostat, UpdateGeometry)
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 
     const TSystem *sys = my_runner.get_system();
-    // sys->AllRayData.Print();
-    const TRayData *ray_data = &(sys->AllRayData);
+    // sys->RayData.Print();
+    const TRayData *ray_data = &(sys->RayData);
     uint_fast64_t num_absorbed = count_absorbed_native(ray_data);
     size_t n = ray_data->Count();
 

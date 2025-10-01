@@ -46,8 +46,24 @@ public:
         return;
     }
 
+    // Accessors
+    int_fast64_t get_number_stages() const
+    {
+        return this->get_system()->StageList.size();
+    }
+    int_fast64_t get_number_elements() const
+    {
+        int_fast64_t nelems = 0;
+        for (auto stage : this->get_system()->StageList)
+        {
+            nelems += stage->ElementList.size();
+        }
+        return nelems;
+    }
+
     const TSystem *get_system() const { return &this->tsys; }
 
+    // Helper functions
     RunnerStatus setup_parameters(const SolTrace::Data::SimulationData *data);
     RunnerStatus setup_sun(const SolTrace::Data::SimulationData *data);
     RunnerStatus setup_elements(const SolTrace::Data::SimulationData *data);

@@ -60,7 +60,6 @@
 #include "simulation_data_export.hpp"
 
 // NativeRunner headers
-// #include "native_runner_backend.hpp"
 #include "find_element_hit.hpp"
 #include "generate_ray.hpp"
 #include "native_runner_types.hpp"
@@ -106,29 +105,9 @@ namespace SolTrace::NativeRunner
 		bool PreviousStageHasRays = false;
 		uint_fast64_t LastRayNumberInPreviousStage = NumberOfRays;
 
-		// // Check Inputs
-		// if (NumberOfRays < 1)
-		// {
-		// 	System->errlog("invalid number of rays: %d", NumberOfRays);
-		// 	return false;
-		// }
-		// if (System->StageList.size() < 1)
-		// {
-		// 	System->errlog("no stages defined.");
-		// 	return false;
-		// }
-
 		// Define IncomingRays
 		std::vector<GlobalRay_refactored> IncomingRays; // Vector of rays from previous stage, going into next stage
 		IncomingRays.resize(NumberOfRays);
-		// try
-		// {
-		// 	IncomingRays.resize(NumberOfRays);
-		// }
-		// catch (std::exception& e) {
-		// 	System->errlog("Incoming rays resize exception: %d, '%s'", NumberOfRays, e.what());
-		// 	return false;
-		// }
 
 		// Initialize Sun
 		double PosSunStage[3] = {0.0, 0.0, 0.0};
@@ -279,8 +258,6 @@ namespace SolTrace::NativeRunner
 								   LastPosRaySurfStage, LastCosRaySurfStage,
 								   ErrorFlag, LastHitBackSide, StageHit);
 
-					// std::cout << "Ray hit: " << StageHit << std::endl;
-
 					// Breakout if ray left stage
 					if (!StageHit)
 					{
@@ -291,9 +268,19 @@ namespace SolTrace::NativeRunner
 					// Increment MultipleHitCount
 					MultipleHitCount++;
 
+					if (i == 0 && MultipleHitCount == 1)
+					{
+						System->RayData.Append(PosRayGlob,
+											   CosRayGlob,
+											   ELEMENT_NULL,
+											   i + 1,
+											   LastRayNumber,
+											   RayEvent::CREATE);
+					}
+
 					// Get optics and check for absorption
 					const OpticalProperties *optics = 0;
-					RayEvent rev = RayEvent::EXIT;
+					RayEvent rev = RayEvent::VIRTUAL;
 					if (Stage->Virtual)
 					{
 						// If stage is virtual, there is no interaction
@@ -303,9 +290,7 @@ namespace SolTrace::NativeRunner
 					else
 					{
 						// trace through the interaction
-						// telement_ptr optelm = Stage->ElementList[p_ray->element - 1];
 						telement_ptr optelm = Stage->ElementList[LastElementNumber - 1];
-						// telement_ptr optelm = Stage->ElementList[p_ray->element];
 
 						if (LastHitBackSide)
 							optics = &optelm->Optics.Back;
@@ -393,23 +378,8 @@ namespace SolTrace::NativeRunner
 							myrng_counter++;
 							// ray was fully absorbed
 							RayIsAbsorbed = true;
-							// break;
+							break;
 						}
-					}
-
-					if (i == 0 && MultipleHitCount == 1)
-					{
-						Stage->RayData.Append(PosRayGlob,
-											  CosRayGlob,
-											  ELEMENT_NULL,
-											  i + 1,
-											  LastRayNumber,
-											  RayEvent::CREATE);
-					}
-
-					if (RayIsAbsorbed)
-					{
-						break;
 					}
 
 					// Process Interaction
@@ -432,12 +402,12 @@ namespace SolTrace::NativeRunner
 										 Stage->Origin, Stage->RLocToRef,
 										 PosRayGlob, CosRayGlob);
 
-					Stage->RayData.Append(PosRayGlob,
-										  CosRayGlob,
-										  LastElementNumber,
-										  i + 1,
-										  LastRayNumber,
-										  rev);
+					System->RayData.Append(PosRayGlob,
+										   CosRayGlob,
+										   LastElementNumber,
+										   i + 1,
+										   LastRayNumber,
+										   rev);
 
 					// Break out if multiple hits are not allowed
 					if (!Stage->MultiHitsPerRay)
@@ -454,14 +424,21 @@ namespace SolTrace::NativeRunner
 				// Handle if Ray was absorbed
 				if (RayIsAbsorbed)
 				{
-					Stage->RayData.Append(PosRayGlob,
-										  CosRayGlob,
-										  LastElementNumber,
-										  i + 1,
-										  LastRayNumber,
-										  RayEvent::ABSORB);
+					TransformToReference(LastPosRaySurfStage,
+										 LastCosRaySurfStage,
+										 Stage->Origin,
+										 Stage->RLocToRef,
+										 PosRayGlob,
+										 CosRayGlob);
+
+					System->RayData.Append(PosRayGlob,
+										   CosRayGlob,
+										   LastElementNumber,
+										   i + 1,
+										   LastRayNumber,
+										   RayEvent::ABSORB);
+
 					n_rays_active--;
-					// IncomingRays[StageDataArrayIndex].active = false;
 
 					// ray was fully absorbed
 					if (RayNumber == LastRayNumberInPreviousStage)
@@ -563,23 +540,16 @@ namespace SolTrace::NativeRunner
 					// Handle FlagMiss condition (
 					if (FlagMiss == true)
 					{
-						LastElementNumber = 0;
 						LastRayNumber = RayNumber;
-						CopyVec3(LastPosRaySurfStage, PosRayStage);
-						CopyVec3(LastCosRaySurfStage, CosRayStage);
 
-						// TODO: Are these correct position/cosine vectors
-						// to save?
-						// Copying this here to handle FlagMiss condition
-						TRayData::ray_t *p_ray =
-							Stage->RayData.Append(PosRayGlob,
-												  CosRayGlob,
-												  ELEMENT_NULL,
-												  i + 1,
-												  LastRayNumber,
-												  RayEvent::EXIT);
+						System->RayData.Append(PosRayGlob,
+											   CosRayGlob,
+											   ELEMENT_NULL,
+											   i + 1,
+											   LastRayNumber,
+											   RayEvent::EXIT);
+
 						n_rays_active--;
-						// IncomingRays[StageDataArrayIndex].active = false;
 
 						if (RayNumber == LastRayNumberInPreviousStage)
 						{
@@ -639,17 +609,13 @@ namespace SolTrace::NativeRunner
 		for (uint_fast64_t k = 0; k < n_rays_active; ++k)
 		{
 			GlobalRay_refactored ray = IncomingRays[k];
-			Stage->RayData.Append(ray.Pos,
-								  ray.Cos,
-								  ELEMENT_NULL,
-								  idx + 1,
-								  ray.Num,
-								  RayEvent::EXIT);
+			System->RayData.Append(ray.Pos,
+								   ray.Cos,
+								   ELEMENT_NULL,
+								   idx + 1,
+								   ray.Num,
+								   RayEvent::EXIT);
 		}
-
-		// std::cout << "PreviousStageDataArrayIndex: "
-		// 		  << PreviousStageDataArrayIndex
-		// 		  << std::endl;
 
 		return true;
 	}

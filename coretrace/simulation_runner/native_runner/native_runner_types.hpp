@@ -304,7 +304,7 @@ namespace SolTrace::NativeRunner
 		double RRefToLoc[3][3];
 		double RLocToRef[3][3];
 
-		TRayData RayData;
+		// TRayData RayData;
 
 		int_fast64_t stage_id;
 	};
@@ -319,10 +319,11 @@ namespace SolTrace::NativeRunner
 		~TSystem();
 
 		void ClearAll();
-		void CollectResults();
+		// void CollectResults();
 
 		TSun Sun;
 		std::vector<tstage_ptr> StageList;
+		// std::map<element_id, std::pair<int_fast64_t, int_fast64_t> > id_map;
 
 		// system simulation context data
 		int sim_raycount;
@@ -334,7 +335,8 @@ namespace SolTrace::NativeRunner
 		uint_fast64_t seed;
 
 		// simulation outputs
-		TRayData AllRayData;
+		// TRayData AllRayData;
+		TRayData RayData;
 		uint_fast64_t SunRayCount;
 
 		std::vector<std::string> messages;

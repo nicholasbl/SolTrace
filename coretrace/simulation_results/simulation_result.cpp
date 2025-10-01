@@ -119,7 +119,7 @@ namespace SolTrace::Result
         if (idx < 0 || idx >= this->interactions.size())
         {
             std::stringstream ss;
-            ss << "SimulationResult::RayRecord: Index " << idx
+            ss << "RayRecord: Index " << idx
                << " is out of bounds [0, " << this->interactions.size()
                << "].";
             throw std::invalid_argument(ss.str());
@@ -169,7 +169,14 @@ namespace SolTrace::Result
 
     const ray_record_ptr &SimulationResult::operator[](int_fast64_t idx) const
     {
-        // TODO: Probably should do bounds checking...
+       if (idx < 0 || idx >= this->ray_history.size())
+        {
+            std::stringstream ss;
+            ss << "SimulationResult: Index " << idx
+               << " is out of bounds [0, " << this->ray_history.size()
+               << "].";
+            throw std::invalid_argument(ss.str());
+        }
         return this->ray_history[idx];
     }
 

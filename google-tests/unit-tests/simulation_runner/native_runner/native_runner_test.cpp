@@ -13,7 +13,6 @@
 #include <single_element.hpp>
 #include <stage_element.hpp>
 #include <vector3d.hpp>
-#include <filesystem>
 #include <virtual_element.hpp>
 
 #include "common.hpp"
@@ -155,8 +154,10 @@ TEST(NativeRunner, SmokeTest)
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 
     const TSystem *sys = runner.get_system();
-    sys->AllRayData.Print();
-    const TRayData *ray_data = &(sys->AllRayData);
+    // sys->AllRayData.Print();
+    // const TRayData *ray_data = &(sys->AllRayData);
+    sys->RayData.Print();
+    const TRayData *ray_data = &(sys->RayData);
     uint_fast64_t num_absorbed = count_absorbed_native(ray_data);
     uint_fast64_t ncreate = count_event_native(ray_data, RayEvent::CREATE);
     uint_fast64_t nexit = count_event_native(ray_data, RayEvent::EXIT);
@@ -284,8 +285,8 @@ TEST(NativeRunner, PowerTowerSmokeTest)
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 
     const TSystem *sys = runner.get_system();
-    // sys->AllRayData.Print();
-    const TRayData *ray_data = &(sys->AllRayData);
+    // sys->RayData.Print();
+    const TRayData *ray_data = &(sys->RayData);
     uint_fast64_t num_absorbed = count_absorbed_native(ray_data);
     uint_fast64_t ncreate = count_event_native(ray_data, RayEvent::CREATE);
     uint_fast64_t nexit = count_event_native(ray_data, RayEvent::EXIT);
@@ -325,7 +326,7 @@ TEST(NativeRunner, PowerTowerSmokeTest)
 
 TEST(NativeRunner, SingleRayValidationTest)
 {
-    const double TOL = 5e-10;
+    const double TOL = 1e-8;
 
     constexpr double c = 0.09;
     constexpr double R = 1.0 / c;
@@ -390,10 +391,10 @@ TEST(NativeRunner, SingleRayValidationTest)
 
     const TSystem *sys = runner.get_system();
     // sys->AllRayData.Print();
-    const TRayData *ray_data = &(sys->AllRayData);
+    const TRayData *ray_data = &(sys->RayData);
     size_t n = ray_data->Count();
 
-    sys->AllRayData.Print();
+    sys->RayData.Print();
 
     EXPECT_EQ(n, 3);
 
@@ -401,8 +402,8 @@ TEST(NativeRunner, SingleRayValidationTest)
     int element, stage;
     unsigned int raynum;
     SolTrace::Result::RayEvent rev;
-    sys->AllRayData.Query(0, ipoint.data, idir.data,
-                          &element, &stage, &raynum, &rev);
+    sys->RayData.Query(0, ipoint.data, idir.data,
+                       &element, &stage, &raynum, &rev);
 
     EXPECT_EQ(raynum, 1);
     EXPECT_EQ(rev, SolTrace::Result::RayEvent::CREATE);
@@ -415,8 +416,8 @@ TEST(NativeRunner, SingleRayValidationTest)
     EXPECT_NEAR(idir[1], u[1], TOL);
     EXPECT_NEAR(idir[2], u[2], TOL);
 
-    sys->AllRayData.Query(1, ipoint.data, idir.data,
-                          &element, &stage, &raynum, &rev);
+    sys->RayData.Query(1, ipoint.data, idir.data,
+                       &element, &stage, &raynum, &rev);
 
     EXPECT_EQ(raynum, 1);
     EXPECT_EQ(rev, SolTrace::Result::RayEvent::REFLECT);

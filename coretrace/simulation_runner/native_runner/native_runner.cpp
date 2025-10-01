@@ -253,7 +253,7 @@ namespace SolTrace::NativeRunner
             this->tsys.sim_errors_optical,
             this->as_power_tower);
 
-        this->tsys.CollectResults();
+        // this->tsys.CollectResults();
 
         return trace_return ? RunnerStatus::SUCCESS : RunnerStatus::ERROR;
     }
@@ -264,7 +264,8 @@ namespace SolTrace::NativeRunner
         RunnerStatus retval = RunnerStatus::SUCCESS;
 
         const TSystem *sys = this->get_system();
-        const TRayData ray_data = sys->AllRayData;
+        // const TRayData ray_data = sys->AllRayData;
+        const TRayData ray_data = sys->RayData;
         std::map<unsigned int, SolTrace::Result::ray_record_ptr> ray_records;
         std::map<unsigned int, SolTrace::Result::ray_record_ptr>::iterator iter;
         size_t ndata = ray_data.Count();
@@ -312,6 +313,7 @@ namespace SolTrace::NativeRunner
                 rec = SolTrace::Result::make_ray_record(raynum);
                 result->add_ray_record(rec);
                 ray_records[raynum] = rec;
+                assert(rev == SolTrace::Result::RayEvent::CREATE);
             }
             else
             {

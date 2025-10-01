@@ -46,13 +46,8 @@
  *  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************************************/
 
-#include <ctype.h>
-#include <stdarg.h>
-
-#include <cstdio>
-#include <cstdlib>
+#include <cstring>
 #include <memory>
-#include <string>
 
 #include "calculator_factory.hpp"
 #include "matvec.hpp"
@@ -490,20 +485,21 @@ namespace SolTrace::NativeRunner
     {
         StageList.clear();
         Sun.Reset();
-        this->AllRayData.Clear();
+        // this->AllRayData.Clear();
+        this->RayData.Clear();
     }
 
-    void TSystem::CollectResults()
-    {
-        // Collect the ray data from the stages
-        // tstage_ptr st;
-        for (auto iter = this->StageList.cbegin();
-             iter != this->StageList.cend();
-             ++iter)
-        {
-            this->AllRayData.Merge((*iter)->RayData);
-        }
-    }
+    // void TSystem::CollectResults()
+    // {
+    //     // Collect the ray data from the stages
+    //     // tstage_ptr st;
+    //     for (auto iter = this->StageList.cbegin();
+    //          iter != this->StageList.cend();
+    //          ++iter)
+    //     {
+    //         this->AllRayData.Merge((*iter)->RayData);
+    //     }
+    // }
 
     void TSystem::errlog(const char *fmt, ...)
     {

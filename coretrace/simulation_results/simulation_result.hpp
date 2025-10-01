@@ -21,7 +21,8 @@ namespace SolTrace::Result
         ABSORB = 2,
         REFLECT = 3,
         TRANSMIT = 4,
-        EXIT = 5,
+        VIRTUAL = 5,
+        EXIT = 6,
         UNKNOWN = 1000
     };
 
@@ -136,6 +137,10 @@ namespace SolTrace::Result
 
         void write_csv_file(std::string csv_name);
         void write_csv_file(const char *csv_name);
+
+        // Legacy stuff -- TODO:
+        // void results_to_legacy_csv(std::string csv_name,
+        //                            SimulationData *data);
 
         const ray_record_ptr &operator[](int_fast64_t idx) const;
         // ray_record_ptr &operator[](int_fast64_t idx);
