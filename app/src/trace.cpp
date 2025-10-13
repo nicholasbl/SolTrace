@@ -124,7 +124,7 @@ TraceForm::TraceForm( wxWindow *parent, Project &prj )
 	m_runner_choice = new wxRadioBox(
 		sizer1->GetStaticBox(),
 		ID_RUNNER_RADIO,
-		"SolTrace 2.0 (pre-alpha)",
+		"Select runner",
 		wxDefaultPosition,
 		wxDefaultSize,
 		WXSIZEOF(runnerChoices),
