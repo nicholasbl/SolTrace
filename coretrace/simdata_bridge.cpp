@@ -5,6 +5,7 @@
 #include "sun.hpp"
 #include "stage_element.hpp"
 #include "single_element.hpp"
+#include "virtual_element.hpp"
 #include <optix_runner.hpp>
 #include <native_runner.hpp>
 #include "simdata_io.hpp"
@@ -106,12 +107,19 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
             stage->set_zrot(stage_legacy->ZRot);
             stage->compute_coordinate_rotations();
 
+            // Check if virtual
+            bool is_virtual = stage_legacy->Virtual;
+
             // Add elements to stage
             int i_element = 0;
             for (TElement* el_legacy : stage_legacy->ElementList)
             {
                 // Make element
-                SolTrace::Data::element_ptr element = SolTrace::Data::make_element<SolTrace::Data::SingleElement>();
+                SolTrace::Data::element_ptr element;
+                if (is_virtual == true)
+                    element = SolTrace::Data::make_element<SolTrace::Data::VirtualElement>();
+                else
+                    element = SolTrace::Data::make_element<SolTrace::Data::SingleElement>();
 
                 // Make aperture
                 SolTrace::Data::ApertureType aperture_type = SolTrace::Data::char_to_aperture(el_legacy->ShapeIndex);
@@ -143,10 +151,13 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
                 element->set_zrot(el_legacy->ZRot);
 
                 // Set optical properties
-                SolTrace::Data::OpticalProperties optics_front = make_optics(el_legacy->Optics->Front, el_legacy->InteractionType);
-                SolTrace::Data::OpticalProperties optics_back = make_optics(el_legacy->Optics->Back, el_legacy->InteractionType);
-                element->set_front_optical_properties(optics_front);
-                element->set_back_optical_properties(optics_back);
+                if (is_virtual == false)
+                {
+                    SolTrace::Data::OpticalProperties optics_front = make_optics(el_legacy->Optics->Front, el_legacy->InteractionType);
+                    SolTrace::Data::OpticalProperties optics_back = make_optics(el_legacy->Optics->Back, el_legacy->InteractionType);
+                    element->set_front_optical_properties(optics_front);
+                    element->set_back_optical_properties(optics_back);
+                }
 
                 // Set element name
                 element->set_name(std::to_string(i_element));
@@ -200,7 +211,7 @@ int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
     sys->AllRayData.Clear();
 
     // Copy from native TOTAL (aggregate) ray list instead of per stage
-    const auto nCount = tsys_native->AllRayData.Count();
+    const auto nCount = tsys_native->RayData.Count();
     for (uint_fast64_t i = 0; i < nCount; ++i)
     {
         // Native TRayData::ray_t layout (Query API)
@@ -210,7 +221,7 @@ int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
 
         // Native runner TRayData::Query signature includes RayEvent;
         // we only need the legacy fields, so pass nullptr for the event.
-        if (!tsys_native->AllRayData.Query(
+        if (!tsys_native->RayData.Query(
             (unsigned int)i,
             pos,            // pos
             dir,            // cos
