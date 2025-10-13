@@ -109,7 +109,7 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
 
             // Check if virtual
             bool is_virtual = stage_legacy->Virtual;
-
+            
             // Add elements to stage
             int i_element = 0;
             for (TElement* el_legacy : stage_legacy->ElementList)
@@ -187,7 +187,7 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
         par.include_optical_errors = sys->sim_errors_optical;
     }
 
-	return static_cast<int>(ConversionErrors::SUCCESS);;
+	return static_cast<int>(ConversionErrors::SUCCESS);
 }
 
 int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)

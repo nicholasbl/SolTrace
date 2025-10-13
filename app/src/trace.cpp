@@ -959,7 +959,7 @@ int RunSolTrace20(Project* System, int nrays, int nmaxrays,
 	}
 
 	// Run ray trace
-	int count_raydata = ::st_sim_run_SolTrace20(spcxt, (unsigned int)seed, runner_type, file_name);
+	int count_raydata = ::st_sim_run_SolTrace20(spcxt, *seed, runner_type, file_name);
 
 	// Delete temporary stinput
 	if (runner_type == 3)
