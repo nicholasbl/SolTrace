@@ -84,8 +84,8 @@ TEST(Surface, MakeSurfaceFromType)
         
         auto parabola = std::dynamic_pointer_cast<SolTrace::Data::Parabola>(surface);
         ASSERT_NE(parabola, nullptr);
-        EXPECT_DOUBLE_EQ(parabola->focal_length_x, 1.5);
-        EXPECT_DOUBLE_EQ(parabola->focal_length_y, 2.0);
+        EXPECT_DOUBLE_EQ(parabola->focal_length_x, 0.33333333333333331);
+        EXPECT_DOUBLE_EQ(parabola->focal_length_y, 0.25);
     }
 
     // Test PARABOLA creation with insufficient arguments
@@ -159,8 +159,8 @@ TEST(Surface, MakeSurfaceFromType)
         ASSERT_NE(parabola, nullptr);
         EXPECT_EQ(parabola->get_type(), SolTrace::Data::PARABOLA);
         auto para_cast = std::dynamic_pointer_cast<SolTrace::Data::Parabola>(parabola);
-        EXPECT_DOUBLE_EQ(para_cast->focal_length_x, 5.0);
-        EXPECT_DOUBLE_EQ(para_cast->focal_length_y, 7.5);
+        EXPECT_DOUBLE_EQ(para_cast->focal_length_x, 0.1);
+        EXPECT_DOUBLE_EQ(para_cast->focal_length_y, 0.066666666666666666);
         
         // SPHERE only uses first argument
         auto sphere = SolTrace::Data::make_surface_from_type(SolTrace::Data::SPHERE, multi_args);

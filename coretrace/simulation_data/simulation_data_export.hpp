@@ -55,6 +55,13 @@ using SolTrace::Data::make_surface;
 using SolTrace::Data::make_surface_from_type;
 
 // Matrix-Vector Functions
+using SolTrace::Data::dot_product;
+using SolTrace::Data::matrix_copy;
+using SolTrace::Data::matrix_matrix_product;
+using SolTrace::Data::matrix_vector_product;
+using SolTrace::Data::vector_add;
+using SolTrace::Data::vector_copy;
+using SolTrace::Data::vector_norm;
 using SolTrace::Data::CopyVec3;
 using SolTrace::Data::DOT;
 using SolTrace::Data::IdentityMat3;

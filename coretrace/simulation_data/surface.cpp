@@ -22,8 +22,19 @@ surface_ptr make_surface_from_type(SurfaceType type, const std::vector<double> &
         retval = make_surface<Flat>();
         break;
     case PARABOLA:
-        retval = nargs < 2 ? nullptr : make_surface<Parabola>(args[0], args[1]);
+    {
+        if (nargs < 2)
+            retval = nullptr;
+        else
+        {
+            double cx = args[0];
+            double cy = args[1];
+            double fx = 1.0 / (2.0 * cx);
+            double fy = 1.0 / (2.0 * cy);
+            retval = make_surface<Parabola>(fx, fy);
+        }
         break;
+    } 
     case SPHERE:
         retval = nargs < 1 ? nullptr : make_surface<Sphere>(args[0]);
         break;

@@ -35,9 +35,9 @@ void ProcessInteraction(
     int &myrng_counter);
 
 void Interaction(MTRand &myrng,
-                 double PosXYZ[3],
-                 double CosKLM[3],
-                 double DFXYZ[3],
+                 const double PosXYZ[3],
+                 const double CosKLM[3],
+                 const double DFXYZ[3],
                  const SolTrace::Data::OpticalProperties *Opticl,
                  double Wavelength,
                  double PosOut[3],

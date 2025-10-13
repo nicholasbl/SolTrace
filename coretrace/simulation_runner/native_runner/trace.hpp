@@ -13,7 +13,7 @@ namespace SolTrace::NativeRunner {
 class GlobalRay_refactored
 {
 public:
-    GlobalRay_refactored()
+    GlobalRay_refactored() // : active(true)
     {
         Num = 0;
         for (int i = 0; i < 3; i++)
@@ -23,6 +23,7 @@ public:
     double Pos[3];
     double Cos[3];
     uint_fast64_t Num;
+    // bool active;
 };
 
 // void SpencerandMurtySurfaceClosedForm(TElement *Element,
@@ -46,7 +47,7 @@ public:
 //                            double CosRayGlobal[3],
 //                            int &raynum);
 
-bool AperturePlane(TElement *Element);
+// bool AperturePlane(TElement *Element);
 
 // void NewZStartforCubicSplineSurf(double CRadius,
 //                                  double PosLoc[3],
