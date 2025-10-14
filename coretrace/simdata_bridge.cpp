@@ -162,6 +162,12 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
 
                 // Set element name
                 element->set_name(std::to_string(i_element));
+                
+                // Enable/disable element
+                if (el_legacy->Enabled)
+                    element->enable();
+                else
+                    element->disable();
 
                 // Attach to stage
                 if (!SolTrace::Data::Element::is_success(stage->add_element(element)))
