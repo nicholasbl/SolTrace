@@ -68,6 +68,25 @@ int assign_raydata_from_hitpoints(const std::vector<float4>& hp_vec, const std::
     return 0;
 }
 
+int set_tstage_parameters(TSystem* sys_legacy, const SolTrace::NativeRunner::TSystem& sys_native)
+{
+    const int n_stage_native = sys_native.StageList.size();
+    const int n_stage_legacy = sys_legacy->StageList.size();
+
+    if (n_stage_native != n_stage_legacy)
+        return static_cast<int>(ConversionErrors::STAGE_PROP_ERROR);
+
+    for (int i = 0; i < n_stage_native; i++)
+    {
+        TStage* stage_legacy = sys_legacy->StageList[i];
+        SolTrace::NativeRunner::tstage_ptr stage_native = sys_native.StageList[i];
+
+        stage_native->MultiHitsPerRay = stage_legacy->MultiHitsPerRay;
+        stage_native->Virtual = stage_legacy->Virtual;
+        stage_native->TraceThrough = stage_legacy->TraceThrough;
+    }
+}
+
 // Public
 
 int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::SimulationData &sd)
@@ -199,10 +218,22 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
 
 int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
 {
+    // Make native runner
     SolTrace::NativeRunner::NativeRunner runner;
+    
+    // Initialize
     SolTrace::Runner::RunnerStatus sts = runner.initialize();
+    
+    // Setup simualtion (convert simulation data to TSystem)
     sts = runner.setup_simulation(&sd);
+
+    // Set stage parameters (specific to native runner)
+    set_tstage_parameters(sys, *runner.get_system());
+
+    // Run simulation
     sts = runner.run_simulation();
+
+    // Collect results
     SolTrace::Result::SimulationResult result;
     sts = runner.report_simulation(&result, 1);
 

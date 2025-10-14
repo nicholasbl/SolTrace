@@ -12,7 +12,9 @@ enum class ConversionErrors
 	APERTURE_ERROR,
 	SURFACE_ERROR,
 	ELEMENT_ADD_ERROR,
-	STAGE_ADD_ERROR
+	STAGE_ADD_ERROR,
+	STAGE_PROP_ERROR,
+	END
 };
 
 inline const char* get_error_message(ConversionErrors err_enum)
@@ -37,7 +39,7 @@ inline const char* get_error_message(ConversionErrors err_enum)
 inline const char* get_error_message(int err_int)
 {
 	if (err_int < static_cast<int>(ConversionErrors::SUCCESS) ||
-		err_int > static_cast<int>(ConversionErrors::STAGE_ADD_ERROR))
+		err_int >= static_cast<int>(ConversionErrors::END))
 		return "Incompatible error int";
 	return get_error_message(static_cast<ConversionErrors>(err_int));
 }
