@@ -959,7 +959,14 @@ int RunSolTrace20(Project* System, int nrays, int nmaxrays,
 	}
 
 	// Run ray trace
-	int count_raydata = ::st_sim_run_SolTrace20(spcxt, *seed, runner_type, file_name);
+	const char* error_msg = "";
+	int count_raydata = ::st_sim_run_SolTrace20(spcxt, *seed, runner_type, &error_msg, file_name);
+	if (count_raydata <= 0)
+	{
+		errors.Add(error_msg && *error_msg ? wxString::FromUTF8(error_msg) : "Unknown error");
+		return -2;
+	}
+		
 
 	// Delete temporary stinput
 	if (runner_type == 3)

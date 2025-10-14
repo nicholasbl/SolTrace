@@ -15,6 +15,33 @@ enum class ConversionErrors
 	STAGE_ADD_ERROR
 };
 
+inline const char* get_error_message(ConversionErrors err_enum)
+{
+	switch (err_enum)
+	{
+		case(ConversionErrors::NOT_SUPPORTED_ERROR):
+			return "Feature not supported";
+		case(ConversionErrors::APERTURE_ERROR):
+			return "Aperture error";
+		case(ConversionErrors::SURFACE_ERROR):
+			return "Surface error";
+		case(ConversionErrors::ELEMENT_ADD_ERROR):
+			return "Element add to stage error";
+		case(ConversionErrors::STAGE_ADD_ERROR):
+			return "Stage add to scene error";
+		default:
+			return "No error";
+	}
+}
+
+inline const char* get_error_message(int err_int)
+{
+	if (err_int < static_cast<int>(ConversionErrors::SUCCESS) ||
+		err_int > static_cast<int>(ConversionErrors::STAGE_ADD_ERROR))
+		return "Incompatible error int";
+	return get_error_message(static_cast<ConversionErrors>(err_int));
+}
+
 int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::SimulationData& sd);
 
 int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys);
