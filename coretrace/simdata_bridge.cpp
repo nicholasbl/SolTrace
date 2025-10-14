@@ -37,6 +37,31 @@ SolTrace::Data::OpticalProperties make_optics(TOpticalProperties optics_legacy, 
     return optics;
 }
 
+void convert_user_sun_data(const std::vector<double>& sun_shape_angle, const std::vector<double>& sun_shape_intensity,
+    std::vector<double>& sun_shape_angle_reduced, std::vector<double>& sun_shape_intensity_reduced)
+{
+    if (sun_shape_angle.size() == 0 || sun_shape_intensity.size() == 0 || sun_shape_angle.size() != sun_shape_intensity.size())
+    {
+        sun_shape_angle_reduced = sun_shape_angle;
+        sun_shape_intensity_reduced = sun_shape_intensity;
+        return;
+    }
+
+    int n_pts_full = sun_shape_angle.size();
+    int start_position = (n_pts_full - 1) / 2;
+
+    sun_shape_angle_reduced.clear();
+    sun_shape_intensity_reduced.clear();
+
+    for (int i = start_position; i < n_pts_full; i++)
+    {
+        sun_shape_angle_reduced.push_back(sun_shape_angle[i]);
+        sun_shape_intensity_reduced.push_back(sun_shape_intensity[i]);
+    }
+
+    return;
+}
+
 int assign_raydata_from_hitpoints(const std::vector<float4>& hp_vec, const std::vector<int>& raynumber_vec,
     TSystem* sys)
 {
@@ -107,9 +132,14 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
         // Set sun shape
         SolTrace::Data::DistributionType sun_shape = SolTrace::Data::char_to_distribution(sys->Sun.ShapeIndex);
         double Sigma = sys->Sun.Sigma;
-        double HalfWidth = sys->Sun.Sigma;  // Gaussian and pillobox parameters are stored in Sun.Sigma
-        sun->set_shape(sun_shape, Sigma, HalfWidth, sys->Sun.SunShapeAngle, sys->Sun.SunShapeIntensity);
-
+        double HalfWidth = sys->Sun.Sigma;  // Gaussian and pillbox parameters are stored in Sun.Sigma
+        //std::vector<double> user_angle = sys->Sun.SunShapeAngle;
+        //std::vector<double> user_intensity = sys->Sun.SunShapeIntensity;
+        std::vector<double> user_angle_formatted, user_intensity_formatted;
+        convert_user_sun_data(sys->Sun.SunShapeAngle, sys->Sun.SunShapeIntensity,
+            user_angle_formatted, user_intensity_formatted);
+        sun->set_shape(sun_shape, Sigma, HalfWidth, user_angle_formatted, user_intensity_formatted);
+        
         // Attach sun to simulation data
         sd.add_ray_source(sun);
 	}
