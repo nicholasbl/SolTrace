@@ -42,6 +42,7 @@ aperture_ptr Aperture::make_aperture_from_type(ApertureType type,
     case ApertureType::SINGLE_AXIS_CURVATURE_SECTION:
         if (args.size() < 3)
             break;
+        break;  // Added break because SINGLE AXIS is not supported (breaks as rect)
         return make_aperture<Rectangle>(
             args[1] - args[0], args[2], args[0], 0.5 * args[2]);
     case ApertureType::IRREGULAR_TRIANGLE:
