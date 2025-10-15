@@ -195,6 +195,19 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
                     return static_cast<int>(ConversionErrors::SURFACE_ERROR);
                 element->set_surface(surface_ptr);
 
+                // TODO: move this somewhere more appropriate
+                if (surface_type == SolTrace::Data::SurfaceType::CYLINDER)
+                {
+                    aperture_ptr = element->get_aperture();
+                    auto rect = std::dynamic_pointer_cast<SolTrace::Data::Rectangle>(aperture_ptr);
+                    auto cyl = std::dynamic_pointer_cast<SolTrace::Data::Cylinder>(surface_ptr);
+                    if (rect == nullptr || cyl == nullptr)
+                    {
+                        throw std::invalid_argument("This should not happen!");
+                    }
+                    rect->x_length = 2.0 * cyl->radius;
+                }
+
                 // Set element position and orientation
                 element->set_origin(el_legacy->Origin[0], el_legacy->Origin[1], el_legacy->Origin[2]);
                 element->set_aim_vector(el_legacy->AimPoint[0], el_legacy->AimPoint[1], el_legacy->AimPoint[2]);
@@ -254,6 +267,10 @@ int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
     // Initialize
     SolTrace::Runner::RunnerStatus sts = runner.initialize();
     
+    // Set native runner specific parameters
+    if (sys->sim_dynamic_group) runner.enable_power_tower();
+    else runner.disable_power_tower();
+
     // Setup simualtion (convert simulation data to TSystem)
     sts = runner.setup_simulation(&sd);
 
@@ -304,7 +321,12 @@ int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
             continue;
         }
         
+        // Skip Create rays
         if (ray_event == SolTrace::Result::RayEvent::CREATE)
+            continue;
+
+        // Skip exit rays
+        if (ray_event == SolTrace::Result::RayEvent::EXIT)
             continue;
 
         if (stageIdx1 < 1 || (size_t)stageIdx1 > sys->StageList.size())
