@@ -4,9 +4,9 @@ name: CMake on multiple platforms
 
 on:
   push:
-    branches: [ develop, trace_refactor ]
+    branches: [ develop ]
   pull_request:
-    branches: [ develop, trace_refactor ]
+    branches: [ develop ]
 
 jobs:
   build:
@@ -57,7 +57,9 @@ jobs:
   
     - name: Install lfontconfig
       if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get install -y libfontconfig1-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libfontconfig1-dev
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
@@ -80,11 +82,11 @@ jobs:
     - name: Build-Windows
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       if: matrix.os == 'windows-latest'
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --target strace Test
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
       
     - name: Build-Mac-Linux
       if: matrix.os != 'windows-latest'
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --target strace Test
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
     # - name: List test directory
     #   run: |

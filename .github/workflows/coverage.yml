@@ -17,6 +17,7 @@ jobs:
 
     - name: Install dependencies
       run: |
+        sudo apt-get update
         sudo apt-get install -o Acquire::Retries=3 lcov
         sudo apt-get install -y libfontconfig1-dev
 
@@ -41,6 +42,7 @@ jobs:
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+        -DSOLTRACE_BUILD_CORETRACE=OFF
         -DSOLTRACE_BUILD_GUI=OFF
         -DENABLE_COVERAGE=ON
         -S ${{ github.workspace }}
@@ -63,4 +65,5 @@ jobs:
       uses: coverallsapp/github-action@v2
       with:
         path-to-lcov: ${{ steps.strings.outputs.build-output-dir }}/coverage.info
-        github-token: ${{ secrets.GITHUB_TOKEN }}      
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        coverage-reporter-version: v0.6.15

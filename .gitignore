@@ -311,3 +311,8 @@ __pycache__/
 
 # Out of source build directories
 build*
+
+# Test stuff
+google-tests/*.stinput
+google-tests/*.mon
+google-tests/*.csv

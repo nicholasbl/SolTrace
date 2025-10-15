@@ -1,0 +1,46 @@
+#ifndef SOLTRACE_CALCULATOR_FACTORY_H
+#define SOLTRACE_CALCULATOR_FACTORY_H
+
+// #include <map>
+// #include <memory>
+
+#include "aperture.hpp"
+#include "native_runner_types.hpp"
+#include "surface.hpp"
+#include "surface_intersection_calculator.hpp"
+
+namespace SolTrace::NativeRunner {
+
+class CalculatorFactory
+{
+public:
+    CalculatorFactory(const CalculatorFactory &) = delete;
+    CalculatorFactory &operator=(const CalculatorFactory &) = delete;
+
+    static CalculatorFactory *get()
+    {
+        if (CalculatorFactory::instance == nullptr)
+        {
+            // instance = std::make_unique<CalculatorFactory>();
+            instance = new CalculatorFactory();
+        }
+        return instance;
+    }
+
+    // calculator_ptr make_calculator(aperture_ptr ap, surface_ptr surf);
+    calculator_ptr make_calculator(SolTrace::Data::aperture_ptr ap,
+                                   SolTrace::Data::surface_ptr surf,
+                                   const ElementParameters &eparams);
+
+private:
+    // static std::unique_ptr<CalculatorFactory> instance;
+    static CalculatorFactory *instance;
+    // std::map<SurfaceType, calculator_ptr> class_map;
+
+    CalculatorFactory() {}
+    // ~CalculatorFactory(){}
+};
+
+} // namespace SolTrace::NativeRunner
+
+#endif

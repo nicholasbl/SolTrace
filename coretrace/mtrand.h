@@ -212,35 +212,35 @@ inline MTRand::uint32 MTRand::hash( time_t t, clock_t c )
 
 inline void MTRand::initialize( const uint32 seed )
 {
-  // Initialize generator state with seed
-  // See Knuth TAOCP Vol 2, 3rd Ed, p.106 for multiplier.
-  // In previous versions, most significant bits (MSBs) of the seed affect
-  // only MSBs of the state array.  Modified 9 Jan 2002 by Makoto Matsumoto.
-  uint32 *s = state;
-  uint32 *r = state;
-  int i = 1;
-  *s++ = seed & 0xffffffffUL;
-  for( ; i < N; ++i )
-  {
-    *s++ = ( 1812433253UL * ( *r ^ (*r >> 30) ) + i ) & 0xffffffffUL;
-    r++;
-  }
+	// Initialize generator state with seed
+	// See Knuth TAOCP Vol 2, 3rd Ed, p.106 for multiplier.
+	// In previous versions, most significant bits (MSBs) of the seed affect
+	// only MSBs of the state array.  Modified 9 Jan 2002 by Makoto Matsumoto.
+	uint32 *s = state;
+	uint32 *r = state;
+	int i = 1;
+	*s++ = seed & 0xffffffffUL;
+	for( ; i < N; ++i )
+	{
+		*s++ = ( 1812433253UL * ( *r ^ (*r >> 30) ) + i ) & 0xffffffffUL;
+		r++;
+	}
 }
 
 inline void MTRand::reload()
 {
-  // Generate N new values in state
-  // Made clearer and faster by Matthew Bellew (matthew.bellew@home.com)
-  static const int MmN = int(M) - int(N);  // in case enums are unsigned
-  uint32 *p = state;
-  int i;
-  for( i = N - M; i--; ++p )
-    *p = twist( p[M], p[0], p[1] );
-  for( i = M; --i; ++p )
-    *p = twist( p[MmN], p[0], p[1] );
-  *p = twist( p[MmN], p[0], state[0] );
-
-  left = N, pNext = state;
+	// Generate N new values in state
+	// Made clearer and faster by Matthew Bellew (matthew.bellew@home.com)
+	static const int MmN = int(M) - int(N);  // in case enums are unsigned
+	uint32 *p = state;
+	int i;
+	for( i = N - M; i--; ++p )
+		*p = twist( p[M], p[0], p[1] );
+	for( i = M; --i; ++p )
+		*p = twist( p[MmN], p[0], p[1] );
+	*p = twist( p[MmN], p[0], state[0] );
+	
+	left = N, pNext = state;
 }
 
 inline void MTRand::seed( const uint32 oneSeed )
@@ -252,37 +252,37 @@ inline void MTRand::seed( const uint32 oneSeed )
 
 inline void MTRand::seed( uint32 *const bigSeed, const uint32 seedLength )
 {
-  // Seed the generator with an array of uint32's
-  // There are 2^19937-1 possible initial states.  This function allows
-  // all of those to be accessed by providing at least 19937 bits (with a
-  // default seed length of N = 624 uint32's).  Any bits above the lower 32
-  // in each element are discarded.
-  // Just call seed() if you want to get array from /dev/urandom
-  initialize(19650218UL);
-  int i = 1;
-  uint32 j = 0;
-  int k = ( N > seedLength ? N : seedLength );
-  for( ; k; --k )
-  {
-    state[i] =
-    state[i] ^ ( (state[i-1] ^ (state[i-1] >> 30)) * 1664525UL );
-    state[i] += ( bigSeed[j] & 0xffffffffUL ) + j;
-    state[i] &= 0xffffffffUL;
-    ++i;  ++j;
-    if( i >= N ) { state[0] = state[N-1];  i = 1; }
-    if( j >= seedLength ) j = 0;
-  }
-  for( k = N - 1; k; --k )
-  {
-    state[i] =
-    state[i] ^ ( (state[i-1] ^ (state[i-1] >> 30)) * 1566083941UL );
-    state[i] -= i;
-    state[i] &= 0xffffffffUL;
-    ++i;
-    if( i >= N ) { state[0] = state[N-1];  i = 1; }
-  }
-  state[0] = 0x80000000UL;  // MSB is 1, assuring non-zero initial array
-  reload();
+	// Seed the generator with an array of uint32's
+	// There are 2^19937-1 possible initial states.  This function allows
+	// all of those to be accessed by providing at least 19937 bits (with a
+	// default seed length of N = 624 uint32's).  Any bits above the lower 32
+	// in each element are discarded.
+	// Just call seed() if you want to get array from /dev/urandom
+	initialize(19650218UL);
+	int i = 1;
+	uint32 j = 0;
+	int k = ( N > seedLength ? N : seedLength );
+	for( ; k; --k )
+	{
+		state[i] =
+		state[i] ^ ( (state[i-1] ^ (state[i-1] >> 30)) * 1664525UL );
+		state[i] += ( bigSeed[j] & 0xffffffffUL ) + j;
+		state[i] &= 0xffffffffUL;
+		++i;  ++j;
+		if( i >= N ) { state[0] = state[N-1];  i = 1; }
+		if( j >= seedLength ) j = 0;
+	}
+	for( k = N - 1; k; --k )
+	{
+		state[i] =
+		state[i] ^ ( (state[i-1] ^ (state[i-1] >> 30)) * 1566083941UL );
+		state[i] -= i;
+		state[i] &= 0xffffffffUL;
+		++i;
+		if( i >= N ) { state[0] = state[N-1];  i = 1; }
+	}
+	state[0] = 0x80000000UL;  // MSB is 1, assuring non-zero initial array
+	reload();
 }
 
 inline void MTRand::seed()
@@ -305,12 +305,12 @@ inline MTRand::MTRand( const uint32 oneSeed )
 
 inline MTRand::MTRand( const MTRand& o )
 {
-  const uint32 *t = o.state;
-  uint32 *s = state;
-  int i = N;
-  for( ; i--; *s++ = *t++ ) {}
-  left = o.left;
-  pNext = &state[N-left];
+	const uint32 *t = o.state;
+	uint32 *s = state;
+	int i = N;
+	for( ; i--; *s++ = *t++ ) {}
+	left = o.left;
+	pNext = &state[N-left];
 }
 
 inline MTRand::uint32 MTRand::randInt()
@@ -348,51 +348,51 @@ inline double MTRand::operator()()
 
 inline void MTRand::save( uint32* saveArray ) const
 {
-  const uint32 *s = state;
-  uint32 *sa = saveArray;
-  int i = N;
-  for( ; i--; *sa++ = *s++ ) {}
-  *sa = left;
+	const uint32 *s = state;
+	uint32 *sa = saveArray;
+	int i = N;
+	for( ; i--; *sa++ = *s++ ) {}
+	*sa = left;
 }
 
 inline void MTRand::load( uint32 *const loadArray )
 {
-  uint32 *s = state;
-  uint32 *la = loadArray;
-  int i = N;
-  for( ; i--; *s++ = *la++ ) {}
-  left = *la;
-  pNext = &state[N-left];
+	uint32 *s = state;
+	uint32 *la = loadArray;
+	int i = N;
+	for( ; i--; *s++ = *la++ ) {}
+	left = *la;
+	pNext = &state[N-left];
 }
 
 inline std::ostream& operator<<( std::ostream& os, const MTRand& mtrand )
 {
-  const MTRand::uint32 *s = mtrand.state;
-  int i = mtrand.N;
-  for( ; i--; os << *s++ << "\t" ) {}
-  return os << mtrand.left;
+	const MTRand::uint32 *s = mtrand.state;
+	int i = mtrand.N;
+	for( ; i--; os << *s++ << "\t" ) {}
+	return os << mtrand.left;
 }
 
 inline std::istream& operator>>( std::istream& is, MTRand& mtrand )
 {
-  MTRand::uint32 *s = mtrand.state;
-  int i = mtrand.N;
-  for( ; i--; is >> *s++ ) {}
-  is >> mtrand.left;
-  mtrand.pNext = &mtrand.state[mtrand.N-mtrand.left];
-  return is;
+	MTRand::uint32 *s = mtrand.state;
+	int i = mtrand.N;
+	for( ; i--; is >> *s++ ) {}
+	is >> mtrand.left;
+	mtrand.pNext = &mtrand.state[mtrand.N-mtrand.left];
+	return is;
 }
 
 inline MTRand& MTRand::operator=( const MTRand& o )
 {
-  if( this == &o ) return (*this);
-  const uint32 *t = o.state;
-  uint32 *s = state;
-  int i = N;
-  for( ; i--; *s++ = *t++ ) {}
-  left = o.left;
-  pNext = &state[N-left];
-  return (*this);
+	if( this == &o ) return (*this);
+	const uint32 *t = o.state;
+	uint32 *s = state;
+	int i = N;
+	for( ; i--; *s++ = *t++ ) {}
+	left = o.left;
+	pNext = &state[N-left];
+	return (*this);
 }
 
 #endif  // MERSENNETWISTER_H

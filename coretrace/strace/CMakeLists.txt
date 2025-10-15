@@ -21,7 +21,7 @@ endif()
 
 #####################################################################################################################
 #
-# Project Settings 
+# Project Settings
 #
 #####################################################################################################################
 project(strace)
@@ -43,7 +43,7 @@ cmake_policy(SET CMP0043 NEW)
 
 if(MSVC)
 	add_compile_options(/W4 /MP /GS)
-	
+
 	#add_compile_definitions(WIN32)
 	add_compile_definitions(_CRT_SECURE_NO_DEPRECATE=1)
 	add_compile_definitions(_CRT_NON_CONFORMING_SWPRINTFS=1)
@@ -52,14 +52,20 @@ if(MSVC)
 	add_compile_definitions(_UNICODE)
 	add_compile_definitions(_WINDOWS)
 	add_compile_definitions(NOPCH)
-	
+
 	foreach (flag_var CMAKE_C_FLAGS_DEBUG CMAKE_CXX_FLAGS_DEBUG)
 		set(${flag_var} "${${flag_var}} /D_DEBUG" CACHE STRING "compile flags" FORCE)
 	endforeach()
 else(MSVC)
 	if (APPLE)
 		set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-		add_compile_options(-arch x86_64)
+		execute_process(
+			COMMAND uname -m
+			RESULT_VARIABLE result
+			OUTPUT_VARIABLE OSX_NATIVE_ARCHITECTURE
+			OUTPUT_STRIP_TRAILING_WHITESPACE
+			)
+		add_compile_options(-arch ${OSX_NATIVE_ARCHITECTURE})
 	else()
 		add_definitions(-D__64BIT__)
 	endif()
@@ -80,7 +86,7 @@ endif(MSVC)
 #####################################################################################################################
 
 #####################################################################################################################
-# 
+#
 # CMake Targets
 #
 #####################################################################################################################
