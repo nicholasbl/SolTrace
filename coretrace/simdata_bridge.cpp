@@ -300,6 +300,7 @@ int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
 
     // Copy from native TOTAL (aggregate) ray list instead of per stage
     const auto nCount = tsys_native->RayData.Count();
+    const auto nStage = tsys_native->StageList.size();
     for (uint_fast64_t i = 0; i < nCount; ++i)
     {
         // Native TRayData::ray_t layout (Query API)
@@ -325,8 +326,8 @@ int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
         if (ray_event == SolTrace::Result::RayEvent::CREATE)
             continue;
 
-        // Skip exit rays
-        if (ray_event == SolTrace::Result::RayEvent::EXIT)
+        // Skip exit rays for last stage
+        if (ray_event == SolTrace::Result::RayEvent::EXIT && stageIdx1 == nStage)
             continue;
 
         if (stageIdx1 < 1 || (size_t)stageIdx1 > sys->StageList.size())
