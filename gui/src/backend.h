@@ -1,0 +1,60 @@
+#pragma once
+
+#include "dataset.h"
+#include "indirect_model.h"
+#include "instance_table.h"
+#include "qt_helpers.h"
+
+#include <QObject>
+#include <QQmlEngine>
+
+struct ADataSet {
+    QString name;
+    QString provenance;
+    DataPtr ptr;
+};
+
+class DataSetsModel : public IndirectTableModel {
+    Q_OBJECT
+    QVector<ADataSet> m_sets;
+
+    bool _can_append_new(QVariant const&) override;
+    void _append_new(QVariant) override;
+    bool _can_delete_at(size_t, size_t) override;
+    void _delete_at(size_t, size_t) override;
+    int  _record_count() const override;
+    void _clear() override;
+
+    void watch(Data* ptr);
+
+    QOBJECT_WRITABLE_PROPERTY(Data, current_data);
+
+private slots:
+    void file_ready();
+    void a_data_changed();
+
+
+public:
+    explicit DataSetsModel(QObject* parent = nullptr);
+
+public slots:
+    void start_load_file(QUrl);
+
+    void select(int);
+
+signals:
+    void file_load_error(QString);
+};
+
+
+class Backend : public QObject {
+    Q_OBJECT
+    QML_ELEMENT
+    QML_SINGLETON
+
+
+    QOBJECT_READONLY_PROPERTY(DataSetsModel, data_sets);
+
+public:
+    explicit Backend(QObject* parent = nullptr);
+};

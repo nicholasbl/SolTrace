@@ -316,3 +316,6 @@ build*
 google-tests/*.stinput
 google-tests/*.mon
 google-tests/*.csv
+
+# Mac specific
+**/*.DS_Store
