@@ -52,6 +52,12 @@ class ElementTableModel : public HashContainerModel<SD::element_id> {
 
     SimDataPtr m_data;
 
+    virtual bool _can_append_new(QVariant const&);
+    virtual void _append_new(QVariant);
+    virtual bool _can_delete_at(size_t, size_t);
+    virtual void _delete_at(size_t, size_t);
+    virtual void _clear();
+
 public:
     explicit ElementTableModel(SimDataPtr, QObject* parent = nullptr);
 };

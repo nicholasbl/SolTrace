@@ -7,6 +7,8 @@
 #include <QTextStream>
 #include <QtConcurrentRun>
 
+// TODO COORDINATE SYSTEMS. the sim could be arbitrary
+
 template <class... Ts>
 struct overloaded : Ts... {
     using Ts::operator()...;
@@ -36,7 +38,9 @@ void DataSetsModel::_append_new(QVariant) {
     m_sets.push_back(new_set);
     endInsertRows();
 
-    if (!current_data()) { select(0); }
+    if (!current_data()) {
+        select(0);
+    }
 }
 
 bool DataSetsModel::_can_delete_at(size_t index, size_t count) {
@@ -69,15 +73,13 @@ DataSetsModel::DataSetsModel(QObject* parent) : IndirectTableModel(parent) {
 
     add_property({
         .display_name = "provenance",
-        .getter       = [this](auto index) -> QVariant {
-            return this->m_sets.value(index).provenance;
-        },
+        .getter = [this](auto index) -> QVariant { return this->m_sets.value(index).provenance; },
     });
 }
 
 struct LoadedFile {
     QString    name;
-    QString    provenance;
+    QString provenance;
     SimDataPtr ptr;
 };
 
@@ -101,17 +103,16 @@ static LoadResult load_file(QString fname) {
         return QStringLiteral("Unable to import file");
     }
 
-
-    return LoadedFile {
-        .name       = file.completeBaseName(),
+    return LoadedFile{
+        .name = file.completeBaseName(),
         .provenance = fname,
-        .ptr        = new_data,
+        .ptr = new_data,
     };
 }
 
 
 void DataSetsModel::file_ready() {
-    auto from = dynamic_cast<QFutureWatcher<LoadResult>*>(sender());
+    auto from = dynamic_cast<QFutureWatcher<LoadResult> *>(sender());
 
     if (!from) { qFatal("this shouldnt happen"); }
 
@@ -122,14 +123,14 @@ void DataSetsModel::file_ready() {
 
     auto result = from->result();
 
-    std::visit(overloaded {
+    std::visit(overloaded{
                    [this](LoadedFile arg) {
                        // convert
 
-                       auto new_set = ADataSet {
-                           .name       = arg.name,
+                       auto new_set = ADataSet{
+                           .name = arg.name,
                            .provenance = arg.provenance,
-                           .ptr        = std::make_shared<Data>(arg.ptr),
+                           .ptr = std::make_shared<Data>(arg.ptr),
                        };
 
                        auto at = _record_count();
@@ -140,7 +141,9 @@ void DataSetsModel::file_ready() {
                        m_sets.push_back(new_set);
                        endInsertRows();
 
-                       if (!current_data()) { select(0); }
+                       if (!current_data()) {
+                           select(0);
+                       }
                    },
                    [this](QString arg) {
                        emit file_load_error(

@@ -53,5 +53,5 @@ SpaceAfterTemplateKeyword: true
 SpaceBeforeAssignmentOperators: true
 SpaceBeforeParens: ControlStatements
 SpaceBeforeRangeBasedForLoopColon: true
-Standard: Cpp20
+Standard: Cpp11
 UseTab: Never
