@@ -316,6 +316,23 @@ ApplicationWindow {
 
                         }
                     }
+
+                    ListView {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        clip: true
+
+                        model: detail_pane.current_set.element_model
+
+                        delegate: ItemDelegate {
+                            required property string name
+
+                            width: ListView.view.width
+
+                            text: name
+                        }
+                    }
                 }
             }
         }

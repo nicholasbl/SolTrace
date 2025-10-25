@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(SolTraceProto VERSION 0.1 LANGUAGES CXX)
+project(SolTraceApp VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -42,11 +42,9 @@ target_include_directories(SolTrace PRIVATE ../coretrace/simulation_data)
 
 set_target_properties(SolTrace PROPERTIES CXX_STANDARD 20)
 
-# Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
-# If you are developing for iOS or macOS you should consider setting an
-# explicit, fixed bundle identifier manually though.
 set_target_properties(SolTrace PROPERTIES
-#    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.SolTrace
+    MACOSX_BUNDLE_GUI_IDENTIFIER "gov.nrel.SolTrace"
+    MACOSX_BUNDLE_BUNDLE_NAME "SolTrace"
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
@@ -55,15 +53,34 @@ set_target_properties(SolTrace PROPERTIES
 
 target_link_libraries(SolTrace
     PRIVATE
-        Qt::Core
-        Qt::Gui
-        Qt::Quick
-        Qt::Quick3D
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Quick
+        Qt6::Quick3D
         simdata
-
 )
 target_link_libraries(SolTrace PRIVATE Qt6::Core)
 target_link_libraries(SolTrace PRIVATE Qt6::Core)
+
+
+set_target_properties(simdata PROPERTIES
+    MACOSX_RPATH ON
+    INSTALL_NAME_DIR "@rpath")
+
+
+#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+if(APPLE)
+  install(TARGETS simdata
+      LIBRARY DESTINATION "SolTrace.app/Contents/Frameworks")
+elseif(WIN32)
+  install(TARGETS simdata
+      RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}") # .dll next to .exe
+else()
+  install(TARGETS simdata
+      LIBRARY DESTINATION "${CMAKE_INSTALL_BINDIR}") # .so next to binary
+endif()
+
 
 include(GNUInstallDirs)
 install(TARGETS SolTrace
@@ -71,3 +88,13 @@ install(TARGETS SolTrace
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+
+qt_generate_deploy_qml_app_script(
+    TARGET SolTrace
+    OUTPUT_SCRIPT deploy_script
+    MACOS_BUNDLE_POST_BUILD
+    NO_UNSUPPORTED_PLATFORM_ERROR
+    DEPLOY_USER_QML_MODULES_ON_UNSUPPORTED_PLATFORM
+)
+install(SCRIPT ${deploy_script})

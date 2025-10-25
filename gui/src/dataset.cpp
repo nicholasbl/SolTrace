@@ -4,10 +4,8 @@
 
 #include <QVector3D>
 
-
 RaySourceModel::RaySourceModel(SimDataPtr data, QObject* parent)
     : QObject(parent) {
-
     // try to find the first ray source
 
     auto ptr = data->get_ray_source();
@@ -49,9 +47,37 @@ void RaySourceModel::commit() {
         shape(), sigma(), half_width(), std::move(ua), std::move(ui));
 }
 
+// =============================================================================
+
+bool ElementTableModel::_can_append_new(QVariant const&) {
+    return false;
+}
+
+void ElementTableModel::_append_new(QVariant) { }
+
+bool ElementTableModel::_can_delete_at(size_t, size_t) {
+    return true;
+}
+
+void ElementTableModel::_delete_at(size_t place, size_t count) {
+    for (auto i = 0; i < count; i++) {
+        m_data->remove_element(m_known_keys[place + i]);
+    }
+
+    m_known_keys.remove(place, count);
+}
+
+void ElementTableModel::_clear() {
+    // no fast clear
+    for (auto k : m_known_keys) {
+        m_data->remove_element(k);
+    }
+
+    m_known_keys.clear();
+}
+
 ElementTableModel::ElementTableModel(SimDataPtr ptr, QObject* parent)
     : HashContainerModel(parent), m_data(ptr) {
-
     // TODO implementing...
 
     add_property({
@@ -109,6 +135,18 @@ ElementTableModel::ElementTableModel(SimDataPtr ptr, QObject* parent)
                                ->get_origin_global());
         },
     });
+
+
+    // scan initial
+
+    m_known_keys.reserve(m_data->get_number_of_elements());
+
+    for (auto iter = m_data->get_const_iterator(); !m_data->is_at_end(iter);
+         ++iter) {
+        m_known_keys.push_back(iter->first);
+    }
+
+    qDebug() << "Added" << m_known_keys.size() << "elements";
 }
 
 // =============================================================================
@@ -139,8 +177,9 @@ void Data::mark_changed() {
 }
 
 Data::Data(SimDataPtr ptr, QObject* parent)
-    : QObject(parent), m_ray_source_model(new RaySourceModel(ptr, this)) {
-
+    : QObject(parent),
+      m_ray_source_model(new RaySourceModel(ptr, this)),
+      m_element_model(new ElementTableModel(ptr, this)) {
     auto changed_slot = metaObject()->indexOfSlot("mark_changed()");
 
     Q_ASSERT(changed_slot >= 0);
@@ -152,4 +191,9 @@ Data::Data(SimDataPtr ptr, QObject* parent)
     recursive_wire_changed(m_ray_source_model, [&](auto o, auto sender) {
         connect(o, sender, this, changed_meta_slot);
     });
+
+    connect(m_element_model,
+            &ElementTableModel::dataChanged,
+            this,
+            &Data::mark_changed);
 }
