@@ -43,6 +43,8 @@ public:
     virtual ~Surface() {}
 
     SurfaceType get_type() { return my_type; }
+
+    virtual double z(double x, double y) const { return 0; }
 };
 
 struct Cone : public Surface
@@ -50,6 +52,7 @@ struct Cone : public Surface
     // z(x,y) = sqrt(x^2 + y^2) / tan(theta)
     // where theta = half_angle
     double half_angle;
+    virtual double z(double x, double y) const;
     Cone(double ha) : Surface(CONE), half_angle(ha) {}
     virtual ~Cone() {}
 };
@@ -59,6 +62,7 @@ struct Cylinder : public Surface
     // x^2 + (z - r)^2 = r^2
     // where r = radius
     double radius;
+    virtual double z(double x, double y) const;
     Cylinder(double r) : Surface(CYLINDER), radius(r)
     {
     }
@@ -79,6 +83,7 @@ struct Parabola : public Surface
     double focal_length_x;
     double focal_length_y;
 
+    virtual double z(double x, double y) const;
     Parabola(double focal_x, double focal_y) : Surface(PARABOLA),
                                                focal_length_x(focal_x),
                                                focal_length_y(focal_y)
@@ -89,15 +94,17 @@ struct Parabola : public Surface
 
 struct Sphere : public Surface
 {
-    // z(x,y) = c(x^2 + y^2) / [1 + sqrt(1 - c^2{x^2 + y^2})]
+    // z(x,y) = d
     // where c = 1/R.
     // TODO: This form seems to be unnecessarily complicated.
     // Could easily just use one of the equations
     // z(x,y) = (1 - sqrt(1 - c^2 (x^2 + y^2))) / c
     //        = R - sqrt(R^2 - (x^2 + y^2))
-    // Need to check on this.
+    // Need to check on this
+    // KG - I think the more complicated construction is correct providing the bottom half, open face up
     double vertex_curv;
 
+    virtual double z(double x, double y) const;
     Sphere(double curv) : Surface(SPHERE),
                           vertex_curv(curv)
     {

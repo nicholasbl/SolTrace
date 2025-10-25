@@ -14,7 +14,6 @@
 #define SOLTRACE_APERTURE_H
 
 #include <cmath>
-#include <memory>
 #include <vector>
 
 #include "constants.hpp"
@@ -54,6 +53,7 @@ namespace SolTrace::Data
     {
         return std::make_shared<A>(std::forward<Args>(args)...);
     }
+
 
     struct Aperture
     {
@@ -107,6 +107,12 @@ namespace SolTrace::Data
         virtual double diameter_circumscribed_circle() const = 0;
 
         /**
+         * @brief Triangulate the aperture shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const = 0;
+
+        /**
          * @brief Test if a point is inside the aperture
          * @param x X coordinate of the test point
          * @param y Y coordinate of the test point
@@ -119,6 +125,57 @@ namespace SolTrace::Data
          * @return Shared pointer to a copy of this aperture
          */
         virtual aperture_ptr make_copy() const = 0;
+
+    protected:
+        struct Point
+        {
+        public:
+            double x;
+            double y;
+            Point(double ix, double iy) : x(ix), y(iy) {}
+            bool operator==(const Point& p) const { return x == p.x && y == p.y; }
+
+        };
+
+        struct Triangle
+        {
+        public:
+            Point a;
+            Point b;
+            Point c;
+
+            Triangle(Point ia, Point ib, Point ic) : a(ia), b(ib), c(ic) {}
+        };
+
+        /**
+         * @brief Compute the mipoint between to points
+         * @return The midpoint
+         */
+        Point midpoint(const Point& v0, const Point& v1) const;
+
+        /**
+         * @brief Recursively Subdivide a triangle by midpoints
+         * @param tri The triangle to subdivide
+         * @param n number of subdivisions
+         * @return vector of triangles
+         */
+        std::vector<Triangle> subdivide(Triangle tri, int n) const;
+
+        /**
+         * @brief Return the index of the point in the vector, adding if it doesn't exist
+         * @param v The vector of points
+         * @param p The point of interest
+         * @return index of p in v
+         */
+        int index_of(std::vector<Point> &v, const Point &p) const;
+
+        /**
+         * @brief Convert a list of Triangles in indexed (flattened) faceset
+         * @param triangles The list to convert
+         * @return indexed faceset
+         */
+        std::tuple<std::vector<double>, std::vector<int>> indexed_triangles(const std::vector<Triangle>& triangles) const;
+
     };
 
     struct Annulus : public Aperture
@@ -159,6 +216,12 @@ namespace SolTrace::Data
         virtual double diameter_circumscribed_circle() const override;
 
         /**
+         * @brief Triangulate the annulus shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const override;
+
+        /**
          * @brief Test if point is inside annulus aperture
          * @param x X coordinate
          * @param y Y coordinate
@@ -197,6 +260,12 @@ namespace SolTrace::Data
          * @return Circle diameter (same as aperture diameter)
          */
         virtual double diameter_circumscribed_circle() const override;
+
+        /**
+         * @brief Triangulate the circle shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const override;
 
         /**
          * @brief Test if point is inside circular aperture
@@ -244,6 +313,12 @@ namespace SolTrace::Data
         virtual double diameter_circumscribed_circle() const override;
 
         /**
+         * @brief Triangulate the triangle shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const override;
+
+        /**
          * @brief Test if point is inside triangular aperture
          * @param x X coordinate
          * @param y Y coordinate
@@ -282,6 +357,12 @@ namespace SolTrace::Data
          * @return Diameter of circumscribed circle
          */
         virtual double diameter_circumscribed_circle() const override;
+
+        /**
+         * @brief Triangulate the hexagon shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const override;
 
         /**
          * @brief Test if point is inside hexagonal aperture
@@ -335,6 +416,12 @@ namespace SolTrace::Data
          * @return Diagonal length of rectangle
          */
         virtual double diameter_circumscribed_circle() const override;
+
+        /**
+         * @brief Triangulate the rectangle shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const override;
 
         /**
          * @brief Test if point is inside rectangular aperture
@@ -393,6 +480,12 @@ namespace SolTrace::Data
         virtual double diameter_circumscribed_circle() const override;
 
         /**
+         * @brief Triangulate the triangle shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const override;
+
+        /**
          * @brief Test if point is inside irregular triangle
          * @param x X coordinate
          * @param y Y coordinate
@@ -447,6 +540,12 @@ namespace SolTrace::Data
          * @return Diameter of smallest circle containing quadrilateral
          */
         virtual double diameter_circumscribed_circle() const override;
+
+        /**
+         * @brief Triangulate the quad shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const override;
 
         /**
          * @brief Test if point is inside irregular quadrilateral

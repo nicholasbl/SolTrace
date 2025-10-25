@@ -1,4 +1,5 @@
 #include "backend.h"
+#include "surface.hpp"
 
 #include <QFileInfo>
 #include <QFuture>
@@ -83,6 +84,7 @@ struct LoadedFile {
 
 using LoadResult = std::variant<LoadedFile, QString>;
 
+
 static LoadResult load_file(QString fname) {
     qDebug() << Q_FUNC_INFO << fname;
 
@@ -101,6 +103,32 @@ static LoadResult load_file(QString fname) {
         return QStringLiteral("Unable to import file");
     }
 
+    qDebug() << "Elements " << new_data->get_number_of_elements();
+    for (auto iter = new_data->get_iterator();
+         !new_data->is_at_end(iter);
+         iter++)
+    {
+        SolTrace::Data::surface_ptr surface = iter->second->get_surface();
+        SolTrace::Data::aperture_ptr aperture = iter->second->get_aperture();
+
+        if (surface){
+            auto p = std::dynamic_pointer_cast<SolTrace::Data::Parabola>(surface);
+
+            if (p != nullptr) {
+                qDebug() << "Parabola " << p->focal_length_x << " " << p->focal_length_y;
+            }
+
+        }
+        else {
+            qDebug() << "Surface is null";
+        }
+        if (aperture) {
+            qDebug() << "Aperture " << aperture->get_type();
+        }
+        else {
+            qDebug() << "Aperture is null";
+        }
+    }
 
     return LoadedFile {
         .name       = file.completeBaseName(),

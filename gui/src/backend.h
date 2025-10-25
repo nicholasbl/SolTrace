@@ -7,6 +7,7 @@
 
 #include <QObject>
 #include <QQmlEngine>
+#include <QSharedPointer>
 
 struct ADataSet {
     QString name;
