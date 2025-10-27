@@ -1,16 +1,13 @@
-#ifndef SURFACEGEOMETRY_H
-#define SURFACEGEOMETRY_H
+#pragma once
 
 #include <QQuick3DGeometry>
+#include <QVector3D>
 
 #include "single_element.hpp"
 
-#include <QVector3D>
-
 namespace SD = SolTrace::Data;
 
-class SurfaceGeometry : public QQuick3DGeometry
-{
+class SurfaceGeometry : public QQuick3DGeometry {
     Q_OBJECT
     QML_NAMED_ELEMENT(SurfaceGeometry)
 
@@ -29,5 +26,3 @@ public:
 
     SurfaceGeometry(single_element_ptr);
 };
-
-#endif // SURFACEGEOMETRY_H

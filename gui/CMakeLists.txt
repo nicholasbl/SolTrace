@@ -5,9 +5,6 @@ project(SolTraceApp VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Quick Quick3D)
-find_package(Qt6 REQUIRED COMPONENTS Core)
-find_package(Qt6 REQUIRED COMPONENTS Core)
-find_package(Qt6 REQUIRED COMPONENTS Core)
 
 set(QT_QML_GENERATE_QMLLS_INI ON)
 
@@ -30,10 +27,9 @@ qt_add_qml_module(SolTrace
         src/instance_table.h src/instance_table.cpp
         src/backend.h src/backend.cpp
         src/qt_helpers.h
-        src/dataset.h
-        SOURCES src/dataset.cpp
-        SOURCES src/indirect_model.h src/indirect_model.cpp
-        SOURCES src/surfacegeometry.h src/surfacegeometry.cpp
+        src/dataset.h src/dataset.cpp
+        src/indirect_model.h src/indirect_model.cpp
+        src/surfacegeometry.h src/surfacegeometry.cpp
 )
 
 target_include_directories(SolTrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
