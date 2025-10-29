@@ -44,6 +44,22 @@ public:
 
     SurfaceType get_type() { return my_type; }
 
+    inline std::string get_type_string() const
+    {
+        switch (my_type) {
+        case CONE: return "Cone";
+        case CYLINDER: return "Cylinder";
+        case FLAT: return "Flat";
+        case PARABOLA: return "Parabola";
+        case SPHERE: return "Sphere";
+        case HYPER: return "Hyper";
+        case GENERAL_SPENCER_MURTY: return "General Spencer Murty";
+        case TORUS: return "Torus";
+        case SURFACE_UNKNOWN: return "Unknown";
+        }
+        return "Unknown";
+    }
+
     virtual double z(double x, double y) const { return 0; }
 };
 

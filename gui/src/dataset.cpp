@@ -77,7 +77,9 @@ void ElementTableModel::_clear() {
 }
 
 ElementTableModel::ElementTableModel(SimDataPtr ptr, QObject* parent)
-    : HashContainerModel(parent), m_data(ptr) {
+    : HashContainerModel(parent), m_data(ptr),
+      m_surface_geometries(new SurfaceGeometryListModel(this))
+{
     // TODO implementing...
 
     add_property({
@@ -146,7 +148,23 @@ ElementTableModel::ElementTableModel(SimDataPtr ptr, QObject* parent)
         m_known_keys.push_back(iter->first);
     }
 
-    qDebug() << "Added" << m_known_keys.size() << "elements";
+    int singles = 0;
+    int composites = 0;
+
+    for (auto iter = m_data->get_iterator();!m_data->is_at_end(iter); iter++)
+    {
+        if (iter->second->is_single())
+        {
+            m_surface_geometries->push_back(std::make_shared<SurfaceGeometry>(iter->second));
+            singles++;
+        }
+        else
+        {
+            composites++;
+        }
+    }
+
+    qDebug() << "Added" << m_known_keys.size() << "elements (" << singles << " singles, " << composites << "composites)";
 }
 
 // =============================================================================

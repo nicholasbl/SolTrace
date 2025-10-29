@@ -8,6 +8,7 @@ find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Quick Quick3D)
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core)
 
 set(QT_QML_GENERATE_QMLLS_INI ON)
 
@@ -34,6 +35,7 @@ qt_add_qml_module(SolTrace
         SOURCES src/dataset.cpp
         SOURCES src/indirect_model.h src/indirect_model.cpp
         SOURCES src/surfacegeometry.h src/surfacegeometry.cpp
+        SOURCES src/surfacegeometrylistmodel.h src/surfacegeometrylistmodel.cpp
 )
 
 target_include_directories(SolTrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -59,6 +61,7 @@ target_link_libraries(SolTrace
         Qt6::Quick3D
         simdata
 )
+target_link_libraries(SolTrace PRIVATE Qt6::Core)
 target_link_libraries(SolTrace PRIVATE Qt6::Core)
 target_link_libraries(SolTrace PRIVATE Qt6::Core)
 

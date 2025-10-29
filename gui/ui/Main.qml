@@ -26,8 +26,11 @@ ApplicationWindow {
         anchors.fill: parent
 
         environment: Q3D.SceneEnvironment {
-            clearColor: "#8fafff"
-            backgroundMode: Q3D.SceneEnvironment.Color
+            backgroundMode: Q3D.SceneEnvironment.SkyBox
+            lightProbe: Q3D.Texture {
+                textureData: Q3DH.ProceduralSkyTextureData {
+                }
+            }
         }
 
         Q3DH.OrbitCameraController {
@@ -40,7 +43,7 @@ ApplicationWindow {
             id: cameraNode
             Q3D.PerspectiveCamera {
                 id: camera
-                position: Qt.vector3d(0, 0, 20)
+                position: Qt.vector3d(0, 0, 50)
             }
         }
 
@@ -59,11 +62,62 @@ ApplicationWindow {
         }
 
         Q3D.Model {
-            id: instanced_plane
-            scale: Qt.vector3d(.0001, .0001, .0001)
+            position: Qt.vector3d(0.1, 0, 0)
+            scale: Qt.vector3d(0.002, 0.0001, 0.0001)
             source: "#Cube"
-            //instancing: Backend.instances
-            materials: [ plane_material ]
+
+            materials: [ Q3D.PrincipledMaterial {
+                    baseColor: "red"
+                }
+            ]
+
+        }
+        Q3D.Model {
+            position: Qt.vector3d(0, 0.1, 0)
+            scale: Qt.vector3d(0.0001, 0.002, 0.0001)
+            source: "#Cube"
+
+            materials: [ Q3D.PrincipledMaterial {
+                    baseColor: "green"
+                }
+            ]
+
+        }
+        Q3D.Model {
+            position: Qt.vector3d(0, 0, 0.1)
+            scale: Qt.vector3d(0.0001, 0.0001, 0.002)
+            source: "#Cube"
+
+            materials: [ Q3D.PrincipledMaterial {
+                    baseColor: "blue"
+                }
+            ]
+
+        }
+
+        Q3D.Node {
+                id: elementsEnitity
+                eulerRotation.x: -90
+        Q3D.Repeater3D {
+            model: detail_pane.current_set.element_model.surface_geometries
+            delegate: Q3D.Model {
+                geometry: model.geometry
+                position: model.position
+                rotation: model.rotation
+                visible:  model.visible
+                objectName: model.label
+
+                materials: [
+                    Q3D.PrincipledMaterial {
+                        id: transmitterMaterial
+                        baseColor: "#cccccc"
+                        metalness: 0.5
+                        roughness: 0.05
+                        cullMode: Q3D.CustomMaterial.NoCulling
+                    }
+                ]
+            }
+        }
         }
     }
 
@@ -153,6 +207,7 @@ ApplicationWindow {
         anchors.bottom: parent.bottom
         anchors.top: parent.top
         anchors.margins: 10
+        visible: false
 
         width: 400
 
@@ -166,6 +221,8 @@ ApplicationWindow {
 
             property var current_set: Backend.data_sets.current_data
             property var ray_source : current_set.ray_source_model
+
+
 
             GroupBox {
                 Layout.fillHeight: true
@@ -317,24 +374,72 @@ ApplicationWindow {
                         }
                     }
 
+}
+            }
+        }
+    }
+        TransparentPane {
+            anchors.left: data_list_pane.right
+            anchors.bottom: parent.bottom
+            anchors.top: parent.top
+            anchors.margins: 10
+            visible: true
+
+            width: 400
+
+            Material.elevation: 10
+            Material.roundedScale: Material.MediumScale
+
+            ColumnLayout {
+                anchors.fill: parent
+
+                id: element_pane
+
+                property var current_set: Backend.data_sets.current_data
+                property var ray_source : current_set.ray_source_model
+
+
+                GroupBox {
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                    title: "Elements"
+
+                    ColumnLayout {
+                        anchors.fill: parent
+
                     ListView {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
+                        model: detail_pane.current_set.element_model.surface_geometries
+                        delegate: Row {
+                            spacing: 1
+                            height: 20
+
+                            CheckBox {
+                                checked: model.visible
+                                onToggled: model.visible = checked   // two-way binding
+                                anchors.verticalCenter: parent.verticalCenter
+                                indicator.width: 14
+                                indicator.height: 14
+                            }
+
+                            Text {
+                                text: index + " " + model.label
+                                color: "white"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+
+                        }
 
                         clip: true
 
-                        model: detail_pane.current_set.element_model
-
-                        delegate: ItemDelegate {
-                            required property string name
-
-                            width: ListView.view.width
-
-                            text: name
-                        }
+                        ScrollIndicator.vertical: ScrollIndicator { }
                     }
-                }
+}
             }
+
+
         }
     }
 

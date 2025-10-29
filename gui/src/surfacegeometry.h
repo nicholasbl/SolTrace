@@ -14,7 +14,8 @@ class SurfaceGeometry : public QQuick3DGeometry
     Q_OBJECT
     QML_NAMED_ELEMENT(SurfaceGeometry)
 
-    std::shared_ptr<SD::SingleElement> m_element;
+    std::shared_ptr<SD::Element> m_element;
+    bool m_visible;
 
     void rebuildGeometry();
 
@@ -25,9 +26,19 @@ class SurfaceGeometry : public QQuick3DGeometry
     };
 
 public:
-    using single_element_ptr = typename std::shared_ptr<SD::SingleElement>;
+    using element_ptr = typename std::shared_ptr<SD::Element>;
 
-    SurfaceGeometry(single_element_ptr);
+    SurfaceGeometry(element_ptr);
+
+    QVector3D position() const;
+    QVector3D eulerAngles() const;
+
+    bool visible() const { return m_visible; }
+    void setVisible(bool visible);
+
+    QString label() const;
+
+    bool operator==(const SurfaceGeometry& other) const;
 };
 
 #endif // SURFACEGEOMETRY_H

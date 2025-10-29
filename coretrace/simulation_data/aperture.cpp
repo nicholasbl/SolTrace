@@ -4,8 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
-
-// #include <iostream>
+#include <iostream>
 
 #include "constants.hpp"
 
@@ -88,8 +87,8 @@ std::vector<Aperture::Triangle> Aperture::subdivide(Aperture::Triangle tri, int 
 
     if (n-1 == 0)
     {
-        result.push_back(Triangle(v0,m01,m20));
-        result.push_back(Triangle(m01,v1,m12));
+        result.push_back(Triangle(v0,m20,m01));
+        result.push_back(Triangle(m01,m12,v1));
         result.push_back(Triangle(m12,m01,m20));
         result.push_back(Triangle(m12,m20,v2));
 
@@ -169,7 +168,7 @@ std::tuple<std::vector<double>, std::vector<int>> Annulus::triangulation() const
 
     for (int i=0; i<=resolution; i++)
     {
-        const double u = i / resolution * M_PI*2;
+        const double u = (double)i / (double)resolution * M_PI*2;
 
         verts.push_back(inner_radius * std::cos(u));
         verts.push_back(inner_radius * std::sin(u));
@@ -177,7 +176,7 @@ std::tuple<std::vector<double>, std::vector<int>> Annulus::triangulation() const
         verts.push_back(outer_radius * std::sin(u));
     }
 
-    for (int i = 0; i < resolution-3; i+=2)
+    for (int i = 0; i < resolution*2; i+=2)
     {
         const int a = i;
         const int b = i+1;
@@ -187,10 +186,10 @@ std::tuple<std::vector<double>, std::vector<int>> Annulus::triangulation() const
         // Generate two triangles for each quad in the mesh
         // Adjust order to be counter-clockwise
         indices.push_back(a);
+        indices.push_back(b);
         indices.push_back(d);
-        indices.push_back(b);
 
-        indices.push_back(b);
+        indices.push_back(a);
         indices.push_back(d);
         indices.push_back(c);
     }
@@ -346,6 +345,9 @@ double Hexagon::aperture_area() const
 
 std::tuple<std::vector<double>, std::vector<int>> Hexagon::triangulation() const
 {
+    std::vector<double> verts;
+    std::vector<int> indices;
+
     double r = circumscribe_diameter/2.0;
     std::vector<Triangle> t0 = subdivide(Triangle(Point(0, 0),
                                                   Point(r*cos(M_PI/3.0), r*sin(M_PI/3.0)),
@@ -357,8 +359,8 @@ std::tuple<std::vector<double>, std::vector<int>> Hexagon::triangulation() const
                                                   Point(-r, 0),
                                                   Point(r*cos(2*M_PI/3.0), r*sin(2*M_PI/3.0))),2);
     std::vector<Triangle> t3 = subdivide(Triangle(Point(0, 0),
-                                                  Point(-r, 0),
-                                                  Point(r*cos(4*M_PI/3.0), r*sin(4*M_PI/3.0))),2);
+                                                  Point(r*cos(4*M_PI/3.0), r*sin(4*M_PI/3.0)),
+                                                  Point(-r, 0)),2);
     std::vector<Triangle> t4 = subdivide(Triangle(Point(0, 0),
                                                   Point(r*cos(5*M_PI/3.0), r*sin(5*M_PI/3.0)),
                                                   Point(r*cos(4*M_PI/3.0), r*sin(4*M_PI/3.0))),2);
@@ -470,8 +472,8 @@ double IrregularTriangle::diameter_circumscribed_circle() const
 std::tuple<std::vector<double>, std::vector<int>> IrregularTriangle::triangulation() const
 {
     Triangle tri(Point(x1, y1),
-                 Point(x2, y2),
-                 Point(x3, y3));
+                 Point(x3, y3),
+                 Point(x2, y2));
 
     return indexed_triangles(subdivide(tri,3));
 }

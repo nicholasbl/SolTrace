@@ -86,6 +86,26 @@ namespace SolTrace::Data
         }
 
         /**
+         * @brief Get the aperture type string
+         * @return The aperture type string
+         */
+        inline std::string get_type_string() const
+        {
+            switch (my_type) {
+            case ANNULUS: return "Annulus";
+            case CIRCLE : return "Circle";
+            case HEXAGON: return "Hexagon";
+            case RECTANGLE: return "Rectangle";
+            case EQUILATERAL_TRIANGLE: return "Regular Triangle";
+            case SINGLE_AXIS_CURVATURE_SECTION: return "Single Axis Curvature";
+            case IRREGULAR_TRIANGLE: return "Triangle";
+            case IRREGULAR_QUADRILATERAL: return "Quad";
+            case APERTURE_UNKNOWN: return "Unknown";
+            }
+            return "Unknown";
+        }
+
+        /**
          * @brief Get radius of circumscribed circle
          * @return Radius of the smallest circle that contains the aperture
          */

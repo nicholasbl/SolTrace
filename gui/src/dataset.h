@@ -1,7 +1,7 @@
 #pragma once
 
 #include "simulation_data_api.hpp"
-
+#include "surfacegeometrylistmodel.h"
 #include "indirect_model.h"
 
 #include "qt_helpers.h"
@@ -57,6 +57,8 @@ class ElementTableModel : public HashContainerModel<SD::element_id> {
     virtual bool _can_delete_at(size_t, size_t);
     virtual void _delete_at(size_t, size_t);
     virtual void _clear();
+
+    QOBJECT_WRITABLE_PROPERTY(SurfaceGeometryListModel, surface_geometries);
 
 public:
     explicit ElementTableModel(SimDataPtr, QObject* parent = nullptr);
