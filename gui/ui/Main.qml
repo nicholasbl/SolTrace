@@ -203,6 +203,7 @@ ApplicationWindow {
     }
 
     TransparentPane {
+        id: ray_source_pane
         anchors.left: data_list_pane.right
         anchors.bottom: parent.bottom
         anchors.top: parent.top
@@ -379,6 +380,7 @@ ApplicationWindow {
         }
     }
         TransparentPane {
+            id: element_pane
             anchors.left: data_list_pane.right
             anchors.bottom: parent.bottom
             anchors.top: parent.top
@@ -392,8 +394,6 @@ ApplicationWindow {
 
             ColumnLayout {
                 anchors.fill: parent
-
-                id: element_pane
 
                 property var current_set: Backend.data_sets.current_data
                 property var ray_source : current_set.ray_source_model
