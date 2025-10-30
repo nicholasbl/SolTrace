@@ -206,6 +206,7 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
                         throw std::invalid_argument("This should not happen!");
                     }
                     rect->x_length = 2.0 * cyl->radius;
+                    rect->x_coord = -1.0 * cyl->radius;
                 }
 
                 // Set element position and orientation
