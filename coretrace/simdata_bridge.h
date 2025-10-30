@@ -48,6 +48,8 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
 
 int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys);
 
+int run_native_file_runner(TSystem* sys, const char* file_name);
+
 int run_optix_runner(SolTrace::Data::SimulationData& sd, TSystem* sys);
 
 int run_optix_file_runner(TSystem* sys, const char* file_name);

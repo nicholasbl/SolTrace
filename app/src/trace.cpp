@@ -120,7 +120,7 @@ TraceForm::TraceForm( wxWindow *parent, Project &prj )
 	flxsizer->AddStretchSpacer();
 
 	// Add a radio box for runner selection
-	wxString runnerChoices[] = { "Legacy", "Native runner (cpu)", "OptiX runner (gpu)", "OptiX direct file (gpu)"};
+	wxString runnerChoices[] = { "Legacy", "Native runner (cpu)", "Native runner direct file (cpu)", "OptiX runner (gpu)", "OptiX direct file (gpu)"};
 	m_runner_choice = new wxRadioBox(
 		sizer1->GetStaticBox(),
 		ID_RUNNER_RADIO,
@@ -201,7 +201,7 @@ void TraceForm::UpdateFromData()
 
 void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed,
 	bool sunshape, bool opterr, bool aspowertower, bool use_refactor_trace,
-	bool use_native_runner, bool use_optix_runner)
+	int runner_type)
 {
 	m_numRays->SetValue( nrays );
 	m_numMaxSunRays->SetValue( nmaxsunrays );
@@ -211,12 +211,7 @@ void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed
 	m_inclOpticalErrors->SetValue( opterr );
     m_asPowerTower->SetValue( aspowertower );
 	m_use_refactor_trace->SetValue( use_refactor_trace );
-	if (use_native_runner)
-		m_runner_choice->SetSelection(1);
-	else if (use_optix_runner)
-		m_runner_choice->SetSelection(2);
-	else
-		m_runner_choice->SetSelection(0);
+	m_runner_choice->SetSelection(runner_type);
 
 	TraceSettings& T = m_prj.Trace_Settings;
 	T.n_rays = m_numRays->AsUnsigned();
@@ -232,7 +227,7 @@ void TraceForm::SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed
 
 void TraceForm::GetOptions( size_t *nrays, size_t *nmaxsunrays, int *ncpu, int *seed,
 	bool *sunshape, bool *opterr, bool *aspowertower, bool *use_refactor_trace,
-	bool *use_native_runner, bool *use_optix_runner)
+	int *runner_type)
 {
 	if ( nrays ) *nrays = m_numRays->AsUnsigned();
 	if ( nmaxsunrays ) *nmaxsunrays = m_numMaxSunRays->AsUnsigned();
@@ -242,8 +237,7 @@ void TraceForm::GetOptions( size_t *nrays, size_t *nmaxsunrays, int *ncpu, int *
 	if ( opterr ) *opterr = m_inclOpticalErrors->GetValue();
     if ( aspowertower ) *aspowertower = m_asPowerTower->GetValue();
 	if ( use_refactor_trace ) *use_refactor_trace = m_use_refactor_trace->GetValue();
-	if ( use_native_runner ) *use_native_runner = (m_runner_choice->GetSelection() == 1);
-	if ( use_optix_runner ) *use_optix_runner = (m_runner_choice->GetSelection() == 2);
+	if ( runner_type) *runner_type = m_runner_choice->GetSelection();
 }
 
 
@@ -922,6 +916,8 @@ int RunSolTrace20(Project* System, int nrays, int nmaxrays,
 {
 	st_context_t spcxt = ::st_create_context();
 
+	st_runner_type_t runner_enum = (st_runner_type_t)runner_type;
+
 	int result = LoadSystemIntoContext(System, spcxt, errors);
 	if (result < 0)
 		return -1;
@@ -930,12 +926,12 @@ int RunSolTrace20(Project* System, int nrays, int nmaxrays,
 	::st_sim_params(spcxt, nrays, nmaxrays, aspowertower);
 
 	// 0: legacy (shouldn't have called this), 1: native, 2: optix, 3: optix file
-	if (runner_type == 0)
+	if (runner_enum == ST_RUNNER_LEGACY)
 		return -1;
 
 	// Save temp stinput file if runner_type 3
 	wxString file_name = "";
-	if (runner_type == 3)
+	if (runner_enum == ST_RUNNER_OPTIX_FILE || runner_enum == ST_RUNNER_NATIVE_FILE)
 	{
 		// Create a unique temp file (wx creates an empty file immediately)
 		wxString basePath = wxFileName::CreateTempFileName("soltrace_case");
@@ -960,7 +956,7 @@ int RunSolTrace20(Project* System, int nrays, int nmaxrays,
 
 	// Run ray trace
 	const char* error_msg = "";
-	int count_raydata = ::st_sim_run_SolTrace20(spcxt, *seed, runner_type, &error_msg, file_name);
+	int count_raydata = ::st_sim_run_SolTrace20(spcxt, *seed, runner_enum, &error_msg, file_name);
 	if (count_raydata <= 0)
 	{
 		errors.Add(error_msg && *error_msg ? wxString::FromUTF8(error_msg) : "Unknown error");
@@ -969,7 +965,7 @@ int RunSolTrace20(Project* System, int nrays, int nmaxrays,
 		
 
 	// Delete temporary stinput
-	if (runner_type == 3)
+	if (runner_enum == ST_RUNNER_OPTIX_FILE || runner_enum == ST_RUNNER_NATIVE_FILE)
 		wxRemoveFile(file_name);
 
 	System->RecomputeTransforms();

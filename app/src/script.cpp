@@ -247,9 +247,9 @@ static void _traceopt( lk::invoke_t &cxt )
 
 	TraceForm *tf = MainWindow::Instance().GetTrace();
 	size_t nrays, nmax;
-	int ncpu, seed;
-	bool ss, oe, pf, rf, native_runner, optix_runner;
-	tf->GetOptions( &nrays, &nmax, &ncpu, &seed, &ss, &oe, &pf, &rf, &native_runner, &optix_runner);
+	int ncpu, seed, runner_type;
+	bool ss, oe, pf, rf, native_runner, native_runner_file, optix_runner, optix_runner_file;
+	tf->GetOptions(&nrays, &nmax, &ncpu, &seed, &ss, &oe, &pf, &rf, &runner_type);
 
 	if (cxt.arg_count() == 0)
 	{
@@ -293,13 +293,10 @@ static void _traceopt( lk::invoke_t &cxt )
 		if ((vval = cxt.arg(0).lookup("use_refactor_trace")))
 			rf = vval->deref().as_integer() ? true : false;
 
-		if ((vval = cxt.arg(0).lookup("use_native_runner")))
-			native_runner = vval->deref().as_integer() ? true : false;
+		if ((vval = cxt.arg(0).lookup("runner_type")))
+			runner_type = vval->deref().as_unsigned();
 
-		if ((vval = cxt.arg(0).lookup("use_optix_runner")))
-			optix_runner = vval->deref().as_integer() ? true : false;
-
-		tf->SetOptions( nrays, nmax, ncpu, seed, ss, oe, pf, rf, native_runner, optix_runner );
+		tf->SetOptions( nrays, nmax, ncpu, seed, ss, oe, pf, rf, runner_type );
 	}
 	else
 	{

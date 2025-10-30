@@ -112,6 +112,68 @@ int set_tstage_parameters(TSystem* sys_legacy, const SolTrace::NativeRunner::TSy
     }
 }
 
+void get_raydata_from_native_tsys(TSystem* sys_legacy, const SolTrace::NativeRunner::TSystem& sys_native)
+{
+    // Copy sun stats (needed for flux normalization)
+    sys_legacy->Sun.MinXSun = sys_native.Sun.MinXSun;
+    sys_legacy->Sun.MaxXSun = sys_native.Sun.MaxXSun;
+    sys_legacy->Sun.MinYSun = sys_native.Sun.MinYSun;
+    sys_legacy->Sun.MaxYSun = sys_native.Sun.MaxYSun;
+    sys_legacy->SunRayCount = static_cast<st_uint_t>(sys_native.SunRayCount);
+
+    for (TStage* s : sys_legacy->StageList)
+        s->RayData.Clear();
+    sys_legacy->AllRayData.Clear();
+
+    // Copy from native TOTAL (aggregate) ray list instead of per stage
+    const auto nCount = sys_native.RayData.Count();
+    const auto nStage = sys_native.StageList.size();
+    for (uint_fast64_t i = 0; i < nCount; ++i)
+    {
+        // Native TRayData::ray_t layout (Query API)
+        double pos_glob[3], cos_glob[3];
+        int element = 0, stageIdx1 = 0;
+        unsigned int raynum = 0;
+        SolTrace::Result::RayEvent ray_event;
+
+        // Get next ray entry
+        if (!sys_native.RayData.Query(
+            (unsigned int)i,
+            pos_glob,            // pos
+            cos_glob,            // cos
+            &element,       // element
+            &stageIdx1,     // stage
+            &raynum,        // ray number
+            &ray_event))       // event
+        {
+            continue;
+        }
+
+        // Skip Create rays
+        if (ray_event == SolTrace::Result::RayEvent::CREATE)
+            continue;
+
+        // Skip exit rays for last stage
+        if (ray_event == SolTrace::Result::RayEvent::EXIT && stageIdx1 == nStage)
+            continue;
+
+        if (stageIdx1 < 1 || (size_t)stageIdx1 > sys_native.StageList.size())
+            continue; // out-of-range stage index, skip
+
+        // Need to convert native runner GLOBAL coords to stage
+        double pos_stage[3], cos_stage[3];
+        SolTrace::NativeRunner::TStage stage = *sys_native.StageList[stageIdx1 - 1];
+        SolTrace::Data::TransformToLocal(pos_glob, cos_glob, stage.Origin, stage.RRefToLoc, pos_stage, cos_stage);
+
+        sys_legacy->AllRayData.Append(
+            pos_stage,
+            cos_stage,
+            element,        // negative if absorbed already encoded
+            stageIdx1,      // 1-based
+            raynum);
+    }
+}
+
 // Public
 
 int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::SimulationData &sd)
@@ -288,66 +350,47 @@ int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
     // Directly using TSystem object to get raydata (for now)
     const SolTrace::NativeRunner::TSystem* tsys_native = runner.get_system();
 
-    // Copy sun stats (needed for flux normalization)
-    sys->Sun.MinXSun = tsys_native->Sun.MinXSun;
-    sys->Sun.MaxXSun = tsys_native->Sun.MaxXSun;
-    sys->Sun.MinYSun = tsys_native->Sun.MinYSun;
-    sys->Sun.MaxYSun = tsys_native->Sun.MaxYSun;
-    sys->SunRayCount = static_cast<st_uint_t>(tsys_native->SunRayCount);
-
-    for (TStage* s : sys->StageList)
-        s->RayData.Clear();
-    sys->AllRayData.Clear();
-
-    // Copy from native TOTAL (aggregate) ray list instead of per stage
-    const auto nCount = tsys_native->RayData.Count();
-    const auto nStage = tsys_native->StageList.size();
-    for (uint_fast64_t i = 0; i < nCount; ++i)
-    {
-        // Native TRayData::ray_t layout (Query API)
-        double pos_glob[3], cos_glob[3];
-        int element = 0, stageIdx1 = 0;
-        unsigned int raynum = 0;
-        SolTrace::Result::RayEvent ray_event;
-
-        // Get next ray entry
-        if (!tsys_native->RayData.Query(
-            (unsigned int)i,
-            pos_glob,            // pos
-            cos_glob,            // cos
-            &element,       // element
-            &stageIdx1,     // stage
-            &raynum,        // ray number
-            &ray_event))       // event
-        {
-            continue;
-        }
-        
-        // Skip Create rays
-        if (ray_event == SolTrace::Result::RayEvent::CREATE)
-            continue;
-
-        // Skip exit rays for last stage
-        if (ray_event == SolTrace::Result::RayEvent::EXIT && stageIdx1 == nStage)
-            continue;
-
-        if (stageIdx1 < 1 || (size_t)stageIdx1 > sys->StageList.size())
-            continue; // out-of-range stage index, skip
-
-        // Need to convert native runner GLOBAL coords to stage
-        double pos_stage[3], cos_stage[3];
-        SolTrace::NativeRunner::TStage stage = *tsys_native->StageList[stageIdx1 - 1];
-        SolTrace::Data::TransformToLocal(pos_glob, cos_glob, stage.Origin, stage.RRefToLoc, pos_stage, cos_stage);
-
-        sys->AllRayData.Append(
-            pos_stage,
-            cos_stage,
-            element,        // negative if absorbed already encoded
-            stageIdx1,      // 1-based
-            raynum);
-    }
+    // Copy raydata to legacy
+    get_raydata_from_native_tsys(sys, *tsys_native);
 
     return -1;
+}
+
+int run_native_file_runner(TSystem* sys, const char* file_name)
+{
+    // Make simulation data
+    SolTrace::Data::SimulationData sd;
+
+    // Load stinput file to simulation data
+    bool success = sd.import_from_file(file_name);
+
+    // Make native runner
+    SolTrace::NativeRunner::NativeRunner runner;
+
+    // Initialize
+    SolTrace::Runner::RunnerStatus sts = runner.initialize();
+
+    // Set native runner specific parameters
+    if (sys->sim_dynamic_group) runner.enable_power_tower();
+    else runner.disable_power_tower();
+
+    // Setup simualtion (convert simulation data to TSystem)
+    sts = runner.setup_simulation(&sd);
+
+    // Run simulation
+    sts = runner.run_simulation();
+
+    // Collect results
+    SolTrace::Result::SimulationResult result;
+    sts = runner.report_simulation(&result, 1);
+
+    // Directly using TSystem object to get raydata (for now)
+    const SolTrace::NativeRunner::TSystem* tsys_native = runner.get_system();
+
+    // Copy raydata to legacy
+    get_raydata_from_native_tsys(sys, *tsys_native);
+
+    return 0;
 }
 
 int run_optix_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)

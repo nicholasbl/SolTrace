@@ -79,10 +79,10 @@ public:
 
 	void SetOptions( size_t nrays, size_t nmaxsunrays, int ncpu, int seed,
 		bool sunshape, bool opterr, bool aspowertower, bool use_refactor_trace,
-		bool use_native_runner, bool use_optix_runner);
+		int runner_type);
 	void GetOptions( size_t *nrays, size_t *nmaxsunrays, int *ncpu, int *seed,
 		bool *sunshape, bool *opterr, bool *aspowertower, bool *use_refactor_trace,
-		bool *use_native_runner, bool *use_optix_runner);
+		int *runner_type);
 
 	void SetWorkDir( const wxString &path );
 	wxString GetWorkDir();
