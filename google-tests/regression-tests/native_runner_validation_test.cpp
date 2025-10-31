@@ -477,7 +477,7 @@ TEST(NativeRunner, ValidationTest2)
               << static_cast<double>(nreflect) / nevents << ")"
               << std::endl;
 
-    result.write_csv_file("native_runner_result_dump.csv");
+    // result.write_csv_file("native_runner_result_dump.csv");
 
     Vector3d point, cosines;
     Vector3d pos_stage, dir_stage;

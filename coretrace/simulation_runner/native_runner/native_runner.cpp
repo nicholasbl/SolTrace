@@ -76,13 +76,26 @@ namespace SolTrace::NativeRunner
         // Set sunshape data
         switch (sun->get_shape())
         {
-        case DistributionType::GAUSSIAN:
+        case SunShape::GAUSSIAN:
             this->tsys.Sun.Sigma = sun->get_sigma();
             break;
-        case DistributionType::PILLBOX:
+        case SunShape::PILLBOX:
             this->tsys.Sun.Sigma = sun->get_half_width();
             break;
-        case DistributionType::USER_DEFINED:
+        case SunShape::LIMBDARKENED:
+            this->tsys.Sun.MaxAngle = 4.65; // [mrad]
+            this->tsys.Sun.MaxIntensity = 1.0;
+            break;
+        case SunShape::BUIE_CSR: {
+            this->tsys.Sun.MaxAngle = 43.6; // [mrad]
+            this->tsys.Sun.MaxIntensity = 1.0;
+            double kappa, gamma;
+            sun->calculate_buie_parameters(kappa, gamma);
+            this->tsys.Sun.buie_kappa = kappa;
+            this->tsys.Sun.buie_gamma = gamma;
+            break;
+        }
+        case SunShape::USER_DEFINED: {
             std::vector<double> angle, intensity;
             sun->get_user_data(angle, intensity);
             int npoints = angle.size();
@@ -104,13 +117,17 @@ namespace SolTrace::NativeRunner
                 if (intensity[i] > this->tsys.Sun.MaxIntensity)
                     this->tsys.Sun.MaxIntensity = intensity[i];
             }
-
-            // fill negative angle side of array
-            for (int i = 0; i < npoints - 1; i++)
-            {
-                this->tsys.Sun.SunShapeAngle[i] = -angle[npoints - i - 1];
-                this->tsys.Sun.SunShapeIntensity[i] = intensity[npoints - i - 1];
-            }
+            // fill negative angle side of array -> I don't think we need this.
+            //for (int i = 0; i < npoints - 1; i++)
+            //{
+            //    this->tsys.Sun.SunShapeAngle[i] = -angle[npoints - i - 1];
+            //    this->tsys.Sun.SunShapeIntensity[i] = intensity[npoints - i - 1];
+            //}
+            break;
+        }
+        default:
+            // TODO: add error
+            break;
         }
 
         return RunnerStatus::SUCCESS;

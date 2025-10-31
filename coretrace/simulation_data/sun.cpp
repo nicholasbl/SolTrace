@@ -35,6 +35,38 @@ void Sun::set_pillbox_distribution(double _half_width)
     half_width = _half_width;
 }
 
+void Sun::set_buie_csr_distribution(double _csr)
+{
+    if (_csr < 0.0 || _csr > 0.8)
+    {
+        throw std::invalid_argument("Buie CSR must be in the range [0, 0.8]");
+    }
+    if (std::isnan(_csr) || std::isinf(_csr))
+    {
+        throw std::invalid_argument("Buie CSR must be finite");
+    }
+    circumsolar_ratio = _csr;
+}
+
+void Sun::calculate_buie_parameters(double& kappa, double& gamma)
+{
+    // Calculate kappa and gamma parameters
+    // Creates the Buie (2003) sun shape based on CSR
+    // [1] Buie, D., Dey, C., & Bosi, S. (2003). The effective size of the solar cone for solar concentrating systems. Solar energy, 74(2003), 417-427.
+    // [2] Buie, D., Monger, A., & Dey, C. (2003). Sun shape distributions for terrestrial solar simulations. Solar Energy, 74(March 2003), 113-122.
+    double csr = this->get_circumsolar_ratio();
+    double chi;
+    if (csr > 0.145)
+        chi = -0.04419909985804843 + csr * (1.401323894233574 + csr * (-0.3639746714505299 + csr * (-0.9579768560161194 + 1.1550475450828657 * csr)));
+    else if (csr > 0.035)
+        chi = 0.022652077593662934 + csr * (0.5252380349996234 + (2.5484334534423887 - 0.8763755326550412 * csr) * csr);
+    else
+        chi = 0.004733749294807862 + csr * (4.716738065192151 + csr * (-463.506669149804 + csr * (24745.88727411664 + csr * (-606122.7511711778 + 5521693.445014727 * csr))));
+    
+    kappa = 0.9 * log(13.5 * chi) * pow(chi, -0.3);
+    gamma = 2.2 * log(0.52 * chi) * pow(chi, 0.43) - 0.1;
+}
+
 void Sun::set_user_defined_distribution(std::vector<double> _user_angle,
                                         std::vector<double> _user_intensity)
 {
@@ -87,9 +119,10 @@ void Sun::set_user_defined_distribution(std::vector<double> _user_angle,
     user_intensity = std::move(_user_intensity);
 }
 
-void Sun::set_shape(DistributionType shape,
+void Sun::set_shape(SunShape shape,
                     double _sigma,
                     double _half_width,
+                    double _csr,
                     std::vector<double> _user_angle,
                     std::vector<double> _user_intensity)
 {
@@ -98,18 +131,24 @@ void Sun::set_shape(DistributionType shape,
     // Clear arguments
     sigma = std::numeric_limits<double>::quiet_NaN();
     half_width = std::numeric_limits<double>::quiet_NaN();
+    circumsolar_ratio = std::numeric_limits<double>::quiet_NaN();
     user_angle.clear();
     user_intensity.clear();
 
     switch (shape)
     {
-    case (DistributionType::GAUSSIAN):
+    case (SunShape::GAUSSIAN):
         set_gaussian_distribution(_sigma);
         break;
-    case (DistributionType::PILLBOX):
+    case (SunShape::PILLBOX):
         set_pillbox_distribution(_half_width);
         break;
-    case (DistributionType::USER_DEFINED):
+    case (SunShape::LIMBDARKENED):
+        break;
+    case (SunShape::BUIE_CSR):
+        set_buie_csr_distribution(_csr);
+        break;
+    case (SunShape::USER_DEFINED):
         set_user_defined_distribution(std::move(_user_angle), std::move(_user_intensity));
         break;
     default:

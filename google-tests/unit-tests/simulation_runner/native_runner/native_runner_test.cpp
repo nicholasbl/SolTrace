@@ -37,14 +37,14 @@ TEST(NativeRunnerTypes, TSun)
     auto sun = SolTrace::Data::make_ray_source<Sun>();
     Vector3d spos(1.0, 2.0, 3.0);
     sun->set_position(spos);
-    sun->set_shape(DistributionType::PILLBOX, -1.0, 1.0);
+    sun->set_shape(SunShape::PILLBOX, -1.0, 1.0, 0.0);
     my_sim.add_ray_source(sun);
 
     NativeRunner runner;
     runner.setup_sun(&my_sim);
     auto sys = runner.get_system();
     EXPECT_TRUE(is_identical(sys->Sun.Origin, sun->get_position()));
-    EXPECT_EQ(sys->Sun.ShapeIndex, DistributionType::PILLBOX);
+    EXPECT_EQ(sys->Sun.ShapeIndex, SunShape::PILLBOX);
 }
 
 TEST(NativeRunnerTypes, TElement)
@@ -110,7 +110,7 @@ TEST(NativeRunner, SmokeTest)
 
     auto sun = SolTrace::Data::make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 100.0);
-    sun->set_shape(SolTrace::Data::DistributionType::GAUSSIAN, 1.0, -5.0);
+    sun->set_shape(SolTrace::Data::SunShape::GAUSSIAN, 1.0, -5.0, 0.0);
     my_sim.add_ray_source(sun);
 
     auto my_st = SolTrace::Data::make_stage(0);
@@ -351,7 +351,7 @@ TEST(NativeRunner, SingleRayValidationTest)
     // Sun
     auto sun = SolTrace::Data::make_ray_source<Sun>();
     sun->set_position(0.0, 0.0, 100.0);
-    sun->set_shape(SolTrace::Data::DistributionType::PILLBOX, -1.0, 1.0);
+    sun->set_shape(SolTrace::Data::SunShape::PILLBOX, -1.0, 1.0, 0.0);
     sd.add_ray_source(sun);
 
     auto sph = SolTrace::Data::make_element<SingleElement>();
