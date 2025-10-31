@@ -1,6 +1,7 @@
 #pragma once
 
 #include "simulation_data_api.hpp"
+
 #include "surfacegeometrylistmodel.h"
 #include "indirect_model.h"
 

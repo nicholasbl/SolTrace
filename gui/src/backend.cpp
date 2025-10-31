@@ -1,4 +1,7 @@
 #include "backend.h"
+
+#include "utility.h"
+
 #include "surface.hpp"
 
 #include <QFileInfo>
@@ -10,10 +13,6 @@
 
 // TODO COORDINATE SYSTEMS. the sim could be arbitrary
 
-template <class... Ts>
-struct overloaded : Ts... {
-    using Ts::operator()...;
-};
 
 
 bool DataSetsModel::_can_append_new(QVariant const&) {

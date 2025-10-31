@@ -32,11 +32,15 @@ qt_add_qml_module(SolTrace
         src/indirect_model.h src/indirect_model.cpp
         src/surfacegeometry.h src/surfacegeometry.cpp
         src/surfacegeometrylistmodel.h src/surfacegeometrylistmodel.cpp
+        src/job_run.h src/job_run.cpp
+        SOURCES src/utility.h
 )
 
 target_include_directories(SolTrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 target_include_directories(SolTrace PRIVATE ../coretrace/simulation_data)
+target_include_directories(SolTrace PRIVATE ../coretrace/simulation_results)
+target_include_directories(SolTrace PRIVATE ../coretrace/simulation_runner)
 
 set_target_properties(SolTrace PROPERTIES CXX_STANDARD 20)
 
@@ -56,10 +60,9 @@ target_link_libraries(SolTrace
         Qt6::Quick
         Qt6::Quick3D
         simdata
+        simresult
+        native_runner
 )
-target_link_libraries(SolTrace PRIVATE Qt6::Core)
-target_link_libraries(SolTrace PRIVATE Qt6::Core)
-target_link_libraries(SolTrace PRIVATE Qt6::Core)
 
 
 set_target_properties(simdata PROPERTIES
@@ -70,13 +73,13 @@ set_target_properties(simdata PROPERTIES
 #set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 if(APPLE)
-  install(TARGETS simdata
+  install(TARGETS simdata simresult native_runner
       LIBRARY DESTINATION "SolTrace.app/Contents/Frameworks")
 elseif(WIN32)
-  install(TARGETS simdata
+  install(TARGETS simdata simresult native_runner
       RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}") # .dll next to .exe
 else()
-  install(TARGETS simdata
+  install(TARGETS simdata simresult native_runner
       LIBRARY DESTINATION "${CMAKE_INSTALL_BINDIR}") # .so next to binary
 endif()
 
