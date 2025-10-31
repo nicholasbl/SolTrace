@@ -69,7 +69,7 @@ void ElementTableModel::_delete_at(size_t place, size_t count) {
 
 void ElementTableModel::_clear() {
     // no fast clear
-    for (auto k : m_known_keys) {
+    for (auto k : std::as_const(m_known_keys)) {
         m_data->remove_element(k);
     }
 

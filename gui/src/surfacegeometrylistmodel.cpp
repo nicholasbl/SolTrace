@@ -4,8 +4,8 @@
 SurfaceGeometryListModel::SurfaceGeometryListModel(QObject* parent)
     : QAbstractListModel { parent } { }
 
-QVariant SurfaceGeometryListModel::data(const QModelIndex& idx, int role) const
-{
+QVariant SurfaceGeometryListModel::data(QModelIndex const& idx,
+                                        int                role) const {
     if (!idx.isValid())
         return {};
 
@@ -28,7 +28,9 @@ QVariant SurfaceGeometryListModel::data(const QModelIndex& idx, int role) const
     }
 }
 
-bool SurfaceGeometryListModel::setData(const QModelIndex &index, const QVariant &value, int role) {
+bool SurfaceGeometryListModel::setData(QModelIndex const& index,
+                                       QVariant const&    value,
+                                       int                role) {
     if (!index.isValid())
         return false;
 
@@ -44,16 +46,16 @@ bool SurfaceGeometryListModel::setData(const QModelIndex &index, const QVariant 
     }
 }
 
-Qt::ItemFlags SurfaceGeometryListModel::flags(const QModelIndex &index) const {
+Qt::ItemFlags SurfaceGeometryListModel::flags(QModelIndex const& index) const {
     return QAbstractListModel::flags(index) | Qt::ItemIsEditable;
 }
 
 QHash<int, QByteArray> SurfaceGeometryListModel::roleNames() const {
-    return {
-        { GeometryRole, "geometry" },
-        { PositionRole, "position" },
-        { RotationRole, "rotation" },
-        { VisibleRole,  "visible"  },
-        { LabelRole,    "label"    }
-    };
+    static QHash<int, QByteArray> roles = { { GeometryRole, "geometry" },
+                                            { PositionRole, "position" },
+                                            { RotationRole, "rotation" },
+                                            { VisibleRole, "visible" },
+                                            { LabelRole, "label" } };
+
+    return roles;
 }

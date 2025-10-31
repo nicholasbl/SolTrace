@@ -1,7 +1,7 @@
 #include "surfacegeometry.h"
 
-SurfaceGeometry::SurfaceGeometry(element_ptr elem) : m_element(elem), m_visible(true)
-{
+SurfaceGeometry::SurfaceGeometry(element_ptr elem)
+    : m_element(elem), m_visible(true) {
     assert(m_element != nullptr);
     rebuildGeometry();
 }
@@ -44,12 +44,14 @@ void SurfaceGeometry::rebuildGeometry() {
     }
 
     // Compute the normals
-    for (int i = 0; i < indices.size(); i+=3) {
+    for (int i = 0; i < indices.size(); i += 3) {
         int a = indices[i];
-        int b = indices[i+1];
-        int c = indices[i+2];
+        int b = indices[i + 1];
+        int c = indices[i + 2];
 
-        QVector3D normal = QVector3D::crossProduct(verts[a].position-verts[b].position,verts[b].position-verts[c].position);
+        QVector3D normal =
+            QVector3D::crossProduct(verts[a].position - verts[b].position,
+                                    verts[b].position - verts[c].position);
 
         verts[a].normal += normal;
         verts[b].normal += normal;
@@ -71,11 +73,14 @@ void SurfaceGeometry::rebuildGeometry() {
     auto vertexBuffer = QByteArray(reinterpret_cast<const char*>(verts.data()),
                                    verts.size() * sizeof(Vertex));
 
-    addAttribute(QQuick3DGeometry::Attribute::PositionSemantic, 0,
+    addAttribute(QQuick3DGeometry::Attribute::PositionSemantic,
+                 0,
                  QQuick3DGeometry::Attribute::ComponentType::F32Type);
-    addAttribute(QQuick3DGeometry::Attribute::NormalSemantic, 3 * sizeof(float),
+    addAttribute(QQuick3DGeometry::Attribute::NormalSemantic,
+                 3 * sizeof(float),
                  QQuick3DGeometry::Attribute::ComponentType::F32Type);
-    addAttribute(QQuick3DGeometry::Attribute::IndexSemantic, 0,
+    addAttribute(QQuick3DGeometry::Attribute::IndexSemantic,
+                 0,
                  QQuick3DGeometry::Attribute::ComponentType::U32Type);
 
     setStride(sizeof(Vertex));
@@ -85,37 +90,39 @@ void SurfaceGeometry::rebuildGeometry() {
     setPrimitiveType(QQuick3DGeometry::PrimitiveType::Triangles);
 }
 
-QVector3D SurfaceGeometry::position() const
-{
-    return QVector3D(m_element->get_origin_ref().data[0], m_element->get_origin_ref().data[1], m_element->get_origin_ref().data[2]);
-
+QVector3D SurfaceGeometry::position() const {
+    return QVector3D(m_element->get_origin_ref().data[0],
+                     m_element->get_origin_ref().data[1],
+                     m_element->get_origin_ref().data[2]);
 }
 
-QVector3D SurfaceGeometry::eulerAngles() const
-{
-    double dx = m_element->get_aim_vector_ref()[0]-m_element->get_origin_ref().data[0];
-    double dy = m_element->get_aim_vector_ref()[1]-m_element->get_origin_ref().data[1];
-    double dz = m_element->get_aim_vector_ref()[1]-m_element->get_origin_ref().data[2];
+QVector3D SurfaceGeometry::eulerAngles() const {
+    double dx = m_element->get_aim_vector_ref()[0] -
+                m_element->get_origin_ref().data[0];
+    double dy = m_element->get_aim_vector_ref()[1] -
+                m_element->get_origin_ref().data[1];
+    double dz = m_element->get_aim_vector_ref()[1] -
+                m_element->get_origin_ref().data[2];
 
-    double dt = sqrt(dx*dx + dy*dy + dz*dz);
+    double dt = sqrt(dx * dx + dy * dy + dz * dz);
 
-    return QVector3D(dt != 0 ? asin(dy/dt) * 180.0/M_PI : 0,
-                     dt != 0 ? atan2(dx/dt,dz/dt)  * 180.0/M_PI : 0,
+    return QVector3D(dt != 0 ? asin(dy / dt) * 180.0 / M_PI : 0,
+                     dt != 0 ? atan2(dx / dt, dz / dt) * 180.0 / M_PI : 0,
                      m_element->get_zrot());
 }
 
-void SurfaceGeometry::setVisible(bool v)
-{
+void SurfaceGeometry::setVisible(bool v) {
     m_visible = v;
 }
 
-QString SurfaceGeometry::label() const
-{
-    return QString::fromStdString(m_element->get_surface()->get_type_string()) + " (" + QString::fromStdString(m_element->get_aperture()->get_type_string()) + ")";
+QString SurfaceGeometry::label() const {
+    return QString::fromStdString(m_element->get_surface()->get_type_string()) +
+           " (" +
+           QString::fromStdString(
+               m_element->get_aperture()->get_type_string()) +
+           ")";
 }
 
-bool SurfaceGeometry::operator==(const SurfaceGeometry& other) const
-{
+bool SurfaceGeometry::operator==(const SurfaceGeometry& other) const {
     return m_element == other.m_element;
 }
-

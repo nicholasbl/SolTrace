@@ -1,43 +1,48 @@
-#ifndef ELEMENTLISTMODEL_H
-#define ELEMENTLISTMODEL_H
+#pragma once
 
-#include <QAbstractListModel>
 #include "surfacegeometry.h"
+#include <QAbstractListModel>
 
 class SurfaceGeometryListModel : public QAbstractListModel {
     Q_OBJECT
+
+    QVector<std::shared_ptr<SurfaceGeometry>> m_geoms;
+
 public:
-    enum Roles { GeometryRole = Qt::UserRole + 1,
-                 PositionRole,
-                 RotationRole,
-                 LabelRole,
-                 VisibleRole
-                 };
+    enum Roles {
+        GeometryRole = Qt::UserRole + 1,
+        PositionRole,
+        RotationRole,
+        LabelRole,
+        VisibleRole
+    };
 
     SurfaceGeometryListModel(QObject* parent = nullptr);
 
-    void setGeometries(const QVector<std::shared_ptr<SurfaceGeometry>>& geoms) {
+    void setGeometries(QVector<std::shared_ptr<SurfaceGeometry>> const& geoms) {
         beginResetModel();
         m_geoms = geoms;
         endResetModel();
     }
 
-    void push_back(const std::shared_ptr<SurfaceGeometry>& surface) {
+    void push_back(std::shared_ptr<SurfaceGeometry> const& surface) {
+        auto at = rowCount();
+
+        beginInsertRows(QModelIndex(), at, at);
         m_geoms.push_back(surface);
+        endInsertRows();
     }
 
-    int rowCount(const QModelIndex&) const override {
+    int rowCount(QModelIndex const& parent = QModelIndex()) const override {
         return m_geoms.size();
     }
 
-    QVariant data(const QModelIndex& idx, int role) const override;
-    bool setData(const QModelIndex &index, const QVariant &value, int role) override;
+    QVariant data(QModelIndex const& idx,
+                  int                role = Qt::DisplayRole) const override;
 
-    Qt::ItemFlags flags(const QModelIndex &index) const override;
+    bool
+    setData(QModelIndex const& index, QVariant const& value, int role) override;
+
+    Qt::ItemFlags          flags(QModelIndex const& index) const override;
     QHash<int, QByteArray> roleNames() const override;
-
-private:
-    QVector<std::shared_ptr<SurfaceGeometry>> m_geoms;
 };
-
-#endif // ELEMENTLISTMODEL_H

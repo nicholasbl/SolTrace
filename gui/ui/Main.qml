@@ -96,28 +96,28 @@ ApplicationWindow {
         }
 
         Q3D.Node {
-                id: elementsEnitity
-                eulerRotation.x: -90
-        Q3D.Repeater3D {
-            model: detail_pane.current_set.element_model.surface_geometries
-            delegate: Q3D.Model {
-                geometry: model.geometry
-                position: model.position
-                rotation: model.rotation
-                visible:  model.visible
-                objectName: model.label
+            id: elementsEnitity
+            eulerRotation.x: -90
+            Q3D.Repeater3D {
+                model: detail_pane.current_set.element_model.surface_geometries
+                delegate: Q3D.Model {
+                    geometry: model.geometry
+                    position: model.position
+                    rotation: model.rotation
+                    visible:  model.visible
+                    objectName: model.label
 
-                materials: [
-                    Q3D.PrincipledMaterial {
-                        id: transmitterMaterial
-                        baseColor: "#cccccc"
-                        metalness: 0.5
-                        roughness: 0.05
-                        cullMode: Q3D.CustomMaterial.NoCulling
-                    }
-                ]
+                    materials: [
+                        Q3D.PrincipledMaterial {
+                            id: transmitterMaterial
+                            baseColor: "#cccccc"
+                            metalness: 0.5
+                            roughness: 0.05
+                            cullMode: Q3D.CustomMaterial.NoCulling
+                        }
+                    ]
+                }
             }
-        }
         }
     }
 
@@ -353,19 +353,19 @@ ApplicationWindow {
                                     let intensities = detail_pane.ray_source.user_intensity
 
                                     let sun_p_count = Math.min(
-                                        angles.length,
-                                        intensities.length
-                                    );
+                                            angles.length,
+                                            intensities.length
+                                            );
 
                                     let sun_points = []
 
                                     for (let sun_i = 0; sun_i < sun_p_count; sun_i++) {
                                         sun_points.push(
-                                            Qt.point(
-                                                angles[sun_i],
-                                                intensities[sun_i]
-                                            )
-                                        )
+                                                    Qt.point(
+                                                        angles[sun_i],
+                                                        intensities[sun_i]
+                                                        )
+                                                    )
                                     }
 
                                     sun_series.replace(sun_points)
@@ -375,37 +375,37 @@ ApplicationWindow {
                         }
                     }
 
-}
+                }
             }
         }
     }
-        TransparentPane {
-            id: element_pane
-            anchors.left: data_list_pane.right
-            anchors.bottom: parent.bottom
-            anchors.top: parent.top
-            anchors.margins: 10
-            visible: true
+    TransparentPane {
+        id: element_pane
+        anchors.left: data_list_pane.right
+        anchors.bottom: parent.bottom
+        anchors.top: parent.top
+        anchors.margins: 10
+        visible: true
 
-            width: 400
+        width: 400
 
-            Material.elevation: 10
-            Material.roundedScale: Material.MediumScale
+        Material.elevation: 10
+        Material.roundedScale: Material.MediumScale
 
-            ColumnLayout {
-                anchors.fill: parent
+        ColumnLayout {
+            anchors.fill: parent
 
-                property var current_set: Backend.data_sets.current_data
-                property var ray_source : current_set.ray_source_model
+            property var current_set: Backend.data_sets.current_data
+            property var ray_source : current_set.ray_source_model
 
 
-                GroupBox {
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    title: "Elements"
+            GroupBox {
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                title: "Elements"
 
-                    ColumnLayout {
-                        anchors.fill: parent
+                ColumnLayout {
+                    anchors.fill: parent
 
                     ListView {
                         Layout.fillWidth: true
@@ -436,7 +436,7 @@ ApplicationWindow {
 
                         ScrollIndicator.vertical: ScrollIndicator { }
                     }
-}
+                }
             }
 
 
@@ -446,8 +446,19 @@ ApplicationWindow {
     FileDialog {
         id: open_dialog
 
+        nameFilters: ["SolTrace datasets (*.stinput)"]
+
         currentFolder: StandardPaths.standardLocations(StandardPaths.DocumentsLocation)[0]
-        onAccepted: Backend.data_sets.start_load_file(selectedFile)
+        onAccepted: {
+            load_settings.last_file = selectedFile
+            Backend.data_sets.start_load_file(selectedFile)
+        }
+
+        Settings {
+            id: load_settings
+            category: "Load"
+            property alias last_file: open_dialog.selectedFile
+        }
     }
 }
 
