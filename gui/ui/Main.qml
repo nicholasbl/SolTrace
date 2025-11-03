@@ -118,6 +118,19 @@ ApplicationWindow {
                     ]
                 }
             }
+
+            Q3D.Model {
+                geometry: detail_pane.current_set.element_model.ray_geometry
+                materials: [
+                    Q3D.PrincipledMaterial {
+                        id: ray_material
+                        baseColor: "white"
+                        metalness: 0.0
+                        roughness: 1.0
+                        lighting: Q3D.PrincipledMaterial.NoLighting
+                    }
+                ]
+            }
         }
     }
 
@@ -407,6 +420,12 @@ ApplicationWindow {
                 ColumnLayout {
                     anchors.fill: parent
 
+                    Button {
+                        text: "Run..."
+
+                        onClicked: detail_pane.current_set.element_model.run_simulation()
+                    }
+
                     ListView {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
@@ -423,13 +442,10 @@ ApplicationWindow {
                                 indicator.height: 14
                             }
 
-                            Text {
+                            Label {
                                 text: index + " " + model.label
-                                color: "white"
                                 anchors.verticalCenter: parent.verticalCenter
                             }
-
-
                         }
 
                         clip: true

@@ -77,9 +77,10 @@ void ElementTableModel::_clear() {
 }
 
 ElementTableModel::ElementTableModel(SimDataPtr ptr, QObject* parent)
-    : HashContainerModel(parent), m_data(ptr),
-      m_surface_geometries(new SurfaceGeometryListModel(this))
-{
+    : HashContainerModel(parent),
+      m_data(ptr),
+      m_surface_geometries(new SurfaceGeometryListModel(this)),
+      m_ray_geometry(new RayGeometry()) {
     // TODO implementing...
 
     add_property({
@@ -165,6 +166,41 @@ ElementTableModel::ElementTableModel(SimDataPtr ptr, QObject* parent)
     }
 
     qDebug() << "Added" << m_known_keys.size() << "elements (" << singles << " singles, " << composites << "composites)";
+}
+
+ElementTableModel::~ElementTableModel() {
+    // TODO better ownership model
+    m_ray_geometry->deleteLater();
+}
+
+void ElementTableModel::sim_done() {
+    qDebug() << "Collecting simulation results...";
+    auto* job = qobject_cast<RunningJob*>(sender());
+
+    if (!job) return;
+
+    auto result = job->take();
+
+    m_ray_geometry->set_database(std::move(result));
+}
+
+void ElementTableModel::run_simulation() {
+    if (sim_running()) return;
+
+    set_sim_running(true);
+
+    // hack hack hack
+    auto* job = new RunningJob(m_data, RunType::Thread, this);
+
+    connect(job, &RunningJob::progress_text_update, this, [](QString text) {
+        qDebug() << "JOB:" << text;
+    });
+
+    connect(job, &RunningJob::error, this, [](QString text) {
+        qCritical() << "JOB FAIL:" << text;
+    });
+
+    connect(job, &RunningJob::finished, this, &ElementTableModel::sim_done);
 }
 
 // =============================================================================

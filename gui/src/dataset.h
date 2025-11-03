@@ -5,6 +5,8 @@
 #include "surfacegeometrylistmodel.h"
 #include "indirect_model.h"
 
+#include "job_run.h"
+
 #include "qt_helpers.h"
 
 #include <QQmlEngine>
@@ -60,9 +62,21 @@ class ElementTableModel : public HashContainerModel<SD::element_id> {
     virtual void _clear();
 
     QOBJECT_WRITABLE_PROPERTY(SurfaceGeometryListModel, surface_geometries);
+    QOBJECT_WRITABLE_PROPERTY(RayGeometry, ray_geometry);
+
+    // Hack for now
+    Q_WRITABLE_PROPERTY(bool, sim_running, false);
+
+private slots:
+    void sim_done();
 
 public:
     explicit ElementTableModel(SimDataPtr, QObject* parent = nullptr);
+
+    ~ElementTableModel();
+
+public slots:
+    void run_simulation();
 };
 
 
