@@ -14,6 +14,7 @@
 #define SOLTRACE_APERTURE_H
 
 #include <cmath>
+#include <memory>
 #include <vector>
 
 #include "constants.hpp"
@@ -54,7 +55,6 @@ namespace SolTrace::Data
         return std::make_shared<A>(std::forward<Args>(args)...);
     }
 
-
     struct Aperture
     {
     public:
@@ -86,26 +86,6 @@ namespace SolTrace::Data
         }
 
         /**
-         * @brief Get the aperture type string
-         * @return The aperture type string
-         */
-        inline std::string get_type_string() const
-        {
-            switch (my_type) {
-            case ANNULUS: return "Annulus";
-            case CIRCLE : return "Circle";
-            case HEXAGON: return "Hexagon";
-            case RECTANGLE: return "Rectangle";
-            case EQUILATERAL_TRIANGLE: return "Regular Triangle";
-            case SINGLE_AXIS_CURVATURE_SECTION: return "Single Axis Curvature";
-            case IRREGULAR_TRIANGLE: return "Triangle";
-            case IRREGULAR_QUADRILATERAL: return "Quad";
-            case APERTURE_UNKNOWN: return "Unknown";
-            }
-            return "Unknown";
-        }
-
-        /**
          * @brief Get radius of circumscribed circle
          * @return Radius of the smallest circle that contains the aperture
          */
@@ -127,12 +107,6 @@ namespace SolTrace::Data
         virtual double diameter_circumscribed_circle() const = 0;
 
         /**
-         * @brief Triangulate the aperture shape
-         * @return Tuple of 2D vertices and triangle indices
-         */
-        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const = 0;
-
-        /**
          * @brief Test if a point is inside the aperture
          * @param x X coordinate of the test point
          * @param y Y coordinate of the test point
@@ -145,57 +119,6 @@ namespace SolTrace::Data
          * @return Shared pointer to a copy of this aperture
          */
         virtual aperture_ptr make_copy() const = 0;
-
-    protected:
-        struct Point
-        {
-        public:
-            double x;
-            double y;
-            Point(double ix, double iy) : x(ix), y(iy) {}
-            bool operator==(const Point& p) const { return x == p.x && y == p.y; }
-
-        };
-
-        struct Triangle
-        {
-        public:
-            Point a;
-            Point b;
-            Point c;
-
-            Triangle(Point ia, Point ib, Point ic) : a(ia), b(ib), c(ic) {}
-        };
-
-        /**
-         * @brief Compute the mipoint between to points
-         * @return The midpoint
-         */
-        Point midpoint(const Point& v0, const Point& v1) const;
-
-        /**
-         * @brief Recursively Subdivide a triangle by midpoints
-         * @param tri The triangle to subdivide
-         * @param n number of subdivisions
-         * @return vector of triangles
-         */
-        std::vector<Triangle> subdivide(Triangle tri, int n) const;
-
-        /**
-         * @brief Return the index of the point in the vector, adding if it doesn't exist
-         * @param v The vector of points
-         * @param p The point of interest
-         * @return index of p in v
-         */
-        int index_of(std::vector<Point> &v, const Point &p) const;
-
-        /**
-         * @brief Convert a list of Triangles in indexed (flattened) faceset
-         * @param triangles The list to convert
-         * @return indexed faceset
-         */
-        std::tuple<std::vector<double>, std::vector<int>> indexed_triangles(const std::vector<Triangle>& triangles) const;
-
     };
 
     struct Annulus : public Aperture
@@ -217,8 +140,10 @@ namespace SolTrace::Data
          * @param arc Arc angle in radians (2*pi for full annulus)
          */
         Annulus(double ri, double ro, double arc)
-            : Aperture(ANNULUS),
-              inner_radius(ri), outer_radius(ro), arc_angle(arc)
+            : Aperture(ApertureType::ANNULUS),
+              inner_radius(ri),
+              outer_radius(ro),
+              arc_angle(arc)
         {
         }
         virtual ~Annulus() {}
@@ -234,12 +159,6 @@ namespace SolTrace::Data
          * @return Diameter of outer circle
          */
         virtual double diameter_circumscribed_circle() const override;
-
-        /**
-         * @brief Triangulate the annulus shape
-         * @return Tuple of 2D vertices and triangle indices
-         */
-        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const override;
 
         /**
          * @brief Test if point is inside annulus aperture
@@ -266,7 +185,7 @@ namespace SolTrace::Data
          * @brief Constructor for circular aperture
          * @param d Diameter of the circle
          */
-        Circle(double d) : Aperture(CIRCLE), diameter(d) {}
+        Circle(double d) : Aperture(ApertureType::CIRCLE), diameter(d) {}
         virtual ~Circle() {}
 
         /**
@@ -280,12 +199,6 @@ namespace SolTrace::Data
          * @return Circle diameter (same as aperture diameter)
          */
         virtual double diameter_circumscribed_circle() const override;
-
-        /**
-         * @brief Triangulate the circle shape
-         * @return Tuple of 2D vertices and triangle indices
-         */
-        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const override;
 
         /**
          * @brief Test if point is inside circular aperture
@@ -314,8 +227,9 @@ namespace SolTrace::Data
          * @brief Constructor for equilateral triangle aperture
          * @param cd Diameter of circumscribed circle
          */
-        EqualateralTriangle(double cd) : Aperture(EQUILATERAL_TRIANGLE),
-                                         circumscribe_diameter(cd)
+        EqualateralTriangle(double cd)
+            : Aperture(ApertureType::EQUILATERAL_TRIANGLE),
+              circumscribe_diameter(cd)
         {
         }
         virtual ~EqualateralTriangle() {}
@@ -331,12 +245,6 @@ namespace SolTrace::Data
          * @return Diameter of circumscribed circle
          */
         virtual double diameter_circumscribed_circle() const override;
-
-        /**
-         * @brief Triangulate the triangle shape
-         * @return Tuple of 2D vertices and triangle indices
-         */
-        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const override;
 
         /**
          * @brief Test if point is inside triangular aperture
@@ -363,7 +271,9 @@ namespace SolTrace::Data
          * @brief Constructor for hexagonal aperture
          * @param d Diameter of circumscribed circle
          */
-        Hexagon(double d) : Aperture(HEXAGON), circumscribe_diameter(d) {}
+        Hexagon(double d)
+            : Aperture(ApertureType::HEXAGON),
+              circumscribe_diameter(d) {}
         virtual ~Hexagon() {}
 
         /**
@@ -377,12 +287,6 @@ namespace SolTrace::Data
          * @return Diameter of circumscribed circle
          */
         virtual double diameter_circumscribed_circle() const override;
-
-        /**
-         * @brief Triangulate the hexagon shape
-         * @return Tuple of 2D vertices and triangle indices
-         */
-        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const override;
 
         /**
          * @brief Test if point is inside hexagonal aperture
@@ -436,12 +340,6 @@ namespace SolTrace::Data
          * @return Diagonal length of rectangle
          */
         virtual double diameter_circumscribed_circle() const override;
-
-        /**
-         * @brief Triangulate the rectangle shape
-         * @return Tuple of 2D vertices and triangle indices
-         */
-        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const override;
 
         /**
          * @brief Test if point is inside rectangular aperture
@@ -500,12 +398,6 @@ namespace SolTrace::Data
         virtual double diameter_circumscribed_circle() const override;
 
         /**
-         * @brief Triangulate the triangle shape
-         * @return Tuple of 2D vertices and triangle indices
-         */
-        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const override;
-
-        /**
          * @brief Test if point is inside irregular triangle
          * @param x X coordinate
          * @param y Y coordinate
@@ -560,12 +452,6 @@ namespace SolTrace::Data
          * @return Diameter of smallest circle containing quadrilateral
          */
         virtual double diameter_circumscribed_circle() const override;
-
-        /**
-         * @brief Triangulate the quad shape
-         * @return Tuple of 2D vertices and triangle indices
-         */
-        virtual std::tuple<std::vector<double>, std::vector<int>> triangulation() const override;
 
         /**
          * @brief Test if point is inside irregular quadrilateral

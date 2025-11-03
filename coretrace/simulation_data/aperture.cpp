@@ -4,7 +4,8 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
-#include <iostream>
+
+// #include <iostream>
 
 #include "constants.hpp"
 
@@ -42,7 +43,9 @@ aperture_ptr Aperture::make_aperture_from_type(ApertureType type,
         if (args.size() < 3)
             break;
         return make_aperture<Rectangle>(
-            args[1] - args[0], args[2], args[0], 0.5 * args[2]);
+            args[1] - args[0], args[2], 
+            -0.5 * (args[1] - args[0]), -0.5 * args[2]);
+        // return make_aperture<Rectangle>(args[1] - args[0], args[2]);
     case ApertureType::IRREGULAR_TRIANGLE:
         if (args.size() < 6)
             break;
@@ -68,79 +71,6 @@ aperture_ptr Aperture::make_aperture_from_type(ApertureType type,
     // return aperture_ptr();
 }
 
-Aperture::Point Aperture::midpoint(const Aperture::Point& v0, const Aperture::Point& v1) const
-{
-    return Aperture::Point((v0.x  + v1.x) / 2, (v0.y  + v1.y) / 2);
-}
-
-std::vector<Aperture::Triangle> Aperture::subdivide(Aperture::Triangle tri, int n) const
-{
-    Point v0 = tri.a;
-    Point v1 = tri.b;
-    Point v2 = tri.c;
-
-    Point m01 = midpoint(v0,v1);
-    Point m12 = midpoint(v1,v2);
-    Point m20 = midpoint(v2,v0);
-
-    std::vector<Triangle> result;
-
-    if (n-1 == 0)
-    {
-        result.push_back(Triangle(v0,m20,m01));
-        result.push_back(Triangle(m01,m12,v1));
-        result.push_back(Triangle(m12,m01,m20));
-        result.push_back(Triangle(m12,m20,v2));
-
-        return result;
-    }
-
-    auto t1 = subdivide(Triangle(v0,m01,m20),n-1);
-    auto t2 = subdivide(Triangle(v0,m01,m20),n-1);
-    auto t3 = subdivide(Triangle(v0,m01,m20),n-1);
-    auto t4 = subdivide(Triangle(v0,m01,m20),n-1);
-
-    result.insert(result.end(), t1.begin(), t1.end());
-    result.insert(result.end(), t2.begin(), t2.end());
-    result.insert(result.end(), t3.begin(), t3.end());
-    result.insert(result.end(), t4.begin(), t4.end());
-
-    return result;
-
-}
-
-int Aperture::index_of(std::vector<Aperture::Point> &v, const Aperture::Point &p) const
-{
-    auto it = find(v.begin(), v.end(), p);
-
-    if (it == v.end()) {
-        v.push_back(p);
-        return v.size()-1;
-    }
-
-    return std::distance(v.begin(), it);
-}
-
-std::tuple<std::vector<double>, std::vector<int>> Aperture::indexed_triangles(const std::vector<Aperture::Triangle>& triangles) const
-{
-    std::vector<int> indices;
-    std::vector<Point> points;
-    std::vector<double> flattened;
-
-    for (const Triangle& tri : triangles) {
-        indices.push_back(index_of(points, tri.a));
-        indices.push_back(index_of(points, tri.b));
-        indices.push_back(index_of(points, tri.c));
-    }
-
-    for (const Point& p : points) {
-        flattened.push_back(p.x);
-        flattened.push_back(p.y);
-    }
-
-    return std::make_pair(flattened, indices);
-}
-
 double Annulus::aperture_area() const
 {
     // TODO: input.cpp on line 219 uses the formula
@@ -158,45 +88,6 @@ double Annulus::diameter_circumscribed_circle() const
 {
     return 2.0 * this->outer_radius;
 }
-
-
-std::tuple<std::vector<double>, std::vector<int>> Annulus::triangulation() const
-{
-    const int resolution = 32;
-    std::vector<double> verts;
-    std::vector<int> indices;
-
-    for (int i=0; i<=resolution; i++)
-    {
-        const double u = (double)i / (double)resolution * M_PI*2;
-
-        verts.push_back(inner_radius * std::cos(u));
-        verts.push_back(inner_radius * std::sin(u));
-        verts.push_back(outer_radius * std::cos(u));
-        verts.push_back(outer_radius * std::sin(u));
-    }
-
-    for (int i = 0; i < resolution*2; i+=2)
-    {
-        const int a = i;
-        const int b = i+1;
-        const int c = i+2;
-        const int d = i+3;
-
-        // Generate two triangles for each quad in the mesh
-        // Adjust order to be counter-clockwise
-        indices.push_back(a);
-        indices.push_back(b);
-        indices.push_back(d);
-
-        indices.push_back(a);
-        indices.push_back(d);
-        indices.push_back(c);
-    }
-
-    return std::make_tuple(verts, indices);
-}
-
 
 bool Annulus::is_in(double x, double y) const
 {
@@ -229,39 +120,6 @@ double Circle::diameter_circumscribed_circle() const
     return this->diameter;
 }
 
-std::tuple<std::vector<double>, std::vector<int>> Circle::triangulation() const
-{
-    // Using a fixed Delaunay triangulation of the unit circle
-    std::vector<double> verts = {1.00000000e+00,  0.00000000e+00,  9.51056516e-01,  3.09016994e-01,
-                                 8.09016994e-01,  5.87785252e-01,  5.87785252e-01,  8.09016994e-01,
-                                 3.09016994e-01,  9.51056516e-01,  6.12323400e-17,  1.00000000e+00,
-                                 -3.09016994e-01,  9.51056516e-01, -5.87785252e-01,  8.09016994e-01,
-                                 -8.09016994e-01,  5.87785252e-01, -9.51056516e-01,  3.09016994e-01,
-                                 -1.00000000e+00,  1.22464680e-16, -9.51056516e-01, -3.09016994e-01,
-                                 -8.09016994e-01, -5.87785252e-01, -5.87785252e-01, -8.09016994e-01,
-                                 -3.09016994e-01, -9.51056516e-01, -1.83697020e-16, -1.00000000e+00,
-                                 3.09016994e-01, -9.51056516e-01,  5.87785252e-01, -8.09016994e-01,
-                                 8.09016994e-01, -5.87785252e-01,  9.51056516e-01, -3.09016994e-01,
-                                 0.00000000e+00,  0.00000000e+00, -5.00000000e-01, -5.00000000e-01,
-                                 -5.00000000e-01,  0.00000000e+00, -5.00000000e-01,  5.00000000e-01,
-                                 0.00000000e+00, -5.00000000e-01,  0.00000000e+00,  5.00000000e-01,
-                                 5.00000000e-01, -5.00000000e-01,  5.00000000e-01,  0.00000000e+00,
-                                 5.00000000e-01,  5.00000000e-01};
-    std::vector<int> indices = {22, 11, 21, 11, 22, 10, 17, 18, 26, 14, 24, 21, 13, 14, 21, 24, 14,
-                                15, 25,  6, 23,  6, 25,  5,  9, 22, 23,  8,  9, 23, 22,  9, 10, 27,
-                                1, 28,  1, 27,  0, 19, 27, 26, 18, 19, 26, 27, 19,  0,  4, 25, 28,
-                                3,  4, 28, 25,  4,  5, 12, 13, 21, 11, 12, 21, 24, 16, 26, 16, 17,
-                                26, 16, 24, 15,  7,  8, 23,  6,  7, 23,  2,  3, 28,  1,  2, 28, 24,
-                                22, 21, 22, 24, 20, 24, 27, 20, 27, 24, 26, 25, 22, 20, 22, 25, 23,
-                                27, 25, 20, 25, 27, 28};
-
-    // scale from the unit cirle to our circle
-    std::transform(verts.begin(), verts.end(), verts.begin(),
-                   [this](double element) { return element *= this->diameter/2.0; });
-
-    return std::make_tuple(verts, indices);
-}
-
 bool Circle::is_in(double x, double y) const
 {
     double r = sqrt(x * x + y * y);
@@ -283,16 +141,6 @@ double EqualateralTriangle::aperture_area() const
 double EqualateralTriangle::diameter_circumscribed_circle() const
 {
     return this->circumscribe_diameter;
-}
-
-std::tuple<std::vector<double>, std::vector<int>> EqualateralTriangle::triangulation() const
-{
-    double r = circumscribe_diameter/2.0;
-    Triangle tri(Point(0, r),
-                 Point(r*cos(-M_PI/6.0), r*sin(-M_PI/6.0)),
-                 Point(r*cos(7*M_PI/6.0), r*sin(7*M_PI/6.0)));
-
-    return indexed_triangles(subdivide(tri,3));
 }
 
 bool EqualateralTriangle::is_in(double x, double y) const
@@ -341,43 +189,6 @@ double Hexagon::aperture_area() const
     // This seems to be wrong...
     double r = 0.5 * this->circumscribe_diameter;
     return 1.5 * sqrt(3) * r * r;
-}
-
-std::tuple<std::vector<double>, std::vector<int>> Hexagon::triangulation() const
-{
-    std::vector<double> verts;
-    std::vector<int> indices;
-
-    double r = circumscribe_diameter/2.0;
-    std::vector<Triangle> t0 = subdivide(Triangle(Point(0, 0),
-                                                  Point(r*cos(M_PI/3.0), r*sin(M_PI/3.0)),
-                                                  Point(r, 0)), 2);
-    std::vector<Triangle> t1 = subdivide(Triangle(Point(0, 0),
-                                                  Point(r*cos(2*M_PI/3.0), r*sin(2*M_PI/3.0)),
-                                                  Point(r*cos(M_PI/3.0), r*sin(M_PI/3.0))), 2);
-    std::vector<Triangle> t2 = subdivide(Triangle(Point(0, 0),
-                                                  Point(-r, 0),
-                                                  Point(r*cos(2*M_PI/3.0), r*sin(2*M_PI/3.0))),2);
-    std::vector<Triangle> t3 = subdivide(Triangle(Point(0, 0),
-                                                  Point(r*cos(4*M_PI/3.0), r*sin(4*M_PI/3.0)),
-                                                  Point(-r, 0)),2);
-    std::vector<Triangle> t4 = subdivide(Triangle(Point(0, 0),
-                                                  Point(r*cos(5*M_PI/3.0), r*sin(5*M_PI/3.0)),
-                                                  Point(r*cos(4*M_PI/3.0), r*sin(4*M_PI/3.0))),2);
-    std::vector<Triangle> t5 = subdivide(Triangle(Point(0, 0),
-                                                  Point(r,0),
-                                                  Point(r*cos(5*M_PI/3.0), r*sin(5*M_PI/3.0))),2);
-
-    std::vector<Triangle> triangles;
-
-    triangles.insert(triangles.end(), t0.begin(), t0.end());
-    triangles.insert(triangles.end(), t1.begin(), t1.end());
-    triangles.insert(triangles.end(), t2.begin(), t2.end());
-    triangles.insert(triangles.end(), t3.begin(), t3.end());
-    triangles.insert(triangles.end(), t4.begin(), t4.end());
-    triangles.insert(triangles.end(), t5.begin(), t5.end());
-
-    return indexed_triangles(triangles);
 }
 
 double Hexagon::diameter_circumscribed_circle() const
@@ -434,7 +245,7 @@ aperture_ptr Hexagon::make_copy() const
 IrregularTriangle::IrregularTriangle(double x1, double y1,
                                      double x2, double y2,
                                      double x3, double y3)
-    : Aperture(IRREGULAR_TRIANGLE),
+    : Aperture(ApertureType::IRREGULAR_TRIANGLE),
       x1(x1), y1(y1),
       x2(x2), y2(y2),
       x3(x3), y3(y3)
@@ -469,15 +280,6 @@ double IrregularTriangle::diameter_circumscribed_circle() const
     return sqrt(dx * dx + dy * dy);
 }
 
-std::tuple<std::vector<double>, std::vector<int>> IrregularTriangle::triangulation() const
-{
-    Triangle tri(Point(x1, y1),
-                 Point(x3, y3),
-                 Point(x2, y2));
-
-    return indexed_triangles(subdivide(tri,3));
-}
-
 bool IrregularTriangle::is_in(double x, double y) const
 {
     return intri(x1, y1, x2, y2, x3, y3, x, y);
@@ -493,7 +295,7 @@ IrregularQuadrilateral::IrregularQuadrilateral(double x1, double y1,
                                                double x2, double y2,
                                                double x3, double y3,
                                                double x4, double y4)
-    : Aperture(IRREGULAR_QUADRILATERAL),
+    : Aperture(ApertureType::IRREGULAR_QUADRILATERAL),
       x1(x1), y1(y1),
       x2(x2), y2(y2),
       x3(x3), y3(y3),
@@ -536,25 +338,6 @@ double IrregularQuadrilateral::diameter_circumscribed_circle() const
     return sqrt(dx * dx + dy * dy);
 }
 
-std::tuple<std::vector<double>, std::vector<int>> IrregularQuadrilateral::triangulation() const
-{
-    std::vector<Triangle> t0 = subdivide(Triangle(Point(x1, y1),
-                                                  Point(x3, y3),
-                                                  Point(x2, y2)),2);
-    std::vector<Triangle> t1 = subdivide(Triangle(Point(x1, y1),
-                                                  Point(x4, y4),
-                                                  Point(x3, y3)),2);
-
-    std::vector<Triangle> triangles;
-
-    triangles.insert(triangles.end(), t0.begin(), t0.end());
-    triangles.insert(triangles.end(), t1.begin(), t1.end());
-
-    return indexed_triangles(triangles);
-
-}
-
-
 bool IrregularQuadrilateral::is_in(double x, double y) const
 {
     return inquad(x1, y1, x2, y2, x3, y3, x4, y4, x, y);
@@ -567,7 +350,7 @@ aperture_ptr IrregularQuadrilateral::make_copy() const
 }
 
 Rectangle::Rectangle(double xlen, double ylen)
-    : Aperture(RECTANGLE),
+    : Aperture(ApertureType::RECTANGLE),
       x_length(xlen),
       y_length(ylen)
 {
@@ -602,48 +385,8 @@ bool Rectangle::is_in(double x, double y) const
     return (xl <= x && x <= xu && yl <= y && y <= yu);
 }
 
-std::tuple<std::vector<double>, std::vector<int>> Rectangle::triangulation() const
-{
-    const int segments = 5;
-    std::vector<double> verts;
-    std::vector<int> indices;
-
-    for (int i = 0; i <= segments; ++i) {
-        for (int j = 0; j <= segments; ++j) {
-
-            const double x = i * x_length/segments + x_coord;
-            const double y = j * y_length/segments + y_coord;
-
-            verts.push_back(x);
-            verts.push_back(y);
-        }
-    }
-
-    for (int i = 0; i < segments; ++i) {
-        for (int j = 0; j < segments; ++j) {
-            const int a = (segments + 1) * i + j;
-            const int c = (segments + 1) * (i + 1) + j;
-            const int d = (segments + 1) * (i + 1) + j + 1;
-            const int b = (segments + 1) * i + j + 1;
-
-            // Generate two triangles for each quad in the mesh
-            // Adjust order to be counter-clockwise
-            indices.push_back(a);
-            indices.push_back(c);
-            indices.push_back(b);
-
-            indices.push_back(b);
-            indices.push_back(c);
-            indices.push_back(d);
-        }
-    }
-
-    return make_pair(verts,indices);
-}
-
-
 Rectangle::Rectangle(double xlen, double ylen, double xl, double yl)
-    : Aperture(RECTANGLE),
+    : Aperture(ApertureType::RECTANGLE),
       x_length(xlen),
       y_length(ylen),
       x_coord(xl),

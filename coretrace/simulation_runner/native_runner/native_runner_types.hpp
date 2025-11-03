@@ -192,14 +192,16 @@ namespace SolTrace::NativeRunner
 		// void set_values(ray_source_ptr rsrc);
 
 		// char ShapeIndex;
-		SolTrace::Data::DistributionType ShapeIndex;
+		SolTrace::Data::SunShape ShapeIndex;
 		double Sigma;
 		bool PointSource;
 
 		std::vector<double> SunShapeAngle;
 		std::vector<double> SunShapeIntensity;
-		double MaxAngle;
+		double MaxAngle;	// maximum sun angle (mrad)
 		double MaxIntensity;
+		double buie_kappa;	// Buie CSR model kappa parameter
+		double buie_gamma;	// Buie CSR model gamma parameter
 
 		double Origin[3];
 
@@ -229,7 +231,8 @@ namespace SolTrace::NativeRunner
 			double cos[3];
 			int element;
 			int stage;
-			unsigned int raynum;
+			// unsigned int raynum;
+			SolTrace::Result::ray_id raynum;
 			SolTrace::Result::RayEvent event;
 		};
 
