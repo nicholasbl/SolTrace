@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <filesystem>
 #include <sstream>
 
 #include <simulation_result.hpp>
@@ -51,6 +52,17 @@ TEST(InteractionRecord, OutputOperator)
     std::stringstream ss;
     ss << ir1;
     EXPECT_TRUE(ss.str().size() > 0);
+}
+
+TEST(InteractionRecord, RayEventToString)
+{
+    EXPECT_EQ(SolTrace::Result::ray_event_string(RayEvent::CREATE), "CREATE");
+    EXPECT_EQ(SolTrace::Result::ray_event_string(RayEvent::ABSORB), "ABSORB");
+    EXPECT_EQ(SolTrace::Result::ray_event_string(RayEvent::REFLECT), "REFLECT");
+    EXPECT_EQ(SolTrace::Result::ray_event_string(RayEvent::TRANSMIT), "TRANSMIT");
+    EXPECT_EQ(SolTrace::Result::ray_event_string(RayEvent::VIRTUAL), "VIRTUAL");
+    EXPECT_EQ(SolTrace::Result::ray_event_string(RayEvent::EXIT), "EXIT");
+    EXPECT_EQ(SolTrace::Result::ray_event_string(RayEvent::UNKNOWN), "UNKNOWN");
 }
 
 TEST(RayRecord, Accessors)
@@ -216,4 +228,84 @@ TEST(SimulationResult, OstreamOperator)
     ss << sr;
 
     EXPECT_TRUE(ss.str().size() > 0);
+}
+
+TEST(SimulationResult, IndexOperator)
+{
+    // Test constants
+    const uint_fast32_t NRAYS = 3;
+    const uint_fast32_t NINTER = 5;
+    const int_fast32_t INDEX = 0;
+    RayEvent my_types[NINTER] = {
+        RayEvent::REFLECT,
+        RayEvent::TRANSMIT,
+        RayEvent::REFLECT,
+        RayEvent::ABSORB,
+        RayEvent::EXIT};
+
+    SimulationResult sr;
+
+    for (uint_fast32_t k = 0; k < NRAYS; ++k)
+    {
+        ray_record_ptr rr = make_ray_record(k);
+        for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
+        {
+            Vector3d loc(1.0 * ell, 2.0 * ell, 3.0 * ell);
+            Vector3d dir(1.0, 2.0, 3.0);
+            RayEvent it = my_types[ell];
+            interaction_ptr ir = make_interaction_record(ell, it, loc, dir);
+            rr->add_interaction_record(ir);
+        }
+        sr.add_ray_record(rr);
+    }
+
+    EXPECT_THROW(sr[-1], std::invalid_argument);
+    EXPECT_THROW(sr[NRAYS + 1], std::invalid_argument);
+
+    ray_record_ptr rr = sr[INDEX];
+    EXPECT_NE(rr, nullptr);
+    EXPECT_THROW((*rr)[-1], std::invalid_argument);
+    EXPECT_THROW((*rr)[NINTER + 1], std::invalid_argument);
+
+    interaction_ptr ir = (*rr)[INDEX];
+    EXPECT_EQ(ir->event, my_types[INDEX]);
+}
+
+TEST(SimulationResult, WriteCSV)
+{
+    // Test constants
+    const uint_fast32_t NRAYS = 3;
+    const uint_fast32_t NINTER = 5;
+    RayEvent my_types[NINTER] = {
+        RayEvent::REFLECT,
+        RayEvent::TRANSMIT,
+        RayEvent::REFLECT,
+        RayEvent::ABSORB,
+        RayEvent::EXIT};
+
+    std::string csv_file("temp_string.csv");
+
+    SimulationResult sr;
+
+    for (uint_fast32_t k = 0; k < NRAYS; ++k)
+    {
+        ray_record_ptr rr = make_ray_record(k);
+        for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
+        {
+            Vector3d loc(1.0 * ell, 2.0 * ell, 3.0 * ell);
+            Vector3d dir(1.0, 2.0, 3.0);
+            RayEvent it = my_types[ell];
+            interaction_ptr ir = make_interaction_record(ell, it, loc, dir);
+            rr->add_interaction_record(ir);
+        }
+        sr.add_ray_record(rr);
+    }
+
+    // Write the CSV files
+    sr.write_csv_file(csv_file);
+    sr.write_csv_file("temp_char.csv");
+
+    // Cleanup
+    std::filesystem::remove(csv_file);
+    std::filesystem::remove("temp_char.csv");
 }
