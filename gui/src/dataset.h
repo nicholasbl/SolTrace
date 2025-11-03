@@ -31,12 +31,12 @@ class RaySourceModel : public QObject {
 
     std::shared_ptr<SolTrace::Data::Sun> m_ray_source;
 
-    using DistributionType = SolTrace::Data::DistributionType;
+    using SunShape = SolTrace::Data::SunShape;
 
-    Q_ENUM(DistributionType);
+    Q_ENUM(SunShape);
 
     Q_WRITABLE_PROPERTY(QVector3D, position, QVector3D());
-    Q_WRITABLE_PROPERTY(DistributionType, shape, DistributionType::GAUSSIAN);
+    Q_WRITABLE_PROPERTY(SunShape, shape, SunShape::GAUSSIAN);
     Q_WRITABLE_PROPERTY(double, sigma, 0.0);
     Q_WRITABLE_PROPERTY(double, half_width, 0.0);
     Q_WRITABLE_PROPERTY(QVector<double>, user_angle, {});
