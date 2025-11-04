@@ -54,8 +54,9 @@ RunnerStatus OptixRunner::setup_parameters(const SimulationData *data)
     // Get Parameter data
     // TODO: Check that these parameters are used as expected
     const SimulationParameters &sim_params = data->get_simulation_parameters();
-    m_sys.set_sun_points(sim_params.max_number_of_rays);
+    m_sys.set_sun_points(sim_params.number_of_rays);
 
+    
     //this->tsys.sim_errors_sunshape = sim_params.include_sun_shape_errors;
     //this->tsys.sim_errors_optical = sim_params.include_optical_errors;
     //this->tsys.sim_raycount = sim_params.number_of_rays;
@@ -85,6 +86,10 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
         element_ptr el = iter->second;  
         if (el->is_enabled())  
         {  
+            // Skip if element is not a single (i.e. stage, composite)
+            if (el->is_single() == false)
+                continue;
+
             auto optix_el = std::make_shared<OptixCSP::CspElement>();  
             Vector3d origin = el->get_origin_global();  
             OptixCSP::Vec3d origin_vec(origin[0], origin[1], origin[2]);  
@@ -107,16 +112,25 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                         break;  
                     }  
                     case SurfaceType::PARABOLA: {  
-                        auto surface = std::make_shared<OptixCSP::SurfaceParabolic>();  
-                        surface->set_curvature(0.02, 0.04);  
-                        optix_el->set_surface(surface);
+                        auto el_surface = std::dynamic_pointer_cast<Parabola>(el->get_surface());
+                        double fx = el_surface->focal_length_x;
+                        double fy = el_surface->focal_length_y;
+
+                        double cx = 1. / (2. * fx);
+                        double cy = 1. / (2. * fy);
+
+                        auto optix_surface = std::make_shared<OptixCSP::SurfaceParabolic>();  
+                        optix_surface->set_curvature(cx, cy);
+                        optix_el->set_surface(optix_surface);
 
                         break;  
                     }  
                     case SurfaceType::CYLINDER: {  
+                        auto el_surface = std::dynamic_pointer_cast<Cylinder>(el->get_surface());
+                        
                         auto surface = std::make_shared<OptixCSP::SurfaceCylinder>();  
-                        surface->set_half_height(2.);
-						surface->set_radius(1.);
+                        surface->set_half_height(2.);   // TODO this needs to come from the aperture
+						surface->set_radius(el_surface->radius);
                         optix_el->set_surface(surface);
 
                         break;  
@@ -132,9 +146,10 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
                 case ApertureType::RECTANGLE: {
 
-                    // TODO: still a placeholder now
+                    auto el_aperture = std::dynamic_pointer_cast<Rectangle>(el->get_aperture());
 
-                    auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(1.5, 1.5);
+                    // TODO: account for x and y coord?
+                    auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length, el_aperture->y_length);
                     optix_el->set_aperture(aperture);
                     break;
                 }
