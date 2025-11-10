@@ -2,6 +2,8 @@ Project(simdata)
 
 include_directories(.)
 include_directories(cst_templates)
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/nlohmann")
+
 
 set(SIMDATA_SRC
     aperture.cpp
