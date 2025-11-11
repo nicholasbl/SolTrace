@@ -20,6 +20,7 @@ set(SIMULATION_DATA_TEST_SRC
     element_test.cpp
     simulation_data_test.cpp
     sun_test.cpp
+    file_io_test.cpp
 )
 
 add_executable(SimulationDataUnitTests
