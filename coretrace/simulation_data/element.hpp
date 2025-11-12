@@ -15,6 +15,7 @@
 
 // #include <memory>
 #include <string>
+#include <nlohmann/json.hpp>
 
 #include "aperture.hpp"
 #include "constants.hpp"
@@ -288,6 +289,14 @@ public:
   // Check that all required fields have been set
   virtual void enforce_user_fields_set() const = 0;
 
+  // Write element to json node
+  virtual void write_json(nlohmann::ordered_json& jnode) const = 0;
+
+  virtual void write_common_json(nlohmann::ordered_json& jnode) const = 0;
+
+  // Check if element has parent elements
+  virtual bool is_top_level() = 0;
+
 protected:
   // virtual int set_bounding_box() = 0;
 
@@ -485,6 +494,13 @@ public:
   }
 
   virtual void enforce_user_fields_set() const override;
+
+  virtual void write_common_json(nlohmann::ordered_json& jnode) const override;
+
+  virtual bool is_top_level() override
+  {
+      return this->reference_element == nullptr;
+  }
 
 protected:
   // TODO: Do these need to be mutable?

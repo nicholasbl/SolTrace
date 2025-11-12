@@ -18,6 +18,10 @@ namespace SolTrace::Data {
 
 bool load_stinput_file(SimulationData& sd, std::string filename);
 
+bool load_json_file(SimulationData& sd, std::string filename);
+
+bool write_json_file(SimulationData& sd, std::string filename);
+
 } // namespace SolTrace::Data
 
 #endif

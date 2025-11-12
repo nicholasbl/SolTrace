@@ -74,6 +74,22 @@ public:
         return this->my_sources.get_number_of_items();
     }
 
+    /// @brief Get an iterator that can be used to access all ray sources owned
+    ///        by this SimulationData object.
+    /// @return iterator
+    RaySourceContainer::iterator get_ray_source_iterator()
+    {
+        return this->my_sources.get_iterator();
+    }
+
+    /// @brief Tests whether the given iterator is at the end
+    /// @param iter iterator to test
+    /// @return true if at end, false otherwise
+    bool is_ray_source_at_end(RaySourceContainer::iterator it)
+    {
+        return this->my_sources.is_at_end(it);
+    }
+
     /// @brief Add the given Element to the SimulationData. When adding a
     ///        CompositeElement, all subelements must already be present.
     ///        Any subelements added to the CompositeElement after calling
@@ -260,6 +276,8 @@ public:
 
     int import_from_file(const char *file_name);
     int import_from_file(const std::string file_name);
+    int import_json_file(const std::string file_name);
+    int export_json_file(const std::string file_name);
 
 private:
     // mutable element_id next_element_id;

@@ -156,4 +156,32 @@ namespace SolTrace::Data
         return;
     }
 
+    // Stage and Composite should have the same function
+    void CompositeElement::write_json(nlohmann::ordered_json& jnode) const
+    {
+        using json = nlohmann::ordered_json;
+
+        // Composite/stage specific info
+        jnode["is_stage"] = true;
+        jnode["number_of_elements"] = this->get_number_of_elements();
+
+        // Common properties of all elements
+        this->write_common_json(jnode);
+
+
+        // Loop through each element, writing json node
+        for (auto it = this->get_const_iterator(); !this->is_at_end(it); ++it)
+        {
+            json jelement;
+
+            SolTrace::Data::element_id id = it->first;
+            auto element = it->second;
+
+            jelement["id"] = id;    // int
+            element->write_json(jelement);
+
+            jnode["element " + std::to_string(id)] = jelement;
+        }
+    }
+
 } // namespace SolTrace::Data

@@ -16,6 +16,7 @@
 #include <cmath>
 #include <memory>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 #include "constants.hpp"
 
@@ -26,6 +27,7 @@ namespace SolTrace::Data
     // "circumscribing" circle be centered at the origin? Or should it
     // be the actual circumscribed circle.
 
+    // Add to ApertureTypeMap when adding to ApertureType
     enum ApertureType
     {
         ANNULUS,
@@ -37,6 +39,19 @@ namespace SolTrace::Data
         IRREGULAR_TRIANGLE,
         IRREGULAR_QUADRILATERAL,
         APERTURE_UNKNOWN
+    };
+
+    inline const std::map<ApertureType, std::string> ApertureTypeMap =
+    {
+        {ApertureType::ANNULUS, "ANNULUS"},
+        {ApertureType::CIRCLE, "CIRCLE"},
+        {ApertureType::HEXAGON, "HEXAGON"},
+        {ApertureType::RECTANGLE, "RECTANGLE"},
+        {ApertureType::EQUILATERAL_TRIANGLE, "EQUILATERAL_TRIANGLE"},
+        {ApertureType::SINGLE_AXIS_CURVATURE_SECTION, "SINGLE_AXIS_CURVATURE_SECTION"},
+        {ApertureType::IRREGULAR_TRIANGLE, "IRREGULAR_TRIANGLE"},
+        {ApertureType::IRREGULAR_QUADRILATERAL, "IRREGULAR_QUADRILATERAL"},
+        {ApertureType::APERTURE_UNKNOWN, "APERTURE_UNKNOWN"}
     };
 
     struct Aperture;
@@ -119,6 +134,12 @@ namespace SolTrace::Data
          * @return Shared pointer to a copy of this aperture
          */
         virtual aperture_ptr make_copy() const = 0;
+
+        /**
+         * @brief Write aperture parameters to json
+         * @param jnode JSON node
+         */
+        virtual void write_json(nlohmann::ordered_json& jnode) const = 0;
     };
 
     struct Annulus : public Aperture
@@ -173,6 +194,12 @@ namespace SolTrace::Data
          * @return Shared pointer to annulus copy
          */
         virtual aperture_ptr make_copy() const override;
+
+        /**
+         * @brief Write aperture parameters to json
+         * @param jnode JSON node
+         */
+        virtual void write_json(nlohmann::ordered_json& jnode) const override;
     };
 
     struct Circle : public Aperture
@@ -213,6 +240,12 @@ namespace SolTrace::Data
          * @return Shared pointer to circle copy
          */
         virtual aperture_ptr make_copy() const override;
+
+        /**
+         * @brief Write aperture parameters to json
+         * @param jnode JSON node
+         */
+        virtual void write_json(nlohmann::ordered_json& jnode) const override;
     };
 
     struct EqualateralTriangle : public Aperture
@@ -259,6 +292,12 @@ namespace SolTrace::Data
          * @return Shared pointer to triangle copy
          */
         virtual aperture_ptr make_copy() const override;
+
+        /**
+         * @brief Write aperture parameters to json
+         * @param jnode JSON node
+         */
+        virtual void write_json(nlohmann::ordered_json& jnode) const override;
     };
 
     struct Hexagon : public Aperture
@@ -301,6 +340,12 @@ namespace SolTrace::Data
          * @return Shared pointer to hexagon copy
          */
         virtual aperture_ptr make_copy() const override;
+
+        /**
+         * @brief Write aperture parameters to json
+         * @param jnode JSON node
+         */
+        virtual void write_json(nlohmann::ordered_json& jnode) const override;
     };
 
     struct Rectangle : public Aperture
@@ -354,6 +399,12 @@ namespace SolTrace::Data
          * @return Shared pointer to rectangle copy
          */
         virtual aperture_ptr make_copy() const override;
+
+        /**
+         * @brief Write aperture parameters to json
+         * @param jnode JSON node
+         */
+        virtual void write_json(nlohmann::ordered_json& jnode) const override;
     };
 
     struct SingleAxisCurvatureSection : public Aperture
@@ -410,6 +461,12 @@ namespace SolTrace::Data
          * @return Shared pointer to triangle copy
          */
         virtual aperture_ptr make_copy() const override;
+
+        /**
+         * @brief Write aperture parameters to json
+         * @param jnode JSON node
+         */
+        virtual void write_json(nlohmann::ordered_json& jnode) const override;
     };
 
     struct IrregularQuadrilateral : public Aperture
@@ -466,6 +523,12 @@ namespace SolTrace::Data
          * @return Shared pointer to quadrilateral copy
          */
         virtual aperture_ptr make_copy() const override;
+
+        /**
+         * @brief Write aperture parameters to json
+         * @param jnode JSON node
+         */
+        virtual void write_json(nlohmann::ordered_json& jnode) const override;
     };
 
     /**

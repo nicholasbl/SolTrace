@@ -23,6 +23,18 @@ const std::string interaction_string(InteractionType it)
     }
 }
 
+void OpticalProperties::write_json(nlohmann::ordered_json& jnode) const
+{
+    jnode["my_type"] = InteractionTypeMap[this->my_type];
+    jnode["error_distribution_type"] = DistributionTypeMap.at(this->error_distribution_type);
+    jnode["transmissivity"] = this->transmitivity;
+    jnode["reflectivity"] = this->reflectivity;
+    jnode["slope_error"] = this->slope_error;
+    jnode["specularity_error"] = this->specularity_error;
+    jnode["refraction_index_front"] = this->refraction_index_front;
+    jnode["refraction_index_back"] = this->refraction_index_back;
+}
+
 std::ostream &operator<<(std::ostream &os,
     const OpticalProperties &op)
 {

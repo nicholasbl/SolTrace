@@ -110,6 +110,15 @@ aperture_ptr Annulus::make_copy() const
     return make_aperture<Annulus>(*this);
 }
 
+void Annulus::write_json(nlohmann::ordered_json& jnode) const
+{
+    ApertureType type = ApertureType::ANNULUS;
+    jnode["aperture_type"] = ApertureTypeMap.at(type);
+    jnode["inner_radius"] = this->inner_radius;
+    jnode["outer_radius"] = this->outer_radius;
+    jnode["arc_angle"] = this->arc_angle;
+}
+
 double Circle::aperture_area() const
 {
     return 0.25 * PI * this->diameter * this->diameter;
@@ -130,6 +139,13 @@ aperture_ptr Circle::make_copy() const
 {
     // Invokes the implicit copy constructor
     return make_aperture<Circle>(*this);
+}
+
+void Circle::write_json(nlohmann::ordered_json& jnode) const
+{
+    ApertureType type = ApertureType::CIRCLE;
+    jnode["aperture_type"] = ApertureTypeMap.at(type);
+    jnode["diameter"] = this->diameter;
 }
 
 double EqualateralTriangle::aperture_area() const
@@ -176,6 +192,13 @@ aperture_ptr EqualateralTriangle::make_copy() const
 {
     // Invokes the implicit copy constructor
     return make_aperture<EqualateralTriangle>(*this);
+}
+
+void EqualateralTriangle::write_json(nlohmann::ordered_json& jnode) const
+{
+    ApertureType type = ApertureType::EQUILATERAL_TRIANGLE;
+    jnode["aperture_type"] = ApertureTypeMap.at(type);
+    jnode["circumscribe_diameter"] = this->circumscribe_diameter;
 }
 
 double Hexagon::aperture_area() const
@@ -242,6 +265,13 @@ aperture_ptr Hexagon::make_copy() const
     return make_aperture<Hexagon>(*this);
 }
 
+void Hexagon::write_json(nlohmann::ordered_json& jnode) const
+{
+    ApertureType type = ApertureType::HEXAGON;
+    jnode["aperture_type"] = ApertureTypeMap.at(type);
+    jnode["circumscribe_diameter"] = this->circumscribe_diameter;
+}
+
 IrregularTriangle::IrregularTriangle(double x1, double y1,
                                      double x2, double y2,
                                      double x3, double y3)
@@ -289,6 +319,18 @@ aperture_ptr IrregularTriangle::make_copy() const
 {
     // Invokes the implicit copy constructor
     return make_aperture<IrregularTriangle>(*this);
+}
+
+void IrregularTriangle::write_json(nlohmann::ordered_json& jnode) const
+{
+    ApertureType type = ApertureType::IRREGULAR_TRIANGLE;
+    jnode["aperture_type"] = ApertureTypeMap.at(type);
+    jnode["x1"] = this->x1;
+    jnode["y1"] = this->y1;
+    jnode["x2"] = this->x2;
+    jnode["y2"] = this->y2;
+    jnode["x3"] = this->x3;
+    jnode["y3"] = this->y3;
 }
 
 IrregularQuadrilateral::IrregularQuadrilateral(double x1, double y1,
@@ -349,6 +391,20 @@ aperture_ptr IrregularQuadrilateral::make_copy() const
     return make_aperture<IrregularQuadrilateral>(*this);
 }
 
+void IrregularQuadrilateral::write_json(nlohmann::ordered_json& jnode) const
+{
+    ApertureType type = ApertureType::IRREGULAR_QUADRILATERAL;
+    jnode["aperture_type"] = ApertureTypeMap.at(type);
+    jnode["x1"] = this->x1;
+    jnode["y1"] = this->y1;
+    jnode["x2"] = this->x2;
+    jnode["y2"] = this->y2;
+    jnode["x3"] = this->x3;
+    jnode["y3"] = this->y3;
+    jnode["x4"] = this->x4;
+    jnode["y4"] = this->y4;
+}
+
 Rectangle::Rectangle(double xlen, double ylen)
     : Aperture(ApertureType::RECTANGLE),
       x_length(xlen),
@@ -392,6 +448,16 @@ Rectangle::Rectangle(double xlen, double ylen, double xl, double yl)
       x_coord(xl),
       y_coord(yl)
 {
+}
+
+void Rectangle::write_json(nlohmann::ordered_json& jnode) const
+{
+    ApertureType type = ApertureType::RECTANGLE;
+    jnode["aperture_type"] = ApertureTypeMap.at(type);
+    jnode["x_length"] = this->x_length;
+    jnode["y_length"] = this->y_length;
+    jnode["x_coord"] = this->x_coord;
+    jnode["y_coord"] = this->y_coord;
 }
 
 bool intri(double x1, double y1,

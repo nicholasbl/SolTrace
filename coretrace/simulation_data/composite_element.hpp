@@ -217,6 +217,8 @@ namespace SolTrace::Data
 
         virtual void enforce_user_fields_set() const override;
 
+        virtual void write_json(nlohmann::ordered_json& jnode) const override;
+
     private:
         uint_fast64_t number_of_elements;
         ElementContainer my_elements;

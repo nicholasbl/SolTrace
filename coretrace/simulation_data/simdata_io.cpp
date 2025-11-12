@@ -6,6 +6,7 @@
 #include <exception>
 #include <sstream>
 #include <string>
+#include <nlohmann/json.hpp>
 
 #include "constants.hpp"
 #include "ray_source.hpp"
@@ -716,5 +717,123 @@ bool load_stinput_file(SimulationData &sd, std::string filename)
 
     return true;
 }
+
+bool write_json_file(SimulationData& sd, std::string filename)
+{
+    using json = nlohmann::ordered_json;
+
+    // Create empty object
+    json root;
+
+    // Write general meta data
+    {
+        root["number_of_elements"] = sd.get_number_of_elements();
+    }
+
+    // Write parameters
+    {
+        json jpar;
+        SolTrace::Data::SimulationParameters sim_par = sd.get_simulation_parameters();
+        jpar["include_sun_shape_errors"] = sim_par.include_sun_shape_errors;   // bool
+        jpar["include_optical_errors"] = sim_par.include_optical_errors;       // bool
+        jpar["number_of_rays"] = sim_par.number_of_rays;                       // int
+        jpar["max_number_of_rays"] = sim_par.max_number_of_rays;               // int
+        jpar["tolerance"] = sim_par.tolerance;                                 // double
+        jpar["latitude"] = sim_par.latitude;                                   // double
+        jpar["longitude"] = sim_par.longitude;                                 // double
+        jpar["seed"] = sim_par.seed;                                           // int
+
+        root["simulation_parameters"] = jpar;
+    }
+
+    // Write ray sources
+    {
+        json jsources;
+        for (auto it = sd.get_ray_source_iterator(); !sd.is_ray_source_at_end(it); ++it)
+        {
+            json jsrc;
+
+            SolTrace::Data::ray_source_id id = it->first;
+            auto ray_source = it->second;
+
+            jsrc["id"] = id;    // int
+
+            // Check source type
+            if (auto sun_ptr = std::dynamic_pointer_cast<SolTrace::Data::Sun>(ray_source))
+            {
+                SolTrace::Data::SunShape shape = sun_ptr->get_shape();
+                std::string shape_string = SolTrace::Data::SunShapeMap.at(shape);
+                jsrc["my_shape"] = shape_string;                // string
+                jsrc["sigma"] = sun_ptr->get_sigma();           // double
+                jsrc["half_width"] = sun_ptr->get_half_width(); // double
+                jsrc["csr"] = sun_ptr->get_circumsolar_ratio(); // double
+                
+                std::vector<double> user_angle, user_intensity;
+                sun_ptr->get_user_data(user_angle, user_intensity);
+                jsrc["user_angle"] = user_angle;                // vector<double>
+                jsrc["user_intensity"] = user_intensity;        // vector<double>
+
+                Vector3d pos = sun_ptr->get_position();
+                jsrc["pos_x"] = pos[0];
+                jsrc["pos_y"] = pos[1];
+                jsrc["pos_z"] = pos[2];
+            }
+            else
+            {
+                // UNSUPPORTED type
+                return false;
+            }
+
+            jsources["source " + std::to_string(id)] = jsrc;
+        }
+
+        root["ray_sources"] = jsources;
+    }
+
+    // Write Elements
+    {
+        json jelements_top;
+        int i_top = 0;
+        for (auto it = sd.get_iterator(); !sd.is_at_end(it); ++it)
+        {
+            json jelement;
+            SolTrace::Data::element_id id = it->first;
+            auto element = it->second;
+
+            if (element->is_single() && (element->is_top_level() == false))
+            {
+                // Skip single elements that are within other stages/composites
+                continue;
+            }
+
+            jelement["id"] = id; // int
+            element->write_json(jelement);
+
+            jelements_top[std::to_string(i_top)] = jelement;
+            i_top++;
+        }
+
+        root["elements"] = jelements_top;
+        
+    }
+
+    // Write to disk
+    std::ofstream ofs(filename, std::ios::out | std::ios::trunc);
+    if (!ofs.is_open())
+        return false;
+    ofs << root.dump(2) << '\n';
+
+    return true;
+}
+
+bool load_json_file(SimulationData& sd, std::string filename)
+{
+
+
+    return true;
+}
+
+
+
 
 } // namespace SolTrace::Data

@@ -88,6 +88,8 @@ public:
 
     virtual void enforce_user_fields_set() const override;
 
+    virtual void write_json(nlohmann::ordered_json& jnode) const override;
+
 protected:
     aperture_ptr aperture;
     surface_ptr surface;

@@ -49,4 +49,39 @@ surface_ptr make_surface_from_type(SurfaceType type, const std::vector<double> &
     return retval;
 }
 
+void Cone::write_json(nlohmann::ordered_json& jnode) const
+{
+    SurfaceType type = SurfaceType::CONE;
+    jnode["surface_type"] = SurfaceTypeMap.at(type);
+    jnode["half_angle"] = this->half_angle;
+}
+
+void Cylinder::write_json(nlohmann::ordered_json& jnode) const
+{
+    SurfaceType type = SurfaceType::CYLINDER;
+    jnode["surface_type"] = SurfaceTypeMap.at(type);
+    jnode["radius"] = this->radius;
+}
+
+void Flat::write_json(nlohmann::ordered_json& jnode) const
+{
+    SurfaceType type = SurfaceType::FLAT;
+    jnode["surface_type"] = SurfaceTypeMap.at(type);
+}
+
+void Parabola::write_json(nlohmann::ordered_json& jnode) const
+{
+    SurfaceType type = SurfaceType::PARABOLA;
+    jnode["surface_type"] = SurfaceTypeMap.at(type);
+    jnode["focal_length_x"] = this->focal_length_x;
+    jnode["focal_length_y"] = this->focal_length_y;
+}
+
+void Sphere::write_json(nlohmann::ordered_json& jnode) const
+{
+    SurfaceType type = SurfaceType::SPHERE;
+    jnode["surface_type"] = SurfaceTypeMap.at(type);
+    jnode["vertex_curv"] = this->vertex_curv;
+}
+
 } // namespace SolTrace::Data

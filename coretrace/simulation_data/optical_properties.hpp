@@ -11,6 +11,8 @@
 #define SOLTRACE_OPTICAL_PROPERTIES_H
 
 #include <iostream>
+#include <map>
+#include <nlohmann/json.hpp>
 
 #include "error_distributions.hpp"
 
@@ -21,6 +23,12 @@ namespace SolTrace::Data
     {
         REFLECTION,
         REFRACTION
+    };
+
+    inline std::map<InteractionType, std::string> InteractionTypeMap =
+    {
+        {InteractionType::REFLECTION, "REFLECTION"},
+        {InteractionType::REFRACTION, "REFRACTION"}
     };
 
     struct OpticalProperties
@@ -92,6 +100,8 @@ namespace SolTrace::Data
             this->refraction_index_back = refraction_index_back;
             return;
         }
+
+        void write_json(nlohmann::ordered_json& jnode) const;
 
         // OpticalProperties &operator=(const OpticalProperties &rhs)
         // {

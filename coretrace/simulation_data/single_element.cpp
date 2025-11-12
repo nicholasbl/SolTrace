@@ -54,4 +54,29 @@ void SingleElement::enforce_user_fields_set() const
     return;
 }
 
+void SingleElement::write_json(nlohmann::ordered_json& jnode) const
+{
+    using json = nlohmann::ordered_json;
+    
+    // Write shared properties
+    this->write_common_json(jnode);
+    
+    // Optical Properties
+    json joptics_front, joptics_back;
+    this->optics_front.write_json(joptics_front);
+    this->optics_back.write_json(joptics_back);
+    jnode["optics_front"] = joptics_front;
+    jnode["optics_back"] = joptics_back;
+
+    // Aperture
+    json japerture;
+    this->aperture->write_json(japerture);
+    jnode["aperture"] = japerture;
+
+    // Surface
+    json jsurface;
+    this->surface->write_json(jsurface);
+    jnode["surface"] = jsurface;
+}
+
 } // namespace SolTrace::Data

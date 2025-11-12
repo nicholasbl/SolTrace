@@ -267,4 +267,14 @@ int SimulationData::import_from_file(const std::string file_name)
     return this->import_from_file(file_name.c_str());
 }
 
+int SimulationData::import_json_file(const std::string file_name)
+{
+    return load_json_file(*this, file_name);
+}
+
+int SimulationData::export_json_file(const std::string file_name)
+{
+    return write_json_file(*this, file_name);
+}
+
 } // namespace SolTrace::Data

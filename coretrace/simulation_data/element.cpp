@@ -503,4 +503,21 @@ void ElementBase::enforce_user_fields_set() const
     return;
 }
 
+void ElementBase::write_common_json(nlohmann::ordered_json& jnode) const
+{
+    jnode["active"] = this->active;
+    jnode["virtual_flag"] = this->virtual_flag;
+    jnode["my_id"] = this->my_id;
+    jnode["stage"] = this->stage;
+    jnode["my_name"] = this->my_name;
+
+    jnode["origin"] = this->origin.data;
+    jnode["aim"] = this->aim.data;
+    jnode["zrot"] = this->zrot;
+    
+    // Not including calculated values
+    //jnode["euler_angles"] = this->euler_angles.data;
+
+}
+
 } // namespace SolTrace::Data
