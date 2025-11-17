@@ -3,6 +3,8 @@
 #include <QObject>
 #include <QQuick3DGeometry>
 
+
+#include "qt_helpers.h"
 #include "simulation_data_api.hpp"
 #include "simulation_result.hpp"
 
@@ -76,18 +78,25 @@ class RayGeometry : public QQuick3DGeometry {
 
     std::shared_ptr<ResultDB> m_database;
 
+    std::unordered_set<SolTrace::Result::RayEvent> m_exclude_events = {
+        SolTrace::Result::RayEvent::CREATE,
+        SolTrace::Result::RayEvent::VIRTUAL,
+        SolTrace::Result::RayEvent::UNKNOWN
+    };
+
     /*
     std::unordered_set<SD::element_id> m_selected_elements;
     std::unordered_set<RD::ray_id>     m_selected_rays;
     */
 
-    void rebuild_geometry();
+    Q_WRITABLE_PROPERTY(float, show_percent, 50)
 
 
 public:
-    using QQuick3DGeometry::QQuick3DGeometry;
+    explicit RayGeometry(QQuick3DObject* parent = nullptr);
 
     void set_database(std::shared_ptr<ResultDB>&&);
 
 public slots:
+    void rebuild_geometry();
 };

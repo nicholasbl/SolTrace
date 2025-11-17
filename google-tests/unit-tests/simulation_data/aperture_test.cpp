@@ -22,6 +22,13 @@ TEST(Aperture, ApertureBase)
         {
             return make_aperture<TestAperture>(*this);
         }
+
+        virtual std::tuple<std::vector<double>, std::vector<int>>
+        triangulation() const {
+            std::vector<double> empty_v;
+            std::vector<int>    empty_i;
+            return std::make_tuple(empty_v, empty_i);
+        }
     };
 
     TestAperture ta1(1.2, ApertureType::CIRCLE);

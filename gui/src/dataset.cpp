@@ -43,8 +43,9 @@ void RaySourceModel::commit() {
     auto ui =
         std::vector<double>(m_user_intensity.begin(), m_user_intensity.end());
 
+    // TODO: ADD IN CSR
     m_ray_source->set_shape(
-        shape(), sigma(), half_width(), std::move(ua), std::move(ui));
+        shape(), sigma(), half_width(), 0.0, std::move(ua), std::move(ui));
 }
 
 // =============================================================================

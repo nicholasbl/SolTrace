@@ -43,6 +43,23 @@ public:
     virtual ~Surface() {}
 
     SurfaceType get_type() { return my_type; }
+
+    virtual double z(double x, double y) const { return 0; }
+
+    inline std::string get_type_string() const {
+        switch (my_type) {
+        case CONE: return "Cone";
+        case CYLINDER: return "Cylinder";
+        case FLAT: return "Flat";
+        case PARABOLA: return "Parabola";
+        case SPHERE: return "Sphere";
+        case HYPER: return "Hyper";
+        case GENERAL_SPENCER_MURTY: return "General Spencer Murty";
+        case TORUS: return "Torus";
+        case SURFACE_UNKNOWN: return "Unknown";
+        }
+        return "Unknown";
+    }
 };
 
 struct Cone : public Surface
@@ -52,6 +69,8 @@ struct Cone : public Surface
     double half_angle;
     Cone(double ha) : Surface(SurfaceType::CONE), half_angle(ha) {}
     virtual ~Cone() {}
+
+    virtual double z(double x, double y) const;
 };
 
 struct Cylinder : public Surface
@@ -63,6 +82,8 @@ struct Cylinder : public Surface
     {
     }
     virtual ~Cylinder() {}
+
+    virtual double z(double x, double y) const;
 };
 
 struct Flat : public Surface
@@ -85,6 +106,8 @@ struct Parabola : public Surface
     {
     }
     virtual ~Parabola() {}
+
+    virtual double z(double x, double y) const;
 };
 
 struct Sphere : public Surface
@@ -103,6 +126,8 @@ struct Sphere : public Surface
     {
     }
     virtual ~Sphere() {}
+
+    virtual double z(double x, double y) const;
 };
 
 // TODO: Add other surface types. Documentation has the following:

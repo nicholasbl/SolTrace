@@ -119,6 +119,7 @@ ApplicationWindow {
                 }
             }
 
+            // Model for showing output Ray Geometry
             Q3D.Model {
                 geometry: detail_pane.current_set.element_model.ray_geometry
                 materials: [
@@ -128,6 +129,10 @@ ApplicationWindow {
                         metalness: 0.0
                         roughness: 1.0
                         lighting: Q3D.PrincipledMaterial.NoLighting
+
+                        baseColorMap: Q3D.Texture {
+                            source: "qrc:/assets/b_to_r_wide.png"
+                        }
                     }
                 ]
             }
@@ -456,6 +461,36 @@ ApplicationWindow {
             }
 
 
+        }
+    }
+
+    TransparentPane {
+        id: output_debug_pane
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        anchors.margins: 10
+
+        height: 100
+        width: 175
+
+        ColumnLayout {
+            anchors.fill: parent
+            Button {
+                Layout.fillWidth: true
+                text: "Filter"
+            }
+
+            Slider {
+                Layout.fillWidth: true
+                from: 0
+                to: 100
+                value: 50
+                stepSize: 10
+                snapMode: Slider.SnapAlways
+                onMoved: {
+                    detail_pane.current_set.element_model.ray_geometry.show_percent = value
+                }
+            }
         }
     }
 

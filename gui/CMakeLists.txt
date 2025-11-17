@@ -33,7 +33,15 @@ qt_add_qml_module(SolTrace
         src/surfacegeometry.h src/surfacegeometry.cpp
         src/surfacegeometrylistmodel.h src/surfacegeometrylistmodel.cpp
         src/job_run.h src/job_run.cpp
-        SOURCES src/utility.h
+        src/utility.h
+)
+
+qt_add_resources(SolTrace
+    "assets"
+    PREFIX
+        /
+    FILES
+        assets/b_to_r_wide.png
 )
 
 target_include_directories(SolTrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

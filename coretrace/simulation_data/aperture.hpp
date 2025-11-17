@@ -107,6 +107,13 @@ namespace SolTrace::Data
         virtual double diameter_circumscribed_circle() const = 0;
 
         /**
+         * @brief Triangulate the aperture shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>>
+        triangulation() const = 0;
+
+        /**
          * @brief Test if a point is inside the aperture
          * @param x X coordinate of the test point
          * @param y Y coordinate of the test point
@@ -119,10 +126,74 @@ namespace SolTrace::Data
          * @return Shared pointer to a copy of this aperture
          */
         virtual aperture_ptr make_copy() const = 0;
+
+        /**
+         * @brief Get the aperture type string
+         * @return The aperture type string
+         */
+        inline std::string get_type_string() const {
+            switch (my_type) {
+            case ANNULUS: return "Annulus";
+            case CIRCLE: return "Circle";
+            case HEXAGON: return "Hexagon";
+            case RECTANGLE: return "Rectangle";
+            case EQUILATERAL_TRIANGLE: return "Regular Triangle";
+            case SINGLE_AXIS_CURVATURE_SECTION: return "Single Axis Curvature";
+            case IRREGULAR_TRIANGLE: return "Triangle";
+            case IRREGULAR_QUADRILATERAL: return "Quad";
+            case APERTURE_UNKNOWN: return "Unknown";
+            }
+            return "Unknown";
+        }
+
+    protected:
+        struct Point {
+        public:
+            double x;
+            double y;
+            Point(double ix, double iy) : x(ix), y(iy) { }
+            bool operator==(const Point& p) const {
+                return x == p.x && y == p.y;
+            }
+        };
+        struct Triangle {
+        public:
+            Point a;
+            Point b;
+            Point c;
+            Triangle(Point ia, Point ib, Point ic) : a(ia), b(ib), c(ic) { }
+        };
+        /**
+         * @brief Compute the mipoint between to points
+         * @return The midpoint
+         */
+        Point midpoint(const Point& v0, const Point& v1) const;
+        /**
+         * @brief Recursively Subdivide a triangle by midpoints
+         * @param tri The triangle to subdivide
+         * @param n number of subdivisions
+         * @return vector of triangles
+         */
+        std::vector<Triangle> subdivide(Triangle tri, int n) const;
+        /**
+         * @brief Return the index of the point in the vector, adding if it
+         * doesn't exist
+         * @param v The vector of points
+         * @param p The point of interest
+         * @return index of p in v
+         */
+        int index_of(std::vector<Point>& v, const Point& p) const;
+        /**
+         * @brief Convert a list of Triangles in indexed (flattened) faceset
+         * @param triangles The list to convert
+         * @return indexed faceset
+         */
+        std::tuple<std::vector<double>, std::vector<int>>
+        indexed_triangles(const std::vector<Triangle>& triangles) const;
     };
 
-    struct Annulus : public Aperture
-    {
+
+    struct Annulus : public Aperture {
         double inner_radius;
         double outer_radius;
         double arc_angle;
@@ -173,6 +244,13 @@ namespace SolTrace::Data
          * @return Shared pointer to annulus copy
          */
         virtual aperture_ptr make_copy() const override;
+
+        /**
+         * @brief Triangulate the annulus shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>>
+        triangulation() const override;
     };
 
     struct Circle : public Aperture
@@ -213,6 +291,13 @@ namespace SolTrace::Data
          * @return Shared pointer to circle copy
          */
         virtual aperture_ptr make_copy() const override;
+
+        /**
+         * @brief Triangulate the circle shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>>
+        triangulation() const override;
     };
 
     struct EqualateralTriangle : public Aperture
@@ -259,6 +344,13 @@ namespace SolTrace::Data
          * @return Shared pointer to triangle copy
          */
         virtual aperture_ptr make_copy() const override;
+
+        /**
+         * @brief Triangulate the triangle shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>>
+        triangulation() const override;
     };
 
     struct Hexagon : public Aperture
@@ -301,6 +393,13 @@ namespace SolTrace::Data
          * @return Shared pointer to hexagon copy
          */
         virtual aperture_ptr make_copy() const override;
+
+        /**
+         * @brief Triangulate the hexagon shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>>
+        triangulation() const override;
     };
 
     struct Rectangle : public Aperture
@@ -354,6 +453,13 @@ namespace SolTrace::Data
          * @return Shared pointer to rectangle copy
          */
         virtual aperture_ptr make_copy() const override;
+
+        /**
+         * @brief Triangulate the rectangle shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>>
+        triangulation() const override;
     };
 
     struct SingleAxisCurvatureSection : public Aperture
@@ -410,6 +516,13 @@ namespace SolTrace::Data
          * @return Shared pointer to triangle copy
          */
         virtual aperture_ptr make_copy() const override;
+
+        /**
+         * @brief Triangulate the triangle shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>>
+        triangulation() const override;
     };
 
     struct IrregularQuadrilateral : public Aperture
@@ -466,6 +579,13 @@ namespace SolTrace::Data
          * @return Shared pointer to quadrilateral copy
          */
         virtual aperture_ptr make_copy() const override;
+
+        /**
+         * @brief Triangulate the quad shape
+         * @return Tuple of 2D vertices and triangle indices
+         */
+        virtual std::tuple<std::vector<double>, std::vector<int>>
+        triangulation() const override;
     };
 
     /**

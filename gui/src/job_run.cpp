@@ -79,11 +79,15 @@ static void execute_runner(QPromise<SimResult>& promise, SimDataPtr data) {
 
                 for (auto const& interaction : (*iter)->interactions) {
                     auto element = interaction->element;
+                    // It looks like invalid element IDs are negative
+                    // Any zero+ element id could be used
                     if (element >= 0) {
                         ret->element_ids_to_ray_ids[interaction->element]
                             .push_back((*iter)->id);
                     }
                 }
+
+                iter_count++;
             }
         }
 
@@ -194,9 +198,10 @@ struct LineVertex {
 
 void RayGeometry::rebuild_geometry() {
     if (!m_database) {
-        clear();
         return;
     }
+
+    clear();
 
     size_t vertex_count = 0;
 
@@ -222,33 +227,92 @@ void RayGeometry::rebuild_geometry() {
     QVector3D bounds_min(maxFloat, maxFloat, maxFloat);
     QVector3D bounds_max(-maxFloat, -maxFloat, -maxFloat);
 
+    size_t ray_limit = m_database->result.get_number_of_records() *
+                       (this->show_percent() / 100.);
+
     {
+        size_t ray_number = 0;
 
         for (auto iter = m_database->result.get_ray_record_iteratior();
              !m_database->result.is_at_end(iter);
              ++iter) {
 
+            if (ray_limit == 0) { break; }
+
+            // qDebug() << "Ray" << ray_number;
+
+            ray_limit -= 1;
+            ray_number += 1;
+
+
             auto& this_ray = (**iter);
 
-            for (size_t interaction_i = 0;
-                 interaction_i < this_ray.interactions.size();
-                 interaction_i++) {
+            // since we are now filtering, we cannot use interaction counts
+            size_t ray_interaction_count = 0;
+            double total_ray_distance    = 0.0;
 
-                // install vert
-                auto const& interaction = this_ray.interactions[interaction_i];
+            QVector3D last_point = {};
+
+            // first compute an idea of the total ray distance
+            for (auto const& interaction : this_ray.interactions) {
+
+                if (m_exclude_events.contains(interaction->event)) { continue; }
 
                 auto p = convert(interaction->location.data);
 
-                float percent = (float)interaction_i /
-                                ((float)this_ray.interactions.size() - 1);
+                // if this is not the first
+                if (ray_interaction_count > 0) {
+                    // record delta
+                    total_ray_distance += (p - last_point).length();
+                } else {
+                    // this is the first. just record
+                    last_point = p;
+                }
 
-                verts.push_back({ .position = p, .uv = QVector2D(percent, 0) });
+                ray_interaction_count += 1;
+            }
+
+            if (total_ray_distance == 0.0) { total_ray_distance = 1.0; }
+
+            // qDebug() << "Distance" << total_ray_distance;
+
+            // Reset counter
+            ray_interaction_count       = 0;
+            double current_ray_distance = 0.0;
+
+            for (auto const& interaction : this_ray.interactions) {
+
+                if (m_exclude_events.contains(interaction->event)) { continue; }
+
+                auto p = convert(interaction->location.data);
+
+                // qDebug() << "Point" << p << "type" <<
+                // (int)interaction->event;
+
+                // if this is not the first
+                if (ray_interaction_count > 0) {
+                    // record delta
+                    current_ray_distance += (p - last_point).length();
+                } else {
+                    // this is the first. just record
+                    last_point = p;
+                }
+
+                ray_interaction_count += 1;
+                verts.push_back({
+                    .position = p,
+                    .uv =
+                        QVector2D(current_ray_distance / total_ray_distance, 0),
+                });
 
 
-                // install index
-
-                index.push_back(verts.size() - 1);
-                index.push_back(verts.size());
+                // install index: connect consecutive vertices within this ray
+                if (ray_interaction_count > 1) {
+                    auto cur  = static_cast<uint32_t>(verts.size() - 1);
+                    auto prev = static_cast<uint32_t>(verts.size() - 2);
+                    index.push_back(prev);
+                    index.push_back(cur);
+                }
 
                 bounds_min.setX(std::min(bounds_min.x(), p.x()));
                 bounds_min.setY(std::min(bounds_min.y(), p.y()));
@@ -257,9 +321,19 @@ void RayGeometry::rebuild_geometry() {
                 bounds_max.setX(std::max(bounds_max.x(), p.x()));
                 bounds_max.setY(std::max(bounds_max.y(), p.y()));
                 bounds_max.setZ(std::max(bounds_max.z(), p.z()));
+
+                ray_interaction_count += 1;
             }
         }
     }
+
+    // for (auto l : verts) {
+    //     qDebug() << "V" << l.position << l.uv;
+    // }
+
+    // for (auto l : index) {
+    //     qDebug() << "I" << l;
+    // }
 
     auto vertex_buffer = QByteArray(reinterpret_cast<const char*>(verts.data()),
                                     verts.size() * sizeof(LineVertex));
@@ -287,6 +361,14 @@ void RayGeometry::rebuild_geometry() {
     setBounds(bounds_min, bounds_max);
     setPrimitiveType(QQuick3DGeometry::PrimitiveType::Lines);
     update();
+}
+
+RayGeometry::RayGeometry(QQuick3DObject* parent) : QQuick3DGeometry(parent) {
+
+    connect(this,
+            &RayGeometry::show_percent_changed,
+            this,
+            &RayGeometry::rebuild_geometry);
 }
 
 void RayGeometry::set_database(std::shared_ptr<ResultDB>&& data) {
