@@ -29,6 +29,7 @@ namespace SolTrace::Data
          * @brief Default constructor for composite element
          */
         CompositeElement();
+        CompositeElement(const nlohmann::ordered_json& jnode);
         virtual ~CompositeElement();
 
         /**

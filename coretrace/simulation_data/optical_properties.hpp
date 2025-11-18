@@ -22,13 +22,15 @@ namespace SolTrace::Data
     enum class InteractionType
     {
         REFLECTION,
-        REFRACTION
+        REFRACTION,
+        UNKNOWN
     };
 
     inline std::map<InteractionType, std::string> InteractionTypeMap =
     {
         {InteractionType::REFLECTION, "REFLECTION"},
-        {InteractionType::REFRACTION, "REFRACTION"}
+        {InteractionType::REFRACTION, "REFRACTION"},
+        {InteractionType::UNKNOWN, "UNKNOWN"}
     };
 
     struct OpticalProperties
@@ -68,6 +70,8 @@ namespace SolTrace::Data
               refraction_index_back(ri_back)
         {
         }
+
+        OpticalProperties(const nlohmann::ordered_json& jnode);
 
         // TODO: What should the error settings be with the below?
 

@@ -29,6 +29,36 @@ ElementBase::ElementBase() : Element(),
     return;
 }
 
+ElementBase::ElementBase(const nlohmann::ordered_json& jnode)
+{
+    if (jnode["active"])
+        this->enable();
+    else
+        this->disable();
+
+    if (jnode["virtual_flag"])
+        this->mark_virtual();
+    else
+        this->unmark_virtual();
+
+    //this->set_id(jnode["my_id"]);
+    this->set_id(ELEMENT_ID_UNASSIGNED);
+    this->set_stage(jnode["stage"]);
+    this->set_name(jnode["my_name"]);
+
+    std::array<double, 3> orig_arr = jnode.at("origin").get<std::array<double, 3>>();
+    Vector3d orig_vec(orig_arr.data());
+    this->set_origin(orig_vec);
+
+    std::array<double, 3> aim_arr = jnode.at("aim").get<std::array<double, 3>>();
+    Vector3d aim_vec(aim_arr.data());
+    this->set_aim_vector(aim_vec);
+
+    this->set_zrot(jnode["zrot"]);
+
+    this->compute_coordinate_rotations();
+}
+
 ElementBase::~ElementBase()
 {
     this->reference_element = nullptr;
@@ -517,7 +547,6 @@ void ElementBase::write_common_json(nlohmann::ordered_json& jnode) const
     
     // Not including calculated values
     //jnode["euler_angles"] = this->euler_angles.data;
-
 }
 
 } // namespace SolTrace::Data

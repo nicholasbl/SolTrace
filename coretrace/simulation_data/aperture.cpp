@@ -1,5 +1,6 @@
 
 #include "aperture.hpp"
+#include "simdata_io.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -71,6 +72,36 @@ aperture_ptr Aperture::make_aperture_from_type(ApertureType type,
     // return aperture_ptr();
 }
 
+aperture_ptr Aperture::make_aperture_from_json(const nlohmann::ordered_json& jnode)
+{
+    if (!jnode.contains("aperture_type"))
+        throw std::invalid_argument("Missing aperture_type");
+    std::string type_str = jnode.at("aperture_type");
+    ApertureType aperture_type = get_enum_from_string(type_str, ApertureTypeMap, ApertureType::APERTURE_UNKNOWN);
+    if (aperture_type == ApertureType::APERTURE_UNKNOWN)
+        throw std::invalid_argument("Unknown aperture");
+    switch (aperture_type)
+    {
+        case ApertureType::ANNULUS:                return make_aperture<Annulus>(jnode);
+        case ApertureType::CIRCLE:                 return make_aperture<Circle>(jnode);
+        case ApertureType::HEXAGON:                return make_aperture<Hexagon>(jnode);
+        case ApertureType::RECTANGLE:              return make_aperture<Rectangle>(jnode);
+        case ApertureType::EQUILATERAL_TRIANGLE:   return make_aperture<EqualateralTriangle>(jnode);
+        case ApertureType::IRREGULAR_TRIANGLE:     return make_aperture<IrregularTriangle>(jnode);
+        case ApertureType::IRREGULAR_QUADRILATERAL:return make_aperture<IrregularQuadrilateral>(jnode);
+        default:
+            throw std::invalid_argument("Unsupported aperture_type: " + type_str);
+    }
+}
+
+Annulus::Annulus(const nlohmann::ordered_json& jnode) 
+    : Aperture(ApertureType::ANNULUS)
+{
+    this->inner_radius = jnode.at("inner_radius");
+    this->outer_radius = jnode.at("outer_radius");
+    this->arc_angle = jnode.at("arc_angle");
+}
+
 double Annulus::aperture_area() const
 {
     // TODO: input.cpp on line 219 uses the formula
@@ -119,6 +150,12 @@ void Annulus::write_json(nlohmann::ordered_json& jnode) const
     jnode["arc_angle"] = this->arc_angle;
 }
 
+Circle::Circle(const nlohmann::ordered_json& jnode)
+    : Aperture(ApertureType::CIRCLE)
+{
+    this->diameter = jnode.at("diameter");
+}
+
 double Circle::aperture_area() const
 {
     return 0.25 * PI * this->diameter * this->diameter;
@@ -146,6 +183,12 @@ void Circle::write_json(nlohmann::ordered_json& jnode) const
     ApertureType type = ApertureType::CIRCLE;
     jnode["aperture_type"] = ApertureTypeMap.at(type);
     jnode["diameter"] = this->diameter;
+}
+
+EqualateralTriangle::EqualateralTriangle(const nlohmann::ordered_json& jnode)
+    : Aperture(ApertureType::EQUILATERAL_TRIANGLE)
+{
+    this->circumscribe_diameter = jnode.at("circumscribe_diameter");
 }
 
 double EqualateralTriangle::aperture_area() const
@@ -199,6 +242,12 @@ void EqualateralTriangle::write_json(nlohmann::ordered_json& jnode) const
     ApertureType type = ApertureType::EQUILATERAL_TRIANGLE;
     jnode["aperture_type"] = ApertureTypeMap.at(type);
     jnode["circumscribe_diameter"] = this->circumscribe_diameter;
+}
+
+Hexagon::Hexagon(const nlohmann::ordered_json& jnode)
+    : Aperture(ApertureType::HEXAGON)
+{
+    this->circumscribe_diameter = jnode.at("circumscribe_diameter");
 }
 
 double Hexagon::aperture_area() const
@@ -282,6 +331,17 @@ IrregularTriangle::IrregularTriangle(double x1, double y1,
 {
 }
 
+IrregularTriangle::IrregularTriangle(const nlohmann::ordered_json& jnode)
+    : Aperture(ApertureType::IRREGULAR_TRIANGLE)
+{
+    this->x1 = jnode.at("x1");
+    this->y1 = jnode.at("y1");
+    this->x2 = jnode.at("x2");
+    this->y2 = jnode.at("y2");
+    this->x3 = jnode.at("x3");
+    this->y3 = jnode.at("y3");
+}
+
 double IrregularTriangle::aperture_area() const
 {
     double v11 = this->x1 - this->x2;
@@ -343,6 +403,19 @@ IrregularQuadrilateral::IrregularQuadrilateral(double x1, double y1,
       x3(x3), y3(y3),
       x4(x4), y4(y4)
 {
+}
+
+IrregularQuadrilateral::IrregularQuadrilateral(const nlohmann::ordered_json& jnode)
+    : Aperture(ApertureType::IRREGULAR_QUADRILATERAL)
+{
+    this->x1 = jnode.at("x1");
+    this->y1 = jnode.at("y1");
+    this->x2 = jnode.at("x2");
+    this->y2 = jnode.at("y2");
+    this->x3 = jnode.at("x3");
+    this->y3 = jnode.at("y3");
+    this->x4 = jnode.at("x4");
+    this->y4 = jnode.at("y4");
 }
 
 double IrregularQuadrilateral::aperture_area() const
@@ -414,6 +487,15 @@ Rectangle::Rectangle(double xlen, double ylen)
     this->x_coord = -0.5 * this->x_length;
     this->y_coord = -0.5 * this->y_length;
     return;
+}
+
+Rectangle::Rectangle(const nlohmann::ordered_json& jnode)
+    : Aperture(ApertureType::RECTANGLE)
+{
+    this->x_length = jnode.at("x_length");
+    this->y_length = jnode.at("y_length");
+    this->x_coord = jnode.at("x_coord");
+    this->y_coord = jnode.at("y_coord");
 }
 
 double Rectangle::aperture_area() const

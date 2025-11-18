@@ -80,6 +80,7 @@ namespace SolTrace::Data
          * @param type The aperture type enumeration
          */
         Aperture(ApertureType type) : my_type(type) {}
+
         virtual ~Aperture() {}
 
         /**
@@ -90,6 +91,13 @@ namespace SolTrace::Data
          */
         static aperture_ptr make_aperture_from_type(ApertureType type,
                                                     const std::vector<double> &args);
+
+        /**
+        * @brief Factory method to create apertures from json
+        * @param jnode the json containing necessary parameters for each aperture type
+        * @return Shared pointer to the created aperture
+        */
+        static aperture_ptr make_aperture_from_json(const nlohmann::ordered_json& jnode);
 
         /**
          * @brief Get the aperture type
@@ -167,6 +175,13 @@ namespace SolTrace::Data
               arc_angle(arc)
         {
         }
+
+        /**
+         * @brief Json-based constructor for annulus aperture
+         * @param jnode contains ri, ro, and arc angle
+         */
+        Annulus(const nlohmann::ordered_json& jnode);
+
         virtual ~Annulus() {}
 
         /**
@@ -213,6 +228,13 @@ namespace SolTrace::Data
          * @param d Diameter of the circle
          */
         Circle(double d) : Aperture(ApertureType::CIRCLE), diameter(d) {}
+
+        /**
+         * @brief Json-based constructor for circular aperture
+         * @param jnode contains diameter
+         */
+        Circle(const nlohmann::ordered_json& jnode);
+
         virtual ~Circle() {}
 
         /**
@@ -265,6 +287,13 @@ namespace SolTrace::Data
               circumscribe_diameter(cd)
         {
         }
+
+        /**
+         * @brief Json-based constructor for equilateral triangle aperture
+         * @param jnode contains diameter of circumscribed circle
+         */
+        EqualateralTriangle(const nlohmann::ordered_json& jnode);
+
         virtual ~EqualateralTriangle() {}
 
         /**
@@ -313,6 +342,13 @@ namespace SolTrace::Data
         Hexagon(double d)
             : Aperture(ApertureType::HEXAGON),
               circumscribe_diameter(d) {}
+
+        /**
+         * @brief Json-based constructor for hexagonal aperture
+         * @param jnode contains diameter of circumscribed circle
+         */
+        Hexagon(const nlohmann::ordered_json& jnode);
+
         virtual ~Hexagon() {}
 
         /**
@@ -372,6 +408,13 @@ namespace SolTrace::Data
          * @param yl Y coordinate of lower-left corner
          */
         Rectangle(double xlen, double ylen, double xl, double yl);
+
+        /**
+         * @brief Json-based constructor for rectangular aperture
+         * @param jnode contains xlen, ylen, xl, yl
+         */
+        Rectangle(const nlohmann::ordered_json& jnode);
+
         virtual ~Rectangle() {}
 
         /**
@@ -434,6 +477,13 @@ namespace SolTrace::Data
         IrregularTriangle(double x1, double y1,
                           double x2, double y2,
                           double x3, double y3);
+
+        /**
+         * @brief Json-based constructor for irregular triangle aperture
+         * @param jnode contains x1, y1, x2, y2, x3, y3
+         */
+        IrregularTriangle(const nlohmann::ordered_json& jnode);
+
         ~IrregularTriangle() {}
 
         /**
@@ -496,6 +546,13 @@ namespace SolTrace::Data
                                double x2, double y2,
                                double x3, double y3,
                                double x4, double y4);
+
+        /**
+         * @brief Json-based constructor for irregular quadrilateral aperture
+         * @param jnode contains x1, y1, x2, y2, x3, y3, x4, y4
+         */
+        IrregularQuadrilateral(const nlohmann::ordered_json& jnode);
+
         ~IrregularQuadrilateral() {}
 
         /**

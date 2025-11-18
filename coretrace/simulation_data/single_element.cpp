@@ -22,6 +22,18 @@ SingleElement::SingleElement() : ElementBase(),
     return;
 }
 
+SingleElement::SingleElement(const nlohmann::ordered_json& jnode) : ElementBase(jnode),
+                                                                    aperture(nullptr),
+                                                                    surface(nullptr),
+                                                                    optics_front(),
+                                                                    optics_back()
+{
+    this->set_aperture(Aperture::make_aperture_from_json(jnode.at("aperture")));
+    this->set_surface(make_surface_from_json(jnode.at("surface")));
+    this->set_front_optical_properties(OpticalProperties(jnode.at("optics_front")));
+    this->set_back_optical_properties(OpticalProperties(jnode.at("optics_back")));
+}
+
 SingleElement::~SingleElement()
 {
     this->aperture = nullptr;
@@ -77,6 +89,9 @@ void SingleElement::write_json(nlohmann::ordered_json& jnode) const
     json jsurface;
     this->surface->write_json(jsurface);
     jnode["surface"] = jsurface;
+
+    // Write element type
+    jnode["is_single"] = true;
 }
 
 } // namespace SolTrace::Data

@@ -16,6 +16,22 @@
 
 namespace SolTrace::Data {
 
+template<typename EnumT>
+EnumT get_enum_from_string(const std::string& str, 
+    const std::map<EnumT, std::string>& forward_map, 
+    EnumT unknown)
+{
+    for (const auto& key_pair : forward_map)
+    {
+        if (key_pair.second == str)
+        {
+            return key_pair.first;
+        }
+    }
+
+    return unknown;
+}
+	
 bool load_stinput_file(SimulationData& sd, std::string filename);
 
 bool load_json_file(SimulationData& sd, std::string filename);

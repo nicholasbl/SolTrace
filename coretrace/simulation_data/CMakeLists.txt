@@ -43,6 +43,7 @@ set(SIMDATA_HDRS
     datetime.hpp
     element.hpp
     error_distributions.hpp
+    json_helpers.hpp
     simulation_data_export.hpp
     matvec.hpp
     optical_properties.hpp

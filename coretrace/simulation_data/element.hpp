@@ -308,6 +308,7 @@ class ElementBase : public Element
 public:
   ElementBase();
   // ElementBase(const Vector3d &origin, const Vector3d &aim);
+  ElementBase(const nlohmann::ordered_json& jnode);
   virtual ~ElementBase();
 
   virtual inline void disable() const override { this->active = false; }

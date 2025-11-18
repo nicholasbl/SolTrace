@@ -15,6 +15,8 @@
 #include "stage_element.hpp"
 #include "sun.hpp"
 #include "surface.hpp"
+#include "utilities.hpp"
+#include "json_helpers.hpp"
 
 namespace SolTrace::Data {
 
@@ -727,6 +729,7 @@ bool write_json_file(SimulationData& sd, std::string filename)
 
     // Write general meta data
     {
+        root["schema_version"] = "2025.11.12";
         root["number_of_elements"] = sd.get_number_of_elements();
     }
 
@@ -761,6 +764,8 @@ bool write_json_file(SimulationData& sd, std::string filename)
             // Check source type
             if (auto sun_ptr = std::dynamic_pointer_cast<SolTrace::Data::Sun>(ray_source))
             {
+                jsrc["source_type"] = "Sun";
+
                 SolTrace::Data::SunShape shape = sun_ptr->get_shape();
                 std::string shape_string = SolTrace::Data::SunShapeMap.at(shape);
                 jsrc["my_shape"] = shape_string;                // string
@@ -774,9 +779,7 @@ bool write_json_file(SimulationData& sd, std::string filename)
                 jsrc["user_intensity"] = user_intensity;        // vector<double>
 
                 Vector3d pos = sun_ptr->get_position();
-                jsrc["pos_x"] = pos[0];
-                jsrc["pos_y"] = pos[1];
-                jsrc["pos_z"] = pos[2];
+                jsrc["pos"] = pos.data;
             }
             else
             {
@@ -814,21 +817,146 @@ bool write_json_file(SimulationData& sd, std::string filename)
         }
 
         root["elements"] = jelements_top;
-        
     }
 
     // Write to disk
     std::ofstream ofs(filename, std::ios::out | std::ios::trunc);
     if (!ofs.is_open())
         return false;
-    ofs << root.dump(2) << '\n';
+    ofs << root.dump(4) << '\n';
 
     return true;
 }
 
 bool load_json_file(SimulationData& sd, std::string filename)
 {
+    using json = nlohmann::ordered_json;
 
+    // Load json file
+    std::ifstream ifs(filename);
+    if (!ifs.is_open())
+        return false;
+
+    json root;
+    try
+    {
+        ifs >> root;
+    }
+    catch (const std::exception& e)
+    {
+        // Failed to parse JSON
+        return false;
+    }
+
+    // File meta data
+    try
+    {
+        std::string schema_version = root.at("schema_version");
+        int number_of_elements = root.at("number_of_elements");
+    }
+    catch (const std::exception& e)
+    {
+        // Failed to read meta data
+        return false;
+    }
+
+    // Simulation parameters
+    try 
+    {
+        SolTrace::Data::SimulationParameters sim_par = sd.get_simulation_parameters();
+        json jpar = root["simulation_parameters"];
+        sim_par.include_sun_shape_errors = jpar.at("include_sun_shape_errors");
+        sim_par.include_optical_errors = jpar.at("include_optical_errors");
+        sim_par.number_of_rays = jpar.at("number_of_rays");
+        sim_par.max_number_of_rays = jpar.at("max_number_of_rays");
+        sim_par.tolerance = jpar.at("tolerance");
+        sim_par.latitude = jpar.at("latitude");
+        sim_par.longitude = jpar.at("longitude");
+        sim_par.seed = jpar.at("seed");
+    }
+    catch (const std::exception& e)
+    {
+        // Failed to read simulation parameters
+        return false;
+    }
+
+    // Ray sources
+    try
+    {
+        json jsources = root["ray_sources"];
+        for (auto& [key, jsrc] : jsources.items())
+        {
+            std::string source_type = jsrc.at("source_type");
+            if (source_type != "Sun")
+            {
+                // UNSUPPORTED source type
+                return false;
+            }
+
+            std::string shape_string = jsrc.at("my_shape");
+            SunShape shape = get_enum_from_string(shape_string, SunShapeMap, SunShape::UNKNOWN);
+            if (shape == SunShape::UNKNOWN)
+            {
+                // Error reading sunshape
+                return false;
+            }
+            
+            double sigma = json_get_double(jsrc, "sigma");
+            double half_width = json_get_double(jsrc, "half_width");
+            double csr = json_get_double(jsrc, "csr");
+
+            std::vector<double> user_angle = jsrc.at("user_angle");
+            std::vector<double> user_intensity = jsrc.at("user_intensity");
+
+            std::array<double, 3> pos_arr = jsrc.at("pos").get<std::array<double, 3>>();
+            Vector3d pos_vec(pos_arr.data());
+
+            // Make sun for simulation data
+            auto sun = make_ray_source<Sun>();
+            sun->set_position(pos_vec);
+            sun->set_shape(shape, sigma, half_width, csr, user_angle, user_intensity);
+            sd.add_ray_source(sun);
+        }
+    }
+    catch (const std::exception& e)
+    {
+        // Failed to read ray sources
+        return false;
+    }
+
+    // Elements
+    try
+    {
+        json jelements = root["elements"];
+        for (auto& [key, jelement] : jelements.items())
+        {
+            // Check if stage
+            // Note a stage is also a composite, so check stage first
+            if (jelement.contains("is_stage") && jelement.at("is_stage") == true)
+            {
+                // Make stage
+                stage_ptr stage = make_stage(jelement);
+                sd.add_stage(stage);
+            }
+            // Composite
+            else if (jelement.contains("is_composite") && jelement.at("is_composite") == true)
+            {
+                composite_element_ptr comp = make_element<CompositeElement>(jelement);
+                sd.add_element(comp);
+            }
+            // Single Element
+            else
+            {
+                single_element_ptr single = make_element<SingleElement>(jelement);
+                sd.add_element(single);
+            }
+        }
+    }
+    catch (const std::exception& e)
+    {
+        // Failed to read elements
+        return false;
+    }
 
     return true;
 }

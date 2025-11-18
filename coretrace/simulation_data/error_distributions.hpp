@@ -20,7 +20,8 @@ enum class DistributionType
     GAUSSIAN,
     PILLBOX,
     DIFFUSE,
-    USER_DEFINED        // Not supported in legacy but should be added.
+    USER_DEFINED,        // Not supported in legacy but should be added.
+    UNKNOWN
 };
 
 inline const std::map<DistributionType, std::string> DistributionTypeMap =
@@ -28,7 +29,8 @@ inline const std::map<DistributionType, std::string> DistributionTypeMap =
     {DistributionType::GAUSSIAN, "GAUSSIAN"},
     {DistributionType::PILLBOX, "PILLBOX"},
     {DistributionType::DIFFUSE, "DIFFUSE"},
-    {DistributionType::USER_DEFINED, "USER_DEFINED"}
+    {DistributionType::USER_DEFINED, "USER_DEFINED"},
+    {DistributionType::UNKNOWN, "UNKNOWN"}
 };
 
 } // namespace SolTrace::Data

@@ -27,6 +27,7 @@ class SingleElement : public ElementBase
 {
 public:
     SingleElement();
+    SingleElement(const nlohmann::ordered_json& jnode);
     virtual ~SingleElement();
 
     virtual bool is_single() const override { return true; }

@@ -67,6 +67,7 @@ struct Cone : public Surface
     // where theta = half_angle
     double half_angle;
     Cone(double ha) : Surface(SurfaceType::CONE), half_angle(ha) {}
+    Cone(const nlohmann::ordered_json& jnode);
     virtual ~Cone() {}
     virtual void write_json(nlohmann::ordered_json& jnode) const override;
 };
@@ -79,6 +80,7 @@ struct Cylinder : public Surface
     Cylinder(double r) : Surface(SurfaceType::CYLINDER), radius(r)
     {
     }
+    Cylinder(const nlohmann::ordered_json& jnode);
     virtual ~Cylinder() {}
     virtual void write_json(nlohmann::ordered_json& jnode) const override;
 };
@@ -86,6 +88,7 @@ struct Cylinder : public Surface
 struct Flat : public Surface
 {
     Flat() : Surface(SurfaceType::FLAT) {}
+    Flat(const nlohmann::ordered_json& jnode) : Surface(SurfaceType::FLAT) {};
     virtual ~Flat() {}
     virtual void write_json(nlohmann::ordered_json& jnode) const override;
 };
@@ -103,6 +106,7 @@ struct Parabola : public Surface
                                                focal_length_y(focal_y)
     {
     }
+    Parabola(const nlohmann::ordered_json& jnode);
     virtual ~Parabola() {}
     virtual void write_json(nlohmann::ordered_json& jnode) const override;
 };
@@ -122,6 +126,7 @@ struct Sphere : public Surface
                           vertex_curv(curv)
     {
     }
+    Sphere(const nlohmann::ordered_json& jnode);
     virtual ~Sphere() {}
     virtual void write_json(nlohmann::ordered_json& jnode) const override;
 };
@@ -145,6 +150,8 @@ inline auto make_surface(Args &&...args)
 
 surface_ptr make_surface_from_type(SurfaceType type,
                                    const std::vector<double> &args);
+
+surface_ptr make_surface_from_json(const nlohmann::ordered_json& jnode);
 
 } // namespace SolTrace::Data
 
