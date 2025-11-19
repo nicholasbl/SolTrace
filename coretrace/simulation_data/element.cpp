@@ -29,7 +29,7 @@ ElementBase::ElementBase() : Element(),
     return;
 }
 
-ElementBase::ElementBase(const nlohmann::ordered_json& jnode)
+ElementBase::ElementBase(const nlohmann::ordered_json& jnode) : ElementBase()
 {
     if (jnode["active"])
         this->enable();
@@ -56,6 +56,7 @@ ElementBase::ElementBase(const nlohmann::ordered_json& jnode)
 
     this->set_zrot(jnode["zrot"]);
 
+    this->coordinates_initialized = false;
     this->compute_coordinate_rotations();
 }
 
