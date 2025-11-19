@@ -863,7 +863,7 @@ bool load_json_file(SimulationData& sd, std::string filename)
     // Simulation parameters
     try 
     {
-        SolTrace::Data::SimulationParameters sim_par = sd.get_simulation_parameters();
+        SolTrace::Data::SimulationParameters& sim_par = sd.get_simulation_parameters();
         json jpar = root["simulation_parameters"];
         sim_par.include_sun_shape_errors = jpar.at("include_sun_shape_errors");
         sim_par.include_optical_errors = jpar.at("include_optical_errors");
