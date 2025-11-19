@@ -276,8 +276,8 @@ public:
 
     int import_from_file(const char *file_name);
     int import_from_file(const std::string file_name);
-    int import_json_file(const std::string file_name);
-    int export_json_file(const std::string file_name);
+    void import_json_file(const std::string file_name);
+    void export_json_file(const std::string file_name);
 
 private:
     // mutable element_id next_element_id;

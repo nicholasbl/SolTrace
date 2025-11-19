@@ -23,14 +23,14 @@ TEST(io_json, json_write)
     ASSERT_TRUE(sd_original.import_from_file(sample_path.string())) << "Failed to import stinput";
 
     // Export to JSON
-    ASSERT_TRUE(sd_original.export_json_file(output_path_1.string())) << "Failed to export first JSON";
+    ASSERT_NO_THROW(sd_original.export_json_file(output_path_1.string())) << "Failed to export first JSON";
 
     // Import from first JSON
     SimulationData sd_round_trip;
-    ASSERT_TRUE(sd_round_trip.import_json_file(output_path_1.string())) << "Failed to import JSON";
+    ASSERT_NO_THROW(sd_round_trip.import_json_file(output_path_1.string())) << "Failed to import JSON";
 
     // Re-export second JSON
-    ASSERT_TRUE(sd_round_trip.export_json_file(output_path_2.string())) << "Failed to export second JSON";
+    ASSERT_NO_THROW(sd_round_trip.export_json_file(output_path_2.string())) << "Failed to export second JSON";
 
     // Parse both JSON files
     std::ifstream ifs1(output_path_1);
