@@ -756,10 +756,8 @@ bool write_json_file(SimulationData& sd, std::string filename)
         {
             json jsrc;
 
-            SolTrace::Data::ray_source_id id = it->first;
+            SolTrace::Data::ray_source_id i = it->first;
             auto ray_source = it->second;
-
-            jsrc["id"] = id;    // int
 
             // Check source type
             if (auto sun_ptr = std::dynamic_pointer_cast<SolTrace::Data::Sun>(ray_source))
@@ -787,7 +785,7 @@ bool write_json_file(SimulationData& sd, std::string filename)
                 return false;
             }
 
-            jsources["source " + std::to_string(id)] = jsrc;
+            jsources[std::to_string(i)] = jsrc;
         }
 
         root["ray_sources"] = jsources;
@@ -800,7 +798,6 @@ bool write_json_file(SimulationData& sd, std::string filename)
         for (auto it = sd.get_iterator(); !sd.is_at_end(it); ++it)
         {
             json jelement;
-            SolTrace::Data::element_id id = it->first;
             auto element = it->second;
 
             if (element->is_single() && (element->is_top_level() == false))
@@ -809,7 +806,6 @@ bool write_json_file(SimulationData& sd, std::string filename)
                 continue;
             }
 
-            jelement["id"] = id; // int
             element->write_json(jelement);
 
             jelements_top[std::to_string(i_top)] = jelement;

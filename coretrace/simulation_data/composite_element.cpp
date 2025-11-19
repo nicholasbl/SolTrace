@@ -204,13 +204,12 @@ namespace SolTrace::Data
         {
             json jelement;
 
-            SolTrace::Data::element_id id = it->first;
+            SolTrace::Data::element_id i = it->first;
             auto element = it->second;
 
-            jelement["id"] = id;    // int
             element->write_json(jelement);
 
-            jelements[std::to_string(id)] = jelement;
+            jelements[std::to_string(i)] = jelement;
         }
         jnode["elements"] = jelements;
     }
