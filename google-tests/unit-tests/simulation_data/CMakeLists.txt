@@ -5,6 +5,9 @@ include_directories(
     ../common
     ../../app/deploy/samples
     ../../../coretrace/simulation_data
+    ../../../coretrace/simulation_results
+    ../../../coretrace/simulation_runner
+	../../../coretrace/simulation_runner/native_runner
 )
 
 # Add CST template tests subdirectory
@@ -30,6 +33,8 @@ add_executable(SimulationDataUnitTests
 target_link_libraries(
     SimulationDataUnitTests
     simdata
+    simresult
+    native_runner
     testtools
     GTest::gtest_main
 )
