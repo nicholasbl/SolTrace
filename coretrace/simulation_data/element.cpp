@@ -31,20 +31,20 @@ ElementBase::ElementBase() : Element(),
 
 ElementBase::ElementBase(const nlohmann::ordered_json& jnode) : ElementBase()
 {
-    if (jnode["active"])
+    if (jnode.at("active"))
         this->enable();
     else
         this->disable();
 
-    if (jnode["virtual_flag"])
+    if (jnode.at("virtual_flag"))
         this->mark_virtual();
     else
         this->unmark_virtual();
 
     //this->set_id(jnode["my_id"]);
     this->set_id(ELEMENT_ID_UNASSIGNED);
-    this->set_stage(jnode["stage"]);
-    this->set_name(jnode["my_name"]);
+    this->set_stage(jnode.at("stage"));
+    this->set_name(jnode.at("my_name"));
 
     std::array<double, 3> orig_arr = jnode.at("origin").get<std::array<double, 3>>();
     Vector3d orig_vec(orig_arr.data());
@@ -54,7 +54,7 @@ ElementBase::ElementBase(const nlohmann::ordered_json& jnode) : ElementBase()
     Vector3d aim_vec(aim_arr.data());
     this->set_aim_vector(aim_vec);
 
-    this->set_zrot(jnode["zrot"]);
+    this->set_zrot(jnode.at("zrot"));
 
     this->coordinates_initialized = false;
     this->compute_coordinate_rotations();
