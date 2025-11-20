@@ -41,7 +41,7 @@ struct UnknownSurface : public Surface
 {
     UnknownSurface() : Surface(SurfaceType::SURFACE_UNKNOWN){}
     ~UnknownSurface() {}
-    virtual void write_json(nlohmann::ordered_json& json) const override {};
+    virtual void write_json(nlohmann::ordered_json& json) const override {}
 };
 
 TEST_F(CalculatorFactoryTest, SingletonBehavior)
