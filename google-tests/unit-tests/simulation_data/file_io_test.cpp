@@ -431,3 +431,39 @@ TEST(io_json, performance_comparison)
         fs::remove(output_path_2, ec);
     }
 }
+
+TEST(io_json, missing_key)
+{
+    namespace fs = std::filesystem;
+
+    // Build paths
+    const fs::path project_root(PROJECT_DIR);
+    const fs::path output_path = project_root / "missing_key.json";
+
+    // Make simulation data
+    SimulationData sd;
+
+    // Export JSON
+    sd.export_json_file(output_path.string());
+
+    // Tamper JSON
+    nlohmann::ordered_json root;
+    {
+        std::ifstream ifs(output_path);
+        ifs >> root;
+    }
+    root["simulation_parameters"].erase("include_sun_shape_errors");
+    {
+        std::ofstream ofs(output_path, std::ios::trunc);
+        ofs << root.dump(SolTrace::Data::kJsonIndentSpaces);
+    }
+
+    SimulationData sd2;
+    EXPECT_THROW(sd2.import_json_file(output_path.string()), nlohmann::json_abi_v3_11_3::detail::out_of_range);
+
+    // Conditional cleanup: remove only if test passed so far.
+    if (!::testing::Test::HasFailure()) {
+        std::error_code ec;
+        fs::remove(output_path, ec);
+    }
+}
