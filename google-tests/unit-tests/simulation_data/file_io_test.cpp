@@ -6,6 +6,7 @@
 #include <native_runner.hpp>
 #include <simulation_data_export.hpp>
 #include <simulation_result_export.hpp>
+#include <json_helpers.hpp>
 
 #include "common.hpp"
 TEST(io_json, json_round_trip)
@@ -124,6 +125,12 @@ TEST(io_json, large_field_comparison)
     int N_rays_original = sd_original.get_number_of_rays();
     int N_rays_round_trip = sd_round_trip.get_number_of_rays();
     ASSERT_TRUE(N_rays_original == N_rays_round_trip) << "Ray number is not equal";
+
+    // Conditional cleanup: remove only if test passed so far.
+    if (!::testing::Test::HasFailure()) {
+        std::error_code ec;
+        fs::remove(output_path, ec);
+    }
 }
 
 TEST(io_json, precision_comparison)
@@ -145,7 +152,7 @@ TEST(io_json, precision_comparison)
 
     // Add sun
     auto sun = make_ray_source<Sun>();
-    double nan = std::numeric_limits<double>::quiet_NaN();
+    constexpr double nan = std::numeric_limits<double>::quiet_NaN();
     sun->set_shape(SolTrace::Data::SunShape::GAUSSIAN, 1.0, nan, nan, {}, {});
     sd_original.add_ray_source(sun);
 
@@ -171,6 +178,12 @@ TEST(io_json, precision_comparison)
 
     EXPECT_TRUE(std::isnan(half_width_original) && std::isnan(half_width_round_trip));
     EXPECT_TRUE(std::isnan(csr_original) && std::isnan(csr_round_trip));
+
+    // Conditional cleanup: remove only if test passed so far.
+    if (!::testing::Test::HasFailure()) {
+        std::error_code ec;
+        fs::remove(output_path, ec);
+    }
 }
 
 TEST(io_json, empty_case)
@@ -195,56 +208,89 @@ TEST(io_json, empty_case)
     // Check number of elements
     EXPECT_TRUE(sd_round_trip.get_number_of_elements() == 0);
     EXPECT_TRUE(sd_round_trip.get_number_of_ray_sources() == 0);
+
+    // Conditional cleanup: remove only if test passed so far.
+    if (!::testing::Test::HasFailure()) {
+        std::error_code ec;
+        fs::remove(output_path, ec);
+    }
 }
 
 TEST(io_json, invalid_sun_shape)
 {
+    namespace fs = std::filesystem;
+
+    // Build paths
+    const fs::path project_root(PROJECT_DIR);
+    const fs::path output_path = project_root / "invalid_sun_shape.json";
+
+    // Make simulation data
     SimulationData sd;
     auto sun = SolTrace::Data::make_ray_source<Sun>();
     sun->set_shape(SunShape::GAUSSIAN, 0.01, 0.0, 0.0);
     sd.add_ray_source(sun);
-    const std::string path = "invalid_sun_shape.json";
-    sd.export_json_file(path);
+
+    // Export JSON
+    sd.export_json_file(output_path.string());
 
     // Tamper JSON
     nlohmann::ordered_json root;
     {
-        std::ifstream ifs(path);
+        std::ifstream ifs(output_path);
         ifs >> root;
     }
     root["ray_sources"]["0"]["my_shape"] = "Ellipse"; // invalid
     {
-        std::ofstream ofs(path, std::ios::trunc);
-        ofs << root.dump(2);
+        std::ofstream ofs(output_path, std::ios::trunc);
+        ofs << root.dump(SolTrace::Data::kJsonIndentSpaces);
     }
 
     SimulationData sd2;
-    EXPECT_THROW(sd2.import_json_file(path), std::runtime_error);
+    EXPECT_THROW(sd2.import_json_file(output_path.string()), std::runtime_error);
+
+    // Conditional cleanup: remove only if test passed so far.
+    if (!::testing::Test::HasFailure()) {
+        std::error_code ec;
+        fs::remove(output_path, ec);
+    }
 }
 
 TEST(io_json, invalid_source_type)
 {
+    namespace fs = std::filesystem;
+
+    // Build paths
+    const fs::path project_root(PROJECT_DIR);
+    const fs::path output_path = project_root / "invalid_source_type.json";
+
     SimulationData sd;
     auto sun = SolTrace::Data::make_ray_source<Sun>();
     sun->set_shape(SunShape::GAUSSIAN, 0.01, 0.0, 0.0);
     sd.add_ray_source(sun);
-    const std::string path = "invalid_source_type.json";
-    sd.export_json_file(path);
+
+    // Export JSON
+    sd.export_json_file(output_path.string());
 
     // Tamper JSON
     nlohmann::ordered_json root;
     {
-        std::ifstream ifs(path);
+        std::ifstream ifs(output_path.string());
         ifs >> root;
     }
     root["ray_sources"]["0"]["source_type"] = "The Moon"; // invalid
     {
-        std::ofstream ofs(path, std::ios::trunc);
+        std::ofstream ofs(output_path.string(), std::ios::trunc);
         ofs << root.dump(2);
     }
 
     SimulationData sd2;
-    EXPECT_THROW(sd2.import_json_file(path), std::runtime_error);
+    EXPECT_THROW(sd2.import_json_file(output_path.string()), std::runtime_error);
+
+    // Conditional cleanup: remove only if test passed so far.
+    if (!::testing::Test::HasFailure()) {
+        std::error_code ec;
+        fs::remove(output_path, ec);
+    }
 }
 
 TEST(io_json, multi_ray_source)
@@ -261,7 +307,7 @@ TEST(io_json, multi_ray_source)
 
     // Add sun
     auto sun = make_ray_source<Sun>();
-    double nan = std::numeric_limits<double>::quiet_NaN();
+    constexpr double nan = std::numeric_limits<double>::quiet_NaN();
     sun->set_shape(SolTrace::Data::SunShape::GAUSSIAN, 1.0, nan, nan, {}, {});
     sd_original.add_ray_source(sun);
 
@@ -279,6 +325,12 @@ TEST(io_json, multi_ray_source)
     // Check ray sources
     EXPECT_EQ(sd_original.get_number_of_ray_sources(), sd_round_trip.get_number_of_ray_sources());
     EXPECT_EQ(sd_round_trip.get_number_of_ray_sources(), 2);
+
+    // Conditional cleanup: remove only if test passed so far.
+    if (!::testing::Test::HasFailure()) {
+        std::error_code ec;
+        fs::remove(output_path, ec);
+    }
 }
 
 TEST(io_json, performance_comparison)
@@ -364,5 +416,10 @@ TEST(io_json, performance_comparison)
 
     }
     
-
+    // Conditional cleanup: remove only if test passed so far.
+    if (!::testing::Test::HasFailure()) {
+        std::error_code ec;
+        fs::remove(output_path_1, ec);
+        fs::remove(output_path_2, ec);
+    }
 }

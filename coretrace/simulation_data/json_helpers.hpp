@@ -17,6 +17,8 @@
 
 namespace SolTrace::Data {
 
+    const int kJsonIndentSpaces = 4;
+
     inline double json_get_double(const nlohmann::ordered_json& jnode, std::string key)
     {
         auto jval = jnode[key];

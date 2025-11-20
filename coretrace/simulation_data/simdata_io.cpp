@@ -787,7 +787,7 @@ void write_json_file(SimulationData& sd, std::string filename)
     std::ofstream ofs(filename, std::ios::out | std::ios::trunc);
     if (!ofs.is_open())
         throw std::runtime_error("Failure writing json");
-    ofs << root.dump(4) << '\n';
+    ofs << root.dump(kJsonIndentSpaces) << '\n';
 
     return;
 }

@@ -16,6 +16,20 @@
 
 namespace SolTrace::Data {
 
+/**
+* @brief Lookup an enumeration value from its string representation.
+*
+* Performs a reverse lookup on a forward (enum->string) map to find the
+* enumeration value whose associated string exactly matches @p str.
+* If no match is found, the provided @p unknown value is returned.
+*
+* @tparam EnumT Enumeration type.
+* @param str String to search for.
+* @param forward_map Map from enumeration values to their string names.
+* @param unknown Fallback value returned when @p str is not present.
+* @return Matching enumeration value, or @p unknown if not found.
+*
+*/
 template<typename EnumT>
 EnumT get_enum_from_string(const std::string& str, 
     const std::map<EnumT, std::string>& forward_map, 
