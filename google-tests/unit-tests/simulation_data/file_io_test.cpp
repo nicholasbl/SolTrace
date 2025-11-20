@@ -163,7 +163,7 @@ TEST(io_json, precision_comparison)
     simpar_original.latitude = SolTrace::Data::PI / 2.;
     simpar_original.longitude = 1.5816981651658435135814384351384351385143845;
     simpar_original.tolerance = 1e-90;
-    simpar_original.seed = 15654681468168136541;
+    simpar_original.seed = static_cast<int>(15654681468168136541ull);;
 
     // Add sun
     auto sun = make_ray_source<Sun>();
