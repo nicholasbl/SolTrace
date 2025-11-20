@@ -57,7 +57,7 @@ ElementBase::ElementBase(const nlohmann::ordered_json& jnode) : ElementBase()
     this->set_zrot(jnode.at("zrot"));
 
     this->coordinates_initialized = false;
-    this->compute_coordinate_rotations();
+    //this->compute_coordinate_rotations();
 }
 
 ElementBase::~ElementBase()
