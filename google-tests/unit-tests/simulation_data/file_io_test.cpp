@@ -366,18 +366,26 @@ TEST(io_json, performance_comparison)
     NativeRunner runner;
     RunnerStatus sts;
     sts = runner.initialize();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner.initialize() failed";
     sts = runner.setup_simulation(&sd_original);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner.setup_simulation() failed";
     sts = runner.run_simulation();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner.run_simulation() failed";
     SimulationResult result_original;
     sts = runner.report_simulation(&result_original, 0);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner.report_simulation() failed";
 
     // Run round trip case
     NativeRunner runner_round_trip;
     sts = runner_round_trip.initialize();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner_round_trip.initialize() failed";
     sts = runner_round_trip.setup_simulation(&sd_round_trip);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner_round_trip.setup_simulation() failed";
     sts = runner_round_trip.run_simulation();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner_round_trip.run_simulation() failed";
     SimulationResult result_round_trip;
     sts = runner_round_trip.report_simulation(&result_round_trip, 0);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner_round_trip.report_simulation() failed";
     
     // Compare number of records
     ASSERT_EQ(result_original.get_number_of_records(), result_round_trip.get_number_of_records());
