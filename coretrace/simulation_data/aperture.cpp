@@ -78,8 +78,6 @@ aperture_ptr Aperture::make_aperture_from_json(const nlohmann::ordered_json& jno
         throw std::invalid_argument("Missing aperture_type");
     std::string type_str = jnode.at("aperture_type");
     ApertureType aperture_type = get_enum_from_string(type_str, ApertureTypeMap, ApertureType::APERTURE_UNKNOWN);
-    if (aperture_type == ApertureType::APERTURE_UNKNOWN)
-        throw std::invalid_argument("Unknown aperture");
     switch (aperture_type)
     {
         case ApertureType::ANNULUS:                return make_aperture<Annulus>(jnode);
