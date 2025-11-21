@@ -796,6 +796,9 @@ void load_json_file(SimulationData& sd, std::string filename)
 {
     using json = nlohmann::ordered_json;
 
+    // Clear simulation data
+    sd.clear();
+
     // Load json file
     std::ifstream ifs(filename);
     if (!ifs.is_open())

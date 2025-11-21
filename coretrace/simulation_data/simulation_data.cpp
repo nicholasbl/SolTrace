@@ -277,4 +277,14 @@ void SimulationData::export_json_file(const std::string file_name)
     write_json_file(*this, file_name);
 }
 
+void SimulationData::clear(bool reset_parameters)
+{
+    this->my_elements.clear();
+    this->my_sources.clear();
+    this->number_of_elements = 0;
+
+    if (reset_parameters)
+        this->my_parameters = SimulationParameters();   // Reset
+}
+
 } // namespace SolTrace::Data
