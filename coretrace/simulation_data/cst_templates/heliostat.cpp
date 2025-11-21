@@ -32,6 +32,7 @@ namespace SolTrace::Data
         this->elevation_axis.set_values(1.0, 0.0, 0.0);
         this->sun_position.set_values(0.0, 0.0, 1.0);
         this->optics_mirror.set_ideal_reflection();
+        this->optics_back.set_ideal_absorption();
         return;
     }
 
@@ -129,7 +130,7 @@ namespace SolTrace::Data
 
                 // TODO: Make back optical properties accessible to user
                 elem->set_front_optical_properties(this->optics_mirror);
-                elem->set_back_optical_properties(this->optics_mirror);
+                elem->set_back_optical_properties(this->optics_back);
                 elem->enable();
 
                 this->heliostat_area += panel_len_x * panel_len_y;
@@ -309,9 +310,24 @@ namespace SolTrace::Data
         return;
     }
 
-    void Heliostat::set_optics(const OpticalProperties &optics)
+    void Heliostat::set_mirror_optics(const OpticalProperties &optics)
     {
         this->optics_mirror = optics;
+        // TODO: Need to update the subelements!
+        return;
+    }
+
+    void Heliostat::set_back_optics(const OpticalProperties& optics)
+    {
+        this->optics_back = optics;
+        // TODO: Need to update the subelements!
+        return;
+    }
+
+    void Heliostat::set_optics(const OpticalProperties& mirror_optics, const OpticalProperties& back_optics)
+    {
+        this->optics_mirror = mirror_optics;
+        this->optics_back = back_optics;
         // TODO: Need to update the subelements!
         return;
     }

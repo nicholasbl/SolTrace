@@ -90,7 +90,7 @@ TEST(NativeRunner, PerformanceTest)
             // vector_add(1.0, hs_origin, 1.0, aim, aim_point);
 
             auto hs = make_element<Heliostat>();
-            hs->set_optics(mirror);
+            hs->set_mirror_optics(mirror);
             // hs->set_reference_frame_geometry(hs_origin, aim, 0.0);
             hs->set_origin(hs_origin);
             hs->set_aperture_size(2.0 * dx, 2.0 * dy);

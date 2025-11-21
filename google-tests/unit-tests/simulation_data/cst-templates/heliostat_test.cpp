@@ -3,6 +3,7 @@
 #include <native_runner.hpp>
 #include <native_runner_types.hpp>
 #include <simulation_data.hpp>
+#include <simulation_result_export.hpp>
 #include <stage_element.hpp>
 #include <sun.hpp>
 
@@ -18,6 +19,7 @@ using SolTrace::Runner::RunnerStatus;
 using SolTrace::NativeRunner::NativeRunner;
 using SolTrace::NativeRunner::TRayData;
 using SolTrace::NativeRunner::TSystem;
+using SolTrace::NativeRunner::TSun;
 
 // Error Checking Tests for Heliostat
 TEST(Heliostat, ErrorChecking_SetApertureSize)
@@ -149,7 +151,7 @@ TEST(Heliostat, BuildParabolaNone)
     mirror.set_ideal_reflection();
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
-    hs->set_optics(mirror);
+    hs->set_mirror_optics(mirror);
     hs->set_origin(1.0, 1.0, 0.0);
     hs->set_aim_vector(0.0, 0.0, 100.0);
     hs->set_aperture_size(12.0, 12.0);
@@ -170,7 +172,7 @@ TEST(Heliostat, BuildFlatOnAxis)
     mirror.set_ideal_reflection();
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
-    hs->set_optics(mirror);
+    hs->set_mirror_optics(mirror);
     hs->set_origin(1.0, 1.0, 0.0);
     hs->set_aim_vector(0.0, 0.0, 100.0);
     hs->set_aperture_size(12.0, 12.0);
@@ -226,7 +228,7 @@ TEST(Heliostat, Trace)
     vector_add(1.0, hs_origin, 1.0, aim, aim_point);
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
-    hs->set_optics(mirror);
+    hs->set_mirror_optics(mirror);
     // hs->set_origin(hs_origin);
     // hs->set_aim_vector(0.0, 0.0, 2.0);
     // hs->set_zrot(0.0);
@@ -348,7 +350,7 @@ TEST(Heliostat, ErrorChecking_UpdateGeometry)
     vector_add(1.0, hs_origin, 1.0, aim, aim_point);
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
-    hs->set_optics(mirror);
+    hs->set_mirror_optics(mirror);
     // hs->set_origin(hs_origin);
     // hs->set_aim_vector(0.0, 0.0, 2.0);
     // hs->set_zrot(0.0);
@@ -406,7 +408,7 @@ TEST(Heliostat, UpdateGeometry)
     Vector3d abs_origin(0.0, 0.0, 2.0);
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
-    hs->set_optics(mirror);
+    hs->set_mirror_optics(mirror);
     hs->set_origin(1.0, 1.0, 0.0);
     hs->set_aperture_size(12.0, 12.0);
     hs->set_number_panels(3, 4);
