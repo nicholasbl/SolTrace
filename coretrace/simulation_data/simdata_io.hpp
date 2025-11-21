@@ -45,7 +45,6 @@ EnumT get_enum_from_string(const std::string& str,
 
     return unknown;
 }
-	
 bool load_stinput_file(SimulationData& sd, std::string filename);
 
 void write_json_file(SimulationData& sd, std::string filename);
