@@ -26,7 +26,7 @@ namespace SolTrace::Data
         UNKNOWN
     };
 
-    inline std::map<InteractionType, std::string> InteractionTypeMap =
+    inline const std::map<InteractionType, std::string> InteractionTypeMap =
     {
         {InteractionType::REFLECTION, "REFLECTION"},
         {InteractionType::REFRACTION, "REFRACTION"},

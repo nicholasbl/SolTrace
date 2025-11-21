@@ -42,7 +42,7 @@ OpticalProperties::OpticalProperties(const nlohmann::ordered_json& jnode)
 
 void OpticalProperties::write_json(nlohmann::ordered_json& jnode) const
 {
-    jnode["my_type"] = InteractionTypeMap[this->my_type];
+    jnode["my_type"] = InteractionTypeMap.at(this->my_type);
     jnode["error_distribution_type"] = DistributionTypeMap.at(this->error_distribution_type);
     jnode["transmissivity"] = this->transmitivity;
     jnode["reflectivity"] = this->reflectivity;
