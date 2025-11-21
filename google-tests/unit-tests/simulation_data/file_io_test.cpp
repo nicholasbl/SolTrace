@@ -94,7 +94,7 @@ TEST(io_json, json_round_trip)
 
     // Full structural equality
     ASSERT_TRUE(root1 == root2);
-    return;
+
     // Conditional cleanup: remove only if test passed so far.
     if (!::testing::Test::HasFailure()) {
         std::error_code ec;
