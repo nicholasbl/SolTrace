@@ -738,7 +738,6 @@ void write_json_file(SimulationData& sd, std::string filename)
                 jsrc["sigma"] = sun_ptr->get_sigma();           // double
                 jsrc["half_width"] = sun_ptr->get_half_width(); // double
                 jsrc["csr"] = sun_ptr->get_circumsolar_ratio(); // double
-                
                 std::vector<double> user_angle, user_intensity;
                 sun_ptr->get_user_data(user_angle, user_intensity);
                 jsrc["user_angle"] = user_angle;                // vector<double>
