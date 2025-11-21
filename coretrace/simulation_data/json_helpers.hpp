@@ -23,7 +23,7 @@ namespace SolTrace::Data {
 
     inline double json_get_double(const nlohmann::ordered_json& jnode, std::string key)
     {
-        auto jval = jnode[key];
+        auto jval = jnode.at(key);
         if (jval.is_null())
             return std::numeric_limits<double>::quiet_NaN();
         else

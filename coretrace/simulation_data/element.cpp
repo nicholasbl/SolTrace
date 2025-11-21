@@ -31,12 +31,12 @@ ElementBase::ElementBase() : Element(),
 
 ElementBase::ElementBase(const nlohmann::ordered_json& jnode) : ElementBase()
 {
-    if (jnode.at("active"))
+    if (jnode.at("active").get<bool>())
         this->enable();
     else
         this->disable();
 
-    if (jnode.at("virtual_flag"))
+    if (jnode.at("virtual_flag").get<bool>())
         this->mark_virtual();
     else
         this->unmark_virtual();

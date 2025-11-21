@@ -16,7 +16,7 @@ StageElement::StageElement(int_fast64_t stage) : CompositeElement()
 StageElement::StageElement(const nlohmann::ordered_json& jnode) : CompositeElement(jnode)
 {
     // Check that it is a stage
-    if (jnode.contains("is_stage") == false || jnode.at("is_stage") == false)
+    if (jnode.contains("is_stage") == false || jnode.at("is_stage").get<bool>() == false)
     {
         std::stringstream ss;
         ss << "JSON node is not a valid stage: ";
