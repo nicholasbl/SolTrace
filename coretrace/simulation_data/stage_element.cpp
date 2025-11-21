@@ -19,7 +19,12 @@ StageElement::StageElement(const nlohmann::ordered_json& jnode) : CompositeEleme
     if (jnode.contains("is_stage") == false || jnode.at("is_stage") == false)
     {
         std::stringstream ss;
-        ss << "json node is not a stage.";
+        ss << "JSON node is not a valid stage: ";
+        if (jnode.contains("is_stage") == false) {
+            ss << "missing 'is_stage' field.";
+        } else {
+            ss << "'is_stage' field is present but has value: " << jnode.at("is_stage") << ".";
+        }
         throw std::invalid_argument(ss.str());
     }
     // Get and set stage number
