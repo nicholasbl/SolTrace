@@ -697,7 +697,7 @@ void write_json_file(SimulationData& sd, std::string filename)
 
     // Write general meta data
     {
-        root["schema_version"] = "2025.11.12";
+        root["schema_version"] = kSchemaVersion;
         root["number_of_elements"] = sd.get_number_of_elements();
     }
 
