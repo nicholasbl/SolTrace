@@ -401,7 +401,6 @@ TEST(io_json, performance_comparison)
     SimulationResult result_round_trip;
     sts = runner_round_trip.report_simulation(&result_round_trip, 0);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS) << "runner_round_trip.report_simulation() failed";
-    
     // Compare number of records
     ASSERT_EQ(result_original.get_number_of_records(), result_round_trip.get_number_of_records());
 
