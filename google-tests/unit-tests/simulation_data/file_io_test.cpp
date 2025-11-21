@@ -163,7 +163,7 @@ TEST(io_json, precision_comparison)
     simpar_original.latitude = SolTrace::Data::PI / 2.;
     simpar_original.longitude = 1.5816981651658435135814384351384351385143845;
     simpar_original.tolerance = 1e-90;
-    simpar_original.seed = static_cast<int>(15654681468168136541ull);;
+    simpar_original.seed = static_cast<int>(15654681468168136541ull);
 
     // Add sun
     auto sun = make_ray_source<Sun>();
@@ -437,7 +437,7 @@ TEST(io_json, performance_comparison)
         }
 
     }
-    
+
     // Conditional cleanup: remove only if test passed so far.
     if (!::testing::Test::HasFailure()) {
         std::error_code ec;
@@ -757,7 +757,7 @@ TEST(io_json, stage_read_fail)
     json jstage;
     get_default_element_base(jstage);
     jstage["is_stage"] = false;
-    jstage["elements"] = json::object();    // Empty node
+    jstage["elements"] = json::object(); // Empty node
 
     // Try to make stage
     EXPECT_THROW(make_stage(jstage), std::invalid_argument);

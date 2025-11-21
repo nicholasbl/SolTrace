@@ -36,9 +36,7 @@ namespace SolTrace::Data
                 composite_element_ptr comp = make_element<CompositeElement>(jelement);
                 this->add_element(comp);
             }
-            
         }
-
         return;
     }
 
