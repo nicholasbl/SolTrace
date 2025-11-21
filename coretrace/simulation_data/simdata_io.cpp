@@ -838,7 +838,6 @@ void load_json_file(SimulationData& sd, std::string filename)
             // Error reading sunshape
             throw std::runtime_error("Error reading sun shape");
         }
-            
         double sigma = json_get_double(jsrc, "sigma");
         double half_width = json_get_double(jsrc, "half_width");
         double csr = json_get_double(jsrc, "csr");
