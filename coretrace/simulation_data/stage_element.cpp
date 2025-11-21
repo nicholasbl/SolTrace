@@ -22,7 +22,6 @@ StageElement::StageElement(const nlohmann::ordered_json& jnode) : CompositeEleme
         ss << "json node is not a stage.";
         throw std::invalid_argument(ss.str());
     }
-    
     // Get and set stage number
     int stage = jnode.at("stage");
     this->set_stage(stage);
