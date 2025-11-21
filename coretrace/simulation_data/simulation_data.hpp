@@ -276,7 +276,23 @@ public:
 
     bool import_from_file(const char *file_name);
     bool import_from_file(const std::string file_name);
+
+    /**
+     * @brief Import simulation data from a JSON file.
+     * @param file_name Path to the JSON file to import.
+     * @throws std::runtime_error if the file cannot be read or parsed.
+     * 
+     * Loads simulation data from the specified JSON file and updates the current simulation state.
+     */
     void import_json_file(const std::string file_name);
+
+    /**
+     * @brief Export simulation data to a JSON file.
+     * @param file_name Path to the JSON file to write.
+     * @throws std::runtime_error if the file cannot be written.
+     * 
+     * Serializes the current simulation data and writes it to the specified JSON file.
+     */
     void export_json_file(const std::string file_name);
 
 private:
