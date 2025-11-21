@@ -1,6 +1,7 @@
+#include "stage_element.hpp"
+
 #include <sstream>
 
-#include "stage_element.hpp"
 #include "element.hpp"
 #include "json_helpers.hpp"
 

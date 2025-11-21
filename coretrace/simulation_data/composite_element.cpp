@@ -1,8 +1,11 @@
 
 #include "composite_element.hpp"
-#include "single_element.hpp"
 
 #include <sstream>
+
+#include "single_element.hpp"
+
+
 
 namespace SolTrace::Data
 {
