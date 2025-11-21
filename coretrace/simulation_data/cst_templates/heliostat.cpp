@@ -259,18 +259,39 @@ namespace SolTrace::Data
         vector_add(1.0, this->get_origin_ref(),
                    1000.0, this->aim);
 
+        // Elevation axis
         // Project into xy-plane
-        aim_vector[2] = 0.0;
-        double theta = acos(aim_vector[0] / vector_norm(aim_vector));
-        this->set_zrot_radians(theta);
+        Vector3d proj_aim_vector = aim_vector;
+        proj_aim_vector[2] = 0.0;
+        double aim_azimuth = acos(proj_aim_vector[1] / vector_norm(proj_aim_vector)) - PI;
 
-        // std::cout << "Origin: " << this->origin
-        //           << "\nAim Point: " << this->aim
-        //           << "\nZ Rot: " << this->zrot
-        //           << "\nAim Vector: " << aim_vector
-        //           << "\nTarget: " << this->target_pos
-        //           << "\nTarget Vector: " << target_dir
-        //           << std::endl;
+        Vector3d elevation_axis = { 1.0, 0.0, 0.0 };
+        Vector3d rotated_elevation_axis;
+        rotate_vector_radians(
+            { 0.0, 0.0, 1.0 },
+            elevation_axis,
+            -aim_azimuth,
+            rotated_elevation_axis);
+
+        Vector3d helio_y_axis;
+        cross_product(aim_vector, rotated_elevation_axis, helio_y_axis);
+        helio_y_axis.make_unit();
+
+        double gamma = 0.0;
+        if (aim_vector[1] != 1.0 && aim_vector[1] != -1.0)
+        {
+            double beta = asin(aim_vector[1]);
+            gamma = -atan2(rotated_elevation_axis[1] / cos(beta), helio_y_axis[1] / cos(beta));
+        }
+        this->set_zrot_radians(gamma);
+
+         //std::cout << "Origin: " << this->origin
+         //          << "\nAim Point: " << this->aim
+         //          << "\nZ Rot: " << this->zrot
+         //          << "\nAim Vector: " << aim_vector
+         //          << "\nTarget: " << this->target_pos
+         //          << "\nTarget Vector: " << target_dir
+         //          << std::endl;
 
         this->compute_coordinate_rotations();
 
