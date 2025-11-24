@@ -161,7 +161,6 @@ void Errors(
 	double Euler[3] = {0.0, 0.0, 0.0};
 	double PosIn[3] = {0.0, 0.0, 0.0};
 	double PosOut[3] = {0.0, 0.0, 0.0};
-	// char dist = 'g';
 	double delop = 0, thetax = 0, thetay = 0, theta2 = 0, phi = 0, theta = 0, stest = 0;
 	uint_fast64_t i;
 	double RRefToLoc[3][3] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
@@ -194,7 +193,7 @@ void Errors(
 	// g,p,d
 	if (Source == 1)  // sun error
 	{
-		delop = Sun->Sigma / 1000.0;
+		delop = Sun->Sigma;
 
 		switch (Sun->ShapeIndex)
 		{
@@ -212,8 +211,9 @@ void Errors(
 				thetay = 2.0 * delop * myrng() - delop;
 				theta2 = thetax * thetax + thetay * thetay;
 			} while (theta2 > (delop * delop));
+			//theta = delop * sqrt(myrng()); // Wang et al. 2010 Solar Energy 195 461-474
+			//theta2 = theta * theta;
 			break;
-
 		case SunShape::LIMBDARKENED:
 			do {
 				thetax = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
@@ -223,10 +223,7 @@ void Errors(
 
 				stest = 1.0 - 0.5138 * std::pow((theta / Sun->MaxAngle), 4);
 			} while ((myrng() > (stest / Sun->MaxIntensity)) || (theta2 > (Sun->MaxAngle * Sun->MaxAngle)));
-
-			theta2 = theta2 / 1.e6; // convert from mrad^2 to rad^2
 			break;
-
 		case SunShape::BUIE_CSR:
 			// This sun model has long tails so this might take more iterations
 			// TODO: add an option to set the max angle (thereby reducing the tail)
@@ -243,10 +240,7 @@ void Errors(
 					stest = std::exp(Sun->buie_kappa) * std::pow(std::abs(theta), Sun->buie_gamma);
 
 			} while ((myrng() > (stest / Sun->MaxIntensity)) || (theta2 > (Sun->MaxAngle * Sun->MaxAngle)));
-
-			theta2 = theta2 / 1.e6; // convert from mrad^2 to rad^2
 			break;
-
 		case SunShape::USER_DEFINED:
 			do
 			{
@@ -266,10 +260,7 @@ void Errors(
 					(Sun->SunShapeAngle[i] - Sun->SunShapeAngle[i - 1]);
 
 			} while ((myrng() > (stest / Sun->MaxIntensity)) || (theta2 > (Sun->MaxAngle * Sun->MaxAngle)));
-
-            theta2 = theta2 / 1.e6;	// convert from mrad^2 to rad^2
 			break;
-
 		default:
 			// TODO: Add error message here.
             //throw std::exception("Unsupported sun shape in Errors function.");
@@ -281,7 +272,7 @@ void Errors(
 	{
 		// dist = OptProperties->DistributionType; // errors
 		// // delop = sqrt(4.0*sqr(OptProperties->RMSSlopeError)+sqr(OptProperties->RMSSpecError))/1000.0;
-		delop = OptProperties->specularity_error / 1000.0;
+		delop = OptProperties->specularity_error;
 
 	Label_50:
 		switch (OptProperties->error_distribution_type)
@@ -317,6 +308,8 @@ void Errors(
 
 	// {Generate errors in terms of direction cosines in local ray coordinate system}
 	theta = sqrt(theta2);
+	theta = theta / 1.e3; // convert from mrad to rad
+
 
 	// phi = atan2(thetay, thetax); //This function appears to  present irregularities that bias results incorrectly for small values of thetay or thetax
 	phi = myrng() * 2.0 * PI; // Therefore have chosen to randomize phi rather than calculate from randomized theta components

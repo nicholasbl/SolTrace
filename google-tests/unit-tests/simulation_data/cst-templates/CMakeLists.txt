@@ -19,6 +19,7 @@ set(CST_TEST_SRC
 	parabolic_trough_test.cpp
 	parabolic_dish_test.cpp
 	heliostat_test.cpp
+	single_heliostat_test.cpp
 )
 
 add_executable(CSTUnitTests

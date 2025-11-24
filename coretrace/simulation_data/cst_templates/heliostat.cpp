@@ -259,12 +259,10 @@ namespace SolTrace::Data
         vector_add(1.0, this->get_origin_ref(),
                    1000.0, this->aim);
 
-        // Elevation axis
         // Project into xy-plane
-        Vector3d proj_aim_vector = aim_vector;
-        proj_aim_vector[2] = 0.0;
-        double aim_azimuth = acos(proj_aim_vector[1] / vector_norm(proj_aim_vector)) - PI;
+        double aim_azimuth = atan2(aim_vector[0], aim_vector[1]);
 
+        // Elevation axis
         Vector3d elevation_axis = { 1.0, 0.0, 0.0 };
         Vector3d rotated_elevation_axis;
         rotate_vector_radians(
