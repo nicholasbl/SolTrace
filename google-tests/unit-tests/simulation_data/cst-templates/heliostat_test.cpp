@@ -450,7 +450,7 @@ TEST(Heliostat, TraceOffAxisCanting)
     SimulationResult result;
     sts = my_runner.report_simulation(&result, 0);
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-    result.write_csv_file("native_runner_result_dump.csv");
+    //result.write_csv_file("native_runner_result_dump.csv");
 
     const TSystem* sys = my_runner.get_system();
     const TRayData* ray_data = &(sys->RayData);
