@@ -17,6 +17,137 @@
 using ResultPtr = std::shared_ptr<ResultDB>;
 using SimResult = std::variant<ResultPtr, QString>;
 
+// =============================================================================
+
+using Vec3i = std::array<int, 3>;
+
+inline Vec3i floor(QVector3D x) {
+    return { static_cast<int>(std::floor(x.x())),
+             static_cast<int>(std::floor(x.y())),
+             static_cast<int>(std::floor(x.z())) };
+}
+
+inline Vec3i ceil(QVector3D x) {
+    return { static_cast<int>(std::ceil(x.x())),
+             static_cast<int>(std::ceil(x.y())),
+             static_cast<int>(std::ceil(x.z())) };
+}
+
+Vec3i world_to_voxel(QVector3D const& p,
+                     QVector3D const& origin,
+                     float            cellSize) {
+    auto rel = (p - origin) / cellSize;
+    return floor(rel);
+}
+
+template <typename T>
+void raster_segment(Grid3D<T>&       grid,
+                    QVector3D const& p0_grid,
+                    QVector3D const& p1_grid) {
+    // Direction in grid space
+    QVector3D d = p1_grid - p0_grid;
+
+    // Start and end voxels (integer indices)
+    int x = static_cast<int>(std::floor(p0_grid.x()));
+    int y = static_cast<int>(std::floor(p0_grid.y()));
+    int z = static_cast<int>(std::floor(p0_grid.z()));
+
+    int x1 = static_cast<int>(std::floor(p1_grid.x()));
+    int y1 = static_cast<int>(std::floor(p1_grid.y()));
+    int z1 = static_cast<int>(std::floor(p1_grid.z()));
+
+    auto in_bounds = [&](int xi, int yi, int zi) {
+        return xi >= 0 && yi >= 0 && zi >= 0 &&
+               xi < static_cast<int>(grid.size_x()) &&
+               yi < static_cast<int>(grid.size_y()) &&
+               zi < static_cast<int>(grid.size_z());
+    };
+
+    // If both endpoints are outside and you don't want to handle clipping,
+    // you can early out. More robust is to clip the segment to the grid box.
+    if (!in_bounds(x, y, z) && !in_bounds(x1, y1, z1)) return;
+
+    // Step direction per axis (-1, 0, or +1)
+    int stepX = (d.x() > 0.f) ? 1 : (d.x() < 0.f ? -1 : 0);
+    int stepY = (d.y() > 0.f) ? 1 : (d.y() < 0.f ? -1 : 0);
+    int stepZ = (d.z() > 0.f) ? 1 : (d.z() < 0.f ? -1 : 0);
+
+    float tMaxX, tMaxY, tMaxZ;
+    float tDeltaX, tDeltaY, tDeltaZ;
+
+    auto INF = std::numeric_limits<float>::infinity();
+
+    // X axis
+    if (stepX != 0) {
+        float nextVoxelBoundary = (stepX > 0) ? (static_cast<float>(x) + 1.0f)
+                                              : static_cast<float>(x);
+        tMaxX                   = (nextVoxelBoundary - p0_grid.x()) / d.x();
+        tDeltaX                 = 1.0f / std::fabs(d.x());
+    } else {
+        tMaxX   = INF;
+        tDeltaX = INF;
+    }
+
+    // Y axis
+    if (stepY != 0) {
+        float nextVoxelBoundary = (stepY > 0) ? (static_cast<float>(y) + 1.0f)
+                                              : static_cast<float>(y);
+        tMaxY                   = (nextVoxelBoundary - p0_grid.y()) / d.y();
+        tDeltaY                 = 1.0f / std::fabs(d.y());
+    } else {
+        tMaxY   = INF;
+        tDeltaY = INF;
+    }
+
+    // Z axis
+    if (stepZ != 0) {
+        float nextVoxelBoundary = (stepZ > 0) ? (static_cast<float>(z) + 1.0f)
+                                              : static_cast<float>(z);
+        tMaxZ                   = (nextVoxelBoundary - p0_grid.z()) / d.z();
+        tDeltaZ                 = 1.0f / std::fabs(d.z());
+    } else {
+        tMaxZ   = INF;
+        tDeltaZ = INF;
+    }
+
+    // Make sure start voxel is inside before touching the grid
+    if (in_bounds(x, y, z)) {
+        grid(static_cast<size_t>(x),
+             static_cast<size_t>(y),
+             static_cast<size_t>(z)) += T(1);
+    }
+
+    // Traverse until we reach the voxel containing p1
+    while (x != x1 || y != y1 || z != z1) {
+        // Advance to next voxel boundary in the dimension with smallest tMax
+        if (tMaxX < tMaxY) {
+            if (tMaxX < tMaxZ) {
+                x += stepX;
+                tMaxX += tDeltaX;
+            } else {
+                z += stepZ;
+                tMaxZ += tDeltaZ;
+            }
+        } else {
+            if (tMaxY < tMaxZ) {
+                y += stepY;
+                tMaxY += tDeltaY;
+            } else {
+                z += stepZ;
+                tMaxZ += tDeltaZ;
+            }
+        }
+
+        if (!in_bounds(x, y, z)) break;
+
+        grid(static_cast<size_t>(x),
+             static_cast<size_t>(y),
+             static_cast<size_t>(z)) += T(1);
+    }
+}
+
+// =============================================================================
+
 // Qconcurrent will auto call start and finish on the promise
 
 #define SOLTRACE_SECTION(FUNC, VALUE, TEXT)                                    \
@@ -46,6 +177,9 @@ static void execute_runner(QPromise<SimResult>& promise, SimDataPtr data) {
         SOLTRACE_SECTION(initialize(), 0, "Starting simulation");
 
         SOLTRACE_SECTION(setup_simulation(data.get()), 0, "Setup simulation");
+
+        // run simulation will indeed run, but we need to stuff it into another
+        // process so we can poll status.
 
         SOLTRACE_SECTION(run_simulation(), 10, "Run simulation");
 
@@ -327,13 +461,40 @@ void RayGeometry::rebuild_geometry() {
         }
     }
 
-    // for (auto l : verts) {
-    //     qDebug() << "V" << l.position << l.uv;
-    // }
+    // Compute volume
+    if (index.size() > 10) {
+        auto grid_size = ceil((bounds_max - bounds_min).normalized() * 128.0);
 
-    // for (auto l : index) {
-    //     qDebug() << "I" << l;
-    // }
+        qDebug() << grid_size[0] << grid_size[1] << grid_size[2];
+
+        auto cell_size = (bounds_max.x() - bounds_min.x()) / grid_size[0];
+
+        Grid3D<float> grid(grid_size[0], grid_size[1], grid_size[2]);
+
+        for (auto index_i = 0; index_i < index.size() - 1; index_i++) {
+            auto p0 = world_to_voxel(
+                verts[index[index_i]].position, bounds_min, cell_size);
+            auto p1 = world_to_voxel(
+                verts[index[index_i + 1]].position, bounds_min, cell_size);
+
+            raster_segment(grid,
+                           QVector3D(p0[0], p0[1], p0[2]),
+                           QVector3D(p1[0], p1[1], p1[2]));
+        }
+
+        // normalize
+        float largest = 0.0;
+        for (auto x : grid) {
+            largest = std::max(x, largest);
+        }
+
+        for (auto& x : grid) {
+            x /= largest;
+        }
+
+        m_ray_volume->set_grid(
+            std::move(grid), bounds_min, (bounds_max - bounds_min));
+    }
 
     auto vertex_buffer = QByteArray(reinterpret_cast<const char*>(verts.data()),
                                     verts.size() * sizeof(LineVertex));
@@ -365,6 +526,9 @@ void RayGeometry::rebuild_geometry() {
 
 RayGeometry::RayGeometry(QQuick3DObject* parent) : QQuick3DGeometry(parent) {
 
+    // WATCH OUT HERE
+    m_ray_volume = new RayVolume();
+
     connect(this,
             &RayGeometry::show_percent_changed,
             this,
@@ -375,4 +539,60 @@ void RayGeometry::set_database(std::shared_ptr<ResultDB>&& data) {
     qDebug() << "New ray geometry database";
     m_database = std::move(data);
     rebuild_geometry();
+}
+
+// =============================================================================
+
+void RayVolume::clean() {
+    m_dirty = false;
+    m_data.resize(m_grid.size() * sizeof(InstanceTableEntry));
+
+    if (m_grid.size() == 0) { return; }
+
+    auto delta = m_extents.x() / m_grid.size_x();
+
+    auto dest = reinterpret_cast<InstanceTableEntry*>(m_data.data());
+
+    for (int x = 0; x < m_grid.size_x(); x++) {
+        for (int y = 0; y < m_grid.size_y(); y++) {
+            for (int z = 0; z < m_grid.size_z(); z++) {
+                auto p = QVector3D(x, y, z) * delta + m_origin;
+
+                auto data = m_grid(x, y, z);
+
+                if (data > 0.5) { qDebug() << x << y << z << data << delta; }
+
+                float scale = delta * data;
+
+                dest[m_grid.index(x, y, z)] =
+                    calculateTableEntry(p,
+                                        QVector3D(scale, scale, scale),
+                                        QVector3D(),
+                                        QColor::fromRgb(255, 255, 255));
+            }
+        }
+    }
+}
+
+RayVolume::RayVolume() {
+    markDirty();
+    m_dirty = true;
+}
+
+void RayVolume::set_grid(Grid3D<float>&& g,
+                         QVector3D       origin,
+                         QVector3D       extents) {
+    m_grid    = std::move(g);
+    m_origin  = origin;
+    m_extents = extents;
+    m_dirty   = true;
+    markDirty();
+}
+
+QByteArray RayVolume::getInstanceBuffer(int* instance_count) {
+    if (m_dirty) clean();
+
+    if (instance_count) { *instance_count = m_grid.size(); }
+
+    return m_data;
 }

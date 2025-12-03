@@ -136,6 +136,21 @@ ApplicationWindow {
                     }
                 ]
             }
+
+            Q3D.Model {
+                source: "#Sphere"
+                materials: [
+                    Q3D.PrincipledMaterial {
+                        baseColor: "white"
+                        metalness: 0.0
+                        roughness: 1.0
+                    }
+                ]
+
+                scale: Qt.vector3d(0.01, 0.01, 0.01)
+
+                instancing: detail_pane.current_set.element_model.ray_geometry.ray_volume
+            }
         }
     }
 

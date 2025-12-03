@@ -88,7 +88,7 @@ struct Cone : public Surface
     virtual ~Cone() {}
     virtual void write_json(nlohmann::ordered_json& jnode) const override;
 
-    virtual double z(double x, double y) const;
+    virtual double z(double x, double y) const override;
 };
 
 struct Cylinder : public Surface
@@ -103,7 +103,7 @@ struct Cylinder : public Surface
     virtual ~Cylinder() {}
     virtual void write_json(nlohmann::ordered_json& jnode) const override;
 
-    virtual double z(double x, double y) const;
+    virtual double z(double x, double y) const override;
 };
 
 struct Flat : public Surface
@@ -131,7 +131,7 @@ struct Parabola : public Surface
     virtual ~Parabola() {}
     virtual void write_json(nlohmann::ordered_json& jnode) const override;
 
-    virtual double z(double x, double y) const;
+    virtual double z(double x, double y) const override;
 };
 
 struct Sphere : public Surface
@@ -153,7 +153,7 @@ struct Sphere : public Surface
     virtual ~Sphere() {}
     virtual void write_json(nlohmann::ordered_json& jnode) const override;
 
-    virtual double z(double x, double y) const;
+    virtual double z(double x, double y) const override;
 };
 
 // TODO: Add other surface types. Documentation has the following:
