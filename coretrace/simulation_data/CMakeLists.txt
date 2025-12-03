@@ -2,6 +2,16 @@ Project(simdata)
 
 include_directories(.)
 include_directories(cst_templates)
+include_directories(solar_position_calculators)
+
+include(FetchContent)
+    FetchContent_Declare(
+        nlohmann_json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG v3.11.3
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(nlohmann_json)
 
 set(SIMDATA_SRC
     aperture.cpp
@@ -23,6 +33,10 @@ set(SIMDATA_SRC
     cst_templates/parabolic_dish.cpp
     cst_templates/parabolic_trough.cpp
     cst_templates/utilities.cpp
+    solar_position_calculators/solar_position_calculator.cpp
+    solar_position_calculators/lib_irradproc.cpp
+    solar_position_calculators/solpos.cpp
+    solar_position_calculators/basic_sun_position.cpp
 )
 
 # Only headers in simulation_data (including cst_templates subfolder)
@@ -34,6 +48,7 @@ set(SIMDATA_HDRS
     datetime.hpp
     element.hpp
     error_distributions.hpp
+    json_helpers.hpp
     simulation_data_export.hpp
     matvec.hpp
     optical_properties.hpp
@@ -53,6 +68,10 @@ set(SIMDATA_HDRS
     cst_templates/parabolic_dish.hpp
     cst_templates/parabolic_trough.hpp
     cst_templates/utilities.hpp
+    solar_position_calculators/solar_position_calculator.hpp
+    solar_position_calculators/lib_irradproc.h
+    solar_position_calculators/solpos00.h
+    solar_position_calculators/basic_sun_position.hpp
 )
 
 source_group("Header Files" FILES ${SIMDATA_HDRS})
@@ -70,6 +89,9 @@ set_target_properties(simdata
     DEBUG_POSTFIX "d"
     PREFIX ""
 )
+
+# Link JSON (propagates its include directory)
+target_link_libraries(simdata PUBLIC nlohmann_json::nlohmann_json)
 
 if (NOT APPLE AND ENABLE_COVERAGE)
     # SET(CMAKE_CXX_FLAGS "-O0 -coverage -fkeep-inline-functions")
