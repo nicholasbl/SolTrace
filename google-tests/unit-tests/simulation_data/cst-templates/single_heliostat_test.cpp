@@ -190,7 +190,6 @@ protected:
                 if (hit_element < 0) continue;  // create or exit
                 
                 // Check heliostat elements
-                element_ptr ptr = nullptr;
                 for (auto iter = heliostat->get_const_iterator(); !heliostat->is_at_end(iter); ++iter) {
                     element_id facet_id = iter->second->get_id();
                     if (hit_element == facet_id) {
@@ -244,8 +243,7 @@ protected:
             Vector3d global_position;
 
             // automatically size the min/max x and y
-            for (size_t i = 0; i < result.get_number_of_records(); i++)
-            {
+            for (size_t i = 0; i < result.get_number_of_records(); i++) {
                 const ray_record_ptr rr = result[i];
                 for (size_t j = 0; j < rr->interactions.size(); j++) {
                     if (receiver->get_id() == rr->get_element(j)) {
