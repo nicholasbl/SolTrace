@@ -61,7 +61,7 @@ set(SIMDATA_HDRS
     sun.hpp
     surface.hpp
     vector3d.hpp
-    # virtual_element.hpp
+    virtual_element.hpp
     cst_templates/arclength.hpp
     cst_templates/heliostat.hpp
     cst_templates/linear_fresnel.hpp
