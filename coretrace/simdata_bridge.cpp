@@ -192,7 +192,7 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
 		sun->set_position(sys->Sun.Origin[0], sys->Sun.Origin[1], sys->Sun.Origin[2]);
 
         // Set sun shape
-        SolTrace::Data::DistributionType sun_shape = SolTrace::Data::char_to_distribution(sys->Sun.ShapeIndex);
+        SolTrace::Data::SunShape sun_shape = SolTrace::Data::char_to_sunshape(sys->Sun.ShapeIndex);
         double Sigma = sys->Sun.Sigma;
         double HalfWidth = sys->Sun.Sigma;  // Gaussian and pillbox parameters are stored in Sun.Sigma
         //std::vector<double> user_angle = sys->Sun.SunShapeAngle;
@@ -200,7 +200,7 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
         std::vector<double> user_angle_formatted, user_intensity_formatted;
         convert_user_sun_data(sys->Sun.SunShapeAngle, sys->Sun.SunShapeIntensity,
             user_angle_formatted, user_intensity_formatted);
-        sun->set_shape(sun_shape, Sigma, HalfWidth, user_angle_formatted, user_intensity_formatted);
+        sun->set_shape(sun_shape, Sigma, HalfWidth, 0.0, user_angle_formatted, user_intensity_formatted);
         
         // Attach sun to simulation data
         sd.add_ray_source(sun);
