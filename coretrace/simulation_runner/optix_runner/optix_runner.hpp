@@ -14,15 +14,17 @@ public:
     OptixRunner();
     ~OptixRunner();
 
-    virtual SolTrace::Runner::RunnerStatus initialize();
+    virtual SolTrace::Runner::RunnerStatus initialize() override;
     virtual SolTrace::Runner::RunnerStatus setup_simulation(
-        const SolTrace::Data::SimulationData *data);
+        const SolTrace::Data::SimulationData *data) override;
     virtual SolTrace::Runner::RunnerStatus update_simulation(
-        const SolTrace::Data::SimulationData *data);
-    virtual SolTrace::Runner::RunnerStatus run_simulation();
+        const SolTrace::Data::SimulationData *data) override;
+    virtual SolTrace::Runner::RunnerStatus run_simulation() override;
+    virtual SolTrace::Runner::RunnerStatus status_simulation(double *progress = nullptr) override;
+    virtual SolTrace::Runner::RunnerStatus cancel_simulation() override;
     virtual SolTrace::Runner::RunnerStatus report_simulation(
         SolTrace::Result::SimulationResult *result,
-        int level_spec);
+        int level_spec) override;
 
     SolTrace::Runner::RunnerStatus run_simulation_core(bool write_output);
     SolTrace::Runner::RunnerStatus get_hp_output(std::vector<float4>& hp_vec, std::vector<int>& raynumber_vec);

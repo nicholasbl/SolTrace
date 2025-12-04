@@ -53,14 +53,17 @@
 #include <exception>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
-#include "constants.hpp"
-#include "element.hpp"
-#include "optical_properties.hpp"
-#include "ray_source.hpp"
-#include "simulation_result.hpp"
+#include <constants.hpp>
+#include <element.hpp>
+#include <optical_properties.hpp>
+#include <ray_source.hpp>
+#include <simulation_runner.hpp>
+#include <simulation_result.hpp>
+
 #include "surface_intersection_calculator.hpp"
 
 namespace SolTrace::NativeRunner
@@ -192,14 +195,16 @@ namespace SolTrace::NativeRunner
 		// void set_values(ray_source_ptr rsrc);
 
 		// char ShapeIndex;
-		SolTrace::Data::DistributionType ShapeIndex;
+		SolTrace::Data::SunShape ShapeIndex;
 		double Sigma;
 		bool PointSource;
 
 		std::vector<double> SunShapeAngle;
 		std::vector<double> SunShapeIntensity;
-		double MaxAngle;
+		double MaxAngle; // maximum sun angle (mrad)
 		double MaxIntensity;
+		double buie_kappa; // Buie CSR model kappa parameter
+		double buie_gamma; // Buie CSR model gamma parameter
 
 		double Origin[3];
 
@@ -312,7 +317,8 @@ namespace SolTrace::NativeRunner
 
 	using tstage_ptr = typename std::shared_ptr<TStage>;
 	tstage_ptr make_tstage(const ElementParameters &eparams);
-	tstage_ptr make_tstage(SolTrace::Data::element_ptr el, const ElementParameters &eparams);
+	tstage_ptr make_tstage(SolTrace::Data::element_ptr el,
+						   const ElementParameters &eparams);
 
 	struct TSystem
 	{
@@ -322,9 +328,13 @@ namespace SolTrace::NativeRunner
 		void ClearAll();
 		// void CollectResults();
 
+		mutable std::mutex state_mutex;
+		mutable SolTrace::Runner::RunnerStatus current_state;
+		mutable bool cancel;
+		mutable double progress;
+
 		TSun Sun;
 		std::vector<tstage_ptr> StageList;
-		// std::map<element_id, std::pair<int_fast64_t, int_fast64_t> > id_map;
 
 		// system simulation context data
 		int sim_raycount;

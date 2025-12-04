@@ -5,9 +5,21 @@
 
 namespace SolTrace::NativeRunner {
 
+    // TODO: These two functions are basically the same. Refactor to avoid code duplication.
+	// NOTES:
+	// SurfaceNormalErrors()						Errors()
+    //     - uses slope error							- uses specularity error
+    //     - applies to surface normal (input)		    - applies to ray direction (input)
+    //     - no diffuse option  						- has diffuse option
+	//													- has an dot product check (goto) for surface reflection (requires DFXYZ)
+    //													- handles sun shape errors
+	//      
+    // Plan: Break up surface and sun shape error handling into separate functions
+	//     - remove the special case of diffuse surfaces before Errors()
+    //     - Reduce the random number calls. I.e., sample theta directly rather than thetax and thetay -> this will break tests because the number of RNG calls will change.
+
 void SurfaceNormalErrors(MTRand &myrng,
 						 double CosIn[3],
-						 //  TOpticalProperties *OptProperties,
 						 const OpticalProperties *OptProperties,
 						 double CosOut[3]) noexcept(false) // throw(nanexcept)
 {
@@ -27,10 +39,9 @@ void SurfaceNormalErrors(MTRand &myrng,
 		   Euler[3] = {0.0, 0.0, 0.0};
 	double PosIn[3] = {0.0, 0.0, 0.0},
 		   PosOut[3] = {0.0, 0.0, 0.0};
-	// char dist = ' ';
 	DistributionType dist;
-	double delop = 0.0, delop3 = 0.0, thetax = 0.0,
-		   thetay = 0.0, ttheta = 0.0, theta2 = 0.0,
+	double delop = 0.0, thetax = 0.0,
+		   thetay = 0.0, theta2 = 0.0,
 		   phi = 0.0, theta = 0.0;
 	double RRefToLoc[3][3] = {{0.0, 0.0, 0.0},
 							  {0.0, 0.0, 0.0},
@@ -45,19 +56,19 @@ void SurfaceNormalErrors(MTRand &myrng,
 		{
 			Euler[0] = 0.0;
 			Euler[1] = PI / 2.0;
-			goto Label_9;
 		}
 		else
 		{
 			Euler[0] = PI / 2.0;
-			goto Label_8;
+			Euler[1] = atan2(CosIn[1], sqrt(CosIn[0] * CosIn[0] + CosIn[2] * CosIn[2]));
 		}
 	}
+	else
+	{
+		Euler[0] = atan2(CosIn[0], CosIn[2]);
+		Euler[1] = atan2(CosIn[1], sqrt(CosIn[0] * CosIn[0] + CosIn[2] * CosIn[2]));
+	}
 
-	Euler[0] = atan2(CosIn[0], CosIn[2]);
-Label_8:
-	Euler[1] = atan2(CosIn[1], sqrt(CosIn[0] * CosIn[0] + CosIn[2] * CosIn[2]));
-Label_9:
 	Euler[2] = 0.0;
 
 	CalculateTransformMatrices(Euler, RRefToLoc, RLocToRef);
@@ -68,23 +79,16 @@ Label_9:
 	// delop = OptProperties->RMSSlopeError / 1000.0;
 	delop = OptProperties->slope_error / 1000.0;
 
-	int nninner = 0;
 	switch (dist)
 	{
-	// case 'g':
-	// case 'G':
-	case DistributionType::GAUSSIAN:
+	case DistributionType::GAUSSIAN:		// case 'g':
 		// gaussian distribution
 		thetax = myrng.randNorm(0., delop);
 		thetay = myrng.randNorm(0., delop);
 
 		theta2 = thetax * thetax + thetay * thetay;
-
 		break;
-
-	// case 'p':
-	// case 'P':
-	case DistributionType::PILLBOX:
+	case DistributionType::PILLBOX:			// case 'p':
 		// pillbox distribution
 		do
 		{
@@ -92,7 +96,6 @@ Label_9:
 			thetay = 2.0 * delop * myrng() - delop;
 			theta2 = thetax * thetax + thetay * thetay;
 		} while (theta2 > (delop * delop));
-
 		break;
 	default:
 		// TODO: Need an error here.
@@ -107,9 +110,8 @@ Label_9:
 	/* {Generate errors in terms of direction cosines in local ray coordinate system} */
 	theta = sqrt(theta2);
 	// phi = atan2(thetay, thetax); //This function appears to  present irregularities that bias results incorrectly for small values of thetay or thetax
-	phi = myrng() * 2.0 * 3.1415926535897932385; // Therefore have chosen to randomize phi rather than calculate from randomized theta components
-												 //  obtained from the distribution. The two approaches are equivalent save for this issue with
-												 //  arctan2.      wendelin 01-12-11
+	phi = myrng() * 2.0 * PI; // Therefore have chosen to randomize phi rather than calculate from randomized theta components
+	                          //  obtained from the distribution. The two approaches are equivalent save for this issue with arctan2.      wendelin 01-12-11
 
 	CosOut[0] = sin(theta) * cos(phi);
 	CosOut[1] = sin(theta) * sin(phi);
@@ -160,13 +162,10 @@ void Errors(
 	double PosIn[3] = {0.0, 0.0, 0.0};
 	double PosOut[3] = {0.0, 0.0, 0.0};
 	// char dist = 'g';
-	DistributionType dist = DistributionType::GAUSSIAN;
-	double delop = 0, delop3 = 0, thetax = 0, thetay = 0, ttheta = 0, theta2 = 0, phi = 0, theta = 0, stest = 0;
+	double delop = 0, thetax = 0, thetay = 0, theta2 = 0, phi = 0, theta = 0, stest = 0;
 	uint_fast64_t i;
 	double RRefToLoc[3][3] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
 	double RLocToRef[3][3] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
-
-	// TODO: Rework function without goto statements...
 
 	if (CosIn[2] == 0.0)
 	{
@@ -174,115 +173,154 @@ void Errors(
 		{
 			Euler[0] = 0.0;
 			Euler[1] = PI / 2.0;
-			goto Label_9;
 		}
 		else
 		{
 			Euler[0] = PI / 2.0;
-			goto Label_8;
+			Euler[1] = atan2(CosIn[1], sqrt(CosIn[0] * CosIn[0] + CosIn[2] * CosIn[2]));
 		}
 	}
+	else
+	{
+		Euler[0] = atan2(CosIn[0], CosIn[2]);
+		Euler[1] = atan2(CosIn[1], sqrt(CosIn[0] * CosIn[0] + CosIn[2] * CosIn[2]));
+	}
 
-	Euler[0] = atan2(CosIn[0], CosIn[2]);
-
-Label_8:
-	Euler[1] = atan2(CosIn[1], sqrt(CosIn[0] * CosIn[0] + CosIn[2] * CosIn[2]));
-
-Label_9:
 	Euler[2] = 0.0;
 
 	CalculateTransformMatrices(Euler, RRefToLoc, RLocToRef);
 
+	unsigned int maxcall = 0;
 	// g,p,d
-	if (Source == 1)
+	if (Source == 1)  // sun error
 	{
-		dist = Sun->ShapeIndex; // sun
 		delop = Sun->Sigma / 1000.0;
+
+		switch (Sun->ShapeIndex)
+		{
+		case SunShape::GAUSSIAN:			// case 'g':
+			thetax = myrng.randNorm(0., delop);
+			thetay = myrng.randNorm(0., delop);
+
+			theta2 = thetax * thetax + thetay * thetay;
+			break;
+
+		case SunShape::PILLBOX:				// case 'p':
+			do
+			{
+				thetax = 2.0 * delop * myrng() - delop;
+				thetay = 2.0 * delop * myrng() - delop;
+				theta2 = thetax * thetax + thetay * thetay;
+			} while (theta2 > (delop * delop));
+			break;
+
+		case SunShape::LIMBDARKENED:
+			do {
+				thetax = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
+				thetay = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
+				theta2 = thetax * thetax + thetay * thetay;
+				theta = sqrt(theta2);
+
+				stest = 1.0 - 0.5138 * std::pow((theta / Sun->MaxAngle), 4);
+			} while ((myrng() > (stest / Sun->MaxIntensity)) || (theta2 > (Sun->MaxAngle * Sun->MaxAngle)));
+
+			theta2 = theta2 / 1.e6; // convert from mrad^2 to rad^2
+			break;
+
+		case SunShape::BUIE_CSR:
+			// This sun model has long tails so this might take more iterations
+			// TODO: add an option to set the max angle (thereby reducing the tail)
+			do 
+			{
+				thetax = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
+				thetay = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
+				theta2 = thetax * thetax + thetay * thetay;
+				theta = sqrt(theta2);
+
+				if (std::abs(theta) <= 4.65) // within solar disc
+					stest = cos(0.326 * theta) / cos(0.308 * theta);
+				else // within circumsolar region
+					stest = std::exp(Sun->buie_kappa) * std::pow(std::abs(theta), Sun->buie_gamma);
+
+			} while ((myrng() > (stest / Sun->MaxIntensity)) || (theta2 > (Sun->MaxAngle * Sun->MaxAngle)));
+
+			theta2 = theta2 / 1.e6; // convert from mrad^2 to rad^2
+			break;
+
+		case SunShape::USER_DEFINED:
+			do
+			{
+				thetax = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
+				thetay = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
+				theta2 = thetax * thetax + thetay * thetay;
+				theta = sqrt(theta2); // wendelin 1-9-12  do the test once on theta NOT individually on thetax and thetay as before
+
+				i = 0;
+				while (i < Sun->SunShapeAngle.size() - 1 && Sun->SunShapeAngle[i] < theta)
+					i++;
+
+				if (i == 0)
+					stest = Sun->SunShapeIntensity[0];
+				else // linear interpolation (switched from average) 12-20-11 wendelin
+					stest = Sun->SunShapeIntensity[i - 1] + (Sun->SunShapeIntensity[i] - Sun->SunShapeIntensity[i - 1]) * (theta - Sun->SunShapeAngle[i - 1]) /
+					(Sun->SunShapeAngle[i] - Sun->SunShapeAngle[i - 1]);
+
+			} while ((myrng() > (stest / Sun->MaxIntensity)) || (theta2 > (Sun->MaxAngle * Sun->MaxAngle)));
+
+            theta2 = theta2 / 1.e6;	// convert from mrad^2 to rad^2
+			break;
+
+		default:
+			// TODO: Add error message here.
+            //throw std::exception("Unsupported sun shape in Errors function.");
+			break;
+		}
 	}
 
-	if (Source == 2)
+	if (Source == 2)	// surface error
 	{
 		// dist = OptProperties->DistributionType; // errors
-		dist = OptProperties->error_distribution_type;
 		// // delop = sqrt(4.0*sqr(OptProperties->RMSSlopeError)+sqr(OptProperties->RMSSpecError))/1000.0;
-		// delop = OptProperties->RMSSpecError / 1000.0;
 		delop = OptProperties->specularity_error / 1000.0;
+
+	Label_50:
+		switch (OptProperties->error_distribution_type)
+		{
+		case DistributionType::GAUSSIAN:			// case 'g':
+			thetax = myrng.randNorm(0., delop);
+			thetay = myrng.randNorm(0., delop);
+
+			theta2 = thetax * thetax + thetay * thetay;
+			break;
+
+		case DistributionType::PILLBOX:				// case 'p':
+			do
+			{
+				thetax = 2.0 * delop * myrng() - delop;
+				thetay = 2.0 * delop * myrng() - delop;
+				theta2 = thetax * thetax + thetay * thetay;
+			} while (theta2 > (delop * delop));
+			break;
+
+		case DistributionType::DIFFUSE:
+			theta2 = pow(asin(sqrt(myrng())), 2);
+			break;
+
+		default:
+			// TODO: Add error message here.
+			break;
+		}
 	}
 
-	unsigned int maxcall = 0;
-
-Label_50:
-	switch (dist)
-	{
-	// case 'g':
-	// case 'G': // gaussian distribution
-	case DistributionType::GAUSSIAN:
-		thetax = myrng.randNorm(0., delop);
-		thetay = myrng.randNorm(0., delop);
-
-		theta2 = thetax * thetax + thetay * thetay;
-
-		break;
-
-	// case 'p':
-	// case 'P': // pillbox distribution
-	case DistributionType::PILLBOX:
-	Label_200:
-		thetax = 2.0 * delop * myrng() - delop;
-		thetay = 2.0 * delop * myrng() - delop;
-		theta2 = thetax * thetax + thetay * thetay;
-		if (theta2 > (delop * delop))
-			goto Label_200;
-		break;
-
-		// TODO: Do we need to the below code?
-		// case 'd':
-		// case 'D': // sunshape data  (for sunshape only)
-		// Label_300:
-		// 	thetax = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
-		// 	thetay = 2.0 * Sun->MaxAngle * myrng() - Sun->MaxAngle;
-		// 	theta2 = thetax * thetax + thetay * thetay;
-		// 	theta = sqrt(theta2); // wendelin 1-9-12  do the test once on theta NOT individually on thetax and thetay as before
-
-		// 	i = 0;
-		// 	while (i < Sun->SunShapeAngle.size() - 1 && Sun->SunShapeAngle[i] < theta)
-		// 		i++;
-
-		// 	if (i == 0)
-		// 		stest = Sun->SunShapeIntensity[0];
-		// 	else // change from average interpolation between data points to linear interpolation  12-20-11 wendelin
-		// 		stest = Sun->SunShapeIntensity[i - 1] + (Sun->SunShapeIntensity[i] - Sun->SunShapeIntensity[i - 1]) * (theta - Sun->SunShapeAngle[i - 1]) /
-		// 													(Sun->SunShapeAngle[i] - Sun->SunShapeAngle[i - 1]);
-		// 	// stest = (Sun->SunShapeIntensity[i] + Sun->SunShapeIntensity[i-1])/2.0;
-
-		// 	if (myrng() > (stest / Sun->MaxIntensity))
-		// 		goto Label_300;
-
-		// 	if (theta2 > (Sun->MaxAngle * Sun->MaxAngle))
-		// 		goto Label_300;
-		// 	theta2 = theta2 / 1000000.0;
-		// 	break;
-
-		// case 'f': // gray diffuse distribution
-		// case 'F':
-		// 	theta2 = pow(asin(sqrt(myrng())), 2);
-		// 	break;
-	default:
-		// TODO: Add error message here.
-		break;
-	}
-
-	/*{Transform to local coordinate system of ray to set up rotation matrices for coord and inverse
-	  transforms}*/
+	// {Transform to local coordinate system of ray to set up rotation matrices for coordinate and inverse transforms}
 	TransformToLocal(PosIn, CosIn, Origin, RRefToLoc, PosOut, CosOut);
 
 	// {Generate errors in terms of direction cosines in local ray coordinate system}
 	theta = sqrt(theta2);
 
 	// phi = atan2(thetay, thetax); //This function appears to  present irregularities that bias results incorrectly for small values of thetay or thetax
-	phi = myrng() * 2.0 * 3.1415926535897932385; // Therefore have chosen to randomize phi rather than calculate from randomized theta components
-												 //  obtained from the distribution. The two approaches are equivalent save for this issue with
-												 //  arctan2.      wendelin 01-12-11
+	phi = myrng() * 2.0 * PI; // Therefore have chosen to randomize phi rather than calculate from randomized theta components
+							  //  obtained from the distribution. The two approaches are equivalent save for this issue with arctan2.      wendelin 01-12-11
 
 	CosOut[0] = sin(theta) * cos(phi);
 	CosOut[1] = sin(theta) * sin(phi);
@@ -297,8 +335,10 @@ Label_50:
 	//{Transform perturbed ray back to element system}
 	TransformToReference(PosIn, CosIn, Origin, RLocToRef, PosOut, CosOut);
 
-	/*{If reflection error applicaton and new ray direction (after errors) physically goes through opaque surface,
-	then go back and get new perturbation 06-12-07}*/
+	// TODO: Remove goto, should we always do dot product check? // We could move this out of the function and into the caller.
+
+	/*{If reflection error application and new ray direction (after errors) physically goes through opaque surface,
+    then go back and get new perturbation 06-12-07}*/		
 	if ((Source == 2) &&
 		(OptProperties->my_type == InteractionType::REFLECTION) &&
 		(DOT(CosOut, DFXYZ) < 0) &&

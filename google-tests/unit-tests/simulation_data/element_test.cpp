@@ -1,8 +1,20 @@
 #include <gtest/gtest.h>
 
+#include <sstream>
+
 #include <simulation_data_export.hpp>
 
 #include "common.hpp"
+
+TEST(OpticalProperties, OutputOperator)
+{
+    std::stringstream ss;
+
+    OpticalProperties op;
+    op.set_ideal_reflection();
+    ss << op;
+    EXPECT_GE(ss.str().length(), 0);
+}
 
 TEST(Element, ConstructionSmokeTest)
 {

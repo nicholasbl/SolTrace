@@ -10,20 +10,18 @@ using SolTrace::Runner::SimulationRunner;
 using SolTrace::Result::SimulationResult;
 
 OptixRunner::OptixRunner() : SimulationRunner(),
-                             m_simdata(nullptr),    
+                             m_simdata(nullptr),
                              m_sys(10000) {}
-
 
 OptixRunner::~OptixRunner()
 {
-
 }
 
 RunnerStatus OptixRunner::initialize()
 {
     // add elements to sys using data structure from SimulationData
 
-    // set number of rays 
+    // set number of rays
 
     // set sun vector, and other sun properties
 
@@ -98,16 +96,19 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
             // TODO: check zrot, radiance or degree here?
 
-            std::cout << "adding elements " << el->get_name() << std::endl;  
-            std::cout << "Origin: " << origin[0] << ", " << origin[1] << ", " << origin[2] << std::endl;  
+            std::cout << "adding elements " << el->get_name() << std::endl;
+            std::cout << "Origin: " << origin[0] << ", " << origin[1] << ", " << origin[2] << std::endl;
 
-            if (el->get_surface() != nullptr) {  
-                std::cout << "surface type: " << el->get_surface()->get_type() << std::endl;  
+            if (el->get_surface() != nullptr)
+            {
+                std::cout << "surface type: " << el->get_surface()->get_type() << std::endl;
 
-                switch (el->get_surface()->get_type()) {  
-                    case SurfaceType::FLAT: {  
-                        auto surface = std::make_shared<OptixCSP::SurfaceFlat>();  
-                        optix_el->set_surface(surface);
+                switch (el->get_surface()->get_type())
+                {
+                case SurfaceType::FLAT:
+                {
+                    auto surface = std::make_shared<OptixCSP::SurfaceFlat>();
+                    optix_el->set_surface(surface);
 
                         break;  
                     }  
@@ -133,18 +134,20 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 						surface->set_radius(el_surface->radius);
                         optix_el->set_surface(surface);
 
-                        break;  
-                    }  
-                    default:  
-                        std::cerr << "Unsupported surface type in OptixCSP" << std::endl;  
-                        break;  
-                }  
+                    break;
+                }
+                default:
+                    std::cerr << "Unsupported surface type in OptixCSP" << std::endl;
+                    break;
+                }
 
-				auto soltrace_aperture_type = el->get_aperture()->get_type();
+                auto soltrace_aperture_type = el->get_aperture()->get_type();
 
-                switch (soltrace_aperture_type) {
+                switch (soltrace_aperture_type)
+                {
 
-                case ApertureType::RECTANGLE: {
+                case ApertureType::RECTANGLE:
+                {
 
                     auto el_aperture = std::dynamic_pointer_cast<Rectangle>(el->get_aperture());
 
@@ -160,12 +163,11 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 }
 
                 m_sys.add_element(optix_el);
-
-            }  
-            std::cout << "=====================================================" << std::endl;  
-        }  
-    }  
-    return RunnerStatus::SUCCESS;  
+            }
+            std::cout << "=====================================================" << std::endl;
+        }
+    }
+    return RunnerStatus::SUCCESS;
 }
 
 RunnerStatus OptixRunner::update_simulation(const SimulationData *data)
@@ -191,11 +193,9 @@ RunnerStatus OptixRunner::run_simulation_core(bool write_output)
     return RunnerStatus::SUCCESS;
 }
 
-RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
-                                             int level)
+RunnerStatus OptixRunner::status_simulation(double *progress)
 {
-    // for different levels of reporting, populate result accordingly 
-    // 
+    // TODO: Implement this
     return RunnerStatus::SUCCESS;
 }
 
@@ -208,7 +208,16 @@ RunnerStatus OptixRunner::get_hp_output(std::vector<float4>& hp_vec, std::vector
     return RunnerStatus::SUCCESS;
 }
 
-OptixCSP::Vec3d OptixRunner::ToVec3d(Vector3d v) {
+RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
+                                            int level)
+{
+    // for different levels of reporting, populate result accordingly
+    //
+    return RunnerStatus::SUCCESS;
+}
+
+OptixCSP::Vec3d OptixRunner::ToVec3d(Vector3d v)
+{
 
     OptixCSP::Vec3d vec(v[0], v[1], v[2]);
     return vec;

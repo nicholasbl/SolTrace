@@ -16,10 +16,30 @@
 
 #include "container.hpp"
 #include "datetime.hpp"
-#include "error_distributions.hpp"
 #include "vector3d.hpp"
 
 namespace SolTrace::Data {
+
+// Add new enums to SunShapeMap too
+enum class SunShape
+{
+    GAUSSIAN,
+    PILLBOX,
+    LIMBDARKENED,
+    BUIE_CSR,
+    USER_DEFINED,
+    UNKNOWN
+};
+
+inline const std::map<SunShape, std::string> SunShapeMap =
+{
+    {SunShape::GAUSSIAN, "GAUSSIAN"},
+    {SunShape::PILLBOX, "PILLBOX"},
+    {SunShape::LIMBDARKENED, "LIMBDARKENED"},
+    {SunShape::BUIE_CSR, "BUIE_CSR"},
+    {SunShape::USER_DEFINED, "USER_DEFINED"},
+    {SunShape::UNKNOWN, "UNKNOWN"}
+};
 
 class RaySource
 {
@@ -32,8 +52,8 @@ public:
     virtual void set_position(const Vector3d &) = 0;
     virtual void set_position(double, double, double) = 0;
     virtual void set_position(const DateTime &, double lat, double long) = 0;
-    virtual DistributionType get_shape() const = 0;
-    virtual void set_shape(DistributionType shape, double _sigma, double _half_width,
+    virtual SunShape get_shape() const = 0;
+    virtual void set_shape(SunShape shape, double _sigma, double _half_width, double _csr,
         std::vector<double> _user_angle = {}, std::vector<double> _user_intensity = {}) = 0;
 
     double get_sigma()
@@ -44,16 +64,22 @@ public:
     {
         return this->half_width;
     }
+    double get_circumsolar_ratio()
+    {
+        return this->circumsolar_ratio;
+    }
     void get_user_data(std::vector<double> &angle, std::vector<double> &intensity)
     {
         angle = this->user_angle;
         intensity = this->user_intensity;
         return;
     }
+    virtual void calculate_buie_parameters(double& kappa, double& gamma) = 0;
 
 protected:
     double sigma = std::numeric_limits<double>::quiet_NaN();
     double half_width = std::numeric_limits<double>::quiet_NaN();
+    double circumsolar_ratio = std::numeric_limits<double>::quiet_NaN();
     std::vector<double> user_angle;
     std::vector<double> user_intensity;
 };

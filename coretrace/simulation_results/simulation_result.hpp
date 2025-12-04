@@ -30,8 +30,9 @@ namespace SolTrace::Result
         {RayEvent::ABSORB, "ABSORB"},
         {RayEvent::REFLECT, "REFLECT"},
         {RayEvent::TRANSMIT, "TRANSMIT"},
+        {RayEvent::VIRTUAL, "VIRTUAL"},
         {RayEvent::EXIT, "EXIT"},
-        {RayEvent::UNKNOWN, "UNKNONWN"}};
+        {RayEvent::UNKNOWN, "UNKNOWN"}};
 
     const std::string &ray_event_string(RayEvent rev);
 
