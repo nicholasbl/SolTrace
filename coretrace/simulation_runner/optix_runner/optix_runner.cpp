@@ -216,6 +216,15 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     return RunnerStatus::SUCCESS;
 }
 
+RunnerStatus OptixRunner::cancel_simulation()
+{
+    RunnerStatus sts = RunnerStatus::ERROR;
+
+    // TODO: Implement actual cancel
+
+    return sts;
+}
+
 OptixCSP::Vec3d OptixRunner::ToVec3d(Vector3d v)
 {
 
