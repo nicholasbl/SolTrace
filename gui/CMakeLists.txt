@@ -32,6 +32,7 @@ qt_add_qml_module(SolTrace
         src/indirect_model.h src/indirect_model.cpp
         src/surfacegeometry.h src/surfacegeometry.cpp
         src/surfacegeometrylistmodel.h src/surfacegeometrylistmodel.cpp
+        src/elementitemmodel.h src/elementitemmodel.cpp
         src/job_run.h src/job_run.cpp
         src/utility.h
 )

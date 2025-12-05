@@ -3,6 +3,7 @@
 #include "simulation_data_api.hpp"
 
 #include "surfacegeometrylistmodel.h"
+#include "elementitemmodel.h"
 #include "indirect_model.h"
 
 #include "job_run.h"
@@ -63,6 +64,7 @@ class ElementTableModel : public HashContainerModel<SD::element_id> {
 
     QOBJECT_WRITABLE_PROPERTY(SurfaceGeometryListModel, surface_geometries);
     QOBJECT_WRITABLE_PROPERTY(RayGeometry, ray_geometry);
+    QOBJECT_WRITABLE_PROPERTY(ElementItemModel, elements);
 
     // Hack for now
     Q_WRITABLE_PROPERTY(bool, sim_running, false);

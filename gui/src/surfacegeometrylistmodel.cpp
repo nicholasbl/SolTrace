@@ -1,4 +1,5 @@
 #include "surfacegeometrylistmodel.h"
+#include <QQuaternion>
 
 
 SurfaceGeometryListModel::SurfaceGeometryListModel(QObject* parent)
@@ -16,13 +17,16 @@ QVariant SurfaceGeometryListModel::data(QModelIndex const& idx,
         return QVariant::fromValue(m_geoms[idx.row()].get());
     case PositionRole:
         return QVariant::fromValue(m_geoms[idx.row()]->position());
-    case RotationRole:
+    case AimRole:
+        return QVariant::fromValue(m_geoms[idx.row()]->aim());
+    case EulerRole:
         return QVariant::fromValue(m_geoms[idx.row()]->eulerAngles());
+    case RotationRole:
+        return QVariant::fromValue(QQuaternion::fromEulerAngles(m_geoms[idx.row()]->eulerAngles()));
     case VisibleRole:
         return QVariant::fromValue(m_geoms[idx.row()]->visible());
     case LabelRole:
-        qDebug() << m_geoms[idx.row()]->label();
-        return QVariant::fromValue(m_geoms[idx.row()]->label());
+        return QVariant::fromValue(m_geoms[idx.row()]->surfaceType());
     default:
         return {};
     }
@@ -41,6 +45,17 @@ bool SurfaceGeometryListModel::setData(QModelIndex const& index,
         entry->setVisible(value.toBool());
         emit dataChanged(index, index, { VisibleRole });
         return true;
+    case ZRotateRole:
+        qDebug() << "ZRotateRole";
+        entry->setZRotation(value.toFloat());
+        emit dataChanged(index, index, { EulerRole });
+        emit dataChanged(index, index, { RotationRole });
+        return true;
+    case AimRole:
+        entry->setAim(value.value<QVector3D>());
+        emit dataChanged(index, index, { EulerRole });
+        emit dataChanged(index, index, { RotationRole });
+        return true;
     default:
         return false;
     }
@@ -51,11 +66,17 @@ Qt::ItemFlags SurfaceGeometryListModel::flags(QModelIndex const& index) const {
 }
 
 QHash<int, QByteArray> SurfaceGeometryListModel::roleNames() const {
+
     static QHash<int, QByteArray> roles = { { GeometryRole, "geometry" },
                                             { PositionRole, "position" },
                                             { RotationRole, "rotation" },
                                             { VisibleRole, "visible" },
-                                            { LabelRole, "label" } };
+                                            { EulerRole,    "euler" },
+                                            { VisibleRole,  "visible"  },
+                                            { LabelRole,    "label"    },
+                                            { ZRotateRole,  "zrot"     },
+                                            { AimRole,      "aim"      }};
 
     return roles;
 }
+

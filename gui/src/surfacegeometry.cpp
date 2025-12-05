@@ -26,13 +26,14 @@ void SurfaceGeometry::rebuildGeometry() {
 
     // Compute the positions
     for (int i = 0; i < verts.size(); ++i) {
+        auto x = points[2 * i];
+        auto y = points[2 * i + 1];
         auto position =
-            QVector3D(points[2 * i],
-                      points[2 * i + 1],
-                      surface->z(verts[i].position.x(), verts[i].position.y()));
+            QVector3D(x,
+                      y,
+                      surface->z(x,y));
 
         verts[i].position = position;
-
 
         boundsMin.setX(std::min(boundsMin.x(), position.x()));
         boundsMin.setY(std::min(boundsMin.y(), position.y()));
@@ -115,12 +116,57 @@ void SurfaceGeometry::setVisible(bool v) {
     m_visible = v;
 }
 
-QString SurfaceGeometry::label() const {
-    return QString::fromStdString(m_element->get_surface()->get_type_string()) +
-           " (" +
-           QString::fromStdString(
-               m_element->get_aperture()->get_type_string()) +
-           ")";
+
+QString SurfaceGeometry::surfaceType() const
+{
+    if (m_element->get_surface() == nullptr)
+    {
+        if (m_element->is_stage())
+            return "Stage (" + QString::number(m_element->get_number_of_elements()) + ")";
+
+        if (m_element->is_composite())
+            return "Composite (" + QString::number(m_element->get_number_of_elements()) + ")";
+
+        return "Bad Element";
+    }
+
+    return QString::fromStdString(m_element->get_surface()->get_type_string());
+}
+
+QString SurfaceGeometry::apertureType() const
+{
+    if(m_element->get_aperture() != nullptr)
+    {
+        QString aperture = QString::fromStdString(m_element->get_aperture()->get_type_string());
+
+        return aperture;
+    }
+    return "";
+}
+
+QVector3D SurfaceGeometry::aim() const
+{
+    SD::Vector3d pt = m_element->get_aim_vector_ref();
+    return QVector3D(pt.data[0], pt.data[0], pt.data[0]);
+}
+
+void SurfaceGeometry::setAim(QVector3D pt)
+{
+    m_element->set_aim_vector(pt.x(), pt.y(), pt.z());
+    m_element->compute_coordinate_rotations();
+    qDebug() << eulerAngles();
+}
+
+float SurfaceGeometry::zRotation() const
+{
+    return m_element->get_zrot();
+}
+
+void SurfaceGeometry::setZRotation(float theta)
+{
+    m_element->set_zrot(theta);
+    m_element->compute_coordinate_rotations();
+    qDebug() << eulerAngles();
 }
 
 bool SurfaceGeometry::operator==(const SurfaceGeometry& other) const {

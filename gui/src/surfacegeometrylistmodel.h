@@ -14,7 +14,10 @@ public:
         PositionRole,
         RotationRole,
         LabelRole,
-        VisibleRole
+        VisibleRole,
+        EulerRole,
+        ZRotateRole,
+        AimRole
     };
 
     SurfaceGeometryListModel(QObject* parent = nullptr);
@@ -46,3 +49,4 @@ public:
     Qt::ItemFlags          flags(QModelIndex const& index) const override;
     QHash<int, QByteArray> roleNames() const override;
 };
+

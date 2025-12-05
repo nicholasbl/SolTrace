@@ -33,7 +33,14 @@ public:
     bool visible() const { return m_visible; }
     void setVisible(bool visible);
 
-    QString label() const;
+    QVector3D aim() const;
+    void setAim(QVector3D pt);
+
+    float zRotation() const;
+    void setZRotation(float theta);
+
+    QString surfaceType() const;
+    QString apertureType() const;
 
     bool operator==(const SurfaceGeometry& other) const;
 };
