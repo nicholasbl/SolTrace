@@ -1,0 +1,170 @@
+#include "job_run_thread.h"
+
+#include "dataset.h"
+#include "native_runner/native_runner.hpp"
+#include "simulation_result.hpp"
+#include "simulation_runner.hpp"
+#include "utility.h"
+
+#include <QtConcurrentRun>
+
+// Qconcurrent will auto call start and finish on the promise
+
+#define SOLTRACE_SECTION(FUNC, VALUE, TEXT)                                    \
+    promise.setProgressValueAndText(VALUE, TEXT);                              \
+    promise.suspendIfRequested();                                              \
+    if (promise.isCanceled()) { return; }                                      \
+    result = current_runner->FUNC;                                             \
+    if (result == SolTrace::Runner::RunnerStatus::ERROR) {                     \
+        promise.emplaceResult(QString(TEXT " failed"));                        \
+        return;                                                                \
+    }
+
+#define SECTION(VALUE, TEXT)                                                   \
+    promise.setProgressValueAndText(VALUE, TEXT);                              \
+    promise.suspendIfRequested();                                              \
+    if (promise.isCanceled()) {                                                \
+        promise.emplaceResult("Cancelled at " TEXT);                           \
+        return;                                                                \
+    }
+
+/// Function to wrap up run into a thread. We will be checking progress
+/// OUTSIDE this function
+static SolTrace::Runner::RunnerStatus
+execute_solve_with(SolTrace::Runner::SimulationRunner* ptr) {
+    return ptr->run_simulation();
+}
+
+void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
+    try {
+        promise.setProgressRange(0, 100);
+
+        auto current_runner =
+            std::make_unique<SolTrace::NativeRunner::NativeRunner>();
+
+        SolTrace::Runner::RunnerStatus result;
+
+        SOLTRACE_SECTION(initialize(), 0, "Starting simulation");
+
+        SOLTRACE_SECTION(setup_simulation(data.get()), 0, "Setup simulation");
+
+        // run simulation will indeed run, but we need to stuff it into another
+        // thread so we can poll status.
+
+        auto progress_check = current_runner->get_system();
+
+        auto run_future =
+            QtConcurrent::run(execute_solve_with, current_runner.get());
+
+        while (true) {
+            if (run_future.isFinished()) { break; }
+
+            // Normally polling would be The Wrong Thing, but the progress stuff
+            // requires active checking
+            QThread::sleep(std::chrono::milliseconds { 16 });
+
+            double progress = -1;
+
+            // If cancelled, we set the flag, wait, and bail
+            if (promise.isCanceled()) {
+                promise.setProgressValueAndText(100, "Cancelling...");
+
+                // User cancelled, set flag
+                {
+                    auto lock = std::lock_guard(progress_check->state_mutex);
+                    progress_check->cancel = true;
+                }
+
+                // Wait for completion
+                run_future.result();
+
+                // bail
+                promise.emplaceResult(QStringLiteral("Cancelled"));
+                return;
+            }
+
+            // Not cancelled, check and see how things are going
+            {
+                auto lock = std::lock_guard(progress_check->state_mutex);
+                progress  = progress_check->progress;
+            }
+
+            // assuming progress is 0-1, TODO: Check
+            progress = std::clamp(progress, 0.0, 1.0);
+
+            // we have reserved progress points 10 to 90 for sim run
+
+
+            promise.setProgressValueAndText(std::lerp(10, 90, progress),
+                                            "Running...");
+        }
+
+        auto run_result = run_future.result();
+
+        switch (run_result) {
+        case SolTrace::Runner::RunnerStatus::CANCEL:
+            promise.setProgressValueAndText(100, "Cancelled");
+            return;
+        case SolTrace::Runner::RunnerStatus::ERROR:
+            promise.setProgressValueAndText(100, "Run failed");
+            return;
+        case SolTrace::Runner::RunnerStatus::RUNNING:
+            // we really shouldnt get here
+            qWarning("Sim result declares running, but was finished??");
+            break;
+        case SolTrace::Runner::RunnerStatus::SUCCESS: break;
+        case SolTrace::Runner::RunnerStatus::TIMEOUT:
+            promise.setProgressValueAndText(100, "Run failed: timeout");
+            return;
+        }
+
+        auto ret = std::make_shared<ResultDB>();
+
+        SOLTRACE_SECTION(
+            report_simulation(&(ret->result), 100), 90, "Report simulation");
+
+        // now compute lookup tables
+
+        SECTION(90, "Building lookup tables");
+
+        auto& st_result = ret->result;
+
+        auto num_records = st_result.get_number_of_records();
+
+        if (num_records > 0) {
+            ret->element_ids_to_ray_ids.reserve(num_records);
+
+            uint64_t iter_count = 0;
+
+            for (auto iter = st_result.get_ray_record_iteratior();
+                 !st_result.is_at_end(iter);
+                 ++iter) {
+                auto progress =
+                    lerp<float, float>(iter_count, 0, num_records - 1, 90, 100);
+
+                SECTION(progress, "Building lookup tables");
+
+                for (auto const& interaction : (*iter)->interactions) {
+                    auto element = interaction->element;
+                    // It looks like invalid element IDs are negative
+                    // Any zero+ element id could be used
+                    if (element >= 0) {
+                        ret->element_ids_to_ray_ids[interaction->element]
+                            .push_back((*iter)->id);
+                    }
+                }
+
+                iter_count++;
+            }
+        }
+
+
+        SECTION(100, "Done");
+
+        promise.emplaceResult(std::move(ret));
+
+    } catch (std::exception& e) {
+        promise.emplaceResult(QString(e.what()));
+        return;
+    }
+}

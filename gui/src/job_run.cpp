@@ -1,21 +1,23 @@
 #include "job_run.h"
 
 #include "dataset.h"
+#include "job_run_process.h"
+#include "job_run_thread.h"
 #include "native_runner/native_runner.hpp"
 #include "simulation_result.hpp"
 #include "simulation_runner.hpp"
 #include "utility.h"
 
+#include <QDir>
 #include <QException>
 #include <QFutureWatcher>
 #include <QGuiApplication>
 #include <QPromise>
 #include <QtConcurrentRun>
 
+
 // Native only for the moment
 
-using ResultPtr = std::shared_ptr<ResultDB>;
-using SimResult = std::variant<ResultPtr, QString>;
 
 // =============================================================================
 
@@ -148,96 +150,24 @@ void raster_segment(Grid3D<T>&       grid,
 
 // =============================================================================
 
-// Qconcurrent will auto call start and finish on the promise
+RunningJob::RunningJob(SimDataPtr data, RunType type, QObject* parent)
+    : QObject(parent) {
 
-#define SOLTRACE_SECTION(FUNC, VALUE, TEXT)                                    \
-    promise.setProgressValueAndText(VALUE, TEXT);                              \
-    promise.suspendIfRequested();                                              \
-    if (promise.isCanceled()) { return; }                                      \
-    result = current_runner->FUNC;                                             \
-    if (result == SolTrace::Runner::RunnerStatus::ERROR) {                     \
-        promise.emplaceResult(QString(TEXT " failed"));                        \
-        return;                                                                \
+    void (*f_ptr)(QPromise<SimResult>& promise, SimDataPtr data);
+
+    switch (type) {
+    case RunType::Thread: f_ptr = execute_thread_runner; break;
+    case RunType::Process: f_ptr = execute_process_runner; break;
     }
 
-#define SECTION(VALUE, TEXT)                                                   \
-    promise.setProgressValueAndText(VALUE, TEXT);                              \
-    promise.suspendIfRequested();                                              \
-    if (promise.isCanceled()) { return; }
+#ifdef Q_WASM
+    f_ptr = execute_thread_runner;
+#endif
 
-static void execute_runner(QPromise<SimResult>& promise, SimDataPtr data) {
-    try {
-        promise.setProgressRange(0, 100);
+    // TEMPORARY HACK WHILE WE FIX PROCESS STUFF
+    f_ptr = execute_thread_runner;
 
-        auto current_runner =
-            std::make_unique<SolTrace::NativeRunner::NativeRunner>();
-
-        SolTrace::Runner::RunnerStatus result;
-
-        SOLTRACE_SECTION(initialize(), 0, "Starting simulation");
-
-        SOLTRACE_SECTION(setup_simulation(data.get()), 0, "Setup simulation");
-
-        // run simulation will indeed run, but we need to stuff it into another
-        // process so we can poll status.
-
-        SOLTRACE_SECTION(run_simulation(), 10, "Run simulation");
-
-        // maybe map simulation work to 10 - 90 %?
-
-        auto ret = std::make_shared<ResultDB>();
-
-        SOLTRACE_SECTION(
-            report_simulation(&(ret->result), 100), 90, "Report simulation");
-
-        // now compute lookup tables
-
-        SECTION(90, "Building lookup tables");
-
-        auto& st_result = ret->result;
-
-        auto num_records = st_result.get_number_of_records();
-
-        if (num_records > 0) {
-            ret->element_ids_to_ray_ids.reserve(num_records);
-
-            uint64_t iter_count = 0;
-
-            for (auto iter = st_result.get_ray_record_iteratior();
-                 !st_result.is_at_end(iter);
-                 ++iter) {
-                auto progress =
-                    lerp<float, float>(iter_count, 0, num_records - 1, 90, 100);
-
-                SECTION(progress, "Building lookup tables");
-
-                for (auto const& interaction : (*iter)->interactions) {
-                    auto element = interaction->element;
-                    // It looks like invalid element IDs are negative
-                    // Any zero+ element id could be used
-                    if (element >= 0) {
-                        ret->element_ids_to_ray_ids[interaction->element]
-                            .push_back((*iter)->id);
-                    }
-                }
-
-                iter_count++;
-            }
-        }
-
-
-        SECTION(100, "Done");
-
-        promise.emplaceResult(std::move(ret));
-
-    } catch (std::exception& e) {
-        promise.emplaceResult(QString(e.what()));
-        return;
-    }
-}
-
-void RunningJob::setup_thread(SimDataPtr data) {
-    auto future = QtConcurrent::run(execute_runner, data);
+    auto future = QtConcurrent::run(f_ptr, data);
 
     auto watcher = new QFutureWatcher<SimResult>();
 
@@ -285,30 +215,6 @@ void RunningJob::setup_thread(SimDataPtr data) {
 
     watcher->setFuture(future);
 }
-void RunningJob::setup_process(SimDataPtr data) {
-#ifdef Q_OS_WASM
-    return setup_thread(data);
-#else
-    {
-        // dump to a temp file or memory
-
-        // launch another process using this
-        // qApp->applicationFilePath();
-
-        // have it read the stuff and return
-
-        return setup_thread(data);
-    }
-#endif
-}
-
-RunningJob::RunningJob(SimDataPtr data, RunType type, QObject* parent)
-    : QObject(parent) {
-    switch (type) {
-    case RunType::Thread: setup_thread(data); break;
-    case RunType::Process: setup_process(data); break;
-    }
-}
 
 RunningJob::~RunningJob() = default;
 
@@ -322,6 +228,9 @@ void RunningJob::pause() {
 void RunningJob::resume() {
     ((QFutureWatcher<SimResult>*)m_watcher)->resume();
 }
+void RunningJob::cancel() {
+    ((QFutureWatcher<SimResult>*)m_watcher)->cancel();
+}
 
 // =============================================================================
 
@@ -331,9 +240,7 @@ struct LineVertex {
 };
 
 void RayGeometry::rebuild_geometry() {
-    if (!m_database) {
-        return;
-    }
+    if (!m_database) { return; }
 
     clear();
 

@@ -35,6 +35,9 @@ qt_add_qml_module(SolTrace
         src/elementitemmodel.h src/elementitemmodel.cpp
         src/job_run.h src/job_run.cpp
         src/utility.h
+        src/job_run_thread.h src/job_run_thread.cpp
+        src/job_run_common.h
+        src/job_run_process.h src/job_run_process.cpp
 )
 
 qt_add_resources(SolTrace
