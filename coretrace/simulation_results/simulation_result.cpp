@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 
+#include "binner.hpp"
 #include "element.hpp"
 #include "records.hpp"
 #include "vector3d.hpp"

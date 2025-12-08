@@ -145,6 +145,12 @@ namespace SolTrace::Result
         return;
     }
 
+    void ElementRecord::add_interaction_record(interaction_ptr ip)
+    {
+        this->interactions.push_back(ip);
+        return;
+    }
+
     const interaction_ptr &ElementRecord::operator[](int_fast64_t idx) const
     {
         if (idx < 0 || idx >= this->interactions.size())

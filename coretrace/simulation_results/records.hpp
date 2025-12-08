@@ -119,6 +119,13 @@ namespace SolTrace::Result
         ElementRecord(SolTrace::Data::element_id eid);
         ~ElementRecord();
 
+        void add_interaction_record(interaction_ptr ip);
+
+        uint_fast64_t get_number_of_interactions()
+        {
+            return this->interactions.size();
+        }
+
         const interaction_ptr &operator[](int_fast64_t idx) const;
         friend std::ostream &operator<<(std::ostream &os,
                                         const ElementRecord &rec);

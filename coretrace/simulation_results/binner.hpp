@@ -10,7 +10,6 @@
 
 #include "element_statistics.hpp"
 #include "records.hpp"
-#include "simulation_result.hpp"
 
 namespace SolTrace::Result
 {

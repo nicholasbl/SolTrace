@@ -1,13 +1,16 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
+#include <random>
 #include <sstream>
 
-#include <simulation_result.hpp>
+#include <simulation_data_export.hpp>
+#include <simulation_result_export.hpp>
 #include <vector3d.hpp>
 
 #include "common.hpp"
 
+using SolTrace::Result::ElementRecord;
 using SolTrace::Result::InteractionRecord;
 using SolTrace::Result::RayEvent;
 using SolTrace::Result::RayRecord;
@@ -154,6 +157,36 @@ TEST(RayRecord, OutputOperator)
     std::stringstream ss;
     ss << rr;
     EXPECT_TRUE(ss.str().size() > 0);
+}
+
+TEST(ElementRecord, OutputOperator)
+{
+    // Test constants
+    const uint_fast32_t NINTER = 5;
+    const int_fast64_t ID = 5;
+    RayEvent my_types[NINTER] = {
+        RayEvent::CREATE,
+        RayEvent::TRANSMIT,
+        RayEvent::REFLECT,
+        RayEvent::ABSORB,
+        RayEvent::EXIT};
+
+    // Adding records and sizing
+    ElementRecord erec(ID);
+    for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
+    {
+        Vector3d loc(1.0 * ell * ell, 2.0 * ell * ell, 3.0 * ell * ell);
+        Vector3d dir(2.0 * ell + 1.0, 4.0 * ell + 2.0, 6.0 * ell + 3.0);
+        RayEvent it = my_types[ell];
+        interaction_ptr ir = make_interaction_record(ell, it, loc, dir);
+        erec.add_interaction_record(ir);
+    }
+
+    std::stringstream ss;
+    ss << erec;
+    EXPECT_TRUE(ss.str().size() > 0);
+
+    std::cout << ss.str() << std::endl;
 }
 
 TEST(SimulationResult, Accessors)
@@ -308,4 +341,59 @@ TEST(SimulationResult, WriteCSV)
     // Cleanup
     std::filesystem::remove(csv_file);
     std::filesystem::remove("temp_char.csv");
+}
+
+TEST(SimulationResult, FlatRectangleBinning)
+{
+
+    // Test constants
+    constexpr uint_fast32_t NRAYS = 10000;
+    constexpr uint_fast32_t NREFLECT = 9 * NRAYS / 10;
+    const element_id ELID = 3;
+    constexpr double XLEN = 10.0;
+    constexpr double YLEN = 8.0;
+    constexpr double XMIN = -0.5 * XLEN;
+    constexpr double YMIN = -0.5 * YLEN;
+    constexpr uint_fast64_t NX = 20;
+    constexpr uint_fast64_t NY = 16;
+    constexpr double DX = XLEN / NX;
+    constexpr double DY = YLEN / NY;
+    // const uint_fast32_t NINTER = 5;
+    // RayEvent my_types[NINTER] = {
+    //     RayEvent::REFLECT,
+    //     RayEvent::TRANSMIT,
+    //     RayEvent::REFLECT,
+    //     RayEvent::ABSORB,
+    //     RayEvent::EXIT};
+
+    std::mt19937_64 my_rand;
+    SimulationResult sr;
+
+    auto el = make_element<SingleElement>();
+    el->set_id(ELID);
+    el->set_aperture(make_aperture<Rectangle>(XLEN, YLEN, XMIN, YMIN));
+    el->set_surface(make_surface<Flat>());
+
+    double x, y;
+
+    for (uint_fast32_t k = 0; k < NRAYS; ++k)
+    {
+        ray_record_ptr rr = make_ray_record(k);
+        x = XLEN * my_rand() + XMIN;
+        y = YLEN * my_rand() + YMIN;
+        Vector3d loc(x, y, 0.0);
+        Vector3d dir(x, y, 0.0);
+        RayEvent rev = k < NREFLECT ? RayEvent::REFLECT : RayEvent::ABSORB;
+        interaction_ptr ir = make_interaction_record(ELID, rev, loc, dir);
+        rr->add_interaction_record(ir);
+        sr.add_ray_record(rr);
+    }
+
+    element_stats_ptr estat = sr.compute_element_stats(el, RayEvent::ABSORB, NX, NY);
+    uint_fast64_t total = estat->data->count_total();
+    EXPECT_EQ(total, NRAYS - NREFLECT);
+
+    estat = sr.compute_element_stats(el, RayEvent::REFLECT, NX, NY);
+    total = estat->data->count_total();
+    EXPECT_EQ(total, NREFLECT);
 }

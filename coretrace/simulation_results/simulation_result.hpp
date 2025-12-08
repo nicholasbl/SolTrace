@@ -10,6 +10,7 @@
 #include "vector3d.hpp"
 
 // SimulationResult headers
+#include "binner.hpp"
 #include "records.hpp"
 
 namespace SolTrace::Result
@@ -49,6 +50,15 @@ namespace SolTrace::Result
             return citer == this->element_view.cend();
         }
 
+        element_stats_ptr compute_element_stats(SolTrace::Data::element_ptr el,
+                                                RayEvent event,
+                                                uint_fast64_t nx,
+                                                uint_fast64_t ny)
+        {
+            auto erec = this->get_element_record(el->get_id());
+            return this->binner.compute_element_stats(el, event, erec, nx, ny);
+        }
+
         // Functions for building up results (used by Runners)
         void add_ray_record(ray_record_ptr);
 
@@ -68,6 +78,7 @@ namespace SolTrace::Result
     private:
         RayRecordContainer ray_history;
         ElementRecordContainer element_view;
+        Binner binner;
 
         void add_element_view(const ray_record_ptr rp);
     };

@@ -76,6 +76,18 @@ namespace SolTrace::Result
         }
     }
 
+    uint_fast64_t BinData::count_total()
+    {
+        uint_fast64_t total = 0;
+        for (auto iter = this->counts.cbegin();
+             iter != this->counts.cend();
+             ++iter)
+        {
+            total += iter->second;
+        }
+        return total;
+    }
+
     ElementStatistics::ElementStatistics(element_id id,
                                          RayEvent rev,
                                          bin_data_ptr bd)

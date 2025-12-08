@@ -14,6 +14,7 @@ namespace SolTrace::Result
         BinData(uint_fast64_t nx, uint_fast64_t ny);
         ~BinData();
         void clear_counts();
+        uint_fast64_t count_total();
 
         bool bins_initialzed;
 
