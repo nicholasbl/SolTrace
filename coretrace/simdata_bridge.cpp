@@ -110,6 +110,8 @@ int set_tstage_parameters(TSystem* sys_legacy, const SolTrace::NativeRunner::TSy
         stage_native->Virtual = stage_legacy->Virtual;
         stage_native->TraceThrough = stage_legacy->TraceThrough;
     }
+
+    return static_cast<int>(ConversionErrors::SUCCESS);
 }
 
 void get_raydata_from_native_tsys(TSystem* sys_legacy, const SolTrace::NativeRunner::TSystem& sys_native)
