@@ -1,14 +1,5 @@
 Project(optix_runner)
 
-include_directories(
-    .
-    ${CMAKE_CURRENT_SOURCE_DIR}/../..
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_data
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_runner
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_results
-
-)
-
 set(OPTIX_RUNNER_SRC
     optix_runner.cpp
 )
@@ -27,6 +18,17 @@ set_target_properties(
     PROPERTIES
     DEBUG_POSTFIX "d"
 	PREFIX ""
+)
+
+# Publish include directories so dependents inherit them
+target_include_directories(optix_runner
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}                           # optix_runner headers
+        ${CMAKE_CURRENT_SOURCE_DIR}/../..                     # coretrace root
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_data
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_runner
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_results
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../app/deploy/samples  # contains soltrace_system.h
 )
 
 target_link_libraries(optix_runner

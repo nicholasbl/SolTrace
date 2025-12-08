@@ -10,6 +10,7 @@ include_directories(
 	../../../../coretrace/simulation_results
 	../../../../coretrace/simulation_runner
 	../../../../coretrace/simulation_runner/native_runner
+	../../../../coretrace/simulation_runner/optix_runner
 )
 
 # CST Template test files
@@ -31,6 +32,7 @@ target_link_libraries(
 	CSTUnitTests
 	simdata
 	native_runner
+	optix_runner
 	testtools
 	GTest::gtest_main
 )
