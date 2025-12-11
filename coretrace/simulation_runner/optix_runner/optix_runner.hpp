@@ -27,7 +27,8 @@ public:
         int level_spec) override;
 
     SolTrace::Runner::RunnerStatus run_simulation_core(bool write_output);
-    SolTrace::Runner::RunnerStatus get_hp_output(std::vector<float4>& hp_vec, std::vector<int>& raynumber_vec);
+    SolTrace::Runner::RunnerStatus get_hp_output(std::vector<float4>& hp_vec,
+        std::vector<int>& raynumber_vec, std::vector<int>& element_id_vec);
 
     // Runner options
     // void disable_sun_shape_errors() { this->include_sun_shape_errors = false; }

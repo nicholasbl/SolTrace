@@ -404,7 +404,8 @@ int run_optix_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
 
     std::vector<float4> hp_vec;
     std::vector<int> raynumber_vec;
-    runner.get_hp_output(hp_vec, raynumber_vec);
+    std::vector<int> element_id_vec;
+    runner.get_hp_output(hp_vec, raynumber_vec, element_id_vec);
 
     assign_raydata_from_hitpoints(hp_vec, raynumber_vec, sys);
     
@@ -422,7 +423,9 @@ int run_optix_file_runner(TSystem* sys, const char* file_name)
 
     std::vector<float4> hp_vec;
     std::vector<int> raynumber_vec;
-    sys_optix.get_hp_output(hp_vec, raynumber_vec);
+    std::vector<int> element_id_vec;
+    std::vector<uint8_t> hit_type_vec;
+    sys_optix.get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);
 
     assign_raydata_from_hitpoints(hp_vec, raynumber_vec, sys);
 

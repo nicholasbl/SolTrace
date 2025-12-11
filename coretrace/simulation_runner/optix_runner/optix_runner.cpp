@@ -87,12 +87,19 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             // Skip if element is not a single (i.e. stage, composite)
             if (el->is_single() == false)
                 continue;
-
+            
             auto optix_el = std::make_shared<OptixCSP::CspElement>();  
             Vector3d origin = el->get_origin_global();  
             OptixCSP::Vec3d origin_vec(origin[0], origin[1], origin[2]);  
             optix_el->set_origin(ToVec3d(origin));  
             optix_el->set_aim_point(ToVec3d(el->get_aim_vector_global()));
+            
+            // Safely narrow element id to int32_t
+            const auto id = el->get_id(); // int
+            if (id < std::numeric_limits<int32_t>::min() || id > std::numeric_limits<int32_t>::max()) {
+                throw std::overflow_error("Element id out of int32_t range");
+            }
+            optix_el->set_id(static_cast<int32_t>(id));
 
             // TODO: check zrot, radiance or degree here?
 
@@ -200,19 +207,84 @@ RunnerStatus OptixRunner::status_simulation(double *progress)
 }
 
 // Temporary function to get hit points
-RunnerStatus OptixRunner::get_hp_output(std::vector<float4>& hp_vec, std::vector<int>& raynumber_vec)
+RunnerStatus OptixRunner::get_hp_output(std::vector<float4>& hp_vec, std::vector<int>& raynumber_vec, 
+    std::vector<int>& element_id_vec)
 {
     // for different levels of reporting, populate result accordingly 
     // 
-    m_sys.get_hp_output(hp_vec, raynumber_vec);
+    std::vector<uint8_t> hit_type_vec;
+    m_sys.get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);
     return RunnerStatus::SUCCESS;
+}
+
+SolTrace::Result::RayEvent hit_type_to_ray_event(OptixCSP::HitType hit_type)
+{
+    if (hit_type == OptixCSP::HitType::HIT_UNASSIGNED
+        || hit_type == OptixCSP::HitType::HIT_UNKNOWN)
+        return SolTrace::Result::RayEvent::UNKNOWN;
+
+    return static_cast<SolTrace::Result::RayEvent>(hit_type);
 }
 
 RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
                                             int level)
 {
-    // for different levels of reporting, populate result accordingly
-    //
+    // Declare results
+    RunnerStatus retval = RunnerStatus::SUCCESS;
+    std::map<unsigned int, SolTrace::Result::ray_record_ptr> ray_records;
+    std::map<unsigned int, SolTrace::Result::ray_record_ptr>::iterator iter;
+
+    // Get results from optixcsp
+    std::vector<float4> hp_vec;
+    std::vector<int> raynumber_vec;
+    std::vector<int32_t> element_id_vec;
+    std::vector<uint8_t> hit_type_vec;
+    m_sys.get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);
+
+    // Check sizes
+    if (!(hp_vec.size() == raynumber_vec.size()
+        && raynumber_vec.size() == element_id_vec.size()
+        && element_id_vec.size() == hit_type_vec.size()))
+    {
+        return RunnerStatus::ERROR;
+    }
+
+    // Loop through data, populating ray records
+    // Assumes ray data is grouped serially
+    size_t ndata = hp_vec.size();
+    int raynum_prev = -1;
+    int raynum = 0;
+    SolTrace::Result::ray_record_ptr rec = nullptr;
+    SolTrace::Result::interaction_ptr intr = nullptr;
+    for (size_t ii = 0; ii < ndata; ++ii)
+    {
+        // Collect results for record
+        raynum = raynumber_vec[ii];
+        Vector3d pos = Vector3d(hp_vec[ii].y, hp_vec[ii].z, hp_vec[ii].w);  // x is depth
+        Vector3d cos = Vector3d(0, 0, 0);   // TODO: calculate directions
+        int32_t element_id = element_id_vec[ii];
+        uint8_t hit_type = hit_type_vec[ii];
+        SolTrace::Result::RayEvent rev = hit_type_to_ray_event(static_cast<OptixCSP::HitType>(hit_type));
+
+        // Make new ray record if necessary
+        iter = ray_records.find(raynum);
+        if (iter == ray_records.end())
+        {
+            rec = SolTrace::Result::make_ray_record(raynum);
+            result->add_ray_record(rec);
+            ray_records[raynum] = rec;
+            assert(rev == SolTrace::Result::RayEvent::CREATE);
+        }
+        else
+        {
+            rec = iter->second;
+        }
+
+        // Make interaction record
+        intr = SolTrace::Result::make_interaction_record(element_id, rev, pos, cos);
+        rec->add_interaction_record(intr);
+    }
+
     return RunnerStatus::SUCCESS;
 }
 

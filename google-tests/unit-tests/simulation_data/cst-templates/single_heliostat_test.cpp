@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include <optix_runner.hpp>
 #include <native_runner.hpp>
 #include <native_runner_types.hpp>
 #include <simulation_data.hpp>
@@ -25,6 +26,8 @@ using SolTrace::NativeRunner::TRayData;
 using SolTrace::NativeRunner::TSystem;
 using SolTrace::NativeRunner::TSun;
 
+
+
 class SingleHeliostatSimulation : public ::testing::Test {
 public:
     const Vector3d zero = { 0.0, 0.0, 0.0 }; // Global origin
@@ -40,6 +43,9 @@ protected:
     SimulationData simData;
     NativeRunner runner;
     SimulationResult result;
+
+    OptixRunner runner_optix;
+    SimulationResult result_optix;
 
     double sun_width;
     double sun_height;
@@ -153,6 +159,18 @@ protected:
         sts = runner.run_simulation();
         EXPECT_EQ(sts, RunnerStatus::SUCCESS);
         sts = runner.report_simulation(&result, 0);
+        EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    }
+
+    void simulate_optix()
+    {
+        RunnerStatus sts = runner_optix.initialize();
+        EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+        sts = runner_optix.setup_simulation(&simData);
+        EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+        sts = runner_optix.run_simulation();
+        EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+        sts = runner_optix.report_simulation(&result_optix, 0);
         EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     }
 
@@ -429,6 +447,33 @@ TEST_F(SingleHeliostatSimulation, SingleFacetFlat_North)
     EXPECT_NEAR(heliostat->get_zrot(), 180.0, 1.e-4); // TODO: This should be zero
 
     setup_simData();
+
+    // Run Optix
+    simulate_optix();
+
+    //std::vector<float4> hp_vec;
+    //std::vector<int> raynumber_vec;
+    //std::vector<int> element_id_vec;
+    //this->runner_optix.get_hp_output(hp_vec, raynumber_vec, element_id_vec);
+    //
+    //int max_val = -1;
+    //int nhit = 0;
+    //for (int32_t val : element_id_vec)
+    //{
+    //    if (val > 0)
+    //    {
+    //        nhit++;
+    //    }
+    //    if (val > max_val)
+    //        max_val = val;
+    //}
+    //
+    SimulationResult& res = result_optix;
+    int x = 0;
+
+
+
+
     simulate();
     //result.write_csv_file("singlefacetflat_north_raydata.csv");
 
@@ -465,6 +510,9 @@ TEST_F(SingleHeliostatSimulation, SingleFacetFlat_North)
         double expected_peak = 906.458;
         EXPECT_NEAR(PeakFlux, expected_peak, 30.0);
     }
+
+    
+
 }
 TEST_F(SingleHeliostatSimulation, SingleFacetFlat_Southeast)
 {
