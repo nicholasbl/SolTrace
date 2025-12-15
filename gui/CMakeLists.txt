@@ -21,6 +21,8 @@ qt_add_qml_module(SolTrace
     QML_FILES
         ui/Main.qml
         ui/TransparentPane.qml
+        ui/WorldView.qml
+        ui/TopBar.qml
     DEPENDENCIES
         QtQuick
         QtQuick3D
@@ -38,7 +40,7 @@ qt_add_qml_module(SolTrace
         src/job_run_process.h src/job_run_process.cpp
         src/utilities/math_utility.h
         src/utilities/structmodel.h
-        SOURCES src/models/geometrydefinitionsmodel.h src/models/geometrydefinitionsmodel.cpp
+        src/models/geometrydefinitionsmodel.h src/models/geometrydefinitionsmodel.cpp
 )
 
 qt_add_resources(SolTrace
