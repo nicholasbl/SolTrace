@@ -2,9 +2,9 @@
 
 #include "simulation_data_api.hpp"
 
-#include "surfacegeometrylistmodel.h"
 #include "elementitemmodel.h"
-#include "indirect_model.h"
+#include "models/geometrydefinitionsmodel.h"
+#include "utilities/indirect_model.h"
 
 #include "job_run.h"
 
@@ -62,7 +62,7 @@ class ElementTableModel : public HashContainerModel<SD::element_id> {
     virtual void _delete_at(size_t, size_t);
     virtual void _clear();
 
-    QOBJECT_WRITABLE_PROPERTY(SurfaceGeometryListModel, surface_geometries);
+    QOBJECT_WRITABLE_PROPERTY(GeometryDefinitionsModel, surface_geometries);
     QOBJECT_WRITABLE_PROPERTY(RayGeometry, ray_geometry);
     QOBJECT_WRITABLE_PROPERTY(ElementItemModel, elements);
 

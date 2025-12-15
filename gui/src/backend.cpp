@@ -1,6 +1,6 @@
 #include "backend.h"
 
-#include "utility.h"
+#include "utilities/math_utility.h"
 
 #include "surface.hpp"
 
@@ -64,16 +64,19 @@ void DataSetsModel::watch(Data* ptr) {
 }
 
 DataSetsModel::DataSetsModel(QObject* parent) : IndirectTableModel(parent) {
-    add_property({
-        .display_name = "name",
-        .getter       = [this](auto index) -> QVariant {
-            return this->m_sets.value(index).name;
+    add_properties({
+        {
+            .display_name = "name",
+            .getter       = [this](auto index) -> QVariant {
+                return this->m_sets.value(index).name;
+            },
         },
-    });
-
-    add_property({
-        .display_name = "provenance",
-        .getter = [this](auto index) -> QVariant { return this->m_sets.value(index).provenance; },
+        {
+            .display_name = "provenance",
+            .getter       = [this](auto index) -> QVariant {
+                return this->m_sets.value(index).provenance;
+            },
+        },
     });
 }
 

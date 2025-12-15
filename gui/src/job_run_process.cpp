@@ -203,7 +203,9 @@ void check_if_process_worker(int argc, char* argv[]) {
 
     auto work_dir = qgetenv(SOLTRACE_WORKER_ENV);
 
-    if (work_dir.isEmpty()) exit(EXIT_FAILURE);
+    if (work_dir.isEmpty()) return;
+
+    qDebug() << "This is a worker process";
 
     auto control      = QDir(work_dir).absoluteFilePath(SOLTRACE_JOB_CONTROL);
     auto is_cancelled = [&]() { return QFileInfo::exists(control); };

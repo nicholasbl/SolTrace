@@ -29,15 +29,16 @@ qt_add_qml_module(SolTrace
         src/backend.h src/backend.cpp
         src/qt_helpers.h
         src/dataset.h src/dataset.cpp
-        src/indirect_model.h src/indirect_model.cpp
+        src/utilities/indirect_model.h src/utilities/indirect_model.cpp
         src/surfacegeometry.h src/surfacegeometry.cpp
-        src/surfacegeometrylistmodel.h src/surfacegeometrylistmodel.cpp
         src/elementitemmodel.h src/elementitemmodel.cpp
         src/job_run.h src/job_run.cpp
-        src/utility.h
         src/job_run_thread.h src/job_run_thread.cpp
         src/job_run_common.h
         src/job_run_process.h src/job_run_process.cpp
+        src/utilities/math_utility.h
+        src/utilities/structmodel.h
+        SOURCES src/models/geometrydefinitionsmodel.h src/models/geometrydefinitionsmodel.cpp
 )
 
 qt_add_resources(SolTrace
@@ -57,7 +58,7 @@ target_include_directories(SolTrace PRIVATE ../coretrace/simulation_runner)
 set_target_properties(SolTrace PROPERTIES CXX_STANDARD 20)
 
 set_target_properties(SolTrace PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER "gov.nrel.SolTrace"
+    MACOSX_BUNDLE_GUI_IDENTIFIER "gov.nlr.SolTrace"
     MACOSX_BUNDLE_BUNDLE_NAME "SolTrace"
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}

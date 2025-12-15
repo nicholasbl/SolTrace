@@ -1,9 +1,9 @@
 #pragma once
 
 #include "dataset.h"
-#include "indirect_model.h"
 #include "instance_table.h"
 #include "qt_helpers.h"
+#include "utilities/indirect_model.h"
 
 #include <QObject>
 #include <QQmlEngine>

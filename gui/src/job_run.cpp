@@ -6,7 +6,7 @@
 #include "native_runner/native_runner.hpp"
 #include "simulation_result.hpp"
 #include "simulation_runner.hpp"
-#include "utility.h"
+#include "utilities/math_utility.h"
 
 #include <QDir>
 #include <QException>

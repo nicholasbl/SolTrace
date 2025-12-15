@@ -80,65 +80,66 @@ void ElementTableModel::_clear() {
 ElementTableModel::ElementTableModel(SimDataPtr ptr, QObject* parent)
     : HashContainerModel(parent),
       m_data(ptr),
-      m_surface_geometries(new SurfaceGeometryListModel(this)),
+      m_surface_geometries(new GeometryDefinitionsModel(this)),
       m_ray_geometry(new RayGeometry()),
-      m_elements(new ElementItemModel(this))
-{
-    // TODO implementing...
+      m_elements(new ElementItemModel(this)) {
 
-    add_property({
-        .display_name = "enabled",
-        .getter       = [this](size_t index) -> QVariant {
-            return m_data->get_element(this->m_known_keys[index])->is_enabled();
-        },
-        .setter =
-            [this](size_t index, QVariant value) {
-                bool        enabled = value.toBool();
-                auto const& e = m_data->get_element(this->m_known_keys[index]);
-                if (enabled) {
-                    e->enable();
-                } else {
-                    e->disable();
-                }
-                return true;
+    add_properties({
+        {
+            .display_name = "enabled",
+            .getter       = [this](size_t index) -> QVariant {
+                return m_data->get_element(this->m_known_keys[index])
+                    ->is_enabled();
             },
-    });
-
-    add_property({
-        .display_name = "name",
-        .getter       = [this](size_t index) -> QVariant {
-            return QString::fromStdString(
-                m_data->get_element(this->m_known_keys[index])->get_name());
+            .setter =
+                [this](size_t index, QVariant value) {
+                    bool        enabled = value.toBool();
+                    auto const& e =
+                        m_data->get_element(this->m_known_keys[index]);
+                    if (enabled) {
+                        e->enable();
+                    } else {
+                        e->disable();
+                    }
+                    return true;
+                },
         },
-        .setter =
-            [this](size_t index, QVariant value) {
-                auto        new_name = value.toString();
-                auto const& e = m_data->get_element(this->m_known_keys[index]);
-                e->set_name(new_name.toStdString());
-                return true;
+        {
+            .display_name = "name",
+            .getter       = [this](size_t index) -> QVariant {
+                return QString::fromStdString(
+                    m_data->get_element(this->m_known_keys[index])->get_name());
             },
-    });
-
-    add_property({
-        .display_name = "origin",
-        .getter       = [this](size_t index) -> QVariant {
-            return convert(m_data->get_element(this->m_known_keys[index])
-                               ->get_origin_ref());
+            .setter =
+                [this](size_t index, QVariant value) {
+                    auto        new_name = value.toString();
+                    auto const& e =
+                        m_data->get_element(this->m_known_keys[index]);
+                    e->set_name(new_name.toStdString());
+                    return true;
+                },
         },
-        .setter =
-            [this](size_t index, QVariant value) {
-                auto        v = value.value<QVector3D>();
-                auto const& e = m_data->get_element(this->m_known_keys[index]);
-                e->set_origin(convert(v));
-                return true;
+        {
+            .display_name = "origin",
+            .getter       = [this](size_t index) -> QVariant {
+                return convert(m_data->get_element(this->m_known_keys[index])
+                                   ->get_origin_ref());
             },
-    });
-
-    add_property({
-        .display_name = "global origin",
-        .getter       = [this](size_t index) -> QVariant {
-            return convert(m_data->get_element(this->m_known_keys[index])
-                               ->get_origin_global());
+            .setter =
+                [this](size_t index, QVariant value) {
+                    auto        v = value.value<QVector3D>();
+                    auto const& e =
+                        m_data->get_element(this->m_known_keys[index]);
+                    e->set_origin(convert(v));
+                    return true;
+                },
+        },
+        {
+            .display_name = "global origin",
+            .getter       = [this](size_t index) -> QVariant {
+                return convert(m_data->get_element(this->m_known_keys[index])
+                                   ->get_origin_global());
+            },
         },
     });
 
@@ -154,31 +155,34 @@ ElementTableModel::ElementTableModel(SimDataPtr ptr, QObject* parent)
 
     m_elements->addElements(m_data);
 
-    int singles = 0;
+    int singles    = 0;
     int composites = 0;
 
-    for (int i=0; i<m_elements->rowCount(); i++){
-
-    }
-
-    for (auto iter = m_data->get_iterator();!m_data->is_at_end(iter); iter++)
     {
-        if (iter->second->is_single())
-        {
-            m_surface_geometries->push_back(std::make_shared<SurfaceGeometry>(iter->second));
-            singles++;
+        QVector<std::shared_ptr<SurfaceGeometry>> geometries;
 
-            qDebug() << "single " << iter->second->get_stage();
-        }
-        else
-        {
-            composites++;
-            qDebug() << "composite " << iter->second->get_number_of_elements() << " " << iter->second->get_stage();
+        for (auto iter = m_data->get_iterator(); !m_data->is_at_end(iter);
+             iter++) {
+            if (iter->second->is_single()) {
+                geometries.push_back(
+                    std::make_shared<SurfaceGeometry>(iter->second));
+                singles++;
+
+                qDebug() << "single " << iter->second->get_stage();
+            } else {
+                composites++;
+                qDebug() << "composite "
+                         << iter->second->get_number_of_elements() << " "
+                         << iter->second->get_stage();
+            }
         }
 
+        m_surface_geometries->reset(geometries);
     }
 
-    qDebug() << "Added" << m_known_keys.size() << "elements (" << singles << " singles, " << composites << "composites)";
+
+    qDebug() << "Added" << m_known_keys.size() << "elements (" << singles
+             << " singles, " << composites << "composites)";
 }
 
 ElementTableModel::~ElementTableModel() {

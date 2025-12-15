@@ -6,24 +6,27 @@ IndirectTableModel::IndirectTableModel(QObject* parent)
 
 IndirectTableModel::~IndirectTableModel() = default;
 
-void IndirectTableModel::add_property(IProperty&& p) {
+void IndirectTableModel::add_properties(QVector<IProperty> lps) {
 
-    if (std::string_view(p.display_name).empty()) {
-        throw std::invalid_argument("All display names must be non-empty");
+    for (auto const& p : lps) {
+        if (std::string_view(p.display_name).empty()) {
+            throw std::invalid_argument("All display names must be non-empty");
+        }
+
+        if (!p.getter) {
+            throw std::invalid_argument(
+                "All properties must have valid getters");
+        }
+
+        auto property_index = m_header.size();
+        m_header.push_back(p.display_name);
+
+        m_properties.push_back(p);
+
+
+        m_name_map[Qt::UserRole + property_index] =
+            m_properties[property_index].display_name;
     }
-
-    if (!p.getter) {
-        throw std::invalid_argument("All properties must have valid getters");
-    }
-
-    auto property_index = m_header.size();
-    m_header.push_back(p.display_name);
-
-    m_properties.push_back(p);
-
-
-    m_name_map[Qt::UserRole + property_index] =
-        m_properties[property_index].display_name;
 }
 
 QVariant IndirectTableModel::headerData(int             section,

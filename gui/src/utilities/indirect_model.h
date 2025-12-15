@@ -16,14 +16,14 @@ class IndirectTableModel : public QAbstractTableModel {
     QHash<int, QByteArray>     m_name_map;
 
 protected:
-    virtual bool _can_append_new(QVariant const&) = 0;
+    virtual bool _can_append_new(QVariant const&) { return true; }
     virtual void _append_new(QVariant)            = 0;
-    virtual bool _can_delete_at(size_t, size_t)   = 0;
+    virtual bool _can_delete_at(size_t, size_t) { return true; }
     virtual void _delete_at(size_t, size_t)       = 0;
     virtual int  _record_count() const            = 0;
     virtual void _clear()                         = 0;
 
-    void add_property(IProperty&&);
+    void add_properties(QVector<IProperty>);
 
 public:
     IndirectTableModel(QObject* parent = nullptr);
@@ -63,6 +63,36 @@ public slots:
     void remove_all();
 
     void notify_update(int i);
+};
+
+// ========
+
+template <class T>
+class ListContainerModel : public IndirectTableModel {
+protected:
+    QVector<T> m_items;
+
+    void _delete_at(size_t index, size_t count) override {
+        m_items.remove(index, count);
+    }
+    int  _record_count() const override { return m_items.size(); }
+    void _clear() override { m_items.clear(); }
+
+public:
+    using IndirectTableModel::IndirectTableModel;
+
+public:
+    void reset(QVector<T> new_list = {}) {
+        beginResetModel();
+        m_items = new_list;
+        endResetModel();
+    }
+
+    void push_back(T new_item) {
+        beginRemoveRows({}, m_items.size(), m_items.size());
+        m_items.push_back(new_item);
+        endInsertRows();
+    }
 };
 
 // ========
