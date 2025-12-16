@@ -103,6 +103,14 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
             // TODO: check zrot, radiance or degree here?
 
+            // Add optical properties
+            OpticalProperties* opt_front = el->get_front_optical_properties();
+            OpticalProperties* opt_back = el->get_back_optical_properties();
+            optix_el->set_optics_front(opt_front->my_type == InteractionType::REFRACTION, opt_front->reflectivity,
+                opt_front->transmitivity, opt_front->slope_error, opt_front->specularity_error);
+            optix_el->set_optics_back(opt_back->my_type == InteractionType::REFRACTION, opt_back->reflectivity,
+                opt_back->transmitivity, opt_back->slope_error, opt_back->specularity_error);
+
             std::cout << "adding elements " << el->get_name() << std::endl;
             std::cout << "Origin: " << origin[0] << ", " << origin[1] << ", " << origin[2] << std::endl;
 
@@ -112,10 +120,10 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
                 switch (el->get_surface()->get_type())
                 {
-                case SurfaceType::FLAT:
-                {
-                    auto surface = std::make_shared<OptixCSP::SurfaceFlat>();
-                    optix_el->set_surface(surface);
+                    case SurfaceType::FLAT:
+                    {
+                        auto surface = std::make_shared<OptixCSP::SurfaceFlat>();
+                        optix_el->set_surface(surface);
 
                         break;  
                     }  
