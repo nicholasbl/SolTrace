@@ -12,6 +12,12 @@ int main(int argc, char* argv[]) {
     qputenv("QT_QUICK_CONTROLS_MATERIAL_VARIANT", "Dense");
     QGuiApplication app(argc, argv);
 
+    // Load fonts
+    QFontDatabase::addApplicationFont(":/fonts/assets/fonts/computer-modern/cmunrm.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/assets/fonts/computer-modern/cmunbx.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/assets/fonts/computer-modern/cmunti.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/assets/fonts/computer-modern/cmunbi.ttf");
+
     QQmlApplicationEngine engine;
     QObject::connect(
         &engine,

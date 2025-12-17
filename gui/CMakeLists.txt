@@ -23,6 +23,22 @@ qt_add_qml_module(SolTrace
         ui/TransparentPane.qml
         ui/WorldView.qml
         ui/TopBar.qml
+
+        ui/components/GlassRect.qml
+        ui/components/IconButton.qml
+        ui/components/Callout.qml
+        ui/components/GlassCombo.qml
+        ui/components/ComboButtonGroup.qml
+        ui/components/BrowserTreeNode.qml
+
+        ui/viewports/SimScene.qml
+        ui/viewports/SceneNav.qml
+
+        ui/sections/Topbar.qml
+        ui/sections/Configure.qml
+        ui/sections/Simulate.qml
+        ui/sections/Analyze.qml
+        ui/sections/ContentPane.qml
     DEPENDENCIES
         QtQuick
         QtQuick3D
@@ -49,6 +65,49 @@ qt_add_resources(SolTrace
         /
     FILES
         assets/b_to_r_wide.png
+)
+
+qt_add_resources(SolTrace "fonts"
+    PREFIX "/fonts"
+    FILES
+        assets/fonts/computer-modern/cmunrm.ttf
+        assets/fonts/computer-modern/cmunbx.ttf
+        assets/fonts/computer-modern/cmunti.ttf
+        assets/fonts/computer-modern/cmunbi.ttf
+        assets/fonts/computer-modern/cmunss.ttf
+        assets/fonts/computer-modern/cmunsx.ttf
+        assets/fonts/computer-modern/cmunsi.ttf
+        assets/fonts/computer-modern/cmunso.ttf
+)
+
+qt_add_resources(SolTrace "images"
+    PREFIX "/images"
+    FILES
+        assets/images/mark.png
+        assets/images/logo.png
+        assets/images/logo.svg
+)
+
+qt_add_resources(SolTrace "icons"
+    PREFIX "/icons"
+    FILES
+        assets/icons/chart.svg
+        assets/icons/play.svg
+        assets/icons/sliders.svg
+        assets/icons/github.svg
+        assets/icons/settings.svg
+        assets/icons/blocks.svg
+        assets/icons/box.svg
+        assets/icons/chevron-down.svg
+        assets/icons/chevron-right.svg
+        assets/icons/info.svg
+        assets/icons/list-video.svg
+        assets/icons/placeholder.svg
+        assets/icons/play-box.svg
+        assets/icons/shapes.svg
+        assets/icons/user.svg
+        assets/icons/double-chevron-right.svg
+        assets/icons/sun.svg
 )
 
 target_include_directories(SolTrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

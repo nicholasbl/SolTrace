@@ -15,7 +15,41 @@ ApplicationWindow {
     width: 1280
     height: 720
     visible: true
+    property int sectionIndex: 1
+    property var sections: ["Configure", "Simulate", "Analyze"]
 
+    SimScene {
+        id: sim
+        z: 0
+    }
+
+    Item {
+        anchors.fill: parent
+        anchors.margins: 15
+        z: 1
+
+        Topbar {
+            id: topbar
+            source: sim
+            sectionIndex: root.sectionIndex
+            onSectionIndexChanged: root.sectionIndex = sectionIndex
+        }
+
+        Loader {
+            id: content_loader
+            anchors.top: topbar.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.topMargin: 15
+
+            source: "qml/sections/" + root.sections[root.sectionIndex] + ".qml"
+
+            onLoaded: item.source = sim
+        }
+    }
+
+/*
     Material.theme: Material.Light
     Material.accent: Material.Blue
 
@@ -45,7 +79,7 @@ ApplicationWindow {
         height: 240
     }
 
-    /*
+
     TransparentPane {
         id: data_list_pane
         anchors.left: parent.left
