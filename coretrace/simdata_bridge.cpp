@@ -325,7 +325,7 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
 	return static_cast<int>(ConversionErrors::SUCCESS);
 }
 
-int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
+int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys, int nthreads)
 {
     // Make native runner
     SolTrace::NativeRunner::NativeRunner runner;
@@ -339,6 +339,9 @@ int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
 
     // Setup simualtion (convert simulation data to TSystem)
     sts = runner.setup_simulation(&sd);
+
+    // Set number of threads
+    runner.set_number_of_threads(nthreads);
 
     // Set stage parameters (specific to native runner)
     set_tstage_parameters(sys, *runner.get_system());
@@ -359,7 +362,7 @@ int run_native_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
     return -1;
 }
 
-int run_native_file_runner(TSystem* sys, const char* file_name)
+int run_native_file_runner(TSystem* sys, const char* file_name, int nthreads)
 {
     // Make simulation data
     SolTrace::Data::SimulationData sd;
@@ -379,6 +382,9 @@ int run_native_file_runner(TSystem* sys, const char* file_name)
 
     // Setup simualtion (convert simulation data to TSystem)
     sts = runner.setup_simulation(&sd);
+
+    // Set number of threads
+    runner.set_number_of_threads(nthreads);
 
     // Run simulation
     sts = runner.run_simulation();
