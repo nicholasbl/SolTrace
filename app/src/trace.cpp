@@ -955,8 +955,9 @@ int RunSolTrace20(Project* System, int nrays, int nmaxrays,
 	}
 
 	// Run ray trace
+	wxStopWatch sw;
 	const char* error_msg = "";
-	int count_raydata = ::st_sim_run_SolTrace20(spcxt, *seed, runner_enum, &error_msg, file_name);
+	int count_raydata = ::st_sim_run_SolTrace20(spcxt, *seed, runner_enum, &error_msg, file_name, nmaxthreads);
 	if (count_raydata <= 0)
 	{
 		errors.Add(error_msg && *error_msg ? wxString::FromUTF8(error_msg) : "Unknown error");
@@ -975,8 +976,9 @@ int RunSolTrace20(Project* System, int nrays, int nmaxrays,
 	bool error = System->Results.ReadResultsFromContextList(ContextList);
 	CountRayHitsPerElement(System);
 
+	int millisec = (int)sw.Time();
 
-	return 0;
+	return millisec;
 }
 
 /*
