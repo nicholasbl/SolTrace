@@ -135,7 +135,7 @@ void get_raydata_from_native_tsys(TSystem* sys_legacy, const SolTrace::NativeRun
         // Native TRayData::ray_t layout (Query API)
         double pos_glob[3], cos_glob[3];
         int element = 0, stageIdx1 = 0;
-        unsigned int raynum = 0;
+        uint_fast64_t raynum = 0;
         SolTrace::Result::RayEvent ray_event;
 
         // Get next ray entry
