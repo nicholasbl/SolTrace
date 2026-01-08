@@ -15,22 +15,6 @@
 namespace SolTrace::NativeRunner
 {
 
-    class GlobalRay_refactored
-    {
-    public:
-        GlobalRay_refactored() // : active(true)
-        {
-            Num = 0;
-            for (int i = 0; i < 3; i++)
-                Pos[i] = Cos[i] = 0.0;
-        }
-
-        double Pos[3];
-        double Cos[3];
-        uint_fast64_t Num;
-        // bool active;
-    };
-
     // void SpencerandMurtySurfaceClosedForm(TElement *Element,
     //                                       double PosLoc[3],
     //                                       double CosLoc[3],

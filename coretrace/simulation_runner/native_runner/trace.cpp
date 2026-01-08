@@ -208,11 +208,6 @@ namespace SolTrace::NativeRunner
 		std::vector<GlobalRay_refactored> IncomingRays; // Vector of rays from previous stage, going into next stage
 		IncomingRays.resize(NumberOfRays);
 
-		// Start the clock
-		// clock_t startTime = clock();
-		// int rays_per_callback_estimate = 50;
-		// uint_fast64_t RaysTracedTotal = 0;
-
 		// Initialize stage variables
 		uint_fast64_t StageDataArrayIndex = 0;
 		uint_fast64_t PreviousStageDataArrayIndex = 0;
@@ -483,7 +478,8 @@ namespace SolTrace::NativeRunner
 									   IncludeSunShape,
 									   optics,
 									   IncludeErrors,
-									   i, Stage, // k,
+									   i, 
+									   Stage,
 									   MultipleHitCount,
 									   LastDFXYZ,
 									   LastCosRaySurfElement,
