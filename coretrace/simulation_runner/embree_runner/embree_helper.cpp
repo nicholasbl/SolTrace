@@ -21,8 +21,8 @@ namespace SolTrace::EmbreeRunner
 {
 
     using SolTrace::Data::CopyVec3;
-    using SolTrace::Data::TransformToReference;
     using SolTrace::Data::TransformToLocal;
+    using SolTrace::Data::TransformToReference;
 
     using SolTrace::NativeRunner::TElement;
     using SolTrace::NativeRunner::telement_ptr;
@@ -48,27 +48,8 @@ namespace SolTrace::EmbreeRunner
         printf("error %d: %s\n", error, str);
     }
 
-    int bounds_error(const RTCBoundsFunctionArguments *args,
-                     const BBOXERRORS error_enum)
+    int bounds_error(const RTCBoundsFunctionArguments *args)
     {
-        // char *str = "";
-        std::string str("");
-        switch (error_enum)
-        {
-        case BBOXERRORS::NONE:
-            str = "None";
-            break;
-        case BBOXERRORS::BOUNDS_APERTURE_ERROR:
-            str = "Aperture bounds error";
-            break;
-        case BBOXERRORS::BOUNDS_SURFACE_ERROR:
-            str = "Surface bounds error";
-            break;
-        default:
-            str = "Unknown error";
-            break;
-        }
-
         // Set bounds to zero and report error
         RTCBounds *bounds_o = args->bounds_o;
         bounds_o->lower_x = std::numeric_limits<float>::quiet_NaN();
@@ -80,9 +61,11 @@ namespace SolTrace::EmbreeRunner
 
         error_function(args->geometryUserPtr,
                        RTC_ERROR_INVALID_OPERATION,
-                       str.c_str());
+                       "Bounding box computation failed for some element");
 
         throw std::runtime_error("Embree scene commit failed");
+
+        return 0;
     }
 
     void bounds_function(const RTCBoundsFunctionArguments *args)
@@ -93,12 +76,14 @@ namespace SolTrace::EmbreeRunner
         // Get bounds
         float min_coord_global[3];
         float max_coord_global[3];
-        BBOXERRORS error = get_bounds(st_element, min_coord_global, max_coord_global);
+        bool success = get_bounds(st_element,
+                                  min_coord_global,
+                                  max_coord_global);
 
         // Check error
-        if (error != BBOXERRORS::NONE)
+        if (!success)
         {
-            bounds_error(args, error);
+            bounds_error(args);
         }
 
         // Assign bounds
@@ -120,11 +105,9 @@ namespace SolTrace::EmbreeRunner
         CopyVec3(PosRayGlob, payload->PosRayGlobIn);
         CopyVec3(CosRayGlob, payload->CosRayGlobIn);
 
-        // TODO: Need to get the stage here somehow...
         // Get Element data
         TElement *st_element = (TElement *)args->geometryUserPtr;
-        // TStage *st_stage = (TStage *)st_element->parent_stage;
-        TStage *st_stage = nullptr;
+        tstage_ptr st_stage = st_element->parent_stage;
 
         // First, convert ray coordinates to element
         // Global -> stage -> element
@@ -140,7 +123,8 @@ namespace SolTrace::EmbreeRunner
                          st_element->Origin, st_element->RRefToLoc,
                          PosRayElement, CosRayElement);
 
-        // increment position by tiny amount to get off the element if tracing to the same element
+        // increment position by tiny amount to get off the element if 
+        // tracing to the same element
         PosRayElement[0] = PosRayElement[0] + 1.0e-4 * CosRayElement[0];
         PosRayElement[1] = PosRayElement[1] + 1.0e-4 * CosRayElement[1];
         PosRayElement[2] = PosRayElement[2] + 1.0e-4 * CosRayElement[2];
@@ -158,7 +142,6 @@ namespace SolTrace::EmbreeRunner
             PosRaySurfElement, CosRaySurfElement, DFXYZ,
             &PathLength, &payload->ErrorFlag, &InterceptFlag, &HitBackSide);
 
-        // TODO: What to do here?
         // Update rayhit info (if hit)
         if (InterceptFlag != 0)
         {
@@ -174,13 +157,7 @@ namespace SolTrace::EmbreeRunner
                  (st_element->element_number < payload->element_number)))
             {
 
-                // if (PosRaySurfElement[2] <= st_element->ZAperture ||
-                //     st_element->SurfaceIndex == 'm' ||
-                //     st_element->SurfaceIndex == 'M' ||
-                //     st_element->SurfaceIndex == 'r' ||
-                //     st_element->SurfaceIndex == 'R')
-                // TODO: Is this the correct thing to do?
-				if (PosRaySurfElement[2] <= st_element->ZAperture)
+                if (PosRaySurfElement[2] <= st_element->ZAperture)
                 {
 
                     // Transform ray back to stage coordinate system
@@ -228,16 +205,9 @@ namespace SolTrace::EmbreeRunner
         for (tstage_ptr stage : system.StageList)
         {
             // Loop through elements in each stage
-            int j = 0;
             unsigned int stage_mask = 1u << stage_index;
             for (telement_ptr st_element : stage->ElementList)
             {
-                // TODO: What to do about stage and mask here?
-                // Add ptr to parent stage to st_element
-                // st_element->parent_stage = stage;
-                st_element->element_number = j + 1;
-                // st_element->embree_mask = stage_mask;
-
                 // Make embree geometry for each element
                 RTCGeometry embree_geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_USER);
                 rtcSetGeometryUserPrimitiveCount(embree_geom, 1);
@@ -262,8 +232,6 @@ namespace SolTrace::EmbreeRunner
 
                 // Release geometry (it is owned by the scene now)
                 rtcReleaseGeometry(embree_geom);
-
-                j++;
             }
 
             stage_index++;

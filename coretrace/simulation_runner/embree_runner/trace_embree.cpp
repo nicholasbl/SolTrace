@@ -67,6 +67,9 @@ namespace SolTrace::EmbreeRunner
             return RunnerStatus::ERROR;
         }
 
+        System->RayData.SetUp(1, NumberOfRays);
+        System->SunRayCount = 0;
+
         std::cout << "Setting up embree stuff..." << std::endl;
 
         // Initialize Embree vars

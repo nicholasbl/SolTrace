@@ -2,8 +2,8 @@
 
 #include <cmath>
 
+#include <utilities.hpp>
 #include <vector3d.hpp>
-#include <cst_templates/utilities.hpp>
 
 #include "common.hpp"
 

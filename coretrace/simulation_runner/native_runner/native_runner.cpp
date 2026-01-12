@@ -155,7 +155,7 @@ namespace SolTrace::NativeRunner
         auto my_map = std::map<int_fast64_t, tstage_ptr>();
         // int_fast64_t current_stage_id = -1;
         tstage_ptr current_stage = nullptr;
-        int_fast64_t element_number = 1;
+        // int_fast64_t element_number = 1;
         bool element_found_before_stage = false;
 
         if (data->get_number_of_elements() <= 0)
@@ -184,17 +184,17 @@ namespace SolTrace::NativeRunner
                 {
                     // TODO: Duplicate stage numbers. Need to make an error
                     // message.
+                    throw std::runtime_error("Duplicate stage numbers found.");
                     sts = RunnerStatus::ERROR;
                 }
 
                 current_stage = stage;
-                element_number = 1;
+                // element_number = 1;
             }
             else if (el->is_enabled() && el->is_single())
             {
                 if (current_stage == nullptr)
                 {
-                    // throw std::runtime_error("No stage to add element to");
                     element_found_before_stage = true;
                     continue;
                 }
@@ -205,10 +205,11 @@ namespace SolTrace::NativeRunner
                 }
 
                 telement_ptr elem = make_telement(iter->second,
-                                                  element_number,
+                                                  current_stage,
                                                   this->eparams);
-                ++element_number;
-                current_stage->ElementList.push_back(elem);
+                // ++element_number;
+                // current_stage->ElementList.push_back(elem);
+                current_stage->add_element(elem);
             }
         }
 
@@ -225,7 +226,7 @@ namespace SolTrace::NativeRunner
             // set to correspond to global coordinates. This is necessary
             // so that the element coordinate setup in make_element are
             // correct.
-            int_fast64_t element_number = 1;
+            // int_fast64_t element_number = 1;
             auto stage = make_tstage(this->eparams);
             stage->ElementList.reserve(data->get_number_of_elements());
             for (auto iter = data->get_const_iterator();
@@ -236,10 +237,11 @@ namespace SolTrace::NativeRunner
                 if (el->is_enabled() && el->is_single())
                 {
                     telement_ptr tel = make_telement(el,
-                                                     element_number,
+                                                     stage,
                                                      this->eparams);
-                    stage->ElementList.push_back(tel);
-                    ++element_number;
+                    // stage->ElementList.push_back(tel);
+                    // ++element_number;
+                    stage->add_element(tel);
                 }
             }
             my_map.insert(std::make_pair(0, stage));

@@ -2,35 +2,41 @@
 
 #include <algorithm>
 
+#include <matvec.hpp>
+#include <native_runner_types.hpp>
+
 namespace SolTrace::EmbreeRunner
 {
+    using SolTrace::Data::MatrixVectorMult_generic;
 
     using SolTrace::NativeRunner::TElement;
+    using SolTrace::NativeRunner::telement_ptr;
     using SolTrace::NativeRunner::TStage;
+    using SolTrace::NativeRunner::tstage_ptr;
 
-    float get_absolute_minmax(const float values[], int size, bool is_max)
-    {
-        float minmax_abs = std::abs(values[0]);
+    // float get_absolute_minmax(const float values[], int size, bool is_max)
+    // {
+    //     float minmax_abs = std::abs(values[0]);
 
-        if (is_max)
-        {
-            for (int i = 1; i < size; i++)
-            {
-                minmax_abs = std::max(std::abs(values[i]),
-                                      minmax_abs);
-            }
-        }
-        else
-        {
-            for (int i = 1; i < size; i++)
-            {
-                minmax_abs = std::min(std::abs(values[i]),
-                                      minmax_abs);
-            }
-        }
+    //     if (is_max)
+    //     {
+    //         for (int i = 1; i < size; i++)
+    //         {
+    //             minmax_abs = std::max(std::abs(values[i]),
+    //                                   minmax_abs);
+    //         }
+    //     }
+    //     else
+    //     {
+    //         for (int i = 1; i < size; i++)
+    //         {
+    //             minmax_abs = std::min(std::abs(values[i]),
+    //                                   minmax_abs);
+    //         }
+    //     }
 
-        return minmax_abs;
-    }
+    //     return minmax_abs;
+    // }
 
     // void process_zernike_bounds(TElement* st_element, float x_minmax[2], float y_minmax[2],
     // 	float(&z_minmax)[2])
@@ -258,26 +264,27 @@ namespace SolTrace::EmbreeRunner
     // }
 
     void transform_to_global(const float coord_element[3],
-                             TStage *st_stage, TElement *st_element,
+                             const tstage_ptr st_stage,
+                             const TElement *st_element,
                              float (&coord_global)[3])
     {
-        // float PosDumStage[3];
-        // float coord_stage[3];
-        // MatrixVectorMult_generic(st_element->RLocToRef, coord_element, PosDumStage);
-        // for (int i = 0; i < 3; i++)
-        // 	coord_stage[i] = PosDumStage[i] + st_element->Origin[i];
+        float PosDumStage[3];
+        float coord_stage[3];
+        MatrixVectorMult_generic(st_element->RLocToRef, coord_element, PosDumStage);
+        for (int i = 0; i < 3; i++)
+            coord_stage[i] = PosDumStage[i] + st_element->Origin[i];
 
-        // float PosDumGlob[3];
-        // MatrixVectorMult_generic(st_stage->RLocToRef, coord_stage, PosDumGlob);
-        // for (int i = 0; i < 3; i++)
-        // 	coord_global[i] = PosDumGlob[i] + st_stage->Origin[i];
+        float PosDumGlob[3];
+        MatrixVectorMult_generic(st_stage->RLocToRef, coord_stage, PosDumGlob);
+        for (int i = 0; i < 3; i++)
+            coord_global[i] = PosDumGlob[i] + st_stage->Origin[i];
         return;
     }
 
     void transform_bounds(const float min_coord_element[3],
                           const float max_coord_element[3],
-                          TStage *st_stage,
-                          TElement *st_element,
+                          const tstage_ptr st_stage,
+                          const TElement *st_element,
                           float (&min_coord_global)[3],
                           float (&max_coord_global)[3])
     {
@@ -318,344 +325,55 @@ namespace SolTrace::EmbreeRunner
         }
     }
 
-    int get_aperture_bounds(TElement *st_element, float &x_min, float &x_max,
-                            float &y_min, float &y_max)
-    {
-        // switch (std::tolower(st_element->ShapeIndex))
-        // {
-        // case ('c'):
-        // {
-        //     // Circular
-        //     float r = st_element->ParameterA * 0.5f;
-        //     x_min = -r;
-        //     x_max = r;
-        //     y_min = -r;
-        //     y_max = r;
-
-        //     break;
-        // }
-        // case ('h'):
-        // {
-        //     // Hexagonal
-        //     float r = st_element->ParameterA * 0.5f;
-        //     float apothem = (2.f * r * std::sqrt(3.f)) / 4.f;
-        //     x_min = -r;
-        //     x_max = r;
-        //     y_min = -apothem;
-        //     y_max = apothem;
-
-        //     break;
-        // }
-        // case ('t'):
-        // {
-        //     // Triangular
-        //     float r = st_element->ParameterA * 0.5f;
-        //     float side = r * std::sqrt(3.f);
-        //     float h = 1.5f * r;
-        //     x_min = -0.5f * side;
-        //     x_max = 0.5f * side;
-        //     y_min = r - h;
-        //     y_max = r;
-
-        //     break;
-        // }
-        // case ('r'):
-        // {
-        //     // Rectangular
-        //     x_min = st_element->ParameterA * -0.5f;
-        //     x_max = st_element->ParameterA * 0.5f;
-        //     y_min = st_element->ParameterB * -0.5f;
-        //     y_max = st_element->ParameterB * 0.5f;
-
-        //     break;
-        // }
-        // case ('l'):
-        // {
-        //     // Single axis curvature section
-        //     x_min = st_element->ParameterA;
-        //     x_max = st_element->ParameterB;
-        //     y_min = st_element->ParameterC * -0.5f;
-        //     y_max = st_element->ParameterC * 0.5f;
-
-        //     break;
-        // }
-        // case ('a'):
-        // {
-        //     // Annular
-        //     float r_inner = st_element->ParameterA;
-        //     float r_outer = st_element->ParameterB;
-        //     float theta_deg = st_element->ParameterC;
-
-        //     // IGNORING theta for now
-        //     x_min = -1.f * r_outer;
-        //     x_max = r_outer;
-        //     y_min = -1.f * r_outer;
-        //     y_max = r_outer;
-
-        //     break;
-        // }
-        // case ('i'):
-        // {
-        //     // Irregular triangle
-        //     float x1 = st_element->ParameterA;
-        //     float y1 = st_element->ParameterB;
-        //     float x2 = st_element->ParameterC;
-        //     float y2 = st_element->ParameterD;
-        //     float x3 = st_element->ParameterE;
-        //     float y3 = st_element->ParameterF;
-
-        //     // Put all x and y values in arrays
-        //     float x_values[3] = {x1, x2, x3};
-        //     float y_values[3] = {y1, y2, y3};
-
-        //     // Find min and max using std::min_element and std::max_element
-        //     x_min = *std::min_element(x_values, x_values + 3);
-        //     x_max = *std::max_element(x_values, x_values + 3);
-        //     y_min = *std::min_element(y_values, y_values + 3);
-        //     y_max = *std::max_element(y_values, y_values + 3);
-
-        //     break;
-        // }
-        // case ('q'):
-        // {
-        //     // Irregular quadrilateral
-        //     float x1 = st_element->ParameterA;
-        //     float y1 = st_element->ParameterB;
-        //     float x2 = st_element->ParameterC;
-        //     float y2 = st_element->ParameterD;
-        //     float x3 = st_element->ParameterE;
-        //     float y3 = st_element->ParameterF;
-        //     float x4 = st_element->ParameterG;
-        //     float y4 = st_element->ParameterH;
-
-        //     // Put all x and y values in arrays
-        //     float x_values[4] = {x1, x2, x3, x4};
-        //     float y_values[4] = {y1, y2, y3, y4};
-
-        //     // Find min and max using std::min_element and std::max_element
-        //     x_min = *std::min_element(x_values, x_values + 4);
-        //     x_max = *std::max_element(x_values, x_values + 4);
-        //     y_min = *std::min_element(y_values, y_values + 4);
-        //     y_max = *std::max_element(y_values, y_values + 4);
-
-        //     break;
-        // }
-        // default:
-        // {
-        //     x_min = std::numeric_limits<float>::quiet_NaN();
-        //     x_max = std::numeric_limits<float>::quiet_NaN();
-        //     y_min = std::numeric_limits<float>::quiet_NaN();
-        //     y_max = std::numeric_limits<float>::quiet_NaN();
-        //     return -1;
-        //     break;
-        // }
-        // }
-
-        return 0;
-    }
-
-    int get_surface_bounds(TElement *st_element,
-                           float x_minmax[2],
-                           float y_minmax[2],
-                           float &z_min,
-                           float &z_max)
-    {
-
-        // switch (std::tolower(st_element->SurfaceIndex))
-        // {
-        // case 's':
-        // {
-        //     // Spherical
-        //     float c = st_element->VertexCurvX;
-        //     float r = 1.f / c;
-
-        //     float x_abs_max = get_absolute_minmax(x_minmax, 2, true);
-        //     float y_abs_max = get_absolute_minmax(y_minmax, 2, true);
-
-        //     // Check if max x,y combo is outside sphere
-        //     float x, y;
-        //     float in_root = 1.f - 1.f - (c * c) * (x_abs_max * x_abs_max + y_abs_max * y_abs_max);
-        //     if (in_root <= 0)
-        //     {
-        //         z_max = r;
-        //         z_min = 0.f;
-        //     }
-        //     else
-        //     {
-        //         float z_numerator = (c * (x_abs_max * x_abs_max + y_abs_max * y_abs_max));
-        //         float z_denom = 1.f + std::sqrt(1.f - (c * c) * (x_abs_max * x_abs_max + y_abs_max * y_abs_max));
-
-        //         z_max = z_numerator / z_denom;
-        //         z_min = 0.f;
-        //     }
-
-        //     break;
-        // }
-        // case 'p':
-        // {
-        //     // Parabolic
-        //     float cx = st_element->VertexCurvX;
-        //     float cy = st_element->VertexCurvY;
-
-        //     float x_abs_max = get_absolute_minmax(x_minmax, 2, true);
-        //     float y_abs_max = get_absolute_minmax(y_minmax, 2, true);
-
-        //     z_max = 0.5f * (cx * x_abs_max * x_abs_max + cy * y_abs_max * y_abs_max);
-        //     z_min = 0.f;
-
-        //     break;
-        // }
-        // case 'o':
-        // {
-        //     // Hyperboloids and hemiellipsoids
-        //     float c = st_element->VertexCurvX;
-        //     float kappa = st_element->Kappa;
-
-        //     float x_abs_max = get_absolute_minmax(x_minmax, 2, true);
-        //     float y_abs_max = get_absolute_minmax(y_minmax, 2, true);
-
-        //     float z_numer = c * (x_abs_max * x_abs_max + y_abs_max * y_abs_max);
-        //     float z_denom = 1.f + std::sqrt(1.f - (kappa * c * c) * (x_abs_max * x_abs_max + y_abs_max * y_abs_max));
-
-        //     z_max = z_numer / z_denom;
-        //     z_min = 0.f;
-
-        //     break;
-        // }
-        // case 'f':
-        // {
-        //     // Flat
-        //     z_max = 1.e-4f;
-        //     z_min = -1.e-4f;
-
-        //     break;
-        // }
-        // case 'c':
-        // {
-        //     // Conical
-        //     float theta_deg = st_element->ConeHalfAngle;
-        //     float theta_rad = theta_deg * (M_PI / 180.0f);
-
-        //     float x_abs_max = get_absolute_minmax(x_minmax, 2, true);
-        //     float y_abs_max = get_absolute_minmax(y_minmax, 2, true);
-
-        //     z_max = std::sqrt(x_abs_max * x_abs_max + y_abs_max * y_abs_max) / std::tan(theta_rad);
-        //     z_min = 0.f;
-
-        //     break;
-        // }
-        // case 't':
-        // {
-        //     // Cylindrical (only works with l aperture)
-        //     float inverse_R = st_element->CurvOfRev;
-        //     float R = 1.f / inverse_R;
-
-        //     // OVERWRITES X BOUNDS
-        //     x_minmax[0] = -R;
-        //     x_minmax[1] = R;
-
-        //     z_max = 2.f * R;
-        //     z_min = 0.f;
-
-        //     break;
-        // }
-        // case 'm':
-        // case 'v':
-        // {
-        //     // Zernike series file (m) or VSHOT (v)
-        //     float z_minmax[2] = {0, 0};
-        //     process_zernike_bounds(st_element, x_minmax, y_minmax, z_minmax);
-
-        //     z_min = z_minmax[0];
-        //     z_max = z_minmax[1];
-
-        //     break;
-        // }
-        // case 'r':
-        // {
-        //     // Rotationally symmetric polynomial file
-        //     float z_minmax[2] = {0, 0};
-        //     process_poly_bounds(st_element, x_minmax, y_minmax, z_minmax);
-
-        //     z_min = z_minmax[0];
-        //     z_max = z_minmax[1];
-
-        //     break;
-        // }
-        // case 'i':
-        // {
-        //     // Rotationally symmetric cubic spline file
-        //     float z_minmax[2] = {0, 0};
-        //     process_cubic_spline_bounds(st_element, x_minmax, y_minmax, z_minmax);
-
-        //     z_min = z_minmax[0] - 10000;
-        //     z_max = z_minmax[1];
-
-        //     break;
-        // }
-        // case 'e':
-        // {
-        //     // Finite element data
-        //     float z_minmax[2] = {0, 0};
-        //     process_FE_bounds(st_element, x_minmax, y_minmax, z_minmax);
-
-        //     z_min = z_minmax[0];
-        //     z_max = z_minmax[1];
-
-        //     break;
-        // }
-        // default:
-        // {
-        //     // not supported for embree
-        //     z_min = std::numeric_limits<float>::quiet_NaN();
-        //     z_max = std::numeric_limits<float>::quiet_NaN();
-        //     return -1;
-        // }
-        // }
-
-        return 0;
-    }
-
-    BBOXERRORS get_bounds(TElement *st_element,
-                          float (&min_coord_global)[3],
-                          float (&max_coord_global)[3])
+    bool get_bounds(const TElement *st_element,
+                    float (&min_coord_global)[3],
+                    float (&max_coord_global)[3])
     {
         // Get stage
-        // TStage *st_stage = st_element->parent_stage;
-        TStage *st_stage = nullptr;
+        tstage_ptr st_stage = st_element->parent_stage;
 
         // Define element coord bounds
         float min_coord_element[3] = {0.f, 0.f, 0.f};
         float max_coord_element[3] = {0.f, 0.f, 0.f};
 
-        float x_minmax[2] = {0.f, 0.f};
-        float y_minmax[2] = {0.f, 0.f};
-        float z_minmax[2] = {0.f, 0.f};
+        double x_minmax[2] = {0.0, 0.0};
+        double y_minmax[2] = {0.0, 0.0};
+        double z_minmax[2] = {0.0, 0.0};
 
-        // Process aperture bounds (sets x and y)
-        int error_code = get_aperture_bounds(st_element,
-                                             x_minmax[0], x_minmax[1],
-                                             y_minmax[0], y_minmax[1]);
-        if (error_code != 0)
-        {
-            // bounds_error(args, "Invalid aperture");
-            return BBOXERRORS::BOUNDS_APERTURE_ERROR;
-        }
+        // // Process aperture bounds (sets x and y)
+        // int error_code = get_aperture_bounds(st_element,
+        //                                      x_minmax[0], x_minmax[1],
+        //                                      y_minmax[0], y_minmax[1]);
+        // if (error_code != 0)
+        // {
+        //     // bounds_error(args, "Invalid aperture");
+        //     return BBOXERRORS::BOUNDS_APERTURE_ERROR;
+        // }
 
-        // Process surface bounds (sets y, and possibly overwrites x and y)
-        error_code = get_surface_bounds(st_element,
-                                        x_minmax,
-                                        y_minmax,
-                                        z_minmax[0],
-                                        z_minmax[1]);
-        if (error_code != 0)
-        {
-            // bounds_error(args, "Invalid surface");
-            return BBOXERRORS::BOUNDS_SURFACE_ERROR;
-        }
+        st_element->aperture->bounding_box(x_minmax[0],
+                                               x_minmax[1],
+                                               y_minmax[0],
+                                               y_minmax[1]);
+
+        // // Process surface bounds (sets y, and possibly overwrites x and y)
+        // error_code = get_surface_bounds(st_element,
+        //                                 x_minmax,
+        //                                 y_minmax,
+        //                                 z_minmax[0],
+        //                                 z_minmax[1]);
+        // if (error_code != 0)
+        // {
+        //     // bounds_error(args, "Invalid surface");
+        //     return BBOXERRORS::BOUNDS_SURFACE_ERROR;
+        // }
+
+        st_element->surface->bounding_box(x_minmax,
+                                              y_minmax,
+                                              z_minmax[0],
+                                              z_minmax[1]);
 
         // Expand bounding boxes slightly to account for float precision
-        float expand = 0.001;
+        const float expand = 1e-3f;
         x_minmax[0] -= expand;
         x_minmax[1] += expand;
         y_minmax[0] -= expand;
@@ -676,7 +394,7 @@ namespace SolTrace::EmbreeRunner
                          st_stage, st_element,
                          min_coord_global, max_coord_global);
 
-        return BBOXERRORS::NONE;
+        return true;
     }
 
 } // namespace SolTrace::EmbreeRunner

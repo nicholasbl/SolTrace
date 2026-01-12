@@ -28,7 +28,7 @@ namespace SolTrace::EmbreeRunner
 		double LastPosRaySurfElement[3] = {0.0, 0.0, 0.0};
 		double LastCosRaySurfElement[3] = {0.0, 0.0, 0.0};
 
-		int element_number = -1;
+		int_fast64_t element_number = -1;
 		int ErrorFlag = 0;
 
 		double PosRayGlobIn[3] = {0.0, 0.0, 0.0};
@@ -36,6 +36,11 @@ namespace SolTrace::EmbreeRunner
 
 		double LastPathLength = std::numeric_limits<double>::infinity();
 	};
+
+	inline unsigned int embree_mask(int_fast64_t stage_index)
+	{
+		return 1u << stage_index;
+	}
 
 	void error_function(void *userPtr,
 						RTCError error,

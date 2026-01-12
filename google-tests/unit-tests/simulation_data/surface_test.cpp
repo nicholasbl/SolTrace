@@ -7,8 +7,6 @@ TEST(Surface, Typing)
     // Test that each constructor properly sets the type
     auto cone = SolTrace::Data::make_surface<SolTrace::Data::Cone>(50.0);
     EXPECT_EQ(cone->get_type(), SolTrace::Data::CONE);
-    // cone = SolTrace::Data::make_surface<Cone>();
-    // EXPECT_EQ(cone->get_type(), CONE);
 
     auto cylinder = SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(1.0);
     EXPECT_EQ(cylinder->get_type(), SolTrace::Data::CYLINDER);
@@ -18,13 +16,9 @@ TEST(Surface, Typing)
 
     auto para = SolTrace::Data::make_surface<SolTrace::Data::Parabola>(1.0, 1.0);
     EXPECT_EQ(para->get_type(), SolTrace::Data::PARABOLA);
-    // para = SolTrace::Data::make_surface<Parabola>();
-    // EXPECT_EQ(para->get_type(), PARABOLA);
 
     auto sph = SolTrace::Data::make_surface<SolTrace::Data::Sphere>(10.0);
     EXPECT_EQ(sph->get_type(), SolTrace::Data::SPHERE);
-    // sph = SolTrace::Data::make_surface<Sphere>();
-    // EXPECT_EQ(sph->get_type(), SPHERE);
 }
 
 TEST(Surface, MakeSurfaceFromType)

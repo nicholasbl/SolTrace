@@ -20,7 +20,6 @@ set(EMBREE_RUNNER_SRC
     find_element_hit_embree.cpp
     embree_helper.cpp
     embree_runner.cpp
-    embree_types.cpp
     trace_embree.cpp
 )
 

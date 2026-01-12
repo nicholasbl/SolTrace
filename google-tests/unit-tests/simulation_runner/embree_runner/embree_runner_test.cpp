@@ -4,145 +4,17 @@
 #include <simulation_data_export.hpp>
 #include <simulation_result.hpp>
 
+#include "common.hpp"
+#include "count_absorbed_native.h"
+
 using SolTrace::EmbreeRunner::EmbreeRunner;
 using SolTrace::EmbreeRunner::RunnerStatus;
 using SolTrace::EmbreeRunner::TSystem;
 using SolTrace::EmbreeRunner::TRayData;
 
-using SolTrace::Result::SimulationResult;
 using SolTrace::Result::ray_record_ptr;
-
-// TEST(EmbreeRunner, PowerTowerSmokeTest)
-// {
-//     SimulationData sd;
-
-//     // Sun
-//     auto sun = SolTrace::Data::make_ray_source<Sun>();
-//     sun->set_position(0.0, 0.0, 100.0);
-//     sd.add_ray_source(sun);
-
-//     // Absorber -- Flat
-//     auto absorber = SolTrace::Data::make_element<SingleElement>();
-//     absorber->set_origin(0.0, 0.0, 10.0);
-//     absorber->set_aim_vector(0.0, 0.0, 5.0);
-//     absorber->set_zrot(0.0);
-//     absorber->compute_coordinate_rotations();
-//     absorber->set_surface(SolTrace::Data::make_surface<Flat>()); // surface(nullptr)
-//     absorber->set_aperture(SolTrace::Data::make_aperture<Rectangle>(2.0, 2.0));
-//     OpticalProperties *foptics = absorber->get_front_optical_properties();
-//     foptics->my_type = InteractionType::REFLECTION;
-//     foptics->reflectivity = 0.0;
-
-//     // Make stage 1 -- second stage -- these can be added to SimulationData
-//     // in any order but should be numbered in the desired order
-//     auto st1 = SolTrace::Data::make_stage(1);
-//     // Origin is initialized to zero but set it explicitly
-//     st1->set_origin(0.0, 0.0, 0.0);
-//     // Set aim vector so stage and global coordinates are identical
-//     st1->set_aim_vector(0.0, 0.0, 1.0);
-//     // Set z rotation so stage and global coordinates are identical
-//     st1->set_zrot(0.0);
-//     // Compute coordinate rotations
-//     st1->compute_coordinate_rotations();
-//     st1->add_element(absorber);
-//     // Optional -- to help the user identify things
-
-//     // Make stage 0 -- this will be the first stage if the runner uses stages
-//     auto st0 = SolTrace::Data::make_stage(0);
-//     st0->set_origin(0.0, 0.0, 0.0);
-//     st0->set_aim_vector(0.0, 0.0, 1.0);
-
-//     Vector3d rvec, svec, avec;
-//     Vector3d aim, pos;
-
-//     const int NUM_ELEMENTS = 10;
-//     for (int k = 0; k < NUM_ELEMENTS; ++k)
-//     {
-//         auto el = SolTrace::Data::make_element<SingleElement>();
-//         foptics = el->get_front_optical_properties();
-//         foptics->reflectivity = 1.0;
-
-//         pos.set_values(5 * sin(k * PI * 2.0 / NUM_ELEMENTS),
-//                        5 * cos(k * PI * 2.0 / NUM_ELEMENTS),
-//                        0.0);
-//         vector_add(1.0, absorber->get_origin_global(),
-//                    -1.0, pos,
-//                    rvec);
-//         make_unit_vector(rvec);
-//         svec = sun->get_position();
-//         make_unit_vector(svec);
-//         vector_add(0.5, rvec, 0.5, svec, avec);
-//         vector_add(1.0, pos, 100.0, avec, aim);
-
-//         el->set_reference_frame_geometry(pos, aim, 0.0);
-
-//         el->set_surface(SolTrace::Data::make_surface<Flat>());
-//         el->set_aperture(SolTrace::Data::make_aperture<Circle>(2.0));
-
-//         st0->add_element(el);
-//     }
-//     EXPECT_EQ(st0->get_number_of_elements(), NUM_ELEMENTS);
-//     sd.add_stage(st0);
-//     EXPECT_EQ(sd.get_number_of_elements(), NUM_ELEMENTS);
-//     sd.add_stage(st1);
-//     EXPECT_EQ(sd.get_number_of_elements(), NUM_ELEMENTS + 1);
-
-//     // Set parameters
-//     const uint_fast64_t NRAYS = 10000;
-//     SimulationParameters &params = sd.get_simulation_parameters();
-//     params.number_of_rays = NRAYS;
-//     params.max_number_of_rays = params.number_of_rays * 100;
-//     params.include_optical_errors = false;
-//     params.include_sun_shape_errors = false;
-//     params.seed = 12345;
-
-//     EmbreeRunner runner;
-//     RunnerStatus sts = runner.initialize();
-//     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-//     sts = runner.setup_simulation(&sd);
-//     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-//     sts = runner.run_simulation();
-//     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-
-//     // const TSystem *sys = runner.get_system();
-//     // // sys->RayData.Print();
-//     // const TRayData *ray_data = &(sys->RayData);
-//     // uint_fast64_t num_absorbed = count_absorbed_native(ray_data);
-//     // uint_fast64_t ncreate = count_event_native(ray_data, RayEvent::CREATE);
-//     // uint_fast64_t nexit = count_event_native(ray_data, RayEvent::EXIT);
-//     // size_t n = ray_data->Count();
-
-//     // std::cout << "Number Created: " << ncreate << std::endl;
-//     // std::cout << "Number Absorbed: " << num_absorbed << std::endl;
-//     // std::cout << "Number Interactions: " << n << std::endl;
-//     // std::cout << "Number Exit: " << nexit << std::endl;
-
-//     // scan_events_native(ray_data);
-
-//     // EXPECT_EQ(ncreate, NRAYS);
-//     // EXPECT_EQ(num_absorbed + nexit, ncreate);
-//     // EXPECT_EQ(num_absorbed + nexit, NRAYS);
-
-//     // // ray_data->Print();
-
-//     // EXPECT_TRUE(n >= NRAYS);
-//     // EXPECT_TRUE(num_absorbed > 0);
-
-//     SimulationResult result;
-//     sts = runner.report_simulation(&result, 0);
-//     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-
-//     EXPECT_EQ(result.get_number_of_records(), NRAYS);
-//     for (int_fast64_t idx = 0; idx < result.get_number_of_records(); ++idx)
-//     {
-//         const ray_record_ptr rr = result[idx];
-//         EXPECT_TRUE(rr->get_number_of_interactions() > 0);
-//     }
-
-//     std::cout << "Number of ray records: "
-//               << result.get_number_of_records()
-//               << std::endl;
-// }
+using SolTrace::Result::RayEvent;
+using SolTrace::Result::SimulationResult;
 
 TEST(EmbreeRunner, SingleRayValidationTest)
 {
@@ -255,4 +127,136 @@ TEST(EmbreeRunner, SingleRayValidationTest)
     EXPECT_NEAR(idir[0], w[0], TOL);
     EXPECT_NEAR(idir[1], w[1], TOL);
     EXPECT_NEAR(idir[2], w[2], TOL);
+}
+
+TEST(EmbreeRunner, PowerTowerSmokeTest)
+{
+    SimulationData sd;
+
+    // Sun
+    auto sun = SolTrace::Data::make_ray_source<Sun>();
+    sun->set_position(0.0, 0.0, 100.0);
+    sd.add_ray_source(sun);
+
+    // Absorber -- Flat
+    auto absorber = SolTrace::Data::make_element<SingleElement>();
+    absorber->set_origin(0.0, 0.0, 10.0);
+    absorber->set_aim_vector(0.0, 0.0, 5.0);
+    absorber->set_zrot(0.0);
+    absorber->compute_coordinate_rotations();
+    absorber->set_surface(SolTrace::Data::make_surface<Flat>()); // surface(nullptr)
+    absorber->set_aperture(SolTrace::Data::make_aperture<Rectangle>(2.0, 2.0));
+    OpticalProperties *foptics = absorber->get_front_optical_properties();
+    foptics->my_type = InteractionType::REFLECTION;
+    foptics->reflectivity = 0.0;
+
+    // Make stage 1 -- second stage -- these can be added to SimulationData
+    // in any order but should be numbered in the desired order
+    auto st1 = SolTrace::Data::make_stage(1);
+    // Origin is initialized to zero but set it explicitly
+    st1->set_origin(0.0, 0.0, 0.0);
+    // Set aim vector so stage and global coordinates are identical
+    st1->set_aim_vector(0.0, 0.0, 1.0);
+    // Set z rotation so stage and global coordinates are identical
+    st1->set_zrot(0.0);
+    // Compute coordinate rotations
+    st1->compute_coordinate_rotations();
+    st1->add_element(absorber);
+    // Optional -- to help the user identify things
+
+    // Make stage 0 -- this will be the first stage if the runner uses stages
+    auto st0 = SolTrace::Data::make_stage(0);
+    st0->set_origin(0.0, 0.0, 0.0);
+    st0->set_aim_vector(0.0, 0.0, 1.0);
+
+    Vector3d rvec, svec, avec;
+    Vector3d aim, pos;
+
+    const int NUM_ELEMENTS = 10;
+    for (int k = 0; k < NUM_ELEMENTS; ++k)
+    {
+        auto el = SolTrace::Data::make_element<SingleElement>();
+        foptics = el->get_front_optical_properties();
+        foptics->reflectivity = 1.0;
+
+        pos.set_values(5 * sin(k * PI * 2.0 / NUM_ELEMENTS),
+                       5 * cos(k * PI * 2.0 / NUM_ELEMENTS),
+                       0.0);
+        vector_add(1.0, absorber->get_origin_global(),
+                   -1.0, pos,
+                   rvec);
+        make_unit_vector(rvec);
+        svec = sun->get_position();
+        make_unit_vector(svec);
+        vector_add(0.5, rvec, 0.5, svec, avec);
+        vector_add(1.0, pos, 100.0, avec, aim);
+
+        el->set_reference_frame_geometry(pos, aim, 0.0);
+
+        el->set_surface(SolTrace::Data::make_surface<Flat>());
+        el->set_aperture(SolTrace::Data::make_aperture<Circle>(2.0));
+
+        st0->add_element(el);
+    }
+    EXPECT_EQ(st0->get_number_of_elements(), NUM_ELEMENTS);
+    sd.add_stage(st0);
+    EXPECT_EQ(sd.get_number_of_elements(), NUM_ELEMENTS);
+    sd.add_stage(st1);
+    EXPECT_EQ(sd.get_number_of_elements(), NUM_ELEMENTS + 1);
+
+    // Set parameters
+    const uint_fast64_t NRAYS = 10000;
+    SimulationParameters &params = sd.get_simulation_parameters();
+    params.number_of_rays = NRAYS;
+    params.max_number_of_rays = params.number_of_rays * 100;
+    params.include_optical_errors = false;
+    params.include_sun_shape_errors = false;
+    params.seed = 12345;
+
+    EmbreeRunner runner;
+    RunnerStatus sts = runner.initialize();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    const TSystem *sys = runner.get_system();
+    // sys->RayData.Print();
+    const TRayData *ray_data = &(sys->RayData);
+    uint_fast64_t num_absorbed = count_absorbed_native(ray_data);
+    uint_fast64_t ncreate = count_event_native(ray_data, RayEvent::CREATE);
+    uint_fast64_t nexit = count_event_native(ray_data, RayEvent::EXIT);
+    size_t n = ray_data->Count();
+
+    std::cout << "Number Created: " << ncreate << std::endl;
+    std::cout << "Number Absorbed: " << num_absorbed << std::endl;
+    std::cout << "Number Interactions: " << n << std::endl;
+    std::cout << "Number Exit: " << nexit << std::endl;
+
+    scan_events_native(ray_data);
+
+    EXPECT_EQ(ncreate, NRAYS);
+    EXPECT_EQ(num_absorbed + nexit, ncreate);
+    EXPECT_EQ(num_absorbed + nexit, NRAYS);
+
+    // ray_data->Print();
+
+    EXPECT_TRUE(n >= NRAYS);
+    EXPECT_TRUE(num_absorbed > 0);
+
+    SimulationResult result;
+    sts = runner.report_simulation(&result, 0);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    EXPECT_EQ(result.get_number_of_records(), NRAYS);
+    for (int_fast64_t idx = 0; idx < result.get_number_of_records(); ++idx)
+    {
+        const ray_record_ptr rr = result[idx];
+        EXPECT_TRUE(rr->get_number_of_interactions() > 0);
+    }
+
+    std::cout << "Number of ray records: "
+              << result.get_number_of_records()
+              << std::endl;
 }
