@@ -2,10 +2,11 @@ cmake_minimum_required(VERSION 3.16)
 
 project(SolTraceApp VERSION 0.1 LANGUAGES CXX)
 
+include(cmake/CPM.cmake)
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Quick Quick3D)
-
 
 set(QT_QML_GENERATE_QMLLS_INI ON)
 
@@ -57,6 +58,8 @@ qt_add_qml_module(SolTrace
         src/utilities/math_utility.h
         src/utilities/structmodel.h
         src/models/geometrydefinitionsmodel.h src/models/geometrydefinitionsmodel.cpp
+        src/database/database.h src/database/database.cpp
+        src/database/database_models.h src/database/database_models.cpp
 )
 
 qt_add_resources(SolTrace
@@ -109,6 +112,23 @@ qt_add_resources(SolTrace "icons"
         assets/icons/double-chevron-right.svg
         assets/icons/sun.svg
 )
+
+# Deps
+
+CPMAddPackage(
+  NAME EnTT
+  VERSION 3.16.0
+  GITHUB_REPOSITORY skypjack/entt
+  DOWNLOAD_ONLY True
+)
+
+if(EnTT_ADDED)
+  add_library(EnTT INTERFACE)
+  target_include_directories(EnTT SYSTEM INTERFACE ${EnTT_SOURCE_DIR}/src)
+endif()
+
+target_link_libraries(SolTrace PRIVATE EnTT)
+
 
 target_include_directories(SolTrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 

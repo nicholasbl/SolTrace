@@ -1,5 +1,6 @@
 #include "job_run_process.h"
 
+#include <QFontDatabase>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 
