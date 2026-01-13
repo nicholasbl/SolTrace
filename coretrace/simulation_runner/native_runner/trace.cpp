@@ -72,6 +72,7 @@
 #include "pt_optimizations.hpp"
 #include "sun_to_primary_stage.hpp"
 #include "thread_manager.hpp"
+#include "trace_logger.hpp"
 #include "treemesh.hpp"
 
 namespace SolTrace::NativeRunner
@@ -83,6 +84,7 @@ namespace SolTrace::NativeRunner
 	// Trace method
 	RunnerStatus trace_native(
 		thread_manager_ptr manager,
+		trace_logger_ptr logger,
 		TSystem *System,
 		const std::vector<unsigned int> &seeds,
 		uint_fast64_t nthreads,
@@ -94,7 +96,7 @@ namespace SolTrace::NativeRunner
 	{
 		// Initialize Sun
 		Vector3d PosSunStage;
-		if (!SunToPrimaryStage(manager,
+		if (!SunToPrimaryStage(logger,
 							   System,
 							   System->StageList[0].get(),
 							   &System->Sun,
@@ -124,6 +126,7 @@ namespace SolTrace::NativeRunner
 		// having trouble with all the arguments...
 		ThreadInfo my_info;
 		my_info.manager = manager;
+		my_info.logger = logger;
 		my_info.System = System;
 		// my_info.NumberOfRays = NumberOfRays / nthreads;
 		uint_fast64_t rem = NumberOfRays % nthreads;
@@ -163,6 +166,7 @@ namespace SolTrace::NativeRunner
 	RunnerStatus trace_single_thread(
 		unsigned thread_id,
 		thread_manager_ptr manager,
+		trace_logger_ptr logger,
 		TSystem *System,
 		unsigned int seed,
 		uint_fast64_t NumberOfRays,
@@ -358,7 +362,7 @@ namespace SolTrace::NativeRunner
 							std::stringstream ss;
 							ss << "Thread " << thread_id
 							   << " failed to record ray data.\n";
-							manager->error_log(ss.str());
+							logger->error_log(ss.str());
 						}
 					}
 
@@ -455,7 +459,7 @@ namespace SolTrace::NativeRunner
 							   << " Stage: " << i
 							   << " Thread: " << thread_id
 							   << "\n";
-							manager->error_log(ss.str());
+							logger->error_log(ss.str());
 							return RunnerStatus::ERROR;
 						}
 

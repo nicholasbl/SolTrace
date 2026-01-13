@@ -15,6 +15,7 @@
 #include <simulation_data_export.hpp>
 #include <simulation_result_export.hpp>
 #include <simulation_runner.hpp>
+#include <trace_logger.hpp>
 
 #include "common.hpp"
 #include "count_absorbed_native.h"
@@ -75,13 +76,13 @@ TEST(NativeRunnerTypes, TSun)
     EXPECT_EQ(sys->Sun.ShapeIndex, SunShape::PILLBOX);
 }
 
-TEST(NativeRunnerTypes, MakeElement)
-{
-}
+// TEST(NativeRunnerTypes, MakeElement)
+// {
+// }
 
-TEST(NativeRunnerTypes, MakeStage)
-{
-}
+// TEST(NativeRunnerTypes, MakeStage)
+// {
+// }
 
 // TEST(NativeRunnerTypes, TElement)
 // {
@@ -130,12 +131,12 @@ TEST(NativeRunnerTypes, MakeStage)
 //     // TODO: Implement test
 // }
 
-TEST(ThreadManager, Logging)
+TEST(TraceLogger, Logging)
 {
-    SolTrace::NativeRunner::ThreadManager manager;
-    manager.error_log("This is a test message to test logging");
+    SolTrace::NativeRunner::TraceLogger logger;
+    logger.error_log("This is a test message to test logging");
     std::stringstream ss;
-    manager.print_log(ss);
+    logger.print_log(ss);
     EXPECT_GT(ss.str().size(), 0);
 }
 

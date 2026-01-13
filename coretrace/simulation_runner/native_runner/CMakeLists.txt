@@ -25,6 +25,7 @@ set(NATIVE_RUNNER_SRC
     thread_manager.cpp
     trace.cpp
     tracing_errors.cpp
+    trace_logger.cpp
     treemesh.cpp
 )
 

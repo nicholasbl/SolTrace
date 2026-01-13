@@ -8,7 +8,7 @@
 namespace SolTrace::NativeRunner
 {
 
-    ThreadManager::ThreadManager()
+    ThreadManager::ThreadManager(trace_logger_ptr log) : logger(log)
     {
         this->initialize();
         return;
@@ -70,7 +70,7 @@ namespace SolTrace::NativeRunner
                            << " returned status "
                            << status_string(thread_status)
                            << ". This is an error.";
-                        this->error_log(ss.str());
+                        this->logger->error_log(ss.str());
 
                         // Unexpected behavior so we terminate
                         this->cancel();
@@ -91,13 +91,6 @@ namespace SolTrace::NativeRunner
         }
 
         return sts;
-    }
-
-    void ThreadManager::error_log(const std::string &msg)
-    {
-        std::lock_guard<std::mutex> lk(this->message_mutex);
-        this->messages.push_back(msg);
-        return;
     }
 
     void ThreadManager::progress_update(unsigned int id, double prog)
@@ -152,18 +145,6 @@ namespace SolTrace::NativeRunner
         return;
     }
 
-    void ThreadManager::print_log(std::ostream &os) const
-    {
-        std::lock_guard<std::mutex> lk(this->message_mutex);
-        for (auto iter = this->messages.cbegin();
-             iter != this->messages.cend();
-             ++iter)
-        {
-            os << *iter;
-        }
-        return;
-    }
-
     void ThreadManager::initialize()
     {
         // Must call prior to manage and not while running!!
@@ -176,10 +157,6 @@ namespace SolTrace::NativeRunner
             std::lock_guard<std::mutex> lk(this->progress_mutex);
             this->progress.clear();
             this->threads.clear();
-        }
-        {
-            std::lock_guard<std::mutex> lk(this->message_mutex);
-            this->messages.clear();
         }
         return;
     }

@@ -17,6 +17,7 @@
 // NativeRunner headers
 #include "native_runner_types.hpp"
 #include "trace.hpp"
+#include "trace_logger.hpp"
 
 namespace SolTrace::NativeRunner
 {
@@ -25,11 +26,16 @@ namespace SolTrace::NativeRunner
                                    as_power_tower(false),
                                    number_of_threads(1)
     {
-        this->my_manager = make_thread_manager();
+        this->my_logger = make_trace_logger();
+        this->my_manager = make_thread_manager(this->my_logger);
+        return;
     }
 
     NativeRunner::~NativeRunner()
     {
+        this->my_manager = nullptr;
+        this->my_logger = nullptr;
+        return;
     }
 
     RunnerStatus NativeRunner::initialize()
@@ -298,6 +304,7 @@ namespace SolTrace::NativeRunner
 
         RunnerStatus sts = trace_native(
             this->my_manager,
+            this->my_logger,
             &this->tsys,
             this->seeds,
             this->number_of_threads,
