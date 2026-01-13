@@ -14,7 +14,7 @@ include_directories(
 
 # Add test files for Embree_runner
 set(EMBREE_RUNNER_TEST_SRC
-    # ../../common/common.cpp
+    ../../common/common.cpp
     # flat_calculator_test.cpp
     # newton_calculator_test.cpp
     # parabola_calculator_test.cpp

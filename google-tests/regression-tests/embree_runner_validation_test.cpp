@@ -3,24 +3,23 @@
 #include <chrono>
 #include <sstream>
 
-#include <native_runner.hpp>
+#include <embree_runner.hpp>
 #include <simulation_data_export.hpp>
 #include <simulation_result_export.hpp>
 
 #include "common.hpp"
 #include "split_csv.h"
 
-
 using SolTrace::Runner::RunnerStatus;
 
-using SolTrace::NativeRunner::NativeRunner;
-using SolTrace::NativeRunner::TRayData;
-using SolTrace::NativeRunner::tstage_ptr;
-using SolTrace::NativeRunner::TSystem;
+using SolTrace::EmbreeRunner::EmbreeRunner;
+using SolTrace::EmbreeRunner::TRayData;
+using SolTrace::EmbreeRunner::tstage_ptr;
+using SolTrace::EmbreeRunner::TSystem;
 
 using SolTrace::Result::RayEvent;
 
-bool get_runner_element_and_stage(const NativeRunner *runner,
+bool get_runner_element_and_stage(const EmbreeRunner *runner,
                                   element_id id,
                                   int_fast64_t &re,
                                   int_fast64_t &rs)
@@ -38,11 +37,11 @@ bool get_runner_element_and_stage(const NativeRunner *runner,
              element_idx < stage->ElementList.size();
              ++element_idx)
         {
-            SolTrace::NativeRunner::telement_ptr tel =
+            SolTrace::EmbreeRunner::telement_ptr tel =
                 stage->ElementList[element_idx];
             if (tel->sim_data_id == id)
             {
-                // NativeRunner stage and element ids are 1 based
+                // EmbreeRunner stage and element ids are 1 based
                 // so we add 1 to the vector index here.
                 found = true;
                 re = element_idx + 1;
@@ -57,31 +56,31 @@ bool get_runner_element_and_stage(const NativeRunner *runner,
     return found;
 }
 
-int_fast64_t count_element_event(const SimulationResult &res, element_id el, RayEvent rev)
-{
-    int_fast64_t count = 0;
+// int_fast64_t count_element_event(const SimulationResult &res, element_id el, RayEvent rev)
+// {
+//     int_fast64_t count = 0;
 
-    for (auto ray_idx = 0;
-         ray_idx < res.get_number_of_records();
-         ++ray_idx)
-    {
-        auto rr = res[ray_idx];
-        for (auto event_idx = 0;
-             event_idx < rr->get_number_of_interactions();
-             ++event_idx)
-        {
-            if (rr->get_event(event_idx) == rev &&
-                rr->get_element(event_idx) == el)
-            {
-                ++count;
-            }
-        }
-    }
+//     for (auto ray_idx = 0;
+//          ray_idx < res.get_number_of_records();
+//          ++ray_idx)
+//     {
+//         auto rr = res[ray_idx];
+//         for (auto event_idx = 0;
+//              event_idx < rr->get_number_of_interactions();
+//              ++event_idx)
+//         {
+//             if (rr->get_event(event_idx) == rev &&
+//                 rr->get_element(event_idx) == el)
+//             {
+//                 ++count;
+//             }
+//         }
+//     }
 
-    return count;
-}
+//     return count;
+// }
 
-TEST(NativeRunner, ValidationTest1)
+TEST(EmbreeRunner, ValidationTest1)
 {
     // Pulling in path variable from CMake and creating path to .stinput sample file
     std::string sample_path = std::string(PROJECT_DIR) + std::string("/High Flux Solar Furnace.stinput");
@@ -114,7 +113,7 @@ TEST(NativeRunner, ValidationTest1)
     params.seed = 1;
 
     // Run Ray Trace
-    NativeRunner runner;
+    EmbreeRunner runner;
     runner.disable_point_focus();
     runner.disable_power_tower();
     RunnerStatus sts;
@@ -222,7 +221,7 @@ TEST(NativeRunner, ValidationTest1)
 
             rr->get_position(iidx, point);
             // Legacy SolTrace stored the incoming ray direction whereas
-            // NativeRunner/SimulationResult stores the exit direction so
+            // EmbreeRunner/SimulationResult stores the exit direction so
             // we take the direction for the previous ray event.
             rr->get_direction(iidx - 1, cosines);
         }
@@ -247,7 +246,7 @@ TEST(NativeRunner, ValidationTest1)
 
                 rr->get_position(iidx, point);
                 // Legacy SolTrace stored the incoming ray direction whereas
-                // NativeRunner/SimulationResult stores the exit direction so
+                // EmbreeRunner/SimulationResult stores the exit direction so
                 // we take the direction for the previous ray event.
                 rr->get_direction(iidx - 1, cosines);
             }
@@ -338,7 +337,7 @@ TEST(NativeRunner, ValidationTest1)
     }
 }
 
-TEST(NativeRunner, ValidationTest2)
+TEST(EmbreeRunner, ValidationTest2)
 {
     // Pulling in path variable from CMake and creating path to .stinput sample file
     std::string sample_path = std::string(PROJECT_DIR) + std::string("/Power-tower-surround_singlefacet.stinput");
@@ -423,7 +422,7 @@ TEST(NativeRunner, ValidationTest2)
     // return;
 
     // Run Ray Trace
-    NativeRunner runner;
+    EmbreeRunner runner;
     runner.disable_point_focus();
     runner.disable_power_tower();
     RunnerStatus sts;
@@ -550,7 +549,7 @@ TEST(NativeRunner, ValidationTest2)
 
             rr->get_position(iidx, point);
             // Legacy SolTrace stored the incoming ray direction whereas
-            // NativeRunner/SimulationResult stores the exit direction so
+            // EmbreeRunner/SimulationResult stores the exit direction so
             // we take the direction for the previous ray event.
             rr->get_direction(iidx - 1, cosines);
         }
@@ -590,7 +589,7 @@ TEST(NativeRunner, ValidationTest2)
 
                 rr->get_position(iidx, point);
                 // Legacy SolTrace stored the incoming ray direction whereas
-                // NativeRunner/SimulationResult stores the exit direction so
+                // EmbreeRunner/SimulationResult stores the exit direction so
                 // we take the direction for the previous ray event.
                 rr->get_direction(iidx - 1, cosines);
             }

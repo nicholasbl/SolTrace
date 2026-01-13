@@ -16,6 +16,8 @@ namespace SolTrace::EmbreeRunner
     // through the EmbreeRunner namespace
     using SolTrace::NativeRunner::TRayData;
     using SolTrace::NativeRunner::TSystem;
+    using SolTrace::NativeRunner::tstage_ptr;
+    using SolTrace::NativeRunner::telement_ptr;
 
     class EmbreeRunner : public SolTrace::NativeRunner::NativeRunner
     {

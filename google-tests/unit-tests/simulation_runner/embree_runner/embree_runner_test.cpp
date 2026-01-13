@@ -260,3 +260,68 @@ TEST(EmbreeRunner, PowerTowerSmokeTest)
               << result.get_number_of_records()
               << std::endl;
 }
+
+TEST(EmbreeRunner, PowerTowerTest)
+{
+    // Pulling in path variable from CMake and creating path to .stinput sample file
+    std::string sample_path = std::string(PROJECT_DIR) + std::string("/Power-tower-surround_singlefacet.stinput");
+
+    // Create Simuluation Data
+    SimulationData sd;
+
+    // Constants
+    const uint_fast64_t NRAYS = 10000;
+    const double TOL = 1e-4;
+
+    // Read Input File
+    bool success = sd.import_from_file(sample_path);
+    EXPECT_TRUE(success);
+    EXPECT_TRUE(sd.get_number_of_elements() > 0);
+    EXPECT_TRUE(sd.get_number_of_ray_sources() > 0);
+
+    std::cout << "Num Elements: " << sd.get_number_of_elements() << std::endl;
+
+    // Parameters
+    SimulationParameters &params = sd.get_simulation_parameters();
+    params.include_optical_errors = true;
+    params.include_sun_shape_errors = true;
+    params.max_number_of_rays = NRAYS * 100;
+    params.number_of_rays = NRAYS;
+    params.seed = 1;
+
+    // Run Ray Trace
+    EmbreeRunner runner;
+    runner.enable_point_focus();
+    runner.enable_power_tower();
+    RunnerStatus sts;
+    sts = runner.initialize();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    auto t0 = std::chrono::high_resolution_clock::now();
+    sts = runner.run_simulation();
+    auto t1 = std::chrono::high_resolution_clock::now();
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+    std::chrono::duration<double, std::milli> dur = t1 - t0;
+
+    std::cout << "Time: " << dur.count() << " ms" << std::endl;
+
+    SimulationResult result;
+    sts = runner.report_simulation(&result, 0);
+    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    EXPECT_EQ(result.get_number_of_records(), NRAYS);
+
+    element_id absorber_id = 6285;
+    int_fast64_t nabsorbed = count_element_event(result, absorber_id, RayEvent::ABSORB);
+    int_fast64_t nreflect = count_element_event(result, absorber_id, RayEvent::REFLECT);
+    int_fast64_t nevents = nabsorbed + nreflect;
+
+    std::cout << "Total: " << nevents
+              << "\nAbsorb: " << nabsorbed << " ("
+              << static_cast<double>(nabsorbed) / nevents << ")"
+              << "\nReflect: " << nreflect << " ("
+              << static_cast<double>(nreflect) / nevents << ")"
+              << std::endl;
+}
