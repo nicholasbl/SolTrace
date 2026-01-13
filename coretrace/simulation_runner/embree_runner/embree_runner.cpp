@@ -3,15 +3,14 @@
 
 #include "trace_embree.hpp"
 
+#include <native_runner.hpp>
+#include <native_runner_types.hpp>
 #include <simulation_data_export.hpp>
-#include <simulation_result.hpp>
 #include <simulation_runner.hpp>
 
 namespace SolTrace::EmbreeRunner
 {
-
     using SolTrace::Runner::RunnerStatus;
-    using SolTrace::Runner::SimulationRunner;
 
     using SolTrace::NativeRunner::telement_ptr;
     using SolTrace::NativeRunner::TRayData;
@@ -20,7 +19,7 @@ namespace SolTrace::EmbreeRunner
 
     using SolTrace::Result::SimulationResult;
 
-    EmbreeRunner::EmbreeRunner() : SimulationRunner()
+    EmbreeRunner::EmbreeRunner() : NativeRunner()
     {
         return;
     }
@@ -30,244 +29,246 @@ namespace SolTrace::EmbreeRunner
         return;
     }
 
-    RunnerStatus EmbreeRunner::initialize()
-    {
-        return RunnerStatus::SUCCESS;
-    }
+    // RunnerStatus EmbreeRunner::initialize()
+    // {
+    //     return RunnerStatus::SUCCESS;
+    // }
 
     RunnerStatus EmbreeRunner::setup_simulation(const SimulationData *data)
     {
 
-        RunnerStatus sts;
+        RunnerStatus sts = NativeRunner::setup_simulation(data);
 
-        this->tsys.ClearAll();
+        // this->tsys.ClearAll();
 
-        sts = this->setup_parameters(data);
+        // sts = this->setup_parameters(data);
 
-        if (sts == RunnerStatus::SUCCESS)
-            sts = this->setup_sun(data);
+        // if (sts == RunnerStatus::SUCCESS)
+        //     sts = this->setup_sun(data);
 
-        if (sts == RunnerStatus::SUCCESS)
-            sts = this->setup_elements(data);
+        // if (sts == RunnerStatus::SUCCESS)
+        //     sts = this->setup_elements(data);
 
-        return sts;
-    }
-
-    RunnerStatus EmbreeRunner::setup_parameters(const SimulationData *data)
-    {
-        // Get Parameter data
-        const SimulationParameters &sim_params = data->get_simulation_parameters();
-        this->tsys.sim_errors_sunshape = sim_params.include_sun_shape_errors;
-        this->tsys.sim_errors_optical = sim_params.include_optical_errors;
-        this->tsys.sim_raycount = sim_params.number_of_rays;
-        this->tsys.sim_raymax = sim_params.max_number_of_rays;
-        this->tsys.seed = sim_params.seed;
-        return RunnerStatus::SUCCESS;
-    }
-
-    RunnerStatus EmbreeRunner::setup_sun(const SimulationData *data)
-    {
-        if (data->get_number_of_ray_sources() > 1)
-        {
-            throw std::invalid_argument("NativeRunner: Only 1 ray source is supported.");
-        }
-        else if (data->get_number_of_ray_sources() <= 0)
-        {
-            throw std::invalid_argument("NativeRunner: Ray source is required.");
-        }
-
-        ray_source_ptr sun = data->get_ray_source();
-        vector_copy(this->tsys.Sun.Origin, sun->get_position());
-        this->tsys.Sun.ShapeIndex = sun->get_shape();
-
-        // Set sunshape data
-        switch (sun->get_shape())
-        {
-        case SunShape::GAUSSIAN:
-            this->tsys.Sun.Sigma = sun->get_sigma();
-            break;
-        case SunShape::PILLBOX:
-            this->tsys.Sun.Sigma = sun->get_half_width();
-            break;
-        case SunShape::LIMBDARKENED:
-            this->tsys.Sun.MaxAngle = 4.65; // [mrad]
-            this->tsys.Sun.MaxIntensity = 1.0;
-            break;
-        case SunShape::BUIE_CSR:
-        {
-            this->tsys.Sun.MaxAngle = 43.6; // [mrad]
-            this->tsys.Sun.MaxIntensity = 1.0;
-            double kappa, gamma;
-            sun->calculate_buie_parameters(kappa, gamma);
-            this->tsys.Sun.buie_kappa = kappa;
-            this->tsys.Sun.buie_gamma = gamma;
-            break;
-        }
-        case SunShape::USER_DEFINED:
-        {
-            std::vector<double> angle, intensity;
-            sun->get_user_data(angle, intensity);
-            int npoints = angle.size();
-
-            // Set user data
-            this->tsys.Sun.MaxAngle = 0;
-            this->tsys.Sun.MaxIntensity = 0;
-
-            this->tsys.Sun.SunShapeAngle.resize(2 * npoints - 1);
-            this->tsys.Sun.SunShapeIntensity.resize(2 * npoints - 1);
-
-            for (int i = 0; i < npoints; i++)
-            {
-                this->tsys.Sun.SunShapeAngle[npoints + i - 1] = angle[i];
-                this->tsys.Sun.SunShapeIntensity[npoints + i - 1] = intensity[i];
-
-                if (angle[i] > this->tsys.Sun.MaxAngle)
-                    this->tsys.Sun.MaxAngle = angle[i];
-                if (intensity[i] > this->tsys.Sun.MaxIntensity)
-                    this->tsys.Sun.MaxIntensity = intensity[i];
-            }
-            // fill negative angle side of array -> I don't think we need this.
-            // for (int i = 0; i < npoints - 1; i++)
-            //{
-            //    this->tsys.Sun.SunShapeAngle[i] = -angle[npoints - i - 1];
-            //    this->tsys.Sun.SunShapeIntensity[i] = intensity[npoints - i - 1];
-            //}
-            break;
-        }
-        default:
-            if (data->get_simulation_parameters().include_sun_shape_errors)
-            {
-                throw std::invalid_argument("Unrecognized sun shape.");
-            }
-            break;
-        }
-
-        return RunnerStatus::SUCCESS;
-    }
-
-    RunnerStatus EmbreeRunner::setup_elements(const SimulationData *data)
-    {
-        // TODO: Improve error messages from this function.
-
-        RunnerStatus sts = RunnerStatus::SUCCESS;
-        auto my_map = std::map<int_fast64_t, tstage_ptr>();
-        // int_fast64_t current_stage_id = -1;
-        tstage_ptr current_stage = nullptr;
-        bool element_found_before_stage = false;
-
-        if (data->get_number_of_elements() <= 0)
-        {
-            throw std::invalid_argument("SimulationData has no elements.");
-        }
-
-        for (auto iter = data->get_const_iterator();
-             !data->is_at_end(iter);
-             ++iter)
-        {
-            element_ptr el = iter->second;
-            if (el->is_enabled() && el->is_stage())
-            {
-                tstage_ptr stage = make_tstage(el, this->eparams);
-                auto retval = my_map.insert(
-                    std::make_pair(el->get_stage(), stage));
-
-                // current_stage_id = stage->stage_id;
-
-                // std::cout << "Created stage " << el->get_stage()
-                //           << " with " << stage->ElementList.size() << " elements"
-                //           << std::endl;
-
-                if (retval.second == false)
-                {
-                    throw std::runtime_error("Duplicate stage numbers.");
-                    sts = RunnerStatus::ERROR;
-                }
-
-                current_stage = stage;
-            }
-            else if (el->is_enabled() && el->is_single())
-            {
-                if (current_stage == nullptr)
-                {
-                    element_found_before_stage = true;
-                    continue;
-                }
-                else if (el->get_stage() != current_stage->stage_id)
-                {
-                    throw std::runtime_error(
-                        "Element does not match current stage");
-                }
-
-                telement_ptr elem = make_telement(iter->second,
-                                                  current_stage,
-                                                  this->eparams);
-                current_stage->add_element(elem);
-            }
-        }
-
-        if (my_map.size() != 0 && element_found_before_stage)
-        {
-            throw std::runtime_error("Element found without a stage");
-        }
-
-        if (my_map.size() == 0)
-        {
-            // No stage elements found in the passed in data. However,
-            // the runner requires stages. So make a single stage
-            // and put everything there. Note that the coordinates are
-            // set to correspond to global coordinates. This is necessary
-            // so that the element coordinate setup in make_element are
-            // correct.
-            auto stage = make_tstage(this->eparams);
-            stage->ElementList.reserve(data->get_number_of_elements());
-            for (auto iter = data->get_const_iterator();
-                 !data->is_at_end(iter);
-                 ++iter)
-            {
-                element_ptr el = iter->second;
-                if (el->is_enabled() && el->is_single())
-                {
-                    telement_ptr tel = make_telement(el,
-                                                     stage,
-                                                     this->eparams);
-                    stage->add_element(tel);
-                }
-            }
-            my_map.insert(std::make_pair(0, stage));
-        }
-
-        // std::map (according to the documentation) is automatically
-        // ordered by the keys so inserting into a map will sort the stages
-        // and we can just transfer the pointers, in order, to the StageList
-        // simply by pulling them out of the map.
-        int_fast64_t last_stage_id = -1;
-        for (auto iter = my_map.cbegin();
-             iter != my_map.cend();
-             ++iter)
-        {
-            assert(last_stage_id < iter->first);
-            last_stage_id = iter->first;
-            this->tsys.StageList.push_back(iter->second);
-        }
-
-        if (sts == RunnerStatus::SUCCESS)
-        {
-            // std::cout << "Setting ZAperture..." << std::endl;
-            // Compute and set ZAperture field in each element
-            bool success = set_aperture_planes(&this->tsys);
-            sts = success ? RunnerStatus::SUCCESS : RunnerStatus::ERROR;
-        }
+        // TODO: Move Embree setup stuff into this function
 
         return sts;
     }
 
-    RunnerStatus EmbreeRunner::update_simulation(const SimulationData *data)
-    {
-        // TODO: Do a more efficient implementation of this?
-        this->tsys.ClearAll();
-        this->setup_simulation(data);
-        return RunnerStatus::SUCCESS;
-    }
+    // RunnerStatus EmbreeRunner::setup_parameters(const SimulationData *data)
+    // {
+    //     // Get Parameter data
+    //     const SimulationParameters &sim_params = data->get_simulation_parameters();
+    //     this->tsys.sim_errors_sunshape = sim_params.include_sun_shape_errors;
+    //     this->tsys.sim_errors_optical = sim_params.include_optical_errors;
+    //     this->tsys.sim_raycount = sim_params.number_of_rays;
+    //     this->tsys.sim_raymax = sim_params.max_number_of_rays;
+    //     this->tsys.seed = sim_params.seed;
+    //     return RunnerStatus::SUCCESS;
+    // }
+
+    // RunnerStatus EmbreeRunner::setup_sun(const SimulationData *data)
+    // {
+    //     if (data->get_number_of_ray_sources() > 1)
+    //     {
+    //         throw std::invalid_argument("NativeRunner: Only 1 ray source is supported.");
+    //     }
+    //     else if (data->get_number_of_ray_sources() <= 0)
+    //     {
+    //         throw std::invalid_argument("NativeRunner: Ray source is required.");
+    //     }
+
+    //     ray_source_ptr sun = data->get_ray_source();
+    //     vector_copy(this->tsys.Sun.Origin, sun->get_position());
+    //     this->tsys.Sun.ShapeIndex = sun->get_shape();
+
+    //     // Set sunshape data
+    //     switch (sun->get_shape())
+    //     {
+    //     case SunShape::GAUSSIAN:
+    //         this->tsys.Sun.Sigma = sun->get_sigma();
+    //         break;
+    //     case SunShape::PILLBOX:
+    //         this->tsys.Sun.Sigma = sun->get_half_width();
+    //         break;
+    //     case SunShape::LIMBDARKENED:
+    //         this->tsys.Sun.MaxAngle = 4.65; // [mrad]
+    //         this->tsys.Sun.MaxIntensity = 1.0;
+    //         break;
+    //     case SunShape::BUIE_CSR:
+    //     {
+    //         this->tsys.Sun.MaxAngle = 43.6; // [mrad]
+    //         this->tsys.Sun.MaxIntensity = 1.0;
+    //         double kappa, gamma;
+    //         sun->calculate_buie_parameters(kappa, gamma);
+    //         this->tsys.Sun.buie_kappa = kappa;
+    //         this->tsys.Sun.buie_gamma = gamma;
+    //         break;
+    //     }
+    //     case SunShape::USER_DEFINED:
+    //     {
+    //         std::vector<double> angle, intensity;
+    //         sun->get_user_data(angle, intensity);
+    //         int npoints = angle.size();
+
+    //         // Set user data
+    //         this->tsys.Sun.MaxAngle = 0;
+    //         this->tsys.Sun.MaxIntensity = 0;
+
+    //         this->tsys.Sun.SunShapeAngle.resize(2 * npoints - 1);
+    //         this->tsys.Sun.SunShapeIntensity.resize(2 * npoints - 1);
+
+    //         for (int i = 0; i < npoints; i++)
+    //         {
+    //             this->tsys.Sun.SunShapeAngle[npoints + i - 1] = angle[i];
+    //             this->tsys.Sun.SunShapeIntensity[npoints + i - 1] = intensity[i];
+
+    //             if (angle[i] > this->tsys.Sun.MaxAngle)
+    //                 this->tsys.Sun.MaxAngle = angle[i];
+    //             if (intensity[i] > this->tsys.Sun.MaxIntensity)
+    //                 this->tsys.Sun.MaxIntensity = intensity[i];
+    //         }
+    //         // fill negative angle side of array -> I don't think we need this.
+    //         // for (int i = 0; i < npoints - 1; i++)
+    //         //{
+    //         //    this->tsys.Sun.SunShapeAngle[i] = -angle[npoints - i - 1];
+    //         //    this->tsys.Sun.SunShapeIntensity[i] = intensity[npoints - i - 1];
+    //         //}
+    //         break;
+    //     }
+    //     default:
+    //         if (data->get_simulation_parameters().include_sun_shape_errors)
+    //         {
+    //             throw std::invalid_argument("Unrecognized sun shape.");
+    //         }
+    //         break;
+    //     }
+
+    //     return RunnerStatus::SUCCESS;
+    // }
+
+    // RunnerStatus EmbreeRunner::setup_elements(const SimulationData *data)
+    // {
+    //     // TODO: Improve error messages from this function.
+
+    //     RunnerStatus sts = RunnerStatus::SUCCESS;
+    //     auto my_map = std::map<int_fast64_t, tstage_ptr>();
+    //     // int_fast64_t current_stage_id = -1;
+    //     tstage_ptr current_stage = nullptr;
+    //     bool element_found_before_stage = false;
+
+    //     if (data->get_number_of_elements() <= 0)
+    //     {
+    //         throw std::invalid_argument("SimulationData has no elements.");
+    //     }
+
+    //     for (auto iter = data->get_const_iterator();
+    //          !data->is_at_end(iter);
+    //          ++iter)
+    //     {
+    //         element_ptr el = iter->second;
+    //         if (el->is_enabled() && el->is_stage())
+    //         {
+    //             tstage_ptr stage = make_tstage(el, this->eparams);
+    //             auto retval = my_map.insert(
+    //                 std::make_pair(el->get_stage(), stage));
+
+    //             // current_stage_id = stage->stage_id;
+
+    //             // std::cout << "Created stage " << el->get_stage()
+    //             //           << " with " << stage->ElementList.size() << " elements"
+    //             //           << std::endl;
+
+    //             if (retval.second == false)
+    //             {
+    //                 throw std::runtime_error("Duplicate stage numbers.");
+    //                 sts = RunnerStatus::ERROR;
+    //             }
+
+    //             current_stage = stage;
+    //         }
+    //         else if (el->is_enabled() && el->is_single())
+    //         {
+    //             if (current_stage == nullptr)
+    //             {
+    //                 element_found_before_stage = true;
+    //                 continue;
+    //             }
+    //             else if (el->get_stage() != current_stage->stage_id)
+    //             {
+    //                 throw std::runtime_error(
+    //                     "Element does not match current stage");
+    //             }
+
+    //             telement_ptr elem = make_telement(iter->second,
+    //                                               current_stage,
+    //                                               this->eparams);
+    //             current_stage->add_element(elem);
+    //         }
+    //     }
+
+    //     if (my_map.size() != 0 && element_found_before_stage)
+    //     {
+    //         throw std::runtime_error("Element found without a stage");
+    //     }
+
+    //     if (my_map.size() == 0)
+    //     {
+    //         // No stage elements found in the passed in data. However,
+    //         // the runner requires stages. So make a single stage
+    //         // and put everything there. Note that the coordinates are
+    //         // set to correspond to global coordinates. This is necessary
+    //         // so that the element coordinate setup in make_element are
+    //         // correct.
+    //         auto stage = make_tstage(this->eparams);
+    //         stage->ElementList.reserve(data->get_number_of_elements());
+    //         for (auto iter = data->get_const_iterator();
+    //              !data->is_at_end(iter);
+    //              ++iter)
+    //         {
+    //             element_ptr el = iter->second;
+    //             if (el->is_enabled() && el->is_single())
+    //             {
+    //                 telement_ptr tel = make_telement(el,
+    //                                                  stage,
+    //                                                  this->eparams);
+    //                 stage->add_element(tel);
+    //             }
+    //         }
+    //         my_map.insert(std::make_pair(0, stage));
+    //     }
+
+    //     // std::map (according to the documentation) is automatically
+    //     // ordered by the keys so inserting into a map will sort the stages
+    //     // and we can just transfer the pointers, in order, to the StageList
+    //     // simply by pulling them out of the map.
+    //     int_fast64_t last_stage_id = -1;
+    //     for (auto iter = my_map.cbegin();
+    //          iter != my_map.cend();
+    //          ++iter)
+    //     {
+    //         assert(last_stage_id < iter->first);
+    //         last_stage_id = iter->first;
+    //         this->tsys.StageList.push_back(iter->second);
+    //     }
+
+    //     if (sts == RunnerStatus::SUCCESS)
+    //     {
+    //         // std::cout << "Setting ZAperture..." << std::endl;
+    //         // Compute and set ZAperture field in each element
+    //         bool success = set_aperture_planes(&this->tsys);
+    //         sts = success ? RunnerStatus::SUCCESS : RunnerStatus::ERROR;
+    //     }
+
+    //     return sts;
+    // }
+
+    // RunnerStatus EmbreeRunner::update_simulation(const SimulationData *data)
+    // {
+    //     // TODO: Do a more efficient implementation of this?
+    //     this->tsys.ClearAll();
+    //     this->setup_simulation(data);
+    //     return RunnerStatus::SUCCESS;
+    // }
 
     RunnerStatus EmbreeRunner::run_simulation()
     {
@@ -310,134 +311,134 @@ namespace SolTrace::EmbreeRunner
         return RunnerStatus::SUCCESS;
     }
 
-    RunnerStatus EmbreeRunner::report_simulation(SolTrace::Result::SimulationResult *result,
-                                                 int level)
-    {
-        RunnerStatus retval = RunnerStatus::SUCCESS;
+    // RunnerStatus EmbreeRunner::report_simulation(SolTrace::Result::SimulationResult *result,
+    //                                              int level)
+    // {
+    //     RunnerStatus retval = RunnerStatus::SUCCESS;
 
-        const TSystem *sys = this->get_system();
-        // const TRayData ray_data = sys->AllRayData;
-        const TRayData ray_data = sys->RayData;
-        std::map<unsigned int, SolTrace::Result::ray_record_ptr> ray_records;
-        std::map<unsigned int, SolTrace::Result::ray_record_ptr>::iterator iter;
-        uint_fast64_t ndata = ray_data.Count();
+    //     const TSystem *sys = this->get_system();
+    //     // const TRayData ray_data = sys->AllRayData;
+    //     const TRayData ray_data = sys->RayData;
+    //     std::map<unsigned int, SolTrace::Result::ray_record_ptr> ray_records;
+    //     std::map<unsigned int, SolTrace::Result::ray_record_ptr>::iterator iter;
+    //     uint_fast64_t ndata = ray_data.Count();
 
-        bool sts;
-        Vector3d point, cosines;
-        int element;
-        int stage;
-        uint_fast64_t raynum;
+    //     bool sts;
+    //     Vector3d point, cosines;
+    //     int element;
+    //     int stage;
+    //     uint_fast64_t raynum;
 
-        telement_ptr el = nullptr;
-        element_id elid;
-        SolTrace::Result::ray_record_ptr rec = nullptr;
-        SolTrace::Result::interaction_ptr intr = nullptr;
-        SolTrace::Result::RayEvent rev;
+    //     telement_ptr el = nullptr;
+    //     element_id elid;
+    //     SolTrace::Result::ray_record_ptr rec = nullptr;
+    //     SolTrace::Result::interaction_ptr intr = nullptr;
+    //     SolTrace::Result::RayEvent rev;
 
-        // std::cout << "Num Events: " << ndata << std::endl;
+    //     // std::cout << "Num Events: " << ndata << std::endl;
 
-        for (uint_fast64_t ii = 0; ii < ndata; ++ii)
-        {
-            sts = ray_data.Query(ii,
-                                 point.data,
-                                 cosines.data,
-                                 &element,
-                                 &stage,
-                                 &raynum,
-                                 &rev);
+    //     for (uint_fast64_t ii = 0; ii < ndata; ++ii)
+    //     {
+    //         sts = ray_data.Query(ii,
+    //                              point.data,
+    //                              cosines.data,
+    //                              &element,
+    //                              &stage,
+    //                              &raynum,
+    //                              &rev);
 
-            if (!sts)
-            {
-                retval = RunnerStatus::ERROR;
-                break;
-            }
+    //         if (!sts)
+    //         {
+    //             retval = RunnerStatus::ERROR;
+    //             break;
+    //         }
 
-            // std::cout << "ii: " << ii
-            //           << "\npoint: " << point
-            //           << "\ndirection: " << cosines
-            //           << "\nelement: " << element
-            //           << "\nstage: " << stage
-            //           << "\nraynum: " << raynum
-            //           << "\nevent: " << ray_event_string(rev)
-            //           << std::endl;
+    //         // std::cout << "ii: " << ii
+    //         //           << "\npoint: " << point
+    //         //           << "\ndirection: " << cosines
+    //         //           << "\nelement: " << element
+    //         //           << "\nstage: " << stage
+    //         //           << "\nraynum: " << raynum
+    //         //           << "\nevent: " << ray_event_string(rev)
+    //         //           << std::endl;
 
-            iter = ray_records.find(raynum);
-            if (iter == ray_records.end())
-            {
-                rec = SolTrace::Result::make_ray_record(raynum);
-                result->add_ray_record(rec);
-                ray_records[raynum] = rec;
-                assert(rev == SolTrace::Result::RayEvent::CREATE);
-            }
-            else
-            {
-                rec = iter->second;
-            }
+    //         iter = ray_records.find(raynum);
+    //         if (iter == ray_records.end())
+    //         {
+    //             rec = SolTrace::Result::make_ray_record(raynum);
+    //             result->add_ray_record(rec);
+    //             ray_records[raynum] = rec;
+    //             assert(rev == SolTrace::Result::RayEvent::CREATE);
+    //         }
+    //         else
+    //         {
+    //             rec = iter->second;
+    //         }
 
-            if (element > 0)
-            {
-                el = sys->StageList[stage - 1]->ElementList[element - 1];
-                elid = el->sim_data_id;
-            }
-            else
-            {
-                elid = element;
-            }
+    //         if (element > 0)
+    //         {
+    //             el = sys->StageList[stage - 1]->ElementList[element - 1];
+    //             elid = el->sim_data_id;
+    //         }
+    //         else
+    //         {
+    //             elid = element;
+    //         }
 
-            intr = make_interaction_record(elid, rev, point, cosines);
-            rec->add_interaction_record(intr);
-        }
+    //         intr = make_interaction_record(elid, rev, point, cosines);
+    //         rec->add_interaction_record(intr);
+    //     }
 
-        return retval;
-    }
+    //     return retval;
+    // }
 
-    bool EmbreeRunner::set_aperture_planes(TSystem *tsys)
-    {
-        bool retval;
+    // bool EmbreeRunner::set_aperture_planes(TSystem *tsys)
+    // {
+    //     bool retval;
 
-        for (auto iter = tsys->StageList.cbegin();
-             iter != tsys->StageList.cend();
-             ++iter)
-        {
-            retval = this->set_aperture_planes(*iter);
-            if (!retval)
-                break;
-        }
+    //     for (auto iter = tsys->StageList.cbegin();
+    //          iter != tsys->StageList.cend();
+    //          ++iter)
+    //     {
+    //         retval = this->set_aperture_planes(*iter);
+    //         if (!retval)
+    //             break;
+    //     }
 
-        return retval;
-    }
+    //     return retval;
+    // }
 
-    bool EmbreeRunner::set_aperture_planes(tstage_ptr stage)
-    {
-        bool retval;
+    // bool EmbreeRunner::set_aperture_planes(tstage_ptr stage)
+    // {
+    //     bool retval;
 
-        for (auto eiter = stage->ElementList.begin();
-             eiter != stage->ElementList.end();
-             ++eiter)
-        {
-            retval = aperture_plane(*eiter);
-            if (!retval)
-                break;
-        }
+    //     for (auto eiter = stage->ElementList.begin();
+    //          eiter != stage->ElementList.end();
+    //          ++eiter)
+    //     {
+    //         retval = aperture_plane(*eiter);
+    //         if (!retval)
+    //             break;
+    //     }
 
-        return retval;
-    }
+    //     return retval;
+    // }
 
-    bool EmbreeRunner::aperture_plane(telement_ptr Element)
-    {
-        /*{Calculates the aperture plane of the element in element coord system.
-        Applicable to rotationally symmetric apertures surfaces with small
-        curvature: g, s, p, o, c, v, m, e, r, i.
-          input - Element = Element record containing geometry of element
-          output -
-                 - Element.ZAperture  where ZAperture is the distance from
-                   the origin to the plane.
-        }*/
+    // bool EmbreeRunner::aperture_plane(telement_ptr Element)
+    // {
+    //     /*{Calculates the aperture plane of the element in element coord system.
+    //     Applicable to rotationally symmetric apertures surfaces with small
+    //     curvature: g, s, p, o, c, v, m, e, r, i.
+    //       input - Element = Element record containing geometry of element
+    //       output -
+    //              - Element.ZAperture  where ZAperture is the distance from
+    //                the origin to the plane.
+    //     }*/
 
-        Element->ZAperture =
-            Element->icalc->compute_z_aperture(Element->aperture);
+    //     Element->ZAperture =
+    //         Element->icalc->compute_z_aperture(Element->aperture);
 
-        return true;
-    }
+    //     return true;
+    // }
 
 } // namespace SolTrace::EmbreeRunner

@@ -4,6 +4,7 @@
 #include <simulation_data.hpp>
 #include <simulation_runner.hpp>
 
+#include <native_runner.hpp>
 #include <native_runner_types.hpp>
 
 namespace SolTrace::EmbreeRunner
@@ -16,7 +17,7 @@ namespace SolTrace::EmbreeRunner
     using SolTrace::NativeRunner::TRayData;
     using SolTrace::NativeRunner::TSystem;
 
-    class EmbreeRunner : public SolTrace::Runner::SimulationRunner
+    class EmbreeRunner : public SolTrace::NativeRunner::NativeRunner
     {
     public:
         EmbreeRunner();
@@ -25,26 +26,55 @@ namespace SolTrace::EmbreeRunner
         EmbreeRunner(const EmbreeRunner &) = delete;
         EmbreeRunner(EmbreeRunner &&) = delete;
 
-        virtual RunnerStatus initialize();
+        // ---- Use inherited methods for these ---- //
+        // -- TODO: Remove this comment block once things have stabilized -- //
+        // virtual RunnerStatus initialize();
+        // virtual RunnerStatus update_simulation(const SolTrace::Data::SimulationData *data);
+        // virtual RunnerStatus report_simulation(SolTrace::Result::SimulationResult *result,
+        //                                        int level_spec);
+        // void set_newton_tolerance(double tol)
+        // {
+        //     this->eparams.newton_tolerance = tol;
+        //     return;
+        // }
+        // void set_newton_max_iters(uint_fast64_t max_iters)
+        // {
+        //     this->eparams.newton_max_iters = max_iters;
+        //     return;
+        // }
+        // void print_log(std::ostream &os)
+        // {
+        //     // this->my_manager->print_log(os);
+        //     return;
+        // }
+        // // Accessors
+        // int_fast64_t get_number_stages() const
+        // {
+        //     return this->get_system()->StageList.size();
+        // }
+        // int_fast64_t get_number_elements() const
+        // {
+        //     int_fast64_t nelems = 0;
+        //     for (auto stage : this->get_system()->StageList)
+        //     {
+        //         nelems += stage->ElementList.size();
+        //     }
+        //     return nelems;
+        // }
+        // const SolTrace::NativeRunner::TSystem *get_system() const
+        // {
+        //     return &this->tsys;
+        // }
+        // // Helper functions
+        // RunnerStatus setup_parameters(const SolTrace::Data::SimulationData *data);
+        // RunnerStatus setup_sun(const SolTrace::Data::SimulationData *data);
+        // RunnerStatus setup_elements(const SolTrace::Data::SimulationData *data);
+        // ---- End Inherited Functions Notes ---- //
+
         virtual RunnerStatus setup_simulation(const SolTrace::Data::SimulationData *data);
-        virtual RunnerStatus update_simulation(const SolTrace::Data::SimulationData *data);
         virtual RunnerStatus run_simulation();
         virtual RunnerStatus status_simulation(double *progress = nullptr);
         virtual RunnerStatus cancel_simulation();
-        virtual RunnerStatus report_simulation(SolTrace::Result::SimulationResult *result,
-                                               int level_spec);
-
-        void set_newton_tolerance(double tol)
-        {
-            this->eparams.newton_tolerance = tol;
-            return;
-        }
-
-        void set_newton_max_iters(uint_fast64_t max_iters)
-        {
-            this->eparams.newton_max_iters = max_iters;
-            return;
-        }
 
         void set_number_of_threads(uint_fast64_t nthr)
         {
@@ -68,50 +98,17 @@ namespace SolTrace::EmbreeRunner
         //     return;
         // }
 
-        void print_log(std::ostream &os)
-        {
-            // this->my_manager->print_log(os);
-            return;
-        }
-
-        // Accessors
-        int_fast64_t get_number_stages() const
-        {
-            return this->get_system()->StageList.size();
-        }
-        int_fast64_t get_number_elements() const
-        {
-            int_fast64_t nelems = 0;
-            for (auto stage : this->get_system()->StageList)
-            {
-                nelems += stage->ElementList.size();
-            }
-            return nelems;
-        }
-
-        const SolTrace::NativeRunner::TSystem *get_system() const
-        {
-            return &this->tsys;
-        }
-
-        // Helper functions
-        RunnerStatus setup_parameters(const SolTrace::Data::SimulationData *data);
-        RunnerStatus setup_sun(const SolTrace::Data::SimulationData *data);
-        RunnerStatus setup_elements(const SolTrace::Data::SimulationData *data);
-
-
     private:
+        // // Number of threads to use when tracing
+        // uint_fast64_t number_of_threads;
+        // std::vector<unsigned int> seeds;
 
-        // Number of threads to use when tracing
-        uint_fast64_t number_of_threads;
-        std::vector<unsigned int> seeds;
+        // SolTrace::NativeRunner::ElementParameters eparams;
+        // SolTrace::NativeRunner::TSystem tsys;
 
-        SolTrace::NativeRunner::ElementParameters eparams;
-        SolTrace::NativeRunner::TSystem tsys;
-
-        bool set_aperture_planes(SolTrace::NativeRunner::TSystem *tsys);
-        bool set_aperture_planes(SolTrace::NativeRunner::tstage_ptr stage);
-        bool aperture_plane(SolTrace::NativeRunner::telement_ptr Element);
+        // bool set_aperture_planes(SolTrace::NativeRunner::TSystem *tsys);
+        // bool set_aperture_planes(SolTrace::NativeRunner::tstage_ptr stage);
+        // bool aperture_plane(SolTrace::NativeRunner::telement_ptr Element);
     };
 
 } // namespace SolTrace::EmbreeRunner
