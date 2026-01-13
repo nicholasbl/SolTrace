@@ -174,14 +174,6 @@ TEST(EmbreeRunner, ValidationTest1)
         // has 0-based ray ID's so subtract 1 here.
         rayidx = stoul(ground_raydata[8][i]) - 1;
 
-        if (stage == 3)
-        {
-            // TODO: Stage 3 is virtual in the input file but
-            // that has not been implemented yet. Remove after
-            // implementing this.
-            continue;
-        }
-
         const ray_record_ptr rr = result[rayidx];
         if (element > 0)
         {

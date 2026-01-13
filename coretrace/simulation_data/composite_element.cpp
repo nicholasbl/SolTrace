@@ -127,6 +127,11 @@ namespace SolTrace::Data
         {
             this->number_of_elements += el->get_number_of_elements();
             el->set_reference_element(this);
+            // Mark any added elements as virtual if needed
+            if(this->is_virtual())
+            {
+                el->mark_virtual();
+            }
         }
         return id;
     }

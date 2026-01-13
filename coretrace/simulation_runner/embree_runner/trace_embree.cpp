@@ -51,7 +51,7 @@ namespace SolTrace::EmbreeRunner
         void *embree_scene_shared)
     {
 
-        std::cout << "Trace embree start..." << std::endl;
+        // std::cout << "Trace embree start..." << std::endl;
 
         // Initialize Internal State Variables
         MTRand myrng(seed);
@@ -74,7 +74,7 @@ namespace SolTrace::EmbreeRunner
         System->RayData.SetUp(1, NumberOfRays);
         System->SunRayCount = 0;
 
-        std::cout << "Setting up embree stuff..." << std::endl;
+        // std::cout << "Setting up embree stuff..." << std::endl;
 
         // Initialize Embree vars
         RTCDevice embree_device = nullptr;
@@ -84,17 +84,17 @@ namespace SolTrace::EmbreeRunner
         if (embree_scene_shared == nullptr)
         {
             // Make device
-            std::cout << "Making embree device..." << std::endl;
+            // std::cout << "Making embree device..." << std::endl;
             embree_device = rtcNewDevice(NULL);
 
-            std::cout << "Setting error function..." << std::endl;
+            // std::cout << "Setting error function..." << std::endl;
             rtcSetDeviceErrorFunction(embree_device, error_function, NULL);
 
             // Convert st stages into scene
-            std::cout << "Making scene..." << std::endl;
+            // std::cout << "Making scene..." << std::endl;
             embree_scene = make_scene(embree_device, *System);
 
-            std::cout << "Committing scene..." << std::endl;
+            // std::cout << "Committing scene..." << std::endl;
             rtcCommitScene(embree_scene);
 
             // Validate bounds
@@ -111,7 +111,7 @@ namespace SolTrace::EmbreeRunner
             use_shared_embree = true;
         }
 
-        std::cout << "Setting up sun stuff..." << std::endl;
+        // std::cout << "Setting up sun stuff..." << std::endl;
 
         // Initialize Sun
         double PosSunStage[3] = {0.0, 0.0, 0.0};
@@ -130,7 +130,7 @@ namespace SolTrace::EmbreeRunner
         uint_fast64_t PreviousStageDataArrayIndex = 0;
         uint_fast64_t n_rays_active = NumberOfRays;
 
-        std::cout << "Starting ray tracing..." << std::endl;
+        // std::cout << "Starting ray tracing..." << std::endl;
 
         // Loop through stages
         for (uint_fast64_t i = 0; i < System->StageList.size(); i++)
