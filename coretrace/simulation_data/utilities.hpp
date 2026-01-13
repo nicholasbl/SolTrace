@@ -2,6 +2,9 @@
 #ifndef SOLTRACE_UTILITIES_H
 #define SOLTRACE_UTILITIES_H
 
+#include <cstdint>
+#include <limits>
+
 #include "vector3d.hpp"
 
 namespace SolTrace::Data {
