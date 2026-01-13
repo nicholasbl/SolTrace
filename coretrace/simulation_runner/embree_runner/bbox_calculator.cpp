@@ -351,9 +351,9 @@ namespace SolTrace::EmbreeRunner
         // }
 
         st_element->aperture->bounding_box(x_minmax[0],
-                                               x_minmax[1],
-                                               y_minmax[0],
-                                               y_minmax[1]);
+                                           x_minmax[1],
+                                           y_minmax[0],
+                                           y_minmax[1]);
 
         // // Process surface bounds (sets y, and possibly overwrites x and y)
         // error_code = get_surface_bounds(st_element,
@@ -368,9 +368,9 @@ namespace SolTrace::EmbreeRunner
         // }
 
         st_element->surface->bounding_box(x_minmax,
-                                              y_minmax,
-                                              z_minmax[0],
-                                              z_minmax[1]);
+                                          y_minmax,
+                                          z_minmax[0],
+                                          z_minmax[1]);
 
         // Expand bounding boxes slightly to account for float precision
         const float expand = 1e-3f;

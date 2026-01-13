@@ -90,10 +90,10 @@ namespace SolTrace::Data
                             double &z_max) const
     {
         double theta = this->half_angle * D2R;
-        double x_abs_max = abs_max(x_minmax, 2);
-        double y_abs_max = abs_max(y_minmax, 2);
+        double x_abs = abs_max(x_minmax, 2);
+        double y_abs = abs_max(y_minmax, 2);
         z_min = 0.0;
-        z_max = sqrt(x_abs_max * x_abs_max + y_abs_max * y_abs_max) / tan(theta);
+        z_max = sqrt(x_abs * x_abs + y_abs * y_abs) / tan(theta);
         return;
     }
 
@@ -177,9 +177,19 @@ namespace SolTrace::Data
         double cy = 0.5 / this->focal_length_y;
         double x_max = abs_max(x_minmax, 2);
         double y_max = abs_max(y_minmax, 2);
-
-        z_min = 0.0;
         z_max = 0.5 * (cx * x_max * x_max + cy * y_max * y_max);
+
+        if (x_minmax[0] <= 0.0 && 0.0 <= x_minmax[1] &&
+            y_minmax[0] <= 0.0 && 0.0 <= y_minmax[1])
+        {
+            z_min = 0.0;
+        }
+        else
+        {
+            double x_min = abs_min(x_minmax, 2);
+            double y_min = abs_min(y_minmax, 2);
+            z_min = 0.5 * (cx * x_min * x_min + cy * y_min * y_min);
+        }
 
         return;
     }
@@ -209,7 +219,11 @@ namespace SolTrace::Data
                               double &z_max) const
     {
         z_min = 0.0;
-        z_max = 1.0 / this->vertex_curv;
+        double R = 1.0 / this->vertex_curv;
+        double x_max = abs_max(x_minmax, 2);
+        double y_max = abs_max(y_minmax, 2);
+        double rsq = x_max * x_max + y_max * y_max;
+        z_max = R > sqrt(rsq) ? R - sqrt(R * R - rsq) : R;
         return;
     }
 

@@ -9,6 +9,7 @@ using SolTrace::Data::Aperture;
 using SolTrace::Data::ApertureType;
 using SolTrace::Data::Circle;
 using SolTrace::Data::CompositeElement;
+using SolTrace::Data::Cone;
 using SolTrace::Data::Cylinder;
 using SolTrace::Data::DistributionType;
 using SolTrace::Data::EqualateralTriangle;

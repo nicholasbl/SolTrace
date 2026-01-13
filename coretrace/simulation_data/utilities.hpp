@@ -23,7 +23,7 @@ R abs_min(const R values[], uint_fast64_t size)
 template <typename R>
 R abs_max(const R values[], uint_fast64_t size)
 {
-    R amax = std::numeric_limits<R>::max();
+    R amax = 0.0;
     for (uint_fast64_t k=0; k < size; ++k)
     {
         amax = std::max(amax, std::abs(values[k]));
