@@ -287,6 +287,7 @@ namespace SolTrace::EmbreeRunner
         // }
 
         RunnerStatus sts = trace_embree(
+            this->my_logger,
             &this->tsys,
             this->tsys.seed,
             this->tsys.sim_raycount,

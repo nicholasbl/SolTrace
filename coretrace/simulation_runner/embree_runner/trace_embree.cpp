@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -23,6 +24,7 @@
 
 #include "embree_helper.hpp"
 #include "find_element_hit_embree.hpp"
+#include "trace_logger.hpp"
 
 namespace SolTrace::EmbreeRunner
 {
@@ -32,12 +34,14 @@ namespace SolTrace::EmbreeRunner
     using SolTrace::NativeRunner::telement_ptr;
     using SolTrace::NativeRunner::tstage_ptr;
     using SolTrace::NativeRunner::TSystem;
+    using SolTrace::NativeRunner::trace_logger_ptr;
 
     using SolTrace::Runner::RunnerStatus;
 
     using SolTrace::Result::RayEvent;
 
     RunnerStatus trace_embree(
+        trace_logger_ptr logger,
         TSystem *System,
         unsigned int seed,
         uint_fast64_t NumberOfRays,
@@ -111,9 +115,8 @@ namespace SolTrace::EmbreeRunner
 
         // Initialize Sun
         double PosSunStage[3] = {0.0, 0.0, 0.0};
-        // TODO: Need a logging thing to pass to this function...
         bool status = SolTrace::NativeRunner::SunToPrimaryStage(
-            nullptr, System, System->StageList[0].get(),
+            logger, System, System->StageList[0].get(),
             &System->Sun, PosSunStage);
         if (!status)
             return RunnerStatus::ERROR;
@@ -234,7 +237,9 @@ namespace SolTrace::EmbreeRunner
 
                         if (r == nullptr)
                         {
-                            // TODO: Log error here?
+                            std::stringstream ss;
+							ss << "Failed to record ray data.\n";
+							logger->error_log(ss.str());
                         }
                     }
 
