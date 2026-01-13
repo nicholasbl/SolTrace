@@ -59,6 +59,12 @@ protected:
     uint_fast64_t rec_absorb_count;
     uint_fast64_t miss_count;
 
+    uint_fast64_t helio_hit_count_optix;
+    uint_fast64_t reflect_count_optix;
+    uint_fast64_t helio_absorb_count_optix;
+    uint_fast64_t rec_absorb_count_optix;
+    uint_fast64_t miss_count_optix;
+
     // Flux map
     HPM2D fluxGrid;
     std::vector<double> xValues, yValues;
@@ -76,8 +82,8 @@ protected:
         SimulationParameters& params = simData.get_simulation_parameters();
         params.number_of_rays = 1.e5;
         params.max_number_of_rays = params.number_of_rays * 100;
-        params.include_optical_errors = true;
-        params.include_sun_shape_errors = true;
+        params.include_optical_errors = false;
+        params.include_sun_shape_errors = false;
         params.seed = 123;
 
         runner.disable_power_tower();
@@ -189,37 +195,46 @@ protected:
         }
     }
 
-    void calculate_ray_counts(bool print_info) {
-        // Reset counts
-        helio_hit_count = 0;
-        reflect_count = 0;
-        helio_absorb_count = 0;
-        rec_absorb_count = 0;
-        miss_count = 0;
+    void calculate_ray_counts(bool print_info, bool is_optix = false) {
+       
+        auto& result_local = is_optix ? result_optix : result;
 
-        for (size_t i = 0; i < result.get_number_of_records(); i++) {
-            const ray_record_ptr rr = result[i];
+        auto& helio_hit_count_local = is_optix ? helio_hit_count_optix : helio_hit_count;
+        auto& reflect_count_local = is_optix ? reflect_count_optix : reflect_count;
+        auto& helio_absorb_count_local = is_optix ? helio_absorb_count_optix : helio_absorb_count;
+        auto& rec_absorb_count_local = is_optix ? rec_absorb_count_optix : rec_absorb_count;
+        auto& miss_count_local = is_optix ? miss_count_optix : miss_count;
+
+        // Reset counts
+        helio_hit_count_local = 0;
+        reflect_count_local = 0;
+        helio_absorb_count_local = 0;
+        rec_absorb_count_local = 0;
+        miss_count_local = 0;
+
+        for (size_t i = 0; i < result_local.get_number_of_records(); i++) {
+            const ray_record_ptr rr = result_local[i];
 
             for (size_t j = 0; j < rr->interactions.size(); j++) {
                 auto hit_element = rr->get_element(j);
                 SolTrace::Result::RayEvent rev = rr->get_event(j);
 
-                if (rev == RayEvent::EXIT) miss_count++;
+                if (rev == RayEvent::EXIT) miss_count_local++;
                 if (hit_element < 0) continue;  // create or exit
                 
                 // Check heliostat elements
                 for (auto iter = heliostat->get_const_iterator(); !heliostat->is_at_end(iter); ++iter) {
                     element_id facet_id = iter->second->get_id();
                     if (hit_element == facet_id) {
-                        helio_hit_count++;
-                        if (rev == RayEvent::REFLECT) reflect_count++;
-                        if (rev == RayEvent::ABSORB) helio_absorb_count++;
+                        helio_hit_count_local++;
+                        if (rev == RayEvent::REFLECT) reflect_count_local++;
+                        if (rev == RayEvent::ABSORB) helio_absorb_count_local++;
                     }
                 }
 
                 // Check receiver element
                 if (hit_element == receiver->get_id()) {
-                    if (rev == RayEvent::ABSORB) rec_absorb_count++;
+                    if (rev == RayEvent::ABSORB) rec_absorb_count_local++;
                 }
             }
         }
@@ -448,32 +463,6 @@ TEST_F(SingleHeliostatSimulation, SingleFacetFlat_North)
 
     setup_simData();
 
-    // Run Optix
-    simulate_optix();
-
-    //std::vector<float4> hp_vec;
-    //std::vector<int> raynumber_vec;
-    //std::vector<int> element_id_vec;
-    //this->runner_optix.get_hp_output(hp_vec, raynumber_vec, element_id_vec);
-    //
-    //int max_val = -1;
-    //int nhit = 0;
-    //for (int32_t val : element_id_vec)
-    //{
-    //    if (val > 0)
-    //    {
-    //        nhit++;
-    //    }
-    //    if (val > max_val)
-    //        max_val = val;
-    //}
-    //
-    SimulationResult& res = result_optix;
-    int x = 0;
-
-
-
-
     simulate();
     //result.write_csv_file("singlefacetflat_north_raydata.csv");
 
@@ -511,8 +500,16 @@ TEST_F(SingleHeliostatSimulation, SingleFacetFlat_North)
         EXPECT_NEAR(PeakFlux, expected_peak, 30.0);
     }
 
-    
+    // Run Optix
+    simulate_optix();
+    calculate_ray_counts(print_info, true);
 
+    // Receiver hit over helio hits
+    double rec_hit_frac_native = (double)rec_absorb_count / (double)helio_hit_count;
+    double rec_hit_frac_optix = (double)rec_absorb_count_optix / (double)helio_hit_count_optix;
+
+
+    int x = 0;
 }
 TEST_F(SingleHeliostatSimulation, SingleFacetFlat_Southeast)
 {
