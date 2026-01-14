@@ -20,6 +20,7 @@ namespace SolTrace::NativeRunner
     public:
         using ThreadStatus = SolTrace::Runner::RunnerStatus;
         using future = std::future<SolTrace::Runner::RunnerStatus>;
+        
         ThreadManager(trace_logger_ptr logger);
         ~ThreadManager();
 
@@ -29,6 +30,7 @@ namespace SolTrace::NativeRunner
         // the returned future to manage along with a unique id
         // 3. Call monitor_until_completion() to wait for everything
         // to finish.
+        // NOTE: Tasks should return type of ThreadManager::ThreadStatus
         
         // Must call prior to manage and not while running!!
         void initialize();

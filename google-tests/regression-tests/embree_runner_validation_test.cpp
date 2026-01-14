@@ -114,8 +114,6 @@ TEST(EmbreeRunner, ValidationTest1)
 
     // Run Ray Trace
     EmbreeRunner runner;
-    runner.disable_point_focus();
-    runner.disable_power_tower();
     RunnerStatus sts;
     sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
@@ -415,8 +413,6 @@ TEST(EmbreeRunner, ValidationTest2)
 
     // Run Ray Trace
     EmbreeRunner runner;
-    runner.disable_point_focus();
-    runner.disable_power_tower();
     RunnerStatus sts;
     sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);

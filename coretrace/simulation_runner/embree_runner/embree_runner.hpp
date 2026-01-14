@@ -100,6 +100,12 @@ namespace SolTrace::EmbreeRunner
         //     return;
         // }
 
+        // TODO: Do we want loud errors when a user calls these?
+        void disable_power_tower() = delete;
+        void enable_power_tower() = delete;
+        void disable_point_focus() = delete;
+        void enable_point_focus() = delete;
+
     private:
         // // Number of threads to use when tracing
         // uint_fast64_t number_of_threads;

@@ -291,8 +291,6 @@ TEST(EmbreeRunner, PowerTowerTest)
 
     // Run Ray Trace
     EmbreeRunner runner;
-    runner.enable_point_focus();
-    runner.enable_power_tower();
     RunnerStatus sts;
     sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
