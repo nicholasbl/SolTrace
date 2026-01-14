@@ -32,13 +32,51 @@ namespace SolTrace::EmbreeRunner
     using SolTrace::NativeRunner::MTRand;
     using SolTrace::NativeRunner::TElement;
     using SolTrace::NativeRunner::telement_ptr;
+    using SolTrace::NativeRunner::trace_logger_ptr;
     using SolTrace::NativeRunner::tstage_ptr;
     using SolTrace::NativeRunner::TSystem;
-    using SolTrace::NativeRunner::trace_logger_ptr;
 
     using SolTrace::Runner::RunnerStatus;
 
     using SolTrace::Result::RayEvent;
+
+    RunnerStatus make_embree_scene(trace_logger_ptr logger,
+                                   TSystem *System,
+                                   RTCDevice &embree_device,
+                                   RTCScene &embree_scene)
+    {
+        RunnerStatus sts = RunnerStatus::SUCCESS;
+        // // Initialize Embree vars
+        // RTCDevice embree_device = nullptr;
+        // RTCScene embree_scene = nullptr;
+        // bool use_shared_embree = false;
+
+        // Make device
+        // std::cout << "Making embree device..." << std::endl;
+        embree_device = rtcNewDevice(NULL);
+
+        // std::cout << "Setting error function..." << std::endl;
+        rtcSetDeviceErrorFunction(embree_device, error_function, NULL);
+
+        // Convert st stages into scene
+        // std::cout << "Making scene..." << std::endl;
+        embree_scene = make_scene(embree_device, *System);
+
+        // std::cout << "Committing scene..." << std::endl;
+        rtcCommitScene(embree_scene);
+
+        // Validate bounds
+        RTCError err = rtcGetDeviceError(embree_device);
+        if (err != RTC_ERROR_NONE)
+        {
+            // int asdg = 0;
+            // return RunnerStatus::ERROR;
+            sts = RunnerStatus::ERROR;
+            logger->error_log("Error setting up Embree scene");
+        }
+
+        return sts;
+    }
 
     RunnerStatus trace_embree(
         trace_logger_ptr logger,
@@ -48,7 +86,7 @@ namespace SolTrace::EmbreeRunner
         uint_fast64_t MaxNumberOfRays,
         bool IncludeSunShape,
         bool IncludeErrors,
-        void *embree_scene_shared)
+        const RTCScene &embree_scene)
     {
 
         // std::cout << "Trace embree start..." << std::endl;
@@ -75,41 +113,44 @@ namespace SolTrace::EmbreeRunner
         System->SunRayCount = 0;
 
         // std::cout << "Setting up embree stuff..." << std::endl;
+        // std::cout << "Embree Scene: " << embree_scene << std::endl;
 
-        // Initialize Embree vars
-        RTCDevice embree_device = nullptr;
-        RTCScene embree_scene = nullptr;
-        bool use_shared_embree = false;
+        // RTCScene embree_scene = static_cast<RTCScene>(embree_scene_shared);
 
-        if (embree_scene_shared == nullptr)
-        {
-            // Make device
-            // std::cout << "Making embree device..." << std::endl;
-            embree_device = rtcNewDevice(NULL);
+        // // Initialize Embree vars
+        // RTCDevice embree_device = nullptr;
+        // RTCScene embree_scene = nullptr;
+        // bool use_shared_embree = false;
 
-            // std::cout << "Setting error function..." << std::endl;
-            rtcSetDeviceErrorFunction(embree_device, error_function, NULL);
+        // if (embree_scene_shared == nullptr)
+        // {
+        //     // Make device
+        //     // std::cout << "Making embree device..." << std::endl;
+        //     embree_device = rtcNewDevice(NULL);
 
-            // Convert st stages into scene
-            // std::cout << "Making scene..." << std::endl;
-            embree_scene = make_scene(embree_device, *System);
+        //     // std::cout << "Setting error function..." << std::endl;
+        //     rtcSetDeviceErrorFunction(embree_device, error_function, NULL);
 
-            // std::cout << "Committing scene..." << std::endl;
-            rtcCommitScene(embree_scene);
+        //     // Convert st stages into scene
+        //     // std::cout << "Making scene..." << std::endl;
+        //     embree_scene = make_scene(embree_device, *System);
 
-            // Validate bounds
-            RTCError err = rtcGetDeviceError(embree_device);
-            if (err != RTC_ERROR_NONE)
-            {
-                // int asdg = 0;
-                return RunnerStatus::ERROR;
-            }
-        }
-        else
-        {
-            embree_scene = static_cast<RTCScene>(embree_scene_shared);
-            use_shared_embree = true;
-        }
+        //     // std::cout << "Committing scene..." << std::endl;
+        //     rtcCommitScene(embree_scene);
+
+        //     // Validate bounds
+        //     RTCError err = rtcGetDeviceError(embree_device);
+        //     if (err != RTC_ERROR_NONE)
+        //     {
+        //         // int asdg = 0;
+        //         return RunnerStatus::ERROR;
+        //     }
+        // }
+        // else
+        // {
+        //     embree_scene = static_cast<RTCScene>(embree_scene_shared);
+        //     use_shared_embree = true;
+        // }
 
         // std::cout << "Setting up sun stuff..." << std::endl;
 
@@ -238,8 +279,8 @@ namespace SolTrace::EmbreeRunner
                         if (r == nullptr)
                         {
                             std::stringstream ss;
-							ss << "Failed to record ray data.\n";
-							logger->error_log(ss.str());
+                            ss << "Failed to record ray data.\n";
+                            logger->error_log(ss.str());
                         }
                     }
 
@@ -585,6 +626,8 @@ namespace SolTrace::EmbreeRunner
             }
         }
 
+        // std::cout << "Closing out rays..." << std::endl;
+
         // Close out any remaining rays as misses
         unsigned idx = System->StageList.size() - 1;
         tstage_ptr Stage = System->StageList[idx];
@@ -600,11 +643,13 @@ namespace SolTrace::EmbreeRunner
                                    RayEvent::EXIT);
         }
 
-        // Clean embree
-        rtcReleaseScene(embree_scene);
-        embree_scene = nullptr;
-        rtcReleaseDevice(embree_device);
-        embree_device = nullptr;
+        // // Clean embree
+        // rtcReleaseScene(embree_scene);
+        // embree_scene = nullptr;
+        // rtcReleaseDevice(embree_device);
+        // embree_device = nullptr;
+
+        // std::cout << "Exiting..." << std::endl;
 
         return RunnerStatus::SUCCESS;
     }

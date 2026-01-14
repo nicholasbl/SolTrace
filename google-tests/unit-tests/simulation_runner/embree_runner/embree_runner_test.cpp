@@ -75,15 +75,15 @@ TEST(EmbreeRunner, SingleRayValidationTest)
     para->set_name("Parabola");
     sd.add_element(para);
 
-    std::cout << "Constructing..." << std::endl;
+    // std::cout << "Constructing..." << std::endl;
     EmbreeRunner runner;
-    std::cout << "Initializing..." << std::endl;
+    // std::cout << "Initializing..." << std::endl;
     RunnerStatus sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-    std::cout << "Setting up simulation..." << std::endl;
+    // std::cout << "Setting up simulation..." << std::endl;
     sts = runner.setup_simulation(&sd);
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-    std::cout << "Running simulation..." << std::endl;
+    // std::cout << "Running simulation..." << std::endl;
     sts = runner.run_simulation();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 

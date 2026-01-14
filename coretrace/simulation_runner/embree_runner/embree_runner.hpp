@@ -1,6 +1,8 @@
 #ifndef SOLTRACE_EMBREE_RUNNER_H
 #define SOLTRACE_EMBREE_RUNNER_H
 
+#include <embree4/rtcore.h>
+
 #include <simulation_data.hpp>
 #include <simulation_runner.hpp>
 
@@ -31,7 +33,7 @@ namespace SolTrace::EmbreeRunner
         // ---- Use inherited methods for these ---- //
         // -- TODO: Remove this comment block once things have stabilized -- //
         // virtual RunnerStatus initialize();
-        // virtual RunnerStatus update_simulation(const SolTrace::Data::SimulationData *data);
+        virtual RunnerStatus update_simulation(const SolTrace::Data::SimulationData *data);
         // virtual RunnerStatus report_simulation(SolTrace::Result::SimulationResult *result,
         //                                        int level_spec);
         // void set_newton_tolerance(double tol)
@@ -117,6 +119,11 @@ namespace SolTrace::EmbreeRunner
         // bool set_aperture_planes(SolTrace::NativeRunner::TSystem *tsys);
         // bool set_aperture_planes(SolTrace::NativeRunner::tstage_ptr stage);
         // bool aperture_plane(SolTrace::NativeRunner::telement_ptr Element);
+
+        RTCDevice embree_device;
+        RTCScene embree_scene;
+
+        void clean_embree();
     };
 
 } // namespace SolTrace::EmbreeRunner

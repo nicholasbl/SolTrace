@@ -19,13 +19,16 @@ namespace SolTrace::EmbreeRunner
 
     using SolTrace::Result::SimulationResult;
 
-    EmbreeRunner::EmbreeRunner() : NativeRunner()
+    EmbreeRunner::EmbreeRunner() : NativeRunner(),
+                                   embree_device(nullptr),
+                                   embree_scene(nullptr)
     {
         return;
     }
 
     EmbreeRunner::~EmbreeRunner()
     {
+        this->clean_embree();
         return;
     }
 
@@ -39,17 +42,10 @@ namespace SolTrace::EmbreeRunner
 
         RunnerStatus sts = NativeRunner::setup_simulation(data);
 
-        // this->tsys.ClearAll();
-
-        // sts = this->setup_parameters(data);
-
-        // if (sts == RunnerStatus::SUCCESS)
-        //     sts = this->setup_sun(data);
-
-        // if (sts == RunnerStatus::SUCCESS)
-        //     sts = this->setup_elements(data);
-
-        // TODO: Move Embree setup stuff into this function
+        make_embree_scene(this->my_logger,
+                          &this->tsys,
+                          this->embree_device,
+                          this->embree_scene);
 
         return sts;
     }
@@ -262,13 +258,13 @@ namespace SolTrace::EmbreeRunner
     //     return sts;
     // }
 
-    // RunnerStatus EmbreeRunner::update_simulation(const SimulationData *data)
-    // {
-    //     // TODO: Do a more efficient implementation of this?
-    //     this->tsys.ClearAll();
-    //     this->setup_simulation(data);
-    //     return RunnerStatus::SUCCESS;
-    // }
+    RunnerStatus EmbreeRunner::update_simulation(const SimulationData *data)
+    {
+        // TODO: Do a more efficient implementation of this?
+        this->clean_embree();
+        NativeRunner::update_simulation(data);
+        return RunnerStatus::SUCCESS;
+    }
 
     RunnerStatus EmbreeRunner::run_simulation()
     {
@@ -286,6 +282,9 @@ namespace SolTrace::EmbreeRunner
         //     ; // Intentional no-op
         // }
 
+        // std::cout << "Embree Device: " << this->embree_device << std::endl;
+        // std::cout << "Embree Scene: " << this->embree_scene << std::endl;
+
         RunnerStatus sts = trace_embree(
             this->my_logger,
             &this->tsys,
@@ -294,14 +293,13 @@ namespace SolTrace::EmbreeRunner
             this->tsys.sim_raymax,
             this->tsys.sim_errors_sunshape,
             this->tsys.sim_errors_optical,
-            nullptr);
+            this->embree_scene);
 
         return sts;
     }
 
     RunnerStatus EmbreeRunner::status_simulation(double *progress)
     {
-        // return this->my_manager->status(progress);
         // TODO: Implement this...
         return RunnerStatus::SUCCESS;
     }
@@ -441,5 +439,22 @@ namespace SolTrace::EmbreeRunner
 
     //     return true;
     // }
+
+    void EmbreeRunner::clean_embree()
+    {
+        // Clean embree
+        if (this->embree_scene != nullptr)
+        {
+            rtcReleaseScene(embree_scene);
+            embree_scene = nullptr;
+        }
+
+        if (this->embree_device != nullptr)
+        {
+            rtcReleaseDevice(embree_device);
+            embree_device = nullptr;
+        }
+        return;
+    }
 
 } // namespace SolTrace::EmbreeRunner
