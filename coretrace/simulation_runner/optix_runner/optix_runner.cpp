@@ -15,6 +15,7 @@ OptixRunner::OptixRunner() : SimulationRunner(),
 
 OptixRunner::~OptixRunner()
 {
+    this->m_sys.clean_up();
 }
 
 RunnerStatus OptixRunner::initialize()
