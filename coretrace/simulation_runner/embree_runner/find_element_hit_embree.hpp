@@ -7,7 +7,7 @@
 
 namespace SolTrace::EmbreeRunner
 {
-    void FindElementHit(
+    void FindElementHit_embree(
         // Embree args
         const RTCScene &scene,
         // Ray info

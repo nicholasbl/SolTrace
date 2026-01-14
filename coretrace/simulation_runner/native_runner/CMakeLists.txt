@@ -11,6 +11,7 @@ set(NATIVE_RUNNER_SRC
     calculator_factory.cpp
     cylinder_calculator.cpp
     determine_element_intersection_new.cpp
+    determine_interaction_type.cpp
     find_element_hit.cpp
     flat_calculator.cpp
     generate_ray.cpp

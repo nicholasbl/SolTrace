@@ -16,6 +16,7 @@
 #include <simulation_runner.hpp>
 
 // NativeRunner header(s)
+#include <determine_interaction_type.hpp>
 #include <generate_ray.hpp>
 #include <mtrand.hpp>
 #include <native_runner_types.hpp>
@@ -248,12 +249,12 @@ namespace SolTrace::EmbreeRunner
                 while (RayInStage)
                 {
 
-                    FindElementHit(embree_scene, i, RayNumber,
-                                   PosRayGlob, CosRayGlob,
-                                   LastPosRaySurfElement, LastCosRaySurfElement,
-                                   LastDFXYZ, LastElementNumber, LastRayNumber,
-                                   LastPosRaySurfStage, LastCosRaySurfStage,
-                                   ErrorFlag, LastHitBackSide, StageHit);
+                    FindElementHit_embree(embree_scene, i, RayNumber,
+                                          PosRayGlob, CosRayGlob,
+                                          LastPosRaySurfElement, LastCosRaySurfElement,
+                                          LastDFXYZ, LastElementNumber, LastRayNumber,
+                                          LastPosRaySurfStage, LastCosRaySurfStage,
+                                          ErrorFlag, LastHitBackSide, StageHit);
 
                     // Breakout if ray left stage
                     if (!StageHit)
@@ -298,87 +299,31 @@ namespace SolTrace::EmbreeRunner
                     }
                     else
                     {
-                        // trace through the interaction
-                        telement_ptr optelm = Stage->ElementList[LastElementNumber - 1];
-
+                        telement_ptr optelm =
+                            Stage->ElementList[LastElementNumber - 1];
                         if (LastHitBackSide)
                             optics = &optelm->Optics.Back;
                         else
                             optics = &optelm->Optics.Front;
 
-                        double TestValue;
-                        double UnitLastDFXYZ[3] = {0.0, 0.0, 0.0};
-                        double IncidentAngle = 0;
-                        switch (optics->my_type)
+                        bool good =
+                            SolTrace::NativeRunner::determine_interaction_type(
+                                logger,
+                                i,
+                                0,
+                                myrng,
+                                optics,
+                                LastDFXYZ,
+                                LastCosRaySurfElement,
+                                rev);
+
+                        if (!good)
                         {
-                        case InteractionType::REFRACTION:
-                            // if (optics->UseTransmissivityTable)
-                            // {
-                            //     int npoints = optics->TransmissivityTable.size();
-                            //     int m = 0;
-
-                            //     UnitLastDFXYZ[0] = -LastDFXYZ[0] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
-                            //     UnitLastDFXYZ[1] = -LastDFXYZ[1] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
-                            //     UnitLastDFXYZ[2] = -LastDFXYZ[2] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
-                            //     IncidentAngle = acos(DOT(LastCosRaySurfElement, UnitLastDFXYZ)) * 1000.; //[mrad]
-                            //     if (IncidentAngle >= optics->TransmissivityTable[npoints - 1].angle)
-                            //     {
-                            //         TestValue = optics->TransmissivityTable[npoints - 1].trans;
-                            //     }
-                            //     else
-                            //     {
-                            //         while (optics->TransmissivityTable[m].angle < IncidentAngle)
-                            //             m++;
-
-                            //         if (m == 0)
-                            //             TestValue = optics->TransmissivityTable[m].trans;
-                            //         else
-                            //             TestValue = (optics->TransmissivityTable[m].trans + optics->TransmissivityTable[m - 1].trans) / 2.0;
-                            //     }
-                            // }
-                            // else
-                            TestValue = optics->transmitivity;
-                            rev = RayEvent::TRANSMIT;
-                            break;
-                        case InteractionType::REFLECTION:
-
-                            // if (optics->UseReflectivityTable)
-                            // {
-                            //     int npoints = optics->ReflectivityTable.size();
-                            //     int m = 0;
-                            //     UnitLastDFXYZ[0] = -LastDFXYZ[0] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
-                            //     UnitLastDFXYZ[1] = -LastDFXYZ[1] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
-                            //     UnitLastDFXYZ[2] = -LastDFXYZ[2] / sqrt(DOT(LastDFXYZ, LastDFXYZ));
-                            //     IncidentAngle = acos(DOT(LastCosRaySurfElement, UnitLastDFXYZ)) * 1000.; //[mrad]
-                            //     if (IncidentAngle >= optics->ReflectivityTable[npoints - 1].angle)
-                            //     {
-                            //         TestValue = optics->ReflectivityTable[npoints - 1].refl;
-                            //     }
-                            //     else
-                            //     {
-                            //         while (optics->ReflectivityTable[m].angle < IncidentAngle)
-                            //             m++;
-
-                            //         if (m == 0)
-                            //             TestValue = optics->ReflectivityTable[m].refl;
-                            //         else
-                            //             TestValue = (optics->ReflectivityTable[m].refl + optics->ReflectivityTable[m - 1].refl) / 2.0;
-                            //     }
-                            // }
-                            // else
-                            TestValue = optics->reflectivity;
-                            rev = RayEvent::REFLECT;
-                            break;
-                        default:
-                            // System->errlog("Bad optical interaction type = %d (stage %d)", i, optelm->InteractionType);
                             return RunnerStatus::ERROR;
                         }
 
-                        // Apply MonteCarlo probability of absorption. Limited
-                        // for now, but can make more complex later on if desired
-                        if (TestValue <= myrng())
+                        if (rev == RayEvent::ABSORB)
                         {
-                            // ray was fully absorbed
                             RayIsAbsorbed = true;
                             break;
                         }

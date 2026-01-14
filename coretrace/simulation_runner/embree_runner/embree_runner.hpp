@@ -33,7 +33,6 @@ namespace SolTrace::EmbreeRunner
         // ---- Use inherited methods for these ---- //
         // -- TODO: Remove this comment block once things have stabilized -- //
         // virtual RunnerStatus initialize();
-        virtual RunnerStatus update_simulation(const SolTrace::Data::SimulationData *data);
         // virtual RunnerStatus report_simulation(SolTrace::Result::SimulationResult *result,
         //                                        int level_spec);
         // void set_newton_tolerance(double tol)
@@ -77,6 +76,7 @@ namespace SolTrace::EmbreeRunner
 
         virtual RunnerStatus setup_simulation(const SolTrace::Data::SimulationData *data);
         virtual RunnerStatus run_simulation();
+        virtual RunnerStatus update_simulation(const SolTrace::Data::SimulationData *data);
         virtual RunnerStatus status_simulation(double *progress = nullptr);
         virtual RunnerStatus cancel_simulation();
 
