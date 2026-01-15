@@ -11,6 +11,6 @@ namespace SolTrace::EmbreeRunner
                     float (&min_coord_global)[3],
                     float (&max_coord_global)[3]);
 
-} // namespace embree_helper
+} // namespace SolTrace::EmbreeRunner
 
 #endif

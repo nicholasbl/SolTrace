@@ -121,6 +121,9 @@ namespace SolTrace::Data
                                 double &z_max) const
     {
         double r = this->radius;
+        // Debug check only. This should be caught upstream before
+        // any bounding box calculations are done by a SimulationRunner.
+        // See, e.g., native_runner/cylinder_calculator.cpp.
         assert(is_approx(x_minmax[0], -r, 1e-6));
         assert(is_approx(x_minmax[1], r, 1e-6));
         z_min = 0.0;
@@ -246,9 +249,9 @@ namespace SolTrace::Data
 
     double Cylinder::z(double x, double) const
     {
-        // TODO: Fix ? This is really only the top half of the cylinder
-        //       Clyinder breaks the model since it is a mulit-valued fuction: each
-        //       x values produces two z values Returning only the positive root
+        // TODO: Fix ? This is really only the top half of the cylinder.
+        //       Cylinder breaks the model since it is a multi-valued function: each
+        //       x value produces two z values. Returning only the positive root.
         return radius + sqrt(x * x + radius * radius);
     }
 

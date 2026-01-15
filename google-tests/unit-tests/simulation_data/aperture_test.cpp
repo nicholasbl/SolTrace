@@ -665,7 +665,3 @@ TEST(Aperture, MakeApertureFromType)
     auto null_ap2 = Aperture::make_aperture_from_type(ApertureType::CIRCLE, empty_args);
     EXPECT_TRUE(null_ap2 == nullptr);
 }
-
-TEST(Aperture, BoundingBox)
-{
-}

@@ -123,8 +123,8 @@ namespace SolTrace::EmbreeRunner
                          st_element->Origin, st_element->RRefToLoc,
                          PosRayElement, CosRayElement);
 
-        // increment position by tiny amount to get off the element if 
-        // tracing to the same element
+        // Increment position by tiny amount to get off the element if 
+        // tracing to the same element.
         PosRayElement[0] = PosRayElement[0] + 1.0e-4 * CosRayElement[0];
         PosRayElement[1] = PosRayElement[1] + 1.0e-4 * CosRayElement[1];
         PosRayElement[2] = PosRayElement[2] + 1.0e-4 * CosRayElement[2];

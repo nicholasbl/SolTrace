@@ -203,7 +203,7 @@ TEST(NativeRunner, ValidationTest1)
                 EXPECT_NE(rr->get_event(iidx), RayEvent::ABSORB);
                 EXPECT_NE(rr->get_event(iidx), RayEvent::EXIT);
 
-                if(rr->get_event(iidx) == RayEvent::ABSORB)
+                if (rr->get_event(iidx) == RayEvent::ABSORB)
                 {
                     break;
                 }
