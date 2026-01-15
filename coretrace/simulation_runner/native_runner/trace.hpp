@@ -20,7 +20,7 @@ namespace SolTrace::NativeRunner
         trace_logger_ptr logger,
         TSystem *System,
         const std::vector<unsigned int> &seeds,
-        uint_fast64_t nthreads,
+        unsigned nthreads,
         uint_fast64_t NumberOfRays,
         uint_fast64_t MaxNumberOfRays,
         bool IncludeSunShape,

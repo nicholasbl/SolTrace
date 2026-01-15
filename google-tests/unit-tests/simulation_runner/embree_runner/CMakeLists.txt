@@ -15,22 +15,15 @@ include_directories(
 # Add test files for Embree_runner
 set(EMBREE_RUNNER_TEST_SRC
     ../../common/common.cpp
-    # flat_calculator_test.cpp
-    # newton_calculator_test.cpp
-    # parabola_calculator_test.cpp
-    # sphere_calculator_test.cpp
-    # cylinder_calculator_test.cpp
-    # calculator_factory_test.cpp
     embree_runner_test.cpp
-    # tower_demo.cpp
 )
 
-# if (NOT ENABLE_COVERAGE)
-#     list(APPEND
-#     EMBREE_RUNNER_TEST_SRC
-#     embree_runner_multithreading_test.cpp
-#     )
-# endif()
+if (NOT ENABLE_COVERAGE)
+    list(APPEND
+    EMBREE_RUNNER_TEST_SRC
+    embree_runner_multithreading_test.cpp
+    )
+endif()
 
 add_executable(EmbreeRunnerUnitTests
     ${EMBREE_RUNNER_TEST_SRC}

@@ -128,6 +128,8 @@ namespace SolTrace::NativeRunner
         bool set_aperture_planes(tstage_ptr stage);
         bool aperture_plane(telement_ptr Element);
 
+        void set_seeds();
+
     private:
     };
 

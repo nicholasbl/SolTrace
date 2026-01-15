@@ -26,6 +26,7 @@ namespace SolTrace::NativeRunner
         assert(this->threads.find(id) == this->threads.end());
 
         this->threads[id] = std::move(f);
+        std::lock_guard<std::mutex> lk(this->progress_mutex);
         this->progress[id] = 0.0;
         return id;
     }

@@ -4,26 +4,24 @@
 #include <future>
 #include <thread>
 
-#include <native_runner.hpp>
+#include <embree_runner.hpp>
 #include <simulation_data_export.hpp>
 #include <simulation_runner.hpp>
 #include <simulation_result_export.hpp>
 
 using SolTrace::Runner::RunnerStatus;
-using SolTrace::NativeRunner::NativeRunner;
+using SolTrace::EmbreeRunner::EmbreeRunner;
 
-TEST(NativeRunner, StatusAndCancelMultiThread)
+TEST(EmbreeRunner, StatusAndCancelMultiThread)
 {
     std::string sample_path = std::string(PROJECT_DIR) +
                               std::string("/Power-tower-surround_singlefacet.stinput");
 
     SimulationData sd;
     EXPECT_TRUE(sd.import_from_file(sample_path));
-    sd.set_number_of_rays(100000);
+    sd.set_number_of_rays(1000000);
 
-    NativeRunner runner;
-    runner.disable_point_focus();
-    runner.disable_power_tower();
+    EmbreeRunner runner;
     runner.set_number_of_threads(2);
     RunnerStatus sts;
     sts = runner.setup_simulation(&sd);
@@ -31,18 +29,18 @@ TEST(NativeRunner, StatusAndCancelMultiThread)
 
     auto t0 = std::chrono::high_resolution_clock::now();
 
-    auto fsts = std::async(&NativeRunner::run_simulation, &runner);
+    auto fsts = std::async(&EmbreeRunner::run_simulation, &runner);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     sts = runner.status_simulation();
     EXPECT_EQ(sts, RunnerStatus::RUNNING);
 
     double prog = -1.0;
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
     sts = runner.status_simulation(&prog);
     EXPECT_EQ(sts, RunnerStatus::RUNNING);
-    EXPECT_LE(prog, 1.0);
-    EXPECT_GE(prog, 0.0);
+    EXPECT_LT(prog, 1.0);
+    EXPECT_GT(prog, 0.0);
 
     runner.cancel_simulation();
     fsts.wait();
@@ -57,7 +55,7 @@ TEST(NativeRunner, StatusAndCancelMultiThread)
     std::cout << "Progress before cancel: " << prog << std::endl;
 }
 
-TEST(NativeRunner, CancelMultithread)
+TEST(EmbreeRunner, CancelMultithread)
 {
     std::string sample_path = std::string(PROJECT_DIR) +
                               std::string("/Power-tower-surround_singlefacet.stinput");
@@ -66,15 +64,13 @@ TEST(NativeRunner, CancelMultithread)
     EXPECT_TRUE(sd.import_from_file(sample_path));
     sd.set_number_of_rays(1000000);
 
-    NativeRunner runner;
-    runner.disable_point_focus();
-    runner.disable_power_tower();
+    EmbreeRunner runner;
     runner.set_number_of_threads(4);
     RunnerStatus sts;
     sts = runner.setup_simulation(&sd);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
 
-    auto fsts = std::async(&NativeRunner::run_simulation, &runner);
+    auto fsts = std::async(&EmbreeRunner::run_simulation, &runner);
 
     // Give time to start processing
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -93,7 +89,7 @@ TEST(NativeRunner, CancelMultithread)
     std::cout << "Time to cancel: " << dur.count() << std::endl;
 }
 
-TEST(NativeRunner, RayIdAssignmentMultiThread)
+TEST(EmbreeRunner, RayIdAssignmentMultiThread)
 {
     const uint_fast64_t NRAYS = 50000;
     const unsigned NTHREADS = 12;
@@ -109,7 +105,7 @@ TEST(NativeRunner, RayIdAssignmentMultiThread)
     sd.set_number_of_rays(NRAYS);
 
     // Create and run the native runner
-    NativeRunner runner;
+    EmbreeRunner runner;
     runner.set_number_of_threads(NTHREADS);
     RunnerStatus sts = runner.initialize();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
@@ -117,6 +113,12 @@ TEST(NativeRunner, RayIdAssignmentMultiThread)
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.run_simulation();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+
+    double prog = -1.0;
+    sts = runner.status_simulation(&prog);
+    EXPECT_LE(prog, 1.0);
+    EXPECT_GT(prog, 0.0);
+    std::cout << "Progress: " << prog << std::endl;
 
     SimulationResult result;
     sts = runner.report_simulation(&result, 0);

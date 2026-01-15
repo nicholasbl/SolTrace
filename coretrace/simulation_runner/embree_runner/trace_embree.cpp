@@ -22,10 +22,11 @@
 #include <native_runner_types.hpp>
 #include <process_interaction.hpp>
 #include <sun_to_primary_stage.hpp>
+#include <thread_manager.hpp>
+#include <trace_logger.hpp>
 
 #include "embree_helper.hpp"
 #include "find_element_hit_embree.hpp"
-#include "trace_logger.hpp"
 
 namespace SolTrace::EmbreeRunner
 {
@@ -33,6 +34,8 @@ namespace SolTrace::EmbreeRunner
     using SolTrace::NativeRunner::MTRand;
     using SolTrace::NativeRunner::TElement;
     using SolTrace::NativeRunner::telement_ptr;
+    using SolTrace::NativeRunner::thread_manager_ptr;
+    using SolTrace::NativeRunner::ThreadManager;
     using SolTrace::NativeRunner::trace_logger_ptr;
     using SolTrace::NativeRunner::tstage_ptr;
     using SolTrace::NativeRunner::TSystem;
@@ -80,9 +83,11 @@ namespace SolTrace::EmbreeRunner
     }
 
     RunnerStatus trace_embree(
+        thread_manager_ptr manager,
         trace_logger_ptr logger,
         TSystem *System,
-        unsigned int seed,
+        const std::vector<unsigned> &seeds,
+        unsigned nthreads,
         uint_fast64_t NumberOfRays,
         uint_fast64_t MaxNumberOfRays,
         bool IncludeSunShape,
@@ -90,78 +95,72 @@ namespace SolTrace::EmbreeRunner
         const RTCScene &embree_scene)
     {
 
-        // std::cout << "Trace embree start..." << std::endl;
+        System->RayData.SetUp(nthreads, NumberOfRays);
+        System->SunRayCount = 0;
 
+        // Initialize Sun
+        Vector3d PosSunStage;
+        bool status = SolTrace::NativeRunner::SunToPrimaryStage(
+            logger, System, System->StageList[0].get(),
+            &System->Sun, PosSunStage.data);
+
+        if (!status)
+            return RunnerStatus::ERROR;
+
+        uint_fast64_t rem = NumberOfRays % nthreads;
+        uint_fast64_t nrays_per_thread = NumberOfRays / nthreads;
+        uint_fast64_t nrays;
+
+        for (unsigned k = 0; k < nthreads; ++k)
+        {
+            nrays = k < rem ? nrays_per_thread + 1 : nrays_per_thread;
+            ThreadManager::future my_future = std::async(
+                std::launch::async,
+                trace_embree_single_thread,
+                k,
+                manager,
+                logger,
+                System,
+                seeds[k],
+                nrays,
+                MaxNumberOfRays / nthreads + 1,
+                IncludeSunShape,
+                IncludeErrors,
+                PosSunStage,
+                embree_scene);
+            manager->manage(k, std::move(my_future));
+        }
+
+        return manager->monitor_until_completion();
+    }
+
+    RunnerStatus trace_embree_single_thread(
+        unsigned thread_id,
+        thread_manager_ptr manager,
+        trace_logger_ptr logger,
+        TSystem *System,
+        unsigned seed,
+        uint_fast64_t NumberOfRays,
+        uint_fast64_t MaxNumberOfRays,
+        bool IncludeSunShape,
+        bool IncludeErrors,
+        const SolTrace::Data::Vector3d &PosSunStage,
+        const RTCScene &embree_scene)
+    {
+        // std::cout << "Thread " << thread_id << " with seed " << seed
+        //           << std::endl;
         // Initialize Internal State Variables
         MTRand myrng(seed);
+
+        uint_fast64_t update_rate = std::min(
+            std::max(static_cast<uint_fast64_t>(1), NumberOfRays / 10),
+            static_cast<uint_fast64_t>(1000));
+        uint_fast64_t update_count = 0;
+        double total_work = System->StageList.size() * NumberOfRays;
+
         uint_fast64_t RayNumber = 1; // Ray Number of current ray
         bool PreviousStageHasRays = false;
         uint_fast64_t LastRayNumberInPreviousStage = NumberOfRays;
-
-        // Check Inputs
-        if (NumberOfRays < 1)
-        {
-            // System->errlog("invalid number of rays: %d", NumberOfRays);
-            return RunnerStatus::ERROR;
-        }
-        if (System->StageList.size() < 1)
-        {
-            // System->errlog("no stages defined.");
-            return RunnerStatus::ERROR;
-        }
-
-        System->RayData.SetUp(1, NumberOfRays);
-        System->SunRayCount = 0;
-
-        // std::cout << "Setting up embree stuff..." << std::endl;
-        // std::cout << "Embree Scene: " << embree_scene << std::endl;
-
-        // RTCScene embree_scene = static_cast<RTCScene>(embree_scene_shared);
-
-        // // Initialize Embree vars
-        // RTCDevice embree_device = nullptr;
-        // RTCScene embree_scene = nullptr;
-        // bool use_shared_embree = false;
-
-        // if (embree_scene_shared == nullptr)
-        // {
-        //     // Make device
-        //     // std::cout << "Making embree device..." << std::endl;
-        //     embree_device = rtcNewDevice(NULL);
-
-        //     // std::cout << "Setting error function..." << std::endl;
-        //     rtcSetDeviceErrorFunction(embree_device, error_function, NULL);
-
-        //     // Convert st stages into scene
-        //     // std::cout << "Making scene..." << std::endl;
-        //     embree_scene = make_scene(embree_device, *System);
-
-        //     // std::cout << "Committing scene..." << std::endl;
-        //     rtcCommitScene(embree_scene);
-
-        //     // Validate bounds
-        //     RTCError err = rtcGetDeviceError(embree_device);
-        //     if (err != RTC_ERROR_NONE)
-        //     {
-        //         // int asdg = 0;
-        //         return RunnerStatus::ERROR;
-        //     }
-        // }
-        // else
-        // {
-        //     embree_scene = static_cast<RTCScene>(embree_scene_shared);
-        //     use_shared_embree = true;
-        // }
-
-        // std::cout << "Setting up sun stuff..." << std::endl;
-
-        // Initialize Sun
-        double PosSunStage[3] = {0.0, 0.0, 0.0};
-        bool status = SolTrace::NativeRunner::SunToPrimaryStage(
-            logger, System, System->StageList[0].get(),
-            &System->Sun, PosSunStage);
-        if (!status)
-            return RunnerStatus::ERROR;
 
         // Define IncomingRays
         std::vector<GlobalRay_refactored> IncomingRays;
@@ -171,8 +170,7 @@ namespace SolTrace::EmbreeRunner
         uint_fast64_t StageDataArrayIndex = 0;
         uint_fast64_t PreviousStageDataArrayIndex = 0;
         uint_fast64_t n_rays_active = NumberOfRays;
-
-        // std::cout << "Starting ray tracing..." << std::endl;
+        uint_fast64_t sun_ray_count_local = 0;
 
         // Loop through stages
         for (uint_fast64_t i = 0; i < System->StageList.size(); i++)
@@ -208,7 +206,7 @@ namespace SolTrace::EmbreeRunner
                     // Make ray (if first stage)
                     double PosRaySun[3];
                     SolTrace::NativeRunner::GenerateRay(
-                        myrng, PosSunStage, Stage->Origin,
+                        myrng, PosSunStage.data, Stage->Origin,
                         Stage->RLocToRef, &System->Sun,
                         PosRayGlob, CosRayGlob, PosRaySun);
                     System->SunRayCount++;
@@ -269,7 +267,7 @@ namespace SolTrace::EmbreeRunner
                     if (i == 0 && MultipleHitCount == 1)
                     {
                         // Add ray to Stage RayData
-                        auto r = System->RayData.Append(0,
+                        auto r = System->RayData.Append(thread_id,
                                                         PosRayGlob,
                                                         CosRayGlob,
                                                         ELEMENT_NULL,
@@ -284,9 +282,6 @@ namespace SolTrace::EmbreeRunner
                             logger->error_log(ss.str());
                         }
                     }
-
-                    // TODO: Move interaction type determination to
-                    // helper function
 
                     // Get optics and check for absorption
                     const OpticalProperties *optics = 0;
@@ -310,7 +305,7 @@ namespace SolTrace::EmbreeRunner
                             SolTrace::NativeRunner::determine_interaction_type(
                                 logger,
                                 i,
-                                0,
+                                thread_id,
                                 myrng,
                                 optics,
                                 LastDFXYZ,
@@ -361,7 +356,7 @@ namespace SolTrace::EmbreeRunner
                                          PosRayGlob,
                                          CosRayGlob);
 
-                    System->RayData.Append(0,
+                    System->RayData.Append(thread_id,
                                            PosRayGlob,
                                            CosRayGlob,
                                            LastElementNumber,
@@ -381,6 +376,17 @@ namespace SolTrace::EmbreeRunner
                     }
                 }
 
+                if (MultipleHitCount > 0)
+                    ++update_count;
+
+                if (update_count % update_rate == 0)
+                {
+                    double progress = update_count / total_work;
+                    manager->progress_update(thread_id, progress);
+                    if (manager->terminate(thread_id))
+                        return RunnerStatus::CANCEL;
+                }
+
                 // Handle if Ray was absorbed
                 if (RayIsAbsorbed)
                 {
@@ -391,7 +397,7 @@ namespace SolTrace::EmbreeRunner
                                          PosRayGlob,
                                          CosRayGlob);
 
-                    System->RayData.Append(0,
+                    System->RayData.Append(thread_id,
                                            PosRayGlob,
                                            CosRayGlob,
                                            LastElementNumber,
@@ -499,12 +505,9 @@ namespace SolTrace::EmbreeRunner
                     // Handle FlagMiss condition (
                     if (FlagMiss == true)
                     {
-                        // LastElementNumber = 0;
                         LastRayNumber = RayNumber;
-                        // CopyVec3(LastPosRaySurfStage, PosRayStage);
-                        // CopyVec3(LastCosRaySurfStage, CosRayStage);
 
-                        System->RayData.Append(0,
+                        System->RayData.Append(thread_id,
                                                PosRayGlob,
                                                CosRayGlob,
                                                ELEMENT_NULL,
@@ -571,15 +574,13 @@ namespace SolTrace::EmbreeRunner
             }
         }
 
-        // std::cout << "Closing out rays..." << std::endl;
-
         // Close out any remaining rays as misses
         unsigned idx = System->StageList.size() - 1;
         tstage_ptr Stage = System->StageList[idx];
         for (uint_fast64_t k = 0; k < n_rays_active; ++k)
         {
             GlobalRay_refactored ray = IncomingRays[k];
-            System->RayData.Append(0,
+            System->RayData.Append(thread_id,
                                    ray.Pos,
                                    ray.Cos,
                                    ELEMENT_NULL,
@@ -588,13 +589,8 @@ namespace SolTrace::EmbreeRunner
                                    RayEvent::EXIT);
         }
 
-        // // Clean embree
-        // rtcReleaseScene(embree_scene);
-        // embree_scene = nullptr;
-        // rtcReleaseDevice(embree_device);
-        // embree_device = nullptr;
-
-        // std::cout << "Exiting..." << std::endl;
+        // System->SunRayCount is atomic so this is thread safe
+        System->SunRayCount += sun_ray_count_local;
 
         return RunnerStatus::SUCCESS;
     }

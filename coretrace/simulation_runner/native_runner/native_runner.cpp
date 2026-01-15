@@ -288,19 +288,7 @@ namespace SolTrace::NativeRunner
 
     RunnerStatus NativeRunner::run_simulation()
     {
-        if (this->seeds.empty() ||
-            this->seeds.size() != this->number_of_threads)
-        {
-            this->seeds.clear();
-            for (unsigned k = 0; k < this->number_of_threads; ++k)
-            {
-                this->seeds.push_back(this->tsys.seed + 123 * k);
-            }
-        }
-        else
-        {
-            ; // Intentional no-op
-        }
+        this->set_seeds();
 
         RunnerStatus sts = trace_native(
             this->my_manager,
@@ -457,6 +445,24 @@ namespace SolTrace::NativeRunner
             Element->icalc->compute_z_aperture(Element->aperture);
 
         return true;
+    }
+
+    void NativeRunner::set_seeds()
+    {
+        if (this->seeds.empty() ||
+            this->seeds.size() != this->number_of_threads)
+        {
+            this->seeds.clear();
+            for (unsigned k = 0; k < this->number_of_threads; ++k)
+            {
+                this->seeds.push_back(this->tsys.seed + 123 * k);
+            }
+        }
+        else
+        {
+            ; // Intentional no-op
+        }
+        return;
     }
 
 } // namespace SolTrace::NativeRunner
