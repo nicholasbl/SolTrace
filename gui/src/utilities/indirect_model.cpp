@@ -96,7 +96,10 @@ bool IndirectTableModel::setData(const QModelIndex& index,
 
     bool ok = setter(resolved_index, value);
 
-    if (ok) { Q_EMIT dataChanged(index, index, QList<int>() << role); }
+    if (ok) {
+        Q_EMIT dataChanged(
+            index, index, { Qt::DisplayRole, Qt::EditRole, role });
+    }
 
     return ok;
 }
@@ -106,7 +109,7 @@ Qt::ItemFlags IndirectTableModel::flags(const QModelIndex& index) const {
 
     bool can_edit = !!m_properties.value(index.column()).setter;
 
-    if (!can_edit) return Qt::ItemIsEnabled;
+    if (!can_edit) return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 
     return Qt::ItemIsEditable | Qt::ItemIsSelectable | Qt::ItemIsEnabled;
 }
@@ -152,7 +155,7 @@ void IndirectTableModel::reset(QList<QVariant> new_records) {
 
 void IndirectTableModel::remove_all() {
     if (_record_count() == 0) return;
-    beginRemoveRows(QModelIndex(), 0, std::max(rowCount() - 1, 0));
+    beginRemoveRows(QModelIndex(), 0, rowCount() - 1);
     _clear();
     endRemoveRows();
 }

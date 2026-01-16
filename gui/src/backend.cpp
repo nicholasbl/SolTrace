@@ -13,7 +13,7 @@
 
 // TODO COORDINATE SYSTEMS. the sim could be arbitrary
 
-
+#if 0
 
 bool DataSetsModel::_can_append_new(QVariant const&) {
     return true;
@@ -21,7 +21,7 @@ bool DataSetsModel::_can_append_new(QVariant const&) {
 
 void DataSetsModel::_append_new(QVariant) {
     auto new_data    = std::make_shared<SD::SimulationData>();
-    auto new_wrapper = std::make_shared<Data>(new_data);
+    auto new_wrapper = std::make_shared<LocalData>(new_data);
 
     watch(new_wrapper.get());
 
@@ -59,8 +59,9 @@ void DataSetsModel::_clear() {
     m_sets.clear();
 }
 
-void DataSetsModel::watch(Data* ptr) {
-    connect(ptr, &Data::modified_changed, this, &DataSetsModel::a_data_changed);
+void DataSetsModel::watch(LocalData* ptr) {
+    // connect(ptr, &Data::modified_changed, this,
+    // &DataSetsModel::a_data_changed);
 }
 
 DataSetsModel::DataSetsModel(QObject* parent) : IndirectTableModel(parent) {
@@ -131,10 +132,10 @@ void DataSetsModel::file_ready() {
                    [this](LoadedFile arg) {
                        // convert
 
-                       auto new_set = ADataSet{
-                           .name = arg.name,
+                       auto new_set = ADataSet {
+                           .name       = arg.name,
                            .provenance = arg.provenance,
-                           .ptr = std::make_shared<Data>(arg.ptr),
+                           .ptr        = std::make_shared<LocalData>(arg.ptr),
                        };
 
                        auto at = _record_count();
@@ -158,7 +159,7 @@ void DataSetsModel::file_ready() {
 }
 
 void DataSetsModel::a_data_changed() {
-    auto who = qobject_cast<Data*>(sender());
+    auto who = qobject_cast<LocalData*>(sender());
 
     if (!who) return;
 
@@ -199,8 +200,8 @@ void DataSetsModel::select(int index) {
 
     set_current_data(m_sets[index].ptr.get());
 }
+#endif
 
 // =============================================================================
 
-Backend::Backend(QObject* parent)
-    : QObject { parent }, m_data_sets(new DataSetsModel(this)) { }
+Backend::Backend(QObject* parent) : QObject { parent } { }

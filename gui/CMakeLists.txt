@@ -7,6 +7,8 @@ include(cmake/CPM.cmake)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Quick Quick3D)
+find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core)
 
 set(QT_QML_GENERATE_QMLLS_INI ON)
 
@@ -57,9 +59,12 @@ qt_add_qml_module(SolTrace
         src/job_run_process.h src/job_run_process.cpp
         src/utilities/math_utility.h
         src/utilities/structmodel.h
-        src/models/geometrydefinitionsmodel.h src/models/geometrydefinitionsmodel.cpp
+
         src/database/database.h src/database/database.cpp
         src/database/database_models.h src/database/database_models.cpp
+        src/database/components.h
+        src/database/geometryeditor.h src/database/geometryeditor.cpp
+        SOURCES src/database/database_notification.h src/database/database_notification.cpp
 )
 
 qt_add_resources(SolTrace
@@ -127,7 +132,13 @@ if(EnTT_ADDED)
   target_include_directories(EnTT SYSTEM INTERFACE ${EnTT_SOURCE_DIR}/src)
 endif()
 
-target_link_libraries(SolTrace PRIVATE EnTT)
+CPMAddPackage(
+    NAME magic_enum
+    GITHUB_REPOSITORY Neargye/magic_enum
+    GIT_TAG v0.9.7
+)
+
+target_link_libraries(SolTrace PRIVATE EnTT magic_enum)
 
 
 target_include_directories(SolTrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -157,6 +168,8 @@ target_link_libraries(SolTrace
         simresult
         native_runner
 )
+target_link_libraries(SolTrace PRIVATE Qt6::Core)
+target_link_libraries(SolTrace PRIVATE Qt6::Core)
 
 
 set_target_properties(simdata PROPERTIES

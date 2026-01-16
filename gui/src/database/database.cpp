@@ -1,4 +1,8 @@
 #include "database.h"
+#include "database/components.h"
+#include "database/database_notification.h"
+
+#include "simulation_data_api.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -70,6 +74,7 @@ struct std::hash<db::GroupParameters> {
 
 namespace db {
 
+
 QQuaternion convert(SD::Matrix3d const& m) {
 
     auto mat = QMatrix3x3(Qt::Initialization::Uninitialized);
@@ -98,89 +103,6 @@ SD::Matrix3d convert(QQuaternion const& m) {
     return mat;
 }
 
-// =============================================================================
-
-void UIApi::change_group_name(entt::entity entity, QString name) {
-    auto lock = m_host.lock();
-    if (!lock) return;
-
-    if (!lock->all_of<GroupComponent>(entity)) { return; }
-
-    lock->patch<GroupComponent>(entity,
-                                [&name](GroupComponent& a) { a.name = name; });
-}
-
-entt::entity UIApi::add_group(QString new_name, QVector<entt::entity> members) {
-    auto lock = m_host.lock();
-    if (!lock) return entt::null;
-
-    auto set = std::unordered_set(members.begin(), members.end());
-
-    auto ent = lock->create();
-    lock->emplace<GroupComponent>(ent,
-                                  GroupComponent {
-                                      .name    = new_name,
-                                      .members = set,
-                                  });
-
-    for (auto child : set) {
-        lock->emplace_or_replace<GroupMemberComponent>(
-            child, GroupMemberComponent { .group = ent });
-    }
-
-    return ent;
-}
-
-void UIApi::delete_group(entt::entity to_delete, entt::entity move_to) {
-    auto lock = m_host.lock();
-    if (!lock) return;
-
-    if (!lock->all_of<GroupComponent>(to_delete)) { return; }
-
-    auto members = std::move(lock->get<GroupComponent>(to_delete).members);
-
-    lock->destroy(to_delete);
-
-    for (auto child : members) {
-        lock->emplace_or_replace<GroupMemberComponent>(
-            child, GroupMemberComponent { .group = move_to });
-    }
-
-    if (!lock->all_of<GroupComponent>(move_to)) {
-        lock->emplace<GroupComponent>(
-            move_to,
-            GroupComponent {
-                .name    = QString("Group {}").arg(entt::to_integral(move_to)),
-                .members = std::move(members),
-            });
-    } else {
-        lock->patch<GroupComponent>(move_to, [&](GroupComponent& a) {
-            a.members.insert(members.begin(), members.end());
-        });
-    }
-}
-
-// =============================================================================
-
-static void on_group_change(entt::registry& reg, entt::entity entity) {
-    auto* nptr = reg.ctx().find<NotificationResource>();
-    if (!nptr) return;
-
-    auto* gptr = reg.try_get<GroupComponent>(entity);
-    if (!gptr) { return; }
-
-    nptr->notifier->group_changed(CachedGroup {
-        .name   = gptr->name,
-        .entity = entity,
-    });
-}
-
-static void on_group_remove(entt::registry& reg, entt::entity entity) {
-    auto* nptr = reg.ctx().find<NotificationResource>();
-    if (!nptr) return;
-
-    nptr->notifier->group_removed(entity);
-}
 
 // =============================================================================
 
@@ -191,16 +113,13 @@ std::shared_ptr<entt::registry> create_new() {
         .notifier = QSharedPointer<UIApi>(new UIApi(ret)),
     });
 
-
-    ret->on_construct<GroupComponent>().connect<&on_group_change>();
-    ret->on_update<GroupComponent>().connect<&on_group_change>();
-    ret->on_destroy<GroupComponent>().connect<&on_group_remove>();
-
     return ret;
 }
 
 std::shared_ptr<entt::registry> import(SD::SimulationData& data) {
     auto ret = create_new();
+
+    auto imported_tag = create_tag(*ret, "imported");
 
     // we use pointers as element IDs are scoped to global AND composite
     std::unordered_map<SD::Element*, entt::entity> emap;
@@ -211,6 +130,8 @@ std::shared_ptr<entt::registry> import(SD::SimulationData& data) {
         } else {
             auto ent  = ret->create();
             emap[ptr] = ent;
+
+            assign_tag(*ret, ent, imported_tag);
 
             return ent;
         }
@@ -230,15 +151,13 @@ std::shared_ptr<entt::registry> import(SD::SimulationData& data) {
 
         auto rotation = convert(element.get_local_to_reference());
 
-        ret->emplace<PositionComponent>(
+        ret->emplace<TransformComponent>(
             ent,
-            PositionComponent {
+            TransformComponent {
                 .position = QVector3D(
                     position.data[0], position.data[1], position.data[2]),
+                .rotation = rotation,
             });
-
-        ret->emplace<OrientationComponent>(
-            ent, OrientationComponent { .rotation = rotation });
 
 
         if (!element.is_enabled()) { ret->emplace<DisabledComponent>(ent); }
@@ -285,48 +204,23 @@ std::shared_ptr<entt::registry> import(SD::SimulationData& data) {
             // no such group
 
             auto new_group = GroupComponent {
-                .name       = QString("Group %1").arg(group_counter),
-                .parameters = local,
+                .parameters = std::make_shared<GroupParameters>(local),
             };
-
-            group_counter++;
 
             auto group_entity = ret->create();
 
             ret->emplace<GroupComponent>(group_entity, new_group);
+            ret->emplace<IdentityComponent>(
+                group_entity,
+                IdentityComponent {
+                    .name = QString("Group %1").arg(group_counter),
+                });
+
+            group_counter++;
 
             groups.try_emplace(local, group_entity);
 
             assign_group(*ret, ent, group_entity);
-        }
-    }
-
-    // fill in missing group information
-
-    // TODO: this will probably fail with nested composites
-
-    {
-        // if all the children are in the same group, duplicate
-        // if mixed, just pick the first one
-        auto view = ret->view<const ChildrenComponent>(
-            entt::exclude<GroupMemberComponent, GroupComponent>);
-
-        // all entities with no group
-        for (auto [parent, children] : view.each()) {
-
-            // get all groups of the children
-            std::unordered_set<entt::entity> children_groups;
-
-            for (auto child : children.children) {
-                auto* comp = ret->try_get<GroupMemberComponent>(child);
-
-                if (comp) { children_groups.insert(comp->group); }
-            }
-
-            // if there are groups we can assign
-            if (children_groups.size()) {
-                assign_group(*ret, parent, *children_groups.begin());
-            }
         }
     }
 
@@ -359,22 +253,19 @@ std::shared_ptr<SD::SimulationData> export_to_simdata(entt::registry& reg) {
         for (auto child : group.members) {
             auto ptr = std::make_shared<SD::SingleElement>();
 
-            ptr->set_aperture(group.parameters.aperture);
-            ptr->set_surface(group.parameters.surface);
+            ptr->set_aperture(group.parameters->aperture);
+            ptr->set_surface(group.parameters->surface);
 
-            ptr->set_front_optical_properties(group.parameters.optics_front);
-            ptr->set_back_optical_properties(group.parameters.optics_back);
+            ptr->set_front_optical_properties(group.parameters->optics_front);
+            ptr->set_back_optical_properties(group.parameters->optics_back);
 
             QVector3D origin(0.0f, 0.0f, 0.0f);
-            if (auto pos_comp = reg.try_get<PositionComponent>(child);
-                pos_comp) {
-                origin = pos_comp->position;
+            if (auto tf_comp = reg.try_get<TransformComponent>(child);
+                tf_comp) {
+                origin = tf_comp->position;
                 ptr->set_origin(origin.x(), origin.y(), origin.z());
-            }
 
-            if (auto rot_comp = reg.try_get<OrientationComponent>(child);
-                rot_comp) {
-                auto rot = rot_comp->rotation.normalized().toRotationMatrix();
+                auto rot = tf_comp->rotation.normalized().toRotationMatrix();
 
                 QVector3D dir(rot(0, 2), rot(1, 2), rot(2, 2));
                 if (!qFuzzyIsNull(dir.lengthSquared())) { dir.normalize(); }
@@ -421,7 +312,7 @@ void unset_parent(entt::registry& reg, entt::entity child) {
 
     reg.patch<ChildrenComponent>(
         child_comp->parent,
-        [child](ChildrenComponent& c) { c.children.erase(child); });
+        [child](ChildrenComponent& c) { erase(c.children, child); });
 }
 
 void set_parent(entt::registry& reg, entt::entity child, entt::entity parent) {
@@ -438,7 +329,7 @@ void set_parent(entt::registry& reg, entt::entity child, entt::entity parent) {
     } else {
         // it has a child component, add to it
         reg.patch<ChildrenComponent>(parent, [child](ChildrenComponent& a) {
-            a.children.insert(child);
+            a.children.push_back(child);
         });
     }
 
@@ -446,13 +337,13 @@ void set_parent(entt::registry& reg, entt::entity child, entt::entity parent) {
     reg.emplace<ChildOfComponent>(child, ChildOfComponent { .parent = parent });
 }
 
-std::unordered_set<entt::entity>* children_of(entt::registry& reg,
-                                              entt::entity    parent) {
+std::span<entt::entity const> children_of(entt::registry& reg,
+                                          entt::entity    parent) {
     auto parent_comp = reg.try_get<ChildrenComponent>(parent);
 
-    if (!parent_comp) { return nullptr; }
+    if (!parent_comp) { return {}; }
 
-    return &(parent_comp->children);
+    return parent_comp->children;
 }
 
 void unset_group(entt::registry& reg, entt::entity child) {
@@ -470,7 +361,7 @@ void unset_group(entt::registry& reg, entt::entity child) {
     if (!parent_comp) { return; }
 
     // remove us from the parent
-    parent_comp->members.erase(child);
+    erase(parent_comp->members, child);
 }
 
 void assign_group(entt::registry& reg, entt::entity child, entt::entity group) {
@@ -480,7 +371,7 @@ void assign_group(entt::registry& reg, entt::entity child, entt::entity group) {
         child, GroupMemberComponent { .group = group });
 
     reg.patch<GroupComponent>(
-        group, [child](GroupComponent& c) { c.members.insert(child); });
+        group, [child](GroupComponent& c) { c.members.push_back(child); });
 }
 
 SD::ray_source_ptr get_ray_source(entt::registry const& reg) {
@@ -497,6 +388,92 @@ SD::SimulationParameters& get_sim_params(entt::registry& reg) {
     }
 
     throw std::runtime_error("missing simulation parameters");
+}
+
+entt::entity create_tag(entt::registry& reg, QString name) {
+    auto ret = reg.create();
+
+    reg.emplace<TagComponent>(ret);
+    reg.emplace<IdentityComponent>(ret, IdentityComponent { .name = name });
+
+    return ret;
+}
+
+bool is_tagged(entt::registry& reg, entt::entity item, entt::entity tag) {
+    if (auto* ptr = reg.try_get<TagMembershipComponent>(item); ptr) {
+        auto& t = ptr->tags;
+
+        return std::find(t.begin(), t.end(), tag) == t.end();
+    }
+    return false;
+}
+
+void assign_tag(entt::registry& reg, entt::entity item, entt::entity tag) {
+    if (!reg.all_of<TagComponent>(tag)) { return; }
+
+    if (is_tagged(reg, item, tag)) return;
+
+    auto& storage = reg.storage<ATagMemberComponent>(entt::to_integral(tag));
+
+    storage.emplace(item);
+
+    emplace_patch<TagMembershipComponent>(
+        reg, item, [tag](TagMembershipComponent& tc) {
+            tc.tags.push_back(tag);
+        });
+}
+
+void unassign_tag(entt::registry& reg, entt::entity item, entt::entity tag) {
+    if (!reg.all_of<TagComponent>(tag)) { return; }
+
+    if (!reg.all_of<TagMembershipComponent>(item)) { return; }
+
+    reg.patch<TagMembershipComponent>(
+        item, [tag](TagMembershipComponent& tc) { erase(tc.tags, tag); });
+
+    auto& storage = reg.storage<ATagMemberComponent>(entt::to_integral(tag));
+
+    if (storage.contains(item)) { storage.erase(item); }
+
+    if (storage.empty()) { reg.reset(entt::to_integral(tag)); }
+}
+
+void delete_tag(entt::registry& reg, entt::entity tag) {
+    auto& storage = reg.storage<ATagMemberComponent>(entt::to_integral(tag));
+
+    for (auto x : storage) {
+        erase(reg.get<TagMembershipComponent>(x).tags, tag);
+    }
+
+    reg.reset(entt::to_integral(tag));
+
+    reg.destroy(tag);
+}
+
+std::span<entt::entity const> tags_for(entt::registry& reg, entt::entity item) {
+    if (auto ptr = reg.try_get<TagMembershipComponent>(item); ptr) {
+        return ptr->tags;
+    }
+
+    return {};
+}
+
+QString name_of(entt::registry& reg, entt::entity item) {
+    if (!reg.valid(item)) return {};
+
+    if (auto ptr = reg.try_get<IdentityComponent>(item); ptr) {
+        return ptr->name;
+    }
+
+    return QString("Entity %1").arg(entt::to_integral(item));
+}
+
+UIApi* get_notifier(entt::registry& reg) {
+    auto ptr = reg.ctx().find<NotificationResource>();
+
+    if (!ptr) return nullptr;
+
+    return ptr->notifier.get();
 }
 
 } // namespace db

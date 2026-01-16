@@ -3,7 +3,6 @@
 #include "simulation_data_api.hpp"
 
 #include "elementitemmodel.h"
-#include "models/geometrydefinitionsmodel.h"
 #include "utilities/indirect_model.h"
 
 #include "job_run.h"
@@ -34,10 +33,10 @@ class RaySourceModel : public QObject {
 
     using SunShape = SolTrace::Data::SunShape;
 
-    Q_ENUM(SunShape);
+    // Q_ENUM(SunShape);
 
     Q_WRITABLE_PROPERTY(QVector3D, position, QVector3D());
-    Q_WRITABLE_PROPERTY(SunShape, shape, SunShape::GAUSSIAN);
+    // Q_WRITABLE_PROPERTY(SunShape, shape, SunShape::GAUSSIAN);
     Q_WRITABLE_PROPERTY(double, sigma, 0.0);
     Q_WRITABLE_PROPERTY(double, half_width, 0.0);
     Q_WRITABLE_PROPERTY(QVector<double>, user_angle, {});
@@ -50,51 +49,17 @@ public slots:
     void commit();
 };
 
-
-class ElementTableModel : public HashContainerModel<SD::element_id> {
+class LocalData : public QObject {
     Q_OBJECT
-
-    SimDataPtr m_data;
-
-    virtual bool _can_append_new(QVariant const&);
-    virtual void _append_new(QVariant);
-    virtual bool _can_delete_at(size_t, size_t);
-    virtual void _delete_at(size_t, size_t);
-    virtual void _clear();
-
-    QOBJECT_WRITABLE_PROPERTY(GeometryDefinitionsModel, surface_geometries);
-    QOBJECT_WRITABLE_PROPERTY(RayGeometry, ray_geometry);
-    QOBJECT_WRITABLE_PROPERTY(ElementItemModel, elements);
-
-    // Hack for now
-    Q_WRITABLE_PROPERTY(bool, sim_running, false);
-
-private slots:
-    void sim_done();
-
-public:
-    explicit ElementTableModel(SimDataPtr, QObject* parent = nullptr);
-
-    ~ElementTableModel();
-
-public slots:
-    void run_simulation();
-};
-
-
-class Data : public QObject {
-    Q_OBJECT
-
-    Q_WRITABLE_PROPERTY(bool, modified, false);
 
     QOBJECT_WRITABLE_PROPERTY(RaySourceModel, ray_source_model);
-    QOBJECT_WRITABLE_PROPERTY(ElementTableModel, element_model);
+    // QOBJECT_WRITABLE_PROPERTY(ElementTableModel, element_model);
 
 private slots:
     void mark_changed();
 
 public:
-    Data(SimDataPtr, QObject* parent = nullptr);
+    LocalData(SimDataPtr, QObject* parent = nullptr);
 };
 
-using DataPtr = std::shared_ptr<Data>;
+using DataPtr = std::shared_ptr<LocalData>;

@@ -81,6 +81,26 @@ Q_SIGNALS:                                                                     \
                                                                                \
 public:
 
+#define Q_WRITABLE_PROPERTY_CUSTOM_STORAGE(TYPE, PROPERTY_NAME, LOCATION)      \
+public:                                                                        \
+    Q_PROPERTY(TYPE PROPERTY_NAME READ PROPERTY_NAME WRITE                     \
+                   set_##PROPERTY_NAME NOTIFY PROPERTY_NAME##_changed)         \
+                                                                               \
+public:                                                                        \
+    TYPE PROPERTY_NAME() const {                                               \
+        return LOCATION;                                                       \
+    }                                                                          \
+public Q_SLOTS:                                                                \
+    void set_##PROPERTY_NAME(TYPE const& new_value) {                          \
+        if ((LOCATION) == new_value) return;                                   \
+        LOCATION = new_value;                                                  \
+        Q_EMIT PROPERTY_NAME##_changed();                                      \
+    }                                                                          \
+Q_SIGNALS:                                                                     \
+    void PROPERTY_NAME##_changed();                                            \
+                                                                               \
+public:
+
 
 #define Q_READONLY_PROPERTY(TYPE, PROPERTY_NAME)                               \
 public:                                                                        \
@@ -93,7 +113,6 @@ public:                                                                        \
     TYPE PROPERTY_NAME() const {                                               \
         return m_##PROPERTY_NAME;                                              \
     }                                                                          \
-public Q_SLOTS:                                                                \
     void set_##PROPERTY_NAME(TYPE const& new_value) {                          \
         if (m_##PROPERTY_NAME == new_value) return;                            \
         m_##PROPERTY_NAME = new_value;                                         \

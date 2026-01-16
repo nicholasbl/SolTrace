@@ -2,112 +2,62 @@
 
 #include <entt/entt.hpp>
 
-#include "utilities/indirect_model.h"
+#include "database/components.h"
 
-#include <QObject>
-#include <QQuaternion>
-#include <QVector3D>
-
-#include "simulation_data_api.hpp"
 
 // TODO BETTER COMPOSITE SUPPORT
 
-namespace SD = SolTrace::Data;
-
-bool operator==(SD::OpticalProperties const& a, SD::OpticalProperties const& b);
-
 namespace db {
 
-struct DisabledComponent { };
+/// Create a new simulation database
+static std::shared_ptr<entt::registry> create_new();
 
-struct ChildOfComponent {
-    entt::entity parent;
-};
+/// Convert a Soltrace dataset to a database
+static std::shared_ptr<entt::registry> import(SD::SimulationData&);
 
-struct ChildrenComponent {
-    std::unordered_set<entt::entity> children;
-};
+/// Convert a database back into a Soltrace dataset
+static std::shared_ptr<SolTrace::Data::SimulationData>
+export_to_simdata(entt::registry&);
 
-struct PositionComponent {
-    QVector3D position;
-};
-
-struct OrientationComponent {
-    QQuaternion rotation;
-};
-
-struct RaySourceResource {
-    SD::ray_source_ptr source;
-};
-
-struct GroupParameters {
-    SD::aperture_ptr aperture;
-    SD::surface_ptr  surface;
-
-    SD::OpticalProperties optics_front;
-    SD::OpticalProperties optics_back;
-
-    bool operator==(GroupParameters const&) const = default;
-};
-
-struct GroupComponent {
-    QString name;
-
-    GroupParameters parameters;
-
-    std::unordered_set<entt::entity> members;
-};
-
-struct GroupMemberComponent {
-    entt::entity group;
-};
-
-
-// =============================================================================
-
-struct CachedGroup {
-    QString      name;
-    entt::entity entity;
-};
-
-class UIApi : public QObject {
-    Q_OBJECT
-
-    std::weak_ptr<entt::registry> m_host;
-
-public:
-    UIApi(std::shared_ptr<entt::registry> const& p) : m_host(p) { }
-    virtual ~UIApi() = default;
-
-signals:
-    void group_changed(db::CachedGroup);
-    void group_removed(entt::entity);
-
-public slots:
-    void         change_group_name(entt::entity, QString);
-    entt::entity add_group(QString new_name, QVector<entt::entity>);
-    void         delete_group(entt::entity to_delete, entt::entity move_to);
-};
-
-struct NotificationResource {
-    QSharedPointer<UIApi> notifier;
-};
-
-// =============================================================================
-
-static std::shared_ptr<entt::registry>     create_new();
-static std::shared_ptr<entt::registry>     import(SD::SimulationData&);
-static std::shared_ptr<SD::SimulationData> export_to_simdata(entt::registry&);
-
+/// Clear the active parent of an entity
 void unset_parent(entt::registry&, entt::entity child);
-void set_parent(entt::registry&, entt::entity child, entt::entity parent);
-std::unordered_set<entt::entity>* children_of(entt::registry&,
-                                              entt::entity parent);
 
+/// Set the parent of an entity
+void set_parent(entt::registry&, entt::entity child, entt::entity parent);
+
+/// Get the list of children of this entity. Returns an empty list if there are
+/// none.
+std::span<entt::entity const> children_of(entt::registry&, entt::entity parent);
+
+/// Assign an entity to a geometry group
 void assign_group(entt::registry&, entt::entity child, entt::entity group);
 
-SD::ray_source_ptr        get_ray_source(entt::registry const&);
-SD::SimulationParameters& get_sim_params(entt::registry&);
+/// Create a new tag. Note that tag names should be unique.
+entt::entity create_tag(entt::registry&, QString name);
 
+/// Ask if an entity has been given a tag
+bool is_tagged(entt::registry&, entt::entity item, entt::entity tag);
+
+/// Assign an entity to a specific tag
+void assign_tag(entt::registry&, entt::entity item, entt::entity tag);
+
+/// Remove a tag from an entity
+void unassign_tag(entt::registry&, entt::entity item, entt::entity tag);
+
+/// Clear and destroy a specific tag
+void delete_tag(entt::registry&, entt::entity tag);
+
+/// Get all the tags for an entity
+std::span<entt::entity const> tags_for(entt::registry&, entt::entity item);
+
+/// Get the name of an entity, either using the Identity component, or by using
+/// the entity ID.
+QString name_of(entt::registry&, entt::entity item);
+
+/// Get the global ray source of the database
+SD::ray_source_ptr get_ray_source(entt::registry const&);
+
+/// Get the global simulation parameters
+SD::SimulationParameters& get_sim_params(entt::registry&);
 
 } // namespace db

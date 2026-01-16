@@ -1,51 +1,49 @@
 #pragma once
 
-#include "dataset.h"
-#include "instance_table.h"
+#include "database/database.h"
 #include "qt_helpers.h"
-#include "utilities/indirect_model.h"
 
 #include <QObject>
 #include <QQmlEngine>
 #include <QSharedPointer>
 
-struct ADataSet {
-    QString name;
-    QString provenance;
-    DataPtr ptr;
-};
+// struct ADataSet {
+//     QString name;
+//     QString provenance;
+//     DataPtr ptr;
+// };
 
-class DataSetsModel : public IndirectTableModel {
-    Q_OBJECT
-    QVector<ADataSet> m_sets;
+// class DataSetsModel : public IndirectTableModel {
+//     Q_OBJECT
+//     QVector<ADataSet> m_sets;
 
-    bool _can_append_new(QVariant const&) override;
-    void _append_new(QVariant) override;
-    bool _can_delete_at(size_t, size_t) override;
-    void _delete_at(size_t, size_t) override;
-    int  _record_count() const override;
-    void _clear() override;
+//     bool _can_append_new(QVariant const&) override;
+//     void _append_new(QVariant) override;
+//     bool _can_delete_at(size_t, size_t) override;
+//     void _delete_at(size_t, size_t) override;
+//     int  _record_count() const override;
+//     void _clear() override;
 
-    void watch(Data* ptr);
+//     void watch(LocalData* ptr);
 
-    QOBJECT_WRITABLE_PROPERTY(Data, current_data);
+//     QOBJECT_WRITABLE_PROPERTY(LocalData, current_data);
 
-private slots:
-    void file_ready();
-    void a_data_changed();
+// private slots:
+//     void file_ready();
+//     void a_data_changed();
 
 
-public:
-    explicit DataSetsModel(QObject* parent = nullptr);
+// public:
+//     explicit DataSetsModel(QObject* parent = nullptr);
 
-public slots:
-    void start_load_file(QUrl);
+// public slots:
+//     void start_load_file(QUrl);
 
-    void select(int);
+//     void select(int);
 
-signals:
-    void file_load_error(QString);
-};
+// signals:
+//     void file_load_error(QString);
+// };
 
 
 class Backend : public QObject {
@@ -53,8 +51,9 @@ class Backend : public QObject {
     QML_ELEMENT
     QML_SINGLETON
 
+    std::shared_ptr<entt::registry> m_current_database;
 
-    QOBJECT_READONLY_PROPERTY(DataSetsModel, data_sets);
+    Q_WRITABLE_PROPERTY(QString, current_data_path, {});
 
 public:
     explicit Backend(QObject* parent = nullptr);
