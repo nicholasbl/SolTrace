@@ -11,7 +11,7 @@ using SolTrace::Result::SimulationResult;
 
 OptixRunner::OptixRunner() : SimulationRunner(),
                              m_simdata(nullptr),
-                             m_sys(10000) {}
+                             m_sys(10000, 10000*10) {}
 
 OptixRunner::~OptixRunner()
 {
@@ -53,7 +53,7 @@ RunnerStatus OptixRunner::setup_parameters(const SimulationData *data)
     // Get Parameter data
     // TODO: Check that these parameters are used as expected
     const SimulationParameters &sim_params = data->get_simulation_parameters();
-    m_sys.set_sun_points(sim_params.number_of_rays);
+    m_sys.set_number_of_rays(sim_params.number_of_rays, sim_params.max_number_of_rays);
 
     
     //this->tsys.sim_errors_sunshape = sim_params.include_sun_shape_errors;
