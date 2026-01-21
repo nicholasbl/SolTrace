@@ -11,28 +11,27 @@ import QtGraphs
 import SolTraceProto
 
 ApplicationWindow {
-    id: window
+    id: root
     width: 1280
     height: 720
     visible: true
-    property int sectionIndex: 1
-    property var sections: ["Configure", "Simulate", "Analyze"]
+    property var workflow: ["Configure", "Simulate", "Analyze"]
 
-    SimScene {
+    SimulationScene {
         id: sim
         z: 0
+        objectName: "simulationScene"
     }
+
 
     Item {
         anchors.fill: parent
         anchors.margins: 15
         z: 1
 
-        Topbar {
+        TopPane {
             id: topbar
             source: sim
-            sectionIndex: root.sectionIndex
-            onSectionIndexChanged: root.sectionIndex = sectionIndex
         }
 
         Loader {
@@ -40,422 +39,20 @@ ApplicationWindow {
             anchors.top: topbar.bottom
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.bottom: parent.bottom
+            anchors.bottom: bottombar.top
             anchors.topMargin: 15
+            anchors.bottomMargin: 15
 
-            source: "qml/sections/" + root.sections[root.sectionIndex] + ".qml"
+            source: "core/" + root.workflow[Session.core.workflowIndex] + ".qml"
 
             onLoaded: item.source = sim
         }
-    }
 
-/*
-    Material.theme: Material.Light
-    Material.accent: Material.Blue
-
-    menuBar: MenuBar {
-        Menu {
-            title: qsTr("&File")
-            Action { text: qsTr("&New...") }
-            Action { text: qsTr("&Open...") }
-            Action { text: qsTr("&Save...") }
-            Action { text: qsTr("Save &As...") }
-            MenuSeparator {}
-            Action { text: qsTr("&Quit") }
+        BottomPane {
+            id: bottombar
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
         }
     }
-
-    WorldView {
-        anchors.fill: parent
-    }
-
-    TopBar {
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-
-        anchors.margins: 6
-
-        height: 240
-    }
-
-
-    TransparentPane {
-        id: data_list_pane
-        anchors.left: parent.left
-        anchors.bottom: parent.bottom
-        anchors.top: parent.top
-        anchors.margins: 10
-
-        width: 200
-
-        Material.elevation: 10
-        Material.roundedScale: Material.MediumScale
-
-        ColumnLayout {
-            anchors.fill: parent
-            Button {
-                text: "Open..."
-
-                onClicked: open_dialog.open()
-
-                Layout.fillWidth: true
-            }
-
-            ListView {
-                id: list_view
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                model: Backend.data_sets
-
-                clip: true
-
-                delegate: Pane {
-                    id: data_set_delegate
-
-                    width: ListView.view.width
-
-                    height: 72
-
-                    required property int index
-                    required property string name
-                    required property string provenance
-
-                    Material.elevation: dsd_mouse.containsMouse ? 5 : 1
-
-                    ColumnLayout {
-                        id: dsd_layout
-                        anchors.fill: parent
-                        anchors.margins: 5
-
-                        Label {
-                            Layout.fillWidth: true
-                            text: name
-
-                            elide: Label.ElideRight
-                        }
-
-                        Label {
-                            Layout.fillWidth: true
-                            text: provenance
-
-                            opacity: .5
-
-                            elide: Label.ElideRight
-                        }
-
-                    }
-
-                    MouseArea {
-                        id: dsd_mouse
-                        anchors.fill: dsd_layout
-
-                        hoverEnabled: true
-
-                        onClicked: {
-                            list_view.model.select(data_set_delegate.index)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    TransparentPane {
-        id: ray_source_pane
-        anchors.left: data_list_pane.right
-        anchors.bottom: parent.bottom
-        anchors.top: parent.top
-        anchors.margins: 10
-        visible: false
-
-        width: 400
-
-        Material.elevation: 10
-        Material.roundedScale: Material.MediumScale
-
-        ColumnLayout {
-            anchors.fill: parent
-
-            id: detail_pane
-
-            property var current_set: Backend.data_sets.current_data
-            property var ray_source : current_set.ray_source_model
-
-
-
-            GroupBox {
-                Layout.fillHeight: true
-                Layout.fillWidth: true
-                title: "Ray Source"
-
-                ColumnLayout {
-                    anchors.fill: parent
-
-                    GridLayout {
-                        Layout.fillWidth: true
-
-                        columns: 2
-                        Label {
-                            text: "Position:"
-                        }
-
-                        Label {
-                            Layout.fillWidth: true
-                            text: detail_pane.ray_source.position.toString()
-                            elide: Label.ElideRight
-                        }
-
-                        //
-
-                        Label {
-                            text: "Type:"
-                        }
-
-                        Label {
-                            Layout.fillWidth: true
-                            text: detail_pane.ray_source.shape
-                            elide: Label.ElideRight
-                        }
-
-                        //
-
-                        Label {
-                            text: "Sigma:"
-                        }
-
-                        Label {
-                            Layout.fillWidth: true
-                            text: detail_pane.ray_source.sigma
-                            elide: Label.ElideRight
-                        }
-
-                        //
-
-                        Label {
-                            text: "Half Width:"
-                        }
-
-                        Label {
-                            Layout.fillWidth: true
-                            text: detail_pane.ray_source.half_width
-                            elide: Label.ElideRight
-                        }
-
-                        //
-
-                        Label {
-                            text: "Angles:"
-                        }
-
-                        Label {
-                            Layout.fillWidth: true
-                            text: detail_pane.ray_source.user_angle.toString()
-                            elide: Label.ElideRight
-                        }
-
-                        //
-
-                        Label {
-                            text: "Intensity:"
-                        }
-
-                        Label {
-                            Layout.fillWidth: true
-                            text: detail_pane.ray_source.user_intensity.toString()
-                            elide: Label.ElideRight
-
-                            onTextChanged: {
-                                console.log(detail_pane.ray_source.user_angle)
-                                console.log(detail_pane.ray_source.user_intensity)
-                            }
-                        }
-                    }
-
-                    GraphsView {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: width
-
-                        axisX: ValueAxis {
-                            titleText: "Angle (mrad)"
-                            max: 15.0
-                            tickInterval: 5
-                        }
-                        axisY: ValueAxis {
-                            titleText: "Intensity"
-                            max: 1.0
-                            tickInterval: .25
-                        }
-
-                        panStyle: GraphsView.PanStyle.Drag
-                        zoomStyle: GraphsView.ZoomStyle.Center
-
-                        LineSeries {
-                            id: sun_series
-                            color: Material.color(Material.Blue)
-
-                            GraphTransition {
-                                GraphPointAnimation {
-                                    duration: 1000;
-                                    easingCurve.type: Easing.OutCubic
-                                }
-                            }
-
-                            // Not amazing, but for now...
-                            Connections {
-                                target: detail_pane
-                                function onCurrent_setChanged() {
-
-                                    console.log("Updating sun chart...")
-
-                                    let angles = detail_pane.ray_source.user_angle
-                                    let intensities = detail_pane.ray_source.user_intensity
-
-                                    let sun_p_count = Math.min(
-                                            angles.length,
-                                            intensities.length
-                                            );
-
-                                    let sun_points = []
-
-                                    for (let sun_i = 0; sun_i < sun_p_count; sun_i++) {
-                                        sun_points.push(
-                                                    Qt.point(
-                                                        angles[sun_i],
-                                                        intensities[sun_i]
-                                                        )
-                                                    )
-                                    }
-
-                                    sun_series.replace(sun_points)
-                                }
-                            }
-
-                        }
-                    }
-
-                }
-            }
-        }
-    }
-    TransparentPane {
-        id: element_pane
-        anchors.left: data_list_pane.right
-        anchors.bottom: parent.bottom
-        anchors.top: parent.top
-        anchors.margins: 10
-        visible: true
-
-        width: 400
-
-        Material.elevation: 10
-        Material.roundedScale: Material.MediumScale
-
-        ColumnLayout {
-            anchors.fill: parent
-
-            property var current_set: Backend.data_sets.current_data
-            property var ray_source : current_set.ray_source_model
-
-
-            GroupBox {
-                Layout.fillHeight: true
-                Layout.fillWidth: true
-                title: "Elements"
-
-                ColumnLayout {
-                    anchors.fill: parent
-
-                    Button {
-                        text: "Run..."
-
-                        onClicked: detail_pane.current_set.element_model.run_simulation()
-                    }
-
-                    ListView {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        model: detail_pane.current_set.element_model.surface_geometries
-                        delegate: Row {
-                            spacing: 1
-                            height: 20
-
-                            CheckBox {
-                                checked: model.visible
-                                onToggled: model.visible = checked   // two-way binding
-                                anchors.verticalCenter: parent.verticalCenter
-                                indicator.width: 14
-                                indicator.height: 14
-                            }
-
-                            Label {
-                                text: index + " " + model.label
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                        }
-
-                        clip: true
-
-                        ScrollIndicator.vertical: ScrollIndicator { }
-                    }
-                }
-            }
-
-
-        }
-    }
-
-    TransparentPane {
-        id: output_debug_pane
-        anchors.bottom: parent.bottom
-        anchors.right: parent.right
-        anchors.margins: 10
-
-        height: 100
-        width: 175
-
-        ColumnLayout {
-            anchors.fill: parent
-            Button {
-                Layout.fillWidth: true
-                text: "Filter"
-            }
-
-            Slider {
-                Layout.fillWidth: true
-                from: 0
-                to: 100
-                value: 50
-                stepSize: 10
-                snapMode: Slider.SnapAlways
-                onMoved: {
-                    detail_pane.current_set.element_model.ray_geometry.show_percent = value
-                }
-            }
-        }
-    }
-
-    FileDialog {
-        id: open_dialog
-
-        nameFilters: ["SolTrace datasets (*.stinput)"]
-
-        currentFolder: StandardPaths.standardLocations(StandardPaths.DocumentsLocation)[0]
-        onAccepted: {
-            load_settings.last_file = selectedFile
-            Backend.data_sets.start_load_file(selectedFile)
-        }
-
-        Settings {
-            id: load_settings
-            category: "Load"
-            property alias last_file: open_dialog.selectedFile
-        }
-    }*/
 }
-
-/*##^##
-Designer {
-    D{i:0}D{i:1;cameraSpeed3d:25;cameraSpeed3dMultiplier:1}
-}
-##^##*/

@@ -6,9 +6,7 @@ include(cmake/CPM.cmake)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Quick Quick3D)
-find_package(Qt6 REQUIRED COMPONENTS Core)
-find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Quick Quick3D Charts Widgets)
 
 set(QT_QML_GENERATE_QMLLS_INI ON)
 
@@ -18,62 +16,8 @@ qt_add_executable(SolTrace
     src/main.cpp
 )
 
-qt_add_qml_module(SolTrace
-    URI SolTraceProto
-    VERSION 1.0
-    QML_FILES
-        ui/Main.qml
-        ui/TransparentPane.qml
-        ui/WorldView.qml
-        ui/TopBar.qml
-
-        ui/components/GlassRect.qml
-        ui/components/IconButton.qml
-        ui/components/Callout.qml
-        ui/components/GlassCombo.qml
-        ui/components/ComboButtonGroup.qml
-        ui/components/BrowserTreeNode.qml
-
-        ui/viewports/SimScene.qml
-        ui/viewports/SceneNav.qml
-
-        ui/sections/Topbar.qml
-        ui/sections/Configure.qml
-        ui/sections/Simulate.qml
-        ui/sections/Analyze.qml
-        ui/sections/ContentPane.qml
-    DEPENDENCIES
-        QtQuick
-        QtQuick3D
-    SOURCES
-        src/backend.h src/backend.cpp
-        src/qt_helpers.h
-        src/dataset.h src/dataset.cpp
-        src/utilities/indirect_model.h src/utilities/indirect_model.cpp
-        src/job_control/job_run.h src/job_control/job_run.cpp
-        src/job_control/job_run_thread.h src/job_control/job_run_thread.cpp
-        src/job_control/job_run_common.h
-        src/job_control/job_run_process.h src/job_control/job_run_process.cpp
-        src/utilities/math_utility.h
-        src/utilities/structmodel.h
-        src/database/database.h src/database/database.cpp
-        src/database/database_models.h src/database/database_models.cpp
-        src/database/components.h
-        src/database/geometryeditor.h src/database/geometryeditor.cpp
-        src/database/database_notification.h src/database/database_notification.cpp
-        src/database/components.cpp
-        SOURCES src/analysis/grid3d.h
-        SOURCES src/analysis/ray_volume_raster.h
-        SOURCES src/analysis/ray_volume.h src/analysis/ray_volume.cpp
-        SOURCES src/analysis/ray_geometry.h src/analysis/ray_geometry.cpp
-        SOURCES src/job_control/job_run_common.cpp
-        SOURCES src/utilities/notification.h
-)
-
-qt_add_resources(SolTrace
-    "assets"
-    PREFIX
-        /
+qt_add_resources(SolTrace "assets"
+    PREFIX "/"
     FILES
         assets/b_to_r_wide.png
 )
@@ -97,6 +41,10 @@ qt_add_resources(SolTrace "images"
         assets/images/mark.png
         assets/images/logo.png
         assets/images/logo.svg
+        assets/images/directional_sun.svg
+        assets/images/point_source.svg
+        assets/images/directional_sun_eq.svg
+        assets/images/point_source_sun_eq.svg
 )
 
 qt_add_resources(SolTrace "icons"
@@ -119,9 +67,146 @@ qt_add_resources(SolTrace "icons"
         assets/icons/user.svg
         assets/icons/double-chevron-right.svg
         assets/icons/sun.svg
+        assets/icons/clock.svg
+        assets/icons/collapse.svg
+        assets/icons/dot.svg
+        assets/icons/download.svg
+        assets/icons/expand.svg
+        assets/icons/files.svg
+        assets/icons/import.svg
+        assets/icons/list-checks.svg
+        assets/icons/list-deselect.svg
+        assets/icons/message-more.svg
+        assets/icons/save.svg
+        assets/icons/square-check.svg
+        assets/icons/square-minus.svg
+        assets/icons/stop.svg
+        assets/icons/upload.svg
+        assets/icons/messages.svg
+        assets/icons/filter.svg
+        assets/icons/swatch-book.svg
+        assets/icons/sort-asc.svg
+        assets/icons/sort-desc.svg
+        assets/icons/book-marked.svg
+        assets/icons/search.svg
+        assets/icons/eye.svg
 )
 
-# Deps
+set_source_files_properties(
+    ui/state/Theme.qml
+    ui/state/Settings.qml
+    ui/state/Session.qml
+    ui/state/Documentation.qml
+    ui/state/Enums.qml
+    PROPERTIES QT_QML_SINGLETON_TYPE TRUE
+)
+
+qt_add_qml_module(SolTrace
+    URI SolTraceProto
+    VERSION 1.0
+    QML_FILES
+        ui/Main.qml
+
+        ui/state/Theme.qml
+        ui/state/Settings.qml
+        ui/state/Session.qml
+        ui/state/Documentation.qml
+        ui/state/Enums.qml
+
+        ui/core/Configure.qml
+        ui/core/Simulate.qml
+        ui/core/Analyze.qml
+        ui/core/TopPane.qml
+        ui/core/MiddlePane.qml
+        ui/core/BottomPane.qml
+
+        ui/viewports/SimulationScene.qml
+        ui/viewports/SceneNavigator.qml
+        ui/viewports/CameraGizmo.qml
+
+        ui/panels/light/SunPanel.qml
+        ui/panels/light/DirectionalSunPanel.qml
+        ui/panels/light/PointSourceSunPanel.qml
+        ui/panels/light/SunShapePanel.qml
+        ui/panels/light/calculators/LegacyCalculatorPanel.qml
+        ui/panels/light/calculators/SOLPOSCalculatorPanel.qml
+        ui/panels/light/calculators/SPACalculatorPanel.qml
+        ui/panels/light/calculators/DuffieCalculatorPanel.qml
+
+        ui/panels/materials/MaterialsPanel.qml
+        ui/panels/staging/StagingPanel.qml
+        ui/panels/tracing/TracingPanel.qml
+
+        ui/primitives/containers/GlassRectangle.qml
+        ui/primitives/containers/Callout.qml
+        ui/primitives/containers/SectionCallout.qml
+        ui/primitives/containers/Table.qml
+
+        ui/primitives/text/Header.qml
+        ui/primitives/text/Body.qml
+        ui/primitives/text/Caption.qml
+        ui/primitives/text/DocSection.qml
+        ui/primitives/text/DocHeaderSection.qml
+
+        ui/primitives/controls/GlassComboBox.qml
+        ui/primitives/controls/GlassSpinBox.qml
+        ui/primitives/controls/CheckBox.qml
+        ui/primitives/controls/GlassButton.qml
+        ui/primitives/controls/IconButton.qml
+
+        ui/primitives/spacing/Spacer.qml
+        ui/primitives/spacing/EndSpacer.qml
+
+        ui/widgets/fields/NumberField.qml
+        ui/widgets/fields/TimeField.qml
+        ui/widgets/fields/DateField.qml
+        ui/widgets/fields/LocationField.qml
+        ui/widgets/fields/SpinBoxField.qml
+        ui/widgets/fields/ScientificNotationField.qml
+        ui/widgets/fields/GlassTextField.qml
+        ui/widgets/fields/CheckBoxField.qml
+
+        ui/widgets/navigators/ComboButtonGroup.qml
+        ui/widgets/navigators/GeometryNavigatorNode.qml
+        ui/widgets/navigators/TreeNavigator.qml
+        ui/widgets/navigators/GlassTabBar.qml
+        ui/widgets/navigators/TreeNavigatorNode.qml
+
+        ui/widgets/tables/CustomEmissionProfileTable.qml
+        ui/widgets/tables/CustomEmissionProfileTableRow.qml
+        ui/widgets/tables/OpticalMaterialsTable.qml
+        ui/widgets/tables/OpticalMaterialsTableRow.qml
+        ui/widgets/tables/MaterialParameterField.qml
+
+    DEPENDENCIES
+        QtQuick
+        QtQuick3D
+
+    SOURCES
+        src/instance_table.h src/instance_table.cpp
+        src/backend.h src/backend.cpp
+        src/qt_helpers.h
+        src/dataset.h src/dataset.cpp
+        src/utilities/indirect_model.h src/utilities/indirect_model.cpp
+        src/surfacegeometry.h src/surfacegeometry.cpp
+        src/elementitemmodel.h src/elementitemmodel.cpp
+        src/job_run.h src/job_run.cpp
+        src/job_run_thread.h src/job_run_thread.cpp
+        src/job_run_common.h src/job_run_common.cpp
+        src/job_run_process.h src/job_run_process.cpp
+        src/utilities/math_utility.h
+        src/utilities/structmodel.h
+        src/utilities/notification.h
+        src/database/database.h src/database/database.cpp
+        src/database/database_models.h src/database/database_models.cpp
+        src/database/components.h src/database/components.cpp
+        src/database/geometryeditor.h src/database/geometryeditor.cpp
+        src/database/database_notification.h src/database/database_notification.cpp
+        src/analysis/grid3d.h
+        src/analysis/ray_volume_raster.h
+        src/analysis/ray_volume.h src/analysis/ray_volume.cpp
+        src/analysis/ray_geometry.h src/analysis/ray_geometry.cpp
+)
 
 CPMAddPackage(
   NAME EnTT
@@ -143,9 +228,7 @@ CPMAddPackage(
 
 target_link_libraries(SolTrace PRIVATE EnTT magic_enum)
 
-
 target_include_directories(SolTrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-
 target_include_directories(SolTrace PRIVATE ../coretrace/simulation_data)
 target_include_directories(SolTrace PRIVATE ../coretrace/simulation_results)
 target_include_directories(SolTrace PRIVATE ../coretrace/simulation_runner)
@@ -167,32 +250,27 @@ target_link_libraries(SolTrace
         Qt6::Gui
         Qt6::Quick
         Qt6::Quick3D
+        Qt6::Charts
+        Qt6::Widgets
         simdata
         simresult
         native_runner
 )
-target_link_libraries(SolTrace PRIVATE Qt6::Core)
-target_link_libraries(SolTrace PRIVATE Qt6::Core)
-
 
 set_target_properties(simdata PROPERTIES
     MACOSX_RPATH ON
     INSTALL_NAME_DIR "@rpath")
-
-
-#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 if(APPLE)
   install(TARGETS simdata simresult native_runner
       LIBRARY DESTINATION "SolTrace.app/Contents/Frameworks")
 elseif(WIN32)
   install(TARGETS simdata simresult native_runner
-      RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}") # .dll next to .exe
+      RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 else()
   install(TARGETS simdata simresult native_runner
-      LIBRARY DESTINATION "${CMAKE_INSTALL_BINDIR}") # .so next to binary
+      LIBRARY DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif()
-
 
 include(GNUInstallDirs)
 install(TARGETS SolTrace
@@ -200,7 +278,6 @@ install(TARGETS SolTrace
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-
 
 qt_generate_deploy_qml_app_script(
     TARGET SolTrace

@@ -121,6 +121,8 @@ void SurfaceGeometry::rebuild_geometry() {
 
 // -------------------- GroupEditor --------------------
 
+using SurfaceEditor = GroupEditor;
+
 static SD::SurfaceType convert(GroupEditor::SurfaceKind k) {
     switch (k) {
     case GroupEditor::SurfaceKind::Cone: return SD::SurfaceType::CONE;
