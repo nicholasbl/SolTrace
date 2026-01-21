@@ -407,7 +407,7 @@ namespace SolTrace::NativeRunner
             if (Query(i, pos, cos, &elm, &stage, &ray, &rev))
             {
                 printf("   [%llu] = { [%lg,%lg,%lg][%lg,%lg,%lg] %d %d %llu %s\(%d) }\n",
-                       i,
+                       static_cast<long long unsigned>(i),
                        pos[0], pos[1], pos[2],
                        cos[0], cos[1], cos[2],
                        elm,
