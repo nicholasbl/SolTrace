@@ -75,7 +75,7 @@ jobs:
     - name: Install embree (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        vcpkg install embree4:x64-windows
+        vcpkg install embree
         echo "CMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
 
     - name: Set reusable strings
