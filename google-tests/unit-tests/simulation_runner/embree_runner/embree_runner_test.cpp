@@ -77,6 +77,7 @@ TEST(EmbreeRunner, SingleRayValidationTest)
 
     // std::cout << "Constructing..." << std::endl;
     EmbreeRunner runner;
+    runner.set_number_of_threads(1);
     // std::cout << "Initializing..." << std::endl;
     RunnerStatus sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
@@ -214,6 +215,7 @@ TEST(EmbreeRunner, PowerTowerSmokeTest)
     params.seed = 12345;
 
     EmbreeRunner runner;
+    runner.set_number_of_threads(1);
     RunnerStatus sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.setup_simulation(&sd);
@@ -291,6 +293,7 @@ TEST(EmbreeRunner, PowerTowerTest)
 
     // Run Ray Trace
     EmbreeRunner runner;
+    runner.set_number_of_threads(1);
     RunnerStatus sts;
     sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);

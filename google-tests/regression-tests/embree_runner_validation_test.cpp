@@ -114,6 +114,7 @@ TEST(EmbreeRunner, ValidationTest1)
 
     // Run Ray Trace
     EmbreeRunner runner;
+    runner.set_number_of_threads(1);
     RunnerStatus sts;
     sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
@@ -413,6 +414,7 @@ TEST(EmbreeRunner, ValidationTest2)
 
     // Run Ray Trace
     EmbreeRunner runner;
+    runner.set_number_of_threads(1);
     RunnerStatus sts;
     sts = runner.initialize();
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);

@@ -17,7 +17,8 @@ namespace SolTrace::EmbreeRunner
         SolTrace::NativeRunner::trace_logger_ptr logger,
         SolTrace::NativeRunner::TSystem *System,
         RTCDevice &embree_device,
-        RTCScene &embree_scene);
+        RTCScene &embree_scene,
+        unsigned nthreads);
 
     SolTrace::Runner::RunnerStatus trace_embree(
         SolTrace::NativeRunner::thread_manager_ptr manager,

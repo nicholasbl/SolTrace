@@ -40,7 +40,8 @@ namespace SolTrace::EmbreeRunner
         make_embree_scene(this->my_logger,
                           &this->tsys,
                           this->embree_device,
-                          this->embree_scene);
+                          this->embree_scene,
+                          this->number_of_threads);
 
         return sts;
     }

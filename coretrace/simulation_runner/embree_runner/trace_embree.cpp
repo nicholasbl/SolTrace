@@ -47,7 +47,8 @@ namespace SolTrace::EmbreeRunner
     RunnerStatus make_embree_scene(trace_logger_ptr logger,
                                    TSystem *System,
                                    RTCDevice &embree_device,
-                                   RTCScene &embree_scene)
+                                   RTCScene &embree_scene,
+                                   unsigned nthreads)
     {
         RunnerStatus sts = RunnerStatus::SUCCESS;
         // // Initialize Embree vars
@@ -57,7 +58,9 @@ namespace SolTrace::EmbreeRunner
 
         // Make device
         // std::cout << "Making embree device..." << std::endl;
-        embree_device = rtcNewDevice(NULL);
+        std::stringstream ss;
+        ss << "threads=" << nthreads;
+        embree_device = rtcNewDevice(ss.str().c_str());
 
         // std::cout << "Setting error function..." << std::endl;
         rtcSetDeviceErrorFunction(embree_device, error_function, NULL);
