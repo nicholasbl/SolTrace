@@ -64,9 +64,11 @@ void SurfaceGeometry::rebuild_geometry() {
         int b = indices[i + 1];
         int c = indices[i + 2];
 
+        Q_ASSERT(a < verts.size() && b < verts.size() && c < verts.size());
+
         QVector3D normal =
-            QVector3D::crossProduct(verts[a].position - verts[b].position,
-                                    verts[b].position - verts[c].position);
+            QVector3D::crossProduct(verts[b].position - verts[a].position,
+                                    verts[c].position - verts[a].position);
 
         verts[a].normal += normal;
         verts[b].normal += normal;
@@ -117,7 +119,7 @@ void SurfaceGeometry::rebuild_geometry() {
     update();
 }
 
-// -------------------- SurfaceEditor --------------------
+// -------------------- GroupEditor --------------------
 
 static SD::SurfaceType convert(GroupEditor::SurfaceKind k) {
     switch (k) {
@@ -126,8 +128,7 @@ static SD::SurfaceType convert(GroupEditor::SurfaceKind k) {
     case GroupEditor::SurfaceKind::Flat: return SD::SurfaceType::FLAT;
     case GroupEditor::SurfaceKind::Parabola: return SD::SurfaceType::PARABOLA;
     case GroupEditor::SurfaceKind::Sphere: return SD::SurfaceType::SPHERE;
-    case GroupEditor::SurfaceKind::Unknown:
-        return SD::SurfaceType::SURFACE_UNKNOWN;
+    default: return SD::SurfaceType::SURFACE_UNKNOWN;
     }
 }
 
@@ -157,8 +158,7 @@ static SD::ApertureType convert(GroupEditor::ApertureKind k) {
         return SD::ApertureType::IRREGULAR_TRIANGLE;
     case GroupEditor::ApertureKind::Irregular_Quadrilateral:
         return SD::ApertureType::IRREGULAR_QUADRILATERAL;
-    case GroupEditor::ApertureKind::Unknown:
-        return SD::ApertureType::APERTURE_UNKNOWN;
+    default: return SD::ApertureType::APERTURE_UNKNOWN;
     }
 }
 
@@ -176,8 +176,7 @@ static GroupEditor::ApertureKind convert(SD::ApertureType k) {
         return GroupEditor::ApertureKind::Irregular_Triangle;
     case SolTrace::Data::IRREGULAR_QUADRILATERAL:
         return GroupEditor::ApertureKind::Irregular_Quadrilateral;
-    case SolTrace::Data::APERTURE_UNKNOWN:
-        return GroupEditor::ApertureKind::Unknown;
+    default: return GroupEditor::ApertureKind::Unknown;
     }
 }
 
@@ -221,8 +220,7 @@ void GroupEditor::make_new_aperture(ApertureKind type) {
         p.aperture  = ptr;                                                     \
         auto editor = new TYPE##Wrapper(ptr.get(), this);                      \
         set_aperture_editor(editor);                                           \
-        connect(                                                               \
-            editor, &TYPE##Wrapper::changed, this, &SurfaceEditor::updated);   \
+        connect(editor, &TYPE##Wrapper::changed, this, &GroupEditor::updated); \
     }                                                                          \
     break;
 

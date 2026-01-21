@@ -1,66 +1,14 @@
 #pragma once
 
-#include <QObject>
-#include <QQuick3DGeometry>
-#include <QtQuick3D/QQuick3DInstancing>
+#include <span>
+#include <vector>
 
-#include "job_run_common.h"
-#include "qt_helpers.h"
-#include "simulation_data_api.hpp"
-#include "simulation_result.hpp"
-
-namespace SD = SolTrace::Data;
-namespace RD = SolTrace::Result;
-
-enum class RunType {
-    Thread,
-    Process,
-};
-
-
-
-/// Models a running simulation.
-///
-/// Provides pause and resume (if the simulation supports it)
-/// Supports progress percent and text
-///
-/// When finished, users can collect results using the `take()` function.
-/// When done (either finished or errored out), this object will destroy itself.
-class RunningJob : public QObject {
-    Q_OBJECT
-
-    using Result = RD::SimulationResult;
-
-    void* m_watcher;
-
-    std::shared_ptr<ResultDB> m_result;
-
-public:
-    explicit RunningJob(SimDataPtr data,
-                        RunType    type   = RunType::Process,
-                        QObject*   parent = nullptr);
-    virtual ~RunningJob();
-
-    std::shared_ptr<ResultDB> take();
-
-public slots:
-    void pause();
-    void resume();
-    void cancel();
-
-signals:
-    void progress_update(int);
-    void progress_text_update(QString);
-    void finished();
-    void error(QString);
-};
-
-// =============================================================================
-
+namespace analysis {
 
 /*!
  * \brief A 3D grid, with integral indicies.
  */
+
 template <typename T>
 class Grid3D {
     std::vector<T> m_data;
@@ -229,58 +177,4 @@ public:
     T const* data() const { return m_data.data(); }
 };
 
-// =============================================================================
-
-class RayVolume : public QQuick3DInstancing {
-    Q_OBJECT
-
-    Grid3D<float> m_grid;
-    QVector3D     m_origin;
-    QVector3D     m_extents;
-    bool          m_dirty = true;
-    QByteArray    m_data;
-
-    void clean();
-
-public:
-    explicit RayVolume();
-
-    void set_grid(Grid3D<float>&&, QVector3D origin, QVector3D extents);
-
-    QByteArray getInstanceBuffer(int* instance_count) override;
-};
-
-// =============================================================================
-
-// TODO make all deltas queued up for Concurrent off thread rebuilding of geom
-
-class RayGeometry : public QQuick3DGeometry {
-    Q_OBJECT
-    QML_ELEMENT
-
-    std::shared_ptr<ResultDB> m_database;
-
-    std::unordered_set<SolTrace::Result::RayEvent> m_exclude_events = {
-        SolTrace::Result::RayEvent::CREATE,
-        SolTrace::Result::RayEvent::VIRTUAL,
-        SolTrace::Result::RayEvent::UNKNOWN
-    };
-
-    /*
-    std::unordered_set<SD::element_id> m_selected_elements;
-    std::unordered_set<RD::ray_id>     m_selected_rays;
-    */
-
-    Q_WRITABLE_PROPERTY(float, show_percent, 50);
-
-    QOBJECT_WRITABLE_PROPERTY(RayVolume, ray_volume);
-
-
-public:
-    explicit RayGeometry(QQuick3DObject* parent = nullptr);
-
-    void set_database(std::shared_ptr<ResultDB>&&);
-
-public slots:
-    void rebuild_geometry();
-};
+} // namespace analysis

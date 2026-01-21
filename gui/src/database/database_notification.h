@@ -144,7 +144,9 @@ public:
     ComponentAPI<TagMembershipComponent>   tags;
 
 public slots:
-    entt::entity add_group(QString new_name, QVector<entt::entity>);
+    entt::entity add_group(QString               new_name,
+                           QVector<entt::entity> members,
+                           entt::entity          clone_from = entt::null);
     void         delete_group(entt::entity to_delete,
                               entt::entity move_to = entt::null);
 };

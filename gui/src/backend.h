@@ -2,58 +2,40 @@
 
 #include "database/database.h"
 #include "qt_helpers.h"
+#include "utilities/notification.h"
 
 #include <QObject>
 #include <QQmlEngine>
 #include <QSharedPointer>
 
-// struct ADataSet {
-//     QString name;
-//     QString provenance;
-//     DataPtr ptr;
-// };
+class Session : public QObject {
+    Q_OBJECT
 
-// class DataSetsModel : public IndirectTableModel {
-//     Q_OBJECT
-//     QVector<ADataSet> m_sets;
+    // If data came from a file, this is the path
+    Q_WRITABLE_PROPERTY(QString, current_data_path, {});
 
-//     bool _can_append_new(QVariant const&) override;
-//     void _append_new(QVariant) override;
-//     bool _can_delete_at(size_t, size_t) override;
-//     void _delete_at(size_t, size_t) override;
-//     int  _record_count() const override;
-//     void _clear() override;
+    // Current content
+    std::shared_ptr<entt::registry> m_current_database;
 
-//     void watch(LocalData* ptr);
+private slots:
+    void file_ready();
 
-//     QOBJECT_WRITABLE_PROPERTY(LocalData, current_data);
+public:
+    explicit Session(QObject* parent = nullptr);
 
-// private slots:
-//     void file_ready();
-//     void a_data_changed();
+public slots:
+    void start_load_file(QUrl);
 
+signals:
 
-// public:
-//     explicit DataSetsModel(QObject* parent = nullptr);
-
-// public slots:
-//     void start_load_file(QUrl);
-
-//     void select(int);
-
-// signals:
-//     void file_load_error(QString);
-// };
+    void notification(ANotification);
+};
 
 
 class Backend : public QObject {
     Q_OBJECT
     QML_ELEMENT
     QML_SINGLETON
-
-    std::shared_ptr<entt::registry> m_current_database;
-
-    Q_WRITABLE_PROPERTY(QString, current_data_path, {});
 
 public:
     explicit Backend(QObject* parent = nullptr);

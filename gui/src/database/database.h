@@ -10,13 +10,13 @@
 namespace db {
 
 /// Create a new simulation database
-static std::shared_ptr<entt::registry> create_new();
+std::shared_ptr<entt::registry> create_new();
 
 /// Convert a Soltrace dataset to a database
-static std::shared_ptr<entt::registry> import(SD::SimulationData&);
+std::shared_ptr<entt::registry> import(SD::SimulationData&);
 
 /// Convert a database back into a Soltrace dataset
-static std::shared_ptr<SolTrace::Data::SimulationData>
+std::shared_ptr<SolTrace::Data::SimulationData>
 export_to_simdata(entt::registry&);
 
 /// Clear the active parent of an entity

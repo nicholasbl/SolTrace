@@ -11,7 +11,12 @@
 
 namespace SD = SolTrace::Data;
 
+namespace SolTrace {
+namespace Data {
 bool operator==(SD::OpticalProperties const& a, SD::OpticalProperties const& b);
+}
+} // namespace SolTrace
+
 
 namespace db {
 
@@ -25,6 +30,8 @@ struct DisabledComponent { };
 struct IdentityComponent {
     QString name;
 };
+
+struct ElementComponent { };
 
 /// Describes the parent of this entity, if it has one. DO NOT modify this
 /// component directly!
@@ -56,7 +63,7 @@ struct GroupParameters {
     SD::OpticalProperties optics_front;
     SD::OpticalProperties optics_back;
 
-    bool operator==(GroupParameters const&) const = default;
+    bool operator==(GroupParameters const&) const;
 };
 
 /// A group of common 'elements'. DO NOT modify the member information directly.
@@ -83,6 +90,11 @@ struct ATagMemberComponent { };
 /// Lists the string tags this entity has
 struct TagMembershipComponent {
     QVector<entt::entity> tags;
+};
+
+/// Denotes an entity that could not be imported properly
+struct ImportErrorComponent {
+    QString reason;
 };
 
 } // namespace db

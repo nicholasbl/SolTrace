@@ -123,45 +123,7 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
         SOLTRACE_SECTION(
             report_simulation(&(ret->result), 100), 90, "Report simulation");
 
-        // now compute lookup tables
-
-        SECTION(90, "Building lookup tables");
-
-        auto& st_result = ret->result;
-
-        auto num_records = st_result.get_number_of_records();
-
-        if (num_records > 0) {
-            ret->element_ids_to_ray_ids.reserve(num_records);
-
-            uint64_t iter_count = 0;
-
-            for (auto iter = st_result.get_ray_record_iteratior();
-                 !st_result.is_at_end(iter);
-                 ++iter) {
-                auto progress =
-                    lerp<float, float>(iter_count, 0, num_records - 1, 90, 100);
-
-                SECTION(progress, "Building lookup tables");
-
-                for (auto const& interaction : (*iter)->interactions) {
-                    auto element = interaction->element;
-                    // It looks like invalid element IDs are negative
-                    // Any zero+ element id could be used
-                    if (element >= 0) {
-                        ret->element_ids_to_ray_ids[interaction->element]
-                            .push_back((*iter)->id);
-                    }
-                }
-
-                iter_count++;
-            }
-        }
-
-
-        SECTION(100, "Done");
-
-        promise.emplaceResult(std::move(ret));
+        construct_result(promise, ret, data);
 
     } catch (std::exception& e) {
         promise.emplaceResult(QString(e.what()));

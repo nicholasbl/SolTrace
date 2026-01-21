@@ -1,5 +1,6 @@
 #include "backend.h"
 
+#include "job_control/job_run_common.h"
 #include "utilities/math_utility.h"
 
 #include "surface.hpp"
@@ -12,6 +13,89 @@
 #include <QtConcurrentRun>
 
 // TODO COORDINATE SYSTEMS. the sim could be arbitrary
+
+
+Session::Session(QObject* parent) : QObject(parent) { }
+
+struct LoadedFile {
+    QString    name;
+    QString    provenance;
+    SimDataPtr ptr;
+};
+
+using LoadResult = std::variant<LoadedFile, ANotification>;
+
+
+static LoadResult load_file(QString fname) {
+    qDebug() << Q_FUNC_INFO << fname;
+
+    auto file = QFileInfo(fname);
+
+    if (!(file.isFile() && file.isReadable())) {
+        return ANotification::error("Unable to open file for reading");
+    }
+
+    auto new_data = std::make_shared<SD::SimulationData>();
+
+    // convert to normal char string
+    auto str = fname.toStdString();
+
+    if (!new_data->import_from_file(str)) {
+        return ANotification::error("Unable to import file");
+    }
+
+    return LoadedFile {
+        .name       = file.completeBaseName(),
+        .provenance = fname,
+        .ptr        = new_data,
+    };
+}
+
+void Session::file_ready() {
+    auto from = dynamic_cast<QFutureWatcher<LoadResult>*>(sender());
+
+    if (!from) { qFatal("this shouldn't happen"); }
+
+    if (from->isCanceled()) {
+        qInfo() << "File load cancelled";
+        return;
+    }
+
+    auto result = from->result();
+
+    std::visit(overloaded {
+                   [this](LoadedFile arg) {
+                       // convert
+
+                       this->set_current_data_path(arg.provenance);
+                       m_current_database = db::import(*arg.ptr);
+                   },
+                   [this](ANotification arg) { emit notification(arg); },
+               },
+               result);
+}
+
+
+void Session::start_load_file(QUrl file) {
+    qDebug() << Q_FUNC_INFO << file;
+
+    auto watcher = new QFutureWatcher<LoadResult>();
+
+    connect(watcher,
+            &QFutureWatcher<LoadResult>::finished,
+            this,
+            &Session::file_ready);
+
+    connect(watcher,
+            &QFutureWatcher<LoadResult>::finished,
+            watcher,
+            &QObject::deleteLater);
+
+    auto future = QtConcurrent::run(load_file, file.toLocalFile());
+
+    watcher->setFuture(future);
+}
+
 
 #if 0
 
@@ -81,39 +165,6 @@ DataSetsModel::DataSetsModel(QObject* parent) : IndirectTableModel(parent) {
     });
 }
 
-struct LoadedFile {
-    QString    name;
-    QString provenance;
-    SimDataPtr ptr;
-};
-
-using LoadResult = std::variant<LoadedFile, QString>;
-
-
-static LoadResult load_file(QString fname) {
-    qDebug() << Q_FUNC_INFO << fname;
-
-    auto file = QFileInfo(fname);
-
-    if (!(file.isFile() && file.isReadable())) {
-        return QStringLiteral("Unable to open file for reading");
-    }
-
-    auto new_data = std::make_shared<SD::SimulationData>();
-
-    // convert to normal char string
-    auto str = fname.toStdString();
-
-    if (!new_data->import_from_file(str)) {
-        return QStringLiteral("Unable to import file");
-    }
-
-    return LoadedFile{
-        .name = file.completeBaseName(),
-        .provenance = fname,
-        .ptr = new_data,
-    };
-}
 
 
 void DataSetsModel::file_ready() {
@@ -174,25 +225,6 @@ void DataSetsModel::a_data_changed() {
     }
 }
 
-void DataSetsModel::start_load_file(QUrl file) {
-    qDebug() << Q_FUNC_INFO << file;
-
-    auto watcher = new QFutureWatcher<LoadResult>();
-
-    connect(watcher,
-            &QFutureWatcher<LoadResult>::finished,
-            this,
-            &DataSetsModel::file_ready);
-
-    connect(watcher,
-            &QFutureWatcher<LoadResult>::finished,
-            watcher,
-            &QObject::deleteLater);
-
-    auto future = QtConcurrent::run(load_file, file.toLocalFile());
-
-    watcher->setFuture(future);
-}
 
 void DataSetsModel::select(int index) {
     qDebug() << Q_FUNC_INFO << index;

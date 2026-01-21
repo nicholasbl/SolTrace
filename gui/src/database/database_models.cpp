@@ -322,10 +322,29 @@ AnInstanceEditor::AnInstanceEditor(std::shared_ptr<entt::registry> ptr,
     : QObject(parent) {
     reset(ptr);
 
-    auto lock = m_host.lock();
-    if (!lock) return;
-    if (!lock->valid(m_entity)) return;
-    auto note = get_notifier(*lock);
+    /*
+     *     auto lock = m_host.lock();
+
+     if (!lock) { return set_empty(); }
+
+      auto note = get_notifier(*lock);
+
+     if (!note) { return set_empty(); }
+
+      if (!lock->valid(m_entity)) { return set_empty(); }
+
+     */
+}
+
+void AnInstanceEditor::set(entt::entity ent) {
+    m_entity = ent;
+    recompute();
+}
+
+void AnInstanceEditor::reset(std::shared_ptr<entt::registry> ptr) {
+    m_host = ptr;
+
+    auto note = get_notifier(*ptr);
     if (!note) return;
 
     connect(note->identity.self(),
@@ -358,27 +377,6 @@ AnInstanceEditor::AnInstanceEditor(std::shared_ptr<entt::registry> ptr,
             this,
             &AnInstanceEditor::an_entity_changed);
 
-    /*
-     *     auto lock = m_host.lock();
-
-     if (!lock) { return set_empty(); }
-
-      auto note = get_notifier(*lock);
-
-     if (!note) { return set_empty(); }
-
-      if (!lock->valid(m_entity)) { return set_empty(); }
-
-     */
-}
-
-void AnInstanceEditor::set(entt::entity ent) {
-    m_entity = ent;
-    recompute();
-}
-
-void AnInstanceEditor::reset(std::shared_ptr<entt::registry> ptr) {
-    m_host = ptr;
     recompute();
 }
 

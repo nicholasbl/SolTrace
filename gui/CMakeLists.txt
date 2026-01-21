@@ -46,25 +46,28 @@ qt_add_qml_module(SolTrace
         QtQuick
         QtQuick3D
     SOURCES
-        src/instance_table.h src/instance_table.cpp
         src/backend.h src/backend.cpp
         src/qt_helpers.h
         src/dataset.h src/dataset.cpp
         src/utilities/indirect_model.h src/utilities/indirect_model.cpp
-        src/surfacegeometry.h src/surfacegeometry.cpp
-        src/elementitemmodel.h src/elementitemmodel.cpp
-        src/job_run.h src/job_run.cpp
-        src/job_run_thread.h src/job_run_thread.cpp
-        src/job_run_common.h
-        src/job_run_process.h src/job_run_process.cpp
+        src/job_control/job_run.h src/job_control/job_run.cpp
+        src/job_control/job_run_thread.h src/job_control/job_run_thread.cpp
+        src/job_control/job_run_common.h
+        src/job_control/job_run_process.h src/job_control/job_run_process.cpp
         src/utilities/math_utility.h
         src/utilities/structmodel.h
-
         src/database/database.h src/database/database.cpp
         src/database/database_models.h src/database/database_models.cpp
         src/database/components.h
         src/database/geometryeditor.h src/database/geometryeditor.cpp
-        SOURCES src/database/database_notification.h src/database/database_notification.cpp
+        src/database/database_notification.h src/database/database_notification.cpp
+        src/database/components.cpp
+        SOURCES src/analysis/grid3d.h
+        SOURCES src/analysis/ray_volume_raster.h
+        SOURCES src/analysis/ray_volume.h src/analysis/ray_volume.cpp
+        SOURCES src/analysis/ray_geometry.h src/analysis/ray_geometry.cpp
+        SOURCES src/job_control/job_run_common.cpp
+        SOURCES src/utilities/notification.h
 )
 
 qt_add_resources(SolTrace
