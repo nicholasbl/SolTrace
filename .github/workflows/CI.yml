@@ -95,10 +95,8 @@ jobs:
         Write-Host "Embree CMake: $embreeCMake"
         Write-Host "Embree Lib: $embreeLib"
         
-        # echo "EMBREE_DIR=$($embreeRoot.FullName)" >> $env:GITHUB_ENV
         echo "embree_DIR=$embreeCMake" >> $env:GITHUB_ENV
-        echo "EMBREE_LIB=$embreeLib" >> $env:GITHUB_ENV
-        # echo "$($embreeRoot.FullName)\bin" >> $env:GITHUB_PATH
+        echo "$embreeLib" >> $env:GITHUB_PATH
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
@@ -122,10 +120,7 @@ jobs:
     - name: Build-Windows
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       if: matrix.os == 'windows-latest'
-      shell: pwsh
-      run: |
-         cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
-         Copy-Item "$env:EMBREE_LIB\*.dll" -Destination "${{ steps.strings.outputs.build-output-dir }}\bin\${{ matrix.build_type }}"
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
       
     - name: Build-Mac-Linux
       if: matrix.os != 'windows-latest'
