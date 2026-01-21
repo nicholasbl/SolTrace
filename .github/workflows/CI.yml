@@ -61,6 +61,23 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libfontconfig1-dev
 
+    - name: Install embree (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libembree-dev
+
+    - name: Install embree (macOS)
+      if: matrix.os == 'macOS-latest'
+      run: |
+        brew install embree
+
+    - name: Install embree (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        vcpkg install embree4:x64-windows
+        echo "CMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
@@ -77,6 +94,7 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DSOLTRACE_BUILD_GUI=OFF
+        -DSOLTRACE_BUILD_EMBREE_SUPPORT=ON
         -S ${{ github.workspace }}
 
     - name: Build-Windows
