@@ -87,10 +87,10 @@ jobs:
         Write-Host "Extracting Embree..."
         Expand-Archive -Path $embreeZip -DestinationPath $embreeDir -Force
         
-        $embreeRoot = Get-ChildItem -Path $embreeDir -Directory | Select-Object -First 1
-        $embreeCMake = Join-Path $embreeRoot.FullName "lib\cmake\embree-$embreeVersion"
+        # $embreeRoot = Get-ChildItem -Path $embreeDir -Directory -Filter "embree*" | Select-Object -First 1
+        $embreeCMake = Join-Path $embreeDir "lib\cmake\embree-$embreeVersion"
         
-        Write-Host "Embree root: $($embreeRoot.FullName)"
+        # Write-Host "Embree root: $($embreeRoot.FullName)"
         Write-Host "Embree CMake: $embreeCMake"
         
         echo "EMBREE_DIR=$($embreeRoot.FullName)" >> $env:GITHUB_ENV
