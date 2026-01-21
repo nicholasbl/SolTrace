@@ -74,9 +74,24 @@ jobs:
 
     - name: Install embree (Windows)
       if: matrix.os == 'windows-latest'
+      shell: pwsh
       run: |
-        vcpkg install embree
-        echo "CMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+        $embreeVersion = "4.4.0"
+        $embreeUrl = "https://github.com/embree/embree/releases/download/v$embreeVersion/embree-$embreeVersion.x64.windows.zip"
+        $embreeZip = "$env:TEMP\embree.zip"
+        $embreeDir = "C:\embree"
+        
+        Write-Host "Downloading Embree $embreeVersion..."
+        Invoke-WebRequest -Uri $embreeUrl -OutFile $embreeZip
+        
+        Write-Host "Extracting Embree..."
+        Expand-Archive -Path $embreeZip -DestinationPath $embreeDir -Force
+        
+        $embreeRoot = Get-ChildItem -Path $embreeDir -Directory | Select-Object -First 1
+        
+        Write-Host "Setting environment variables..."
+        echo "embree_DIR=$($embreeRoot.FullName)" >> $env:GITHUB_ENV
+        echo "$($embreeRoot.FullName)\bin" >> $env:GITHUB_PATH
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
