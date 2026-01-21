@@ -88,9 +88,13 @@ jobs:
         Expand-Archive -Path $embreeZip -DestinationPath $embreeDir -Force
         
         $embreeRoot = Get-ChildItem -Path $embreeDir -Directory | Select-Object -First 1
+        $embreeCMake = Join-Path $embreeRoot.FullName "lib\cmake\embree-$embreeVersion"
         
-        Write-Host "Setting environment variables..."
-        echo "embree_DIR=$($embreeRoot.FullName)" >> $env:GITHUB_ENV
+        Write-Host "Embree root: $($embreeRoot.FullName)"
+        Write-Host "Embree CMake: $embreeCMake"
+        
+        echo "EMBREE_DIR=$($embreeRoot.FullName)" >> $env:GITHUB_ENV
+        echo "embree_DIR=$embreeCMake" >> $env:GITHUB_ENV
         echo "$($embreeRoot.FullName)\bin" >> $env:GITHUB_PATH
 
     - name: Set reusable strings
@@ -110,6 +114,7 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DSOLTRACE_BUILD_GUI=OFF
         -DSOLTRACE_BUILD_EMBREE_SUPPORT=ON
+        ${{ matrix.os == 'windows-latest' && format('-Dembree_DIR={0}', env.embree_DIR) || '' }}
         -S ${{ github.workspace }}
 
     - name: Build-Windows
