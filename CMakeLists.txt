@@ -16,6 +16,9 @@ option(SOLTRACE_BUILD_OPTIX_SUPPORT "Build the OptiX support for ray tracing" OF
 
 option(SOLTRACE_BUILD_PERF_TEST "Build performance tests (not built for debug)" OFF)
 
+option(FULL_FIELD_VALIDATION_TEST "Include full field validation tests" OFF)
+
+
 enable_testing()
 
 add_subdirectory(coretrace)
