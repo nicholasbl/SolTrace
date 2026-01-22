@@ -1,16 +1,17 @@
 pragma Singleton
 import QtQuick 2.15
 
+// Very rough sketch of session data, will replace indices with enums later
 QtObject {
     property QtObject core: QtObject {
-        property int workflowIndex: 0
-        property int sectionIndex: 0
+        property int workflowIndex: 0 // Configure, Simulate, Analyze, etc
+        property int sectionIndex: 0 // Section of the workflow phase (example: Materials)
 
+            
         property QtObject sun: QtObject {
-            property int sunTypeIndex: 0
-            property int calculatorIndex: 0
-            property int sunShapeIndex: 0
-            property int sunType: 0
+            property int sunTypeIndex: 0 // Directional or point source sun
+            property int calculatorIndex: 0 // Position calculator (legacy, SOLPOS, etc)
+            property int sunShapeIndex: 0 // Emission profile type (Gaussian, Pillbox, etc)
 
             property QtObject directionalSun: QtObject {
                 // Location
