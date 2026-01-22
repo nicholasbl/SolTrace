@@ -12,6 +12,8 @@
 #include "common.hpp"
 #include "count_absorbed_native.h"
 
+#include <glm/gtx/io.hpp>
+
 using ParabolicTrough = SolTrace::Data::ParabolicTrough;
 
 using SolTrace::Runner::RunnerStatus;
@@ -258,7 +260,7 @@ TEST(ParabolicTrough, Tracing)
     my_sim.add_ray_source(sun);
 
     // Assumes that reference and global coordinates are the same
-    // Vector3d pt_aim_point;
+    // glm::dvec3 pt_aim_point;
     // vector_add(1.0, sun->get_position(), -1.0, pt->get_origin_ref(), pt_aim_point);
     // pt->set_aim_vector(pt_aim_point);
     pt->set_aim_vector(sun->get_position());
@@ -384,9 +386,9 @@ TEST(ParabolicTrough, UpdateGeometry)
 
     pt->update_geometry(sun_az, sun_el);
 
-    Vector3d sun_pos;
-    sun_position_vector_degrees(sun_pos, sun_az, sun_el);
-    sun_pos.scalar_mult(1000.0);
+    glm::dvec3 sun_pos;
+    SolTrace::Data::sun_position_vector_degrees(sun_pos, sun_az, sun_el);
+    sun_pos *= 1000.0;
     auto sun = SolTrace::Data::make_ray_source<Sun>();
     sun->set_position(sun_pos);
     sun->set_shape(SolTrace::Data::SunShape::PILLBOX, 0.0, 1.0, 0.0);
@@ -401,12 +403,12 @@ TEST(ParabolicTrough, UpdateGeometry)
               << "\nZ-Rotation: " << pt->get_zrot()
               << std::endl;
 
-    EXPECT_NEAR(dot_product(pt->get_tracking_origin(), pt->get_rotation_vector()), 0.0, TOL);
-    EXPECT_NEAR(dot_product(pt->get_tracking_origin(), pt->get_neutral_normal()), 0.0, TOL);
-    EXPECT_NEAR(dot_product(pt->get_rotation_vector(), pt->get_neutral_normal()), 0.0, TOL);
+    EXPECT_NEAR(glm::dot(pt->get_tracking_origin(), pt->get_rotation_vector()), 0.0, TOL);
+    EXPECT_NEAR(glm::dot(pt->get_tracking_origin(), pt->get_neutral_normal()), 0.0, TOL);
+    EXPECT_NEAR(glm::dot(pt->get_rotation_vector(), pt->get_neutral_normal()), 0.0, TOL);
 
-    Vector3d temp, result;
-    rotate_vector_degrees(pt->get_rotation_vector(),
+    glm::dvec3 temp, result;
+    SolTrace::Data::rotate_vector_degrees(pt->get_rotation_vector(),
                           pt->get_tracking_origin(),
                           pt->get_tracking_angle_degrees(),
                           temp);
@@ -422,7 +424,7 @@ TEST(ParabolicTrough, UpdateGeometry)
     EXPECT_NEAR(result[1], 1.0, TOL);
     EXPECT_NEAR(result[2], 0.0, TOL);
 
-    rotate_vector_degrees(pt->get_rotation_vector(),
+    SolTrace::Data::rotate_vector_degrees(pt->get_rotation_vector(),
                           pt->get_neutral_normal(),
                           pt->get_tracking_angle_degrees(),
                           temp);
@@ -519,12 +521,11 @@ TEST(ParabolicTrough, UpdateGeometry_TrackingLimits)
     //           << "\nZ-Rotation: " << pt->get_zrot()
     //           << std::endl;
     EXPECT_NEAR(pt->get_tracking_angle_degrees(), UPPER, TOL);
-    Vector3d normal = pt->get_aim_vector_global();
-    normal.make_unit();
+    glm::dvec3 normal = glm::normalize(pt->get_aim_vector_global());
     EXPECT_NEAR(normal[0], cos(UPPER * D2R), TOL);
     EXPECT_NEAR(normal[1], 0.0, TOL);
     EXPECT_NEAR(normal[2], sin(UPPER * D2R), TOL);
-    Vector3d upper = pt->get_tracking_limit_upper();
+    glm::dvec3 upper = pt->get_tracking_limit_upper();
     for (unsigned k = 0; k < 3; ++k)
     {
         EXPECT_NEAR(normal[k], upper[k], TOL);
@@ -532,12 +533,11 @@ TEST(ParabolicTrough, UpdateGeometry_TrackingLimits)
 
     pt->update_geometry(-sun_az, sun_el);
     EXPECT_NEAR(pt->get_tracking_angle_degrees(), LOWER, TOL);
-    normal = pt->get_aim_vector_global();
-    normal.make_unit();
+    normal = glm::normalize(pt->get_aim_vector_global());
     EXPECT_NEAR(normal[0], cos(LOWER * D2R), TOL);
     EXPECT_NEAR(normal[1], 0.0, TOL);
     EXPECT_NEAR(normal[2], sin(LOWER * D2R), TOL);
-    Vector3d lower = pt->get_tracking_limit_lower();
+    glm::dvec3 lower = pt->get_tracking_limit_lower();
     for (unsigned k = 0; k < 3; ++k)
     {
         EXPECT_NEAR(normal[k], lower[k], TOL);

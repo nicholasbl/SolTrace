@@ -19,9 +19,9 @@ namespace SolTrace::NativeRunner {
     //     - Reduce the random number calls. I.e., sample theta directly rather than thetax and thetay -> this will break tests because the number of RNG calls will change.
 
 void SurfaceNormalErrors(MTRand &myrng,
-						 double CosIn[3],
-						 const OpticalProperties *OptProperties,
-						 double CosOut[3]) noexcept(false) // throw(nanexcept)
+                         glm::dvec3 &CosIn,
+                         const SolTrace::Data::OpticalProperties *OptProperties,
+                         glm::dvec3 &CosOut) noexcept(false) // throw(nanexcept)
 {
 
 	/*{Purpose:  To add error terms to the surface normal vector at the surface in question
@@ -34,49 +34,42 @@ void SurfaceNormalErrors(MTRand &myrng,
 			   Output - CosOut  = Output direction cosine vector of surface normal after error terms have been included
 					   }*/
 
-	int i = 0;
-	double Origin[3] = {0.0, 0.0, 0.0},
-		   Euler[3] = {0.0, 0.0, 0.0};
-	double PosIn[3] = {0.0, 0.0, 0.0},
-		   PosOut[3] = {0.0, 0.0, 0.0};
-	DistributionType dist;
-	double delop = 0.0, thetax = 0.0,
-		   thetay = 0.0, theta2 = 0.0,
-		   phi = 0.0, theta = 0.0;
-	double RRefToLoc[3][3] = {{0.0, 0.0, 0.0},
-							  {0.0, 0.0, 0.0},
-							  {0.0, 0.0, 0.0}};
-	double RLocToRef[3][3] = {{0.0, 0.0, 0.0},
-							  {0.0, 0.0, 0.0},
-							  {0.0, 0.0, 0.0}};
+    int i = 0;
 
-	if (CosIn[2] == 0.0)
-	{
-		if (CosIn[0] == 0.0)
-		{
-			Euler[0] = 0.0;
+    glm::dvec3 Origin(0.0, 0.0, 0.0);
+    glm::dvec3 Euler(0.0, 0.0, 0.0);
+
+    glm::dvec3 PosIn(0.0, 0.0, 0.0);
+    glm::dvec3 PosOut(0.0, 0.0, 0.0);
+
+    DistributionType dist;
+
+    double delop = 0.0, thetax = 0.0, thetay = 0.0, theta2 = 0.0, phi = 0.0, theta = 0.0;
+
+    glm::dmat3 RRefToLoc(0.0);
+    glm::dmat3 RLocToRef(0.0);
+
+    if (CosIn[2] == 0.0) {
+        if (CosIn[0] == 0.0) {
+            Euler[0] = 0.0;
 			Euler[1] = PI / 2.0;
-		}
-		else
-		{
-			Euler[0] = PI / 2.0;
+        } else {
+            Euler[0] = PI / 2.0;
 			Euler[1] = atan2(CosIn[1], sqrt(CosIn[0] * CosIn[0] + CosIn[2] * CosIn[2]));
-		}
-	}
-	else
-	{
-		Euler[0] = atan2(CosIn[0], CosIn[2]);
-		Euler[1] = atan2(CosIn[1], sqrt(CosIn[0] * CosIn[0] + CosIn[2] * CosIn[2]));
-	}
+        }
+    } else {
+        Euler[0] = atan2(CosIn[0], CosIn[2]);
+        Euler[1] = atan2(CosIn[1], sqrt(CosIn[0] * CosIn[0] + CosIn[2] * CosIn[2]));
+    }
 
-	Euler[2] = 0.0;
+    Euler[2] = 0.0;
 
-	CalculateTransformMatrices(Euler, RRefToLoc, RLocToRef);
+    Data::CalculateTransformMatrices(Euler, RRefToLoc, RLocToRef);
 
-	// TODO: Add distribution type to optical properties
-	// dist = OptProperties->DistributionType;
-	dist = OptProperties->error_distribution_type;
-	// delop = OptProperties->RMSSlopeError / 1000.0;
+    // TODO: Add distribution type to optical properties
+    // dist = OptProperties->DistributionType;
+    dist = OptProperties->error_distribution_type;
+    // delop = OptProperties->RMSSlopeError / 1000.0;
 	delop = OptProperties->slope_error / 1000.0;
 
 	switch (dist)
@@ -105,11 +98,11 @@ void SurfaceNormalErrors(MTRand &myrng,
 	/* {Transform to local coordinate system of ray to set up rotation matrices for coord and inverse
 	   transforms} */
 
-	TransformToLocal(PosIn, CosIn, Origin, RRefToLoc, PosOut, CosOut);
+    Data::TransformToLocal(PosIn, CosIn, Origin, RRefToLoc, PosOut, CosOut);
 
-	/* {Generate errors in terms of direction cosines in local ray coordinate system} */
-	theta = sqrt(theta2);
-	// phi = atan2(thetay, thetax); //This function appears to  present irregularities that bias results incorrectly for small values of thetay or thetax
+    /* {Generate errors in terms of direction cosines in local ray coordinate system} */
+    theta = sqrt(theta2);
+    // phi = atan2(thetay, thetax); //This function appears to  present irregularities that bias results incorrectly for small values of thetay or thetax
 	phi = myrng() * 2.0 * PI; // Therefore have chosen to randomize phi rather than calculate from randomized theta components
 	                          //  obtained from the distribution. The two approaches are equivalent save for this issue with arctan2.      wendelin 01-12-11
 
@@ -124,20 +117,19 @@ void SurfaceNormalErrors(MTRand &myrng,
 	}
 
 	/*{Transform perturbed ray back to element system}*/
-	TransformToReference(PosIn, CosIn, Origin, RLocToRef, PosOut, CosOut);
+    Data::TransformToReference(PosIn, CosIn, Origin, RLocToRef, PosOut, CosOut);
 }
 
 void Errors(
-	MTRand &myrng,
-	double CosIn[3],
-	int Source,
-	TSun *Sun,
-	// telement_ptr Element,
-	const OpticalProperties *OptProperties,
-	// TElement *Element,
-	// TOpticalProperties *OptProperties,
-	double CosOut[3],
-	double DFXYZ[3])
+    MTRand& myrng,
+    glm::dvec3& CosIn,
+    int Source,
+    TSun* Sun,
+    // TElement *Element,
+    // TOpticalProperties *OptProperties,
+    const SolTrace::Data::OpticalProperties* OptProperties,
+    glm::dvec3& CosOut,
+    glm::dvec3& DFXYZ)
 {
 	/*{Purpose:  To add error terms to the perturbed ray at the surface in question
 
@@ -157,15 +149,18 @@ void Errors(
 			   Output - CosOut  = Output direction cosine vector of ray after error terms have been included
 					   }*/
 
-	double Origin[3] = {0.0, 0.0, 0.0};
-	double Euler[3] = {0.0, 0.0, 0.0};
-	double PosIn[3] = {0.0, 0.0, 0.0};
-	double PosOut[3] = {0.0, 0.0, 0.0};
-	// char dist = 'g';
-	double delop = 0, thetax = 0, thetay = 0, theta2 = 0, phi = 0, theta = 0, stest = 0;
-	uint_fast64_t i;
-	double RRefToLoc[3][3] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
-	double RLocToRef[3][3] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+    glm::dvec3 Origin(0.0, 0.0, 0.0);
+    glm::dvec3 Euler(0.0, 0.0, 0.0);
+    glm::dvec3 PosIn(0.0, 0.0, 0.0);
+    glm::dvec3 PosOut(0.0, 0.0, 0.0);
+
+    // char dist = 'g';
+    double delop = 0.0, thetax = 0.0, thetay = 0.0, theta2 = 0.0, phi = 0.0, theta = 0.0, stest = 0.0;
+    uint_fast64_t i;
+
+    glm::dmat3 RRefToLoc(0.0);
+    glm::dmat3 RLocToRef(0.0);
+
 
 	if (CosIn[2] == 0.0)
 	{
@@ -188,9 +183,9 @@ void Errors(
 
 	Euler[2] = 0.0;
 
-	CalculateTransformMatrices(Euler, RRefToLoc, RLocToRef);
+    Data::CalculateTransformMatrices(Euler, RRefToLoc, RLocToRef);
 
-	unsigned int maxcall = 0;
+    unsigned int maxcall = 0;
 	// g,p,d
 	if (Source == 1)  // sun error
 	{
@@ -313,12 +308,12 @@ void Errors(
 	}
 
 	// {Transform to local coordinate system of ray to set up rotation matrices for coordinate and inverse transforms}
-	TransformToLocal(PosIn, CosIn, Origin, RRefToLoc, PosOut, CosOut);
+    Data::TransformToLocal(PosIn, CosIn, Origin, RRefToLoc, PosOut, CosOut);
 
-	// {Generate errors in terms of direction cosines in local ray coordinate system}
-	theta = sqrt(theta2);
+    // {Generate errors in terms of direction cosines in local ray coordinate system}
+    theta = sqrt(theta2);
 
-	// phi = atan2(thetay, thetax); //This function appears to  present irregularities that bias results incorrectly for small values of thetay or thetax
+    // phi = atan2(thetay, thetax); //This function appears to  present irregularities that bias results incorrectly for small values of thetay or thetax
 	phi = myrng() * 2.0 * PI; // Therefore have chosen to randomize phi rather than calculate from randomized theta components
 							  //  obtained from the distribution. The two approaches are equivalent save for this issue with arctan2.      wendelin 01-12-11
 
@@ -333,15 +328,15 @@ void Errors(
 	}
 
 	//{Transform perturbed ray back to element system}
-	TransformToReference(PosIn, CosIn, Origin, RLocToRef, PosOut, CosOut);
+    Data::TransformToReference(PosIn, CosIn, Origin, RLocToRef, PosOut, CosOut);
 
-	// TODO: Remove goto, should we always do dot product check? // We could move this out of the function and into the caller.
+    // TODO: Remove goto, should we always do dot product check? // We could move this out of the function and into the caller.
 
-	/*{If reflection error application and new ray direction (after errors) physically goes through opaque surface,
+    /*{If reflection error application and new ray direction (after errors) physically goes through opaque surface,
     then go back and get new perturbation 06-12-07}*/		
 	if ((Source == 2) &&
 		(OptProperties->my_type == InteractionType::REFLECTION) &&
-		(DOT(CosOut, DFXYZ) < 0) &&
+        (glm::dot(CosOut, DFXYZ) < 0) &&
 		maxcall++ < 50000)
 	{
 		goto Label_50;

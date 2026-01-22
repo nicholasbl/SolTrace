@@ -90,11 +90,11 @@ namespace SolTrace::NativeRunner
     {
     }
 
-    int CylinderCalculator::intersect(const double PosLoc[3],
-                                      const double CosLoc[3],
-                                      double PosXYZ[3],
-                                      double CosKLM[3],
-                                      double DFXYZ[3],
+    int CylinderCalculator::intersect(const glm::dvec3 PosLoc,
+                                      const glm::dvec3 CosLoc,
+                                      glm::dvec3& PosXYZ,
+                                      glm::dvec3& CosKLM,
+                                      glm::dvec3& DFXYZ,
                                       double *PathLength)
     {
         // std::cout << "Computing cylinder intersection" << std::endl;
@@ -110,15 +110,15 @@ namespace SolTrace::NativeRunner
         double a, b, c;
         // double y1, y2;
 
-        Vector3d p1, p2;
+        glm::dvec3 p1, p2;
 
         c = x0 * x0 + z0 * z0 - 2.0 * z0 * r;
         b = 2.0 * (x0 * mx + (z0 - r) * mz);
         a = mx * mx + mz * mz;
 
-        ZeroVec3(PosXYZ);
-        ZeroVec3(CosKLM);
-        ZeroVec3(DFXYZ);
+        PosXYZ = {};
+        CosKLM = {};
+        DFXYZ = {};
 
         if (fabs(a) < 1e-12)
         {
@@ -145,8 +145,8 @@ namespace SolTrace::NativeRunner
 
                 // y1 = y0 + t1 * my;
                 // y2 = y0 + t2 * my;
-                AddVec3(1.0, PosLoc, t1, CosLoc, p1.data);
-                AddVec3(1.0, PosLoc, t2, CosLoc, p2.data);
+                p1 = PosLoc + t1 * CosLoc;
+                p2 = PosLoc + t2 * CosLoc;
 
                 if (t1 > 0.0 && this->aper->is_in(p1[0], p1[1]))
                 {
@@ -156,7 +156,7 @@ namespace SolTrace::NativeRunner
                     // SetVec3(PosXYZ, x0 + t1 * mx, y1, z0 + t1 * mz);
                     // AddVec3(1.0, PosLoc, t1, CosLoc, PosXYZ);
                     // this->surface_normal(PosXYZ, DFXYZ);
-                    CopyVec3(PosXYZ, p1.data);
+                    PosXYZ = p1;
                 }
                 else if (t2 > 0.0 && this->aper->is_in(p2[0], p2[1]))
                 {
@@ -167,7 +167,7 @@ namespace SolTrace::NativeRunner
                     // SetVec3(PosXYZ, x0 + t2 * mx, y2, z0 + t2 * mz);
                     // AddVec3(1.0, PosLoc, t2, CosLoc, PosXYZ);
                     // this->surface_normal(PosXYZ, DFXYZ);
-                    CopyVec3(PosXYZ, p2.data);
+                    PosXYZ = p2;
                 }
                 else
                 {
@@ -181,7 +181,7 @@ namespace SolTrace::NativeRunner
 
         if (sts == 0)
         {
-            CopyVec3(CosKLM, CosLoc);
+            CosKLM = CosLoc;
             this->surface_normal(PosXYZ, DFXYZ);
         }
 
@@ -190,8 +190,8 @@ namespace SolTrace::NativeRunner
         return sts;
     }
 
-    void CylinderCalculator::surface_normal(const double PosXYZ[3],
-                                            double DFXYZ[3])
+    void CylinderCalculator::surface_normal(const glm::dvec3 PosXYZ,
+                                            glm::dvec3& DFXYZ)
     {
         // TODO: Need to default to returning the surface normal of
         // whatever is the "front". Is that the inside of the cylinder

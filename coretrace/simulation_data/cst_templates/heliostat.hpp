@@ -47,11 +47,11 @@ public:
     // void set_onaxis_canting_distance(double dist);
     // void set_offaxis_canting_sun_position(double azimuth, double zenith);
     void set_canting(CantingType ct, double val1, double val2);
-    void set_target_position(const Vector3d &pos);
+    void set_target_position(const glm::dvec3 &pos);
     void set_tracking_limits(double az_lower, double az_upper,
                              double el_lower, double el_upper);
 
-    Vector3d get_elevation_axis() const
+    glm::dvec3 get_elevation_axis() const
     {
         return this->elevation_axis;
     }
@@ -80,11 +80,11 @@ private:
     double heliostat_area;
     double tracking_azimuth;
     double tracking_elevation;
-    Vector3d elevation_axis;
+    glm::dvec3 elevation_axis;
     // Sun position in global coordinates
-    Vector3d sun_position;
+    glm::dvec3 sun_position;
     // Target position in global coordinates
-    Vector3d target_pos;
+    glm::dvec3 target_pos;
     bool target_set;
 
     std::vector<single_element_ptr> facets;

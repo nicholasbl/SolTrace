@@ -63,7 +63,7 @@ TEST(NativeRunnerTypes, TSun)
 
     SimulationData my_sim;
     auto sun = SolTrace::Data::make_ray_source<Sun>();
-    Vector3d spos(1.0, 2.0, 3.0);
+    glm::dvec3 spos(1.0, 2.0, 3.0);
     sun->set_position(spos);
     sun->set_shape(SunShape::PILLBOX, -1.0, 1.0, 0.0);
     my_sim.add_ray_source(sun);
@@ -90,25 +90,25 @@ TEST(NativeRunnerTypes, MakeStage)
 //     // SimulationData my_sim;
 //     // // **** Setup Answers **** //
 //     // // Origin
-//     // Vector3d Origin1(1.0, 2.0, 3.0);
+//     // glm::dvec3 Origin1(1.0, 2.0, 3.0);
 //     // // Corresponding Euler angles in radians
 //     // const double a1 = 0.0;
 //     // const double b1 = asin(-1.0 / sqrt(3.0));
 //     // const double g1 = acos(1.0 / cos(b1) * 1.0 / sqrt(6.0)); // approximately 0.615
 //     // // Corresponding aim vector (local z-axis in reference coordinates)
-//     // Vector3d aim1(0.0, -1.0 / sqrt(3.0), sqrt(2.0 / 3.0));
+//     // glm::dvec3 aim1(0.0, -1.0 / sqrt(3.0), sqrt(2.0 / 3.0));
 //     // vector_add(1.0, Origin1, 1.0, aim1);
 
 //     // // Z-Rotation is the last of the Euler angles but in degrees
 //     // const double zrot1 = g1 * 180.0 / PI;
 
 //     // // Origin
-//     // Vector3d Origin2(-3.0, 1.0, -5.0);
+//     // glm::dvec3 Origin2(-3.0, 1.0, -5.0);
 //     // const double a2 = PI / 4.0;
 //     // const double b2 = PI / 6.0;
 //     // const double g2 = PI / 3.0;
 //     // // Corresponding aim vector (local z-axis in reference coordinates)
-//     // Vector3d aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
+//     // glm::dvec3 aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
 //     // vector_add(1.0, Origin2, 1.0, aim2);
 
 //     // // Z-Rotation is the last of the Euler angles but in degrees
@@ -171,8 +171,8 @@ TEST(NativeRunner, SmokeTest)
         element_ptr el = SolTrace::Data::make_element<SingleElement>();
         el->set_aperture(SolTrace::Data::make_aperture<Circle>(2.0));
         el->set_surface(SolTrace::Data::make_surface<Flat>());
-        el->set_reference_frame_geometry(Vector3d(x[k], y[k], 0.0),
-                                         Vector3d(-x[k], -y[k], 1.0),
+        el->set_reference_frame_geometry(glm::dvec3(x[k], y[k], 0.0),
+                                         glm::dvec3(-x[k], -y[k], 1.0),
                                          0.0);
         el->set_front_optical_properties(optics);
         el->set_back_optical_properties(optics);
@@ -270,8 +270,8 @@ TEST(NativeRunner, PowerTowerSmokeTest)
     st0->set_origin(0.0, 0.0, 0.0);
     st0->set_aim_vector(0.0, 0.0, 1.0);
 
-    Vector3d rvec, svec, avec;
-    Vector3d aim, pos;
+    glm::dvec3 rvec, svec, avec;
+    glm::dvec3 aim, pos;
 
     const int NUM_ELEMENTS = 10;
     for (int k = 0; k < NUM_ELEMENTS; ++k)
@@ -280,17 +280,12 @@ TEST(NativeRunner, PowerTowerSmokeTest)
         foptics = el->get_front_optical_properties();
         foptics->reflectivity = 1.0;
 
-        pos.set_values(5 * sin(k * PI * 2.0 / NUM_ELEMENTS),
-                       5 * cos(k * PI * 2.0 / NUM_ELEMENTS),
-                       0.0);
-        vector_add(1.0, absorber->get_origin_global(),
-                   -1.0, pos,
-                   rvec);
-        make_unit_vector(rvec);
-        svec = sun->get_position();
-        make_unit_vector(svec);
-        vector_add(0.5, rvec, 0.5, svec, avec);
-        vector_add(1.0, pos, 100.0, avec, aim);
+        pos = {5 * sin(k * PI * 2.0 / NUM_ELEMENTS), 5 * cos(k * PI * 2.0 / NUM_ELEMENTS), 0.0};
+        rvec = glm::normalize(absorber->get_origin_global() - pos);
+        svec = glm::normalize(sun->get_position());
+
+        avec = 0.5 * rvec + 0.5 * svec;
+        aim = pos + 100.0 * avec;
 
         el->set_reference_frame_geometry(pos, aim, 0.0);
 
@@ -375,12 +370,12 @@ TEST(NativeRunner, SingleRayValidationTest)
     double zref = R - sqrt(R * R - (x * x + y * y));
     double z = z0 - zref;
 
-    Vector3d u(0.0, 0.0, -1.0);
-    Vector3d v(2.0 * x, 2.0 * y, -2.0 * (z0 - z - R));
-    v.make_unit();
-    Vector3d w;
-    double alpha = dot_product(u, v);
-    vector_add(1.0, u, -2.0 * alpha, v, w);
+    glm::dvec3 u(0.0, 0.0, -1.0);
+    glm::dvec3 v(2.0 * x, 2.0 * y, -2.0 * (z0 - z - R));
+    SolTrace::Data::normalize_inplace(v);
+
+    double alpha = glm::dot(u, v);
+    glm::dvec3 w = u + (-2.0 * alpha * v);
 
     SimulationData sd;
 
@@ -400,8 +395,8 @@ TEST(NativeRunner, SingleRayValidationTest)
     sd.add_ray_source(sun);
 
     auto sph = SolTrace::Data::make_element<SingleElement>();
-    Vector3d origin(0.0, 0.0, z0);
-    Vector3d aim(0.0, 0.0, -1.0);
+    glm::dvec3 origin(0.0, 0.0, z0);
+    glm::dvec3 aim(0.0, 0.0, -1.0);
     double zrot = 0.0;
     sph->set_reference_frame_geometry(origin, aim, zrot);
     sph->set_aperture(SolTrace::Data::make_aperture<Hexagon>(20.0));
@@ -412,8 +407,8 @@ TEST(NativeRunner, SingleRayValidationTest)
     sd.add_element(sph);
 
     auto para = SolTrace::Data::make_element<SingleElement>();
-    origin.set_values(0.0, 0.0, -1.0);
-    aim.set_values(0.0, 0.0, 0.0);
+    origin = {0.0, 0.0, -1.0};
+    aim = {};
     zrot = 0.0;
     para->set_reference_frame_geometry(origin, aim, zrot);
     para->set_aperture(SolTrace::Data::make_aperture<Rectangle>(31.0, 31.0));
@@ -438,12 +433,11 @@ TEST(NativeRunner, SingleRayValidationTest)
 
     EXPECT_EQ(n, 3);
 
-    Vector3d ipoint, idir;
+    glm::dvec3 ipoint, idir;
     int element, stage;
     uint_fast64_t raynum;
     SolTrace::Result::RayEvent rev;
-    sys->RayData.Query(0, ipoint.data, idir.data,
-                       &element, &stage, &raynum, &rev);
+    sys->RayData.Query(0, ipoint, idir, &element, &stage, &raynum, &rev);
 
     EXPECT_EQ(raynum, 1);
     EXPECT_EQ(rev, SolTrace::Result::RayEvent::CREATE);
@@ -456,8 +450,7 @@ TEST(NativeRunner, SingleRayValidationTest)
     EXPECT_NEAR(idir[1], u[1], TOL);
     EXPECT_NEAR(idir[2], u[2], TOL);
 
-    sys->RayData.Query(1, ipoint.data, idir.data,
-                       &element, &stage, &raynum, &rev);
+    sys->RayData.Query(1, ipoint, idir, &element, &stage, &raynum, &rev);
 
     EXPECT_EQ(raynum, 1);
     EXPECT_EQ(rev, SolTrace::Result::RayEvent::REFLECT);

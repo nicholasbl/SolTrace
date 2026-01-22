@@ -7,35 +7,23 @@
 #include <element.hpp>
 #include <single_element.hpp>
 #include <surface.hpp>
-#include <vector3d.hpp>
 
-bool is_identical(const Vector3d &x, const Vector3d &y)
+bool is_identical(const glm::dvec3 &x, const glm::dvec3 &y)
 {
-    return (
-        x.data[0] == y.data[0] &&
-        x.data[1] == y.data[1] &&
-        x.data[2] == y.data[2]);
+    return x == y;
 }
 
-bool is_identical(const Vector3d &x, const Vector3d &y, double tol)
+bool is_identical(const glm::dvec3 &x, const glm::dvec3 &y, double tol)
 {
     return (
-        fabs(x.data[0] - y.data[0]) <= tol &&
-        fabs(x.data[1] - y.data[1]) <= tol &&
-        fabs(x.data[2] - y.data[2]) <= tol);
+        fabs(x.x - y.x) <= tol &&
+        fabs(x.y - y.y) <= tol &&
+        fabs(x.z - y.z) <= tol);
 }
 
-bool is_identical(const Matrix3d &A, const Matrix3d &B)
+bool is_identical(const glm::dmat3 &A, const glm::dmat3 &B)
 {
-    bool all_identical = true;
-    for (int i = 0; i < 3; ++i)
-    {
-        for (int j = 0; j < 3; ++j)
-        {
-            all_identical &= A.data[i][j] == B.data[i][j];
-        }
-    }
-    return all_identical;
+    return A == B;
 }
 
 element_ptr make_configured_element()

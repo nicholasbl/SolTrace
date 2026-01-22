@@ -6,6 +6,7 @@
 #include <exception>
 #include <sstream>
 #include <string>
+#include <fstream>
 #include <nlohmann/json.hpp>
 
 #include "constants.hpp"
@@ -425,14 +426,16 @@ bool read_element(
     }
 
     bool enabled = atoi(tok[0].c_str()) ? 1 : 0;
-    double xyz[3] = {
+    glm::dvec3 xyz = {
         atof(tok[1].c_str()),
         atof(tok[2].c_str()),
-        atof(tok[3].c_str())};
-    double aim[3] = {
+        atof(tok[3].c_str())
+    };
+    glm::dvec3 aim = {
         atof(tok[4].c_str()),
         atof(tok[5].c_str()),
-        atof(tok[6].c_str())};
+        atof(tok[6].c_str())
+    };
     double zrot = atof(tok[7].c_str());
 
     char ShapeIndex = ' ';
@@ -531,8 +534,8 @@ bool read_element(
     }
 
     // Set element position and orientation
-    el->set_reference_frame_geometry(Vector3d(xyz),
-                                     Vector3d(aim),
+    el->set_reference_frame_geometry(glm::dvec3(xyz),
+                                     glm::dvec3(aim),
                                      zrot);
 
     // Set optical properties
@@ -743,8 +746,8 @@ void write_json_file(SimulationData& sd, std::string filename)
                 jsrc["user_angle"] = user_angle;                // vector<double>
                 jsrc["user_intensity"] = user_intensity;        // vector<double>
 
-                Vector3d pos = sun_ptr->get_position();
-                jsrc["pos"] = pos.data;
+                glm::dvec3 pos = sun_ptr->get_position();
+                jsrc["pos"] = to_array(pos);
             }
             else
             {
@@ -849,7 +852,7 @@ void load_json_file(SimulationData& sd, std::string filename)
         std::vector<double> user_intensity = jsrc.at("user_intensity");
 
         std::array<double, 3> pos_arr = jsrc.at("pos").get<std::array<double, 3>>();
-        Vector3d pos_vec(pos_arr.data());
+        glm::dvec3 pos_vec = from_array(pos_arr);
 
         // Make sun for simulation data
         auto sun = make_ray_source<Sun>();

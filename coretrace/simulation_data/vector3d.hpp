@@ -1,8 +1,8 @@
 /**
- * @file vector3d.hpp
+ * @file glm::dvec3.hpp
  * @brief 3D vector and matrix classes
  *
- * Provides Vector3d and Matrix3d classes for 3D geometric operations,
+ * Provides glm::dvec3 and Matrix3d classes for 3D geometric operations,
  * coordinate transformations, and linear algebra computations.
  * These classes form the mathematical foundation for ray tracing
  * calculations and geometric transformations in SolTrace.
@@ -11,29 +11,29 @@
  * @{
  */
 
-#ifndef SOLTRACE_VECTOR3D_H
-#define SOLTRACE_VECTOR3D_H
+#ifndef SOLTRACE_glm_vec3
+#define SOLTRACE_glm_vec3
 
 #include <cassert>
 #include <vector>
-
+#if 0
 #include "matvec.hpp"
 
 namespace SolTrace::Data {
 
-class Vector3d
+class glm::dvec3
 {
 public:
     /**
      * @brief Default constructor - initializes to zero vector
      */
-    Vector3d();
+    glm::dvec3();
 
     /**
      * @brief Constructor from array
      * @param data Array of 3 doubles [x, y, z]
      */
-    Vector3d(const double data[3]);
+    glm::dvec3(const double data[3]);
 
     /**
      * @brief Constructor from components
@@ -41,8 +41,8 @@ public:
      * @param y Y component
      * @param z Z component
      */
-    Vector3d(double x, double y, double z);
-    ~Vector3d();
+    glm::dvec3(double x, double y, double z);
+    ~glm::dvec3();
 
     /**
      * @brief Set all components to zero
@@ -94,7 +94,7 @@ public:
      * @param x Vector to output
      * @return Reference to output stream
      */
-    friend std::ostream &operator<<(std::ostream &os, const Vector3d &x);
+    friend std::ostream &operator<<(std::ostream &os, const glm::dvec3 &x);
 
     double data[3];
 
@@ -144,12 +144,12 @@ public:
 private:
 };
 
-inline void vector_copy(double data[3], const Vector3d &x)
+inline void vector_copy(double data[3], const glm::dvec3 &x)
 {
     CopyVec3(data, x.data);
     return;
 }
-inline void vector_copy(std::vector<double> &dest, const Vector3d &x)
+inline void vector_copy(std::vector<double> &dest, const glm::dvec3 &x)
 {
     CopyVec3(dest, x.data);
     return;
@@ -162,14 +162,14 @@ inline void matrix_copy(double data[3][3], const Matrix3d &A)
 }
 
 // Compute y = A*x placing the result in y
-void matrix_vector_product(const Matrix3d &A, const Vector3d &x, Vector3d &y);
+void matrix_vector_product(const Matrix3d &A, const glm::dvec3 &x, glm::dvec3 &y);
 // Compute C = A * B placing result in C
 void matrix_matrix_product(const Matrix3d &A, const Matrix3d &B, Matrix3d &C);
 
 // Compute z = a*x + b*y (result stored in z)
-void vector_add(double a, const Vector3d &x,
-                double b, const Vector3d &y,
-                Vector3d &z);
+void vector_add(double a, const glm::dvec3 &x,
+                double b, const glm::dvec3 &y,
+                glm::dvec3 &z);
 /**
  * @brief Compute linear combination y = a*x + b*y (result stored in y)
  * @param a Scalar multiplier for vector x
@@ -177,8 +177,8 @@ void vector_add(double a, const Vector3d &x,
  * @param b Scalar multiplier for vector y
  * @param y Second vector (modified in-place with result)
  */
-void vector_add(double a, const Vector3d &x,
-                double b, Vector3d &y);
+void vector_add(double a, const glm::dvec3 &x,
+                double b, glm::dvec3 &y);
 
 /**
  * @brief Compute element-wise maximum of two vectors
@@ -186,7 +186,7 @@ void vector_add(double a, const Vector3d &x,
  * @param y Second vector
  * @param max Output vector containing element-wise maximum
  */
-void vector_max(const Vector3d &x, const Vector3d &y, Vector3d &max);
+void vector_max(const glm::dvec3 &x, const glm::dvec3 &y, glm::dvec3 &max);
 
 /**
  * @brief Compute element-wise minimum of two vectors
@@ -194,7 +194,7 @@ void vector_max(const Vector3d &x, const Vector3d &y, Vector3d &max);
  * @param y Second vector
  * @param min Output vector containing element-wise minimum
  */
-void vector_min(const Vector3d &x, const Vector3d &y, Vector3d &min);
+void vector_min(const glm::dvec3 &x, const glm::dvec3 &y, glm::dvec3 &min);
 
 /**
  * @brief Compute standard Euclidean dot product
@@ -202,7 +202,7 @@ void vector_min(const Vector3d &x, const Vector3d &y, Vector3d &min);
  * @param y Second vector
  * @return Dot product x·y
  */
-double dot_product(const Vector3d &x, const Vector3d &y);
+double dot_product(const glm::dvec3 &x, const glm::dvec3 &y);
 
 /**
  * @brief Compute standard Euclidean cross product
@@ -210,35 +210,35 @@ double dot_product(const Vector3d &x, const Vector3d &y);
  * @param v Second vector
  * @param w Result vector
  */
-void cross_product(const Vector3d &u, const Vector3d &v, Vector3d &w);
+void cross_product(const glm::dvec3 &u, const glm::dvec3 &v, glm::dvec3 &w);
 
-double error(const Vector3d &u, const Vector3d &v);
-double error_inf(const Vector3d &u, const Vector3d &v);
+double error(const glm::dvec3 &u, const glm::dvec3 &v);
+double error_inf(const glm::dvec3 &u, const glm::dvec3 &v);
 
 /**
  * @brief Compute Euclidean norm (length) of vector
  * @param x Input vector
  * @return ||x||₂ (L2 norm)
  */
-double vector_norm(const Vector3d &x);
+double vector_norm(const glm::dvec3 &x);
 
 /**
  * @brief Normalize vector to unit length (modifies vector in-place)
  * @param x Vector to normalize
  */
-void make_unit_vector(Vector3d &x);
-// void transform_to_local(Vector3d &pos_ref,
-//                         Vector3d &cos_ref,
-//                         Vector3d &origin,
+void make_unit_vector(glm::dvec3 &x);
+// void transform_to_local(glm::dvec3 &pos_ref,
+//                         glm::dvec3 &cos_ref,
+//                         glm::dvec3 &origin,
 //                         Matrix3d &ref_to_local,
-//                         Vector3d &pos_local,
-//                         Vector3d &cos_local);
-// void transform_to_reference(Vector3d &pos_local,
-//                             Vector3d &cos_local,
-//                             Vector3d &origin,
+//                         glm::dvec3 &pos_local,
+//                         glm::dvec3 &cos_local);
+// void transform_to_reference(glm::dvec3 &pos_local,
+//                             glm::dvec3 &cos_local,
+//                             glm::dvec3 &origin,
 //                             Matrix3d &local_to_ref,
-//                             Vector3d &pos_ref,
-//                             Vector3d &cos_ref);
+//                             glm::dvec3 &pos_ref,
+//                             glm::dvec3 &cos_ref);
 
 /**
  * @brief Compute transformation matrices from Euler angles
@@ -246,7 +246,7 @@ void make_unit_vector(Vector3d &x);
  * @param ref_to_local Output matrix for reference-to-local transformation
  * @param local_to_ref Output matrix for local-to-reference transformation
  */
-void compute_transform_matrices(Vector3d &euler,
+void compute_transform_matrices(glm::dvec3 &euler,
                                 Matrix3d &ref_to_local,
                                 Matrix3d &local_to_ref);
 
@@ -255,5 +255,6 @@ void compute_transform_matrices(Vector3d &euler,
 /**
  * @}
  */
+#endif
 
 #endif

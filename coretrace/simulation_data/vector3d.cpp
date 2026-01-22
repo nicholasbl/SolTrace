@@ -1,59 +1,60 @@
-
-#include "vector3d.hpp"
+#include "glm::dvec3.hpp"
 
 // #include <cassert>
 
 #include <algorithm>
 #include <cmath>
 
+#if 0
+
 #include "matvec.hpp"
 
 namespace SolTrace::Data
 {
 
-    // inline void vector_copy(double data[3], const Vector3d &x)
+    // inline void vector_copy(double data[3], const glm::dvec3 &x)
     // {
     //     CopyVec3(data, x.data);
     //     return;
     // }
-    // inline void vector_copy(std::vector<double> &dest, const Vector3d &x)
+    // inline void vector_copy(std::vector<double> &dest, const glm::dvec3 &x)
     // {
     //     CopyVec3(dest, x.data);
     //     return;
     // }
 
-    Vector3d::Vector3d()
+    glm::dvec3::glm::dvec3()
     {
         this->zero();
         return;
     }
 
-    Vector3d::Vector3d(const double data[3])
+    glm::dvec3::glm::dvec3(const double data[3])
     {
         for (int i = 0; i < 3; ++i)
             this->data[i] = data[i];
         return;
     }
-    Vector3d::Vector3d(double x, double y, double z)
+    glm::dvec3::glm::dvec3(double x, double y, double z)
     {
         this->data[0] = x;
         this->data[1] = y;
         this->data[2] = z;
         return;
     }
-    Vector3d::~Vector3d()
+    glm::dvec3::~glm::dvec3()
     {
         return;
     }
 
-    void Vector3d::zero()
+    void glm::dvec3::zero()
     {
         for (int i = 0; i < 3; ++i)
             this->data[i] = 0.0;
         return;
     }
 
-    void Vector3d::set_values(double x, double y, double z)
+    void glm::dvec3::set_values(double x, double y, double z)
     {
         this->data[0] = x;
         this->data[1] = y;
@@ -61,37 +62,37 @@ namespace SolTrace::Data
         return;
     }
 
-    void Vector3d::scalar_mult(double alpha)
+    void glm::dvec3::scalar_mult(double alpha)
     {
         for (int i = 0; i < 3; ++i)
             this->data[i] *= alpha;
         return;
     }
 
-    void Vector3d::make_unit()
+    void glm::dvec3::make_unit()
     {
         make_unit_vector(*this);
         return;
     }
 
-    double Vector3d::norm() const
+    double glm::dvec3::norm() const
     {
         return vector_norm(*this);
     }
 
-    const double &Vector3d::operator[](int idx) const
+    const double &glm::dvec3::operator[](int idx) const
     {
         assert(idx >= 0 && idx < 3);
         return this->data[idx];
     }
 
-    double &Vector3d::operator[](int idx)
+    double &glm::dvec3::operator[](int idx)
     {
         assert(idx >= 0 && idx < 3);
         return this->data[idx];
     }
 
-    std::ostream &operator<<(std::ostream &os, const Vector3d &x)
+    std::ostream &operator<<(std::ostream &os, const glm::dvec3 &x)
     {
         os << "[" << x.data[0] << ", "
            << x.data[1] << ", "
@@ -170,7 +171,7 @@ namespace SolTrace::Data
     }
 
     // Compute y = A*x placing the result in y
-    void matrix_vector_product(const Matrix3d &A, const Vector3d &x, Vector3d &y)
+    void matrix_vector_product(const Matrix3d &A, const glm::dvec3 &x, glm::dvec3 &y)
     {
         MatrixVectorMult(A.data, x.data, y.data);
         return;
@@ -182,9 +183,9 @@ namespace SolTrace::Data
         return;
     }
 
-    void vector_add(double a, const Vector3d &x,
-                    double b, const Vector3d &y,
-                    Vector3d &z)
+    void vector_add(double a, const glm::dvec3 &x,
+                    double b, const glm::dvec3 &y,
+                    glm::dvec3 &z)
     {
         for (int i = 0; i < 3; ++i)
         {
@@ -193,8 +194,8 @@ namespace SolTrace::Data
         return;
     }
 
-    void vector_add(double a, const Vector3d &x,
-                    double b, Vector3d &y)
+    void vector_add(double a, const glm::dvec3 &x,
+                    double b, glm::dvec3 &y)
     {
         for (int i = 0; i < 3; ++i)
         {
@@ -203,7 +204,7 @@ namespace SolTrace::Data
         return;
     }
 
-    void vector_max(const Vector3d &x, const Vector3d &y, Vector3d &max)
+    void vector_max(const glm::dvec3 &x, const glm::dvec3 &y, glm::dvec3 &max)
     {
         for (int i = 0; i < 3; ++i)
         {
@@ -212,7 +213,7 @@ namespace SolTrace::Data
         return;
     }
 
-    void vector_min(const Vector3d &x, const Vector3d &y, Vector3d &min)
+    void vector_min(const glm::dvec3 &x, const glm::dvec3 &y, glm::dvec3 &min)
     {
         for (int i = 0; i < 3; ++i)
         {
@@ -222,12 +223,12 @@ namespace SolTrace::Data
     }
 
     // Compute standard Euclidean dot product
-    double dot_product(const Vector3d &x, const Vector3d &y)
+    double dot_product(const glm::dvec3 &x, const glm::dvec3 &y)
     {
         return DOT(x.data, y.data);
     }
 
-    void cross_product(const Vector3d &u, const Vector3d &v, Vector3d &w)
+    void cross_product(const glm::dvec3 &u, const glm::dvec3 &v, glm::dvec3 &w)
     {
         double w0 = u[1] * v[2] - u[2] * v[1];
         double w1 = u[2] * v[0] - u[0] * v[2];
@@ -236,7 +237,7 @@ namespace SolTrace::Data
         return;
     }
 
-    double error(const Vector3d &u, const Vector3d &v)
+    double error(const glm::dvec3 &u, const glm::dvec3 &v)
     {
         double err = 0.0;
         double dx;
@@ -248,7 +249,7 @@ namespace SolTrace::Data
         return sqrt(err);
     }
 
-    double error_inf(const Vector3d &u, const Vector3d &v)
+    double error_inf(const glm::dvec3 &u, const glm::dvec3 &v)
     {
         double err = 0.0;
         for (int i = 0; i < 3; ++i)
@@ -258,12 +259,12 @@ namespace SolTrace::Data
         return err;
     }
 
-    double vector_norm(const Vector3d &x)
+    double vector_norm(const glm::dvec3 &x)
     {
         return sqrt(DOT(x.data, x.data));
     }
 
-    void make_unit_vector(Vector3d &x)
+    void make_unit_vector(glm::dvec3 &x)
     {
         double mag = vector_norm(x);
         assert(mag > 0.0);
@@ -275,12 +276,12 @@ namespace SolTrace::Data
         return;
     }
 
-    // void transform_to_local(Vector3d &pos_ref,
-    //                         Vector3d &cos_ref,
-    //                         Vector3d &origin,
+    // void transform_to_local(glm::dvec3 &pos_ref,
+    //                         glm::dvec3 &cos_ref,
+    //                         glm::dvec3 &origin,
     //                         Matrix3d &ref_to_local,
-    //                         Vector3d &pos_local,
-    //                         Vector3d &cos_local)
+    //                         glm::dvec3 &pos_local,
+    //                         glm::dvec3 &cos_local)
     // {
     //     TransformToLocal(pos_ref.data, cos_ref.data,
     //                      origin.data, ref_to_local.data,
@@ -288,12 +289,12 @@ namespace SolTrace::Data
     //     return;
     // }
 
-    // void transform_to_reference(Vector3d &pos_local,
-    //                             Vector3d &cos_local,
-    //                             Vector3d &origin,
+    // void transform_to_reference(glm::dvec3 &pos_local,
+    //                             glm::dvec3 &cos_local,
+    //                             glm::dvec3 &origin,
     //                             Matrix3d &local_to_ref,
-    //                             Vector3d &pos_ref,
-    //                             Vector3d &cos_ref)
+    //                             glm::dvec3 &pos_ref,
+    //                             glm::dvec3 &cos_ref)
     // {
     //     TransformToReference(pos_local.data, cos_local.data,
     //                          origin.data, local_to_ref.data,
@@ -301,7 +302,7 @@ namespace SolTrace::Data
     //     return;
     // }
 
-    void compute_transform_matrices(Vector3d &euler,
+    void compute_transform_matrices(glm::dvec3 &euler,
                                     Matrix3d &ref_to_local,
                                     Matrix3d &local_to_ref)
     {
@@ -312,3 +313,5 @@ namespace SolTrace::Data
     }
 
 } // namespace SolTrace::Data
+
+#endif

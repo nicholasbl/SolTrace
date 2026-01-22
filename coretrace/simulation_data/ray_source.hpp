@@ -14,9 +14,11 @@
 #include <limits>
 #include <map>
 
+#include <glm/vec3.hpp>
+
 #include "container.hpp"
 #include "datetime.hpp"
-#include "vector3d.hpp"
+
 
 namespace SolTrace::Data {
 
@@ -47,9 +49,9 @@ public:
     RaySource() {}
     virtual ~RaySource() {}
 
-    virtual const Vector3d &get_position() const = 0;
-    virtual Vector3d &get_position() = 0;
-    virtual void set_position(const Vector3d &) = 0;
+    virtual const glm::dvec3 &get_position() const = 0;
+    virtual glm::dvec3 &get_position() = 0;
+    virtual void set_position(const glm::dvec3 &) = 0;
     virtual void set_position(double, double, double) = 0;
     virtual void set_position(const DateTime &, double lat, double long) = 0;
     virtual SunShape get_shape() const = 0;

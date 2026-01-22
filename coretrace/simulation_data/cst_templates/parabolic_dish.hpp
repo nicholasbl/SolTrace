@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "single_element.hpp"
-#include "vector3d.hpp"
 
 namespace SolTrace::Data {
 
@@ -46,7 +45,7 @@ public:
 
     virtual void enforce_user_fields_set() const override;
 
-    const Vector3d &get_elevation_axis() const
+    const glm::dvec3 &get_elevation_axis() const
     {
         return this->elevation_axis;
     }
@@ -77,8 +76,8 @@ private:
     double tracking_elevation;
     double tracking_azimuth;
     // Defines the direction about which the dish can change its elevation
-    Vector3d elevation_axis;
-    Vector3d sun_position;
+    glm::dvec3 elevation_axis;
+    glm::dvec3 sun_position;
 
     std::vector<single_element_ptr> mirrors;
     std::vector<single_element_ptr> absorbers;

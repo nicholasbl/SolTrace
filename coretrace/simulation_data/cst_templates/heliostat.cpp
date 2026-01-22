@@ -27,10 +27,13 @@ namespace SolTrace::Data
           heliostat_area(-1.0),
           tracking_azimuth(-1.0),
           tracking_elevation(-1.0),
+          elevation_axis(0.0),
+          sun_position(0.0),
+          target_pos(0.0),
           target_set(false)
     {
-        this->elevation_axis.set_values(1.0, 0.0, 0.0);
-        this->sun_position.set_values(0.0, 0.0, 1.0);
+        this->elevation_axis = {1.0, 0.0, 0.0};
+        this->sun_position = {0.0, 0.0, 1.0};
         this->optics_mirror.set_ideal_reflection();
         return;
     }
@@ -68,8 +71,8 @@ namespace SolTrace::Data
         double panel_y = -0.5 * (this->aperture_size_y - panel_len_y);
 
         single_element_ptr elem;
-        Vector3d origin;
-        Vector3d aim;
+        glm::dvec3 origin;
+        glm::dvec3 aim;
         aperture_ptr ap;
         surface_ptr surf;
         element_id sts;
@@ -83,21 +86,21 @@ namespace SolTrace::Data
 
                 if (this->canting_method == NONE)
                 {
-                    origin.set_values(panel_x, panel_y, 0.0);
-                    aim.set_values(panel_x, panel_y, 1000.0);
+                    origin = {panel_x, panel_y, 0.0};
+                    aim = {panel_x, panel_y, 1000.0};
                 }
                 else if (this->canting_method == ON_AXIS)
                 {
                     c = 0.5 / (this->onaxis_canting_distance);
                     z = 0.5 * c * (panel_x * panel_x + panel_y * panel_y);
-                    origin.set_values(panel_x, panel_y, z);
-                    aim.set_values(0.0, 0.0, 2.0 * this->onaxis_canting_distance);
+                    origin = {panel_x, panel_y, z};
+                    aim = {0.0, 0.0, 2.0 * this->onaxis_canting_distance};
                 }
                 else if (this->canting_method == OFF_AXIS)
                 {
-                    origin.set_values(panel_x, panel_y, 0.0);
+                    origin = {panel_x, panel_y, 0.0};
                     // TODO: Set aim vector values
-                    aim.set_values(0.0, 0.0, 1.0);
+                    aim = {0.0, 0.0, 1.0};
                     throw std::runtime_error("OFF_AXIS is not yet implemented");
                 }
                 else if (this->canting_method == UNSET)
@@ -184,24 +187,23 @@ namespace SolTrace::Data
         this->tracking_elevation = elevation;
 
         sun_position_vector_degrees(this->sun_position, azimuth, elevation);
-        Vector3d target_dir;
-        vector_add(1.0, this->target_pos,
-                   -1.0, this->get_origin_global(),
-                   target_dir);
+        glm::dvec3 target_dir = this->target_pos +
+                                -1.0 * this->get_origin_global();
 
-        Vector3d aim_vector;
-        this->sun_position.make_unit();
-        target_dir.make_unit();
-        vector_add(1.0, target_dir, 1.0, this->sun_position, aim_vector);
-        aim_vector.make_unit();
+        glm::dvec3 aim_vector;
+        this->sun_position = glm::normalize(this->sun_position);
+
+        target_dir = glm::normalize(target_dir);
+        aim_vector = glm::normalize(target_dir + this->sun_position);
+
         this->convert_global_to_reference(this->aim, aim_vector);
         aim_vector = this->aim;
-        vector_add(1.0, this->get_origin_ref(),
-                   1000.0, this->aim);
+        this->aim = this->get_origin_ref() +
+                   1000.0 *this->aim;
 
         // Project into xy-plane
         aim_vector[2] = 0.0;
-        double theta = acos(aim_vector[0] / vector_norm(aim_vector));
+        double theta = acos(aim_vector[0] / glm::length(aim_vector));
         this->set_zrot_radians(theta);
 
         // std::cout << "Origin: " << this->origin
@@ -371,7 +373,7 @@ namespace SolTrace::Data
         return;
     }
 
-    void Heliostat::set_target_position(const Vector3d &pos)
+    void Heliostat::set_target_position(const glm::dvec3 &pos)
     {
         this->target_pos = pos;
         this->target_set = true;

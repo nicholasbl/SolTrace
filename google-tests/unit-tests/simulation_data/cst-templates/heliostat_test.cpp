@@ -139,7 +139,7 @@ TEST(Heliostat, ErrorChecking_CreateGeometryWithoutParameters)
     hs->set_canting(SolTrace::Data::Heliostat::NONE, 0.0, 0.0);
     EXPECT_THROW(hs->create_geometry(), std::invalid_argument);
 
-    hs->set_target_position(Vector3d(0.0, 0.0, 10.0));
+    hs->set_target_position(glm::dvec3(0.0, 0.0, 10.0));
     EXPECT_NO_THROW(hs->create_geometry());
 }
 
@@ -158,7 +158,7 @@ TEST(Heliostat, BuildParabolaNone)
     hs->set_focal_length(156.06);
     // hs->set_focal_point(0.0, 0.0, 156.06);
     hs->set_canting(Heliostat::NONE, 0.0, 0.0);
-    hs->set_target_position(Vector3d(0.0, 0.0, 1.0));
+    hs->set_target_position(glm::dvec3(0.0, 0.0, 1.0));
     hs->create_geometry();
 
     // TODO: Check that everything ends up in the proper position
@@ -177,9 +177,9 @@ TEST(Heliostat, BuildFlatOnAxis)
     hs->set_number_panels(3, 4);
     hs->set_gaps(0.1, 0.1);
     hs->set_focal_length(0.0);
-    // hs->set_focal_point(Vector3d(0.0, 0.0, 10.0));
+    // hs->set_focal_point(glm::dvec3(0.0, 0.0, 10.0));
     hs->set_canting(Heliostat::NONE, 0.0, 0.0);
-    hs->set_target_position(Vector3d(0.0, 0.0, 1.0));
+    hs->set_target_position(glm::dvec3(0.0, 0.0, 1.0));
     hs->create_geometry();
 
     // TODO: Check that everything ends up in the proper position
@@ -189,8 +189,8 @@ TEST(Heliostat, Trace)
 {
     constexpr uint_fast64_t NRAYS = 10000;
     constexpr uint_fast64_t N_ABSORBED_THRESH = NRAYS / 10;
-    const Vector3d zero(0.0, 0.0, 0.0);
-    const Vector3d khat(0.0, 0.0, 1.0);
+    const glm::dvec3 zero(0.0, 0.0, 0.0);
+    const glm::dvec3 khat(0.0, 0.0, 1.0);
 
     SimulationData my_sim;
     // Set parameters
@@ -213,17 +213,14 @@ TEST(Heliostat, Trace)
     stage_ptr st2 = SolTrace::Data::make_stage(2);
     st2->set_reference_frame_geometry(zero, khat, 0.0);
 
-    Vector3d sun_pos(0.0, 0.0, 1000.0);
-    Vector3d hs_origin(1.0, 1.0, 0.0);
-    Vector3d abs_origin(0.0, 0.0, 10.0);
-    Vector3d v1;
-    Vector3d v2;
-    Vector3d aim;
-    Vector3d aim_point;
-    vector_add(1.0, sun_pos, -1.0, hs_origin, v1);
-    vector_add(1.0, abs_origin, -1.0, hs_origin, v2);
-    vector_add(0.5, v1, 0.5, v2, aim);
-    vector_add(1.0, hs_origin, 1.0, aim, aim_point);
+    glm::dvec3 sun_pos(0.0, 0.0, 1000.0);
+    glm::dvec3 hs_origin(1.0, 1.0, 0.0);
+    glm::dvec3 abs_origin(0.0, 0.0, 10.0);
+
+    glm::dvec3 v1 = sun_pos - hs_origin;
+    glm::dvec3 v2 = abs_origin - hs_origin;
+    glm::dvec3 aim = 0.5 * v1 + 0.5 * v2;
+    glm::dvec3 aim_point = hs_origin + aim;
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
     hs->set_optics(mirror);
@@ -256,8 +253,8 @@ TEST(Heliostat, Trace)
     // absorb->set_zrot(0.0);
     // absorb->compute_coordinate_rotations();
     // aim.scalar_mult(-1.0);
-    vector_add(1.0, hs_origin, -1.0, abs_origin, aim);
-    vector_add(1.0, abs_origin, 1.0, aim, aim_point);
+    aim = hs_origin - abs_origin;
+    aim_point = abs_origin + aim;
     absorb->set_reference_frame_geometry(abs_origin, aim_point, 0.0);
     absorb->set_name("Absorber");
     absorb->enable();
@@ -335,17 +332,13 @@ TEST(Heliostat, ErrorChecking_UpdateGeometry)
     OpticalProperties mirror;
     mirror.set_ideal_reflection();
 
-    Vector3d sun_pos(0.0, 0.0, 1000.0);
-    Vector3d hs_origin(1.0, 1.0, 0.0);
-    Vector3d abs_origin(0.0, 0.0, 10.0);
-    Vector3d v1;
-    Vector3d v2;
-    Vector3d aim;
-    Vector3d aim_point;
-    vector_add(1.0, sun_pos, -1.0, hs_origin, v1);
-    vector_add(1.0, abs_origin, -1.0, hs_origin, v2);
-    vector_add(0.5, v1, 0.5, v2, aim);
-    vector_add(1.0, hs_origin, 1.0, aim, aim_point);
+    glm::dvec3 sun_pos(0.0, 0.0, 1000.0);
+    glm::dvec3 hs_origin(1.0, 1.0, 0.0);
+    glm::dvec3 abs_origin(0.0, 0.0, 10.0);
+    glm::dvec3 v1 = sun_pos - hs_origin;
+    glm::dvec3 v2 = abs_origin - hs_origin;
+    glm::dvec3 aim = 0.5 * v1 + 0.5 * v2;
+    glm::dvec3 aim_point = hs_origin + aim;
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
     hs->set_optics(mirror);
@@ -400,10 +393,10 @@ TEST(Heliostat, UpdateGeometry)
     OpticalProperties mirror;
     mirror.set_ideal_reflection();
 
-    Vector3d sun_pos;
-    sun_position_vector_degrees(sun_pos, sun_az, sun_el);
-    // Vector3d hs_origin(1.0, 1.0, 0.0);
-    Vector3d abs_origin(0.0, 0.0, 2.0);
+    glm::dvec3 sun_pos;
+    SolTrace::Data::sun_position_vector_degrees(sun_pos, sun_az, sun_el);
+    // glm::dvec3 hs_origin(1.0, 1.0, 0.0);
+    glm::dvec3 abs_origin(0.0, 0.0, 2.0);
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
     hs->set_optics(mirror);
@@ -422,17 +415,11 @@ TEST(Heliostat, UpdateGeometry)
     EXPECT_TRUE(SolTrace::Data::Element::is_success(ret));
 
     hs->update_geometry(sun_az, sun_el);
-    Vector3d result;
-    vector_add(-1.0, hs->get_origin_global(),
-               1.0, hs->get_aim_vector_global(),
-               result);
-    result.make_unit();
-    Vector3d temp;
-    vector_add(1.0, abs_origin, -1.0, hs->get_origin_global(), temp);
-    temp.make_unit();
-    double phi1 = acos(dot_product(result, sun_pos)) * SolTrace::Data::R2D;
-    double phi2 = acos(dot_product(result, temp)) * SolTrace::Data::R2D;
-    double phi3 = acos(dot_product(sun_pos, temp)) * SolTrace::Data::R2D;
+    glm::dvec3 result = glm::normalize(-hs->get_origin_global() + hs->get_aim_vector_global());
+    glm::dvec3 temp = glm::normalize(abs_origin - hs->get_origin_global());
+    double phi1 = acos(glm::dot(result, sun_pos)) * SolTrace::Data::R2D;
+    double phi2 = acos(glm::dot(result, temp)) * SolTrace::Data::R2D;
+    double phi3 = acos(glm::dot(sun_pos, temp)) * SolTrace::Data::R2D;
 
     EXPECT_NEAR(phi1, phi2, TOL);
     EXPECT_NEAR(phi1 + phi2, phi3, TOL);
@@ -451,8 +438,8 @@ TEST(Heliostat, UpdateGeometry)
     // aim.scalar_mult(-1.0);
     // vector_add(1.0, hs_origin, -1.0, abs_origin, aim);
     // vector_add(1.0, abs_origin, 1.0, aim, aim_point);
-    Vector3d aim_point(0.0, 0.0, 1.0);
-    vector_add(1.0, abs_origin, 1.0, aim_point);
+    glm::dvec3 aim_point(0.0, 0.0, 1.0);
+    aim_point = abs_origin + aim_point;
     absorb->set_reference_frame_geometry(abs_origin, aim_point, 0.0);
     absorb->set_name("Absorber");
     absorb->enable();

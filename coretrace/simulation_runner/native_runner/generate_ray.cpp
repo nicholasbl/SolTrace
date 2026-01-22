@@ -6,14 +6,14 @@
 namespace SolTrace::NativeRunner {
 
 void GenerateRay(
-	MTRand &myrng,
-	const double PosSunStage[3],
-	double Origin[3],
-	double RLocToRef[3][3],
-	TSun *Sun,
-	double PosRayGlobal[3],
-	double CosRayGlobal[3],
-	double PosRaySun[3])
+    MTRand& myrng,
+    const glm::dvec3& PosSunStage,
+    glm::dvec3& Origin,
+    glm::dmat3& RLocToRef,
+    TSun* Sun,
+    glm::dvec3& PosRayGlobal,
+    glm::dvec3& CosRayGlobal,
+    glm::dvec3& PosRaySun)
 {
 	/*{This procedure generates a randomly located ray in the x-y plane of the sun coordinate system in
 	 the z direction of the sun coord. system, checks to see that the ray is within the region of interest
@@ -31,9 +31,9 @@ void GenerateRay(
 		   - CosRayGlobal = Direction cosines of ray in Global coordinate system} */
 
 	double XRaySun = 0.0, YRaySun = 0.0, ZRaySun = 0.0;
-	double CosRaySun[3] = {0.0, 0.0, 0.0};
-	double PosRayStage[3] = {0.0, 0.0, 0.0};
-	double CosRayStage[3] = {0.0, 0.0, 0.0};
+    glm::dvec3 CosRaySun(0.0, 0.0, 0.0);
+    glm::dvec3 PosRayStage(0.0, 0.0, 0.0);
+    glm::dvec3 CosRayStage(0.0, 0.0, 0.0);
 	int NegPosSign = 0;
 	PosRaySun[0] = 0.;
 	PosRaySun[1] = 0.;
@@ -112,11 +112,21 @@ void GenerateRay(
 		CosRaySun[2] = 1.0;
 
 		//{Transform ray locations and dir cosines into Stage system}
-		TransformToReference(PosRaySun, CosRaySun, PosSunStage, Sun->RLocToRef, PosRayStage, CosRayStage);
+        Data::TransformToReference(PosRaySun,
+                                   CosRaySun,
+                                   PosSunStage,
+                                   Sun->RLocToRef,
+                                   PosRayStage,
+                                   CosRayStage);
 
-		//{Transform ray locations and dir cosines into global system}
-		TransformToReference(PosRayStage, CosRayStage, Origin, RLocToRef, PosRayGlobal, CosRayGlobal);
-	}
+        //{Transform ray locations and dir cosines into global system}
+        Data::TransformToReference(PosRayStage,
+                                   CosRayStage,
+                                   Origin,
+                                   RLocToRef,
+                                   PosRayGlobal,
+                                   CosRayGlobal);
+    }
 
 	return;
 }

@@ -25,8 +25,8 @@ namespace SolTrace::NativeRunner
                 Pos[i] = Cos[i] = 0.0;
         }
 
-        double Pos[3];
-        double Cos[3];
+        glm::dvec3 Pos;
+        glm::dvec3 Cos;
         uint_fast64_t Num;
         // bool active;
     };
@@ -143,20 +143,19 @@ namespace SolTrace::NativeRunner
         bool IncludeErrors,
         bool AsPowerTower);
 
-    SolTrace::Runner::RunnerStatus trace_single_thread(
-        unsigned thread_id,
-        thread_manager_ptr manager,
-        TSystem *System,
-        unsigned seed,
-        uint_fast64_t NumberOfRays,
-        uint_fast64_t MaxNumberOfRays,
-        bool IncludeSunShape,
-        bool IncludeErrors,
-        bool AsPowerTower,
-        const SolTrace::Data::Vector3d &PosSunStage,
-        st_hash_tree *sun_hash,
-        st_hash_tree *rec_hash,
-        const SolTrace::Data::Vector3d &reccm_helio);
+    SolTrace::Runner::RunnerStatus trace_single_thread(unsigned thread_id,
+                                                       thread_manager_ptr manager,
+                                                       TSystem *System,
+                                                       unsigned seed,
+                                                       uint_fast64_t NumberOfRays,
+                                                       uint_fast64_t MaxNumberOfRays,
+                                                       bool IncludeSunShape,
+                                                       bool IncludeErrors,
+                                                       bool AsPowerTower,
+                                                       const glm::dvec3 &PosSunStage,
+                                                       st_hash_tree *sun_hash,
+                                                       st_hash_tree *rec_hash,
+                                                       const glm::dvec3 &reccm_helio);
 
     struct ThreadInfo
     {
@@ -168,10 +167,10 @@ namespace SolTrace::NativeRunner
         bool IncludeSunShape;
         bool IncludeErrors;
         bool AsPowerTower;
-        SolTrace::Data::Vector3d PosSunStage;
+        glm::dvec3 PosSunStage;
         st_hash_tree *sun_hash;
         st_hash_tree *rec_hash;
-        SolTrace::Data::Vector3d reccm_helio;
+        glm::dvec3 reccm_helio;
     };
 
     // Hack to get around stupid compiler issue
