@@ -28,6 +28,7 @@ include_directories(.
 	./simulation_runner
 	./simulation_runner/native_runner
 	./simulation_runner/optix_runner
+	./simulation_runner/embree_runner
 )
 
 set(CORETRACE_SRC
@@ -115,6 +116,8 @@ else(MSVC)
 	endif()
 endif(MSVC)
 
+# Find Embree: use legacy variables to ensure compatibility across installs
+find_package(embree 4 REQUIRED)
 
 #####################################################################################################################
 #
@@ -129,7 +132,8 @@ if(SOLTRACE_BUILD_CORETRACE)
 		DEBUG_POSTFIX "d"
 		PREFIX ""
 		)
-	target_link_libraries(coretrace_api simdata native_runner optix_runner simresult)
+	target_include_directories(coretrace_api PRIVATE ${embree_INCLUDE_DIRS})
+	target_link_libraries(coretrace_api PRIVATE simdata native_runner optix_runner simresult embree_runner ${embree_LIBRARIES})
 
 	if(MSVC)
 		target_compile_definitions(coretrace_api PRIVATE STCORE_API_EXPORTS _STCOREDLL_)
@@ -147,7 +151,8 @@ if(SOLTRACE_BUILD_CORETRACE)
 		DEBUG_POSTFIX "d"
 		PREFIX ""
 		)
-	target_link_libraries(coretrace simdata native_runner optix_runner simresult)
+	target_include_directories(coretrace PRIVATE ${embree_INCLUDE_DIRS})
+	target_link_libraries(coretrace PRIVATE simdata native_runner optix_runner simresult embree_runner ${embree_LIBRARIES})
 
 #####################################################################################################################
 #

@@ -54,4 +54,6 @@ int run_optix_runner(SolTrace::Data::SimulationData& sd, TSystem* sys);
 
 int run_optix_file_runner(TSystem* sys, const char* file_name);
 
+int run_embree_runner(SolTrace::Data::SimulationData& sd, TSystem* sys);
+
 #endif

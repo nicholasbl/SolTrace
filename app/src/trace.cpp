@@ -120,7 +120,7 @@ TraceForm::TraceForm( wxWindow *parent, Project &prj )
 	flxsizer->AddStretchSpacer();
 
 	// Add a radio box for runner selection
-	wxString runnerChoices[] = { "Legacy", "Native runner (cpu)", "Native runner direct file (cpu)", "OptiX runner (gpu)", "OptiX direct file (gpu)"};
+	wxString runnerChoices[] = { "Legacy", "Native runner (cpu)", "Native runner direct file (cpu)", "OptiX runner (gpu)", "OptiX direct file (gpu)", "Embree (cpu)"};
 	m_runner_choice = new wxRadioBox(
 		sizer1->GetStaticBox(),
 		ID_RUNNER_RADIO,

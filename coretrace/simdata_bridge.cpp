@@ -10,6 +10,7 @@
 #include <native_runner.hpp>
 #include "simdata_io.hpp"
 #include <simulation_result.hpp>
+#include <embree_runner/embree_runner.hpp>
 
 // Private
 
@@ -430,4 +431,34 @@ int run_optix_file_runner(TSystem* sys, const char* file_name)
     assign_raydata_from_hitpoints(hp_vec, raynumber_vec, sys);
 
     return 0;
+}
+
+int run_embree_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
+{
+    // Make embree runner
+    SolTrace::EmbreeRunner::EmbreeRunner runner;
+
+    // Initialize
+    SolTrace::Runner::RunnerStatus sts = runner.initialize();
+
+    // Setup simualtion (convert simulation data to TSystem)
+    sts = runner.setup_simulation(&sd);
+
+    // Set stage parameters (specific to native runner)
+    set_tstage_parameters(sys, *runner.get_system());
+
+    // Run simulation
+    sts = runner.run_simulation();
+
+    // Collect results
+    SolTrace::Result::SimulationResult result;
+    sts = runner.report_simulation(&result, 1);
+
+    // Directly using TSystem object to get raydata (for now)
+    const SolTrace::EmbreeRunner::TSystem* tsys_native = runner.get_system();
+
+    // Copy raydata to legacy
+    get_raydata_from_native_tsys(sys, *tsys_native);
+
+    return -1;
 }
