@@ -333,8 +333,8 @@ TEST(Heliostat, TraceOffAxisCanting)
 {
     constexpr uint_fast64_t NRAYS = 10000;
     constexpr uint_fast64_t N_ABSORBED_THRESH = NRAYS / 10;
-    const Vector3d zero(0.0, 0.0, 0.0);
-    const Vector3d khat(0.0, 0.0, 1.0);
+    const glm::dvec3 zero(0.0);
+    const glm::dvec3 khat(0.0, 0.0, 1.0);
 
     SimulationData my_sim;
     // Set parameters
@@ -357,8 +357,8 @@ TEST(Heliostat, TraceOffAxisCanting)
     stage_ptr st2 = SolTrace::Data::make_stage(2);
     st2->set_reference_frame_geometry(zero, khat, 0.0);
 
-    Vector3d hs_origin(50.0, 50.0, 5.0);
-    Vector3d abs_origin(0.0, 0.0, 5.0);
+    glm::dvec3 hs_origin(50.0, 50.0, 5.0);
+    glm::dvec3 abs_origin(0.0, 0.0, 5.0);
     double canting_azimuth = 135.0;
     double canting_zenith = 90.0;
 
@@ -384,9 +384,8 @@ TEST(Heliostat, TraceOffAxisCanting)
     absorb->get_back_optical_properties()->set_ideal_absorption();
     absorb->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(10.0, 10.0)); // TODO: Set a tight aperture (2.35, 1.55)
     absorb->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Flat>());
-    Vector3d v1 = { 0.0, 1.0, 0.0 };
-    Vector3d aim_point;
-    vector_add(1.0, abs_origin, 1.0, v1, aim_point);
+    glm::dvec3 v1 = {0.0, 1.0, 0.0};
+    glm::dvec3 aim_point = abs_origin + v1;
     absorb->set_reference_frame_geometry(abs_origin, aim_point, 0.0);
     absorb->set_name("Absorber");
     absorb->enable();
@@ -396,8 +395,8 @@ TEST(Heliostat, TraceOffAxisCanting)
     my_sim.add_stage(st1);
     my_sim.add_stage(st2);
 
-    Vector3d sun_pos;
-    sun_position_vector_degrees(sun_pos, canting_azimuth, 90.0 - canting_zenith);
+    glm::dvec3 sun_pos;
+    SolTrace::Data::sun_position_vector_degrees(sun_pos, canting_azimuth, 90.0 - canting_zenith);
     auto sun = SolTrace::Data::make_ray_source<Sun>();
     sun->set_position(sun_pos);
     sun->set_shape(SolTrace::Data::SunShape::PILLBOX, 0.0, 4.65, 0.0);

@@ -33,8 +33,8 @@ public:
     bool print_info = false;        // Prints information on from simulation results (sun calculations, ray counts, flux calculations)
     bool save_results = false;      // Saves flux map results to CSV files
 
-    const Vector3d zero = { 0.0, 0.0, 0.0 }; // Global origin
-    const Vector3d khat = { 0.0, 0.0, 1.0 }; // Global z-axis
+    const glm::dvec3 zero = {0.0, 0.0, 0.0}; // Global origin
+    const glm::dvec3 khat = {0.0, 0.0, 1.0}; // Global z-axis
 
     double solar_azimuth = 180.0;
     double solar_elevation = 59.96377;
@@ -107,8 +107,8 @@ protected:
         mirror_back.set_ideal_absorption();
 
         // Initial setup of heliostat
-        Vector3d heliostat_origin(0.0, 500.0, 5.65);
-        Vector3d rec_origin(0.0, 0.0, 169.0);
+        glm::dvec3 heliostat_origin(0.0, 500.0, 5.65);
+        glm::dvec3 rec_origin(0.0, 0.0, 169.0);
         heliostat = SolTrace::Data::make_element<Heliostat>();
         heliostat->set_optics(mirror, mirror_back);
         heliostat->set_reference_frame_geometry(heliostat_origin, khat, 0.0);
@@ -128,9 +128,8 @@ protected:
         receiver->get_back_optical_properties()->set_ideal_reflection();
         receiver->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(12.0, 18.0));
         receiver->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Flat>());
-        Vector3d v1 = { 0.0, 1.0, 0.0 }; // Pointing North TODO: change to point towards heliostat
-        Vector3d aim_point;
-        vector_add(1.0, rec_origin, 1.0, v1, aim_point);
+        glm::dvec3 v1 = {0.0, 1.0, 0.0}; // Pointing North TODO: change to point towards heliostat
+        glm::dvec3 aim_point = rec_origin + v1;
         receiver->set_reference_frame_geometry(rec_origin, aim_point, 0.0);
         receiver->set_name("Receiver");
         receiver->enable();
@@ -144,7 +143,7 @@ protected:
 
     void setup_simData() {
         // Set up sun
-        Vector3d sun_pos = { 0.0, 0.0, 1000.0 };
+        glm::dvec3 sun_pos = {0.0, 0.0, 1000.0};
         sun = SolTrace::Data::make_ray_source<Sun>();
         sun->set_position(sun_pos);
         sun->set_shape(SolTrace::Data::SunShape::PILLBOX, 0.0, 4.65, 0.0);
@@ -167,22 +166,20 @@ protected:
 
     void set_heliostat_to_southeast() {
         // Update heliostat position to southeast of tower
-        Vector3d helio_origin(200.0, -200.0, 5.65);     // Southeast of tower
+        glm::dvec3 helio_origin(200.0, -200.0, 5.65); // Southeast of tower
         heliostat->set_reference_frame_geometry(helio_origin, khat, 0.0);
 
         // Point receiver to heliostat without tilting down
         helio_origin[2] = 0.0; // Project to ground plane
-        Vector3d rec_origin = receiver->get_origin_ref();
-        Vector3d aim_point;
-        vector_add(1.0, rec_origin, 1.0, helio_origin, aim_point);
+        glm::dvec3 rec_origin = receiver->get_origin_ref();
+        glm::dvec3 aim_point = rec_origin + helio_origin;
         receiver->set_reference_frame_geometry(rec_origin, aim_point, 90.0);
     }
 
     void set_slant_focal_length() {
         // Set focal length to slant range
-        Vector3d distance;
-        vector_add(-1.0, receiver->get_origin_global(), 1.0, heliostat->get_origin_global(), distance);
-        double focal_length = vector_norm(distance);
+        glm::dvec3 distance = -receiver->get_origin_global() + heliostat->get_origin_global();
+        double focal_length = glm::length(distance);
         heliostat->set_focal_length(focal_length);
         heliostat->create_geometry();
     }
@@ -197,17 +194,16 @@ protected:
         heliostat->set_number_panels(7, 5);
         heliostat->set_gaps(0.03, 0.03);
         // Set on-axis canting to slant range
-        Vector3d distance;
-        vector_add(-1.0, receiver->get_origin_global(), 1.0, heliostat->get_origin_global(), distance);
-        double focal_length = vector_norm(distance);
+        glm::dvec3 distance = -receiver->get_origin_global() + heliostat->get_origin_global();
+        double focal_length = glm::length(distance);
         heliostat->set_canting(Heliostat::CantingType::ON_AXIS, focal_length, 0.0);
         heliostat->create_geometry();
     }
 
     void update_simulation_geometry(double azimuth, double elevation) {
         // Set sun position
-        Vector3d sun_pos;
-        sun_position_vector_degrees(sun_pos, azimuth, elevation);
+        glm::dvec3 sun_pos;
+        SolTrace::Data::sun_position_vector_degrees(sun_pos, azimuth, elevation);
         sun->set_position(sun_pos);
         // Update heliostat position
         heliostat->update_geometry(azimuth, elevation);
@@ -375,14 +371,14 @@ protected:
 
         double minx, maxx, miny, maxy;
         minx = maxx = miny = maxy = 0.0;
-        Vector3d rec_origin = receiver->get_origin_global();
+        glm::dvec3 rec_origin = receiver->get_origin_global();
 
         // Autoscale
         if (true) {
             minx = miny = 1e199;
             maxx = maxy = -1e199;
-            Vector3d local_position;
-            Vector3d global_position;
+            glm::dvec3 local_position;
+            glm::dvec3 global_position;
 
             // automatically size the min/max x and y
             for (size_t i = 0; i < result.get_number_of_records(); i++) {
@@ -437,8 +433,8 @@ protected:
         fluxGrid.fill(0.0);
 
         for (size_t i = 0; i < result.get_number_of_records(); i++) {
-            Vector3d local_position;
-            Vector3d global_position;
+            glm::dvec3 local_position;
+            glm::dvec3 global_position;
 
             const ray_record_ptr rr = result[i];
             for (size_t j = 0; j < rr->interactions.size(); j++) {
@@ -565,15 +561,15 @@ protected:
     void check_outputs(SimulationResult result, std::string position) {
         // Check heliostat aim vector and z-rotation
         if (position == "N") {
-            EXPECT_NEAR(heliostat->get_aim_vector_ref().data[0], 0.0, 1.e-3);
-            EXPECT_NEAR(heliostat->get_aim_vector_ref().data[1], -276.838, 1.e-3);
-            EXPECT_NEAR(heliostat->get_aim_vector_ref().data[2], 635.35, 1.e-3);
+            EXPECT_NEAR(heliostat->get_aim_vector_ref().x, 0.0, 1.e-3);
+            EXPECT_NEAR(heliostat->get_aim_vector_ref().y, -276.838, 1.e-3);
+            EXPECT_NEAR(heliostat->get_aim_vector_ref().z, 635.35, 1.e-3);
             EXPECT_NEAR(heliostat->get_zrot(), 180.0, 1.e-4); // TODO: This should be zero
         }
         else if (position == "SE") {
-            EXPECT_NEAR(heliostat->get_aim_vector_ref().data[0], -207.952, 1.e-3);
-            EXPECT_NEAR(heliostat->get_aim_vector_ref().data[1], -125.53, 1.e-3);
-            EXPECT_NEAR(heliostat->get_aim_vector_ref().data[2], 915.611, 1.e-3);
+            EXPECT_NEAR(heliostat->get_aim_vector_ref().x, -207.952, 1.e-3);
+            EXPECT_NEAR(heliostat->get_aim_vector_ref().y, -125.53, 1.e-3);
+            EXPECT_NEAR(heliostat->get_aim_vector_ref().z, 915.611, 1.e-3);
             EXPECT_NEAR(heliostat->get_zrot(), -80.5688, 1.e-4);
         }
 

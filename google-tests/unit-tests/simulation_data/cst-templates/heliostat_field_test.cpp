@@ -37,11 +37,11 @@ public:
     bool save_results = false;      // Saves flux map results to CSV files
     bool save_raydata = false;      // Saves ray data to CSV file
 
-    const Vector3d zero = { 0.0, 0.0, 0.0 }; // Global origin
-    const Vector3d khat = { 0.0, 0.0, 1.0 }; // Global z-axis
+    const glm::dvec3 zero = {0.0, 0.0, 0.0}; // Global origin
+    const glm::dvec3 khat = {0.0, 0.0, 1.0}; // Global z-axis
 
     // Receiver parameters
-    Vector3d rec_origin = { 0.0, 0.0, 180.33 };   // This is the receiver center
+    glm::dvec3 rec_origin = {0.0, 0.0, 180.33}; // This is the receiver center
     double rec_radius = 15.45 / 2.0;
     double rec_height = 18.59;
     double rec_heat_shield_height = 3.2331;
@@ -123,12 +123,10 @@ protected:
         receiver->get_back_optical_properties()->set_ideal_reflection();
         receiver->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_height));
         receiver->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(rec_radius));
-        Vector3d offset = { 0.0, rec_radius, 0.0 };    // Cylinder origin is on the edge
-        Vector3d rec_origin_offset;
-        vector_add(1.0, rec_origin, 1.0, offset, rec_origin_offset);
-        Vector3d v1 = { 0.0, -1.0, 0.0 };
-        Vector3d aim_point;
-        vector_add(1.0, rec_origin_offset, 1.0, v1, aim_point);
+        glm::dvec3 offset = {0.0, rec_radius, 0.0}; // Cylinder origin is on the edge
+        glm::dvec3 rec_origin_offset = rec_origin + offset;
+        glm::dvec3 v1 = {0.0, -1.0, 0.0};
+        glm::dvec3 aim_point = rec_origin_offset + v1;
         receiver->set_reference_frame_geometry(rec_origin_offset, aim_point, 180.0);
         receiver->set_name("Receiver");
         receiver->enable();
@@ -139,8 +137,8 @@ protected:
         top_heat_shield->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_heat_shield_height));
         top_heat_shield->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(rec_radius));
         offset = { 0.0, rec_radius, (rec_height + rec_heat_shield_height)/2.};    // Cylinder origin is on the edge
-        vector_add(1.0, rec_origin, 1.0, offset, rec_origin_offset);
-        vector_add(1.0, rec_origin_offset, 1.0, v1, aim_point);
+        rec_origin_offset = rec_origin + offset;
+        aim_point = rec_origin_offset + v1;
         top_heat_shield->set_reference_frame_geometry(rec_origin_offset, aim_point, 0.0);
         top_heat_shield->set_name("Top Heat Shield");
         top_heat_shield->enable();
@@ -151,8 +149,8 @@ protected:
         bottom_heat_shield->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_heat_shield_height));
         bottom_heat_shield->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(rec_radius));
         offset = { 0.0, rec_radius, -(rec_height + rec_heat_shield_height) / 2. };    // Cylinder origin is on the edge
-        vector_add(1.0, rec_origin, 1.0, offset, rec_origin_offset);
-        vector_add(1.0, rec_origin_offset, 1.0, v1, aim_point);
+        rec_origin_offset = rec_origin + offset;
+        aim_point = rec_origin_offset + v1;
         bottom_heat_shield->set_reference_frame_geometry(rec_origin_offset, aim_point, 0.0);
         bottom_heat_shield->set_name("Bottom Heat Shield");
         bottom_heat_shield->enable();
@@ -210,7 +208,7 @@ protected:
         // Generate heliostat field
         heliostat_field.clear();
         for (size_t i = 0; i < x_coords.size(); i++) {
-            Vector3d heliostat_origin(x_coords[i], y_coords[i], 4.49);
+            glm::dvec3 heliostat_origin(x_coords[i], y_coords[i], 4.49);
             auto heliostat = SolTrace::Data::make_element<Heliostat>();
             heliostat->set_optics(mirror, mirror_back);
             heliostat->set_reference_frame_geometry(heliostat_origin, khat, 0.0);
@@ -220,14 +218,13 @@ protected:
             heliostat->set_canting(Heliostat::NONE, 0.0, 0.0);
             // Set aim point on the receiver surface
             double distance = sqrt(pow(x_coords[i], 2) + pow(y_coords[i], 2));
-            Vector3d aim_point = { rec_radius * (x_coords[i] / distance),
-                                   rec_radius * (y_coords[i] / distance),
-                                   rec_origin[2]};
+            glm::dvec3 aim_point = {rec_radius * (x_coords[i] / distance),
+                                    rec_radius * (y_coords[i] / distance),
+                                    rec_origin[2]};
             heliostat->set_target_position(aim_point);
             // At-slant focal length - to center of receiver
-            Vector3d slant;
-            vector_add(-1.0, rec_origin, 1.0, heliostat_origin, slant);  //aim_point
-            double focal_length = vector_norm(slant);
+            glm::dvec3 slant = -rec_origin + heliostat_origin; //aim_point
+            double focal_length = glm::length(slant);
             heliostat->set_focal_length(focal_length);
 
             heliostat->create_geometry();
@@ -240,11 +237,11 @@ protected:
     void set_scatter_aimpoints() {
         int helio_idx = 0;
         for (const auto& heliostat : heliostat_field) {
-            Vector3d heliostat_origin = heliostat->get_origin_global();
+            glm::dvec3 heliostat_origin = heliostat->get_origin_global();
             double distance = sqrt(pow(heliostat_origin[0], 2) + pow(heliostat_origin[1], 2));
-            Vector3d aim_point = { rec_radius * (heliostat_origin[0] / distance),
-                                   rec_radius * (heliostat_origin[1] / distance),
-                                   rec_origin[2] + scatter_aim_elevation[helio_idx] };
+            glm::dvec3 aim_point = {rec_radius * (heliostat_origin[0] / distance),
+                                    rec_radius * (heliostat_origin[1] / distance),
+                                    rec_origin[2] + scatter_aim_elevation[helio_idx]};
             heliostat->set_target_position(aim_point);
             heliostat->create_geometry();
             helio_idx++;
@@ -253,7 +250,7 @@ protected:
 
     void assign_focal_lengths_banded() {
         for (const auto& heliostat : heliostat_field) {
-            Vector3d heliostat_origin = heliostat->get_origin_global();
+            glm::dvec3 heliostat_origin = heliostat->get_origin_global();
             double distance = sqrt(pow(heliostat_origin[0], 2) + pow(heliostat_origin[1], 2));
             double focal_length = 0.0;
             if (distance <= 502.5)
@@ -275,7 +272,7 @@ protected:
     void assign_focal_lengths_canting_banded() {
         // NOTE: This was created for task 1b where the focal lengths were set to the canting distances.
         for (const auto& heliostat : heliostat_field) {
-            Vector3d heliostat_origin = heliostat->get_origin_global();
+            glm::dvec3 heliostat_origin = heliostat->get_origin_global();
             double distance = sqrt(pow(heliostat_origin[0], 2) + pow(heliostat_origin[1], 2));
             double focal_length = 0.0;
             if (distance <= 502.0)
@@ -296,9 +293,8 @@ protected:
 
     void assign_canted_slant(bool flat_facets) {
         for (const auto& heliostat : heliostat_field) {
-            Vector3d slant;
-            vector_add(-1.0, rec_origin, 1.0, heliostat->get_origin_global(), slant);
-            double slant_distance = vector_norm(slant);
+            glm::dvec3 slant = -rec_origin + heliostat->get_origin_global();
+            double slant_distance = glm::length(slant);
             heliostat->set_number_panels(6, 5);
             heliostat->set_gaps(0.02, 0.02);
             heliostat->set_canting(Heliostat::CantingType::ON_AXIS, slant_distance, 0.0);
@@ -312,7 +308,7 @@ protected:
     void assign_canted_banded(bool flat_facets) {
         // Modify heliostat canting to bands - to center of receiver
         for (const auto& heliostat : heliostat_field) {
-            Vector3d heliostat_origin = heliostat->get_origin_global();
+            glm::dvec3 heliostat_origin = heliostat->get_origin_global();
             double distance = sqrt(pow(heliostat_origin[0], 2) + pow(heliostat_origin[1], 2));
             double cant_distance = 0.0;
             if (distance <= 502.0)
@@ -336,7 +332,7 @@ protected:
 
     void setup_simData() {
         // Set up sun
-        Vector3d sun_pos = { 0.0, 0.0, 1000.0 };
+        glm::dvec3 sun_pos = {0.0, 0.0, 1000.0};
         sun = SolTrace::Data::make_ray_source<Sun>();
         sun->set_position(sun_pos);
         sun->set_shape(SolTrace::Data::SunShape::PILLBOX, 0.0, 4.65, 0.0);
@@ -365,8 +361,8 @@ protected:
 
     void update_simulation_geometry(double azimuth, double elevation) {
         // Set sun position
-        Vector3d sun_pos;
-        sun_position_vector_degrees(sun_pos, azimuth, elevation);
+        glm::dvec3 sun_pos;
+        SolTrace::Data::sun_position_vector_degrees(sun_pos, azimuth, elevation);
         sun->set_position(sun_pos);
         // Update heliostat positions
         for (const auto& heliostat : heliostat_field) {
@@ -586,14 +582,14 @@ protected:
 
         double minx, maxx, miny, maxy;
         minx = maxx = miny = maxy = 0.0;
-        Vector3d rec_origin = receiver->get_origin_global();
+        glm::dvec3 rec_origin = receiver->get_origin_global();
 
         // Autoscale
         if (true) {
             minx = miny = 1e199;
             maxx = maxy = -1e199;
-            Vector3d local_position;
-            Vector3d global_position;
+            glm::dvec3 local_position;
+            glm::dvec3 global_position;
 
             // automatically size the min/max x and y
             for (size_t i = 0; i < result.get_number_of_records(); i++) {
@@ -648,8 +644,8 @@ protected:
         fluxGrid.fill(0.0);
 
         for (size_t i = 0; i < result.get_number_of_records(); i++) {
-            Vector3d local_position;
-            Vector3d global_position;
+            glm::dvec3 local_position;
+            glm::dvec3 global_position;
 
             const ray_record_ptr rr = result[i];
             for (size_t j = 0; j < rr->interactions.size(); j++) {

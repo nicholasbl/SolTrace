@@ -25,8 +25,8 @@ using SolTrace::NativeRunner::TSystem;
 TEST(NativeRunner, PerformanceTest)
 {
     const uint_fast64_t NRAYS = 100000;
-    const Vector3d zero(0.0, 0.0, 0.0);
-    const Vector3d khat(0.0, 0.0, 1.0);
+    const glm::dvec3 zero(0.0, 0.0, 0.0);
+    const glm::dvec3 khat(0.0, 0.0, 1.0);
 
     const uint_fast64_t NX = 4;
     const uint_fast64_t NY = 2;
@@ -63,13 +63,13 @@ TEST(NativeRunner, PerformanceTest)
     stage_ptr st2 = make_stage(2);
     st2->set_reference_frame_geometry(zero, khat, 0.0);
 
-    Vector3d sun_pos(0.0, 0.0, 10000.0);
-    Vector3d abs_origin(0.0, 0.0, 10.0);
-    Vector3d hs_origin;
-    Vector3d v1;
-    Vector3d v2;
-    Vector3d aim;
-    Vector3d aim_point;
+    glm::dvec3 sun_pos(0.0, 0.0, 10000.0);
+    glm::dvec3 abs_origin(0.0, 0.0, 10.0);
+    glm::dvec3 hs_origin;
+    glm::dvec3 v1;
+    glm::dvec3 v2;
+    glm::dvec3 aim;
+    glm::dvec3 aim_point;
 
     // double xpos = -1.0 * LX;
     // double ypos = -1.0 * LY;
@@ -81,7 +81,7 @@ TEST(NativeRunner, PerformanceTest)
         for (auto jy = 0; jy < NHY; ++jy)
         {
             ypos = dy * jy - LY;
-            hs_origin.set_values(xpos, ypos, 0.0);
+            hs_origin = {xpos, ypos, 0.0};
 
             // vector_add(1.0, sun_pos, -1.0, hs_origin, v1);
             // vector_add(1.0, abs_origin, -1.0, hs_origin, v2);
@@ -126,7 +126,7 @@ TEST(NativeRunner, PerformanceTest)
     // absorb->set_surface(make_surface<Flat>());
 
     aim_point = abs_origin;
-    aim_point[2] += vector_norm(aim_point);
+    aim_point[2] += glm::length(aim_point);
     absorb->set_reference_frame_geometry(abs_origin, aim_point, 0.0);
     absorb->set_name("Absorber");
     absorb->enable();
@@ -253,7 +253,7 @@ TEST(NativeRunner, PerformanceTest)
 //     // const TRayData *ray_data = &(sys->AllRayData);
 //     // size_t nrdata = ray_data->Count();
 
-//     // Vector3d point, cosines;
+//     // glm::dvec3 point, cosines;
 //     // int element;
 //     // int stage;
 //     // unsigned int raynum;
