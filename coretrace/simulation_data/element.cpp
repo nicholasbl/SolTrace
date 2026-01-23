@@ -7,6 +7,10 @@
 #include "json_helpers.hpp"
 #include "matvec.hpp"
 
+#define GLM_ENABLE_EXPERIMENTAL 1
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/io.hpp>
+
 namespace SolTrace::Data {
 
 // ElementContainer ElementBase::empty_container;
@@ -25,8 +29,8 @@ ElementBase::ElementBase() : Element(),
     this->origin = glm::dvec3(0.0);
 
     this->euler_angles = glm::dvec3(0.0);
-    this->reference_to_local = glm::mat3();
-    this->local_to_reference = glm::mat3();
+    this->reference_to_local = glm::identity<glm::dmat3>();
+    this->local_to_reference = glm::identity<glm::dmat3>();
 
     return;
 }
@@ -152,13 +156,13 @@ glm::dmat3 ElementBase::get_reference_to_local() const
 
 glm::dmat3 ElementBase::get_stage_to_local() const
 {
-    glm::dmat3 stage_to_local;
+    glm::dmat3 stage_to_local = glm::dmat3(0.0);
     if (this->is_stage())
     {
         // stage_to_local.set_value(0, 0, 1.0);
         // stage_to_local.set_value(1, 1, 1.0);
         // stage_to_local.set_value(2, 2, 1.0);
-        stage_to_local = {};
+        stage_to_local = glm::identity<glm::dmat3>();
     }
     else if (this->reference_element == nullptr)
     {
@@ -174,13 +178,10 @@ glm::dmat3 ElementBase::get_stage_to_local() const
 
 glm::dmat3 ElementBase::get_global_to_local() const
 {
-    glm::dmat3 global_to_local;
-    if (this->reference_element == nullptr)
-    {
+    glm::dmat3 global_to_local = glm::dmat3(0.0);
+    if (this->reference_element == nullptr) {
         global_to_local = this->reference_to_local;
-    }
-    else
-    {
+    } else {
         glm::dmat3 R = this->reference_element->get_global_to_local();
         global_to_local = this->reference_to_local * R;
     }
@@ -194,12 +195,10 @@ glm::dmat3 ElementBase::get_local_to_reference() const
 
 glm::dmat3 ElementBase::get_local_to_stage() const
 {
-    glm::dmat3 local_to_stage;
+    glm::dmat3 local_to_stage = glm::dmat3(0.0);
     if (this->is_stage())
     {
-        local_to_stage[0][0] = 1.0;
-        local_to_stage[1][1] = 1.0;
-        local_to_stage[2][2] = 1.0;
+        local_to_stage = glm::identity<glm::dmat3>();
     }
     else if (this->reference_element == nullptr)
     {
@@ -215,7 +214,7 @@ glm::dmat3 ElementBase::get_local_to_stage() const
 
 glm::dmat3 ElementBase::get_local_to_global() const
 {
-    glm::dmat3 local_to_global;
+    glm::dmat3 local_to_global = glm::dmat3(0.0);
     if (this->reference_element == nullptr)
     {
         local_to_global = this->local_to_reference;
@@ -234,7 +233,7 @@ int ElementBase::compute_coordinate_rotations()
 
     if (!this->coordinates_initialized)
     {
-        glm::dvec3 dr = glm::normalize(this->aim + -1.0 * this->origin);
+        glm::dvec3 dr = glm::normalize(this->aim - this->origin);
 
         this->euler_angles[0] = atan2(dr[0], dr[2]);
         this->euler_angles[1] = asin(dr[1]);
@@ -264,7 +263,7 @@ int ElementBase::set_reference_frame_geometry(const glm::dvec3 &origin,
 int ElementBase::convert_reference_to_local(glm::dvec3 &local,
                                             const glm::dvec3 &ref)
 {
-    glm::dvec3 temp = ref + -1.0 * this->origin;
+    glm::dvec3 temp = ref - this->origin;
     local = this->reference_to_local * temp;
     return 0;
 }

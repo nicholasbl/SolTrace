@@ -6,6 +6,8 @@
 
 #include "common.hpp"
 
+#include <glm/gtx/io.hpp>
+
 TEST(OpticalProperties, OutputOperator)
 {
     std::stringstream ss;
@@ -368,7 +370,7 @@ TEST(Element, CoordinateComputationsIdentity)
     EXPECT_TRUE(is_identical(aim, el->get_aim_vector_global()));
 
     // Operators
-    glm::dmat3 Q = {};
+    glm::dmat3 Q = glm::identity<glm::dmat3>();
 
     glm::dmat3 RtoL = el->get_reference_to_local();
     EXPECT_TRUE(is_identical(RtoL, Q));
@@ -386,7 +388,6 @@ TEST(Element, CoordinateComputationsIdentity)
 
 TEST(Element, CoordinateComputationsRotations)
 {
-    using SolTrace::Data::MatrixTranspose;
     using SolTrace::Data::PI;
 
     // **** Setup Answers **** //
@@ -404,7 +405,7 @@ TEST(Element, CoordinateComputationsRotations)
     Q1[0][2] = -0.5;
     Q1[1][2] = sqrt(3.0) / 6.0;
     Q1[2][2] = sqrt(6.0) / 3.0;
-    glm::dmat3 Q1t = glm::transpose(Q1);
+    //glm::dmat3 Q1t = glm::transpose(Q1);
     // Corresponding Euler angles in radians
     const double a1 = 0.0;
     const double b1 = asin(-1.0 / sqrt(3.0));
@@ -418,15 +419,15 @@ TEST(Element, CoordinateComputationsRotations)
 
     glm::dmat3 Q2;
     Q2[0][0] = (sqrt(8.0) + sqrt(6.0)) / 8.0;
-    Q2[0][1] = -0.75;
-    Q2[0][2] = (sqrt(6.0) - sqrt(8.0)) / 8.0;
     Q2[1][0] = (2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0;
-    Q2[1][1] = sqrt(3.0) / 4.0;
-    Q2[1][2] = (-2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0;
     Q2[2][0] = sqrt(6.0) / 4.0;
+    Q2[0][1] = -0.75;
+    Q2[1][1] = sqrt(3.0) / 4.0;
     Q2[2][1] = 0.5;
+    Q2[0][2] = (sqrt(6.0) - sqrt(8.0)) / 8.0;
+    Q2[1][2] = (-2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0;
     Q2[2][2] = sqrt(6.0) / 4.0;
-    glm::dmat3 Q2t = glm::transpose(Q2);
+    //glm::dmat3 Q2t = glm::transpose(Q2);
     // Corresponding Euler angles in radians
     const double a2 = PI / 4.0;
     const double b2 = PI / 6.0;
@@ -468,14 +469,14 @@ TEST(Element, CoordinateComputationsRotations)
     // Aim vector tests
     EXPECT_TRUE(is_identical(el->get_aim_vector_ref(), aim1, TOL));
     EXPECT_TRUE(is_identical(el->get_aim_vector_stage(), el->get_aim_vector_ref(), TOL));
-    result_vec = Q2t * aim1;
+    result_vec = Q2 * aim1;
     EXPECT_TRUE(is_identical(el->get_aim_vector_global(), result_vec, TOL));
 
     glm::dvec3 v_local(-1.0, 2.0, 4.0);
     glm::dvec3 v_stage;
     glm::dvec3 v_global;
-    v_stage = Q1t * v_local;
-    v_global = Q2t * v_stage;
+    v_stage = Q1 * v_local;
+    v_global = Q2 * v_stage;
 
     glm::dvec3 result;
 
@@ -597,7 +598,7 @@ TEST(Element, CoordinateComputations)
     Q1[1][2] = sqrt(3.0) / 6.0;
     Q1[2][2] = sqrt(6.0) / 3.0;
     // Local to stage matrix
-    glm::dmat3 Q1t = glm::transpose(Q1);
+    //glm::dmat3 Q1t = glm::transpose(Q1);
     // Corresponding Euler angles in radians
     const double a1 = 0.0;
     const double b1 = asin(-1.0 / sqrt(3.0));
@@ -615,16 +616,16 @@ TEST(Element, CoordinateComputations)
     // Global to stage matrix
     glm::dmat3 Q2;
     Q2[0][0] = (sqrt(8.0) + sqrt(6.0)) / 8.0;
-    Q2[0][1] = -0.75;
-    Q2[0][2] = (sqrt(6.0) - sqrt(8.0)) / 8.0;
     Q2[1][0] = (2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0;
-    Q2[1][1] = sqrt(3.0) / 4.0;
-    Q2[1][2] = (-2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0;
     Q2[2][0] = sqrt(6.0) / 4.0;
+    Q2[0][1] = -0.75;
+    Q2[1][1] = sqrt(3.0) / 4.0;
     Q2[2][1] = 0.5;
+    Q2[0][2] = (sqrt(6.0) - sqrt(8.0)) / 8.0;
+    Q2[1][2] = (-2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0;
     Q2[2][2] = sqrt(6.0) / 4.0;
     // Stage to global matrix
-    glm::dmat3 Q2t = glm::transpose(Q2);
+    //glm::dmat3 Q2t = glm::transpose(Q2);
     ;
     // Corresponding Euler angles in radians
     const double a2 = PI / 4.0;
@@ -654,9 +655,9 @@ TEST(Element, CoordinateComputations)
     EXPECT_TRUE(is_identical(el->get_origin_stage(), el->get_origin_ref()));
     EXPECT_TRUE(is_identical(el->get_origin_ref(), Origin1));
     // vector_add(1.0, Origin1, 1.0, Origin2, result_vec);
-    result_vec = Q2t * Origin1;
+    result_vec = Q2 * Origin1;
     result_vec = Origin2 + result_vec;
-    EXPECT_TRUE(is_identical(el->get_origin_global(), result_vec));
+    EXPECT_TRUE(is_identical(el->get_origin_global(), result_vec, TOL));
 
     // Euler angles tests
     result_vec = el->get_euler_angles();
@@ -671,17 +672,17 @@ TEST(Element, CoordinateComputations)
     // Aim vector tests
     EXPECT_TRUE(is_identical(el->get_aim_vector_ref(), aim1, TOL));
     EXPECT_TRUE(is_identical(el->get_aim_vector_stage(), el->get_aim_vector_ref(), TOL));
-    result_vec = Q2t * aim1;
+    result_vec = Q2 * aim1;
     result_vec = Origin2 + result_vec;
     EXPECT_TRUE(is_identical(el->get_aim_vector_global(), result_vec, TOL));
 
     glm::dvec3 v_local(-1.0, 2.0, 4.0);
     glm::dvec3 v_stage;
     glm::dvec3 v_global;
-    v_stage = Q1t * v_local;
+    v_stage = Q1 * v_local;
     v_stage = Origin1 + v_stage;
-    v_global = Q2t * v_stage;
-    v_global = Origin2 * v_global;
+    v_global = Q2 * v_stage;
+    v_global = Origin2 + v_global;
 
     glm::dvec3 result;
 
@@ -744,7 +745,7 @@ TEST(Element, VectorCoordinateComputations)
     Q1[1][2] = sqrt(3.0) / 6.0;
     Q1[2][2] = sqrt(6.0) / 3.0;
     // Local to stage matrix
-    glm::dmat3 Q1t = glm::transpose(Q1);
+    //glm::dmat3 Q1t = glm::transpose(Q1);
     // Corresponding Euler angles in radians
     const double a1 = 0.0;
     const double b1 = asin(-1.0 / sqrt(3.0));
@@ -762,23 +763,23 @@ TEST(Element, VectorCoordinateComputations)
     // Global to stage matrix
     glm::dmat3 Q2;
     Q2[0][0] = (sqrt(8.0) + sqrt(6.0)) / 8.0;
-    Q2[0][1] = -0.75;
-    Q2[0][2] = (sqrt(6.0) - sqrt(8.0)) / 8.0;
     Q2[1][0] = (2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0;
-    Q2[1][1] = sqrt(3.0) / 4.0;
-    Q2[1][2] = (-2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0;
     Q2[2][0] = sqrt(6.0) / 4.0;
+    Q2[0][1] = -0.75;
+    Q2[1][1] = sqrt(3.0) / 4.0;
     Q2[2][1] = 0.5;
+    Q2[0][2] = (sqrt(6.0) - sqrt(8.0)) / 8.0;
+    Q2[1][2] = (-2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0;
     Q2[2][2] = sqrt(6.0) / 4.0;
     // Stage to global matrix
-    glm::dmat3 Q2t = glm::transpose(Q2);
+    //glm::dmat3 Q2t = glm::transpose(Q2);
     // Corresponding Euler angles in radians
     const double a2 = PI / 4.0;
     const double b2 = PI / 6.0;
     const double g2 = PI / 3.0;
     // Corresponding aim vector (local z-axis in reference coordinates)
     glm::dvec3 aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
-    aim2 = Origin2 * aim2;
+    aim2 = Origin2 + aim2;
 
     // Z-Rotation is the last of the Euler angles but in degrees
     const double zrot2 = 60.0;
@@ -810,8 +811,8 @@ TEST(Element, VectorCoordinateComputations)
     glm::dvec3 v_local(-1.0, 2.0, 4.0);
     glm::dvec3 v_stage;
     glm::dvec3 v_global;
-    v_stage = Q1t * v_local;
-    v_global = Q2t * v_stage;
+    v_stage = Q1 * v_local;
+    v_global = Q2 * v_stage;
 
     glm::dvec3 result;
 

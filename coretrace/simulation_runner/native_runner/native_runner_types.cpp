@@ -128,16 +128,12 @@ namespace SolTrace::NativeRunner
                            icalc(nullptr),
                            Optics()
     {
-        int i, j;
-        for (i = 0; i < 3; i++)
-        {
-            // Origin[i] = AimPoint[i] = Euler[i] = PosSunCoords[i] = 0;
-            Origin[i] = AimPoint[i] = PosSunCoords[i] = 0;
-            // PosSunCoords[i] = 0;
-        }
-        for (i = 0; i < 3; i++)
-            for (j = 0; j < 3; j++)
-                RRefToLoc[i][j] = RLocToRef[i][j] = 0;
+        Origin = glm::dvec3{0.0};
+        AimPoint = glm::dvec3{0.0};
+        PosSunCoords = glm::dvec3{0.0};
+
+        RRefToLoc = {0.0};
+        RLocToRef = {0.0};
 
         // ZRot = 0;
         ZAperture = 0;
@@ -161,12 +157,10 @@ namespace SolTrace::NativeRunner
 
     void TSun::Reset()
     {
-        int i, j;
-        for (i = 0; i < 3; i++)
-            Origin[i] = Euler[i] = 0;
-        for (i = 0; i < 3; i++)
-            for (j = 0; j < 3; j++)
-                RRefToLoc[i][j] = RLocToRef[i][j] = 0;
+        Origin = glm::dvec3{0.0};
+        Euler = glm::dvec3{0.0};
+        RRefToLoc = {0.0};
+        RLocToRef = {0.0};
 
         PointSource = false;
         // ShapeIndex = ' ';
@@ -507,12 +501,12 @@ namespace SolTrace::NativeRunner
         tstage_ptr my_stage = std::make_shared<TStage>();
 
         // Use global coordinates as stage coordinates
-        my_stage->Origin = {};
-        my_stage->AimPoint = {};
+        my_stage->Origin = glm::dvec3{0.0};
+        my_stage->AimPoint = glm::dvec3{0.0};
         my_stage->AimPoint[2] = 1.0;
         my_stage->ZRot = 0.0;
-        my_stage->RRefToLoc = {};
-        my_stage->RLocToRef = {};
+        my_stage->RRefToLoc = glm::dmat3{0.0};
+        my_stage->RLocToRef = glm::dmat3{0.0};
 
         return my_stage;
     }

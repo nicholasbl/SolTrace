@@ -92,11 +92,12 @@ namespace SolTrace::NativeRunner
 
 			// increment position by tiny amount to get off the element
 			// if tracing to the same element
-			PosRayElement[0] = PosRayElement[0] + 1.0e-5 * CosRayElement[0];
-			PosRayElement[1] = PosRayElement[1] + 1.0e-5 * CosRayElement[1];
-			PosRayElement[2] = PosRayElement[2] + 1.0e-5 * CosRayElement[2];
+            PosRayElement = PosRayElement + 1.0e-5 * CosRayElement;
+            // PosRayElement[0] = PosRayElement[0] + 1.0e-5 * CosRayElement[0];
+            // PosRayElement[1] = PosRayElement[1] + 1.0e-5 * CosRayElement[1];
+            // PosRayElement[2] = PosRayElement[2] + 1.0e-5 * CosRayElement[2];
 
-			// {Determine if ray intersects element[j]; if so, Find intersection
+            // {Determine if ray intersects element[j]; if so, Find intersection
 			// point with surface of element[j] }
 			DetermineElementIntersectionNew(Element,
 											PosRayElement,

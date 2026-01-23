@@ -123,8 +123,8 @@ TEST(LinearAlgebra, MatrixVectorProduct)
     y = A * x;
     EXPECT_TRUE(is_identical(x, y));
 
-    A[0][1] = 2.0;
-    A[1][2] = 3.0;
+    A[1][0] = 2.0;
+    A[2][1] = 3.0;
     y = A * x;
     EXPECT_NEAR(y[0], 2.5, 1e-12);
     EXPECT_NEAR(y[1], -5.0, 1e-12);
@@ -134,26 +134,26 @@ TEST(LinearAlgebra, MatrixVectorProduct)
 TEST(LinearAlgebra, MatrixMatrixProduct)
 {
     glm::dmat3 A;
-    A[0][1] = 1.0;
-    A[0][2] = 2.0;
-    A[1][0] = -1.0;
-    A[1][1] = 1.0;
+    A[1][0] = 1.0;
     A[2][0] = 2.0;
+    A[0][1] = -1.0;
+    A[1][1] = 1.0;
+    A[0][2] = 2.0;
     A[2][2] = 1.0;
 
     glm::dmat3 B;
     B[0][0] = -1.0;
-    B[0][1] = 1.0;
+    B[1][0] = 1.0;
     B[1][1] = 1.0;
-    B[1][2] = -2.0;
+    B[2][1] = -2.0;
     B[2][2] = 1.0;
 
     glm::dmat3 Ctrue;
-    Ctrue[0][1] = 1.0;
     Ctrue[1][0] = 1.0;
-    Ctrue[1][2] = -2.0;
-    Ctrue[2][0] = -2.0;
-    Ctrue[2][1] = 2.0;
+    Ctrue[0][1] = 1.0;
+    Ctrue[2][1] = -2.0;
+    Ctrue[0][2] = -2.0;
+    Ctrue[1][2] = 2.0;
     Ctrue[2][2] = 1.0;
 
     glm::dmat3 C{0.0};
@@ -180,67 +180,75 @@ TEST(LinearAlgebra, dvec3OutputOperator)
 
     std::ostringstream oss1;
     oss1 << v1;
-    EXPECT_EQ(oss1.str(), "[1, 2, 3]");
+    EXPECT_EQ(oss1.str(), "[    1.000,    2.000,    3.000]");
 
     std::ostringstream oss2;
     oss2 << v2;
-    EXPECT_EQ(oss2.str(), "[-0.5, 0, 10.5]");
+    EXPECT_EQ(oss2.str(), "[   -0.500,    0.000,   10.500]");
 
     std::ostringstream oss3;
     oss3 << v3;
-    EXPECT_EQ(oss3.str(), "[0, 0, 0]");
+    EXPECT_EQ(oss3.str(), "[    0.000,    0.000,    0.000]");
 
     // Test with different precision
     glm::dvec3 v4(1.23456789, -2.34567891, 3.45678912);
     std::ostringstream oss4;
     oss4 << std::fixed << std::setprecision(3) << v4;
-    EXPECT_EQ(oss4.str(), "[1.235, -2.346, 3.457]");
+    EXPECT_EQ(oss4.str(), "[    1.235,   -2.346,    3.457]");
 }
 
 TEST(LinearAlgebra, dmat3OutputOperator)
 {
-    glm::dmat3 A(1.0);
+    glm::dmat3 A;
     A[0][0] = 1.0;
-    A[0][1] = 2.0;
-    A[0][2] = 3.0;
-    A[1][0] = 4.0;
+    A[1][0] = 2.0;
+    A[2][0] = 3.0;
+    A[0][1] = 4.0;
     A[1][1] = 5.0;
-    A[1][2] = 6.0;
-    A[2][0] = 7.0;
-    A[2][1] = 8.0;
+    A[2][1] = 6.0;
+    A[0][2] = 7.0;
+    A[1][2] = 8.0;
     A[2][2] = 9.0;
 
     std::ostringstream oss;
     oss << A;
-    EXPECT_EQ(oss.str(), "[1, 2, 3; 4, 5, 6; 7, 8, 9]");
+    EXPECT_EQ(oss.str(),
+              "\n[[    1.000,    2.000,    3.000]\n [    4.000,    5.000,    6.000]\n [    7.000,  "
+              "  8.000,    9.000]]");
 
     // Test identity matrix
-    glm::dmat3 I;
+    glm::dmat3 I = glm::identity<glm::dmat3>();
     std::ostringstream oss_identity;
     oss_identity << I;
-    EXPECT_EQ(oss_identity.str(), "[1, 0, 0; 0, 1, 0; 0, 0, 1]");
+    EXPECT_EQ(oss_identity.str(),
+              "\n[[    1.000,    0.000,    0.000]\n [    0.000,    1.000,    0.000]\n [    0.000,  "
+              "  0.000,    1.000]]");
 
     // Test zero matrix
     glm::dmat3 Z(0.0);
     std::ostringstream oss_zero;
     oss_zero << Z;
-    EXPECT_EQ(oss_zero.str(), "[0, 0, 0; 0, 0, 0; 0, 0, 0]");
+    EXPECT_EQ(oss_zero.str(),
+              "\n[[    0.000,    0.000,    0.000]\n [    0.000,    0.000,    0.000]\n [    0.000,  "
+              "  0.000,    0.000]]");
 
     // Test with negative values and different precision
     glm::dmat3 B;
     B[0][0] = -1.5;
-    B[0][1] = 2.25;
-    B[0][2] = -3.75;
-    B[1][0] = 0.0;
+    B[1][0] = 2.25;
+    B[2][0] = -3.75;
+    B[0][1] = 0.0;
     B[1][1] = -0.5;
-    B[1][2] = 1.0;
-    B[2][0] = 10.0;
-    B[2][1] = -20.0;
+    B[2][1] = 1.0;
+    B[0][2] = 10.0;
+    B[1][2] = -20.0;
     B[2][2] = 30.0;
 
     std::ostringstream oss_negative;
     oss_negative << std::fixed << std::setprecision(2) << B;
-    EXPECT_EQ(oss_negative.str(), "[-1.50, 2.25, -3.75; 0.00, -0.50, 1.00; 10.00, -20.00, 30.00]");
+    EXPECT_EQ(oss_negative.str(),
+              "\n[[   -1.500,    2.250,   -3.750]\n [    0.000,   -0.500,    1.000]\n [   10.000,  "
+              "-20.000,   30.000]]");
 }
 
 TEST(LinearAlgebra, dmat3GetValue)
@@ -258,35 +266,35 @@ TEST(LinearAlgebra, dmat3GetValue)
 
     // Set specific values and test retrieval
     A[0][0] = 1.5;
-    A[0][1] = -2.5;
-    A[0][2] = 3.7;
-    A[1][0] = -4.2;
+    A[1][0] = -2.5;
+    A[2][0] = 3.7;
+    A[0][1] = -4.2;
     A[1][1] = 5.8;
-    A[1][2] = -6.1;
-    A[2][0] = 7.9;
-    A[2][1] = -8.4;
+    A[2][1] = -6.1;
+    A[0][2] = 7.9;
+    A[1][2] = -8.4;
     A[2][2] = 9.6;
 
     EXPECT_DOUBLE_EQ(A[0][0], 1.5);
-    EXPECT_DOUBLE_EQ(A[0][1], -2.5);
-    EXPECT_DOUBLE_EQ(A[0][2], 3.7);
-    EXPECT_DOUBLE_EQ(A[1][0], -4.2);
+    EXPECT_DOUBLE_EQ(A[1][0], -2.5);
+    EXPECT_DOUBLE_EQ(A[2][0], 3.7);
+    EXPECT_DOUBLE_EQ(A[0][1], -4.2);
     EXPECT_DOUBLE_EQ(A[1][1], 5.8);
-    EXPECT_DOUBLE_EQ(A[1][2], -6.1);
-    EXPECT_DOUBLE_EQ(A[2][0], 7.9);
-    EXPECT_DOUBLE_EQ(A[2][1], -8.4);
+    EXPECT_DOUBLE_EQ(A[2][1], -6.1);
+    EXPECT_DOUBLE_EQ(A[0][2], 7.9);
+    EXPECT_DOUBLE_EQ(A[1][2], -8.4);
     EXPECT_DOUBLE_EQ(A[2][2], 9.6);
 
     // Test identity matrix
-    glm::dmat3 I;
+    glm::dmat3 I = glm::identity<glm::dmat3>();
     EXPECT_DOUBLE_EQ(I[0][0], 1.0);
-    EXPECT_DOUBLE_EQ(I[0][1], 0.0);
-    EXPECT_DOUBLE_EQ(I[0][2], 0.0);
     EXPECT_DOUBLE_EQ(I[1][0], 0.0);
-    EXPECT_DOUBLE_EQ(I[1][1], 1.0);
-    EXPECT_DOUBLE_EQ(I[1][2], 0.0);
     EXPECT_DOUBLE_EQ(I[2][0], 0.0);
+    EXPECT_DOUBLE_EQ(I[0][1], 0.0);
+    EXPECT_DOUBLE_EQ(I[1][1], 1.0);
     EXPECT_DOUBLE_EQ(I[2][1], 0.0);
+    EXPECT_DOUBLE_EQ(I[0][2], 0.0);
+    EXPECT_DOUBLE_EQ(I[1][2], 0.0);
     EXPECT_DOUBLE_EQ(I[2][2], 1.0);
 
     // Test very small and very large values

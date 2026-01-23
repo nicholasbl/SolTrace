@@ -48,11 +48,9 @@ void GenerateRay(
 
 	if (Sun->PointSource) // fixed this on 3-18-13
 	{
-		PosRayGlobal[0] = Sun->Origin[0];
-		PosRayGlobal[1] = Sun->Origin[1];
-		PosRayGlobal[2] = Sun->Origin[2];
+        PosRayGlobal = Sun->Origin;
 
-		if (myrng() <= 0.5)
+        if (myrng() <= 0.5)
 			NegPosSign = -1;
 		else
 			NegPosSign = 1;
@@ -73,14 +71,10 @@ void GenerateRay(
 
 		CosRayGlobal[2] = NegPosSign * myrng(); // random direction for z part of ray vector
 
-		double CosRayGMag = sqrt(CosRayGlobal[0] * CosRayGlobal[0] +
-								 CosRayGlobal[1] * CosRayGlobal[1] +
-								 CosRayGlobal[2] * CosRayGlobal[2]);
+        double CosRayGMag = glm::length(CosRayGlobal);
 
-		CosRayGlobal[0] = CosRayGlobal[0] / CosRayGMag; // obtain unit vector by dividing by magnitude
-		CosRayGlobal[1] = CosRayGlobal[1] / CosRayGMag;
-		CosRayGlobal[2] = CosRayGlobal[2] / CosRayGMag;
-	}
+        CosRayGlobal /= CosRayGMag;
+    }
 	else
 	{
 		// following changed on 09/26/05 to more efficiently generate rays relative to element center of mass in primary stage

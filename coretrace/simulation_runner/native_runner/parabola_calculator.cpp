@@ -77,8 +77,8 @@ namespace SolTrace::NativeRunner
 
         // std::cout << "Computing parabola intersection" << std::endl;
 
-        double x0 = PosLoc[0], y0 = PosLoc[1], z0 = PosLoc[2];
-        double mx = CosLoc[0], my = CosLoc[1], mz = CosLoc[2];
+        double x0 = PosLoc.x, y0 = PosLoc.y, z0 = PosLoc.z;
+        double mx = CosLoc.x, my = CosLoc.y, mz = CosLoc.z;
         double cx = this->cx, cy = this->cy;
         double t1, t2;
         double a, b, c;
@@ -103,15 +103,12 @@ namespace SolTrace::NativeRunner
             t1 = -c / b;
             p1 = PosLoc + t1 * CosLoc;
 
-            if (t1 > 0.0 && this->aper->is_in(p1[0], p1[1]))
-            {
+            if (t1 > 0.0 && this->aper->is_in(p1.x, p1.y)) {
                 *PathLength = t1;
                 // SetVec3(PosXYZ, x0 + t1 * mx, y0 + t1 * my, z0 + t1 * mz);
                 // AddVec3(1.0, PosLoc, t1, CosLoc, PosXYZ);
                 PosXYZ = p1;
-            }
-            else
-            {
+            } else {
                 // Intersection is behind the ray -- same as
                 // no solution.
                 sts = 1;
@@ -147,22 +144,17 @@ namespace SolTrace::NativeRunner
                 //           << "\nP2: " << p2
                 //           << std::endl;
 
-                if (t1 > 0.0 && this->aper->is_in(p1[0], p1[1]))
-                {
+                if (t1 > 0.0 && this->aper->is_in(p1.x, p1.y)) {
                     *PathLength = t1;
                     // SetVec3(PosXYZ, x0 + t1 * mx, y0 + t1 * my, z0 + t1 * mz);
                     // AddVec3(1.0, PosLoc, t1, CosLoc, PosXYZ);
                     PosXYZ = p1;
-                }
-                else if (t2 > 0.0 && this->aper->is_in(p2[0], p2[1]))
-                {
+                } else if (t2 > 0.0 && this->aper->is_in(p2.x, p2.y)) {
                     *PathLength = t2;
                     // SetVec3(PosXYZ, x0 + t2 * mx, y0 + t2 * my, z0 + t2 * mz);
                     // AddVec3(1.0, PosLoc, t2, CosLoc, PosXYZ);
                     PosXYZ = p2;
-                }
-                else
-                {
+                } else {
                     sts = 1;
                     *PathLength = 0.0;
                 }
@@ -194,7 +186,7 @@ namespace SolTrace::NativeRunner
         // (which is used currently) or the outside?
         double cx = this->cx;
         double cy = this->cy;
-        DFXYZ = {-cx * PosXYZ[0], -cy * PosXYZ[1], 1.0};
+        DFXYZ = {-cx * PosXYZ.x, -cy * PosXYZ.y, 1.0};
         return;
     }
 

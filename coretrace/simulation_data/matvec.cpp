@@ -266,13 +266,13 @@ namespace SolTrace::Data
         /*{Fill in elements of the transformation matrix as per Spencer and Murty paper
          page 673 equation (2)}*/
         RRefToLoc[0][0] = CosAlpha * CosGamma + SinAlpha * SinBeta * SinGamma;
-        RRefToLoc[0][1] = -CosBeta * SinGamma;
-        RRefToLoc[0][2] = -SinAlpha * CosGamma + CosAlpha * SinBeta * SinGamma;
-        RRefToLoc[1][0] = CosAlpha * SinGamma - SinAlpha * SinBeta * CosGamma;
+        RRefToLoc[1][0] = -CosBeta * SinGamma;
+        RRefToLoc[2][0] = -SinAlpha * CosGamma + CosAlpha * SinBeta * SinGamma;
+        RRefToLoc[0][1] = CosAlpha * SinGamma - SinAlpha * SinBeta * CosGamma;
         RRefToLoc[1][1] = CosBeta * CosGamma;
-        RRefToLoc[1][2] = -SinAlpha * SinGamma - CosAlpha * SinBeta * CosGamma;
-        RRefToLoc[2][0] = SinAlpha * CosBeta;
-        RRefToLoc[2][1] = SinBeta;
+        RRefToLoc[2][1] = -SinAlpha * SinGamma - CosAlpha * SinBeta * CosGamma;
+        RRefToLoc[0][2] = SinAlpha * CosBeta;
+        RRefToLoc[1][2] = SinBeta;
         RRefToLoc[2][2] = CosAlpha * CosBeta;
 
         /*{Transpose the matrix to get the inverse transformation matrix for going back
@@ -357,15 +357,25 @@ namespace SolTrace::Data
 
         /*{Fill in elements of the transformation matrix as per Spencer and Murty paper
          page 673 equation (2)}*/
-        RRefToLoc[0][0] = CosAlpha * CosGamma + SinAlpha * SinBeta * SinGamma;
-        RRefToLoc[0][1] = -CosBeta * SinGamma;
-        RRefToLoc[0][2] = -SinAlpha * CosGamma + CosAlpha * SinBeta * SinGamma;
-        RRefToLoc[1][0] = CosAlpha * SinGamma - SinAlpha * SinBeta * CosGamma;
-        RRefToLoc[1][1] = CosBeta * CosGamma;
-        RRefToLoc[1][2] = -SinAlpha * SinGamma - CosAlpha * SinBeta * CosGamma;
-        RRefToLoc[2][0] = SinAlpha * CosBeta;
-        RRefToLoc[2][1] = SinBeta;
-        RRefToLoc[2][2] = CosAlpha * CosBeta;
+        // RRefToLoc[0][0] = CosAlpha * CosGamma + SinAlpha * SinBeta * SinGamma;
+        // RRefToLoc[1][0] = -CosBeta * SinGamma;
+        // RRefToLoc[2][0] = -SinAlpha * CosGamma + CosAlpha * SinBeta * SinGamma;
+        // RRefToLoc[0][1] = CosAlpha * SinGamma - SinAlpha * SinBeta * CosGamma;
+        // RRefToLoc[1][1] = CosBeta * CosGamma;
+        // RRefToLoc[2][1] = -SinAlpha * SinGamma - CosAlpha * SinBeta * CosGamma;
+        // RRefToLoc[0][2] = SinAlpha * CosBeta;
+        // RRefToLoc[1][2] = SinBeta;
+        // RRefToLoc[2][2] = CosAlpha * CosBeta;
+
+        RRefToLoc[0] = {CosAlpha * CosGamma + SinAlpha * SinBeta * SinGamma,
+                        CosAlpha * SinGamma - SinAlpha * SinBeta * CosGamma,
+                        SinAlpha * CosBeta};
+
+        RRefToLoc[1] = {-CosBeta * SinGamma, CosBeta * CosGamma, SinBeta};
+
+        RRefToLoc[2] = {-SinAlpha * CosGamma + CosAlpha * SinBeta * SinGamma,
+                        -SinAlpha * SinGamma - CosAlpha * SinBeta * CosGamma,
+                        CosAlpha * CosBeta};
 
         /*{Transpose the matrix to get the inverse transformation matrix for going back
          to reference system.  This is used by the TransformToReference procedure.}*/
