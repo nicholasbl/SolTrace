@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 #include "utilities.hpp"
+#include "vector_utility.hpp"
 
 namespace SolTrace::Data
 {
@@ -35,6 +36,7 @@ namespace SolTrace::Data
         this->elevation_axis = {1.0, 0.0, 0.0};
         this->sun_position = {0.0, 0.0, 1.0};
         this->optics_mirror.set_ideal_reflection();
+        this->optics_back.set_ideal_absorption();
         return;
     }
 
@@ -61,9 +63,36 @@ namespace SolTrace::Data
                              this->gap_y * (this->num_panels_y - 1);
         panel_len_y /= this->num_panels_y;
 
+        double tracking_azimuth = 0.0, tracking_elevation = 0.0;
+        double delta_azimuth = 0.0, delta_elevation = 0.0;
+        glm::dvec3 elevation_axis_rotated = { 1.0, 0.0, 0.0 };
+        glm::dvec3 sun_vec;
         if (this->canting_method == OFF_AXIS)
         {
-            // TODO: Do stuff here...
+            // Determine sun position vector from azimuth and zenith
+            sun_position_vector_degrees(sun_vec,
+                                        this->offaxis_canting_sun_position_azimuth,
+                                        90.0 - this->offaxis_canting_sun_position_zenith);
+            glm::dvec3 target_dir;
+            vector_add(1.0, this->target_pos,               // TODO: is target pos set?
+                      -1.0, this->get_origin_global(),
+                      target_dir);
+            target_dir.make_unit();
+            glm::dvec3 aim_vector;
+            vector_add(1.0, target_dir, 1.0, sun_vec, aim_vector);
+            aim_vector.make_unit();
+
+            // Calculate the tracking azimuth and elevation from the aim vector
+            tracking_azimuth = atan2(aim_vector[0], aim_vector[1]);
+            tracking_elevation = asin(aim_vector[2]);
+            
+            // Calculate the panel's actual x-y-z location w/r/t the global coordinates
+            delta_azimuth = tracking_azimuth - PI;
+            delta_elevation = tracking_elevation - PI / 2.0;
+
+            glm::dvec3 z_axis = { 0.0, 0.0, 1.0 };
+            glm::dvec3 elevation_axis = { 1.0, 0.0, 0.0 };
+            rotate_vector_radians(z_axis, elevation_axis, -delta_azimuth, elevation_axis_rotated);
         }
 
         this->heliostat_area = 0.0;
@@ -98,10 +127,31 @@ namespace SolTrace::Data
                 }
                 else if (this->canting_method == OFF_AXIS)
                 {
-                    origin = {panel_x, panel_y, 0.0};
-                    // TODO: Set aim vector values
-                    aim = {0.0, 0.0, 1.0};
-                    throw std::runtime_error("OFF_AXIS is not yet implemented");
+                    origin = {panel_x, panel_y, 0.0}; // Facets center points all fall on the same plane
+
+                    // Calculate the panel's position within the global coordinates
+                    glm::dvec3 panel_pos = origin;
+                    glm::dvec3 scratch;
+                    glm::dvec3 z_axis = { 0.0, 0.0, 1.0 };
+                    rotate_vector_radians(z_axis, panel_pos, -delta_azimuth, scratch);
+                    rotate_vector_radians(elevation_axis_rotated, scratch, -delta_elevation, panel_pos);
+                    panel_pos = this ->get_origin_global() + panel_pos;
+
+                    // Determine the vector from the panel centroid to the target
+                    glm::dvec3 target_dir = this->target_pos - panel_pos; // TODO: is target pos set?
+
+                    normalize_inplace(target_dir);
+                    glm::dvec3 panel_norm = target_dir + sun_vec;
+                    normalize_inplace(panel_norm);
+
+                    // Translate back to stow position
+                    rotate_vector_radians(elevation_axis_rotated, panel_norm, delta_elevation, scratch);
+                    rotate_vector_radians(z_axis, scratch, delta_azimuth, panel_norm);
+
+                    // Scale aim to target and translate to panel position
+                    scratch = this->target_pos - panel_pos;
+                    double scale = 2.0 * glm::length(scratch);
+                    aim = scale * panel_norm + origin,;
                 }
                 else if (this->canting_method == UNSET)
                 {
@@ -132,7 +182,7 @@ namespace SolTrace::Data
 
                 // TODO: Make back optical properties accessible to user
                 elem->set_front_optical_properties(this->optics_mirror);
-                elem->set_back_optical_properties(this->optics_mirror);
+                elem->set_back_optical_properties(this->optics_back);
                 elem->enable();
 
                 this->heliostat_area += panel_len_x * panel_len_y;
@@ -202,17 +252,42 @@ namespace SolTrace::Data
                    1000.0 *this->aim;
 
         // Project into xy-plane
+<<<<<<< HEAD
         aim_vector[2] = 0.0;
         double theta = acos(aim_vector[0] / glm::length(aim_vector));
         this->set_zrot_radians(theta);
+=======
+        double aim_azimuth = atan2(aim_vector[0], aim_vector[1]);
+>>>>>>> origin/develop
 
-        // std::cout << "Origin: " << this->origin
-        //           << "\nAim Point: " << this->aim
-        //           << "\nZ Rot: " << this->zrot
-        //           << "\nAim Vector: " << aim_vector
-        //           << "\nTarget: " << this->target_pos
-        //           << "\nTarget Vector: " << target_dir
-        //           << std::endl;
+        // Elevation axis
+        Vector3d elevation_axis = { 1.0, 0.0, 0.0 };
+        Vector3d rotated_elevation_axis;
+        rotate_vector_radians(
+            { 0.0, 0.0, 1.0 },
+            elevation_axis,
+            -aim_azimuth,
+            rotated_elevation_axis);
+
+        Vector3d helio_y_axis;
+        cross_product(aim_vector, rotated_elevation_axis, helio_y_axis);
+        helio_y_axis.make_unit();
+
+        double gamma = 0.0;
+        if (aim_vector[1] != 1.0 && aim_vector[1] != -1.0)
+        {
+            double beta = asin(aim_vector[1]);
+            gamma = -atan2(rotated_elevation_axis[1] / cos(beta), helio_y_axis[1] / cos(beta));
+        }
+        this->set_zrot_radians(gamma);
+
+         //std::cout << "Origin: " << this->origin
+         //          << "\nAim Point: " << this->aim
+         //          << "\nZ Rot: " << this->zrot
+         //          << "\nAim Vector: " << aim_vector
+         //          << "\nTarget: " << this->target_pos
+         //          << "\nTarget Vector: " << target_dir
+         //          << std::endl;
 
         this->compute_coordinate_rotations();
 
@@ -311,9 +386,24 @@ namespace SolTrace::Data
         return;
     }
 
-    void Heliostat::set_optics(const OpticalProperties &optics)
+    void Heliostat::set_mirror_optics(const OpticalProperties &optics)
     {
         this->optics_mirror = optics;
+        // TODO: Need to update the subelements!
+        return;
+    }
+
+    void Heliostat::set_back_optics(const OpticalProperties& optics)
+    {
+        this->optics_back = optics;
+        // TODO: Need to update the subelements!
+        return;
+    }
+
+    void Heliostat::set_optics(const OpticalProperties& mirror_optics, const OpticalProperties& back_optics)
+    {
+        this->optics_mirror = mirror_optics;
+        this->optics_back = back_optics;
         // TODO: Need to update the subelements!
         return;
     }
