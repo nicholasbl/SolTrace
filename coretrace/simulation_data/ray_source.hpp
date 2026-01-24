@@ -13,6 +13,8 @@
 
 #include <limits>
 #include <map>
+#include <string>
+#include <utility>
 
 #include <glm/vec3.hpp>
 
