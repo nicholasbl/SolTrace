@@ -166,8 +166,8 @@ TEST(LinearAlgebra, CoordinateTransforms)
 {
     // TODO: Implement tests for compute_transform_matrices,
     // transform_to_local, and transform_to_reference functions
-    glm::dmat3 A;
-    glm::dmat3 B;
+    glm::dmat3 A = {0.0};
+    glm::dmat3 B = {0.0};
 
     EXPECT_TRUE(is_identical(A, B));
 }
