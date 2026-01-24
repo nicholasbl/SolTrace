@@ -133,7 +133,7 @@ TEST(LinearAlgebra, MatrixVectorProduct)
 
 TEST(LinearAlgebra, MatrixMatrixProduct)
 {
-    glm::dmat3 A;
+    glm::dmat3 A = {0.0};
     A[1][0] = 1.0;
     A[2][0] = 2.0;
     A[0][1] = -1.0;
@@ -141,7 +141,7 @@ TEST(LinearAlgebra, MatrixMatrixProduct)
     A[0][2] = 2.0;
     A[2][2] = 1.0;
 
-    glm::dmat3 B;
+    glm::dmat3 B = {0.0};
     B[0][0] = -1.0;
     B[1][0] = 1.0;
     B[1][1] = 1.0;
