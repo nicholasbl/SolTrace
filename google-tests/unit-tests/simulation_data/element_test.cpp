@@ -127,8 +127,8 @@ TEST(Element, VirtualElement)
     EXPECT_NE(rptr, nullptr);
     if (rptr != nullptr)
     {
-        EXPECT_EQ(rptr->x_length, LX);
-        EXPECT_EQ(rptr->y_length, LY);
+        EXPECT_EQ(rptr->x_length(), LX);
+        EXPECT_EQ(rptr->y_length(), LY);
     }
 
     ve.set_surface(make_surface<Flat>());
@@ -175,8 +175,8 @@ TEST(Element, VirtualPlane)
     EXPECT_NE(rptr, nullptr);
     if (rptr != nullptr)
     {
-        EXPECT_EQ(rptr->x_length, LX);
-        EXPECT_EQ(rptr->y_length, LY);
+        EXPECT_EQ(rptr->x_length(), LX);
+        EXPECT_EQ(rptr->y_length(), LY);
     }
 
     // These functions should have no effects

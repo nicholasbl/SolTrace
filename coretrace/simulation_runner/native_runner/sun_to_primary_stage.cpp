@@ -13,7 +13,7 @@ namespace SolTrace::NativeRunner
         TSystem *System,
         TStage *Stage,
         TSun *Sun,
-        glm::dvec3 PosSunStage)
+        glm::dvec3& PosSunStage)
     {
 
         /*{Purpose: To compute the sun position within primary sage and the maximum radius of a cicle seen from sun which encircles

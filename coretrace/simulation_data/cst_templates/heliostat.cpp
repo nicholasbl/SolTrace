@@ -249,9 +249,6 @@ namespace SolTrace::Data
                    1000.0 *this->aim;
 
         // Project into xy-plane
-        aim_vector[2] = 0.0;
-        double theta = acos(aim_vector[0] / glm::length(aim_vector));
-        this->set_zrot_radians(theta);
         double aim_azimuth = atan2(aim_vector[0], aim_vector[1]);
 
         // Elevation axis

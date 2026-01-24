@@ -8,7 +8,7 @@ namespace SolTrace::NativeRunner
 {
 
 bool SunToPrimaryStage(
-    thread_manager_ptr manager, TSystem *System, TStage *Stage, TSun *Sun, glm::dvec3 PosSunStage);
+    thread_manager_ptr manager, TSystem *System, TStage *Stage, TSun *Sun, glm::dvec3 &PosSunStage);
 
 } // namespace SolTrace::NativeRunner
 

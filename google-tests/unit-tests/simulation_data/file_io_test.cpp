@@ -531,10 +531,10 @@ TEST(io_json, apertures_read)
     auto rect_ptr = Aperture::make_aperture_from_json(jrectangle);
     auto rect_cast = dynamic_cast<Rectangle*>(rect_ptr.get());
     ASSERT_TRUE(rect_cast != nullptr);
-    EXPECT_DOUBLE_EQ(4, rect_cast->x_length);
-    EXPECT_DOUBLE_EQ(5, rect_cast->y_length);
-    EXPECT_DOUBLE_EQ(-2, rect_cast->x_coord);
-    EXPECT_DOUBLE_EQ(-2.5, rect_cast->y_coord);
+    EXPECT_DOUBLE_EQ(4, rect_cast->x_length());
+    EXPECT_DOUBLE_EQ(5, rect_cast->y_length());
+    EXPECT_DOUBLE_EQ(-2, rect_cast->x_coord());
+    EXPECT_DOUBLE_EQ(-2.5, rect_cast->y_coord());
 
     // EQUILATERAL_TRIANGLE
     json jtriangle_eq;

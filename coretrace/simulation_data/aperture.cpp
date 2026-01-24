@@ -9,6 +9,7 @@
 // #include <iostream>
 
 #include "constants.hpp"
+#include "vector_utility.hpp"
 
 namespace SolTrace::Data {
 
@@ -668,33 +669,32 @@ void IrregularQuadrilateral::write_json(nlohmann::ordered_json& jnode) const
 }
 
 Rectangle::Rectangle(double xlen, double ylen)
-    : Aperture(ApertureType::RECTANGLE),
-      x_length(xlen),
-      y_length(ylen)
+    : Aperture(ApertureType::RECTANGLE)
+    , m_length(xlen, ylen)
 {
     // Default to rectangle centered at the origin.
-    this->x_coord = -0.5 * this->x_length;
-    this->y_coord = -0.5 * this->y_length;
-    return;
+    m_coord = -0.5 * m_length;
+    update_cached();
 }
 
 Rectangle::Rectangle(const nlohmann::ordered_json& jnode)
     : Aperture(ApertureType::RECTANGLE)
 {
-    this->x_length = jnode.at("x_length");
-    this->y_length = jnode.at("y_length");
-    this->x_coord = jnode.at("x_coord");
-    this->y_coord = jnode.at("y_coord");
+    this->m_length.x = jnode.at("x_length");
+    this->m_length.y = jnode.at("y_length");
+    this->m_coord.x = jnode.at("x_coord");
+    this->m_coord.y = jnode.at("y_coord");
+    update_cached();
 }
 
 double Rectangle::aperture_area() const
 {
-    return this->x_length * this->y_length;
+    return glm::compMul(m_length);
 }
 
 double Rectangle::diameter_circumscribed_circle() const
 {
-    return sqrt(x_length * x_length + y_length * y_length);
+    return glm::length(m_length);
 }
 
 aperture_ptr Rectangle::make_copy() const
@@ -705,30 +705,25 @@ aperture_ptr Rectangle::make_copy() const
 
 bool Rectangle::is_in(double x, double y) const
 {
-    double xl = this->x_coord;
-    double yl = this->y_coord;
-    double xu = xl + this->x_length;
-    double yu = yl + this->y_length;
-    return (xl <= x && x <= xu && yl <= y && y <= yu);
+    return (m_coord.x <= x && x <= m_cached_range.x && m_coord.y <= y && y <= m_cached_range.y);
 }
 
 Rectangle::Rectangle(double xlen, double ylen, double xl, double yl)
-    : Aperture(ApertureType::RECTANGLE),
-      x_length(xlen),
-      y_length(ylen),
-      x_coord(xl),
-      y_coord(yl)
+    : Aperture(ApertureType::RECTANGLE)
+    , m_length(xlen, ylen)
+    , m_coord(xl, yl)
 {
+    update_cached();
 }
 
 void Rectangle::write_json(nlohmann::ordered_json& jnode) const
 {
     ApertureType type = ApertureType::RECTANGLE;
     jnode["aperture_type"] = ApertureTypeMap.at(type);
-    jnode["x_length"] = this->x_length;
-    jnode["y_length"] = this->y_length;
-    jnode["x_coord"] = this->x_coord;
-    jnode["y_coord"] = this->y_coord;
+    jnode["x_length"] = this->m_length.x;
+    jnode["y_length"] = this->m_length.y;
+    jnode["x_coord"] = this->m_coord.x;
+    jnode["y_coord"] = this->m_coord.y;
 }
 
 
@@ -739,10 +734,9 @@ Rectangle::triangulation() const {
     std::vector<int>    indices;
     for (int i = 0; i <= segments; ++i) {
         for (int j = 0; j <= segments; ++j) {
-            const double x = i * x_length / segments + x_coord;
-            const double y = j * y_length / segments + y_coord;
-            verts.push_back(x);
-            verts.push_back(y);
+            auto p = glm::dvec2(i, j) * m_length / double(segments) + m_coord;
+            verts.push_back(p.x);
+            verts.push_back(p.y);
         }
     }
     for (int i = 0; i < segments; ++i) {

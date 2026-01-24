@@ -54,20 +54,20 @@ namespace SolTrace::NativeRunner
         }
 
         // Validate rectangle dimensions
-        if (rect->x_length <= 0.0 || rect->y_length <= 0.0)
+        if (rect->x_length() <= 0.0 || rect->y_length() <= 0.0)
         {
             std::stringstream ss;
             ss << "CylinderCalculator: Rectangle dimensions must be positive, got: ("
-               << rect->x_length << ", " << rect->y_length << ")";
+               << rect->x_length() << ", " << rect->y_length() << ")";
             throw std::invalid_argument(ss.str());
         }
 
         // Validate that rectangle x_length matches cylinder diameter
         double expected_x_length = 2.0 * cylinder->radius;
-        if (fabs(expected_x_length - rect->x_length) > 1e-8)
+        if (fabs(expected_x_length - rect->x_length()) > 1e-8)
         {
             std::stringstream ss;
-            ss << "CylinderCalculator: Rectangle x_length (" << rect->x_length
+            ss << "CylinderCalculator: Rectangle x_length (" << rect->x_length()
                << ") must equal cylinder diameter (" << expected_x_length << ")";
             throw std::invalid_argument(ss.str());
         }
