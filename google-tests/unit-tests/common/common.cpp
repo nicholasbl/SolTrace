@@ -38,7 +38,14 @@ bool is_identical(const glm::dmat3 &A, const glm::dmat3 &B)
         }
     }
 
-    return maxAbs < 1E-300;
+    bool check = maxAbs < 1E-300;
+
+    if (!check) {
+        std::cout << "Matrix not equal: A = " << A << ", B = " << B << std::endl;
+        std::cout << "Tolerance = " << maxAbs << std::endl;
+    }
+
+    return check;
 }
 
 element_ptr make_configured_element()
