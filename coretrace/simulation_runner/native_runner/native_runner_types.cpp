@@ -52,6 +52,8 @@
 #include <memory>
 #include <sstream>
 
+#include "glm/ext/matrix_transform.hpp"
+
 #include "calculator_factory.hpp"
 #include "matvec.hpp"
 #include "native_runner_types.hpp"
@@ -505,8 +507,8 @@ namespace SolTrace::NativeRunner
         my_stage->AimPoint = glm::dvec3{0.0};
         my_stage->AimPoint[2] = 1.0;
         my_stage->ZRot = 0.0;
-        my_stage->RRefToLoc = glm::dmat3{0.0};
-        my_stage->RLocToRef = glm::dmat3{0.0};
+        my_stage->RRefToLoc = glm::identity<glm::dmat3>();
+        my_stage->RLocToRef = glm::identity<glm::dmat3>();
 
         return my_stage;
     }

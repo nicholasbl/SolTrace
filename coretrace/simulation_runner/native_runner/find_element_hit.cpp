@@ -39,16 +39,16 @@ namespace SolTrace::NativeRunner
 		double LastPathLength = 1e99;
 		int HitBackSide = 0;
 		int InterceptFlag = 0;
-        glm::dvec3 DFXYZ = {0.0, 0.0, 0.0};
-        glm::dvec3 PosRayElement = {0.0, 0.0, 0.0};
-        glm::dvec3 CosRayElement = {0.0, 0.0, 0.0};
-        glm::dvec3 PosRaySurfStage = {0.0, 0.0, 0.0};
-        glm::dvec3 CosRaySurfStage = {0.0, 0.0, 0.0};
-        glm::dvec3 PosRaySurfElement = {0.0, 0.0, 0.0};
-        glm::dvec3 CosRaySurfElement = {0.0, 0.0, 0.0};
-		StageHit = false;
+        glm::dvec3 DFXYZ = glm::dvec3{0.0};
+        glm::dvec3 PosRayElement = glm::dvec3{0.0};
+        glm::dvec3 CosRayElement = glm::dvec3{0.0};
+        glm::dvec3 PosRaySurfStage = glm::dvec3{0.0};
+        glm::dvec3 CosRaySurfStage = glm::dvec3{0.0};
+        glm::dvec3 PosRaySurfElement = glm::dvec3{0.0};
+        glm::dvec3 CosRaySurfElement = glm::dvec3{0.0};
+        StageHit = false;
 
-		for (uint_fast64_t j = 0; j < nintelements; j++)
+        for (uint_fast64_t j = 0; j < nintelements; j++)
 		{
 			TElement *Element; // = Stage->ElementList[j];
 			if (i == 0 && !PT_override)
@@ -124,9 +124,9 @@ namespace SolTrace::NativeRunner
 					// 	Element->SurfaceIndex == 'r' ||
 					// 	Element->SurfaceIndex == 'R')
 					// TODO: Is this the correct thing to do?
-					if (PosRaySurfElement[2] <= Element->ZAperture)
-					{
-						StageHit = true;
+                    if (PosRaySurfElement.z <= Element->ZAperture)
+                    {
+                        StageHit = true;
 						LastPathLength = PathLength;
                         LastPosRaySurfElement = PosRaySurfElement;
                         LastCosRaySurfElement = CosRaySurfElement;
@@ -144,8 +144,8 @@ namespace SolTrace::NativeRunner
                         LastPosRaySurfStage = PosRaySurfStage;
                         LastCosRaySurfStage = CosRaySurfStage;
 						LastHitBackSide = HitBackSide;
-					}
-				}
+                    }
+                }
 			}
 		}
 	}

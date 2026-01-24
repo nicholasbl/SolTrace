@@ -216,12 +216,11 @@ namespace SolTrace::NativeRunner
 		uint_fast64_t StageDataArrayIndex = 0;
 		uint_fast64_t PreviousStageDataArrayIndex = 0;
 		uint_fast64_t n_rays_active = NumberOfRays;
-		uint_fast64_t sun_ray_count_local = 0;
+        uint_fast64_t sun_ray_count_local = 0;
 
-		// Loop through stages
-		for (uint_fast64_t i = 0; i < System->StageList.size(); i++)
-		{
-			// std::cout << "Processing stage " << i << "..." << std::endl;
+        // Loop through stages
+        for (uint_fast64_t i = 0; i < System->StageList.size(); i++) {
+            // std::cout << "Processing stage " << i << "..." << std::endl;
 			// Check if previous stage has rays
 			bool StageHasRays = true;
 			if (i > 0 && PreviousStageHasRays == false)
@@ -240,12 +239,12 @@ namespace SolTrace::NativeRunner
 			while (StageHasRays)
 			{
                 // Initialize Global Coordinates
-                glm::dvec3 PosRayGlob(0.0, 0.0, 0.0);
-                glm::dvec3 CosRayGlob(0.0, 0.0, 0.0);
+                glm::dvec3 PosRayGlob(0.0);
+                glm::dvec3 CosRayGlob(0.0);
 
                 // Initialize Stage Coordinates
-                glm::dvec3 PosRayStage(0.0, 0.0, 0.0);
-                glm::dvec3 CosRayStage(0.0, 0.0, 0.0);
+                glm::dvec3 PosRayStage(0.0);
+                glm::dvec3 CosRayStage(0.0);
 
                 // Initialize PT Optimization variables
                 bool has_elements = true;
@@ -273,22 +272,19 @@ namespace SolTrace::NativeRunner
 					// that could interact with ray
 					if (!PT_override)
 					{
-						has_elements =
-							sun_hash->get_all_data_at_loc(sunint_elements,
-														  PosRaySun[0],
-														  PosRaySun[1]);
-					}
-				}
-				else
-				{
-					// Get ray from previous stage
-					RayNumber = IncomingRays[StageDataArrayIndex].Num;
+                        has_elements = sun_hash->get_all_data_at_loc(sunint_elements,
+                                                                     PosRaySun.x,
+                                                                     PosRaySun.y);
+                    }
+                } else {
+                    // Get ray from previous stage
+                    RayNumber = IncomingRays[StageDataArrayIndex].Num;
                     PosRayGlob = IncomingRays[StageDataArrayIndex].Pos;
                     CosRayGlob = IncomingRays[StageDataArrayIndex].Cos;
                     StageDataArrayIndex++;
                 }
 
-				// transform the global incoming ray to local stage coordinates
+                // transform the global incoming ray to local stage coordinates
                 Data::TransformToLocal(PosRayGlob,
                                        CosRayGlob,
                                        Stage->Origin,
@@ -300,11 +296,11 @@ namespace SolTrace::NativeRunner
                 bool RayInStage = true;
                 bool in_multi_hit_loop = false;
 
-                glm::dvec3 LastPosRaySurfElement(0.0, 0.0, 0.0);
-                glm::dvec3 LastCosRaySurfElement(0.0, 0.0, 0.0);
-                glm::dvec3 LastPosRaySurfStage(0.0, 0.0, 0.0);
-                glm::dvec3 LastCosRaySurfStage(0.0, 0.0, 0.0);
-                glm::dvec3 LastDFXYZ(0.0, 0.0, 0.0);
+                glm::dvec3 LastPosRaySurfElement(0.0);
+                glm::dvec3 LastCosRaySurfElement(0.0);
+                glm::dvec3 LastPosRaySurfStage(0.0);
+                glm::dvec3 LastCosRaySurfStage(0.0);
+                glm::dvec3 LastDFXYZ(0.0);
 
                 uint_fast64_t LastElementNumber = 0;
                 uint_fast64_t LastRayNumber = 0;
@@ -314,18 +310,17 @@ namespace SolTrace::NativeRunner
                 bool StageHit;
                 int MultipleHitCount = 0;
 
-                glm::dvec3 PosRayOutElement(0.0, 0.0, 0.0);
-                glm::dvec3 CosRayOutElement(0.0, 0.0, 0.0);
+                glm::dvec3 PosRayOutElement(0.0);
+                glm::dvec3 CosRayOutElement(0.0);
 
                 // Start Loop to trace ray until it leaves stage
                 bool RayIsAbsorbed = false;
-				while (RayInStage)
-				{
-					// Set number of elements to search through
-					uint_fast64_t nintelements = 0;
-					std::vector<void *> reflint_elements;
-					if (!PT_override) // if using opt AND first stage
-					{
+                while (RayInStage) {
+                    // Set number of elements to search through
+                    uint_fast64_t nintelements = 0;
+                    std::vector<void *> reflint_elements; // TODO Hoist
+                    if (!PT_override)                     // if using opt AND first stage
+                    {
                         nintelements = GetPTElements(AsPowerTower,
                                                      Stage,
                                                      i,
@@ -353,40 +348,35 @@ namespace SolTrace::NativeRunner
 								   LastPosRaySurfStage, LastCosRaySurfStage,
 								   ErrorFlag, LastHitBackSide, StageHit);
 
-					// Breakout if ray left stage
-					if (!StageHit)
-					{
-						RayInStage = false;
-						break;
-					}
+                    // Breakout if ray left stage
+                    if (!StageHit) {
+                        RayInStage = false;
+                        break;
+                    }
 
-					// Increment MultipleHitCount
-					MultipleHitCount++;
+                    // Increment MultipleHitCount
+                    MultipleHitCount++;
 
-					if (i == 0 && MultipleHitCount == 1)
-					{
-						auto r = System->RayData.Append(thread_id,
-														PosRayGlob,
-														CosRayGlob,
-														ELEMENT_NULL,
-														i + 1,
-														LastRayNumber,
-														RayEvent::CREATE);
-						if (r == nullptr)
-						{
-							std::stringstream ss;
-							ss << "Thread " << thread_id
-							   << " failed to record ray data.\n";
-							manager->error_log(ss.str());
-						}
-					}
+                    if (i == 0 && MultipleHitCount == 1) {
+                        auto r = System->RayData.Append(thread_id,
+                                                        PosRayGlob,
+                                                        CosRayGlob,
+                                                        ELEMENT_NULL,
+                                                        i + 1,
+                                                        LastRayNumber,
+                                                        RayEvent::CREATE);
+                        if (r == nullptr) {
+                            std::stringstream ss;
+                            ss << "Thread " << thread_id << " failed to record ray data.\n";
+                            manager->error_log(ss.str());
+                        }
+                    }
 
-					// Get optics and check for absorption
-					const OpticalProperties *optics = 0;
-					RayEvent rev = RayEvent::VIRTUAL;
-					if (Stage->Virtual)
-					{
-						// If stage is virtual, there is no interaction
+                    // Get optics and check for absorption
+                    const OpticalProperties *optics = 0;
+                    RayEvent rev = RayEvent::VIRTUAL;
+                    if (Stage->Virtual) {
+                        // If stage is virtual, there is no interaction
                         PosRayOutElement = LastPosRaySurfElement;
                         CosRayOutElement = LastCosRaySurfElement;
                     } else {
@@ -536,18 +526,17 @@ namespace SolTrace::NativeRunner
 					{
 						in_multi_hit_loop = true;
 					}
-				}
+                }
 
-				++update_count;
-				if (update_count % update_rate == 0)
-				{
-					double progress = update_count / total_work;
+                ++update_count;
+                if (update_count % update_rate == 0) {
+                    double progress = update_count / total_work;
 					manager->progress_update(thread_id, progress);
 					if (manager->terminate(thread_id))
 						return RunnerStatus::CANCEL;
-				}
+                }
 
-				// Handle if Ray was absorbed
+                // Handle if Ray was absorbed
 				if (RayIsAbsorbed)
 				{
                     Data::TransformToReference(LastPosRaySurfStage,
@@ -725,9 +714,9 @@ namespace SolTrace::NativeRunner
 			{
 				return RunnerStatus::ERROR;
 			}
-		}
+        }
 
-		// Close out any remaining rays as misses
+        // Close out any remaining rays as misses
 		unsigned idx = System->StageList.size() - 1;
 		tstage_ptr Stage = System->StageList[idx];
 		for (uint_fast64_t k = 0; k < n_rays_active; ++k)

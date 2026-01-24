@@ -115,7 +115,7 @@ TEST(LinearAlgebra, MatrixVectorProduct)
     glm::dvec3 x(0.5, 1.0, -2.0);
     glm::dvec3 y;
 
-    glm::dmat3 A;
+    glm::dmat3 A = {0.0};
     A[0][0] = 1.0;
     A[1][1] = 1.0;
     A[2][2] = 1.0;
