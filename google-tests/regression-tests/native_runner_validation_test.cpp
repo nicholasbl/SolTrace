@@ -514,7 +514,7 @@ TEST(NativeRunner, ValidationTest2)
     EXPECT_TRUE(dur.count() < 75000.0);
 #else
     // Debug builds can go very slowly on some machines and compilers
-    EXPECT_TRUE(dur.count() < 250000.0);
+    EXPECT_TRUE(dur.count() < 300000.0);
 #endif
 
     std::cout << "Time: " << dur.count() << " ms" << std::endl;

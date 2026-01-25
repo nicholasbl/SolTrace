@@ -148,7 +148,7 @@ TEST(LinearAlgebra, MatrixMatrixProduct)
     B[2][1] = -2.0;
     B[2][2] = 1.0;
 
-    glm::dmat3 Ctrue;
+    glm::dmat3 Ctrue = {0.0};
     Ctrue[1][0] = 1.0;
     Ctrue[0][1] = 1.0;
     Ctrue[2][1] = -2.0;
