@@ -18,45 +18,59 @@
 Session::Session(QObject* parent) : QObject(parent) { }
 
 struct LoadedFile {
-    QString    name;
-    QString    provenance;
-    SimDataPtr ptr;
+    QString       name;
+    QString       provenance;
+    db::Database* ptr;
 };
 
 using LoadResult = std::variant<LoadedFile, ANotification>;
 
 
-static LoadResult load_file(QString fname) {
+static void load_file(QPromise<LoadResult>& result, QString fname) {
+    result.setProgressRange(0, 100);
     qDebug() << Q_FUNC_INFO << fname;
+
+    result.setProgressValueAndText(0, "Reading file...");
 
     auto file = QFileInfo(fname);
 
     if (!(file.isFile() && file.isReadable())) {
-        return ANotification::error("Unable to open file for reading");
+        result.emplaceResult(
+            ANotification::error("Unable to open file for reading"));
+        return;
     }
 
     auto new_data = std::make_shared<SD::SimulationData>();
 
-    // convert to normal char string
     auto str = fname.toStdString();
 
     if (!new_data->import_from_file(str)) {
-        return ANotification::error("Unable to import file");
+        result.emplaceResult(ANotification::error("Unable to import file"));
+        return;
     }
 
-    return LoadedFile {
+    result.setProgressValueAndText(50, "Importing content...");
+
+    auto ptr = new db::Database(*new_data);
+
+    result.setProgressValueAndText(100, "Done");
+
+    result.emplaceResult(LoadedFile {
         .name       = file.completeBaseName(),
         .provenance = fname,
-        .ptr        = new_data,
-    };
+        .ptr        = ptr,
+    });
 }
 
+using ResultFuture = QFutureWatcher<LoadResult>;
+
 void Session::file_ready() {
-    auto from = dynamic_cast<QFutureWatcher<LoadResult>*>(sender());
+    auto from = dynamic_cast<ResultFuture*>(sender());
 
     if (!from) { qFatal("this shouldn't happen"); }
 
     if (from->isCanceled()) {
+        emit notification(ANotification::info("File load cancelled"));
         qInfo() << "File load cancelled";
         return;
     }
@@ -65,31 +79,27 @@ void Session::file_ready() {
 
     std::visit(overloaded {
                    [this](LoadedFile arg) {
-                       // convert
-
                        this->set_current_data_path(arg.provenance);
-                       m_current_database = db::import(*arg.ptr);
+
+                       m_current_database = arg.ptr;
+                       m_current_database->moveToThread(this->thread());
+                       m_current_database->setParent(this);
                    },
                    [this](ANotification arg) { emit notification(arg); },
                },
                result);
 }
 
+void Session::reset() { }
 
 void Session::start_load_file(QUrl file) {
     qDebug() << Q_FUNC_INFO << file;
 
-    auto watcher = new QFutureWatcher<LoadResult>();
+    auto watcher = new ResultFuture(this);
 
-    connect(watcher,
-            &QFutureWatcher<LoadResult>::finished,
-            this,
-            &Session::file_ready);
+    connect(watcher, &ResultFuture::finished, this, &Session::file_ready);
 
-    connect(watcher,
-            &QFutureWatcher<LoadResult>::finished,
-            watcher,
-            &QObject::deleteLater);
+    connect(watcher, &ResultFuture::finished, watcher, &QObject::deleteLater);
 
     auto future = QtConcurrent::run(load_file, file.toLocalFile());
 
@@ -233,7 +243,3 @@ void DataSetsModel::select(int index) {
     set_current_data(m_sets[index].ptr.get());
 }
 #endif
-
-// =============================================================================
-
-Backend::Backend(QObject* parent) : QObject { parent } { }

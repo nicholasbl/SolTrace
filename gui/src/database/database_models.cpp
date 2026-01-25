@@ -9,11 +9,9 @@ namespace db {
 void BreadcrumbModel::recompute() {
     m_path.clear();
 
-    auto lock = m_host.lock();
+    if (!m_host) return;
 
-    if (!lock) return;
-
-    if (!lock->valid(m_node)) return;
+    if (!m_host->valid(m_node)) return;
 
     std::unordered_set<entt::entity> seen;
 
@@ -21,7 +19,7 @@ void BreadcrumbModel::recompute() {
 
     while (true) {
 
-        if (!lock->valid(looking_at)) { break; }
+        if (!m_host->valid(looking_at)) { break; }
 
         if (seen.contains(looking_at)) {
             // cycles??
@@ -32,11 +30,7 @@ void BreadcrumbModel::recompute() {
 
         m_path.push_back(looking_at);
 
-        auto* ptr = lock->try_get<ChildOfComponent>(looking_at);
-
-        if (!ptr) break;
-
-        looking_at = ptr->parent;
+        looking_at = m_host->parent_of(looking_at);
     }
 
     std::reverse(m_path.begin(), m_path.end());
@@ -44,20 +38,16 @@ void BreadcrumbModel::recompute() {
     QStringList ret;
 
     for (auto e : std::as_const(m_path)) {
-        ret << name_of(*lock, e);
+        ret << m_host->name_of(e);
     }
 
     this->setStringList(ret);
 }
 
-BreadcrumbModel::BreadcrumbModel(std::shared_ptr<entt::registry> p,
-                                 QObject*                        parent)
-    : QStringListModel(parent), m_host(p) {
-    reset(p);
-}
+BreadcrumbModel::BreadcrumbModel(QObject* parent) : QStringListModel(parent) { }
 
-void BreadcrumbModel::reset(std::shared_ptr<entt::registry> ptr) {
-    m_host = ptr;
+void BreadcrumbModel::reset(Database* database) {
+    m_host = database;
     m_node = entt::null;
     recompute();
 
@@ -66,40 +56,38 @@ void BreadcrumbModel::reset(std::shared_ptr<entt::registry> ptr) {
             this,
             &BreadcrumbModel::recompute);
 
-    connect(get_notifier(*ptr)->identity.self(),
-            &ComponentAPIBase::changed,
-            this,
-            [this](entt::entity e) {
-                if (m_path.contains(e)) { this->recompute(); }
-            });
+    if (database) {
+        connect(database->identity.self(),
+                &ComponentAPIBase::changed,
+                this,
+                [this](entt::entity e) {
+                    if (m_path.contains(e)) { this->recompute(); }
+                });
+    }
 }
 
 
 // =============================================================================
 
-static EntityNamePair rec_for_node(entt::registry& reg, entt::entity item) {
-    return EntityNamePair { .name = name_of(reg, item), .entity = item };
+static EntityNamePair rec_for_node(Database& reg, entt::entity item) {
+    return EntityNamePair { .name = reg.name_of(item), .entity = item };
 }
 
 QVector<EntityNamePair> ChildModel::rebuild_lists() {
     QVector<EntityNamePair> new_recs;
     m_reverse.clear();
 
-    auto lock = m_host.lock();
+    if (!m_host) return {};
 
-    if (!lock) return {};
+    if (!m_host->valid(m_node)) return {};
 
-    if (!lock->valid(m_node)) return {};
-
-    auto ptr = lock->try_get<ChildrenComponent>(m_node);
-
-    if (!ptr) return {};
+    auto children = m_host->children_of(m_node);
 
     // Copy here, can revise later
-    new_recs.reserve(ptr->children.size());
+    new_recs.reserve(children.size());
 
-    for (auto x : ptr->children) {
-        new_recs << rec_for_node(*lock, x);
+    for (auto x : children) {
+        new_recs << rec_for_node(*m_host, x);
     }
 
     for (size_t i = 0; i < new_recs.size(); i++) {
@@ -116,38 +104,35 @@ void ChildModel::recompute() {
 }
 
 void ChildModel::ident_changed(entt::entity e) {
-    auto lock = m_host.lock();
-
-    if (!lock) return;
+    if (!m_host) return;
 
     if (auto iter = m_reverse.find(e); iter != m_reverse.end()) {
-        this->store_push_update(iter->second, rec_for_node(*lock, e));
+        this->store_push_update(iter->second, rec_for_node(*m_host, e));
     }
 }
 
-ChildModel::ChildModel(std::shared_ptr<entt::registry> p, QObject* parent)
-    : StructModelAdapter(parent), m_host(p) {
-    reset(p);
-}
+ChildModel::ChildModel(QObject* parent) : StructModelAdapter(parent) { }
 
-void ChildModel::reset(std::shared_ptr<entt::registry> ptr) {
-    m_host = ptr;
+void ChildModel::reset(Database* database) {
+    m_host = database;
     m_node = entt::null;
     recompute();
 
     connect(this, &ChildModel::node_changed, this, &ChildModel::recompute);
 
-    connect(get_notifier(*ptr)->children.self(),
-            &ComponentAPIBase::changed,
-            this,
-            [this](entt::entity e) {
-                if (node() == e) { recompute(); }
-            });
+    if (database) {
+        connect(database->children.self(),
+                &ComponentAPIBase::changed,
+                this,
+                [this](entt::entity e) {
+                    if (node() == e) { recompute(); }
+                });
 
-    connect(get_notifier(*ptr)->identity.self(),
-            &ComponentAPIBase::changed,
-            this,
-            &ChildModel::ident_changed);
+        connect(database->identity.self(),
+                &ComponentAPIBase::changed,
+                this,
+                &ChildModel::ident_changed);
+    }
 }
 
 // =============================================================================
@@ -156,14 +141,12 @@ QVector<EntityNamePair> GroupsModel::rebuild_lists() {
     QVector<EntityNamePair> new_recs;
     m_reverse.clear();
 
-    auto lock = m_host.lock();
+    if (!m_host) return {};
 
-    if (!lock) return {};
-
-    auto view = lock->view<GroupComponent>();
+    auto view = m_host->as_registry().view<GroupComponent>();
 
     for (auto const& [e, group] : view.each()) {
-        new_recs.push_back(rec_for_node(*lock, e));
+        new_recs.push_back(rec_for_node(*m_host, e));
     }
 
     for (size_t i = 0; i < new_recs.size(); i++) {
@@ -180,42 +163,37 @@ void GroupsModel::recompute() {
 }
 
 void GroupsModel::group_changed(entt::entity e) {
-    auto lock = m_host.lock();
-
-    if (!lock) return;
+    if (!m_host) return;
 
     auto iter = m_reverse.find(e);
 
     if (iter == m_reverse.end()) { return recompute(); }
 
-    this->store_push_update(iter->second, rec_for_node(*lock, e));
+    this->store_push_update(iter->second, rec_for_node(*m_host, e));
 }
 void GroupsModel::group_removed(entt::entity e) {
     recompute();
 }
 
-GroupsModel::GroupsModel(std::shared_ptr<entt::registry> p, QObject* parent)
-    : StructModelAdapter(parent), m_host(p) {
-    reset(p);
-}
+GroupsModel::GroupsModel(QObject* parent) : StructModelAdapter(parent) { }
 
-void GroupsModel::reset(std::shared_ptr<entt::registry> ptr) {
-    m_host = ptr;
+void GroupsModel::reset(Database* database) {
+    m_host = database;
     recompute();
 
-    auto* notifier = get_notifier(*ptr);
+    if (!database) { return; }
 
-    connect(notifier->group_root.self(),
+    connect(database->group_root.self(),
             &ComponentAPIBase::changed,
             this,
             &GroupsModel::group_changed);
 
-    connect(notifier->group_root.self(),
+    connect(database->group_root.self(),
             &ComponentAPIBase::removed,
             this,
             &GroupsModel::group_removed);
 
-    connect(notifier->identity.self(),
+    connect(database->identity.self(),
             &ComponentAPIBase::changed,
             this,
             &GroupsModel::group_changed);
@@ -227,14 +205,12 @@ QVector<EntityNamePair> TagsModel::rebuild_lists() {
     QVector<EntityNamePair> new_recs;
     m_reverse.clear();
 
-    auto lock = m_host.lock();
+    if (!m_host) return {};
 
-    if (!lock) return {};
-
-    auto view = lock->view<TagComponent>();
+    auto view = m_host->as_registry().view<TagComponent>();
 
     for (auto const& e : view.each()) {
-        new_recs.push_back(rec_for_node(*lock, std::get<0>(e)));
+        new_recs.push_back(rec_for_node(*m_host, std::get<0>(e)));
     }
 
     for (size_t i = 0; i < new_recs.size(); i++) {
@@ -251,42 +227,37 @@ void TagsModel::recompute() {
 }
 
 void TagsModel::tag_changed(entt::entity e) {
-    auto lock = m_host.lock();
-
-    if (!lock) return;
+    if (!m_host) return;
 
     auto iter = m_reverse.find(e);
 
     if (iter == m_reverse.end()) { return recompute(); }
 
-    this->store_push_update(iter->second, rec_for_node(*lock, e));
+    this->store_push_update(iter->second, rec_for_node(*m_host, e));
 }
 void TagsModel::tag_removed(entt::entity e) {
     recompute();
 }
 
-TagsModel::TagsModel(std::shared_ptr<entt::registry> p, QObject* parent)
-    : StructModelAdapter(parent), m_host(p) {
-    reset(p);
-}
+TagsModel::TagsModel(QObject* parent) : StructModelAdapter(parent) { }
 
-void TagsModel::reset(std::shared_ptr<entt::registry> ptr) {
-    m_host = ptr;
+void TagsModel::reset(Database* database) {
+    m_host = database;
     recompute();
 
-    auto* notifier = get_notifier(*ptr);
+    if (!database) return;
 
-    connect(notifier->tag_root.self(),
+    connect(database->tag_root.self(),
             &ComponentAPIBase::changed,
             this,
             &TagsModel::tag_changed);
 
-    connect(notifier->tag_root.self(),
+    connect(database->tag_root.self(),
             &ComponentAPIBase::removed,
             this,
             &TagsModel::tag_removed);
 
-    connect(notifier->identity.self(),
+    connect(database->identity.self(),
             &ComponentAPIBase::changed,
             this,
             &TagsModel::tag_changed);
@@ -296,12 +267,9 @@ void TagsModel::reset(std::shared_ptr<entt::registry> ptr) {
 
 
 #define FIND(MEM)                                                              \
-    auto lock = m_host.lock();                                                 \
-    if (!lock) return;                                                         \
-    if (!lock->valid(m_entity)) return;                                        \
-    auto note = get_notifier(*lock);                                           \
-    if (!note) return;                                                         \
-    auto& component = note->MEM;
+    if (!m_host) return;                                                       \
+    if (!m_host->valid(m_entity)) return;                                      \
+    auto& component = m_host->MEM;
 
 void AnInstanceEditor::recompute() {
     emit position_changed();
@@ -317,11 +285,7 @@ void AnInstanceEditor::an_entity_changed(entt::entity e) {
     recompute();
 }
 
-AnInstanceEditor::AnInstanceEditor(std::shared_ptr<entt::registry> ptr,
-                                   QObject*                        parent)
-    : QObject(parent) {
-    reset(ptr);
-
+AnInstanceEditor::AnInstanceEditor(QObject* parent) : QObject(parent) {
     /*
      *     auto lock = m_host.lock();
 
@@ -341,38 +305,37 @@ void AnInstanceEditor::set(entt::entity ent) {
     recompute();
 }
 
-void AnInstanceEditor::reset(std::shared_ptr<entt::registry> ptr) {
-    m_host = ptr;
+void AnInstanceEditor::reset(Database* database) {
+    m_host = database;
 
-    auto note = get_notifier(*ptr);
-    if (!note) return;
+    if (!database) return;
 
-    connect(note->identity.self(),
+    connect(database->identity.self(),
             &ComponentAPIBase::changed,
             this,
             &AnInstanceEditor::an_entity_changed);
 
-    connect(note->transform.self(),
+    connect(database->transform.self(),
             &ComponentAPIBase::changed,
             this,
             &AnInstanceEditor::an_entity_changed);
 
-    connect(note->invisible.self(),
+    connect(database->invisible.self(),
             &ComponentAPIBase::changed,
             this,
             &AnInstanceEditor::an_entity_changed);
 
-    connect(note->group.self(),
+    connect(database->group.self(),
             &ComponentAPIBase::changed,
             this,
             &AnInstanceEditor::an_entity_changed);
 
-    connect(note->tags.self(),
+    connect(database->tags.self(),
             &ComponentAPIBase::changed,
             this,
             &AnInstanceEditor::an_entity_changed);
 
-    connect(note->parent.self(),
+    connect(database->parent.self(),
             &ComponentAPIBase::changed,
             this,
             &AnInstanceEditor::an_entity_changed);
@@ -382,11 +345,9 @@ void AnInstanceEditor::reset(std::shared_ptr<entt::registry> ptr) {
 
 QVector3D AnInstanceEditor::position() const {
 
-    if (auto lock = m_host.lock(); lock and lock->valid(m_entity)) {
-        if (auto note = get_notifier(*lock); note) {
-            if (auto tf = note->transform.get(m_entity); tf) {
-                return tf->position;
-            }
+    if (m_host and m_host->valid(m_entity)) {
+        if (auto tf = m_host->transform.get(m_entity); tf) {
+            return tf->position;
         }
     }
 
@@ -406,11 +367,9 @@ void AnInstanceEditor::set_position(const QVector3D& newPosition) {
 }
 
 QQuaternion AnInstanceEditor::orientation() const {
-    if (auto lock = m_host.lock(); lock and lock->valid(m_entity)) {
-        if (auto note = get_notifier(*lock); note) {
-            if (auto tf = note->transform.get(m_entity); tf) {
-                return tf->rotation;
-            }
+    if (m_host and m_host->valid(m_entity)) {
+        if (auto tf = m_host->transform.get(m_entity); tf) {
+            return tf->rotation;
         }
     }
     return {};
@@ -428,8 +387,10 @@ void AnInstanceEditor::set_orientation(const QQuaternion& newOrientation) {
 }
 
 bool AnInstanceEditor::hidden() const {
-    if (auto lock = m_host.lock(); lock and lock->valid(m_entity)) {
-        if (lock->any_of<InvisibleComponent>(m_entity)) { return true; }
+    if (m_host and m_host->valid(m_entity)) {
+        if (m_host->as_registry().any_of<InvisibleComponent>(m_entity)) {
+            return true;
+        }
     }
 
     return false;
@@ -450,10 +411,8 @@ void AnInstanceEditor::set_hidden(bool newHidden) {
 }
 
 entt::entity AnInstanceEditor::group() const {
-    if (auto lock = m_host.lock(); lock and lock->valid(m_entity)) {
-        if (auto note = get_notifier(*lock); note) {
-            if (auto tf = note->group.get(m_entity); tf) { return tf->group; }
-        }
+    if (m_host and m_host->valid(m_entity)) {
+        if (auto tf = m_host->group.get(m_entity); tf) { return tf->group; }
     }
 
     return entt::null;
@@ -462,16 +421,14 @@ entt::entity AnInstanceEditor::group() const {
 void AnInstanceEditor::set_group(entt::entity newGroup) {
     if (group() == newGroup) return;
 
-    assign_group(*m_host.lock(), m_entity, newGroup);
+    m_host->assign_group(m_entity, newGroup);
 
     emit group_changed();
 }
 
 entt::entity AnInstanceEditor::parent() const {
-    if (auto lock = m_host.lock(); lock and lock->valid(m_entity)) {
-        if (auto note = get_notifier(*lock); note) {
-            if (auto tf = note->parent.get(m_entity); tf) { return tf->parent; }
-        }
+    if (m_host and m_host->valid(m_entity)) {
+        if (auto tf = m_host->parent.get(m_entity); tf) { return tf->parent; }
     }
 
     return entt::null;
@@ -480,16 +437,14 @@ entt::entity AnInstanceEditor::parent() const {
 void AnInstanceEditor::set_parent(entt::entity newParent) {
     if (parent() == newParent) return;
 
-    ::db::set_parent(*m_host.lock(), m_entity, newParent);
+    m_host->set_parent(m_entity, newParent);
 
     emit parent_changed();
 }
 
 QVector<entt::entity> AnInstanceEditor::tags() const {
-    if (auto lock = m_host.lock(); lock and lock->valid(m_entity)) {
-        if (auto note = get_notifier(*lock); note) {
-            if (auto tf = note->tags.get(m_entity); tf) { return tf->tags; }
-        }
+    if (m_host and m_host->valid(m_entity)) {
+        if (auto tf = m_host->tags.get(m_entity); tf) { return tf->tags; }
     }
 
     return {};
@@ -503,20 +458,19 @@ void AnInstanceEditor::set_tags(QVector<entt::entity> const& newTags) {
                                              current_tags.end());
 
     if (incoming == current) return;
-    auto lock = m_host.lock();
-    if (!lock) return;
-    if (!lock->valid(m_entity)) return;
+    if (!m_host) return;
+    if (!m_host->valid(m_entity)) return;
 
     for (auto new_tag : incoming) {
         if (!current.contains(new_tag)) {
-            assign_tag(*lock, m_entity, new_tag);
+            m_host->assign_tag(m_entity, new_tag);
         }
     }
 
     // Remove tags no longer present.
     for (auto old_tag : current) {
         if (!incoming.contains(old_tag)) {
-            unassign_tag(*lock, m_entity, old_tag);
+            m_host->unassign_tag(m_entity, old_tag);
         }
     }
 
@@ -524,10 +478,8 @@ void AnInstanceEditor::set_tags(QVector<entt::entity> const& newTags) {
 }
 
 QString AnInstanceEditor::entity_name() const {
-    if (auto lock = m_host.lock(); lock and lock->valid(m_entity)) {
-        if (auto note = get_notifier(*lock); note) {
-            if (auto tf = note->identity.get(m_entity); tf) { return tf->name; }
-        }
+    if (m_host and m_host->valid(m_entity)) {
+        if (auto tf = m_host->identity.get(m_entity); tf) { return tf->name; }
     }
 
     return {};

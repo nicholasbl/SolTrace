@@ -18,7 +18,7 @@ namespace db {
 class BreadcrumbModel : public QStringListModel {
     Q_OBJECT
 
-    std::weak_ptr<entt::registry> m_host;
+    QPointer<Database> m_host;
 
     QVector<entt::entity> m_path;
 
@@ -28,11 +28,10 @@ private slots:
     void recompute();
 
 public:
-    explicit BreadcrumbModel(std::shared_ptr<entt::registry>,
-                             QObject* parent = nullptr);
+    explicit BreadcrumbModel(QObject* parent = nullptr);
     virtual ~BreadcrumbModel() = default;
 
-    void reset(std::shared_ptr<entt::registry>);
+    void reset(Database* database);
 };
 
 // =============================================================================
@@ -47,7 +46,7 @@ struct EntityNamePair {
 /// A model providing all children of a given entity
 class ChildModel : public StructModelAdapter<EntityNamePair> {
     Q_OBJECT
-    std::weak_ptr<entt::registry> m_host;
+    QPointer<Database> m_host;
 
     Q_WRITABLE_PROPERTY(entt::entity, node, entt::null);
 
@@ -61,11 +60,10 @@ private slots:
     void ident_changed(entt::entity);
 
 public:
-    explicit ChildModel(std::shared_ptr<entt::registry>,
-                        QObject* parent = nullptr);
+    explicit ChildModel(QObject* parent = nullptr);
     virtual ~ChildModel() = default;
 
-    void reset(std::shared_ptr<entt::registry>);
+    void reset(Database* database);
 };
 
 // =============================================================================
@@ -74,7 +72,7 @@ public:
 class GroupsModel : public StructModelAdapter<EntityNamePair> {
     Q_OBJECT
 
-    std::weak_ptr<entt::registry> m_host;
+    QPointer<Database> m_host;
 
     std::unordered_map<entt::entity, int> m_reverse;
 
@@ -87,11 +85,10 @@ private slots:
     void group_removed(entt::entity);
 
 public:
-    explicit GroupsModel(std::shared_ptr<entt::registry>,
-                         QObject* parent = nullptr);
+    explicit GroupsModel(QObject* parent = nullptr);
     virtual ~GroupsModel() = default;
 
-    void reset(std::shared_ptr<entt::registry>);
+    void reset(Database* database);
 };
 
 // =============================================================================
@@ -99,7 +96,7 @@ public:
 /// A model providing the available tags in a database
 class TagsModel : public StructModelAdapter<EntityNamePair> {
     Q_OBJECT
-    std::weak_ptr<entt::registry> m_host;
+    QPointer<Database> m_host;
 
     std::unordered_map<entt::entity, int> m_reverse;
 
@@ -112,11 +109,10 @@ private slots:
     void tag_removed(entt::entity);
 
 public:
-    explicit TagsModel(std::shared_ptr<entt::registry>,
-                       QObject* parent = nullptr);
+    explicit TagsModel(QObject* parent = nullptr);
     virtual ~TagsModel() = default;
 
-    void reset(std::shared_ptr<entt::registry>);
+    void reset(Database* database);
 };
 
 
@@ -125,7 +121,7 @@ public:
 /// A model that helps edit a geometry instance
 class AnInstanceEditor : public QObject {
     Q_OBJECT
-    std::weak_ptr<entt::registry> m_host;
+    QPointer<Database> m_host;
 
     entt::entity m_entity = entt::null;
 
@@ -153,11 +149,10 @@ private slots:
     void recompute();
 
 public:
-    explicit AnInstanceEditor(std::shared_ptr<entt::registry>,
-                              QObject* parent = nullptr);
+    explicit AnInstanceEditor(QObject* parent = nullptr);
     virtual ~AnInstanceEditor() = default;
 
-    void reset(std::shared_ptr<entt::registry>);
+    void reset(Database* database);
 
     void set(entt::entity);
 

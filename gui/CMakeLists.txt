@@ -16,12 +16,6 @@ qt_add_executable(SolTrace
     src/main.cpp
 )
 
-qt_add_resources(SolTrace "assets"
-    PREFIX "/"
-    FILES
-        assets/b_to_r_wide.png
-)
-
 qt_add_resources(SolTrace "fonts"
     PREFIX "/fonts"
     FILES
@@ -183,17 +177,18 @@ qt_add_qml_module(SolTrace
         QtQuick3D
 
     SOURCES
-        src/instance_table.h src/instance_table.cpp
         src/backend.h src/backend.cpp
         src/qt_helpers.h
         src/dataset.h src/dataset.cpp
         src/utilities/indirect_model.h src/utilities/indirect_model.cpp
-        src/surfacegeometry.h src/surfacegeometry.cpp
-        src/elementitemmodel.h src/elementitemmodel.cpp
-        src/job_run.h src/job_run.cpp
-        src/job_run_thread.h src/job_run_thread.cpp
-        src/job_run_common.h src/job_run_common.cpp
-        src/job_run_process.h src/job_run_process.cpp
+        src/job_control/job_run_thread.h
+        src/job_control/job_run_process.cpp
+        src/job_control/job_run_process.h
+        src/job_control/job_run.h
+        src/job_control/job_run.cpp
+        src/job_control/job_run_thread.cpp
+        src/job_control/job_run_common.h
+        src/job_control/job_run_common.cpp
         src/utilities/math_utility.h
         src/utilities/structmodel.h
         src/utilities/notification.h

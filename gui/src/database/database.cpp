@@ -222,24 +222,31 @@ SD::Matrix3d convert(QQuaternion const& m) {
     return mat;
 }
 
+// =============================================================================
+
+Database::Database(QObject* p)
+    : QObject(p),
+      m_registry(),
+      identity(m_registry),
+      transform(m_registry),
+      invisible(m_registry),
+      parent(m_registry),
+      tag_root(m_registry),
+      group_root(m_registry),
+      children(m_registry),
+      group(m_registry),
+      tags(m_registry) { }
 
 // =============================================================================
 
-std::shared_ptr<entt::registry> create_new() {
-    auto ret = std::make_shared<entt::registry>();
+static void
+import_optics(Database&                                          reg,
+              entt::entity                                       entity,
+              SD::Element const&                                 item,
+              std::unordered_map<GroupParameters, entt::entity>& groups,
+              size_t& group_counter) {
 
-    ret->ctx().emplace<NotificationResource>(NotificationResource {
-        .notifier = QSharedPointer<UIApi>(new UIApi(ret)),
-    });
-
-    return ret;
-}
-
-void import_optics(entt::registry&                                    reg,
-                   entt::entity                                       entity,
-                   SD::Element const&                                 item,
-                   std::unordered_map<GroupParameters, entt::entity>& groups,
-                   size_t& group_counter) {
+    auto& registry = reg.as_registry();
 
     if (!item.get_front_optical_properties() and
         !item.get_back_optical_properties() and !item.get_aperture() and
@@ -268,7 +275,7 @@ void import_optics(entt::registry&                                    reg,
     if (auto group = groups.find(local); group != groups.end()) {
         // we have such a group
 
-        assign_group(reg, entity, group->second);
+        reg.assign_group(entity, group->second);
 
     } else {
         // no such group
@@ -279,8 +286,8 @@ void import_optics(entt::registry&                                    reg,
 
         auto group_entity = reg.create();
 
-        reg.emplace<GroupComponent>(group_entity, new_group);
-        reg.emplace<IdentityComponent>(
+        registry.emplace<GroupComponent>(group_entity, new_group);
+        registry.emplace<IdentityComponent>(
             group_entity,
             IdentityComponent {
                 .name = QString("Group %1").arg(group_counter),
@@ -290,15 +297,14 @@ void import_optics(entt::registry&                                    reg,
 
         groups.try_emplace(local, group_entity);
 
-        assign_group(reg, entity, group_entity);
+        reg.assign_group(entity, group_entity);
     }
 }
 
-std::shared_ptr<entt::registry> import(SD::SimulationData& data) {
-    auto ret = create_new();
+Database::Database(SD::SimulationData& data, QObject* p) : Database(p) {
 
     // Assuming we are not re-using registries, which we are not for the moment
-    auto imported_tag = create_tag(*ret, "imported");
+    auto imported_tag = create_tag("imported");
 
     // we use pointers as element IDs are scoped to global AND composite
     std::unordered_map<SD::Element*, entt::entity> emap;
@@ -307,12 +313,12 @@ std::shared_ptr<entt::registry> import(SD::SimulationData& data) {
         if (auto eiter = emap.find(ptr); eiter != emap.end()) {
             return eiter->second;
         } else {
-            auto ent  = ret->create();
+            auto ent  = m_registry.create();
             emap[ptr] = ent;
 
-            ret->emplace<ElementComponent>(ent);
+            m_registry.emplace<ElementComponent>(ent);
 
-            assign_tag(*ret, ent, imported_tag);
+            assign_tag(ent, imported_tag);
 
             return ent;
         }
@@ -333,7 +339,7 @@ std::shared_ptr<entt::registry> import(SD::SimulationData& data) {
 
         auto rotation = convert(element.get_local_to_reference());
 
-        ret->emplace<TransformComponent>(
+        m_registry.emplace<TransformComponent>(
             ent,
             TransformComponent {
                 .position = QVector3D(
@@ -342,11 +348,13 @@ std::shared_ptr<entt::registry> import(SD::SimulationData& data) {
             });
 
         if (!element.get_name().empty()) {
-            ret->emplace<IdentityComponent>(
+            m_registry.emplace<IdentityComponent>(
                 ent, QString::fromStdString(element.get_name()));
         }
 
-        if (!element.is_enabled()) { ret->emplace<DisabledComponent>(ent); }
+        if (!element.is_enabled()) {
+            m_registry.emplace<DisabledComponent>(ent);
+        }
 
         if (element.is_composite()) {
             auto& c = *static_cast<SD::CompositeElement const*>(&element);
@@ -356,27 +364,24 @@ std::shared_ptr<entt::registry> import(SD::SimulationData& data) {
 
                 auto child_ent = get_or_create_entity(iter->second.get());
 
-                if (ret->any_of<ChildOfComponent>(child_ent)) {
+                if (m_registry.any_of<ChildOfComponent>(child_ent)) {
                     // Uh oh. We should not have multiple parents!
                     throw std::runtime_error("Multiple parents for element");
                 }
 
-                set_parent(*ret, child_ent, ent);
+                set_parent(child_ent, ent);
             }
         }
 
-        import_optics(*ret, ent, element, groups, group_counter);
+        import_optics(*this, ent, element, groups, group_counter);
     }
 
-    ret->ctx().emplace<RaySourceResource>(RaySourceResource {
+    m_registry.ctx().emplace<RaySourceResource>(RaySourceResource {
         .source = data.get_ray_source(),
     });
 
-    ret->ctx().emplace<SD::SimulationParameters>(
+    m_registry.ctx().emplace<SD::SimulationParameters>(
         data.get_simulation_parameters());
-
-
-    return ret;
 }
 
 // TODO: remove once we have sorted the vector aim thing
@@ -412,9 +417,8 @@ static void install_group(SD::element_ptr ptr, GroupParameters const& param) {
     ptr->set_back_optical_properties(param.optics_back);
 }
 
-std::shared_ptr<SD::SimulationData> export_to_simdata(entt::registry& reg) {
-
-
+std::shared_ptr<SD::SimulationData>
+Database::export_to_simdata(entt::registry& reg) {
     SD::SimulationData ret;
 
     auto param_ptr = reg.ctx().find<SD::SimulationParameters>();
@@ -527,73 +531,91 @@ std::shared_ptr<SD::SimulationData> export_to_simdata(entt::registry& reg) {
     return std::make_shared<SD::SimulationData>(std::move(ret));
 }
 
-void unset_parent(entt::registry& reg, entt::entity child) {
+entt::entity Database::create() {
+    return m_registry.create();
+}
 
-    auto child_comp = reg.try_get<ChildOfComponent>(child);
+bool Database::valid(entt::entity e) const {
+    return m_registry.valid(e);
+}
+
+void Database::unset_parent(entt::entity child) {
+
+    auto child_comp = m_registry.try_get<ChildOfComponent>(child);
 
     if (!child_comp) return;
 
-    auto has_parent_comp = reg.all_of<ChildrenComponent>(child_comp->parent);
+    auto has_parent_comp =
+        m_registry.all_of<ChildrenComponent>(child_comp->parent);
 
     if (!has_parent_comp) {
-        reg.erase<ChildOfComponent>(child);
+        m_registry.erase<ChildOfComponent>(child);
         return;
     }
 
-    reg.erase<ChildOfComponent>(child);
+    m_registry.erase<ChildOfComponent>(child);
 
-    reg.patch<ChildrenComponent>(
+    m_registry.patch<ChildrenComponent>(
         child_comp->parent,
         [child](ChildrenComponent& c) { erase(c.children, child); });
 }
 
-void set_parent(entt::registry& reg, entt::entity child, entt::entity parent) {
-    if (!reg.valid(parent) or !reg.valid(child)) {
+void Database::set_parent(entt::entity child, entt::entity parent) {
+    if (!m_registry.valid(parent) or !m_registry.valid(child)) {
         qWarning() << "Invalid parent or child in set_parent";
         return;
     }
 
     // remove existing parent, if any
-    unset_parent(reg, child);
+    unset_parent(child);
 
-    if (!reg.all_of<ChildrenComponent>(parent)) {
+    if (!m_registry.all_of<ChildrenComponent>(parent)) {
         // if the parent doesnt have a child component, insert this as our first
         // child
-        reg.emplace<ChildrenComponent>(parent,
-                                       ChildrenComponent {
-                                           .children = { child },
-                                       });
+        m_registry.emplace<ChildrenComponent>(parent,
+                                              ChildrenComponent {
+                                                  .children = { child },
+                                              });
     } else {
         // it has a child component, add to it
-        reg.patch<ChildrenComponent>(parent, [child](ChildrenComponent& a) {
-            a.children.push_back(child);
-        });
+        m_registry.patch<ChildrenComponent>(
+            parent,
+            [child](ChildrenComponent& a) { a.children.push_back(child); });
     }
 
     // set the child's parent
-    reg.emplace<ChildOfComponent>(child, ChildOfComponent { .parent = parent });
+    m_registry.emplace<ChildOfComponent>(child,
+                                         ChildOfComponent { .parent = parent });
 }
 
-std::span<entt::entity const> children_of(entt::registry& reg,
-                                          entt::entity    parent) {
-    auto parent_comp = reg.try_get<ChildrenComponent>(parent);
+std::span<entt::entity const> Database::children_of(entt::entity parent) const {
+    auto parent_comp = m_registry.try_get<ChildrenComponent>(parent);
 
     if (!parent_comp) { return {}; }
 
     return parent_comp->children;
 }
 
-void unset_group(entt::registry& reg, entt::entity child) {
+entt::entity Database::parent_of(entt::entity child) const {
+    if (!m_registry.valid(child)) return entt::null;
+    auto* ptr = m_registry.try_get<ChildOfComponent>(child);
+
+    if (!ptr) return entt::null;
+
+    return ptr->parent;
+}
+
+void Database::unset_group(entt::entity child) {
     // is this a member of a group?
-    auto child_comp = reg.try_get<GroupMemberComponent>(child);
+    auto child_comp = m_registry.try_get<GroupMemberComponent>(child);
 
     if (!child_comp) return;
 
     // Check if the group parent exists
-    auto parent_comp = reg.try_get<GroupComponent>(child_comp->group);
+    auto parent_comp = m_registry.try_get<GroupComponent>(child_comp->group);
 
     // remove us from a member of the group
-    reg.erase<GroupMemberComponent>(child);
+    m_registry.erase<GroupMemberComponent>(child);
 
     if (!parent_comp) { return; }
 
@@ -601,43 +623,46 @@ void unset_group(entt::registry& reg, entt::entity child) {
     erase(parent_comp->members, child);
 }
 
-void assign_group(entt::registry& reg, entt::entity child, entt::entity group) {
-    unset_group(reg, child);
+void Database::assign_group(entt::entity child, entt::entity group) {
+    unset_group(child);
 
-    reg.emplace_or_replace<GroupMemberComponent>(
+    m_registry.emplace_or_replace<GroupMemberComponent>(
         child, GroupMemberComponent { .group = group });
 
-    emplace_patch<GroupComponent>(
-        reg, group, [child](GroupComponent& c) { c.members.push_back(child); });
+    ::db::emplace_patch<GroupComponent>(
+        m_registry, group, [child](GroupComponent& c) {
+            c.members.push_back(child);
+        });
 }
 
-SD::ray_source_ptr get_ray_source(entt::registry const& reg) {
-    if (auto ptr = reg.ctx().find<RaySourceResource>(); ptr) {
+SD::ray_source_ptr Database::get_ray_source() const {
+    if (auto ptr = m_registry.ctx().find<RaySourceResource>(); ptr) {
         return ptr->source;
     }
 
     return {};
 }
 
-SD::SimulationParameters& get_sim_params(entt::registry& reg) {
-    if (auto ptr = reg.ctx().find<SD::SimulationParameters>(); ptr) {
+SD::SimulationParameters const& Database::get_sim_params() const {
+    if (auto ptr = m_registry.ctx().find<SD::SimulationParameters>(); ptr) {
         return *ptr;
     }
 
     throw std::runtime_error("missing simulation parameters");
 }
 
-entt::entity create_tag(entt::registry& reg, QString name) {
-    auto ret = reg.create();
+entt::entity Database::create_tag(QString name) {
+    auto ret = m_registry.create();
 
-    reg.emplace<TagComponent>(ret);
-    reg.emplace<IdentityComponent>(ret, IdentityComponent { .name = name });
+    m_registry.emplace<TagComponent>(ret);
+    m_registry.emplace<IdentityComponent>(ret,
+                                          IdentityComponent { .name = name });
 
     return ret;
 }
 
-bool is_tagged(entt::registry& reg, entt::entity item, entt::entity tag) {
-    if (auto* ptr = reg.try_get<TagMembershipComponent>(item); ptr) {
+bool Database::is_tagged(entt::entity item, entt::entity tag) const {
+    if (auto* ptr = m_registry.try_get<TagMembershipComponent>(item); ptr) {
         auto& t = ptr->tags;
 
         return std::find(t.begin(), t.end(), tag) != t.end();
@@ -645,72 +670,155 @@ bool is_tagged(entt::registry& reg, entt::entity item, entt::entity tag) {
     return false;
 }
 
-void assign_tag(entt::registry& reg, entt::entity item, entt::entity tag) {
-    if (!reg.all_of<TagComponent>(tag)) { return; }
+void Database::assign_tag(entt::entity item, entt::entity tag) {
+    if (!m_registry.all_of<TagComponent>(tag)) { return; }
 
-    if (is_tagged(reg, item, tag)) return;
+    if (is_tagged(item, tag)) return;
 
-    auto& storage = reg.storage<ATagMemberComponent>(entt::to_integral(tag));
+    auto& storage =
+        m_registry.storage<ATagMemberComponent>(entt::to_integral(tag));
 
     storage.emplace(item);
 
-    emplace_patch<TagMembershipComponent>(
-        reg, item, [tag](TagMembershipComponent& tc) {
+    ::db::emplace_patch<TagMembershipComponent>(
+        m_registry, item, [tag](TagMembershipComponent& tc) {
             tc.tags.push_back(tag);
         });
 }
 
-void unassign_tag(entt::registry& reg, entt::entity item, entt::entity tag) {
-    if (!reg.all_of<TagComponent>(tag)) { return; }
+void Database::unassign_tag(entt::entity item, entt::entity tag) {
+    if (!m_registry.all_of<TagComponent>(tag)) { return; }
 
-    if (!reg.all_of<TagMembershipComponent>(item)) { return; }
+    if (!m_registry.all_of<TagMembershipComponent>(item)) { return; }
 
-    reg.patch<TagMembershipComponent>(
+    m_registry.patch<TagMembershipComponent>(
         item, [tag](TagMembershipComponent& tc) { erase(tc.tags, tag); });
 
-    auto& storage = reg.storage<ATagMemberComponent>(entt::to_integral(tag));
+    auto& storage =
+        m_registry.storage<ATagMemberComponent>(entt::to_integral(tag));
 
     if (storage.contains(item)) { storage.erase(item); }
 
     // if (storage.empty()) { reg.reset(entt::to_integral(tag)); }
 }
 
-void delete_tag(entt::registry& reg, entt::entity tag) {
-    auto& storage = reg.storage<ATagMemberComponent>(entt::to_integral(tag));
+void Database::delete_tag(entt::entity tag) {
+    auto& storage =
+        m_registry.storage<ATagMemberComponent>(entt::to_integral(tag));
 
     for (auto x : storage) {
-        erase(reg.get<TagMembershipComponent>(x).tags, tag);
+        erase(m_registry.get<TagMembershipComponent>(x).tags, tag);
     }
 
-    reg.reset(entt::to_integral(tag));
+    m_registry.reset(entt::to_integral(tag));
 
-    reg.destroy(tag);
+    m_registry.destroy(tag);
 }
 
-std::span<entt::entity const> tags_for(entt::registry& reg, entt::entity item) {
-    if (auto ptr = reg.try_get<TagMembershipComponent>(item); ptr) {
+std::span<entt::entity const> Database::tags_for(entt::entity item) const {
+    if (auto ptr = m_registry.try_get<TagMembershipComponent>(item); ptr) {
         return ptr->tags;
     }
 
     return {};
 }
 
-QString name_of(entt::registry& reg, entt::entity item) {
-    if (!reg.valid(item)) return {};
+QString Database::name_of(entt::entity item) const {
+    if (!m_registry.valid(item)) return {};
 
-    if (auto ptr = reg.try_get<IdentityComponent>(item); ptr) {
+    if (auto ptr = m_registry.try_get<IdentityComponent>(item); ptr) {
         return ptr->name;
     }
 
     return QString("Entity %1").arg(entt::to_integral(item));
 }
 
-UIApi* get_notifier(entt::registry& reg) {
-    auto ptr = reg.ctx().find<NotificationResource>();
 
-    if (!ptr) return nullptr;
+entt::entity Database::add_group(QString               new_name,
+                                 QVector<entt::entity> members,
+                                 entt::entity          clone_from) {
+    auto set = std::unordered_set(members.begin(), members.end());
 
-    return ptr->notifier.get();
+
+    std::shared_ptr<GroupParameters> params;
+
+    if (m_registry.valid(clone_from) and
+        m_registry.all_of<GroupComponent>(clone_from)) {
+
+        auto& other_p = m_registry.get<GroupComponent>(clone_from).parameters;
+
+        // horrible, but it works.
+        nlohmann::ordered_json node;
+
+        other_p->surface->write_json(node);
+
+        params = std::make_shared<GroupParameters>(GroupParameters {
+            .aperture = other_p->aperture->make_copy(),
+            .surface  = SD::make_surface_from_json(node),
+        });
+    } else {
+        params = std::make_shared<GroupParameters>(GroupParameters {
+            .aperture = SD::make_aperture<SD::Circle>(1.0),
+            .surface  = SolTrace::Data::make_surface_from_type(
+                SolTrace::Data::SurfaceType::FLAT, { 1.0, 1.0 }),
+        });
+    }
+
+
+    auto ent = m_registry.create();
+    m_registry.emplace<GroupComponent>(
+        ent,
+        GroupComponent {
+            .parameters = params,
+            .members    = QVector<entt::entity>(set.begin(), set.end()),
+        });
+
+    m_registry.emplace<IdentityComponent>(
+        ent, IdentityComponent { .name = new_name });
+
+    for (auto child : set) {
+        m_registry.emplace_or_replace<GroupMemberComponent>(
+            child, GroupMemberComponent { .group = ent });
+    }
+
+    return ent;
+}
+
+void Database::delete_group(entt::entity to_delete, entt::entity move_to) {
+    if (to_delete == move_to) {
+        qWarning()
+            << "Trying to delete a group and move members to the same group!";
+        return;
+    }
+
+    // if not a group, bail
+    if (!m_registry.all_of<GroupComponent>(to_delete)) { return; }
+
+    // steal current member list
+    auto members = std::move(m_registry.get<GroupComponent>(to_delete).members);
+
+    // destroy current group entity
+    m_registry.destroy(to_delete);
+
+
+    if (m_registry.valid(move_to) and
+        m_registry.all_of<GroupComponent>(move_to)) {
+        // moving to valid target
+
+        // reset member list membership
+        for (auto child : members) {
+            m_registry.emplace_or_replace<GroupMemberComponent>(
+                child, GroupMemberComponent { .group = move_to });
+        }
+
+        m_registry.patch<GroupComponent>(move_to, [&](GroupComponent& a) {
+            a.members.append(members.begin(), members.end());
+        });
+    } else {
+        // invalid target. clear
+
+        m_registry.remove<GroupMemberComponent>(members.begin(), members.end());
+    }
 }
 
 } // namespace db

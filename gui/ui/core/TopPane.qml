@@ -1,4 +1,6 @@
-import QtQuick 2.15
+import QtCore
+import QtQuick
+import QtQuick.Dialogs
 import SolTraceProto
 
 Item {
@@ -99,12 +101,22 @@ Item {
                     label: "New"
                     source: "qrc:/icons/assets/icons/placeholder.svg"
                     anchors.verticalCenter: parent.verticalCenter
+                    onClicked: Session.reset()
                 }
 
                 IconButton {
                     label: "Open"
                     source: "qrc:/icons/assets/icons/placeholder.svg"
                     anchors.verticalCenter: parent.verticalCenter
+                    onClicked: openFileDialog.open()
+
+                    FileDialog {
+                        id: openFileDialog
+                        currentFolder: StandardPaths.standardLocations(
+                                           StandardPaths.DocumentsLocation
+                                           )[0]
+                        onAccepted: Session.start_load_file(selectedFile)
+                    }
                 }
 
                 IconButton {

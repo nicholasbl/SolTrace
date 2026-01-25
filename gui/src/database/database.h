@@ -3,61 +3,128 @@
 #include <entt/entt.hpp>
 
 #include "database/components.h"
+#include "database/database_notification.h"
 
 
 // TODO BETTER COMPOSITE SUPPORT
 
 namespace db {
 
-/// Create a new simulation database
-std::shared_ptr<entt::registry> create_new();
 
-/// Convert a Soltrace dataset to a database
-std::shared_ptr<entt::registry> import(SD::SimulationData&);
+/// Helper function: patch a component, creating it if it does not exist.
+template <class Component, class Function>
+void emplace_patch(entt::registry& reg, entt::entity entity, Function&& f) {
+    if (!reg.all_of<Component>(entity)) {
+        if constexpr (std::is_empty_v<Component>) {
+            reg.emplace<Component>(entity);
+        } else {
+            reg.emplace<Component>(entity, Component {});
+        }
+    }
 
-/// Convert a database back into a Soltrace dataset
-std::shared_ptr<SolTrace::Data::SimulationData>
-export_to_simdata(entt::registry&);
+    reg.patch<Component>(entity, f);
+}
 
-/// Clear the active parent of an entity
-void unset_parent(entt::registry&, entt::entity child);
+class Database : public QObject {
+    entt::registry m_registry;
 
-/// Set the parent of an entity
-void set_parent(entt::registry&, entt::entity child, entt::entity parent);
+public:
+    /// Create a new simulation database
+    explicit Database(QObject* p = nullptr);
 
-/// Get the list of children of this entity. Returns an empty list if there are
-/// none.
-std::span<entt::entity const> children_of(entt::registry&, entt::entity parent);
+    /// Convert a Soltrace dataset to a database
+    explicit Database(SD::SimulationData&, QObject* p = nullptr);
 
-/// Assign an entity to a geometry group
-void assign_group(entt::registry&, entt::entity child, entt::entity group);
+    virtual ~Database() = default;
 
-/// Create a new tag. Note that tag names should be unique.
-entt::entity create_tag(entt::registry&, QString name);
+    /// Convert a database back into a Soltrace dataset
+    std::shared_ptr<SolTrace::Data::SimulationData>
+    export_to_simdata(entt::registry&);
 
-/// Ask if an entity has been given a tag
-bool is_tagged(entt::registry&, entt::entity item, entt::entity tag);
+public:
+    operator entt::registry&() { return m_registry; }
+    operator entt::registry const&() const { return m_registry; }
 
-/// Assign an entity to a specific tag
-void assign_tag(entt::registry&, entt::entity item, entt::entity tag);
+    entt::registry&       as_registry() { return m_registry; }
+    entt::registry const& as_registry() const { return m_registry; }
 
-/// Remove a tag from an entity
-void unassign_tag(entt::registry&, entt::entity item, entt::entity tag);
+public:
+    ComponentAPIUpdate<IdentityComponent>  identity;
+    ComponentAPIUpdate<TransformComponent> transform;
+    ComponentAPIUpdate<InvisibleComponent> invisible;
+    ComponentAPI<ChildOfComponent>         parent;
+    ComponentAPI<TagComponent>             tag_root;
+    ComponentAPI<GroupComponent>           group_root;
+    ComponentAPI<ChildrenComponent>        children;
+    ComponentAPI<GroupMemberComponent>     group;
+    ComponentAPI<TagMembershipComponent>   tags;
 
-/// Clear and destroy a specific tag
-void delete_tag(entt::registry&, entt::entity tag);
+public:
+    /// Helper function: patch a component, creating it if it does not exist.
+    template <class Component, class Function>
+    void emplace_patch(entt::entity entity, Function&& f) {
+        emplace_patch(m_registry, entity, f);
+    }
 
-/// Get all the tags for an entity
-std::span<entt::entity const> tags_for(entt::registry&, entt::entity item);
+public:
+    entt::entity create();
 
-/// Get the name of an entity, either using the Identity component, or by using
-/// the entity ID.
-QString name_of(entt::registry&, entt::entity item);
+    bool valid(entt::entity) const;
 
-/// Get the global ray source of the database
-SD::ray_source_ptr get_ray_source(entt::registry const&);
+    /// Clear the active parent of an entity
+    void unset_parent(entt::entity child);
 
-/// Get the global simulation parameters
-SD::SimulationParameters& get_sim_params(entt::registry&);
+    /// Set the parent of an entity
+    void set_parent(entt::entity child, entt::entity parent);
+
+    /// Get the list of children of this entity. Returns an empty list if there
+    /// are none.
+    std::span<entt::entity const> children_of(entt::entity parent) const;
+
+    /// Get the parent of this entity. Returns entt::null if there is none.
+    entt::entity parent_of(entt::entity child) const;
+
+    /// Assign an entity to a geometry group
+    void assign_group(entt::entity child, entt::entity group);
+
+    /// Remove an entity from a geometry group
+    void unset_group(entt::entity child);
+
+    /// Create a new tag. Note that tag names should be unique.
+    entt::entity create_tag(QString name);
+
+    /// Ask if an entity has been given a tag
+    bool is_tagged(entt::entity item, entt::entity tag) const;
+
+    /// Assign an entity to a specific tag
+    void assign_tag(entt::entity item, entt::entity tag);
+
+    /// Remove a tag from an entity
+    void unassign_tag(entt::entity item, entt::entity tag);
+
+    /// Clear and destroy a specific tag
+    void delete_tag(entt::entity tag);
+
+    /// Get all the tags for an entity
+    std::span<entt::entity const> tags_for(entt::entity item) const;
+
+    /// Get the name of an entity, either using the Identity component, or by
+    /// using the entity ID.
+    QString name_of(entt::entity item) const;
+
+    /// Get the global ray source of the database
+    SD::ray_source_ptr get_ray_source() const;
+
+    /// Get the global simulation parameters
+    SD::SimulationParameters const& get_sim_params() const;
+
+public slots:
+    entt::entity add_group(QString               new_name,
+                           QVector<entt::entity> members,
+                           entt::entity          clone_from = entt::null);
+
+    void delete_group(entt::entity to_delete,
+                      entt::entity move_to = entt::null);
+};
 
 } // namespace db
