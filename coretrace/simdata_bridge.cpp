@@ -439,7 +439,7 @@ int run_optix_file_runner(TSystem* sys, const char* file_name)
     return 0;
 }
 
-int run_embree_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
+int run_embree_runner(SolTrace::Data::SimulationData& sd, TSystem* sys, int nthreads)
 {
     // Make embree runner
     SolTrace::EmbreeRunner::EmbreeRunner runner;
@@ -449,6 +449,9 @@ int run_embree_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
 
     // Setup simualtion (convert simulation data to TSystem)
     sts = runner.setup_simulation(&sd);
+
+    // Set number of threads
+    runner.set_number_of_threads(nthreads);
 
     // Set stage parameters (specific to native runner)
     set_tstage_parameters(sys, *runner.get_system());
