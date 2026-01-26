@@ -19,7 +19,7 @@ Column {
             }
             Row {
                 spacing: 10
-                x: !Settings.showDocumentation ? 0 : (parent.width - width) / 2
+                x: !UserSettings.showDocumentation ? 0 : (parent.width - width) / 2
                 Column {
                     spacing: 5
                     NumberField {
@@ -61,7 +61,7 @@ Column {
         Row {
             spacing: 20
             Layout.alignment: Qt.AlignTop
-            visible: Settings.showDocumentation
+            visible: UserSettings.showDocumentation
             Image {
                 id: equations
                 source: "qrc:/images/assets/images/point_source_sun_eq.svg"
@@ -69,7 +69,7 @@ Column {
                 fillMode: Image.PreserveAspectFit
                 smooth: true
                 anchors.verticalCenter: parent.verticalCenter
-                height: !Settings.showDocumentation ? 0 : implicitHeight
+                height: !UserSettings.showDocumentation ? 0 : implicitHeight
             }
             Column {
                 spacing: 10
@@ -81,7 +81,7 @@ Column {
                     fillMode: Image.PreserveAspectFit
                     smooth: true
                     anchors.horizontalCenter: parent.horizontalCenter
-                    height: !Settings.showDocumentation ? 0 : implicitHeight
+                    height: !UserSettings.showDocumentation ? 0 : implicitHeight
                 }
                 Body {
                     width: 280

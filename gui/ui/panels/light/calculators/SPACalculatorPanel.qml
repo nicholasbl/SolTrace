@@ -9,7 +9,7 @@ Column {
         body.text: Documentation.sun.spaCalculator
     }
     Row {
-        x: !Settings.showDocumentation ? 0 : (parent.width - width) / 2
+        x: !UserSettings.showDocumentation ? 0 : (parent.width - width) / 2
         spacing: 20
         LocationField {
             latitude: Session.core.sun.directionalSun.latitude
@@ -61,7 +61,7 @@ Column {
     Spacer {}
     Column {
         spacing: 10
-        x: !Settings.showDocumentation ? 0 : (parent.width - width) / 2
+        x: !UserSettings.showDocumentation ? 0 : (parent.width - width) / 2
         CheckBoxField {
             id: optionalFieldCheckBox
             label: "Optional fields"

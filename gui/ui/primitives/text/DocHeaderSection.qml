@@ -17,19 +17,19 @@ Column {
     Item {
         width: 1
         height: 8
-        visible: Settings.showDocumentation
+        visible: UserSettings.showDocumentation
     }
 
     Body {
         id: body
         width: parent.width
         text: Documentation.placeholderText1
-        visible: Settings.showDocumentation
+        visible: UserSettings.showDocumentation
     }
 
     Item {
         width: 1
         height: 20
-        visible: Settings.showDocumentation
+        visible: UserSettings.showDocumentation
     }
 }

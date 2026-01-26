@@ -197,10 +197,10 @@ Item {
                 spacing: root.iconSpacing
 
                 IconButton {
-                    label: "Docs" + (Settings.showDocumentation ? " ▾" : " ▸")
+                    label: "Docs" + (UserSettings.showDocumentation ? " ▾" : " ▸")
                     source: "qrc:/icons/assets/icons/info.svg"
                     anchors.verticalCenter: parent.verticalCenter
-                    onClicked: Settings.showDocumentation = !Settings.showDocumentation
+                    onClicked: UserSettings.showDocumentation = !UserSettings.showDocumentation
                 }
 
                 IconButton {

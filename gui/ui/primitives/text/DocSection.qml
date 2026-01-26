@@ -5,7 +5,7 @@ Column {
     property alias header: header
     property alias body: body
 
-    visible: Settings.showDocumentation
+    visible: UserSettings.showDocumentation
     spacing: 0
     width: parent.width
 

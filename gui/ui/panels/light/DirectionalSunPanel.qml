@@ -13,7 +13,7 @@ Column {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignTop
             spacing: 10
-            visible: Settings.showDocumentation
+            visible: UserSettings.showDocumentation
             DocSection {
                 width: parent.width
                 header.text: Documentation.sun.headers.directionalSun
@@ -28,7 +28,7 @@ Column {
         Column {
             spacing: 20
             Layout.alignment: Qt.AlignTop
-            visible: Settings.showDocumentation
+            visible: UserSettings.showDocumentation
             Column {
                 spacing: 10
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -39,7 +39,7 @@ Column {
                     fillMode: Image.PreserveAspectFit
                     smooth: true
                     anchors.horizontalCenter: parent.horizontalCenter
-                    height: !Settings.showDocumentation ? 0 : implicitHeight
+                    height: !UserSettings.showDocumentation ? 0 : implicitHeight
                 }
                 Body {
                     width: 280
@@ -55,7 +55,7 @@ Column {
                 fillMode: Image.PreserveAspectFit
                 smooth: true
                 anchors.horizontalCenter: parent.horizontalCenter
-                height: !Settings.showDocumentation ? 0 : implicitHeight
+                height: !UserSettings.showDocumentation ? 0 : implicitHeight
             }
         }
     }
@@ -65,7 +65,7 @@ Column {
         onIndexRequested: (newIndex) => Session.core.sun.calculatorIndex = newIndex
     }
     Spacer {
-        visible: Settings.showDocumentation
+        visible: UserSettings.showDocumentation
     }
     Item {
         width: parent.width

@@ -73,7 +73,7 @@ Column {
     property alias chartView: chartView
     property alias lineSeries: lineSeries
 
-    spacing: !Settings.showDocumentation ? 0 : 10
+    spacing: !UserSettings.showDocumentation ? 0 : 10
 
     onCurrentIndexChanged: {
         if (currentIndex !== 3) {
@@ -89,18 +89,18 @@ Column {
     RowLayout {
         id: controlRow
         width: parent.width
-        spacing: !Settings.showDocumentation ? 20 : 40
+        spacing: !UserSettings.showDocumentation ? 20 : 40
 
         Item {
-            Layout.fillWidth: Settings.showDocumentation
-            Layout.preferredHeight: Settings.showDocumentation ? 0 : 1
-            visible: Settings.showDocumentation
+            Layout.fillWidth: UserSettings.showDocumentation
+            Layout.preferredHeight: UserSettings.showDocumentation ? 0 : 1
+            visible: UserSettings.showDocumentation
         }
 
         Column {
             id: control
             Layout.preferredWidth: root.currentIndex == 3 ? 500 : 200
-            Layout.alignment: !Settings.showDocumentation || root.currentIndex == 3 ? Qt.AlignTop : Qt.AlignCenter
+            Layout.alignment: !UserSettings.showDocumentation || root.currentIndex == 3 ? Qt.AlignTop : Qt.AlignCenter
             spacing: 10
 
             // NumberField for Gaussian, Pillbox, Buie (indices 0-2)

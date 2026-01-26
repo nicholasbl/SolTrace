@@ -28,7 +28,7 @@ Column {
         onIndexRequested: (newIndex) =>  Session.core.sun.sunTypeIndex = newIndex
     }
 
-    Spacer {visible: Settings.showDocumentation}
+    Spacer {visible: UserSettings.showDocumentation}
 
     Item {
         width: parent.width
@@ -60,7 +60,7 @@ Column {
         onIndexRequested: (newIndex) => Session.core.sun.sunShapeIndex = newIndex
     }
 
-    Spacer {visible: Settings.showDocumentation}
+    Spacer {visible: UserSettings.showDocumentation}
 
     SunShapePanel {
         width: parent.width

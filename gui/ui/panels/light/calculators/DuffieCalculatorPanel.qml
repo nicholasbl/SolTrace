@@ -10,7 +10,7 @@ Column {
     }
     Row {
         spacing: 20
-        x: !Settings.showDocumentation ? 0 : (parent.width - width) / 2
+        x: !UserSettings.showDocumentation ? 0 : (parent.width - width) / 2
         LocationField {
             latitude: Session.core.sun.directionalSun.latitude
             longitude: Session.core.sun.directionalSun.longitude

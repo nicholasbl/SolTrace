@@ -9,7 +9,7 @@ Column {
         body.text: Documentation.sun.solposCalculator
     }
     Row {
-        x: !Settings.showDocumentation ? 0 : (parent.width - width) / 2
+        x: !UserSettings.showDocumentation ? 0 : (parent.width - width) / 2
         spacing: 20
         LocationField {
             latitude: Session.core.sun.directionalSun.latitude
@@ -40,7 +40,7 @@ Column {
     Spacer {}
     Row {
         spacing: 10
-        x: !Settings.showDocumentation ? 0 : (parent.width - width) / 2
+        x: !UserSettings.showDocumentation ? 0 : (parent.width - width) / 2
         TimeField {
             label: "Time"
             showSeconds: true

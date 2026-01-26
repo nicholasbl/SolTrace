@@ -22,7 +22,7 @@ Column {
         padding: 12
         columnsCentered: [true, true, false, true, true]
         columnsBolded: [true]
-        visible: Settings.showDocumentation
+        visible: UserSettings.showDocumentation
         rowData: [
             {
                 symbol: "ρ",
@@ -82,7 +82,7 @@ Column {
             }
         ]
     }
-    Spacer { visible: Settings.showDocumentation}
+    Spacer { visible: UserSettings.showDocumentation}
     GlassTabBar {
         model: ["Table View", "List View"]
     }

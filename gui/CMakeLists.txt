@@ -88,7 +88,7 @@ qt_add_resources(SolTrace "icons"
 
 set_source_files_properties(
     ui/state/Theme.qml
-    ui/state/Settings.qml
+    ui/state/UserSettings.qml
     ui/state/Session.qml
     ui/state/Documentation.qml
     ui/state/Enums.qml
@@ -102,7 +102,7 @@ qt_add_qml_module(SolTrace
         ui/Main.qml
 
         ui/state/Theme.qml
-        ui/state/Settings.qml
+        ui/state/UserSettings.qml
         ui/state/Session.qml
         ui/state/Documentation.qml
         ui/state/Enums.qml
