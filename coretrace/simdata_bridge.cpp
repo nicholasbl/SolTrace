@@ -439,7 +439,7 @@ int run_optix_file_runner(TSystem* sys, const char* file_name)
     return 0;
 }
 
-int run_embree_runner(SolTrace::Data::SimulationData& sd, TSystem* sys, int nthreads)
+int run_embree_runner(SolTrace::Data::SimulationData& sd, TSystem* sys, const int nthreads)
 {
     // Make embree runner
     SolTrace::EmbreeRunner::EmbreeRunner runner;

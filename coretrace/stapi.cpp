@@ -797,7 +797,7 @@ STCORE_API int st_sim_run_SolTrace20(st_context_t pcxt, unsigned int seed, const
 			break;
 		// Embree
 		case(ST_RUNNER_EMBREE):
-			run_embree_runner(sd, sys);
+			run_embree_runner(sd, sys, nthreads);
 			break;
 		default:
 			return -1;
