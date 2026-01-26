@@ -1,5 +1,5 @@
 pragma Singleton
-import QtQuick 2.15
+import QtQuick
 
 // Very rough sketch of session data, will replace indices with enums later
 QtObject {
@@ -33,6 +33,7 @@ QtObject {
                 property int interval: 1  // seconds
 
                 // SPA specific (optional parameters)
+                property bool optionalFieldsEnabled: false
                 property real deltaUt1: 0.0  // seconds, range: -1 to 1
                 property real altitude: 1000.0  // meters, elevation above sea level
                 property real pressure: 1013.25  // mbar (standard atmospheric pressure)

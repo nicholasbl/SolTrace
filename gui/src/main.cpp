@@ -10,6 +10,7 @@ int main(int argc, char* argv[]) {
     // Check if we are a worker. If so, this function will not return.
     check_if_process_worker(argc, argv);
 
+    qputenv("QML_DISABLE_DISK_CACHE", "1");
     qputenv("QT_QUICK_CONTROLS_MATERIAL_VARIANT", "Dense");
 
     QApplication app(argc, argv);

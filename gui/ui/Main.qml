@@ -6,8 +6,6 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 
 import QtGraphs
-
-
 import SolTraceProto
 
 ApplicationWindow {
@@ -42,10 +40,8 @@ ApplicationWindow {
             anchors.bottom: bottombar.top
             anchors.topMargin: 15
             anchors.bottomMargin: 15
-
-            source: "core/" + root.workflow[Session.core.workflowIndex] + ".qml"
-
             onLoaded: item.source = sim
+            source: "core/" + root.workflow[Session.core.workflowIndex] + ".qml"
         }
 
         BottomPane {

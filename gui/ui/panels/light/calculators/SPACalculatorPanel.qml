@@ -60,13 +60,19 @@ Column {
     Spacer {}
     Spacer {}
     Column {
-        spacing: 5
+        spacing: 10
         x: !Settings.showDocumentation ? 0 : (parent.width - width) / 2
-        Label {
-            text: "Optional Fields"
-            font.pointSize: Theme.controlRowLabelSize
+        CheckBoxField {
+            id: optionalFieldCheckBox
+            label: "Optional fields"
+            checked: Session.core.sun.directionalSun.optionalFieldsEnabled
+            onCheckBoxClicked: {
+                Session.core.sun.directionalSun.optionalFieldsEnabled = !Session.core.sun.directionalSun.optionalFieldsEnabled
+            }
         }
+
         Row {
+            opacity: Session.core.sun.directionalSun.optionalFieldsEnabled ? 1 : 0.5
             spacing: 20
             NumberField {
                 unit: "s"

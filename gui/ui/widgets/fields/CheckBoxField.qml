@@ -7,6 +7,7 @@ MouseArea {
 
     property string label: ""
     property bool checked: false
+    property alias checkBox: checkBox
 
     // Renamed to avoid conflict with MouseArea's clicked signal
     signal checkBoxClicked()

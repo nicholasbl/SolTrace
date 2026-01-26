@@ -20,7 +20,7 @@ Rectangle {
         id: updateTimer
         interval: 16
         repeat: true
-        running: root.visible && root.source && globalWindow !== null && !root.isDestroying
+        running: !!(root.visible && root.source && globalWindow !== undefined && !root.isDestroying)
         onTriggered: {
             if (root.isDestroying) {
                 stop()
@@ -32,8 +32,8 @@ Rectangle {
 
     Connections {
         id: windowConnections
-        target: !root.isDestroying && globalWindow !== null ? globalWindow : null
-        enabled: root.visible && !root.isDestroying
+        target: globalWindow ?? null
+        enabled: root.visible && !root.isDestroying && globalWindow !== undefined
 
         function onXChanged() {
             if (!root.isDestroying) updateSourceRect()
@@ -87,7 +87,7 @@ Rectangle {
         if (isDestroying) return Qt.rect(0, 0, 0, 0)
 
         try {
-            if (globalWindow !== null && globalWindow.contentItem) {
+            if (globalWindow !== undefined && globalWindow.contentItem != null) {
                 var pos = root.mapToItem(globalWindow.contentItem, 0, 0)
                 return Qt.rect(pos.x, pos.y, root.width, root.height)
             }
@@ -156,7 +156,7 @@ Rectangle {
     ShaderEffectSource {
         id: effect_source
         anchors.fill: root
-        sourceItem: !root.isDestroying ? root.source : null
+        sourceItem: !root.isDestroying && root.source !== undefined ? root.source : null
         sourceRect: Qt.rect(0, 0, 0, 0)
         visible: false
         z: -2
@@ -212,7 +212,7 @@ Rectangle {
     }
 
     Component.onCompleted: {
-        if (globalWindow !== null && root.source) {
+        if (globalWindow !== undefined && root.source) {
             updateSourceRect()
         }
     }

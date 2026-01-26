@@ -6,7 +6,7 @@ MouseArea {
     property bool checked: false
     property int radius: 25
     width: 25
-    height: 25
+    height: width
 
     onClicked: {
         checked = !checked
