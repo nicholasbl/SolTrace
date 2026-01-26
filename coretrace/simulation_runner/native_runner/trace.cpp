@@ -299,9 +299,9 @@ namespace SolTrace::NativeRunner
 				double LastDFXYZ[3] = {0.0, 0.0, 0.0};
 				uint_fast64_t LastElementNumber = 0;
 				uint_fast64_t LastRayNumber = 0;
-				int ErrorFlag;
-				int LastHitBackSide;
-				bool StageHit;
+				int ErrorFlag = 0;
+				int LastHitBackSide = 0;
+				bool StageHit = false;
 				int MultipleHitCount = 0;
 				double PosRayOutElement[3] = {0.0, 0.0, 0.0};
 				double CosRayOutElement[3] = {0.0, 0.0, 0.0};
