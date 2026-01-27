@@ -92,7 +92,7 @@ template <class Record>
 QHash<int, QByteArray> const& get_name_map() {
     constexpr auto meta = Record::sm_meta_getter();
 
-    static QHash<int, QByteArray> ret = []() {
+    static QHash<int, QByteArray> ret = [&]() {
         QHash<int, QByteArray> build;
 
         for (int i = 0; i < std::size(meta); i++) {
@@ -412,6 +412,7 @@ protected:
     virtual bool request_append(std::span<Record>) { return false; }
 
 
+    // these must be infallible
     void store_push_insert(int at, std::span<Record> list) {
         this->beginInsertRows({}, at, at + list.size() - 1);
         this->m_records.insert(at, list);
@@ -432,8 +433,6 @@ protected:
                                  { Qt::DisplayRole, Qt::EditRole });
     }
     void store_reset(QVector<Record> new_records = {}) {
-        if (!this->request_reset(new_records)) { return; }
-
         this->beginResetModel();
         this->m_records = new_records;
         this->endResetModel();
@@ -441,8 +440,6 @@ protected:
 
     // this emits a remove signal, instead of a reset
     void store_remove_all() {
-        if (!this->request_reset({})) { return; }
-
         if (this->m_records.empty()) { return; }
 
         beginRemoveRows({}, 0, this->rowCount() - 1);
@@ -537,6 +534,12 @@ public:
         }
 
         return ok;
+    }
+
+    QHash<int, QByteArray> roleNames() const override {
+        static const auto roles = get_name_map<Record>();
+
+        return roles;
     }
 
     bool insertRows(int                row,

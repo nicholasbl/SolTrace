@@ -39,12 +39,12 @@ struct std::hash<SD::OpticalProperties> {
 
 
 template <>
-struct std::hash<db::GroupParameters> {
-    std::size_t operator()(db::GroupParameters const& a) const {
+struct std::hash<db::GroupParameterComponent> {
+    std::size_t operator()(db::GroupParameterComponent const& a) const {
         size_t seed = 0;
 
-        hash_combine(seed, *a.aperture);
-        hash_combine(seed, *a.surface);
+        if (a.aperture) hash_combine(seed, *a.aperture);
+        if (a.surface) hash_combine(seed, *a.surface);
         hash_combine(seed, a.optics_front);
         hash_combine(seed, a.optics_back);
 
@@ -233,9 +233,10 @@ Database::Database(QObject* p)
       parent(m_registry),
       tag_root(m_registry),
       group_root(m_registry),
+      group_parameters(m_registry),
       children(m_registry),
-      group(m_registry),
-      tags(m_registry) { }
+      group_membership(m_registry),
+      tag_membership(m_registry) { }
 
 // =============================================================================
 
@@ -243,7 +244,7 @@ static void
 import_optics(Database&                                          reg,
               entt::entity                                       entity,
               SD::Element const&                                 item,
-              std::unordered_map<GroupParameters, entt::entity>& groups,
+              std::unordered_map<GroupParameterComponent, entt::entity>& groups,
               size_t& group_counter) {
 
     auto& registry = reg.as_registry();
@@ -265,7 +266,7 @@ import_optics(Database&                                          reg,
         return;
     }
 
-    auto local = GroupParameters {
+    auto local = GroupParameterComponent {
         .aperture     = item.get_aperture(),
         .surface      = item.get_surface(),
         .optics_front = *item.get_front_optical_properties(),
@@ -280,13 +281,15 @@ import_optics(Database&                                          reg,
     } else {
         // no such group
 
-        auto new_group = GroupComponent {
-            .parameters = std::make_shared<GroupParameters>(local),
-        };
+        auto new_group_params = local;
+
+        auto new_group = GroupComponent {};
 
         auto group_entity = reg.create();
 
         registry.emplace<GroupComponent>(group_entity, new_group);
+        registry.emplace<GroupParameterComponent>(group_entity,
+                                                  new_group_params);
         registry.emplace<IdentityComponent>(
             group_entity,
             IdentityComponent {
@@ -325,7 +328,7 @@ void Database::import(SD::SimulationData& data) {
     };
 
     // MAP MAY NOT BE RE-USED!
-    std::unordered_map<GroupParameters, entt::entity> groups;
+    std::unordered_map<GroupParameterComponent, entt::entity> groups;
 
     size_t group_counter = 0;
 
@@ -415,7 +418,7 @@ static void install_transform(SD::element_ptr           ptr,
     ptr->set_zrot_radians(gamma);
 }
 
-static void install_group(SD::element_ptr ptr, GroupParameters const& param) {
+static void install_group(SD::element_ptr ptr, GroupParameterComponent const& param) {
     ptr->set_aperture(param.aperture);
     ptr->set_surface(param.surface);
 
@@ -484,7 +487,7 @@ Database::export_to_simdata(entt::registry& reg) {
         for (auto const& [e, gm] : view.each()) {
 
             // get group, we assume this is valid
-            auto const& group = reg.get<GroupComponent>(gm.group).parameters;
+            auto const& group = reg.get<GroupParameterComponent>(gm.group);
 
             auto element = entity_element_map.at(e);
 
@@ -499,7 +502,7 @@ Database::export_to_simdata(entt::registry& reg) {
 
                     auto n = std::make_shared<SD::SingleElement>();
                     composite->add_element(n);
-                    install_group(n, *group);
+                    install_group(n, group);
 
                     continue;
                 }
@@ -507,7 +510,7 @@ Database::export_to_simdata(entt::registry& reg) {
 
             // has no children
 
-            install_group(element, *group);
+            install_group(element, group);
         }
     }
 
@@ -630,6 +633,10 @@ void Database::unset_group(entt::entity child) {
 }
 
 void Database::assign_group(entt::entity child, entt::entity group) {
+    if (!valid(child) or !valid(group)) return;
+
+    if (!m_registry.all_of<GroupComponent>(group)) return;
+
     unset_group(child);
 
     m_registry.emplace_or_replace<GroupMemberComponent>(
@@ -772,38 +779,39 @@ entt::entity Database::add_group(QString               new_name,
     auto set = std::unordered_set(members.begin(), members.end());
 
 
-    std::shared_ptr<GroupParameters> params;
+    GroupParameterComponent params;
 
     if (m_registry.valid(clone_from) and
-        m_registry.all_of<GroupComponent>(clone_from)) {
+        m_registry.all_of<GroupParameterComponent>(clone_from)) {
 
-        auto& other_p = m_registry.get<GroupComponent>(clone_from).parameters;
+        auto& other_p = m_registry.get<GroupParameterComponent>(clone_from);
 
-        // horrible, but it works.
+        // horrible, but it works. library classes don't all have clone()
         nlohmann::ordered_json node;
 
-        other_p->surface->write_json(node);
+        other_p.surface->write_json(node);
 
-        params = std::make_shared<GroupParameters>(GroupParameters {
-            .aperture = other_p->aperture->make_copy(),
-            .surface  = SD::make_surface_from_json(node),
-        });
+        params.aperture = other_p.aperture->make_copy();
+        params.surface  = SD::make_surface_from_json(node);
     } else {
-        params = std::make_shared<GroupParameters>(GroupParameters {
-            .aperture = SD::make_aperture<SD::Circle>(1.0),
-            .surface  = SolTrace::Data::make_surface_from_type(
-                SolTrace::Data::SurfaceType::FLAT, { 1.0, 1.0 }),
-        });
+        params.aperture = SD::make_aperture<SD::Circle>(1.0);
+        params.surface  = SolTrace::Data::make_surface_from_type(
+            SolTrace::Data::SurfaceType::FLAT, { 1.0, 1.0 });
     }
 
+
+    for (auto mem : members) {
+        this->unset_group(mem);
+    }
 
     auto ent = m_registry.create();
     m_registry.emplace<GroupComponent>(
         ent,
         GroupComponent {
-            .parameters = params,
-            .members    = QVector<entt::entity>(set.begin(), set.end()),
+            .members = QVector<entt::entity>(set.begin(), set.end()),
         });
+    m_registry.emplace<GroupParameterComponent>(ent, params);
+
 
     m_registry.emplace<IdentityComponent>(
         ent, IdentityComponent { .name = new_name });

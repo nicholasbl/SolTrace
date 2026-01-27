@@ -67,6 +67,38 @@ FocusScope {
             eulerRotation.y: 45
         }
 
+
+
+        Node {
+
+            // for the moment, we are going to hang everything off here
+
+            rotation: Quaternion.fromEulerAngles(-90,0,0)
+
+            // Display scene geometry
+            Repeater3D {
+                model: Backend.world_geometry_model
+
+                delegate: Model {
+                    required property var group_instances;
+                    required property var group_geometry;
+
+                    instancing: group_instances
+                    geometry: group_geometry
+
+                    materials : [
+                        PrincipledMaterial {
+                            metalness: 1
+                            roughness: 0
+                            baseColor: Qt.white
+                        }
+                    ]
+                }
+            }
+        }
+
+
+
     }
 
     SceneNavigator {

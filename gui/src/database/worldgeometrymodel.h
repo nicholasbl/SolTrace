@@ -24,8 +24,6 @@ class InstancedElements : public QQuick3DInstancing {
 private slots:
     void on_group_change(entt::entity);
 
-    void on_group_mem_change(entt::entity);
-
 public:
     explicit InstancedElements(Database*       db,
                                entt::entity    group,
@@ -34,12 +32,12 @@ public:
 
 struct VisibleGroup {
     entt::entity                       group_entity;
-    std::shared_ptr<InstancedElements> instances;
-    std::shared_ptr<SurfaceGeometry>   geometry;
+    std::shared_ptr<InstancedElements> group_instances;
+    std::shared_ptr<SurfaceGeometry>   group_geometry;
 
     RECORD_META(VisibleGroup,
-                SM_EXPOSE_RO(instances),
-                SM_EXPOSE_RO(geometry), );
+                SM_EXPOSE_RO(group_instances),
+                SM_EXPOSE_RO(group_geometry), );
 };
 
 

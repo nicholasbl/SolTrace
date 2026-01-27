@@ -4,6 +4,8 @@
 #include <QtGui/qvectornd.h>
 #include <QtQuick3D/qquick3dgeometry.h>
 
+#include "database/components.h"
+#include "database/database.h"
 #include "qt_helpers.h"
 
 #include "aperture.hpp"
@@ -14,14 +16,14 @@ namespace SD = SolTrace::Data;
 
 namespace db {
 
-struct GroupParameters;
+struct GroupParameterComponent;
 
 /// Surface geometry visualization. Creates geometry for Quick3D for a given
 /// group
-class SurfaceGeometry : public QQuick3DGeometry {
+class SurfaceGeometry : public QQuick3DGeometry, public DatabaseObserver {
     Q_OBJECT
 
-    std::shared_ptr<GroupParameters> m_parameters;
+    entt::entity m_current_group;
 
     struct Vertex {
         QVector3D position;
@@ -29,18 +31,21 @@ class SurfaceGeometry : public QQuick3DGeometry {
         QVector2D uv;
     };
 
+    void set_new_database_connections(Database* ptr) override;
+
+private slots:
+    void parameters_changed(entt::entity);
+    void rebuild_geometry();
+
 public:
     SurfaceGeometry();
 
-    void set(std::shared_ptr<GroupParameters>);
-
-public slots:
-    void rebuild_geometry();
+    void set(Database*, entt::entity group);
 };
 
 
 /// Model providing an interface to edit a group
-class GroupEditor : public QObject {
+class GroupEditor : public QObject, public DatabaseObserver {
     Q_OBJECT
 
     // TODO: Front and back optics
@@ -63,7 +68,9 @@ public:
     Q_ENUM(SurfaceKind);
 
 private:
-    std::shared_ptr<GroupParameters> m_current;
+    entt::entity m_current_group;
+
+    void set_new_database_connections(Database* ptr) override;
 
     QOBJECT_WRITABLE_PROPERTY(SurfaceGeometry, surface_geometry);
 
@@ -85,12 +92,16 @@ private:
     void make_new_aperture(ApertureKind);
     void make_new_surface(SurfaceKind);
 
+private slots:
+    void parameters_changed(entt::entity);
+
 public:
     explicit GroupEditor(QObject* parent = nullptr);
     ~GroupEditor() override;
 
-    void set(std::shared_ptr<GroupParameters>);
+    void set(Database*, entt::entity group);
 
+public slots:
     ApertureKind kind() const;
     void         set_kind(ApertureKind newKind);
 

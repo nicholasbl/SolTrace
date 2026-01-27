@@ -4,27 +4,44 @@
 
 namespace db {
 
-// -------------------- Surface --------------------
-
 SurfaceGeometry::SurfaceGeometry() {
     rebuild_geometry();
 }
 
-void SurfaceGeometry::set(std::shared_ptr<GroupParameters> ptr) {
-    m_parameters = ptr;
+void SurfaceGeometry::set_new_database_connections(Database* ptr) {
+    connect(ptr->group_parameters.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &SurfaceGeometry::parameters_changed);
+}
+
+void SurfaceGeometry::set(Database* ptr, entt::entity group) {
+    observe(ptr);
+    m_current_group = group;
+
     rebuild_geometry();
+}
+
+void SurfaceGeometry::parameters_changed(entt::entity group) {
+    if (group == m_current_group) rebuild_geometry();
 }
 
 void SurfaceGeometry::rebuild_geometry() {
     clear();
 
-    if (!m_parameters || !m_parameters->surface || !m_parameters->aperture) {
+    if (!database()) return;
+
+    auto ptr = database()->group_parameters.get(m_current_group);
+
+    if (!ptr) return;
+
+    if (!ptr->surface || !ptr->aperture) {
         update();
         return;
     }
 
-    auto surface  = m_parameters->surface;
-    auto aperture = m_parameters->aperture;
+    auto surface  = ptr->surface;
+    auto aperture = ptr->aperture;
 
     auto [points, indices] = aperture->triangulation();
 
@@ -116,6 +133,9 @@ void SurfaceGeometry::rebuild_geometry() {
     setBounds(boundsMin, boundsMax);
     setPrimitiveType(QQuick3DGeometry::PrimitiveType::Triangles);
 
+    qDebug() << Q_FUNC_INFO << entt::to_integral(m_current_group)
+             << verts.size() << indices.size();
+
     update();
 }
 
@@ -185,10 +205,6 @@ static GroupEditor::ApertureKind convert(SD::ApertureType k) {
 GroupEditor::GroupEditor(QObject* parent)
     : QObject { parent }, m_surface_geometry(new SurfaceGeometry()) {
 
-    connect(this,
-            &GroupEditor::updated,
-            m_surface_geometry,
-            &SurfaceGeometry::rebuild_geometry);
 
     connect(
         this, &GroupEditor::surface_kind_changed, this, &GroupEditor::updated);
@@ -199,7 +215,6 @@ GroupEditor::GroupEditor(QObject* parent)
         make_new_surface(m_surf_kind);
     });
 
-    set(std::make_shared<GroupParameters>());
     make_new_aperture(ApertureKind::Rectangle);
 }
 
@@ -207,8 +222,17 @@ GroupEditor::~GroupEditor() {
     delete m_surface_geometry;
 }
 
+void GroupEditor::parameters_changed(entt::entity e) { }
+
+void GroupEditor::set_new_database_connections(Database* ptr) {
+    connect(ptr->group_parameters.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &GroupEditor::parameters_changed);
+}
+
 void GroupEditor::make_new_aperture(ApertureKind type) {
-    auto& p = *m_current;
+    if (!database()) return;
 
     if (m_aperture_editor) {
         QObject* p = m_aperture_editor;
@@ -218,39 +242,47 @@ void GroupEditor::make_new_aperture(ApertureKind type) {
 
 #define EDIT_CASE(TYPE, ...)                                                   \
     {                                                                          \
-        auto ptr    = SD::make_aperture<SD::TYPE>(__VA_ARGS__);                \
-        p.aperture  = ptr;                                                     \
-        auto editor = new TYPE##Wrapper(ptr.get(), this);                      \
+        auto ptr        = SD::make_aperture<SD::TYPE>(__VA_ARGS__);            \
+        params.aperture = ptr;                                                 \
+        auto editor     = new TYPE##Wrapper(ptr.get(), this);                  \
         set_aperture_editor(editor);                                           \
         connect(editor, &TYPE##Wrapper::changed, this, &GroupEditor::updated); \
     }                                                                          \
     break;
 
-    switch (convert(type)) {
-    case SolTrace::Data::ANNULUS: EDIT_CASE(Annulus, 0.0, 1.0, 2 * M_PI);
-    case SolTrace::Data::CIRCLE: EDIT_CASE(Circle, 1.0);
-    case SolTrace::Data::HEXAGON: EDIT_CASE(Hexagon, 1.0);
-    case SolTrace::Data::RECTANGLE: EDIT_CASE(Rectangle, 1.0, 1.0);
-    case SolTrace::Data::EQUILATERAL_TRIANGLE:
-        EDIT_CASE(EqualateralTriangle, 1.0);
-    case SolTrace::Data::IRREGULAR_TRIANGLE:
-        EDIT_CASE(IrregularTriangle, 0, 1, 0, 0, 1, 0);
-    case SolTrace::Data::IRREGULAR_QUADRILATERAL:
-        EDIT_CASE(IrregularQuadrilateral, -1, -1, -1, 1, 1, 1, 1, -1);
-    default: return make_new_aperture(ApertureKind::Circle);
-    }
+    database()->as_registry().patch<GroupParameterComponent>(
+        m_current_group, [this, type](GroupParameterComponent& params) {
+            switch (convert(type)) {
+            case SolTrace::Data::ANNULUS:
+                EDIT_CASE(Annulus, 0.0, 1.0, 2 * M_PI);
+            case SolTrace::Data::CIRCLE: EDIT_CASE(Circle, 1.0);
+            case SolTrace::Data::HEXAGON: EDIT_CASE(Hexagon, 1.0);
+            case SolTrace::Data::RECTANGLE: EDIT_CASE(Rectangle, 1.0, 1.0);
+            case SolTrace::Data::EQUILATERAL_TRIANGLE:
+                EDIT_CASE(EqualateralTriangle, 1.0);
+            case SolTrace::Data::IRREGULAR_TRIANGLE:
+                EDIT_CASE(IrregularTriangle, 0, 1, 0, 0, 1, 0);
+            case SolTrace::Data::IRREGULAR_QUADRILATERAL:
+                EDIT_CASE(IrregularQuadrilateral, -1, -1, -1, 1, 1, 1, 1, -1);
+            default: return make_new_aperture(ApertureKind::Circle);
+            }
+        });
 }
 
 void GroupEditor::make_new_surface(SurfaceKind type) {
     // weeeee
     auto const& l      = surface_arguments();
     auto        sdvec  = std::vector<double> { l.begin(), l.end() };
-    m_current->surface = SD::make_surface_from_type(convert(type), sdvec);
+    database()->as_registry().patch<GroupParameterComponent>(
+        m_current_group, [sdvec, type](GroupParameterComponent& params) {
+            params.surface = SD::make_surface_from_type(convert(type), sdvec);
+        });
 }
 
-void GroupEditor::set(std::shared_ptr<GroupParameters> ptr) {
-    m_surface_geometry->set(ptr);
-    m_current = std::move(ptr);
+void GroupEditor::set(Database* database, entt::entity group) {
+    observe(database);
+    m_current_group = group;
+    m_surface_geometry->set(database, group);
     emit updated();
 }
 

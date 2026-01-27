@@ -28,25 +28,28 @@ void InstancedElements::on_group_change(entt::entity group) {
         m_rev_cache[member] = m_member_cache.size();
         m_member_cache.push_back(member);
     }
-}
 
-void InstancedElements::on_group_mem_change(entt::entity) { }
+    qDebug() << Q_FUNC_INFO << "group" << entt::to_integral(group) << "->"
+             << m_member_cache.size();
+}
 
 InstancedElements::InstancedElements(Database*       db,
                                      entt::entity    group,
                                      QQuick3DObject* parent)
-    : QQuick3DInstancing(parent) {
+    : QQuick3DInstancing(parent), m_database(db), m_target_group(group) {
     if (!db) return;
 
-    connect(db->group.self(),
+    connect(db->group_membership.self(),
             &ComponentAPIBase::changed,
             this,
             &InstancedElements::on_group_change);
 
-    connect(db->group.self(),
+    connect(db->group_membership.self(),
             &ComponentAPIBase::removed,
             this,
             &InstancedElements::on_group_change);
+
+    on_group_change(group);
 }
 
 QByteArray InstancedElements::getInstanceBuffer(int* instanceCount) {
@@ -59,21 +62,23 @@ QByteArray InstancedElements::getInstanceBuffer(int* instanceCount) {
 // =============================================================================
 
 static VisibleGroup vis_assets_for_entity(Database& db, entt::entity e) {
-    auto vg =
-        VisibleGroup { .group_entity = e,
-                       .instances = std::make_shared<InstancedElements>(&db, e),
-                       .geometry  = std::make_shared<SurfaceGeometry>() };
+    auto vg = VisibleGroup {
+        .group_entity    = e,
+        .group_instances = std::make_shared<InstancedElements>(&db, e),
+        .group_geometry  = std::make_shared<SurfaceGeometry>(),
+    };
 
-    auto grp = db.group_root.get(e);
+    auto grp = db.group_parameters.get(e);
 
     assert(grp);
 
-    vg.geometry->set(grp->parameters);
+    vg.group_geometry->set(&db, e);
 
     return vg;
 }
 
 QVector<VisibleGroup> WorldGeometryModel::rebuild_lists() {
+    qDebug() << Q_FUNC_INFO;
     QVector<VisibleGroup> new_recs;
     m_reverse.clear();
 
@@ -88,6 +93,8 @@ QVector<VisibleGroup> WorldGeometryModel::rebuild_lists() {
     for (size_t i = 0; i < new_recs.size(); i++) {
         m_reverse[new_recs[i].group_entity] = i;
     }
+
+    qDebug() << Q_FUNC_INFO << "Done" << new_recs.size();
 
     return new_recs;
 }

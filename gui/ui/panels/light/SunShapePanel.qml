@@ -1,6 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Layouts
-import QtCharts
+import QtGraphs
 import SolTraceProto
 
 Column {
@@ -176,44 +176,58 @@ Column {
             radius: 8
             Layout.alignment: Qt.AlignTop
 
-            ChartView {
+            GraphsView {
                 id: chartView
                 anchors.fill: parent
                 anchors.margins: 10
-                title: chartTitle
-                legend.visible: false
-                titleColor: Theme.textColor
-                backgroundColor: "transparent"
+                //title: chartTitle
+                //legend.visible: false
+                //titleColor: Theme.textColor
+                //backgroundColor: "transparent"
 
-                ValueAxis {
-                    id: xAxis
-                    titleText: "<font color='white'>" + xAxisTitle + "</font>"
-                    min: xAxisMin
-                    max: xAxisMax
-                    color: Theme.textColor
-                    labelsColor: Theme.textColor
-                    shadesColor: Theme.textColor
-                    gridLineColor: Theme.lineColor
-                    gridVisible: false
-                    minorGridVisible: false
+                theme: GraphsTheme {
+                    colorScheme: GraphsTheme.ColorScheme.Light
+                    backgroundVisible: false
+                    seriesColors: ["#E0D080", "#B0A060"]
+                    borderColors: [Theme.lineColor]
+                    plotAreaBackgroundVisible: false
+                    grid.mainColor: Theme.lineColor
+                    grid.subColor: Theme.lineColor
+                    axisY.mainColor: Theme.lineColor
+                    axisY.subColor: Theme.lineColor
+                    axisX.mainColor: Theme.lineColor
+                    axisX.subColor: Theme.lineColor
+                    labelTextColor: Theme.textColor
                 }
 
-                ValueAxis {
+
+                axisX: ValueAxis {
+                    id: xAxis
+                    titleText: xAxisTitle
+                    min: xAxisMin
+                    max: xAxisMax
+                    //color: Theme.textColor
+                    //labelsColor: Theme.textColor
+                    //shadesColor: Theme.textColor
+                    //gridLineColor: Theme.lineColor
+                    //gridVisible: false
+                    //minorGridVisible: false
+                }
+
+                axisY: ValueAxis {
                     id: yAxis
-                    titleText: "<font color='white'>" + yAxisTitle + "</font>"
+                    titleText: yAxisTitle
                     min: yAxisMin
                     max: yAxisMax
-                    color: Theme.textColor
-                    labelsColor: Theme.textColor
-                    shadesColor: Theme.textColor
-                    gridLineColor: Theme.lineColor
+                    //color: Theme.textColor
+                    //labelsColor: Theme.textColor
+                    //shadesColor: Theme.textColor
+                    //gridLineColor: Theme.lineColor
                 }
 
                 LineSeries {
                     id: lineSeries
                     name: ""
-                    axisX: xAxis
-                    axisY: yAxis
                 }
             }
         }

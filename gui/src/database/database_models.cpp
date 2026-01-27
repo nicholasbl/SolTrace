@@ -325,12 +325,12 @@ void AnInstanceEditor::reset(Database* database) {
             this,
             &AnInstanceEditor::an_entity_changed);
 
-    connect(database->group.self(),
+    connect(database->group_membership.self(),
             &ComponentAPIBase::changed,
             this,
             &AnInstanceEditor::an_entity_changed);
 
-    connect(database->tags.self(),
+    connect(database->tag_membership.self(),
             &ComponentAPIBase::changed,
             this,
             &AnInstanceEditor::an_entity_changed);
@@ -412,7 +412,7 @@ void AnInstanceEditor::set_hidden(bool newHidden) {
 
 entt::entity AnInstanceEditor::group() const {
     if (m_host and m_host->valid(m_entity)) {
-        if (auto tf = m_host->group.get(m_entity); tf) { return tf->group; }
+        if (auto tf = m_host->group_membership.get(m_entity); tf) { return tf->group; }
     }
 
     return entt::null;
@@ -444,7 +444,7 @@ void AnInstanceEditor::set_parent(entt::entity newParent) {
 
 QVector<entt::entity> AnInstanceEditor::tags() const {
     if (m_host and m_host->valid(m_entity)) {
-        if (auto tf = m_host->tags.get(m_entity); tf) { return tf->tags; }
+        if (auto tf = m_host->tag_membership.get(m_entity); tf) { return tf->tags; }
     }
 
     return {};

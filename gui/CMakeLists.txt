@@ -6,7 +6,7 @@ include(cmake/CPM.cmake)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Quick Quick3D Charts Widgets)
+find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Quick Quick3D Widgets Graphs)
 
 set(QT_QML_GENERATE_QMLLS_INI ON)
 
@@ -246,8 +246,8 @@ target_link_libraries(SolTrace
         Qt6::Gui
         Qt6::Quick
         Qt6::Quick3D
-        Qt6::Charts
         Qt6::Widgets
+        Qt6::Graphs
         simdata
         simresult
         native_runner

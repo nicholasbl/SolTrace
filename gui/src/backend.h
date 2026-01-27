@@ -2,6 +2,7 @@
 
 #include "database/database.h"
 #include "database/database_models.h"
+#include "database/worldgeometrymodel.h"
 #include "qt_helpers.h"
 #include "utilities/notification.h"
 
@@ -27,6 +28,8 @@ class Backend : public QObject {
     QOBJECT_READONLY_PROPERTY(db::GroupsModel, groups_model);
     QOBJECT_READONLY_PROPERTY(db::TagsModel, tags_model);
     QOBJECT_READONLY_PROPERTY(db::AnInstanceEditor, instance_edit_model);
+    QOBJECT_READONLY_PROPERTY(db::WorldGeometryModel, world_geometry_model);
+
 
     void install(db::Database*);
 

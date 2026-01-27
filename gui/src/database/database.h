@@ -5,6 +5,8 @@
 #include "database/components.h"
 #include "database/database_notification.h"
 
+#include <QPointer>
+
 
 // TODO BETTER COMPOSITE SUPPORT
 
@@ -24,6 +26,7 @@ void emplace_patch(entt::registry& reg, entt::entity entity, Function&& f) {
 
     reg.patch<Component>(entity, f);
 }
+
 
 class Database : public QObject {
     entt::registry m_registry;
@@ -51,15 +54,16 @@ public:
     entt::registry const& as_registry() const { return m_registry; }
 
 public:
-    ComponentAPIUpdate<IdentityComponent>  identity;
-    ComponentAPIUpdate<TransformComponent> transform;
-    ComponentAPIUpdate<InvisibleComponent> invisible;
-    ComponentAPI<ChildOfComponent>         parent;
-    ComponentAPI<TagComponent>             tag_root;
-    ComponentAPI<GroupComponent>           group_root;
-    ComponentAPI<ChildrenComponent>        children;
-    ComponentAPI<GroupMemberComponent>     group;
-    ComponentAPI<TagMembershipComponent>   tags;
+    ComponentAPIUpdate<IdentityComponent>       identity;
+    ComponentAPIUpdate<TransformComponent>      transform;
+    ComponentAPIUpdate<InvisibleComponent>      invisible;
+    ComponentAPI<ChildOfComponent>              parent;
+    ComponentAPI<TagComponent>                  tag_root;
+    ComponentAPI<GroupComponent>                group_root;
+    ComponentAPIUpdate<GroupParameterComponent> group_parameters;
+    ComponentAPI<ChildrenComponent>             children;
+    ComponentAPI<GroupMemberComponent>          group_membership;
+    ComponentAPI<TagMembershipComponent>        tag_membership;
 
 public:
     /// Helper function: patch a component, creating it if it does not exist.
@@ -130,6 +134,43 @@ public slots:
 
     void delete_group(entt::entity to_delete,
                       entt::entity move_to = entt::null);
+};
+
+
+class DatabaseObserver {
+
+    QPointer<Database>               m_database;
+    QVector<QMetaObject::Connection> m_database_conns;
+
+protected:
+    void observe(Database* ptr) {
+        if (ptr == m_database) return;
+        if (m_database) {
+            for (auto const& c : m_database_conns) {
+                QObject::disconnect(c);
+            }
+            m_database_conns.clear();
+        }
+        m_database = ptr;
+        if (ptr) set_new_database_connections(ptr);
+    }
+
+    void add_connection(QMetaObject::Connection c) {
+        m_database_conns.push_back(c);
+    }
+
+    Database* database() { return m_database; }
+
+    virtual void set_new_database_connections(Database* ptr) = 0;
+
+public:
+    DatabaseObserver()          = default;
+    virtual ~DatabaseObserver() = default;
+
+    DatabaseObserver(DatabaseObserver const&)            = delete;
+    DatabaseObserver& operator=(DatabaseObserver const&) = delete;
+    DatabaseObserver(DatabaseObserver&&)                 = delete;
+    DatabaseObserver& operator=(DatabaseObserver&&)      = delete;
 };
 
 } // namespace db

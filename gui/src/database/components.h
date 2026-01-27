@@ -58,21 +58,19 @@ struct RaySourceResource {
 };
 
 /// A group's collective properties.
-struct GroupParameters {
+struct GroupParameterComponent {
     SD::aperture_ptr aperture;
     SD::surface_ptr  surface;
 
     SD::OpticalProperties optics_front;
     SD::OpticalProperties optics_back;
 
-    bool operator==(GroupParameters const&) const;
+    bool operator==(GroupParameterComponent const&) const;
 };
 
 /// A group of common 'elements'. DO NOT modify the member information directly.
 /// Other aspects can be modified at will.
 struct GroupComponent {
-    std::shared_ptr<GroupParameters> parameters;
-
     QVector<entt::entity> members;
 };
 

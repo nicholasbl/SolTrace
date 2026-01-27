@@ -22,7 +22,8 @@ Backend::Backend(QObject* parent)
       m_child_model(new db::ChildModel(this)),
       m_groups_model(new db::GroupsModel(this)),
       m_tags_model(new db::TagsModel(this)),
-      m_instance_edit_model(new db::AnInstanceEditor(this)) { }
+      m_instance_edit_model(new db::AnInstanceEditor(this)),
+      m_world_geometry_model(new db::WorldGeometryModel(this)) { }
 
 struct LoadedFile {
     QString       name;
@@ -96,6 +97,7 @@ void Backend::install(db::Database* db) {
     m_groups_model->reset(db);
     m_tags_model->reset(db);
     m_instance_edit_model->reset(db);
+    m_world_geometry_model->reset(db);
 }
 
 void Backend::file_ready() {
