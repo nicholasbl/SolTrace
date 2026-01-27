@@ -1,4 +1,5 @@
 #include "components.h"
+#include <QtGui/qmatrix4x4.h>
 
 // TODO: Consolidate
 
@@ -29,6 +30,13 @@ bool operator==(SD::OpticalProperties const& a,
 
 namespace db {
 
+QMatrix4x4 TransformComponent::as_matrix() const {
+    QMatrix4x4 m;
+    m.setToIdentity();
+    m.translate(position);
+    m.rotate(rotation);
+    return m;
+}
 
 // --- Aperture value equality -----------------------------------------------
 

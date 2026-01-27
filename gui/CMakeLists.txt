@@ -201,6 +201,7 @@ qt_add_qml_module(SolTrace
         src/analysis/ray_volume_raster.h
         src/analysis/ray_volume.h src/analysis/ray_volume.cpp
         src/analysis/ray_geometry.h src/analysis/ray_geometry.cpp
+        SOURCES src/database/worldgeometrymodel.h src/database/worldgeometrymodel.cpp
 )
 
 CPMAddPackage(

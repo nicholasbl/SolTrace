@@ -32,10 +32,12 @@ public:
     /// Create a new simulation database
     explicit Database(QObject* p = nullptr);
 
-    /// Convert a Soltrace dataset to a database
-    explicit Database(SD::SimulationData&, QObject* p = nullptr);
-
     virtual ~Database() = default;
+
+    /// Merge in simulation data. Note, this should be called closely after
+    /// the database constructor. We have this split here so that we can
+    /// allocate a database on one thread and fill it in another.
+    void import(SD::SimulationData&);
 
     /// Convert a database back into a Soltrace dataset
     std::shared_ptr<SolTrace::Data::SimulationData>
@@ -117,6 +119,9 @@ public:
 
     /// Get the global simulation parameters
     SD::SimulationParameters const& get_sim_params() const;
+
+    TransformComponent global_transform(entt::entity item) const;
+
 
 public slots:
     entt::entity add_group(QString               new_name,

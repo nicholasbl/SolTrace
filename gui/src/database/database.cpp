@@ -301,7 +301,7 @@ import_optics(Database&                                          reg,
     }
 }
 
-Database::Database(SD::SimulationData& data, QObject* p) : Database(p) {
+void Database::import(SD::SimulationData& data) {
 
     // Assuming we are not re-using registries, which we are not for the moment
     auto imported_tag = create_tag("imported");
@@ -382,6 +382,12 @@ Database::Database(SD::SimulationData& data, QObject* p) : Database(p) {
 
     m_registry.ctx().emplace<SD::SimulationParameters>(
         data.get_simulation_parameters());
+
+    qInfo() << "Imported" << this->m_registry.view<ElementComponent>()->size()
+            << "elements";
+
+    qInfo() << "Imported" << this->m_registry.view<GroupComponent>()->size()
+            << "groups";
 }
 
 // TODO: remove once we have sorted the vector aim thing
@@ -649,6 +655,32 @@ SD::SimulationParameters const& Database::get_sim_params() const {
     }
 
     throw std::runtime_error("missing simulation parameters");
+}
+
+TransformComponent Database::global_transform(entt::entity item) const {
+    TransformComponent out;
+    out.position = QVector3D(0.f, 0.f, 0.f);
+    out.rotation = QQuaternion(); // identity
+
+    entt::entity current = item;
+
+    while (current != entt::null) {
+        if (auto* t = m_registry.try_get<TransformComponent>(current)) {
+            // apply current local, then whatever accumulated so
+            // far.
+            out.position =
+                t->position + t->rotation.rotatedVector(out.position);
+            out.rotation = t->rotation * out.rotation;
+        }
+
+        if (auto* child_of = m_registry.try_get<ChildOfComponent>(current)) {
+            current = child_of->parent;
+        } else {
+            break;
+        }
+    }
+
+    return out;
 }
 
 entt::entity Database::create_tag(QString name) {

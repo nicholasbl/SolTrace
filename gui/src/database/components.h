@@ -48,6 +48,8 @@ struct ChildrenComponent {
 struct TransformComponent {
     QVector3D   position;
     QQuaternion rotation;
+
+    QMatrix4x4 as_matrix() const;
 };
 
 /// A Global describing the ray source.

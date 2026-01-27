@@ -1,6 +1,7 @@
 #pragma once
 
 #include "database/database.h"
+#include "database/database_models.h"
 #include "qt_helpers.h"
 #include "utilities/notification.h"
 
@@ -8,7 +9,8 @@
 #include <QQmlEngine>
 #include <QSharedPointer>
 
-class Session : public QObject {
+
+class Backend : public QObject {
     Q_OBJECT
 
     QML_ELEMENT
@@ -20,11 +22,19 @@ class Session : public QObject {
     // Current content
     QPointer<db::Database> m_current_database;
 
+    QOBJECT_READONLY_PROPERTY(db::BreadcrumbModel, breadcrumb_model);
+    QOBJECT_READONLY_PROPERTY(db::ChildModel, child_model);
+    QOBJECT_READONLY_PROPERTY(db::GroupsModel, groups_model);
+    QOBJECT_READONLY_PROPERTY(db::TagsModel, tags_model);
+    QOBJECT_READONLY_PROPERTY(db::AnInstanceEditor, instance_edit_model);
+
+    void install(db::Database*);
+
 private slots:
     void file_ready();
 
 public:
-    explicit Session(QObject* parent = nullptr);
+    explicit Backend(QObject* parent = nullptr);
 
 public slots:
     void reset();

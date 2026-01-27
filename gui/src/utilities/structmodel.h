@@ -26,11 +26,26 @@ template <class T>
 inline constexpr bool is_shared_ptr_v =
     is_shared_ptr_t<std::remove_cvref_t<T>>::value;
 
+template <class T>
+QVariant _sm_to_variant(T const& t) {
+    return QVariant::fromValue(t);
+}
+
+template <class T>
+QVariant _sm_to_variant(std::shared_ptr<T> const& t) {
+    return QVariant::fromValue(t.get());
+}
+
+template <class T>
+QVariant _sm_to_variant(std::unique_ptr<T> const& t) {
+    return QVariant::fromValue(t.get());
+}
+
 #define SM_EXPOSE_RW(MEM)                                                      \
     SMRecordMeta<Record> {                                                     \
         .name = #MEM, .offset = offsetof(Record, MEM),                         \
         .getter = [](Record const& t) -> QVariant {                            \
-            return QVariant::fromValue(t.MEM);                                 \
+            return _sm_to_variant(t.MEM);                                      \
         },                                                                     \
         .setter = [](Record& t, QVariant const& a) {                           \
             using LT = std::remove_cvref_t<decltype(t.MEM)>;                   \
@@ -42,7 +57,7 @@ inline constexpr bool is_shared_ptr_v =
     SMRecordMeta<Record> {                                                     \
         .name = #MEM, .offset = offsetof(Record, MEM),                         \
         .getter = [](Record const& t) -> QVariant {                            \
-            return QVariant::fromValue(t.MEM);                                 \
+            return _sm_to_variant(t.MEM);                                      \
         },                                                                     \
         .setter = nullptr,                                                     \
     }
