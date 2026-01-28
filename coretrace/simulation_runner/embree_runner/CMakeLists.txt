@@ -9,10 +9,10 @@ Project(embree_runner)
 
 include_directories(
     .
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_data
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_runner
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_runner/native_runner
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_results
+    ../../simulation_data
+    ../../simulation_runner
+    ../../simulation_runner/native_runner
+    ../../simulation_results
 )
 
 set(EMBREE_RUNNER_SRC
