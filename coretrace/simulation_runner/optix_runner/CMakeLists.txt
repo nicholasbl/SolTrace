@@ -1,5 +1,7 @@
 Project(optix_runner)
 
+add_subdirectory(OptixCSP)
+
 set(OPTIX_RUNNER_SRC
     optix_runner.cpp
 )
@@ -29,6 +31,7 @@ target_include_directories(optix_runner
         ${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_runner
         ${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_results
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../../app/deploy/samples  # contains soltrace_system.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/OptixCSP/src              # OptixCSP headers (for core/soltrace_system.h)
 )
 
 target_link_libraries(optix_runner

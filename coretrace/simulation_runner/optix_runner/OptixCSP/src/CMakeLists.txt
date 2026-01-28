@@ -19,6 +19,11 @@ set_target_properties(OptixCSP_core PROPERTIES
 target_link_libraries(OptixCSP_core PRIVATE CUDA::cuda_driver CUDA::cudart)  # or cudart_static   
 find_package(CUDAToolkit REQUIRED)
 find_package(OptiX REQUIRED)
+
+# OptixCSP's FindOptiX sets OptiX_INCLUDE, normalize to OptiX_INCLUDE for consistency
+if(NOT OptiX_INCLUDE AND OptiX_INCLUDE_DIR)
+    set(OptiX_INCLUDE ${OptiX_INCLUDE_DIR})
+endif()
 message(STATUS "OptiX include directory: ${OptiX_INCLUDE}")
 
 # detect compute capabilities
@@ -26,9 +31,15 @@ execute_process(
     COMMAND nvidia-smi --query-gpu=compute_cap --format=csv,noheader
     OUTPUT_VARIABLE DETECTED_COMPUTE_CAP
     OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE nvidia_smi_result
 )
-string(REPLACE "." "" DETECTED_COMPUTE_CAP ${DETECTED_COMPUTE_CAP})
-message(STATUS "Detected gpu compute capability: ${DETECTED_COMPUTE_CAP}")
+if(nvidia_smi_result EQUAL 0 AND DETECTED_COMPUTE_CAP)
+    string(REPLACE "." "" DETECTED_COMPUTE_CAP ${DETECTED_COMPUTE_CAP})
+    message(STATUS "Detected gpu compute capability: ${DETECTED_COMPUTE_CAP}")
+else()
+    set(DETECTED_COMPUTE_CAP "80")
+    message(STATUS "Could not detect GPU compute capability, defaulting to: ${DETECTED_COMPUTE_CAP}")
+endif()
 
 
 file(GLOB_RECURSE CORE_SRC  CONFIGURE_DEPENDS  core/*.cpp core/*.cu)
@@ -38,6 +49,7 @@ target_sources(OptixCSP_core PRIVATE ${CORE_SRC} ${CORE_HDR})
 
 target_include_directories(OptixCSP_core
    PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}
+           ${CMAKE_CURRENT_SOURCE_DIR}/core
            ${OptiX_INCLUDE}
            ${CUDAToolkit_INCLUDE_DIRS}
    PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
@@ -60,7 +72,8 @@ set(SHADERS
     sun
 )
 
-set(PTX_OUTPUT_DIR "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/ptx")
+# Use a reliable PTX output directory
+set(PTX_OUTPUT_DIR "${CMAKE_BINARY_DIR}/lib/ptx")
 file(MAKE_DIRECTORY "${PTX_OUTPUT_DIR}")
 
 message(STATUS "PTX output directory: ${PTX_OUTPUT_DIR}")
@@ -77,7 +90,7 @@ foreach(shader ${SHADERS})
             -std=c++17
 #            -arch=sm_${DETECTED_COMPUTE_CAP}
             -arch=sm_80
-            -I${OptiX_INCLUDE}      
+            -I"${OptiX_INCLUDE}"
             -I${CMAKE_CURRENT_SOURCE_DIR}/core
             -DOPTIX_INCLUDE_INTERNAL_FUNCTIONS
             -ptx
