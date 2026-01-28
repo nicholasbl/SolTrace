@@ -118,7 +118,7 @@ void SolTraceSystem::initialize() {
 	std::cout << "Time to create SBT: " << sbt_timer.get_time_sec() << " seconds" << std::endl;
 
 	// seed for sun ray randomization
-    data_manager->launch_params_H.sun_dir_seed = 123456ULL;
+    data_manager->launch_params_H.sun_dir_seed = m_seed;
 
     // Create a CUDA stream for asynchronous operations.
     CUDA_CHECK(cudaStreamCreate(&m_state.stream));

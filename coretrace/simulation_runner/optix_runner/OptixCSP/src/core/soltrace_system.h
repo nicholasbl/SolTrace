@@ -77,6 +77,7 @@ namespace OptixCSP {
 
         void set_sun_angle(double angle) { m_sun_angle = angle; } // Set the sun angle
 
+        void set_seed(uint64_t seed) { m_seed = seed; }  // Set sun seed
 
         /// <summary>
         /// compute number of heliostat CspElements added to the system 
@@ -105,7 +106,6 @@ namespace OptixCSP {
 
         void print_launch_params();
 
-
     private:
 
         std::shared_ptr<GeometryManager> geometry_manager;
@@ -119,6 +119,7 @@ namespace OptixCSP {
 
         OptixCSP::Vec3d m_sun_vector;
         double m_sun_angle;
+        uint64_t m_seed = 123456ULL;
         OptixCSP::SoltraceState m_state;
 
         // Results

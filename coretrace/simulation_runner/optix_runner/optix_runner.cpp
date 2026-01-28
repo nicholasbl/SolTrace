@@ -54,7 +54,7 @@ RunnerStatus OptixRunner::setup_parameters(const SimulationData *data)
     // TODO: Check that these parameters are used as expected
     const SimulationParameters &sim_params = data->get_simulation_parameters();
     m_sys.set_number_of_rays(sim_params.number_of_rays, sim_params.max_number_of_rays);
-
+    m_sys.set_seed(static_cast<uint64_t>(sim_params.seed));
     
     //this->tsys.sim_errors_sunshape = sim_params.include_sun_shape_errors;
     //this->tsys.sim_errors_optical = sim_params.include_optical_errors;

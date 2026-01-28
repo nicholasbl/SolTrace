@@ -152,7 +152,7 @@ TEST(FlatOptixOptical, Reflectivity)
 	sts = runner.report_simulation(&result, 0);
 	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
 
-	// Calculate transmissivity
+	// Calculate reflectivity
 	int absorbed_count, transmitted_count, reflected_count;
 	count_hits(result, absorbed_count, transmitted_count, reflected_count);
 	int total_hits = absorbed_count + transmitted_count + reflected_count;
@@ -160,3 +160,253 @@ TEST(FlatOptixOptical, Reflectivity)
 	ASSERT_NEAR(refl_calc, reflectivity, 0.01);
 }
 
+TEST(FlatOptixOptical, SimResults)
+{
+	// Make default simulation data
+	SimulationData sd;
+	element_ptr plate;
+	make_default_sd(sd, plate);
+
+	// Set plate properties (reflective)
+	double reflectivity = 0.6;
+	plate->get_front_optical_properties()->my_type = InteractionType::REFLECTION;
+	plate->get_front_optical_properties()->reflectivity = reflectivity;
+	plate->get_back_optical_properties()->my_type = InteractionType::REFLECTION;
+	plate->get_back_optical_properties()->reflectivity = reflectivity;
+
+	// Run simulation
+	OptixRunner runner;
+	RunnerStatus sts = runner.initialize();
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+	sts = runner.setup_simulation(&sd);
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+	sts = runner.run_simulation();
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+	// Collect results
+	SimulationResult result;
+	sts = runner.report_simulation(&result, 0);
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+	int n_records = result.get_number_of_records();
+
+	// Check sim result order
+	for (int i = 0; i < n_records; i++)
+	{
+		ray_record_ptr rec = result[i];
+
+		int n_interactions = rec->get_number_of_interactions();
+		RayEvent prev_rev = RayEvent::UNKNOWN;
+		for (int j = 0; j < n_interactions; j++)
+		{
+			RayEvent rev = rec->get_event(j);
+
+			// Check that ray event is assigned
+			ASSERT_FALSE(rev == RayEvent::UNKNOWN);
+
+			// Check that first interaction is create
+			if (j == 0)
+				ASSERT_TRUE(rev == RayEvent::CREATE);
+			if (rev == RayEvent::CREATE)
+				ASSERT_TRUE(j == 0);
+
+			// Check that nothing happens after absorb or exit
+			if (j > 0)
+			{
+				ASSERT_FALSE(prev_rev == RayEvent::ABSORB);
+				ASSERT_FALSE(prev_rev == RayEvent::EXIT);
+			}
+
+			prev_rev = rev;
+		}
+	}
+	
+}
+
+TEST(FlatOptixOptical, Absorption)
+{
+	// Make default simulation data
+	SimulationData sd;
+	element_ptr plate;
+	make_default_sd(sd, plate);
+
+	// Set plate properties (absorptive - no reflection, no transmission)
+	plate->get_front_optical_properties()->set_ideal_absorption();
+	plate->get_back_optical_properties()->set_ideal_absorption();
+
+	// Run simulation
+	OptixRunner runner;
+	RunnerStatus sts = runner.initialize();
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+	sts = runner.setup_simulation(&sd);
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+	sts = runner.run_simulation();
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+	// Collect results
+	SimulationResult result;
+	sts = runner.report_simulation(&result, 0);
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+	// Calculate absorption - should be nearly 100%
+	int absorbed_count, transmitted_count, reflected_count;
+	count_hits(result, absorbed_count, transmitted_count, reflected_count);
+	int total_hits = absorbed_count + transmitted_count + reflected_count;
+	double abs_calc = (double)absorbed_count / (double)total_hits;
+	ASSERT_DOUBLE_EQ(abs_calc, 1);
+}
+
+TEST(FlatOptixOptical, IdealReflection)
+{
+	// Make default simulation data
+	SimulationData sd;
+	element_ptr plate;
+	make_default_sd(sd, plate);
+
+	// Set plate properties (ideal reflection)
+	plate->get_front_optical_properties()->set_ideal_reflection();
+	plate->get_back_optical_properties()->set_ideal_reflection();
+
+	// Run simulation
+	OptixRunner runner;
+	RunnerStatus sts = runner.initialize();
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+	sts = runner.setup_simulation(&sd);
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+	sts = runner.run_simulation();
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+	// Collect results
+	SimulationResult result;
+	sts = runner.report_simulation(&result, 0);
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+	// Calculate reflectivity - should be nearly 100%
+	int absorbed_count, transmitted_count, reflected_count;
+	count_hits(result, absorbed_count, transmitted_count, reflected_count);
+	int total_hits = absorbed_count + transmitted_count + reflected_count;
+	double refl_calc = (double)reflected_count / (double)total_hits;
+	ASSERT_DOUBLE_EQ(refl_calc, 1.0);
+}
+
+TEST(FlatOptixOptical, SeedReproducibility)
+{
+	// Run simulation twice with same seed
+	auto run_simulation = [](int seed) -> int {
+		SimulationData sd;
+		element_ptr plate;
+		make_default_sd(sd, plate);
+
+		// Set specific seed
+		SimulationParameters& params = sd.get_simulation_parameters();
+		params.seed = seed;
+
+		// Set plate properties
+		double reflectivity = 0.5;
+		plate->get_front_optical_properties()->my_type = InteractionType::REFLECTION;
+		plate->get_front_optical_properties()->reflectivity = reflectivity;
+		plate->get_back_optical_properties()->my_type = InteractionType::REFLECTION;
+		plate->get_back_optical_properties()->reflectivity = reflectivity;
+
+		OptixRunner runner;
+		runner.initialize();
+		runner.setup_simulation(&sd);
+		runner.run_simulation();
+
+		SimulationResult result;
+		runner.report_simulation(&result, 0);
+
+		int absorbed_count, transmitted_count, reflected_count;
+		count_hits(result, absorbed_count, transmitted_count, reflected_count);
+		return reflected_count;
+	};
+
+	int result1 = run_simulation(42);
+	int result2 = run_simulation(42);
+	int result3 = run_simulation(99);
+
+	EXPECT_EQ(result1, result2);  // Same seed should give same result
+	EXPECT_NE(result1, result3);  // Different seed should give different result
+}
+
+TEST(FlatOptixOptical, RayCountScaling)
+{
+	double reflectivity = 0.7;
+
+	auto run_with_rays = [reflectivity](uint_fast64_t num_rays) -> double {
+		SimulationData sd;
+		element_ptr plate;
+		make_default_sd(sd, plate);
+
+		SimulationParameters& params = sd.get_simulation_parameters();
+		params.number_of_rays = num_rays;
+		params.max_number_of_rays = num_rays * 100;
+
+		plate->get_front_optical_properties()->my_type = InteractionType::REFLECTION;
+		plate->get_front_optical_properties()->reflectivity = reflectivity;
+		plate->get_back_optical_properties()->my_type = InteractionType::REFLECTION;
+		plate->get_back_optical_properties()->reflectivity = reflectivity;
+
+		OptixRunner runner;
+		runner.initialize();
+		runner.setup_simulation(&sd);
+		runner.run_simulation();
+
+		SimulationResult result;
+		runner.report_simulation(&result, 0);
+
+		int absorbed_count, transmitted_count, reflected_count;
+		count_hits(result, absorbed_count, transmitted_count, reflected_count);
+		int total_hits = absorbed_count + transmitted_count + reflected_count;
+		return (double)reflected_count / (double)total_hits;
+	};
+
+	double result_1k = run_with_rays(1000);
+	double result_10k = run_with_rays(10000);
+	double result_50k = run_with_rays(50000);
+
+	// All should be close to target reflectivity
+	EXPECT_NEAR(result_1k, reflectivity, 0.05);   // Larger tolerance for fewer rays
+	EXPECT_NEAR(result_10k, reflectivity, 0.02);
+	EXPECT_NEAR(result_50k, reflectivity, 0.01);  // Tighter tolerance for more rays
+}
+
+TEST(FlatOptixOptical, MixedReflectionAbsorption)
+{
+	// Make default simulation data
+	SimulationData sd;
+	element_ptr plate;
+	make_default_sd(sd, plate);
+
+	// Set plate properties with partial reflection and absorption
+	double reflectivity = 0.4;
+	plate->get_front_optical_properties()->my_type = InteractionType::REFLECTION;
+	plate->get_front_optical_properties()->reflectivity = reflectivity;
+	plate->get_back_optical_properties()->my_type = InteractionType::REFLECTION;
+	plate->get_back_optical_properties()->reflectivity = reflectivity;
+
+	// Run simulation
+	OptixRunner runner;
+	RunnerStatus sts = runner.initialize();
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+	sts = runner.setup_simulation(&sd);
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+	sts = runner.run_simulation();
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+	// Collect results
+	SimulationResult result;
+	sts = runner.report_simulation(&result, 0);
+	EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+
+	// Verify both reflection and absorption occur
+	int absorbed_count, transmitted_count, reflected_count;
+	count_hits(result, absorbed_count, transmitted_count, reflected_count);
+	int total_hits = absorbed_count + transmitted_count + reflected_count;
+
+	double refl_calc = (double)reflected_count / (double)total_hits;
+	double abs_calc = (double)absorbed_count / (double)total_hits;
+
+	ASSERT_NEAR(refl_calc, reflectivity, 0.02);
+	ASSERT_NEAR(abs_calc, 1.0 - reflectivity, 0.02);
+}
