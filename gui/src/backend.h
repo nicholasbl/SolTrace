@@ -1,8 +1,10 @@
 #pragma once
 
+#include "analysis/ray_geometry.h"
 #include "database/database.h"
 #include "database/database_models.h"
 #include "database/worldgeometrymodel.h"
+#include "job_control/job_run.h"
 #include "qt_helpers.h"
 #include "utilities/notification.h"
 
@@ -10,6 +12,71 @@
 #include <QQmlEngine>
 #include <QSharedPointer>
 
+
+class JobBackend : public QObject {
+    Q_OBJECT
+
+    // Current content
+    QPointer<db::Database> m_current_database;
+
+    QPointer<RunningJob> m_running;
+
+    enum class State {
+        IDLE,
+        RUNNING,
+    };
+
+    Q_ENUM(State);
+
+    Q_WRITABLE_PROPERTY(State, state, State::IDLE);
+    Q_WRITABLE_PROPERTY(int, progress, 0);
+    Q_WRITABLE_PROPERTY(QString, job_log, {});
+
+public:
+    explicit JobBackend(QObject* parent = nullptr);
+    virtual ~JobBackend() = default;
+
+    void install(db::Database*);
+
+private slots:
+    void job_done();
+
+public slots:
+    void start();
+    void stop();
+
+signals:
+    void notify(ANotification);
+
+    void new_results(std::shared_ptr<ResultDB>);
+};
+
+//==============================================================================
+
+class ResultsBackend : public QObject {
+    Q_OBJECT
+
+    std::shared_ptr<ResultDB> m_results;
+
+    std::unique_ptr<analysis::RayGeometry> m_ray_geometry;
+
+    Q_PROPERTY(analysis::RayGeometry* ray_geometry READ ray_geometry NOTIFY
+                   ray_geometry_changed FINAL)
+
+public:
+    explicit ResultsBackend(QObject* parent = nullptr);
+    virtual ~ResultsBackend() = default;
+
+    analysis::RayGeometry* ray_geometry() const;
+
+public slots:
+    void set_results(std::shared_ptr<ResultDB>);
+
+signals:
+    void ray_geometry_changed();
+};
+
+//==============================================================================
 
 class Backend : public QObject {
     Q_OBJECT
@@ -22,6 +89,9 @@ class Backend : public QObject {
 
     // Current content
     QPointer<db::Database> m_current_database;
+
+    QOBJECT_READONLY_PROPERTY(JobBackend, job_backend);
+    QOBJECT_READONLY_PROPERTY(ResultsBackend, results_backend);
 
     QOBJECT_READONLY_PROPERTY(db::BreadcrumbModel, breadcrumb_model);
     QOBJECT_READONLY_PROPERTY(db::ChildModel, child_model);
@@ -44,6 +114,5 @@ public slots:
     void start_load_file(QUrl);
 
 signals:
-
     void notification(ANotification);
 };

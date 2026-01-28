@@ -95,10 +95,14 @@ Item {
                     IconButton {
                         label: "Run"
                         source: "qrc:/icons/assets/icons/play.svg"
+
+                        onClicked: Backend.job_backend.start();
                     }
                     IconButton {
                         label: "Stop"
                         source: "qrc:/icons/assets/icons/stop.svg"
+
+                        onClicked: Backend.job_backend.stop();
                     }
                     IconButton {
                         label: "Logs"

@@ -36,7 +36,7 @@ class RayGeometry : public QQuick3DGeometry {
 public:
     explicit RayGeometry(QQuick3DObject* parent = nullptr);
 
-    void set_database(std::shared_ptr<ResultDB>&&);
+    void set_results(std::shared_ptr<ResultDB>);
 
 public slots:
     void rebuild_geometry();

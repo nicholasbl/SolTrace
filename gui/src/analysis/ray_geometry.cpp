@@ -164,7 +164,7 @@ RayGeometry::RayGeometry(QQuick3DObject* parent) : QQuick3DGeometry(parent) {
             &RayGeometry::rebuild_geometry);
 }
 
-void RayGeometry::set_database(std::shared_ptr<ResultDB>&& data) {
+void RayGeometry::set_results(std::shared_ptr<ResultDB> data) {
     qDebug() << "New ray geometry database";
     m_database = std::move(data);
     rebuild_geometry();

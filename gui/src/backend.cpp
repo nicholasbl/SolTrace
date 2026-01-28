@@ -15,15 +15,100 @@
 
 // TODO COORDINATE SYSTEMS. the sim could be arbitrary
 
+JobBackend::JobBackend(QObject* parent) { }
+
+void JobBackend::install(db::Database* db) {
+    m_current_database = db;
+}
+
+void JobBackend::job_done() {
+    qDebug() << Q_FUNC_INFO;
+
+    auto* from = qobject_cast<RunningJob*>(sender());
+    if (!from) {
+        qCritical() << Q_FUNC_INFO << "bad cast";
+        return;
+    }
+
+    if (m_running != from) {
+        qCritical() << Q_FUNC_INFO << m_running << from;
+        return;
+    }
+
+    set_state(State::IDLE);
+
+    m_running = nullptr;
+
+    auto results = from->take();
+
+    emit new_results(results);
+}
+
+void JobBackend::start() {
+    qDebug() << Q_FUNC_INFO;
+    if (!m_current_database) return;
+
+    if (m_running) {
+        emit notify(
+            ANotification::error("A running job is already in progress."));
+        return;
+    }
+
+    qDebug() << Q_FUNC_INFO << "Launch";
+    m_running = new RunningJob(
+        m_current_database->export_to_simdata(), RunType::Thread, this);
+
+    connect(m_running,
+            &RunningJob::progress_update,
+            this,
+            &JobBackend::set_progress);
+    connect(m_running,
+            &RunningJob::progress_text_update,
+            this,
+            [this](QString text) {
+                this->set_job_log(this->job_log() + "\n" + text);
+            });
+
+    connect(m_running, &RunningJob::finished, this, &JobBackend::job_done);
+    connect(m_running, &RunningJob::finished, this, &RunningJob::deleteLater);
+    connect(this, &QObject::destroyed, m_running, &RunningJob::cancel);
+
+    set_state(State::RUNNING);
+}
+void JobBackend::stop() { }
+
+//==============================================================================
+
+ResultsBackend::ResultsBackend(QObject* parent)
+    : QObject(parent), m_ray_geometry(new analysis::RayGeometry) { }
+
+void ResultsBackend::set_results(std::shared_ptr<ResultDB> ptr) {
+    m_ray_geometry->set_results(ptr);
+}
+
+analysis::RayGeometry* ResultsBackend::ray_geometry() const {
+    return m_ray_geometry.get();
+}
+
+//==============================================================================
 
 Backend::Backend(QObject* parent)
     : QObject(parent),
+      m_job_backend(new JobBackend(this)),
+      m_results_backend(new ResultsBackend(this)),
       m_breadcrumb_model(new db::BreadcrumbModel(this)),
       m_child_model(new db::ChildModel(this)),
       m_groups_model(new db::GroupsModel(this)),
       m_tags_model(new db::TagsModel(this)),
       m_instance_edit_model(new db::AnInstanceEditor(this)),
-      m_world_geometry_model(new db::WorldGeometryModel(this)) { }
+      m_world_geometry_model(new db::WorldGeometryModel(this)) {
+    connect(m_job_backend, &JobBackend::notify, this, &Backend::notification);
+
+    connect(m_job_backend,
+            &JobBackend::new_results,
+            m_results_backend,
+            &ResultsBackend::set_results);
+}
 
 struct LoadedFile {
     QString       name;
@@ -91,6 +176,8 @@ void Backend::install(db::Database* db) {
     m_current_database = db;
 
     if (db) { db->setParent(this); }
+
+    m_job_backend->install(db);
 
     m_breadcrumb_model->reset(db);
     m_child_model->reset(db);

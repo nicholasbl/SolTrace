@@ -1,4 +1,5 @@
 #include "database.h"
+#include "conversion.h"
 #include "database/components.h"
 #include "database/database_notification.h"
 
@@ -310,14 +311,17 @@ void Database::import(SD::SimulationData& data) {
     auto imported_tag = create_tag("imported");
 
     // we use pointers as element IDs are scoped to global AND composite
-    std::unordered_map<SD::Element*, entt::entity> emap;
+    std::unordered_map<SD::Element*, entt::entity> element_to_entity;
 
-    auto get_or_create_entity = [&](SD::Element* ptr) {
-        if (auto eiter = emap.find(ptr); eiter != emap.end()) {
+    auto get_or_create_entity = [&](SD::Element* ptr) -> entt::entity {
+        if (!ptr) return entt::null;
+
+        if (auto eiter = element_to_entity.find(ptr);
+            eiter != element_to_entity.end()) {
             return eiter->second;
         } else {
             auto ent  = m_registry.create();
-            emap[ptr] = ent;
+            element_to_entity[ptr] = ent;
 
             m_registry.emplace<ElementComponent>(ent);
 
@@ -336,6 +340,10 @@ void Database::import(SD::SimulationData& data) {
         auto const& element = *(iter->second);
 
         entt::entity ent = get_or_create_entity(iter->second.get());
+
+        if (!m_registry.valid(ent)) {
+            qWarning() << "Unable to mirror element" << &element;
+        }
 
 
         auto position = element.get_origin_ref();
@@ -396,26 +404,17 @@ void Database::import(SD::SimulationData& data) {
 // TODO: remove once we have sorted the vector aim thing
 static void install_transform(SD::element_ptr           ptr,
                               TransformComponent const& tf_comp) {
+
+    QVector3D aim;
+    double    roll;
+    quat_to_dir_roll(tf_comp.rotation, aim, roll);
+
     auto origin = tf_comp.position;
     ptr->set_origin(origin.x(), origin.y(), origin.z());
 
-    auto rot = tf_comp.rotation.normalized().toRotationMatrix();
-
-    QVector3D dir(rot(0, 2), rot(1, 2), rot(2, 2));
-    if (!qFuzzyIsNull(dir.lengthSquared())) { dir.normalize(); }
-
-    auto aim = origin + dir;
     ptr->set_aim_vector(aim.x(), aim.y(), aim.z());
 
-    auto   ref_to_local = rot.transposed();
-    double beta         = std::asin(
-        std::clamp(static_cast<double>(ref_to_local(2, 1)), -1.0, 1.0));
-    double cosb  = std::cos(beta);
-    double gamma = 0.0;
-    if (std::abs(cosb) > 1e-6) {
-        gamma = std::atan2(-ref_to_local(0, 1), ref_to_local(1, 1));
-    }
-    ptr->set_zrot_radians(gamma);
+    ptr->set_zrot_radians(roll);
 }
 
 static void install_group(SD::element_ptr ptr, GroupParameterComponent const& param) {
@@ -426,16 +425,15 @@ static void install_group(SD::element_ptr ptr, GroupParameterComponent const& pa
     ptr->set_back_optical_properties(param.optics_back);
 }
 
-std::shared_ptr<SD::SimulationData>
-Database::export_to_simdata(entt::registry& reg) {
+std::shared_ptr<SD::SimulationData> Database::export_to_simdata() {
     SD::SimulationData ret;
 
-    auto param_ptr = reg.ctx().find<SD::SimulationParameters>();
+    auto param_ptr = m_registry.ctx().find<SD::SimulationParameters>();
     if (!param_ptr) return nullptr;
 
     ret.get_simulation_parameters() = *param_ptr;
 
-    auto ray_source_ptr = reg.ctx().find<RaySourceResource>();
+    auto ray_source_ptr = m_registry.ctx().find<RaySourceResource>();
     if (!ray_source_ptr) return nullptr;
 
     ret.add_ray_source(ray_source_ptr->source);
@@ -445,11 +443,11 @@ Database::export_to_simdata(entt::registry& reg) {
     // Mirror all elements
 
     {
-        auto view = reg.view<const ElementComponent>();
+        auto view = m_registry.view<const ElementComponent>();
         for (auto const& [e] : view.each()) {
             SD::element_ptr ptr;
 
-            if (reg.all_of<ChildrenComponent>(e)) {
+            if (children_of(e).size()) {
                 auto n = std::make_shared<SD::CompositeElement>();
                 ptr    = n;
             } else {
@@ -461,37 +459,42 @@ Database::export_to_simdata(entt::registry& reg) {
         }
     }
 
+    qDebug() << Q_FUNC_INFO << entity_element_map.size();
+    qDebug() << Q_FUNC_INFO << ret.get_number_of_elements();
+
     {
-        auto view = reg.view<const TransformComponent>();
+        auto view = m_registry.view<const TransformComponent>();
         for (auto const& [e, tf] : view.each()) {
             install_transform(entity_element_map.at(e), tf);
         }
     }
 
     {
-        auto view = reg.view<const IdentityComponent>();
-        for (auto const& [e, tf] : view.each()) {
-            entity_element_map.at(e)->set_name(tf.name.toStdString());
+        auto view =
+            m_registry.view<const ElementComponent, const IdentityComponent>();
+        for (auto const& [e, ident] : view.each()) {
+            entity_element_map.at(e)->set_name(ident.name.toStdString());
         }
     }
 
     {
-        auto view = reg.view<const DisabledComponent>();
+        auto view = m_registry.view<const DisabledComponent>();
         for (auto const& [e] : view.each()) {
             entity_element_map.at(e)->disable();
         }
     }
 
     {
-        auto view = reg.view<const GroupMemberComponent>();
+        auto view = m_registry.view<const GroupMemberComponent>();
         for (auto const& [e, gm] : view.each()) {
 
             // get group, we assume this is valid
-            auto const& group = reg.get<GroupParameterComponent>(gm.group);
+            auto const& group =
+                m_registry.get<GroupParameterComponent>(gm.group);
 
             auto element = entity_element_map.at(e);
 
-            if (auto ptr = reg.try_get<ChildrenComponent>(e); ptr) {
+            if (auto ptr = m_registry.try_get<ChildrenComponent>(e); ptr) {
                 if (!ptr->children.empty()) {
                     // it has children AND a group component. add a proxy that
                     // will only hold the geometry
@@ -515,7 +518,7 @@ Database::export_to_simdata(entt::registry& reg) {
     }
 
     {
-        auto view = reg.view<const ChildrenComponent>();
+        auto view = m_registry.view<const ChildrenComponent>();
         for (auto const& [e, children] : view.each()) {
 
             auto composite = dynamic_cast<SD::CompositeElement*>(
@@ -534,6 +537,11 @@ Database::export_to_simdata(entt::registry& reg) {
                 composite->add_element(iter->second);
             }
         }
+    }
+
+    // Install all elements into the sim engine
+    for (auto const& iter : entity_element_map) {
+        ret.add_element(iter.second);
     }
 
 

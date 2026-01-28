@@ -43,8 +43,7 @@ public:
     void import(SD::SimulationData&);
 
     /// Convert a database back into a Soltrace dataset
-    std::shared_ptr<SolTrace::Data::SimulationData>
-    export_to_simdata(entt::registry&);
+    std::shared_ptr<SolTrace::Data::SimulationData> export_to_simdata();
 
 public:
     operator entt::registry&() { return m_registry; }

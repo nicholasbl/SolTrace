@@ -9,6 +9,7 @@
 namespace db {
 
 
+// TODO: push instance generation to a thread
 class InstancedElements : public QQuick3DInstancing {
     Q_OBJECT
 

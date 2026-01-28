@@ -11,16 +11,19 @@
 // Qconcurrent will auto call start and finish on the promise
 
 #define SOLTRACE_SECTION(FUNC, VALUE, TEXT)                                    \
+    qDebug() << Q_FUNC_INFO << TEXT;                                           \
     promise.setProgressValueAndText(VALUE, TEXT);                              \
     promise.suspendIfRequested();                                              \
     if (promise.isCanceled()) { return; }                                      \
     result = current_runner->FUNC;                                             \
     if (result == SolTrace::Runner::RunnerStatus::ERROR) {                     \
+        qWarning() << Q_FUNC_INFO << "failed at" << TEXT << (int)result;       \
         promise.emplaceResult(QString(TEXT " failed"));                        \
         return;                                                                \
     }
 
 #define SECTION(VALUE, TEXT)                                                   \
+    qDebug() << Q_FUNC_INFO << TEXT;                                           \
     promise.setProgressValueAndText(VALUE, TEXT);                              \
     promise.suspendIfRequested();                                              \
     if (promise.isCanceled()) {                                                \
@@ -44,9 +47,14 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
 
         SolTrace::Runner::RunnerStatus result;
 
+        current_runner->set_number_of_threads(6);
+
         SOLTRACE_SECTION(initialize(), 0, "Starting simulation");
 
+
         SOLTRACE_SECTION(setup_simulation(data.get()), 0, "Setup simulation");
+
+        qDebug() << Q_FUNC_INFO << "setup complete";
 
         // run simulation will indeed run, but we need to stuff it into another
         // thread so we can poll status.
@@ -55,6 +63,8 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
 
         auto run_future =
             QtConcurrent::run(execute_solve_with, current_runner.get());
+
+        double last_progress = -1;
 
         while (true) {
             if (run_future.isFinished()) { break; }
@@ -80,6 +90,7 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
 
                 // bail
                 promise.emplaceResult(QStringLiteral("Cancelled"));
+                qDebug() << Q_FUNC_INFO << "cancelled";
                 return;
             }
 
@@ -92,14 +103,19 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
             // assuming progress is 0-1, TODO: Check
             progress = std::clamp(progress, 0.0, 1.0);
 
-            // we have reserved progress points 10 to 90 for sim run
+            if (last_progress != progress) {
+                // we have reserved progress points 10 to 90 for sim run
 
-
-            promise.setProgressValueAndText(std::lerp(10, 90, progress),
-                                            "Running...");
+                promise.setProgressValueAndText(std::lerp(10, 90, progress),
+                                                "Running...");
+                last_progress = progress;
+                qDebug() << "sim progress " << progress;
+            }
         }
 
         auto run_result = run_future.result();
+
+        qDebug() << Q_FUNC_INFO << "Run complete";
 
         switch (run_result) {
         case SolTrace::Runner::RunnerStatus::CANCEL:
@@ -117,6 +133,8 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
             promise.setProgressValueAndText(100, "Run failed: timeout");
             return;
         }
+
+        qDebug() << Q_FUNC_INFO << "Build result database";
 
         auto ret = std::make_shared<ResultDB>();
 
