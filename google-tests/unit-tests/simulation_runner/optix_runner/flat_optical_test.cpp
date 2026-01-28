@@ -7,42 +7,6 @@
 
 using SolTrace::Runner::RunnerStatus;
 
-class FlatOptixOpticalTest : public ::testing::Test 
-{
-	SimulationData m_sd;
-
-	void setup_simulation()
-	{
-		m_sd.clear();
-
-		// Sun
-		auto sun = make_ray_source<Sun>();
-		sun->set_position(0, 0, 100);
-		m_sd.add_ray_source(sun);
-
-		// Make stage
-		auto stage = make_stage(0);
-		stage->set_origin(0, 0, 0);
-		stage->set_aim_vector(0, 0, 1);
-		stage->set_name("stage");
-
-		// Add stage to sd
-		m_sd.add_stage(stage);
-
-		// Set parameters
-		SimulationParameters& params = m_sd.get_simulation_parameters();
-		params.number_of_rays = 10000;
-		params.max_number_of_rays = params.number_of_rays * 100;
-		params.include_optical_errors = false;
-		params.include_sun_shape_errors = false;
-		params.seed = 123;
-	}
-
-	
-};
-
-
-
 void make_default_sd(SimulationData& sd, element_ptr& plate)
 {
 	sd.clear();
