@@ -65,6 +65,8 @@ Column {
         CheckBoxField {
             id: optionalFieldCheckBox
             label: "Optional fields"
+            labelSize: Theme.controlRowLabelSize
+            checkBox.width: 20
             checked: Session.core.sun.directionalSun.optionalFieldsEnabled
             onCheckBoxClicked: {
                 Session.core.sun.directionalSun.optionalFieldsEnabled = !Session.core.sun.directionalSun.optionalFieldsEnabled

@@ -58,19 +58,19 @@ Column {
     property string headerText: profiles[currentIndex].headerText
     property string explanationText: profiles[currentIndex].explanationText
     property string controlLabel: profiles[currentIndex].controlLabel
-    property string chartTitle: "Sun Shape Profile"
+    property string graphTitle: "Sun Shape Profile"
 
-    // Chart properties
-    property int chartWidth: 600
-    property int chartHeight: 400
-    property string xAxisTitle: "Angle from Center (mrad)"
+    // graph properties
+    property int graphWidth: 600
+    property int graphHeight: 400
+    property string xAxisTitle: "Angle from Center (mrad)\n"
     property real xAxisMin: profiles[currentIndex].xAxisMin
     property real xAxisMax: profiles[currentIndex].xAxisMax
-    property string yAxisTitle: "Intensity"
+    property string yAxisTitle: "<span style='margin-bottom: 100px'>Intensity</span>"
     property real yAxisMin: 0
     property real yAxisMax: 1
 
-    property alias chartView: chartView
+    property alias graphView: graphView
     property alias lineSeries: lineSeries
 
     spacing: !UserSettings.showDocumentation ? 0 : 10
@@ -168,72 +168,116 @@ Column {
         }
 
         Rectangle {
-            Layout.preferredWidth: chartWidth
-            Layout.preferredHeight: chartHeight
+            Layout.preferredWidth: graphWidth
+            Layout.preferredHeight: graphHeight
             color: "transparent"
             border.width: 1
             border.color: Theme.lineColor
             radius: 8
             Layout.alignment: Qt.AlignTop
 
-            GraphsView {
-                id: chartView
+            Column {
                 anchors.fill: parent
                 anchors.margins: 10
-                //title: chartTitle
-                //legend.visible: false
-                //titleColor: Theme.textColor
-                //backgroundColor: "transparent"
+                spacing: 0
 
-                theme: GraphsTheme {
-                    colorScheme: GraphsTheme.ColorScheme.Light
-                    backgroundVisible: false
-                    seriesColors: ["#E0D080", "#B0A060"]
-                    borderColors: [Theme.lineColor]
-                    plotAreaBackgroundVisible: false
-                    grid.mainColor: Theme.lineColor
-                    grid.subColor: Theme.lineColor
-                    axisY.mainColor: Theme.lineColor
-                    axisY.subColor: Theme.lineColor
-                    axisX.mainColor: Theme.lineColor
-                    axisX.subColor: Theme.lineColor
-                    labelTextColor: Theme.textColor
+                // Graph Title
+                Text {
+                    id: graphTitle
+                    text: "Emission Profile"
+                    color: "white"
+                    font.bold: true
+                    font.pointSize: Theme.controlRowLabelSize
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.horizontalCenterOffset: yAxisLabel.height + yAxisLabel.anchors.leftMargin
+                    height: implicitHeight
                 }
 
+                // Graph and axis labels grouped together
+                Item {
+                    width: parent.width
+                    height: parent.height - graphTitle.height - parent.spacing
 
-                axisX: ValueAxis {
-                    id: xAxis
-                    titleText: xAxisTitle
-                    min: xAxisMin
-                    max: xAxisMax
-                    //color: Theme.textColor
-                    //labelsColor: Theme.textColor
-                    //shadesColor: Theme.textColor
-                    //gridLineColor: Theme.lineColor
-                    //gridVisible: false
-                    //minorGridVisible: false
-                }
+                    GraphsView {
+                        id: graphView
+                        anchors.fill: parent
+                        marginTop: 10
+                        marginLeft: 25
+                        marginBottom: 12
 
-                axisY: ValueAxis {
-                    id: yAxis
-                    titleText: yAxisTitle
-                    min: yAxisMin
-                    max: yAxisMax
-                    //color: Theme.textColor
-                    //labelsColor: Theme.textColor
-                    //shadesColor: Theme.textColor
-                    //gridLineColor: Theme.lineColor
-                }
+                        theme: GraphsTheme {
+                            colorScheme: GraphsTheme.ColorScheme.Dark
+                            backgroundVisible: false
+                            seriesColors: ["#E0D080", "#B0A060"]
+                            borderColors: ["#e3e3e3", "#e3e3e3"]
+                            plotAreaBackgroundVisible: false
+                            grid.mainColor: "#e3e3e3"
+                            grid.subColor: "#e3e3e3"
+                            axisY.mainColor: "#e3e3e3"
+                            axisY.subColor: "#e3e3e3"
+                            axisY.labelTextColor: "#e3e3e3"
+                            axisX.mainColor: "#e3e3e3"
+                            axisX.subColor: "#e3e3e3"
+                            axisX.labelTextColor: "#e3e3e3"
+                            labelTextColor: "#e3e3e3"
+                            grid.mainWidth: 1
+                            grid.subWidth: 1
+                            axisX.mainWidth: 1
+                            axisX.subWidth: 1
+                            axisY.mainWidth: 1
+                            axisY.subWidth: 1
+                        }
 
-                LineSeries {
-                    id: lineSeries
-                    name: ""
+                        axisX: ValueAxis {
+                            id: xAxis
+                            titleVisible: false
+                            min: root.xAxisMin
+                            max: root.xAxisMax
+                        }
+
+                        axisY: ValueAxis {
+                            id: yAxis
+                            titleVisible: false
+                            min: root.yAxisMin
+                            max: root.yAxisMax
+                        }
+
+                        LineSeries {
+                            id: lineSeries
+                            name: ""
+                        }
+                    }
+
+                    // Custom Y-axis label
+                    Text {
+                        id: yAxisLabel
+                        text: root.yAxisTitle
+                        color: "white"
+                        font.pointSize: Theme.controlLabelSize
+                        rotation: -90
+                        anchors.left: parent.left
+                        anchors.leftMargin: 0
+                        anchors.verticalCenter: graphView.verticalCenter
+                        anchors.verticalCenterOffset: -(xAxisLabel.height + xAxisLabel.anchors.bottomMargin)
+                    }
+                    // Custom X-axis label
+                    Text {
+                        id: xAxisLabel
+                        text: root.xAxisTitle
+                        color: "white"
+                        font.pointSize: Theme.controlLabelSize
+                        anchors.bottom: parent.bottom
+                        anchors.bottomMargin: 0
+                        anchors.horizontalCenter: graphView.horizontalCenter
+                        anchors.horizontalCenterOffset: yAxisLabel.height + yAxisLabel.anchors.leftMargin
+                    }
                 }
             }
         }
 
         Item {
             Layout.fillWidth: true
+            Layout.fillHeight: true
         }
     }
 }

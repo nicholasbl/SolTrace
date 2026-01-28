@@ -8,6 +8,7 @@ MouseArea {
     property string label: ""
     property bool checked: false
     property alias checkBox: checkBox
+    property int labelSize: Theme.controlLabelSize
 
     // Renamed to avoid conflict with MouseArea's clicked signal
     signal checkBoxClicked()
@@ -39,7 +40,7 @@ MouseArea {
 
         Label {
             text: root.label
-            font.pointSize: Theme.controlLabelSize
+            font.pointSize: root.labelSize
             anchors.verticalCenter: parent.verticalCenter
         }
     }
