@@ -120,6 +120,19 @@ Item {
                         width: 1
                     }
 
+                    Rectangle {
+                        visible: output.sim_active
+                        width: Backend.job_backend.progress * parent.width / 100
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+
+                        color: Qt.alpha("white", .1)
+                        radius: 25
+                        onWidthChanged: console.log(Backend.job_backend.progress)
+                    }
+
+
                     Text {
                         id: output
 

@@ -72,11 +72,9 @@ void RayGeometry::rebuild_geometry() {
                 if (ray_interaction_count > 0) {
                     // record delta
                     total_ray_distance += (p - last_point).length();
-                } else {
-                    // this is the first. just record
-                    last_point = p;
                 }
 
+                last_point = p;
                 ray_interaction_count += 1;
             }
 
@@ -101,11 +99,9 @@ void RayGeometry::rebuild_geometry() {
                 if (ray_interaction_count > 0) {
                     // record delta
                     current_ray_distance += (p - last_point).length();
-                } else {
-                    // this is the first. just record
-                    last_point = p;
                 }
 
+                last_point = p;
                 ray_interaction_count += 1;
                 verts.push_back({
                     .position = p,
@@ -122,7 +118,6 @@ void RayGeometry::rebuild_geometry() {
                     index.push_back(cur);
                 }
 
-                ray_interaction_count += 1;
             }
         }
     }

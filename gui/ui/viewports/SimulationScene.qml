@@ -91,6 +91,8 @@ FocusScope {
                             metalness: 1
                             roughness: 0
                             baseColor: "white"
+                            //cullMode: Material.NoCulling
+                            // TODO Remove after demo
                         }
                     ]
                 }

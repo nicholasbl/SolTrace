@@ -100,7 +100,8 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
             qDebug() << "raw" << progress;
 
             // assuming progress is 0-1, TODO: Check
-            progress = std::clamp(progress, 0.0, 1.0);
+            // It is, but there is a bug in the lib. HACK
+            progress = std::clamp(progress / 10., 0.0, 1.0);
 
 
             if (last_progress != progress) {
