@@ -65,9 +65,7 @@ void JobBackend::start() {
     connect(m_running,
             &RunningJob::progress_text_update,
             this,
-            [this](QString text) {
-                this->set_job_log(this->job_log() + "\n" + text);
-            });
+            &JobBackend::set_job_log);
 
     connect(m_running, &RunningJob::finished, this, &JobBackend::job_done);
     connect(m_running, &RunningJob::finished, this, &RunningJob::deleteLater);

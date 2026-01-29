@@ -123,7 +123,9 @@ Item {
                     Text {
                         id: output
 
-                        text: "Abbreviated debug output goes here"
+                        property bool sim_active: Backend.job_backend.state !== 0
+
+                        text: sim_active ? Backend.job_backend.job_log : "Idle"
                         color: "white"
                         anchors.centerIn: parent
                     }

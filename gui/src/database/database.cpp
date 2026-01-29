@@ -2,8 +2,10 @@
 #include "conversion.h"
 #include "database/components.h"
 #include "database/database_notification.h"
+#include "utilities/math_utility.h"
 
 #include "simulation_data_api.hpp"
+#include "simdata_io.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -223,6 +225,41 @@ SD::Matrix3d convert(QQuaternion const& m) {
     return mat;
 }
 
+TransformComponent extract_tf(SD::Element const& e) {
+    auto pos = ::convert(e.get_origin_ref());
+
+    auto aim = ::convert(e.get_aim_vector_ref());
+
+    aim = (aim - pos).normalized();
+
+    auto quat = dir_roll_to_quat(aim, e.get_zrot_radians());
+
+    // TODO FIX
+    auto quat2 = convert(e.get_local_to_reference());
+
+    // qDebug() << quat << quat2;
+
+    return TransformComponent { .position = pos, .rotation = quat2 };
+}
+
+
+TransformComponent extract_tf_stage(SD::Element const& e) {
+    auto pos = ::convert(e.get_origin_stage());
+
+    auto aim = ::convert(e.get_aim_vector_stage());
+
+    aim = (aim - pos).normalized();
+
+    auto quat = dir_roll_to_quat(aim, e.get_zrot_radians());
+
+    auto quat2 = convert(e.get_local_to_reference());
+
+    // qDebug() << quat << quat2;
+
+    return TransformComponent { .position = pos, .rotation = quat2 };
+}
+
+
 // =============================================================================
 
 Database::Database(QObject* p)
@@ -254,6 +291,7 @@ import_optics(Database&                                          reg,
         !item.get_back_optical_properties() and !item.get_aperture() and
         !item.get_surface()) {
         // does not have geometry.
+        qDebug() << "Skipping optics on" << entt::to_integral(entity);
         return;
     }
 
@@ -264,6 +302,8 @@ import_optics(Database&                                          reg,
         emplace_patch<ImportErrorComponent>(reg, entity, [](auto& c) {
             c.reason += "Missing aperture and surface";
         });
+        qWarning() << "Entity" << entt::to_integral(entity)
+                   << "missing surface properties";
         return;
     }
 
@@ -305,6 +345,11 @@ import_optics(Database&                                          reg,
     }
 }
 
+struct StageComponent {
+    TransformComponent stage_tf;
+    TransformComponent this_in_stage;
+};
+
 void Database::import(SD::SimulationData& data) {
 
     // Assuming we are not re-using registries, which we are not for the moment
@@ -339,24 +384,48 @@ void Database::import(SD::SimulationData& data) {
     for (auto iter = data.get_iterator(); !data.is_at_end(iter); ++iter) {
         auto const& element = *(iter->second);
 
+        if (element.is_stage()) {
+            // we want to avoid materializing stage elements
+            auto c = std::dynamic_pointer_cast<SD::StageElement>(iter->second);
+
+            TransformComponent stage_tf = extract_tf(element);
+
+            qDebug() << stage_tf.position << stage_tf.rotation;
+
+            for (auto iter = c->get_const_iterator(); !c->is_at_end(iter);
+                 ++iter) {
+
+                auto child_ent = get_or_create_entity(iter->second.get());
+
+                auto child_tf = extract_tf(*iter->second);
+
+                qDebug() << (child_tf.position -
+                             extract_tf_stage(*iter->second).position)
+                                .length();
+
+                m_registry.emplace_or_replace<StageComponent>(
+                    child_ent,
+                    StageComponent {
+                        .stage_tf      = stage_tf,
+                        .this_in_stage = extract_tf_stage(*iter->second),
+                    });
+            }
+
+            // we do NOT add these as children, we instead make them globals
+            continue;
+        }
+
         entt::entity ent = get_or_create_entity(iter->second.get());
 
         if (!m_registry.valid(ent)) {
             qWarning() << "Unable to mirror element" << &element;
         }
 
+        // auto position = element.get_origin_ref();
 
-        auto position = element.get_origin_ref();
+        // auto rotation = convert(element.get_local_to_reference());
 
-        auto rotation = convert(element.get_local_to_reference());
-
-        m_registry.emplace<TransformComponent>(
-            ent,
-            TransformComponent {
-                .position = QVector3D(
-                    position.data[0], position.data[1], position.data[2]),
-                .rotation = rotation,
-            });
+        m_registry.emplace<TransformComponent>(ent, extract_tf(element));
 
         if (!element.get_name().empty()) {
             m_registry.emplace<IdentityComponent>(
@@ -387,6 +456,36 @@ void Database::import(SD::SimulationData& data) {
         import_optics(*this, ent, element, groups, group_counter);
     }
 
+    {
+        // burn in globals from a stage
+
+        auto view = m_registry.view<StageComponent const>();
+
+        for (auto const& [e, stage] : view.each()) {
+            // qDebug() << entt::to_integral(e);
+
+            auto new_pos =
+                stage.stage_tf.position + stage.stage_tf.rotation.rotatedVector(
+                                              stage.this_in_stage.position);
+            auto new_rot =
+                stage.stage_tf.rotation * stage.this_in_stage.rotation;
+
+            // qDebug() << new_pos << new_rot;
+            // qDebug() << stage.this_in_stage.position
+            //          << stage.this_in_stage.rotation;
+
+            m_registry.emplace_or_replace<TransformComponent>(
+                e,
+                TransformComponent {
+                    .position = new_pos,
+                    .rotation = new_rot,
+                });
+        }
+
+        m_registry.clear<StageComponent>();
+    }
+
+
     m_registry.ctx().emplace<RaySourceResource>(RaySourceResource {
         .source = data.get_ray_source(),
     });
@@ -411,6 +510,8 @@ static void install_transform(SD::element_ptr           ptr,
 
     auto origin = tf_comp.position;
     ptr->set_origin(origin.x(), origin.y(), origin.z());
+
+    aim = (origin + aim * 100);
 
     ptr->set_aim_vector(aim.x(), aim.y(), aim.z());
 
@@ -534,16 +635,44 @@ std::shared_ptr<SD::SimulationData> Database::export_to_simdata() {
                     continue;
                 }
 
-                composite->add_element(iter->second);
+                if (iter->second->is_composite()) {
+                    qCritical()
+                        << "Composite child under non-stage composite is not supported";
+                    continue;
+                }
+
+                auto ret = composite->add_element(iter->second);
+
+                if (ret < 0) { qCritical() << "Add failed"; }
             }
         }
     }
 
     // Install all elements into the sim engine
     for (auto const& iter : entity_element_map) {
-        ret.add_element(iter.second);
+        if (m_registry.any_of<ChildOfComponent>(iter.first)) {
+            // Only add top-level elements; composites will add subelements.
+            continue;
+        }
+        auto const& ptr = iter.second;
+        // qDebug() << entt::to_integral(iter.first) << ptr->is_single()
+        //          << ptr->is_composite() << ptr->is_stage();
+        try {
+            ret.add_element(iter.second);
+        } catch (std::exception const& e) {
+            qCritical() << "Unable to export entity"
+                        << entt::to_integral(iter.first);
+
+            return nullptr;
+        }
     }
 
+
+    // try {
+    //     SD::write_json_file(ret, "/tmp/soltrace_export.json");
+    // } catch (std::exception const& e) {
+    //     qWarning() << "Failed to write export JSON dump:" << e.what();
+    // }
 
     return std::make_shared<SD::SimulationData>(std::move(ret));
 }

@@ -80,7 +80,7 @@ RunningJob::RunningJob(SimDataPtr data, RunType type, QObject* parent)
             this,
             &RunningJob::progress_text_update);
 
-    connect(watcher, &QFutureWatcher<Result>::canceled, this, [this]() {
+    connect(watcher, &QFutureWatcher<SimResult>::canceled, this, [this]() {
         emit this->error("Cancelled");
     });
 

@@ -11,7 +11,7 @@
 namespace analysis {
 
 // TODO make all deltas queued up for Concurrent off thread rebuilding of geom
-
+// TODO move to tubes and instancing?
 class RayGeometry : public QQuick3DGeometry {
     Q_OBJECT
 

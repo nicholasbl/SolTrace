@@ -35,6 +35,7 @@
 /// OUTSIDE this function
 static SolTrace::Runner::RunnerStatus
 execute_solve_with(SolTrace::Runner::SimulationRunner* ptr) {
+    qDebug() << "execute runner";
     return ptr->run_simulation();
 }
 
@@ -47,7 +48,11 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
 
         SolTrace::Runner::RunnerStatus result;
 
-        current_runner->set_number_of_threads(6);
+        current_runner->set_number_of_threads(7);
+        data->set_number_of_rays(1000);
+        data->set_max_rays_traced(10000);
+        qDebug() << data->get_number_of_rays()
+                 << data->get_max_number_rays_traced();
 
         SOLTRACE_SECTION(initialize(), 0, "Starting simulation");
 
@@ -59,8 +64,6 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
         // run simulation will indeed run, but we need to stuff it into another
         // thread so we can poll status.
 
-        auto progress_check = current_runner->get_system();
-
         auto run_future =
             QtConcurrent::run(execute_solve_with, current_runner.get());
 
@@ -71,7 +74,7 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
 
             // Normally polling would be The Wrong Thing, but the progress stuff
             // requires active checking
-            QThread::sleep(std::chrono::milliseconds { 16 });
+            QThread::sleep(std::chrono::milliseconds { 500 });
 
             double progress = -1;
 
@@ -80,10 +83,7 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
                 promise.setProgressValueAndText(100, "Cancelling...");
 
                 // User cancelled, set flag
-                {
-                    auto lock = std::lock_guard(progress_check->state_mutex);
-                    progress_check->cancel = true;
-                }
+                current_runner->cancel_simulation();
 
                 // Wait for completion
                 run_future.result();
@@ -95,13 +95,13 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
             }
 
             // Not cancelled, check and see how things are going
-            {
-                auto lock = std::lock_guard(progress_check->state_mutex);
-                progress  = progress_check->progress;
-            }
+            current_runner->status_simulation(&progress);
+
+            qDebug() << "raw" << progress;
 
             // assuming progress is 0-1, TODO: Check
             progress = std::clamp(progress, 0.0, 1.0);
+
 
             if (last_progress != progress) {
                 // we have reserved progress points 10 to 90 for sim run
@@ -111,6 +111,11 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
                 last_progress = progress;
                 qDebug() << "sim progress " << progress;
             }
+
+            // if (progress > 1) {
+            //     current_runner->cancel_simulation();
+            //     break;
+            // }
         }
 
         auto run_result = run_future.result();
@@ -131,6 +136,9 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
         case SolTrace::Runner::RunnerStatus::SUCCESS: break;
         case SolTrace::Runner::RunnerStatus::TIMEOUT:
             promise.setProgressValueAndText(100, "Run failed: timeout");
+            return;
+        default:
+            promise.setProgressValueAndText(100, "Run failed: unknown");
             return;
         }
 

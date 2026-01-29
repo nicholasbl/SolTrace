@@ -90,10 +90,26 @@ FocusScope {
                         PrincipledMaterial {
                             metalness: 1
                             roughness: 0
-                            baseColor: Qt.white
+                            baseColor: "white"
                         }
                     ]
                 }
+            }
+
+            Model {
+                geometry: Backend.results_backend.ray_geometry
+
+                materials : [
+                    PrincipledMaterial {
+                        metalness: 0
+                        roughness: 1
+                        lighting: PrincipledMaterial.NoLighting
+                        baseColor: "white"
+                        baseColorMap: Texture {
+                            source: "qrc:/images/assets/images/b_to_r_wide.png"
+                        }
+                    }
+                ]
             }
         }
 

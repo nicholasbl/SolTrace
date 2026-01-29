@@ -181,7 +181,50 @@ int test() {
     return 0;
 }
 
+int test2() {
+
+    std::vector<QVector3D> positions = {
+        { 300.4760, 670.9580, 3.6927 },    { 300.0650, 669.9370, 2.6376 },
+        { 299.6530, 668.9150, 1.5826 },    { 293.9950, 671.1970, 1.5826 },
+        { -1214.6600, 163.1450, -0.5042 }, { -1082.3500, 360.9840, -3.5815 },
+        { 209.9780, -847.9350, 2.9950 },   { -1003.4800, -476.8940, 3.2507 },
+    };
+    std::vector<QVector3D> aims = {
+        { 38.8543, 27.7015, 723.2590 },    { 38.7178, 27.3632, 722.9140 },
+        { 38.5817, 27.0256, 722.5680 },    { 36.7186, 27.7769, 722.5680 },
+        { -591.0470, -55.8965, 749.9110 }, { -501.2880, 28.8448, 739.4200 },
+        { 14.6201, -319.2480, 829.0250 },  { -413.4470, -318.4600, 794.9350 },
+    };
+    std::vector<float> rots = { 29.184700,  29.184700,  29.184700,  29.184700,
+                                -75.322200, -67.126400, -23.855000, 77.872600 };
+
+    for (int i = 0; i < positions.size(); i++) {
+        auto p = positions.at(i);
+        auto a = aims.at(i);
+        auto r = qDegreesToRadians(rots.at(i));
+
+        a = (a - p).normalized();
+
+        auto q = dir_roll_to_quat(a, r);
+
+        QVector3D dir2;
+        double    roll2;
+        quat_to_dir_roll(q, dir2, roll2);
+
+        qDebug() << "-----";
+        qDebug() << "Original dir: (" << a.x() << "," << a.y() << "," << a.z()
+                 << ")";
+        qDebug() << "Decoded  dir: (" << dir2.x() << "," << dir2.y() << ","
+                 << dir2.z() << ")";
+        qDebug() << "Original roll: " << r;
+        qDebug() << "Decoded  roll: " << roll2;
+        qDebug() << (a - p).length();
+    }
+    return 0;
+}
+
 
 static int VT = test();
+static int VT2 = test2();
 
 } // namespace db

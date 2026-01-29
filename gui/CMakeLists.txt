@@ -39,6 +39,7 @@ qt_add_resources(SolTrace "images"
         assets/images/point_source.svg
         assets/images/directional_sun_eq.svg
         assets/images/point_source_sun_eq.svg
+        assets/images/b_to_r_wide.png
 )
 
 qt_add_resources(SolTrace "icons"
