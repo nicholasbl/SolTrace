@@ -23,6 +23,7 @@ set(NATIVE_RUNNER_TEST_SRC
     thread_manager_test.cpp
     native_runner_test.cpp
     tower_demo.cpp
+    stage_test.cpp
 )
 
 if (NOT ENABLE_COVERAGE)
