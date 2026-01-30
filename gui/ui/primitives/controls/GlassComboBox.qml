@@ -22,12 +22,14 @@ Item {
     signal activated(int index)
 
     implicitWidth: 200
-    implicitHeight: button.height
+    implicitHeight: 40
 
     // Main Button
     Rectangle {
         id: button
-        anchors.fill: parent
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 40
         color: parent.backgroundColor
         radius: 8
         border.color: root.borderColor

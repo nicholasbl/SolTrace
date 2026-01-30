@@ -130,7 +130,7 @@ Item {
 
     GlassRectangle {
         id: workspaceHeader
-        width: 500
+        width: 450
         height: parent.height
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
@@ -242,11 +242,11 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
-                IconButton {
+                /* IconButton {
                     label: "Account"
                     source: "qrc:/icons/assets/icons/user.svg"
                     anchors.verticalCenter: parent.verticalCenter
-                }
+                } */
             }
         }
     }

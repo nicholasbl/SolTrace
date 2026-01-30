@@ -6,7 +6,7 @@ import SolTraceProto
 Item {
     id: root
     property var source: null
-    property int sidebarWidth: 325
+    property int sidebarWidth: 300
     property var panels: ["Sun", "Materials", "Staging", "Tracing"]
     property int panelIndex: 0
 
@@ -108,7 +108,7 @@ Item {
                         }
 
                         GlassComboBox {
-                            model: ["Untitled (Unsaved)", "Config1 (Last Run)"]
+                            model: ["Current (Unsaved)", "Other Config (Last Run)"]
                             width: parent.width
                             height: 30
                             labelFontSize: Theme.textSizeSmall
@@ -116,7 +116,7 @@ Item {
                         }
                     }
 
-                    Spacer { height: 10 }
+                    Spacer { height: 20 }
 
                 }
 

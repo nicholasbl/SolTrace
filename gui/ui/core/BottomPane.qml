@@ -51,10 +51,10 @@ Item {
                     property string name: "Run"
                     property string icon: "qrc:/icons/assets/icons/play.svg"
                 },
-                QtObject {
+                /* QtObject {
                     property string name: "Monitor"
                     property string icon: "qrc:/icons/assets/icons/placeholder.svg"
-                },
+                }, */
                 QtObject {
                     property string name: "Debug"
                     property string icon: "qrc:/icons/assets/icons/placeholder.svg"

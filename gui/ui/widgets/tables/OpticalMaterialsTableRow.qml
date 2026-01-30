@@ -231,6 +231,7 @@ GridLayout {
                 visible: parent.modelData.sideObj.enabled
                 enabled: parent.modelData.sideObj.enabled
                 model: ["Gaussian", "Pillbox", "Diffuse"]
+                labelFontSize: Theme.controlLabelSize
                 currentIndex: parent.modelData.sideObj.errorType === "Pillbox" ? 1 : 0
                 onActivated: parent.modelData.sideObj.errorType = currentText
             }

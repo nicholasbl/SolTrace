@@ -212,7 +212,7 @@ Column {
             id: addRowButton
             width: parent.width
             height: 40
-            color: mouseArea.containsMouse ? Theme.buttonHoverColor : Theme.buttonColor
+            color: Theme.buttonColor
             border.width: 1
             border.color: Theme.lineColor
 
@@ -248,6 +248,7 @@ Column {
                     Layout.preferredWidth: 150
                     model: ["None", "Example"]
                     labelFontSize: 13
+                    enabled: true
                     z: 2
                 }
 
@@ -260,7 +261,7 @@ Column {
                 id: mouseArea
                 anchors.fill: parent
                 hoverEnabled: true
-                z: -1
+                z: -5
                 onClicked: {
                     root.addRow()
                 }
