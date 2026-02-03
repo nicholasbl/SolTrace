@@ -116,9 +116,6 @@ else(MSVC)
 	endif()
 endif(MSVC)
 
-# Find Embree: use legacy variables to ensure compatibility across installs
-find_package(embree 4 REQUIRED)
-
 #####################################################################################################################
 #
 # CMake Targets
