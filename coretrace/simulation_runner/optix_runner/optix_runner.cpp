@@ -195,7 +195,7 @@ RunnerStatus OptixRunner::update_simulation(const SimulationData *data)
 
 RunnerStatus OptixRunner::run_simulation()
 {
-    return run_simulation_core(true);
+    return run_simulation_core(false);
 }
 
 RunnerStatus OptixRunner::run_simulation_core(bool write_output)
