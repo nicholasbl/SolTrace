@@ -40,8 +40,15 @@ target_link_libraries(
 	native_runner
 	testtools
 	GTest::gtest_main
-    embree_runner
 )
+
+if (SOLTRACE_BUILD_EMBREE_SUPPORT)
+	target_link_libraries(
+	    CSTUnitTests
+	    embree_runner
+        )
+endif()
+
 
 if (ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
 	target_link_options(CSTUnitTests PRIVATE --coverage)

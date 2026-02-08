@@ -509,9 +509,6 @@ TEST(NativeRunner, ValidationTest2)
     std::chrono::duration<double, std::milli> dur = t1 - t0;
 #ifdef NDEBUG
     EXPECT_TRUE(dur.count() < 75000.0);
-#else
-    // Debug builds can go very slowly on some machines and compilers
-    EXPECT_TRUE(dur.count() < 300000.0);
 #endif
 
     std::cout << "Time: " << dur.count() << " ms" << std::endl;

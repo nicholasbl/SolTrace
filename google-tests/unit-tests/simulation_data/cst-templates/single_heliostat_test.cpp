@@ -2,7 +2,13 @@
 
 #include <gtest/gtest.h>
 
+// TODO: Replace with configuration define
+#if __has_include(<embree4/rtcore.h>)
+#define USE_EMBREE
 #include <embree_runner.hpp>
+using SolTrace::EmbreeRunner::EmbreeRunner;
+#endif
+
 #include <native_runner.hpp>
 #include <native_runner_types.hpp>
 #include <simulation_data.hpp>
@@ -22,7 +28,6 @@ using Heliostat = SolTrace::Data::Heliostat;
 
 using SolTrace::Runner::RunnerStatus;
 using SolTrace::NativeRunner::NativeRunner;
-using SolTrace::EmbreeRunner::EmbreeRunner;
 
 using SolTrace::NativeRunner::TRayData;
 using SolTrace::NativeRunner::TSystem;
@@ -51,8 +56,12 @@ public:
 protected:
 
     SimulationData simData;
-    //NativeRunner runner;
+
+#ifdef USE_EMBREE
     EmbreeRunner runner;
+#else
+    NativeRunner runner;
+#endif
 
     double sun_width;
     double sun_height;
@@ -380,12 +389,10 @@ protected:
     bool calculate_receiver_flux_map(SimulationResult result, int nbinsx, int nbinsy, bool is_cylinder) {
         reset_flux_map();
 
-        double minx, maxx, miny, maxy;
-        
-        minx = -rec_width / 2.0;
-        maxx = rec_width / 2.0;
-        miny = -rec_height / 2.0;
-        maxy = rec_height / 2.0;
+        double minx = -rec_width / 2.0;
+        double maxx = rec_width / 2.0;
+        double miny = -rec_height / 2.0;
+        double maxy = rec_height / 2.0;
 
         glm::dvec3 rec_origin = receiver->get_origin_global();
 

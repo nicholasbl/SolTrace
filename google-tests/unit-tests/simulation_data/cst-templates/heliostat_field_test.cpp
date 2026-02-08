@@ -7,8 +7,14 @@
 
 #include <gtest/gtest.h>
 
-#include <native_runner.hpp>
+// TODO: Replace with configuration define
+#if __has_include(<embree4/rtcore.h>)
+#define USE_EMBREE
 #include <embree_runner.hpp>
+using SolTrace::EmbreeRunner::EmbreeRunner;
+#endif
+
+#include <native_runner.hpp>
 #include <native_runner_types.hpp>
 #include <simulation_data.hpp>
 #include <simulation_result_export.hpp>
@@ -25,9 +31,8 @@
 
 using Heliostat = SolTrace::Data::Heliostat;
 
-using SolTrace::Runner::RunnerStatus;
 using SolTrace::NativeRunner::NativeRunner;
-using SolTrace::EmbreeRunner::EmbreeRunner;
+using SolTrace::Runner::RunnerStatus;
 
 using SolTrace::NativeRunner::TRayData;
 using SolTrace::NativeRunner::TSystem;
@@ -64,8 +69,12 @@ public:
 
 protected:
     SimulationData simData;
-    //NativeRunner runner;
+
+#ifdef USE_EMBREE
     EmbreeRunner runner;
+#else
+    NativeRunner runner;
+#endif
 
     // Sun outputs
     double sun_width;
@@ -90,7 +99,7 @@ protected:
     double PeakFlux, PeakFluxUncertainty;
     double AveFlux, AveFluxUncertainty;
     double MinFlux, SigmaFlux, Uniformity;
-    double Centroid[3];
+    glm::dvec3 Centroid;
     double zScale;
     size_t NumberOfRays;
 
@@ -231,7 +240,7 @@ protected:
             double distance = sqrt(pow(x_coords[i], 2) + pow(y_coords[i], 2));
             glm::dvec3 aim_point = {rec_radius * (x_coords[i] / distance),
                                     rec_radius * (y_coords[i] / distance),
-                                    rec_origin[2]};
+                                    rec_origin.z};
             heliostat->set_target_position(aim_point);
             // At-slant focal length - to center of receiver
             glm::dvec3 slant = -rec_origin + heliostat_origin; //aim_point
@@ -249,10 +258,10 @@ protected:
         int helio_idx = 0;
         for (const auto& heliostat : heliostat_field) {
             glm::dvec3 heliostat_origin = heliostat->get_origin_global();
-            double distance = sqrt(pow(heliostat_origin[0], 2) + pow(heliostat_origin[1], 2));
-            glm::dvec3 aim_point = {rec_radius * (heliostat_origin[0] / distance),
-                                    rec_radius * (heliostat_origin[1] / distance),
-                                    rec_origin[2] + scatter_aim_elevation[helio_idx]};
+            double distance = sqrt(pow(heliostat_origin.x, 2) + pow(heliostat_origin.y, 2));
+            glm::dvec3 aim_point = {rec_radius * (heliostat_origin.x / distance),
+                                    rec_radius * (heliostat_origin.y / distance),
+                                    rec_origin.z + scatter_aim_elevation[helio_idx]};
             heliostat->set_target_position(aim_point);
             heliostat->create_geometry();
             helio_idx++;
@@ -262,7 +271,7 @@ protected:
     void assign_focal_lengths_banded() {
         for (const auto& heliostat : heliostat_field) {
             glm::dvec3 heliostat_origin = heliostat->get_origin_global();
-            double distance = sqrt(pow(heliostat_origin[0], 2) + pow(heliostat_origin[1], 2));
+            double distance = sqrt(pow(heliostat_origin.x, 2) + pow(heliostat_origin.y, 2));
             double focal_length = 0.0;
             if (distance <= 502.5)
                 focal_length = 353.8;
@@ -284,7 +293,7 @@ protected:
         // NOTE: This was created for task 1b where the focal lengths were set to the canting distances.
         for (const auto& heliostat : heliostat_field) {
             glm::dvec3 heliostat_origin = heliostat->get_origin_global();
-            double distance = sqrt(pow(heliostat_origin[0], 2) + pow(heliostat_origin[1], 2));
+            double distance = sqrt(pow(heliostat_origin.x, 2) + pow(heliostat_origin.y, 2));
             double focal_length = 0.0;
             if (distance <= 502.0)
                 focal_length = 516;
@@ -320,7 +329,7 @@ protected:
         // Modify heliostat canting to bands - to center of receiver
         for (const auto& heliostat : heliostat_field) {
             glm::dvec3 heliostat_origin = heliostat->get_origin_global();
-            double distance = sqrt(pow(heliostat_origin[0], 2) + pow(heliostat_origin[1], 2));
+            double distance = sqrt(pow(heliostat_origin.x, 2) + pow(heliostat_origin.y, 2));
             double cant_distance = 0.0;
             if (distance <= 502.0)
                 cant_distance = 516;
@@ -493,10 +502,14 @@ protected:
                 tokens.push_back(item);
             }
             // TODO: we could average values across the different models
-            if (line_number == 2) expected_power = std::stod(tokens[1]);
-            if (line_number == 3) expected_peak_flux = std::stod(tokens[1]);
-            if (line_number == 6) expected_flux_RMS = std::stod(tokens[1]);     // TODO: Maybe not required
-            if (line_number == 8) expected_max_flux_RMS = std::stod(tokens[1]);
+            if (line_number == 2)
+                expected_power = std::stod(tokens[1]);
+            if (line_number == 3)
+                expected_peak_flux = std::stod(tokens[1]);
+            if (line_number == 6)
+                expected_flux_RMS = std::stod(tokens[1]); // TODO: Maybe not required
+            if (line_number == 8)
+                expected_max_flux_RMS = std::stod(tokens[1]);
             line_number++;
         }
     }
@@ -520,7 +533,8 @@ protected:
                 tokens.push_back(item);
             }
             if (line_number > 2) {
-                double avg_eff = (std::stod(tokens[2]) + std::stod(tokens[4]) + std::stod(tokens[6])) / 3.0;
+                double avg_eff = (std::stod(tokens[2]) + std::stod(tokens[4]) + std::stod(tokens[6]))
+                                 / 3.0;
                 if (line_number == 3) expected_cosine_efficiency = avg_eff;
                 if (line_number == 4) expected_absorption_efficiency = avg_eff;
                 if (line_number == 5) expected_blocking_efficiency = avg_eff;
@@ -579,7 +593,7 @@ protected:
         PeakFlux = PeakFluxUncertainty = 0.0;
         AveFlux = AveFluxUncertainty = 0.0;
         MinFlux = SigmaFlux = Uniformity = 0.0;
-        Centroid[0] = Centroid[1] = Centroid[2] = 0.0;
+        Centroid = glm::dvec3{0.0};
         zScale = 0.0;
         NumberOfRays = 0;
     }
@@ -587,16 +601,13 @@ protected:
     bool calculate_receiver_flux_map(const SimulationResult &result, int nbinsx, int nbinsy, bool is_cylinder) {
         reset_flux_map();
 
-        double minx, maxx, miny, maxy;
-        minx = maxx = miny = maxy = 0.0;
+        double minx = -rec_width / 2.0;
+        double maxx = rec_width / 2.0;
+
+        double maxy = rec_height / 2.0;
+        double miny = -rec_height / 2.0;
+
         glm::dvec3 rec_origin = receiver->get_origin_global();
-        
-        minx = -rec_width / 2.0;
-        maxx = rec_width / 2.0;
-
-        maxy = rec_height / 2.0;
-        miny = -rec_height / 2.0;
-
 
         // Autoscale
         if (false) {
@@ -613,8 +624,8 @@ protected:
                         rr->get_position(j, global_position);
                         receiver->convert_global_to_local(local_position, global_position);
 
-                        double x = local_position[0];
-                        double y = local_position[1];
+                        double x = local_position.x;
+                        double y = local_position.y;
 
                         if (x < minx) minx = x;
                         if (x > maxx) maxx = x;
@@ -654,7 +665,7 @@ protected:
         size_t RayCount = 0;
         size_t NotBinned = 0;
         size_t npoints = 0;
-        Centroid[0] = Centroid[1] = Centroid[2] = 0.0;
+        Centroid.x = Centroid.y = Centroid.z = 0.0;
         fluxGrid.fill(0.0);
 
         for (size_t i = 0; i < result.get_number_of_records(); i++) {
@@ -669,13 +680,12 @@ protected:
 
                         receiver->convert_global_to_local(local_position, global_position);
 
-                        x = local_position[0];
-                        y = local_position[1];
-                        z = local_position[2];
+                        x = local_position.x;
+                        y = local_position.y;
+                        z = local_position.z;
 
-                        Centroid[0] += x;
-                        Centroid[1] += y;
-                        Centroid[2] += z;
+                        Centroid += local_position;
+
                         npoints++;
 
                         if (is_cylinder) {
@@ -725,9 +735,7 @@ protected:
 
         if (npoints > 0)
         {
-            Centroid[0] /= npoints;
-            Centroid[1] /= npoints;
-            Centroid[2] /= npoints;
+            Centroid /= npoints;
         }
 
         double SumFlux, SumFlux2;
@@ -776,7 +784,8 @@ protected:
             std::cout << "Avg. flux: " << AveFlux << std::endl;
             std::cout << "Avg. flux uncertainty: +/- " << AveFluxUncertainty << " %" << std::endl;
             std::cout << "Uniformity: " << Uniformity << std::endl;
-            std::cout << "Centroid: (" << Centroid[0] << ", " << Centroid[1] << ", " << Centroid[2] << ")" << std::endl;
+            std::cout << "Centroid: (" << Centroid.x << ", " << Centroid.y << ", " << Centroid.z
+                      << ")" << std::endl;
         }
 
         return true;

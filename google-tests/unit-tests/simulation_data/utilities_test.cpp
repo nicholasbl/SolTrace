@@ -1,8 +1,6 @@
 #include <gtest/gtest.h>
 
 #include <cmath>
-
-#include <cst_templates/utilities.hpp>
 #include <utilities.hpp>
 
 #include "common.hpp"

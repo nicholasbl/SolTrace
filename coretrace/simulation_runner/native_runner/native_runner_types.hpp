@@ -69,23 +69,15 @@
 namespace SolTrace::NativeRunner
 {
 
-	class GlobalRay_refactored
-	{
-	public:
-		GlobalRay_refactored() // : active(true)
-		{
-			Num = 0;
-			for (int i = 0; i < 3; i++)
-				Pos[i] = Cos[i] = 0.0;
-		}
+    struct GlobalRay_refactored
+    {
+        glm::dvec3 Pos = glm::dvec3{0};
+        glm::dvec3 Cos = glm::dvec3{0};
+        uint_fast64_t Num = 0;
+        // bool active;
+    };
 
-		double Pos[3];
-		double Cos[3];
-		uint_fast64_t Num;
-		// bool active;
-	};
-
-	// #define ACOSM1O180 0.017453292519943295 // acos(-1)/180.0
+    // #define ACOSM1O180 0.017453292519943295 // acos(-1)/180.0
 	// #endif
 
 	// class nanexcept : public std::exception

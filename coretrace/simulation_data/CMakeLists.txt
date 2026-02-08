@@ -31,11 +31,7 @@ set(SIMDATA_SRC
     stage_element.cpp
     sun.cpp
     surface.cpp
-<<<<<<< HEAD
-=======
     utilities.cpp
-    vector3d.cpp
->>>>>>> origin/develop
     virtual_element.cpp
     cst_templates/arclength.cpp
     cst_templates/heliostat.cpp
