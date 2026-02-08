@@ -7,6 +7,8 @@
 #include <element.hpp>
 #include <single_element.hpp>
 #include <surface.hpp>
+#include <simulation_data_export.hpp>
+#include <simulation_result_export.hpp>
 
 #include <glm/ext/matrix_common.hpp>
 #include <glm/gtx/io.hpp>
@@ -54,4 +56,28 @@ element_ptr make_configured_element()
     el->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Circle>(2.0));
     el->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Flat>());
     return el;
+}
+
+int_fast64_t count_element_event(const SimulationResult &res, element_id el, RayEvent rev)
+{
+    int_fast64_t count = 0;
+
+    for (auto ray_idx = 0;
+         ray_idx < res.get_number_of_records();
+         ++ray_idx)
+    {
+        auto rr = res[ray_idx];
+        for (auto event_idx = 0;
+             event_idx < rr->get_number_of_interactions();
+             ++event_idx)
+        {
+            if (rr->get_event(event_idx) == rev &&
+                rr->get_element(event_idx) == el)
+            {
+                ++count;
+            }
+        }
+    }
+
+    return count;
 }

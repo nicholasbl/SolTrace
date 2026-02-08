@@ -65,6 +65,7 @@
 #include <simulation_runner.hpp>
 
 // NativeRunner headers
+#include "determine_interaction_type.hpp"
 #include "find_element_hit.hpp"
 #include "generate_ray.hpp"
 #include "native_runner_types.hpp"
@@ -72,6 +73,7 @@
 #include "pt_optimizations.hpp"
 #include "sun_to_primary_stage.hpp"
 #include "thread_manager.hpp"
+#include "trace_logger.hpp"
 #include "treemesh.hpp"
 
 namespace SolTrace::NativeRunner
@@ -83,9 +85,10 @@ namespace SolTrace::NativeRunner
 	// Trace method
 	RunnerStatus trace_native(
 		thread_manager_ptr manager,
+		trace_logger_ptr logger,
 		TSystem *System,
 		const std::vector<unsigned int> &seeds,
-		uint_fast64_t nthreads,
+		unsigned nthreads,
 		uint_fast64_t NumberOfRays,
 		uint_fast64_t MaxNumberOfRays,
 		bool IncludeSunShape,
@@ -94,7 +97,7 @@ namespace SolTrace::NativeRunner
 	{
 		// Initialize Sun
 		glm::dvec3 PosSunStage;
-        if (!SunToPrimaryStage(manager,
+        if (!SunToPrimaryStage(logger,
                                System,
                                System->StageList[0].get(),
                                &System->Sun,
@@ -123,6 +126,7 @@ namespace SolTrace::NativeRunner
 		// having trouble with all the arguments...
 		ThreadInfo my_info;
 		my_info.manager = manager;
+		my_info.logger = logger;
 		my_info.System = System;
 		// my_info.NumberOfRays = NumberOfRays / nthreads;
 		uint_fast64_t rem = NumberOfRays % nthreads;
@@ -162,6 +166,7 @@ namespace SolTrace::NativeRunner
 	RunnerStatus trace_single_thread(
 		unsigned thread_id,
 		thread_manager_ptr manager,
+		trace_logger_ptr logger,
 		TSystem *System,
 		unsigned int seed,
 		uint_fast64_t NumberOfRays,
@@ -206,11 +211,6 @@ namespace SolTrace::NativeRunner
 		// Define IncomingRays
 		std::vector<GlobalRay_refactored> IncomingRays; // Vector of rays from previous stage, going into next stage
 		IncomingRays.resize(NumberOfRays);
-
-		// Start the clock
-		// clock_t startTime = clock();
-		// int rays_per_callback_estimate = 50;
-		// uint_fast64_t RaysTracedTotal = 0;
 
 		// Initialize stage variables
 		uint_fast64_t StageDataArrayIndex = 0;
@@ -357,30 +357,36 @@ namespace SolTrace::NativeRunner
                     // Increment MultipleHitCount
                     MultipleHitCount++;
 
-                    if (i == 0 && MultipleHitCount == 1) {
-                        auto r = System->RayData.Append(thread_id,
-                                                        PosRayGlob,
-                                                        CosRayGlob,
-                                                        ELEMENT_NULL,
-                                                        i + 1,
-                                                        LastRayNumber,
-                                                        RayEvent::CREATE);
-                        if (r == nullptr) {
-                            std::stringstream ss;
-                            ss << "Thread " << thread_id << " failed to record ray data.\n";
-                            manager->error_log(ss.str());
-                        }
-                    }
+					if (i == 0 && MultipleHitCount == 1)
+					{
+						auto r = System->RayData.Append(thread_id,
+														PosRayGlob,
+														CosRayGlob,
+														ELEMENT_NULL,
+														i + 1,
+														LastRayNumber,
+														RayEvent::CREATE);
+						if (r == nullptr)
+						{
+							std::stringstream ss;
+							ss << "Thread " << thread_id
+							   << " failed to record ray data.\n";
+							manager->error_log(ss.str());
+						}
+					}
 
-                    // Get optics and check for absorption
-                    const OpticalProperties *optics = 0;
-                    RayEvent rev = RayEvent::VIRTUAL;
-                    if (Stage->Virtual) {
-                        // If stage is virtual, there is no interaction
-                        PosRayOutElement = LastPosRaySurfElement;
-                        CosRayOutElement = LastCosRaySurfElement;
-                    } else {
-                        // trace through the interaction
+					// Get optics and check for absorption
+					const OpticalProperties *optics = 0;
+					RayEvent rev = RayEvent::VIRTUAL;
+					if (Stage->Virtual)
+					{
+						// If stage is virtual, there is no interaction
+						CopyVec3(PosRayOutElement, LastPosRaySurfElement);
+						CopyVec3(CosRayOutElement, LastCosRaySurfElement);
+					}
+					else
+					{
+						// trace through the interaction
 						telement_ptr optelm = Stage->ElementList[LastElementNumber - 1];
 
 						if (LastHitBackSide)
@@ -389,9 +395,9 @@ namespace SolTrace::NativeRunner
 							optics = &optelm->Optics.Front;
 
 						double TestValue;
-                        glm::dvec3 UnitLastDFXYZ(0.0, 0.0, 0.0);
-                        double IncidentAngle = 0;
-                        // switch (optelm->InteractionType)
+						double UnitLastDFXYZ[3] = {0.0, 0.0, 0.0};
+						double IncidentAngle = 0;
+						// switch (optelm->InteractionType)
 						switch (optics->my_type)
 						{
 						case InteractionType::REFRACTION: // refraction
@@ -466,13 +472,8 @@ namespace SolTrace::NativeRunner
 							return RunnerStatus::ERROR;
 						}
 
-						// Apply MonteCarlo probability of absorption. Limited
-						// for now, but can make more complex later on if desired
-						// if (TestValue <= myrng())
-						double flip = myrng();
-						if (TestValue <= flip)
+						if (rev == RayEvent::ABSORB)
 						{
-							// ray was fully absorbed
 							RayIsAbsorbed = true;
 							break;
 						}
@@ -485,7 +486,8 @@ namespace SolTrace::NativeRunner
 									   IncludeSunShape,
 									   optics,
 									   IncludeErrors,
-									   i, Stage, // k,
+									   i,
+									   Stage,
 									   MultipleHitCount,
 									   LastDFXYZ,
 									   LastCosRaySurfElement,
@@ -528,9 +530,10 @@ namespace SolTrace::NativeRunner
 					}
                 }
 
-                ++update_count;
-                if (update_count % update_rate == 0) {
-                    double progress = update_count / total_work;
+				++update_count;
+				if (update_count % update_rate == 0)
+				{
+					double progress = update_count / total_work;
 					manager->progress_update(thread_id, progress);
 					if (manager->terminate(thread_id))
 						return RunnerStatus::CANCEL;

@@ -10,8 +10,8 @@
 #define GLM_ENABLE_EXPERIMENTAL 1
 #include <glm/gtx/io.hpp>
 
+#include "common.hpp"
 #include "split_csv.h"
-
 
 using SolTrace::Runner::RunnerStatus;
 
@@ -177,14 +177,6 @@ TEST(NativeRunner, ValidationTest1)
         // has 0-based ray ID's so subtract 1 here.
         rayidx = stoul(ground_raydata[8][i]) - 1;
 
-        if (stage == 3)
-        {
-            // TODO: Stage 3 is virtual in the input file but
-            // that has not been implemented yet. Remove after
-            // implementing this.
-            continue;
-        }
-
         const ray_record_ptr rr = result[rayidx];
         if (element > 0)
         {
@@ -213,6 +205,11 @@ TEST(NativeRunner, ValidationTest1)
                 EXPECT_NE(rr->get_event(iidx), RayEvent::CREATE);
                 EXPECT_NE(rr->get_event(iidx), RayEvent::ABSORB);
                 EXPECT_NE(rr->get_event(iidx), RayEvent::EXIT);
+
+                if (rr->get_event(iidx) == RayEvent::ABSORB)
+                {
+                    break;
+                }
             }
             else
             {
@@ -709,6 +706,7 @@ TEST(NativeRunner, ValidationTest2)
             break;
         }
 
+        // -------- Test Debugging Code -------- //
         // if (fabs(pos_stage[0] - stod(ground_raydata[0][i]) > TOL))
         // {
         //     glm::dvec3 pos_csv(stod(ground_raydata[0][i]),

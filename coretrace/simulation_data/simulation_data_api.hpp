@@ -11,6 +11,7 @@
 #include "stage_element.hpp"
 #include "sun.hpp"
 #include "surface.hpp"
+#include "utilities.hpp"
 #include "virtual_element.hpp"
 #include "matvec.hpp"
 #include "cst_templates/heliostat.hpp"

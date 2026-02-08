@@ -1,9 +1,9 @@
 #ifndef SOLTRACE_UNITTESTS_COMMON_H
 #define SOLTRACE_UNITTESTS_COMMON_H
 
-#include <element.hpp>
 #include <simulation_data_export.hpp>
 #include <vector_utility.hpp>
+#include <simulation_result_export.hpp>
 
 // Vectors exactly match component-wise
 bool is_identical(const glm::dvec3 &x,
@@ -64,5 +64,7 @@ inline std::shared_ptr<Rectangle> create_rectangle_aperture(double x_length = 2.
     auto rect = std::make_shared<Rectangle>(x_length, y_length);
     return rect;
 }
+
+int_fast64_t count_element_event(const SimulationResult &res, element_id el, RayEvent rev);
 
 #endif
