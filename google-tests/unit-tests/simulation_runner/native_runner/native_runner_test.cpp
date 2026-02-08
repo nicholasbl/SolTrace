@@ -504,7 +504,13 @@ TEST(NativeRunner, StatusAndCancelSingleThread)
     std::chrono::duration<double, std::milli> dur = t1 - t0;
 
     EXPECT_EQ(fsts.get(), RunnerStatus::CANCEL);
+
+    // succeeds in release, fails in some coverage tests
+#ifndef NDEBUG
+    EXPECT_LT(dur.count(), 10000.0);
+#else
     EXPECT_LT(dur.count(), 2000.0);
+#endif
 
     std::cout << "Time for run: " << dur.count() << std::endl;
     std::cout << "Progress before cancel: " << prog << std::endl;
