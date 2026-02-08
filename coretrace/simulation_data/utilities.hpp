@@ -3,6 +3,7 @@
 #define SOLTRACE_UTILITIES_H
 
 #include <cstdint>
+#include <cstdlib>
 #include <limits>
 
 #include <glm/vec3.hpp>
