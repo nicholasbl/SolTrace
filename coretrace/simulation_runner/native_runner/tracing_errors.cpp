@@ -49,20 +49,20 @@ void SurfaceNormalErrors(MTRand &myrng,
     glm::dmat3 RRefToLoc(0.0);
     glm::dmat3 RLocToRef(0.0);
 
-    if (CosIn[2] == 0.0) {
-        if (CosIn[0] == 0.0) {
-            Euler[0] = 0.0;
-			Euler[1] = PI / 2.0;
+    if (CosIn.z == 0.0) {
+        if (CosIn.x == 0.0) {
+            Euler.x = 0.0;
+            Euler.y = PI / 2.0;
         } else {
-            Euler[0] = PI / 2.0;
-			Euler[1] = atan2(CosIn[1], sqrt(CosIn[0] * CosIn[0] + CosIn[2] * CosIn[2]));
+            Euler.x = PI / 2.0;
+            Euler.y = atan2(CosIn.y, sqrt(CosIn.x * CosIn.x + CosIn.z * CosIn.z));
         }
     } else {
-        Euler[0] = atan2(CosIn[0], CosIn[2]);
-        Euler[1] = atan2(CosIn[1], sqrt(CosIn[0] * CosIn[0] + CosIn[2] * CosIn[2]));
+        Euler.x = atan2(CosIn.x, CosIn.z);
+        Euler.y = atan2(CosIn.y, sqrt(CosIn.x * CosIn.x + CosIn.z * CosIn.z));
     }
 
-    Euler[2] = 0.0;
+    Euler.z = 0.0;
 
     Data::CalculateTransformMatrices(Euler, RRefToLoc, RLocToRef);
 
@@ -106,15 +106,14 @@ void SurfaceNormalErrors(MTRand &myrng,
 	phi = myrng() * 2.0 * PI; // Therefore have chosen to randomize phi rather than calculate from randomized theta components
 	                          //  obtained from the distribution. The two approaches are equivalent save for this issue with arctan2.      wendelin 01-12-11
 
-	CosOut[0] = sin(theta) * cos(phi);
-	CosOut[1] = sin(theta) * sin(phi);
-	CosOut[2] = cos(theta);
+    CosOut = {
+        sin(theta) * cos(phi),
+        sin(theta) * sin(phi),
+        cos(theta)
+    };
 
-	for (i = 0; i < 3; i++)
-	{
-		PosIn[i] = PosOut[i];
-		CosIn[i] = CosOut[i];
-	}
+    PosIn = PosOut;
+    CosIn = CosOut;
 
 	/*{Transform perturbed ray back to element system}*/
     Data::TransformToReference(PosIn, CosIn, Origin, RLocToRef, PosOut, CosOut);
@@ -161,26 +160,26 @@ void Errors(
     glm::dmat3 RRefToLoc(0.0);
     glm::dmat3 RLocToRef(0.0);
 
-	if (CosIn[2] == 0.0)
+    if (CosIn.z == 0.0)
 	{
-		if (CosIn[0] == 0.0)
+        if (CosIn.x == 0.0)
 		{
-			Euler[0] = 0.0;
-			Euler[1] = PI / 2.0;
+            Euler.x = 0.0;
+            Euler.y = PI / 2.0;
 		}
 		else
 		{
-			Euler[0] = PI / 2.0;
-			Euler[1] = atan2(CosIn[1], sqrt(CosIn[0] * CosIn[0] + CosIn[2] * CosIn[2]));
+            Euler.x = PI / 2.0;
+            Euler.y = atan2(CosIn.y, sqrt(CosIn.x * CosIn.x + CosIn.z * CosIn.z));
 		}
 	}
 	else
 	{
-		Euler[0] = atan2(CosIn[0], CosIn[2]);
-		Euler[1] = atan2(CosIn[1], sqrt(CosIn[0] * CosIn[0] + CosIn[2] * CosIn[2]));
+        Euler.x = atan2(CosIn.x, CosIn.z);
+        Euler.y = atan2(CosIn.y, sqrt(CosIn.x * CosIn.x + CosIn.z * CosIn.z));
 	}
 
-	Euler[2] = 0.0;
+    Euler.z = 0.0;
 
     Data::CalculateTransformMatrices(Euler, RRefToLoc, RLocToRef);
 
@@ -249,7 +248,7 @@ void Errors(
 					i++;
 
 				if (i == 0)
-					stest = Sun->SunShapeIntensity[0];
+                    stest = Sun->SunShapeIntensity[0];
 				else // linear interpolation (switched from average) 12-20-11 wendelin
 					stest = Sun->SunShapeIntensity[i - 1] + (Sun->SunShapeIntensity[i] - Sun->SunShapeIntensity[i - 1]) * (theta - Sun->SunShapeAngle[i - 1]) /
 					(Sun->SunShapeAngle[i] - Sun->SunShapeAngle[i - 1]);
@@ -307,9 +306,9 @@ void Errors(
 	phi = myrng() * 2.0 * PI; // Therefore have chosen to randomize phi rather than calculate from randomized theta components
 							  //  obtained from the distribution. The two approaches are equivalent save for this issue with arctan2.      wendelin 01-12-11
 
-	CosOut[0] = sin(theta) * cos(phi);
-	CosOut[1] = sin(theta) * sin(phi);
-	CosOut[2] = cos(theta);
+    CosOut.x = sin(theta) * cos(phi);
+    CosOut.y = sin(theta) * sin(phi);
+    CosOut.z = cos(theta);
 
 	for (i = 0; i < 3; i++)
 	{

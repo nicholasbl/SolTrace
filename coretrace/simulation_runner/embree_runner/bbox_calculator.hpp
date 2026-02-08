@@ -8,8 +8,8 @@
 namespace SolTrace::EmbreeRunner
 {
     bool get_bounds(const SolTrace::NativeRunner::TElement *st_element,
-                    float (&min_coord_global)[3],
-                    float (&max_coord_global)[3]);
+                    glm::vec3& min_coord_global,
+                    glm::vec3& max_coord_global);
 
 } // namespace SolTrace::EmbreeRunner
 

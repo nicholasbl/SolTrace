@@ -182,8 +182,8 @@ void ProcessInteraction(
         Epsilon = 0.000005;
 
         *ErrorFlag = 0;
-        for (i = 0; i < 3; i++)
-            PosOut[i] = PosXYZ[i];
+
+        PosOut = PosXYZ;
 
         switch (Opticl->my_type)
         {
@@ -211,9 +211,11 @@ void ProcessInteraction(
             }
 
             // fresnel equations
-            UnitDFXYZ[0] = -DFXYZ[0] / sqrt(glm::dot(DFXYZ, DFXYZ)); // unit surface normals
-            UnitDFXYZ[1] = -DFXYZ[1] / sqrt(glm::dot(DFXYZ, DFXYZ));
-            UnitDFXYZ[2] = -DFXYZ[2] / sqrt(glm::dot(DFXYZ, DFXYZ));
+            UnitDFXYZ = -glm::normalize(DFXYZ);
+            // UnitDFXYZ[0] = -DFXYZ[0] / sqrt(glm::dot(DFXYZ, DFXYZ)); // unit surface normals
+            // UnitDFXYZ[1] = -DFXYZ[1] / sqrt(glm::dot(DFXYZ, DFXYZ));
+            // UnitDFXYZ[2] = -DFXYZ[2] / sqrt(glm::dot(DFXYZ, DFXYZ));
+
             IncidentAngle = acos(glm::dot(CosKLM, UnitDFXYZ));
             Rs = sqr(((Refr1 * cos(IncidentAngle) - Refr2 * sqrt(1 - sqr(Refr1 * sin(IncidentAngle) / Refr2)))) /
                      ((Refr1 * cos(IncidentAngle) + Refr2 * sqrt(1 - sqr(Refr1 * sin(IncidentAngle) / Refr2)))));
@@ -246,14 +248,16 @@ void ProcessInteraction(
 
                 // Have converged on Gamma, Compute direction cosines of refracted ray.
                 // Label_Converge:
-                for (i = 0; i < 3; i++)
-                    CosOut[i] = RMU * CosKLM[i] + Gamn1 * DFXYZ[i];
+                CosOut = RMU * CosKLM + Gamn1 * DFXYZ;
+                // for (i = 0; i < 3; i++)
+                //     CosOut[i] = RMU * CosKLM[i] + Gamn1 * DFXYZ[i];
             }
             else // reflected from surface
             {
                 A = glm::dot(CosKLM, DFXYZ) / glm::dot(DFXYZ, DFXYZ);
-                for (i = 0; i < 3; i++)
-                    CosOut[i] = CosKLM[i] - 2.0 * A * DFXYZ[i];
+                CosOut = CosKLM - 2.0 * A * DFXYZ;
+                // for (i = 0; i < 3; i++)
+                //     CosOut[i] = CosKLM[i] - 2.0 * A * DFXYZ[i];
             }
             return;
             break;
@@ -265,8 +269,9 @@ void ProcessInteraction(
         {
             A = glm::dot(CosKLM, DFXYZ) / glm::dot(DFXYZ, DFXYZ);
             // Compute direction cosines for reflected ray
-            for (i = 0; i < 3; i++)
-                CosOut[i] = CosKLM[i] - 2.0 * A * DFXYZ[i];
+            CosOut = CosKLM - 2.0 * A * DFXYZ;
+            // for (i = 0; i < 3; i++)
+            //     CosOut[i] = CosKLM[i] - 2.0 * A * DFXYZ[i];
 
             return;
             break;

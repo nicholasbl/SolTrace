@@ -7,13 +7,7 @@
 
 #include <gtest/gtest.h>
 
-// TODO: Replace with configuration define
-#if __has_include(<embree4/rtcore.h>)
-#define USE_EMBREE
 #include <embree_runner.hpp>
-using SolTrace::EmbreeRunner::EmbreeRunner;
-#endif
-
 #include <native_runner.hpp>
 #include <native_runner_types.hpp>
 #include <simulation_data.hpp>
@@ -31,6 +25,7 @@ using SolTrace::EmbreeRunner::EmbreeRunner;
 
 using Heliostat = SolTrace::Data::Heliostat;
 
+using SolTrace::EmbreeRunner::EmbreeRunner;
 using SolTrace::NativeRunner::NativeRunner;
 using SolTrace::Runner::RunnerStatus;
 
@@ -70,11 +65,7 @@ public:
 protected:
     SimulationData simData;
 
-#ifdef USE_EMBREE
     EmbreeRunner runner;
-#else
-    NativeRunner runner;
-#endif
 
     // Sun outputs
     double sun_width;
