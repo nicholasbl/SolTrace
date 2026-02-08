@@ -605,6 +605,9 @@ namespace SolTrace::EmbreeRunner
         // System->SunRayCount is atomic so this is thread safe
         System->SunRayCount += sun_ray_count_local;
 
+        if (manager->terminate(thread_id))
+            return RunnerStatus::CANCEL;
+
         return RunnerStatus::SUCCESS;
     }
 
