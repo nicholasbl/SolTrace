@@ -42,9 +42,6 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
         -DSOLTRACE_BUILD_CORETRACE=OFF
         -DSOLTRACE_BUILD_GUI=OFF
-        -DCMAKE_C_FLAGS="--coverage -O0 -g -fprofile-update=atomic"
-        -DCMAKE_CXX_FLAGS="--coverage -O0 -g -fprofile-update=atomic"
-        -DCMAKE_EXE_LINKER_FLAGS="--coverage"
         -DENABLE_COVERAGE=ON
         -DSOLTRACE_BUILD_EMBREE_SUPPORT=ON
         -S ${{ github.workspace }}
@@ -60,7 +57,7 @@ jobs:
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: |
         # Capture coverage info; ignore mismatches to prevent geninfo line errors
-        lcov --capture --directory . --output-file coverage.info --ignore-errors unused
+        lcov --capture --directory . --output-file coverage.info --ignore-errors unused --rc geninfo_unexecuted_blocks=1
         # Remove unwanted directories (3rd-party, deps)
         lcov --remove coverage.info '*/_deps/*' '*/nlohmann_json-src/*' '/usr/*' --output-file coverage.info --ignore-errors unused
 
