@@ -273,8 +273,6 @@ namespace SolTrace::EmbreeRunner
 
         auto PosDumGlob = st_stage->RLocToRef * coord_stage;
         coord_global = PosDumGlob + st_stage->Origin;
-        for (int i = 0; i < 3; i++)
-            coord_global[i] = PosDumGlob[i] + st_stage->Origin[i];
         return;
     }
 
@@ -335,7 +333,7 @@ namespace SolTrace::EmbreeRunner
                                           z_minmax.y);
 
         // Expand bounding boxes slightly to account for float precision
-        glm::dvec2 expand = {1e-3f, -1e-3f};
+        glm::dvec2 expand = {-1e-3f, 1e-3f};
         x_minmax += expand;
         y_minmax += expand;
         z_minmax += expand;

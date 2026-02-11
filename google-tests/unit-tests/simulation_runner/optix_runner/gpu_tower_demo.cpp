@@ -81,7 +81,7 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
                5 * cos(i * spacing),
                0.0};
         el->set_origin(pos);
-	rvec = glm::normalize(absorber->get_origin_global() - pos);
+        rvec = glm::normalize(absorber->get_origin_global() - pos);
         svec = glm::normalize(sun->get_position());
         avec = 0.5 * rvec + 0.5 * svec;
 

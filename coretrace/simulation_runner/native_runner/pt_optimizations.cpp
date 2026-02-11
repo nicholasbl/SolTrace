@@ -233,15 +233,15 @@ namespace SolTrace::NativeRunner
 
         // Ray info
         const bool in_multi_hit_loop,
-        const glm::dvec3& PosRayStage,
-        const glm::dvec3& reccm_helio,
-        st_hash_tree* rec_hash,
+        const glm::dvec3 &PosRayStage,
+        const glm::dvec3 &reccm_helio,
+        st_hash_tree *rec_hash,
 
-        const std::vector<void*>& sunint_elements,
+        const std::vector<void *> &suntint_elements,
 
         // Outputs
-        std::vector<void*>& reflint_elements,
-        bool& has_elements)
+        std::vector<void *> &reflint_elements,
+        bool &has_elements)
     {
 		uint_fast64_t nintelements = 0;
 
@@ -276,8 +276,8 @@ namespace SolTrace::NativeRunner
 			{
 				// First time through - checking for sun ray intersections
 				if (has_elements)
-					nintelements = sunint_elements.size();
-				else
+                    nintelements = suntint_elements.size();
+                else
 					nintelements = 0;
 			}
 		}
