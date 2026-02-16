@@ -4,14 +4,20 @@ include_directories(.)
 include_directories(cst_templates)
 include_directories(solar_position_calculators)
 
-include(FetchContent)
-    FetchContent_Declare(
-        nlohmann_json
-        GIT_REPOSITORY https://github.com/nlohmann/json.git
-        GIT_TAG v3.11.3
-        GIT_SHALLOW TRUE
-    )
-    FetchContent_MakeAvailable(nlohmann_json)
+CPMAddPackage(
+  GITHUB_REPOSITORY "nlohmann/json"
+  GIT_TAG "v3.11.3"
+  GIT_SHALLOW TRUE
+  OPTIONS "JSON_BuildTests OFF"
+)
+
+CPMAddPackage(
+  GITHUB_REPOSITORY "g-truc/glm"
+  GIT_TAG "1.0.3"
+  GIT_SHALLOW TRUE
+  OPTIONS
+    "GLM_ENABLE_CXX_17 ON"
+)
 
 set(SIMDATA_SRC
     aperture.cpp
@@ -26,7 +32,6 @@ set(SIMDATA_SRC
     sun.cpp
     surface.cpp
     utilities.cpp
-    vector3d.cpp
     virtual_element.cpp
     cst_templates/arclength.cpp
     cst_templates/heliostat.cpp
@@ -60,8 +65,8 @@ set(SIMDATA_HDRS
     stage_element.hpp
     sun.hpp
     surface.hpp
+    vector_utility.hpp
     utilities.hpp
-    vector3d.hpp
     virtual_element.hpp
     cst_templates/arclength.hpp
     cst_templates/heliostat.hpp
@@ -90,8 +95,12 @@ set_target_properties(simdata
     PREFIX ""
 )
 
-# Link JSON (propagates its include directory)
-target_link_libraries(simdata PUBLIC nlohmann_json::nlohmann_json)
+# Link dependencies
+target_link_libraries(simdata
+    PUBLIC
+    nlohmann_json::nlohmann_json
+    glm::glm
+)
 
 if (NOT APPLE AND ENABLE_COVERAGE)
     # SET(CMAKE_CXX_FLAGS "-O0 -coverage -fkeep-inline-functions")

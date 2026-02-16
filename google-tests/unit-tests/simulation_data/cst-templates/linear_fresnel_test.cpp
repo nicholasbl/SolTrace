@@ -256,7 +256,7 @@ TEST(LinearFresnel, Tracing)
     my_sim.add_ray_source(sun);
 
     // Assumes that reference and global coordinates are the same
-    // Vector3d pt_aim_point;
+    // glm::dvec3 pt_aim_point;
     // vector_add(1.0, sun->get_position(), -1.0, lf->get_origin_ref(), pt_aim_point);
     // lf->set_aim_vector(pt_aim_point);
     lf->set_aim_vector(sun->get_position());
@@ -383,9 +383,9 @@ TEST(LinearFresnel, UpdateGeometry)
     envelop_in.specularity_error = 1e-4;
 
     auto sun = SolTrace::Data::make_ray_source<Sun>();
-    Vector3d sun_pos;
-    sun_position_vector_degrees(sun_pos, sun_az, sun_el);
-    sun_pos.scalar_mult(1000.0);
+    glm::dvec3 sun_pos;
+    SolTrace::Data::sun_position_vector_degrees(sun_pos, sun_az, sun_el);
+    sun_pos *= 1000.0;
     sun->set_position(sun_pos);
     sun->set_shape(SolTrace::Data::SunShape::GAUSSIAN, 1.0, 0.0, 0.0);
     my_sim.add_ray_source(sun);
@@ -413,13 +413,13 @@ TEST(LinearFresnel, UpdateGeometry)
     //                         lf->get_neutral_normal()),
     //             0.0, 1e-12);
 
-    EXPECT_NEAR(dot_product(lf->get_tracking_origin(),
+    EXPECT_NEAR(glm::dot(lf->get_tracking_origin(),
                             lf->get_rotation_vector()),
                 0.0, TOL);
-    EXPECT_NEAR(dot_product(lf->get_tracking_origin(),
+    EXPECT_NEAR(glm::dot(lf->get_tracking_origin(),
                             lf->get_neutral_normal()),
                 0.0, TOL);
-    EXPECT_NEAR(dot_product(lf->get_rotation_vector(),
+    EXPECT_NEAR(glm::dot(lf->get_rotation_vector(),
                             lf->get_neutral_normal()),
                 0.0, TOL);
 
@@ -507,17 +507,16 @@ TEST(LinearFresnel, UpdateGeometry_TrackingLimits)
     lf->set_name("LinearFresnel");
     lf->enable();
 
-    Vector3d normal;
+    glm::dvec3 normal;
     double theta;
 
     lf->update_geometry(-sun_az, sun_el);
 
     for (auto citer : lf->get_mirrors())
     {
-        vector_add(1.0, citer->get_aim_vector_global(),
-                   -1.0, citer->get_origin_global(),
-                   normal);
-        normal.make_unit();
+        normal = citer->get_aim_vector_global() +
+                   -1.0 * citer->get_origin_global();
+        SolTrace::Data::normalize_inplace(normal);
         // Dot product with [0, 0, 1]
         theta = acos(normal[2]);
         if (normal[0] < 0.0)
@@ -532,10 +531,10 @@ TEST(LinearFresnel, UpdateGeometry_TrackingLimits)
     lf->update_geometry(sun_az, sun_el);
     for (auto citer : lf->get_mirrors())
     {
-        vector_add(1.0, citer->get_aim_vector_global(),
-                   -1.0, citer->get_origin_global(),
-                   normal);
-        normal.make_unit();
+        normal = citer->get_aim_vector_global() - citer->get_origin_global();
+
+        SolTrace::Data::normalize_inplace(normal);
+
         // Dot product with [1, 0, 0]
         theta = acos(normal[2]);
         if (normal[0] < 0.0)

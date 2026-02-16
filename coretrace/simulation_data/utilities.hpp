@@ -3,9 +3,10 @@
 #define SOLTRACE_UTILITIES_H
 
 #include <cstdint>
+#include <cstdlib>
 #include <limits>
 
-#include "vector3d.hpp"
+#include <glm/vec3.hpp>
 
 namespace SolTrace::Data {
 
@@ -37,35 +38,35 @@ bool is_approx(const R &x, const R &y, const R &atol=1e-6)
     return (fabs(x - y) < atol);
 }
 
-void project_onto_plane(const Vector3d &n,
-                        const Vector3d &u,
-                        Vector3d &uproj);
+void project_onto_plane(const glm::dvec3 &n,
+                        const glm::dvec3 &u,
+                        glm::dvec3 &uproj);
 
-void project_onto_plane(const Vector3d &n,
-                        Vector3d &u);
+void project_onto_plane(const glm::dvec3 &n,
+                        glm::dvec3 &u);
 
-void project_onto_vector(const Vector3d &u,
-                         const Vector3d &v,
-                         Vector3d &vproj);
+void project_onto_vector(const glm::dvec3 &u,
+                         const glm::dvec3 &v,
+                         glm::dvec3 &vproj);
 
-void project_onto_vector(const Vector3d &u,
-                         Vector3d &v);
+void project_onto_vector(const glm::dvec3 &u,
+                         glm::dvec3 &v);
 
-void rotate_vector_degrees(const Vector3d &k,
-                           const Vector3d &v,
+void rotate_vector_degrees(const glm::dvec3 &k,
+                           const glm::dvec3 &v,
                            double theta,
-                           Vector3d &vrot);
+                           glm::dvec3 &vrot);
 
-void rotate_vector_radians(const Vector3d &k,
-                           const Vector3d &v,
+void rotate_vector_radians(const glm::dvec3 &k,
+                           const glm::dvec3 &v,
                            double theta,
-                           Vector3d &vrot);
+                           glm::dvec3 &vrot);
 
-void sun_position_vector_degrees(Vector3d &sun_pos,
+void sun_position_vector_degrees(glm::dvec3 &sun_pos,
                                  double azimuth,
                                  double elevation);
 
-void sun_position_vector_radians(Vector3d &sun_pos,
+void sun_position_vector_radians(glm::dvec3 &sun_pos,
                                  double azimuth,
                                  double elevation);
 

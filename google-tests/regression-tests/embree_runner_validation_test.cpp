@@ -146,9 +146,9 @@ TEST(EmbreeRunner, ValidationTest1)
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     EXPECT_EQ(result.get_number_of_records(), NRAYS);
 
-    Vector3d point, cosines;
-    Vector3d pos_stage, dir_stage;
-    Vector3d temp;
+    glm::dvec3 point, cosines;
+    glm::dvec3 pos_stage, dir_stage;
+    glm::dvec3 temp;
     int_fast64_t element;
     int_fast64_t stage;
     uint_fast64_t rayidx;
@@ -277,17 +277,17 @@ TEST(EmbreeRunner, ValidationTest1)
 
         // if (fabs(pos_stage[0] - stod(ground_raydata[0][i]) > TOL))
         // {
-        //     Vector3d pos_csv(stod(ground_raydata[0][i]),
+        //     glm::dvec3 pos_csv(stod(ground_raydata[0][i]),
         //                      stod(ground_raydata[1][i]),
         //                      stod(ground_raydata[2][i]));
-        //     Vector3d dir_csv(stod(ground_raydata[3][i]),
+        //     glm::dvec3 dir_csv(stod(ground_raydata[3][i]),
         //                      stod(ground_raydata[4][i]),
         //                      stod(ground_raydata[5][i]));
 
-        //     Vector3d pos_loc;
-        //     Vector3d dir_loc;
+        //     glm::dvec3 pos_loc;
+        //     glm::dvec3 dir_loc;
 
-        //     Vector3d csv_glob;
+        //     glm::dvec3 csv_glob;
         //     el->convert_stage_to_local(temp, pos_csv);
         //     el->convert_local_to_global(csv_glob, temp);
 
@@ -468,9 +468,9 @@ TEST(EmbreeRunner, ValidationTest2)
 
     // result.write_csv_file("native_runner_result_dump.csv");
 
-    Vector3d point, cosines;
-    Vector3d pos_stage, dir_stage;
-    Vector3d temp;
+    glm::dvec3 point, cosines;
+    glm::dvec3 pos_stage, dir_stage;
+    glm::dvec3 temp;
     int_fast64_t element;
     int_fast64_t stage;
     uint_fast64_t rayidx;
@@ -610,7 +610,7 @@ TEST(EmbreeRunner, ValidationTest2)
         // See previous comment about coordinates
         el->convert_vector_global_to_reference(dir_stage, cosines);
 
-        RTOL = vector_norm(pos_stage) * TOL;
+        RTOL = glm::length(pos_stage) * TOL;
         EXPECT_NEAR(pos_stage[0], stod(ground_raydata[0][i]), RTOL);
         EXPECT_NEAR(pos_stage[1], stod(ground_raydata[1][i]), RTOL);
         EXPECT_NEAR(pos_stage[2], stod(ground_raydata[2][i]), RTOL);
@@ -635,17 +635,17 @@ TEST(EmbreeRunner, ValidationTest2)
 
         // if (fabs(pos_stage[0] - stod(ground_raydata[0][i]) > TOL))
         // {
-        //     Vector3d pos_csv(stod(ground_raydata[0][i]),
+        //     glm::dvec3 pos_csv(stod(ground_raydata[0][i]),
         //                      stod(ground_raydata[1][i]),
         //                      stod(ground_raydata[2][i]));
-        //     Vector3d dir_csv(stod(ground_raydata[3][i]),
+        //     glm::dvec3 dir_csv(stod(ground_raydata[3][i]),
         //                      stod(ground_raydata[4][i]),
         //                      stod(ground_raydata[5][i]));
 
-        //     Vector3d pos_loc;
-        //     Vector3d dir_loc;
+        //     glm::dvec3 pos_loc;
+        //     glm::dvec3 dir_loc;
 
-        //     Vector3d csv_glob;
+        //     glm::dvec3 csv_glob;
         //     el->convert_stage_to_local(temp, pos_csv);
         //     el->convert_local_to_global(csv_glob, temp);
 

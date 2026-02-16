@@ -64,6 +64,9 @@
 #include <iostream>
 #include <fstream>
 
+#include <glm/vec3.hpp>
+#include <glm/mat3x3.hpp>
+
 namespace SolTrace::Data
 {
 
@@ -115,6 +118,25 @@ namespace SolTrace::Data
     void CalculateTransformMatrices(const double Euler[3],
                                     double RRefToLoc[3][3],
                                     double RLocToRef[3][3]);
+
+    void TransformToLocal(const glm::dvec3& PosRef,
+                          const glm::dvec3& CosRef,
+                          const glm::dvec3& Origin,
+                          const glm::dmat3& RRefToLoc,
+                          glm::dvec3& PosLoc,
+                          glm::dvec3& CosLoc);
+
+    void TransformToReference(const glm::dvec3& PosLoc,
+                              const glm::dvec3& CosLoc,
+                              const glm::dvec3& Origin,
+                              const glm::dmat3& RLocToRef,
+                              glm::dvec3& PosRef,
+                              glm::dvec3& CosRef);
+
+    void CalculateTransformMatrices(const glm::dvec3& Euler,
+                                    glm::dmat3& RRefToLoc,
+                                    glm::dmat3& RLocToRef);
+
 
     // inline void CopyVec3(double dest[3], const std::vector<double> &src);
     // inline void CopyVec3(std::vector<double> &dest, const double src[3]);

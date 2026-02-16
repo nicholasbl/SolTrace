@@ -4,7 +4,6 @@
 #include <sstream>
 
 #include <simulation_result.hpp>
-#include <vector3d.hpp>
 
 #include "common.hpp"
 
@@ -23,8 +22,8 @@ TEST(InteractionRecord, Constructors)
 {
     element_id elid = 5;
     RayEvent it = RayEvent::ABSORB;
-    Vector3d loc(-3.2, -2.5, 1.2);
-    Vector3d dir(-1.0, 1.5, -2.5);
+    glm::dvec3 loc(-3.2, -2.5, 1.2);
+    glm::dvec3 dir(-1.0, 1.5, -2.5);
     InteractionRecord ir1(elid, it, loc, dir);
     InteractionRecord ir2(elid, it,
                           loc[0], loc[1], loc[2],
@@ -43,8 +42,8 @@ TEST(InteractionRecord, OutputOperator)
 {
     element_id elid = 5;
     RayEvent it = RayEvent::ABSORB;
-    Vector3d loc(-3.2, -2.5, 1.2);
-    Vector3d dir(-1.0, 1.5, -2.5);
+    glm::dvec3 loc(-3.2, -2.5, 1.2);
+    glm::dvec3 dir(-1.0, 1.5, -2.5);
     InteractionRecord ir1(elid, it, loc, dir);
 
     // Basic test to see that the output operator is there
@@ -82,8 +81,8 @@ TEST(RayRecord, Accessors)
     ray_record_ptr rr = make_ray_record(ID);
     for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
     {
-        Vector3d loc(1.0 * ell * ell, 2.0 * ell * ell, 3.0 * ell * ell);
-        Vector3d dir(2.0 * ell + 1.0, 4.0 * ell + 2.0, 6.0 * ell + 3.0);
+        glm::dvec3 loc(1.0 * ell * ell, 2.0 * ell * ell, 3.0 * ell * ell);
+        glm::dvec3 dir(2.0 * ell + 1.0, 4.0 * ell + 2.0, 6.0 * ell + 3.0);
         RayEvent it = my_types[ell];
         interaction_ptr ir = make_interaction_record(ell, it, loc, dir);
         rr->add_interaction_record(ir);
@@ -92,9 +91,9 @@ TEST(RayRecord, Accessors)
 
     // Getting direction cosines and indexing
     int_fast64_t idx = 0;
-    Vector3d ret1;
-    Vector3d ret2;
-    Vector3d lcos;
+    glm::dvec3 ret1;
+    glm::dvec3 ret2;
+    glm::dvec3 lcos;
     for (auto iter = rr->interactions.cbegin();
          iter != rr->interactions.cend();
          ++iter)
@@ -105,15 +104,15 @@ TEST(RayRecord, Accessors)
         rr->get_direction(*iter, ret2);
         EXPECT_TRUE(is_identical(ret1, ret2));
 
-        lcos.set_values(1.0, 2.0, 3.0);
-        lcos.scalar_mult(2 * idx + 1);
+        lcos = {1.0, 2.0, 3.0};
+        lcos *= 2 * idx + 1;
 
-        SolTrace::Data::make_unit_vector(lcos);
+        SolTrace::Data::normalize_inplace(lcos);
         EXPECT_NEAR(ret1[0], lcos[0], TOL);
         EXPECT_NEAR(ret1[1], lcos[1], TOL);
         EXPECT_NEAR(ret1[2], lcos[2], TOL);
 
-        ret1.zero();
+        ret1 = glm::dvec3(0.0);
         rr->get_position(idx, ret1);
         rr->get_position(*iter, ret2);
         EXPECT_TRUE(is_identical(ret1, ret2));
@@ -144,8 +143,8 @@ TEST(RayRecord, OutputOperator)
     RayRecord rr(ID);
     for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
     {
-        Vector3d loc(1.0 * ell * ell, 2.0 * ell * ell, 3.0 * ell * ell);
-        Vector3d dir(2.0 * ell + 1.0, 4.0 * ell + 2.0, 6.0 * ell + 3.0);
+        glm::dvec3 loc(1.0 * ell * ell, 2.0 * ell * ell, 3.0 * ell * ell);
+        glm::dvec3 dir(2.0 * ell + 1.0, 4.0 * ell + 2.0, 6.0 * ell + 3.0);
         RayEvent it = my_types[ell];
         interaction_ptr ir = make_interaction_record(ell, it, loc, dir);
         rr.add_interaction_record(ir);
@@ -175,8 +174,8 @@ TEST(SimulationResult, Accessors)
         ray_record_ptr rr = make_ray_record(k);
         for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
         {
-            Vector3d loc(1.0 * ell, 2.0 * ell, 3.0 * ell);
-            Vector3d dir(1.0, 2.0, 3.0);
+            glm::dvec3 loc(1.0 * ell, 2.0 * ell, 3.0 * ell);
+            glm::dvec3 dir(1.0, 2.0, 3.0);
             RayEvent it = my_types[ell];
             interaction_ptr ir = make_interaction_record(ell, it, loc, dir);
             rr->add_interaction_record(ir);
@@ -215,8 +214,8 @@ TEST(SimulationResult, OstreamOperator)
         ray_record_ptr rr = make_ray_record(k);
         for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
         {
-            Vector3d loc(1.0 * ell, 2.0 * ell, 3.0 * ell);
-            Vector3d dir(1.0, 2.0, 3.0);
+            glm::dvec3 loc(1.0 * ell, 2.0 * ell, 3.0 * ell);
+            glm::dvec3 dir(1.0, 2.0, 3.0);
             RayEvent it = my_types[ell];
             interaction_ptr ir = make_interaction_record(ell, it, loc, dir);
             rr->add_interaction_record(ir);
@@ -250,8 +249,8 @@ TEST(SimulationResult, IndexOperator)
         ray_record_ptr rr = make_ray_record(k);
         for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
         {
-            Vector3d loc(1.0 * ell, 2.0 * ell, 3.0 * ell);
-            Vector3d dir(1.0, 2.0, 3.0);
+            glm::dvec3 loc(1.0 * ell, 2.0 * ell, 3.0 * ell);
+            glm::dvec3 dir(1.0, 2.0, 3.0);
             RayEvent it = my_types[ell];
             interaction_ptr ir = make_interaction_record(ell, it, loc, dir);
             rr->add_interaction_record(ir);
@@ -292,8 +291,8 @@ TEST(SimulationResult, WriteCSV)
         ray_record_ptr rr = make_ray_record(k);
         for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
         {
-            Vector3d loc(1.0 * ell, 2.0 * ell, 3.0 * ell);
-            Vector3d dir(1.0, 2.0, 3.0);
+            glm::dvec3 loc(1.0 * ell, 2.0 * ell, 3.0 * ell);
+            glm::dvec3 dir(1.0, 2.0, 3.0);
             RayEvent it = my_types[ell];
             interaction_ptr ir = make_interaction_record(ell, it, loc, dir);
             rr->add_interaction_record(ir);

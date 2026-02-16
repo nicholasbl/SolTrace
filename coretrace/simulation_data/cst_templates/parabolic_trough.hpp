@@ -25,7 +25,6 @@
 #include "simulation_data.hpp"
 #include "single_element.hpp"
 // #include "surface.hpp"
-#include "vector3d.hpp"
 
 namespace SolTrace::Data {
 
@@ -56,7 +55,7 @@ public:
                     const OpticalProperties &absorber,
                     const OpticalProperties &envelope_inner,
                     const OpticalProperties &envelope_outer);
-    // void set_position(const Vector3d &pos)
+    // void set_position(const glm::dvec3 &pos)
     // {
     //     this->position = pos;
     //     return;
@@ -68,23 +67,23 @@ public:
 
     virtual void enforce_user_fields_set() const override;
 
-    Vector3d get_tracking_origin() const
+    glm::dvec3 get_tracking_origin() const
     {
         return this->tracking_origin;
     }
-    Vector3d get_rotation_vector() const
+    glm::dvec3 get_rotation_vector() const
     {
         return this->rotation_axis;
     }
-    Vector3d get_neutral_normal() const
+    glm::dvec3 get_neutral_normal() const
     {
         return this->neutral_normal;
     }
-    Vector3d get_tracking_limit_lower() const
+    glm::dvec3 get_tracking_limit_lower() const
     {
         return this->vector_lower_limit;
     }
-    Vector3d get_tracking_limit_upper() const
+    glm::dvec3 get_tracking_limit_upper() const
     {
         return this->vector_upper_limit;
     }
@@ -102,11 +101,11 @@ private:
     // Degrees from ground plane (GLOBAL z-axis)
     double tilt;
     // Aperture normal when tracking angle is 0.0 (GLOBAL coordinates)
-    Vector3d tracking_origin;
+    glm::dvec3 tracking_origin;
     // Axis trough rotates about (GLOBAL coordinates)
-    Vector3d rotation_axis;
+    glm::dvec3 rotation_axis;
     // Aperture normal when tracking angle is 90.0 (GLOBAL coordinates)
-    Vector3d neutral_normal;
+    glm::dvec3 neutral_normal;
 
     // Reflector(s) Characteristic(s)
     double aperture_size_x;
@@ -134,9 +133,9 @@ private:
     double tracking_limit_lower;
     double tracking_limit_upper;
     // Aperture normal at lower limit in global coordinate
-    Vector3d vector_lower_limit;
+    glm::dvec3 vector_lower_limit;
     // Aperture normal at upper limit in global coordinate
-    Vector3d vector_upper_limit;
+    glm::dvec3 vector_upper_limit;
 
     // Element Management
     // composite_element_ptr elements;

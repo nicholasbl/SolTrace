@@ -22,7 +22,7 @@ set(CST_TEST_SRC
 	heliostat_test.cpp
 )
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release" OR FULL_FIELD_VALIDATION_TEST)
+if(SOLTRACE_BUILD_EMBREE_SUPPORT OR FULL_FIELD_VALIDATION_TEST)
 	list(APPEND 
 	CST_TEST_SRC
 	single_heliostat_test.cpp
@@ -40,8 +40,15 @@ target_link_libraries(
 	native_runner
 	testtools
 	GTest::gtest_main
-    embree_runner
 )
+
+if (SOLTRACE_BUILD_EMBREE_SUPPORT)
+	target_link_libraries(
+	    CSTUnitTests
+	    embree_runner
+        )
+endif()
+
 
 if (ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
 	target_link_options(CSTUnitTests PRIVATE --coverage)

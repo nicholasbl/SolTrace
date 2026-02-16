@@ -85,7 +85,7 @@ namespace SolTrace::NativeRunner
         }
 
         ray_source_ptr sun = data->get_ray_source();
-        vector_copy(this->tsys.Sun.Origin, sun->get_position());
+        this->tsys.Sun.Origin = sun->get_position();
         this->tsys.Sun.ShapeIndex = sun->get_shape();
 
         // Set sunshape data
@@ -330,7 +330,7 @@ namespace SolTrace::NativeRunner
         uint_fast64_t ndata = ray_data.Count();
 
         bool sts;
-        Vector3d point, cosines;
+        glm::dvec3 point, cosines;
         int element;
         int stage;
         uint_fast64_t raynum;
@@ -346,8 +346,8 @@ namespace SolTrace::NativeRunner
         for (uint_fast64_t ii = 0; ii < ndata; ++ii)
         {
             sts = ray_data.Query(ii,
-                                 point.data,
-                                 cosines.data,
+                                 point,
+                                 cosines,
                                  &element,
                                  &stage,
                                  &raynum,

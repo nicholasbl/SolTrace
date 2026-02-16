@@ -5,10 +5,10 @@
 #include <matvec.hpp>
 #include <native_runner_types.hpp>
 
+#include <glm/gtc/type_ptr.hpp>
+
 namespace SolTrace::EmbreeRunner
 {
-    using SolTrace::Data::MatrixVectorMult_generic;
-
     using SolTrace::NativeRunner::TElement;
     using SolTrace::NativeRunner::telement_ptr;
     using SolTrace::NativeRunner::TStage;
@@ -263,109 +263,84 @@ namespace SolTrace::EmbreeRunner
     // 	}
     // }
 
-    void transform_to_global(const float coord_element[3],
-                             const tstage_ptr st_stage,
+    void transform_to_global(glm::vec3 coord_element,
+                             const tstage_ptr& st_stage,
                              const TElement *st_element,
-                             float (&coord_global)[3])
+                             glm::vec3& coord_global)
     {
-        float PosDumStage[3];
-        float coord_stage[3];
-        MatrixVectorMult_generic(st_element->RLocToRef, coord_element, PosDumStage);
-        for (int i = 0; i < 3; i++)
-            coord_stage[i] = PosDumStage[i] + st_element->Origin[i];
+        auto PosDumStage = st_element->RLocToRef * coord_element;
+        auto coord_stage = PosDumStage + st_element->Origin;
 
-        float PosDumGlob[3];
-        MatrixVectorMult_generic(st_stage->RLocToRef, coord_stage, PosDumGlob);
-        for (int i = 0; i < 3; i++)
-            coord_global[i] = PosDumGlob[i] + st_stage->Origin[i];
+        auto PosDumGlob = st_stage->RLocToRef * coord_stage;
+        coord_global = PosDumGlob + st_stage->Origin;
         return;
     }
 
-    void transform_bounds(const float min_coord_element[3],
-                          const float max_coord_element[3],
-                          const tstage_ptr st_stage,
+    void transform_bounds(glm::vec3 min_coord_element,
+                          glm::vec3 max_coord_element,
+                          const tstage_ptr& st_stage,
                           const TElement *st_element,
-                          float (&min_coord_global)[3],
-                          float (&max_coord_global)[3])
+                          glm::vec3 &min_coord_global,
+                          glm::vec3 &max_coord_global)
     {
         // Transform min and max bounding box from element coordinates to global
-        float corners_element[8][3] =
+        glm::vec3 corners_element[8] =
             {
-                {min_coord_element[0], min_coord_element[1], min_coord_element[2]},
-                {min_coord_element[0], min_coord_element[1], max_coord_element[2]},
-                {min_coord_element[0], max_coord_element[1], min_coord_element[2]},
-                {min_coord_element[0], max_coord_element[1], max_coord_element[2]},
-                {max_coord_element[0], min_coord_element[1], min_coord_element[2]},
-                {max_coord_element[0], min_coord_element[1], max_coord_element[2]},
-                {max_coord_element[0], max_coord_element[1], min_coord_element[2]},
-                {max_coord_element[0], max_coord_element[1], max_coord_element[2]}};
+                {min_coord_element.x, min_coord_element.y, min_coord_element.z},
+                {min_coord_element.x, min_coord_element.y, max_coord_element.z},
+                {min_coord_element.x, max_coord_element.y, min_coord_element.z},
+                {min_coord_element.x, max_coord_element.y, max_coord_element.z},
+                {max_coord_element.x, min_coord_element.y, min_coord_element.z},
+                {max_coord_element.x, min_coord_element.y, max_coord_element.z},
+                {max_coord_element.x, max_coord_element.y, min_coord_element.z},
+                {max_coord_element.x, max_coord_element.y, max_coord_element.z}};
 
         // Convert corners to global coordinates
-        float corners_global[8][3];
+        glm::vec3 corners_global[8];
         for (int i = 0; i < 8; i++)
             transform_to_global(corners_element[i], st_stage, st_element, corners_global[i]);
 
         // Find min and max xyz
-        min_coord_global[0] = corners_global[0][0];
-        min_coord_global[1] = corners_global[0][1];
-        min_coord_global[2] = corners_global[0][2];
-        max_coord_global[0] = corners_global[0][0];
-        max_coord_global[1] = corners_global[0][1];
-        max_coord_global[2] = corners_global[0][2];
+        min_coord_global = corners_global[0];
+        max_coord_global = corners_global[0];
         for (int i = 1; i < 8; i++)
         {
-            for (int j = 0; j < 3; j++)
-            {
-                float val = corners_global[i][j];
-                if (val < min_coord_global[j])
-                    min_coord_global[j] = val;
-                if (val > max_coord_global[j])
-                    max_coord_global[j] = val;
-            }
+            min_coord_global = glm::min(corners_global[i], min_coord_global);
+            max_coord_global = glm::max(corners_global[i], max_coord_global);
         }
     }
 
     bool get_bounds(const TElement *st_element,
-                    float (&min_coord_global)[3],
-                    float (&max_coord_global)[3])
+                    glm::vec3 &min_coord_global,
+                    glm::vec3 &max_coord_global)
     {
         // Get stage
-        tstage_ptr st_stage = st_element->parent_stage;
+        tstage_ptr const& st_stage = st_element->parent_stage;
 
         // Define element coord bounds
-        float min_coord_element[3] = {0.f, 0.f, 0.f};
-        float max_coord_element[3] = {0.f, 0.f, 0.f};
+        glm::dvec2 x_minmax;
+        glm::dvec2 y_minmax;
+        glm::dvec2 z_minmax;
 
-        double x_minmax[2] = {0.0, 0.0};
-        double y_minmax[2] = {0.0, 0.0};
-        double z_minmax[2] = {0.0, 0.0};
+        st_element->aperture->bounding_box(x_minmax.x,
+                                           x_minmax.y,
+                                           y_minmax.x,
+                                           y_minmax.y);
 
-        st_element->aperture->bounding_box(x_minmax[0],
-                                           x_minmax[1],
-                                           y_minmax[0],
-                                           y_minmax[1]);
-
-        st_element->surface->bounding_box(x_minmax,
-                                          y_minmax,
-                                          z_minmax[0],
-                                          z_minmax[1]);
+        st_element->surface->bounding_box(glm::value_ptr(x_minmax),
+                                          glm::value_ptr(y_minmax),
+                                          z_minmax.x,
+                                          z_minmax.y);
 
         // Expand bounding boxes slightly to account for float precision
-        const float expand = 1e-3f;
-        x_minmax[0] -= expand;
-        x_minmax[1] += expand;
-        y_minmax[0] -= expand;
-        y_minmax[1] += expand;
-        z_minmax[0] -= expand;
-        z_minmax[1] += expand;
+        glm::dvec2 expand = {-1e-3f, 1e-3f};
+        x_minmax += expand;
+        y_minmax += expand;
+        z_minmax += expand;
 
         // Assign points to min/max coordinate element arrays
-        min_coord_element[0] = x_minmax[0];
-        min_coord_element[1] = y_minmax[0];
-        min_coord_element[2] = z_minmax[0];
-        max_coord_element[0] = x_minmax[1];
-        max_coord_element[1] = y_minmax[1];
-        max_coord_element[2] = z_minmax[1];
+        glm::vec3 min_coord_element = {x_minmax.x, y_minmax.x, z_minmax.x};
+        glm::vec3 max_coord_element = {x_minmax.y, y_minmax.y, z_minmax.y};
 
         // Convert local element bounds, to global xyz
         transform_bounds(min_coord_element, max_coord_element,

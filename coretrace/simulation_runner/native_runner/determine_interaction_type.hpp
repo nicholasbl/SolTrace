@@ -17,8 +17,8 @@ namespace SolTrace::NativeRunner
         unsigned thread_id,
         MTRand &myrng,
         const SolTrace::Data::OpticalProperties *optics,
-        const double (&LastDFXYZ)[3],
-        const double (&LastCosRaySurfElement)[3],
+        glm::dvec3 const& LastDFXYZ,
+        glm::dvec3 const& LastCosRaySurfElement,
         // bool LastHitBackSide,
         SolTrace::Result::RayEvent &rev);
 

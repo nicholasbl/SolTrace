@@ -1,5 +1,8 @@
 #include "simulation_result.hpp"
 
+#define GLM_ENABLE_EXPERIMENTAL 1
+#include <glm/gtx/io.hpp>
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -8,13 +11,11 @@
 #include <string>
 
 #include "element.hpp"
-#include "vector3d.hpp"
 
 namespace SolTrace::Result
 {
 
     using element_id = SolTrace::Data::element_id;
-    using Vector3d = SolTrace::Data::Vector3d;
 
     const std::string &ray_event_string(const RayEvent rev)
     {
@@ -32,8 +33,8 @@ namespace SolTrace::Result
     InteractionRecord::InteractionRecord(
         element_id el,
         RayEvent rev,
-        const Vector3d &location,
-        const Vector3d &direction)
+        const glm::dvec3 &location,
+        const glm::dvec3 &direction)
         // : index(-1),
         : element(el),
           event(rev),
@@ -88,28 +89,28 @@ namespace SolTrace::Result
         return;
     }
 
-    void RayRecord::get_position(const interaction_ptr ip, Vector3d &pos)
+    void RayRecord::get_position(const interaction_ptr ip, glm::dvec3 &pos)
     {
         pos = ip->location;
         return;
     }
 
-    void RayRecord::get_position(int_fast64_t idx, Vector3d &pos)
+    void RayRecord::get_position(int_fast64_t idx, glm::dvec3 &pos)
     {
         const interaction_ptr ip0 = this->interactions[idx];
         return this->get_position(ip0, pos);
     }
 
     void RayRecord::get_direction(const interaction_ptr ip,
-                                  Vector3d &cos)
+                                  glm::dvec3 &cos)
     {
         cos = ip->direction;
-        make_unit_vector(cos);
+        cos = glm::normalize(cos);
         return;
     }
 
     void RayRecord::get_direction(int_fast64_t idx,
-                                  Vector3d &cos)
+                                  glm::dvec3 &cos)
     {
         const interaction_ptr ip0 = this->interactions[idx];
         this->get_direction(ip0, cos);

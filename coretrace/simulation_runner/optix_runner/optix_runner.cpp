@@ -84,8 +84,8 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
         if (el->is_enabled())
         {
             auto optix_el = std::make_shared<OptixCSP::CspElement>();
-            Vector3d origin = el->get_origin_global();
-            OptixCSP::Vec3d origin_vec(origin[0], origin[1], origin[2]);
+            auto origin = el->get_origin_global();
+            OptixCSP::Vec3d origin_vec(origin.x, origin.y, origin.z);
             optix_el->set_origin(ToVec3d(origin));
             optix_el->set_aim_point(ToVec3d(el->get_aim_vector_global()));
 
@@ -191,9 +191,8 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     return RunnerStatus::SUCCESS;
 }
 
-OptixCSP::Vec3d OptixRunner::ToVec3d(Vector3d v)
+OptixCSP::Vec3d OptixRunner::ToVec3d(glm::dvec3 v)
 {
-
-    OptixCSP::Vec3d vec(v[0], v[1], v[2]);
+    OptixCSP::Vec3d vec(v.x, v.y, v.z);
     return vec;
 }

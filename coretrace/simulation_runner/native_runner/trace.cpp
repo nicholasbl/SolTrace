@@ -79,601 +79,602 @@
 namespace SolTrace::NativeRunner
 {
 
-	using SolTrace::Result::RayEvent;
-	using SolTrace::Runner::RunnerStatus;
-
-	// Trace method
-	RunnerStatus trace_native(
-		thread_manager_ptr manager,
-		trace_logger_ptr logger,
-		TSystem *System,
-		const std::vector<unsigned int> &seeds,
-		unsigned nthreads,
-		uint_fast64_t NumberOfRays,
-		uint_fast64_t MaxNumberOfRays,
-		bool IncludeSunShape,
-		bool IncludeErrors,
-		bool AsPowerTower)
-	{
-		// Initialize Sun
-		Vector3d PosSunStage;
-		if (!SunToPrimaryStage(logger,
-							   System,
-							   System->StageList[0].get(),
-							   &System->Sun,
-							   PosSunStage.data))
-			return RunnerStatus::ERROR;
-
-		// Determine if PT optimizations should be applied
-		bool PT_override = false;
-		if (System->StageList.size() > 0 &&
-			(System->StageList[0]->ElementList.size() < 10 || System->StageList.size() == 1))
-		{
-			PT_override = true;
-		}
-
-		// Calculate hash tree for reflection to receiver plane(polar coordinates).
-		st_hash_tree sun_hash;
-		st_hash_tree rec_hash;
-		// double reccm_helio[3]; // receiver centroid in heliostat field coordinates
-		Vector3d reccm_helio;
-		if (!PT_override)
-		{
-			SetupPTOptimizations(System, AsPowerTower, sun_hash,
-								 rec_hash, reccm_helio.data);
-		}
-
-		// Bundle many args into a struct because the compiler was
-		// having trouble with all the arguments...
-		ThreadInfo my_info;
-		my_info.manager = manager;
-		my_info.logger = logger;
-		my_info.System = System;
-		// my_info.NumberOfRays = NumberOfRays / nthreads;
-		uint_fast64_t rem = NumberOfRays % nthreads;
-		uint_fast64_t nrays_per_thread = NumberOfRays / nthreads;
-
-		my_info.MaxNumberOfRays = MaxNumberOfRays / nthreads + 1;
-		my_info.IncludeSunShape = IncludeSunShape;
-		my_info.IncludeErrors = IncludeErrors;
-		my_info.AsPowerTower = AsPowerTower;
-		my_info.PosSunStage = PosSunStage;
-		my_info.sun_hash = &sun_hash;
-		my_info.rec_hash = &rec_hash;
-		my_info.reccm_helio = reccm_helio;
-
-		System->RayData.SetUp(nthreads, NumberOfRays);
-		System->SunRayCount = 0;
-
-		for (unsigned int k = 0; k < nthreads; ++k)
-		{
-			my_info.NumberOfRays = (k < rem
-										? nrays_per_thread + 1
-										: nrays_per_thread);
-
-			ThreadManager::future my_future = std::async(
-				std::launch::async,
-				trace_single_compact,
-				k,
-				seeds[k],
-				my_info);
-
-			manager->manage(k, std::move(my_future));
-		}
-
-		return manager->monitor_until_completion();
-	}
-
-	RunnerStatus trace_single_thread(
-		unsigned thread_id,
-		thread_manager_ptr manager,
-		trace_logger_ptr logger,
-		TSystem *System,
-		unsigned int seed,
-		uint_fast64_t NumberOfRays,
-		uint_fast64_t MaxNumberOfRays,
-		bool IncludeSunShape,
-		bool IncludeErrors,
-		bool AsPowerTower,
-		const Vector3d &PosSunStage,
-		st_hash_tree *sun_hash,
-		st_hash_tree *rec_hash,
-		const Vector3d &reccm_helio)
-	{
-		// Initialize variables
-		MTRand myrng(seed);
-
-		// std::stringstream ss;
-		// ss << "Thread " << thread_id
-		//    << " tracing " << NumberOfRays << " rays"
-		//    << std::endl;
-		// std::cout << ss.str();
-
-		// Determine if PT optimizations should be applied
-		bool PT_override = false;
-		if (System->StageList.size() > 0 &&
-			(System->StageList[0]->ElementList.size() < 10 ||
-			 System->StageList.size() == 1))
-		{
-			PT_override = true;
-		}
-
-		uint_fast64_t update_rate = std::min(
-			std::max(static_cast<uint_fast64_t>(1), NumberOfRays / 10),
-			static_cast<uint_fast64_t>(1000));
-		uint_fast64_t update_count = 0;
-		double total_work = System->StageList.size() * NumberOfRays;
-
-		// Initialize Internal State Variables
-		uint_fast64_t RayNumber = 1; // Ray Number of current ray
-		bool PreviousStageHasRays = false;
-		uint_fast64_t LastRayNumberInPreviousStage = NumberOfRays;
-
-		// Define IncomingRays
-		std::vector<GlobalRay_refactored> IncomingRays; // Vector of rays from previous stage, going into next stage
-		IncomingRays.resize(NumberOfRays);
-
-		// Initialize stage variables
-		uint_fast64_t StageDataArrayIndex = 0;
-		uint_fast64_t PreviousStageDataArrayIndex = 0;
-		uint_fast64_t n_rays_active = NumberOfRays;
-		uint_fast64_t sun_ray_count_local = 0;
-
-		// Loop through stages
-		for (uint_fast64_t i = 0; i < System->StageList.size(); i++)
-		{
-			// std::cout << "Processing stage " << i << "..." << std::endl;
-			// Check if previous stage has rays
-			bool StageHasRays = true;
-			if (i > 0 && PreviousStageHasRays == false)
-			{
-				StageHasRays = false;
-			}
-
-			// Get Current Stage
-			tstage_ptr Stage = System->StageList[i];
-
-			// Initialize stage variables
-			StageDataArrayIndex = 0;
-			PreviousStageDataArrayIndex = 0;
-
-			// Loop through rays
-			while (StageHasRays)
-			{
-				// Initialize Global Coordinates
-				double PosRayGlob[3] = {0.0, 0.0, 0.0};
-				double CosRayGlob[3] = {0.0, 0.0, 0.0};
-
-				// Initialize Stage Coordinates
-				double PosRayStage[3] = {0.0, 0.0, 0.0};
-				double CosRayStage[3] = {0.0, 0.0, 0.0};
-
-				// Initialize PT Optimization variables
-				bool has_elements = true;
-				std::vector<void *> sunint_elements;
-
-				// Get Ray
-				if (i == 0)
-				{
-					// TODO: This function seems to ignore the MaxNumberOfRays
-					// argument. Should fix that.
-
-					// Make ray (if first stage)
-					double PosRaySun[3];
-					GenerateRay(myrng, PosSunStage.data, Stage->Origin,
-								Stage->RLocToRef, &System->Sun,
-								PosRayGlob, CosRayGlob, PosRaySun);
-					sun_ray_count_local++;
-
-					// If using PT optimizations, check if stage has elements
-					// that could interact with ray
-					if (!PT_override)
-					{
-						has_elements =
-							sun_hash->get_all_data_at_loc(sunint_elements,
-														  PosRaySun[0],
-														  PosRaySun[1]);
-					}
-				}
-				else
-				{
-					// Get ray from previous stage
-					RayNumber = IncomingRays[StageDataArrayIndex].Num;
-					CopyVec3(PosRayGlob, IncomingRays[StageDataArrayIndex].Pos);
-					CopyVec3(CosRayGlob, IncomingRays[StageDataArrayIndex].Cos);
-					StageDataArrayIndex++;
-				}
-
-				// transform the global incoming ray to local stage coordinates
-				TransformToLocal(PosRayGlob, CosRayGlob,
-								 Stage->Origin, Stage->RRefToLoc,
-								 PosRayStage, CosRayStage);
-
-				// Initialize internal variables for ray intersection tracing
-				bool RayInStage = true;
-				bool in_multi_hit_loop = false;
-				double LastPosRaySurfElement[3] = {0.0, 0.0, 0.0};
-				double LastCosRaySurfElement[3] = {0.0, 0.0, 0.0};
-				double LastPosRaySurfStage[3] = {0.0, 0.0, 0.0};
-				double LastCosRaySurfStage[3] = {0.0, 0.0, 0.0};
-				double LastDFXYZ[3] = {0.0, 0.0, 0.0};
-				uint_fast64_t LastElementNumber = 0;
-				uint_fast64_t LastRayNumber = 0;
-				int ErrorFlag;
-				int LastHitBackSide;
-				bool StageHit;
-				int MultipleHitCount = 0;
-				double PosRayOutElement[3] = {0.0, 0.0, 0.0};
-				double CosRayOutElement[3] = {0.0, 0.0, 0.0};
-
-				// Start Loop to trace ray until it leaves stage
-				bool RayIsAbsorbed = false;
-				while (RayInStage)
-				{
-					// Set number of elements to search through
-					uint_fast64_t nintelements = 0;
-					std::vector<void *> reflint_elements;
-					if (!PT_override) // if using opt AND first stage
-					{
-						nintelements = GetPTElements(AsPowerTower, Stage, i,
-													 in_multi_hit_loop, PosRayStage,
-													 reccm_helio.data, rec_hash,
-													 sunint_elements,
-													 reflint_elements, has_elements);
-					}
-					else
-					{
-						nintelements = Stage->ElementList.size();
-					}
-
-					// Find the element the ray hits
-					FindElementHit(i, Stage, PT_override, AsPowerTower,
-								   nintelements, sunint_elements,
-								   reflint_elements,
-								   RayNumber, in_multi_hit_loop,
-								   PosRayStage, CosRayStage,
-								   LastPosRaySurfElement,
-								   LastCosRaySurfElement,
-								   LastDFXYZ,
-								   LastElementNumber, LastRayNumber,
-								   LastPosRaySurfStage, LastCosRaySurfStage,
-								   ErrorFlag, LastHitBackSide, StageHit);
-
-					// Breakout if ray left stage
-					if (!StageHit)
-					{
-						RayInStage = false;
-						break;
-					}
-
-					// Increment MultipleHitCount
-					MultipleHitCount++;
-
-					if (i == 0 && MultipleHitCount == 1)
-					{
-						auto r = System->RayData.Append(thread_id,
-														PosRayGlob,
-														CosRayGlob,
-														ELEMENT_NULL,
-														i + 1,
-														LastRayNumber,
-														RayEvent::CREATE);
-						if (r == nullptr)
-						{
-							std::stringstream ss;
-							ss << "Thread " << thread_id
-							   << " failed to record ray data.\n";
-							logger->error_log(ss.str());
-						}
-					}
-
-					// Get optics and check for absorption
-					const OpticalProperties *optics = 0;
-					RayEvent rev = RayEvent::VIRTUAL;
-					if (Stage->Virtual)
-					{
-						// If stage is virtual, there is no interaction
-						CopyVec3(PosRayOutElement, LastPosRaySurfElement);
-						CopyVec3(CosRayOutElement, LastCosRaySurfElement);
-					}
-					else
-					{
-						// trace through the interaction
-						telement_ptr optelm =
-							Stage->ElementList[LastElementNumber - 1];
-
-						if (LastHitBackSide)
-							optics = &optelm->Optics.Back;
-						else
-							optics = &optelm->Optics.Front;
-
-						bool good = determine_interaction_type(
-							logger,
-							i,
-							0,
-							myrng,
-							optics,
-							LastDFXYZ,
-							LastCosRaySurfElement,
-							rev);
-
-						if (!good)
-						{
-							return RunnerStatus::ERROR;
-						}
-
-						if (rev == RayEvent::ABSORB)
-						{
-							RayIsAbsorbed = true;
-							break;
-						}
-					}
-
-					// Process Interaction
-					int_fast64_t k = LastElementNumber - 1;
-					ProcessInteraction(System,
-									   myrng,
-									   IncludeSunShape,
-									   optics,
-									   IncludeErrors,
-									   i,
-									   Stage,
-									   MultipleHitCount,
-									   LastDFXYZ,
-									   LastCosRaySurfElement,
-									   ErrorFlag,
-									   CosRayOutElement,
-									   LastPosRaySurfElement,
-									   PosRayOutElement);
-
-					// Transform ray back to stage coordinate system
-					TransformToReference(PosRayOutElement,
-										 CosRayOutElement,
-										 Stage->ElementList[k]->Origin,
-										 Stage->ElementList[k]->RLocToRef,
-										 PosRayStage,
-										 CosRayStage);
-					TransformToReference(PosRayStage,
-										 CosRayStage,
-										 Stage->Origin,
-										 Stage->RLocToRef,
-										 PosRayGlob,
-										 CosRayGlob);
-
-					System->RayData.Append(thread_id,
-										   PosRayGlob,
-										   CosRayGlob,
-										   LastElementNumber,
-										   i + 1,
-										   LastRayNumber,
-										   rev);
-
-					// Break out if multiple hits are not allowed
-					if (!Stage->MultiHitsPerRay)
-					{
-						StageHit = false;
-						break;
-					}
-					else
-					{
-						in_multi_hit_loop = true;
-					}
-				}
-
-				if (MultipleHitCount > 0)
-					++update_count;
-
-				if (update_count % update_rate == 0)
-				{
-					double progress = update_count / total_work;
-					manager->progress_update(thread_id, progress);
-					if (manager->terminate(thread_id))
-						return RunnerStatus::CANCEL;
-				}
-
-				// Handle if Ray was absorbed
-				if (RayIsAbsorbed)
-				{
-					TransformToReference(LastPosRaySurfStage,
-										 LastCosRaySurfStage,
-										 Stage->Origin,
-										 Stage->RLocToRef,
-										 PosRayGlob,
-										 CosRayGlob);
-
-					System->RayData.Append(thread_id,
-										   PosRayGlob,
-										   CosRayGlob,
-										   LastElementNumber,
-										   i + 1,
-										   LastRayNumber,
-										   RayEvent::ABSORB);
-
-					n_rays_active--;
-
-					// ray was fully absorbed
-					if (RayNumber == LastRayNumberInPreviousStage)
-					{
-						PreviousStageHasRays = false;
-						if (PreviousStageDataArrayIndex > 0)
-						{
-							PreviousStageDataArrayIndex--;
-							PreviousStageHasRays = true;
-						}
-						break;
-					}
-					else
-					{
-						if (i == 0)
-						{
-							if (RayNumber == NumberOfRays)
-								break;
-							else
-								RayNumber++;
-						}
-
-						// Next ray in loop
-						continue;
-					}
-				}
-
-				// Ray has left the stage
-				bool FlagMiss = false;
-				if (i == 0)
-				{
-					if (MultipleHitCount == 0)
-					{
-						// Ray in first stage missed stage entirely
-						// Generate new ray
-						continue;
-					}
-					else
-					{
-						// Ray hit an element, so save it for next stage
-						CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Pos,
-								 PosRayGlob);
-						CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Cos,
-								 CosRayGlob);
-						IncomingRays[PreviousStageDataArrayIndex].Num = RayNumber;
-
-						// Is Ray the last in the stage?
-						if (RayNumber == NumberOfRays)
-						{
-							StageHasRays = false;
-							break;
-						}
-
-						PreviousStageDataArrayIndex++;
-						PreviousStageHasRays = true;
-
-						// Move on to next ray
-						RayNumber++;
-						continue;
-					}
-				}
-				else
-				{
-					// After the first stage
-					// Ray hit element OR is traced through stage
-					if (Stage->TraceThrough || MultipleHitCount > 0)
-					{
-						// Ray is saved for the next stage
-						CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Pos,
-								 PosRayGlob);
-						CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Cos,
-								 CosRayGlob);
-						IncomingRays[PreviousStageDataArrayIndex].Num = RayNumber;
-
-						// Check if ray is last in stage
-						if (RayNumber == LastRayNumberInPreviousStage)
-						{
-							StageHasRays = false;
-							break;
-						}
-
-						PreviousStageDataArrayIndex++;
-						PreviousStageHasRays = true;
-
-						if (MultipleHitCount == 0)
-						{
-							FlagMiss = true;
-						}
-
-						// Go to next ray
-						continue;
-					}
-					// Ray missed stage entirely and is not traced
-					else
-					{
-						FlagMiss = true;
-					}
-
-					// Handle FlagMiss condition (
-					if (FlagMiss == true)
-					{
-						LastRayNumber = RayNumber;
-
-						System->RayData.Append(thread_id,
-											   PosRayGlob,
-											   CosRayGlob,
-											   ELEMENT_NULL,
-											   i + 1,
-											   LastRayNumber,
-											   RayEvent::EXIT);
-
-						n_rays_active--;
-
-						if (RayNumber == LastRayNumberInPreviousStage)
-						{
-							if (!Stage->TraceThrough)
-							{
-								PreviousStageHasRays = false;
-								if (PreviousStageDataArrayIndex > 0)
-								{
-									PreviousStageHasRays = true;
-									PreviousStageDataArrayIndex--; // last ray was previous one
-								}
-							}
-
-							// Exit stage
-							StageHasRays = false;
-							break;
-						}
-						else
-						{
-							if (i == 0)
-								RayNumber++; // generate new sun ray
-
-							// Start new ray
-							continue;
-						}
-					}
-				}
-			}
-
-			// EndStage section...
-
-			// skipping save_st_data logic
-
-			if (!PreviousStageHasRays)
-			{
-				LastRayNumberInPreviousStage = 0;
-				continue; // No rays to carry forward
-			}
-
-			if (PreviousStageDataArrayIndex < IncomingRays.size())
-			{
-				LastRayNumberInPreviousStage = IncomingRays[PreviousStageDataArrayIndex].Num;
-				if (LastRayNumberInPreviousStage == 0)
-				{
-					return RunnerStatus::ERROR;
-				}
-			}
-			else
-			{
-				return RunnerStatus::ERROR;
-			}
-		}
-
-		// Close out any remaining rays as misses
-		unsigned idx = System->StageList.size() - 1;
-		tstage_ptr Stage = System->StageList[idx];
-		for (uint_fast64_t k = 0; k < n_rays_active; ++k)
-		{
-			GlobalRay_refactored ray = IncomingRays[k];
-			System->RayData.Append(thread_id,
-								   ray.Pos,
-								   ray.Cos,
-								   ELEMENT_NULL,
-								   idx + 1,
-								   ray.Num,
-								   RayEvent::EXIT);
-		}
-
-		// System->SunRayCount is atomic so this is thread safe
-		System->SunRayCount += sun_ray_count_local;
-
-		return RunnerStatus::SUCCESS;
-	}
+using SolTrace::Result::RayEvent;
+using SolTrace::Runner::RunnerStatus;
+
+// Trace method
+RunnerStatus trace_native(
+    thread_manager_ptr manager,
+    trace_logger_ptr logger,
+    TSystem *System,
+    const std::vector<unsigned int> &seeds,
+    unsigned nthreads,
+    uint_fast64_t NumberOfRays,
+    uint_fast64_t MaxNumberOfRays,
+    bool IncludeSunShape,
+    bool IncludeErrors,
+    bool AsPowerTower)
+{
+    // Initialize Sun
+    glm::dvec3 PosSunStage;
+    if (!SunToPrimaryStage(logger,
+                           System,
+                           System->StageList[0].get(),
+                           &System->Sun,
+                           PosSunStage))
+        return RunnerStatus::ERROR;
+
+    // Determine if PT optimizations should be applied
+    bool PT_override = false;
+    if (System->StageList.size() > 0 &&
+        (System->StageList[0]->ElementList.size() < 10 || System->StageList.size() == 1))
+    {
+        PT_override = true;
+    }
+
+    // Calculate hash tree for reflection to receiver plane(polar coordinates).
+    st_hash_tree sun_hash;
+    st_hash_tree rec_hash;
+    // double reccm_helio[3]; // receiver centroid in heliostat field coordinates
+    glm::dvec3 reccm_helio;
+    if (!PT_override)
+    {
+        SetupPTOptimizations(System, AsPowerTower, sun_hash,
+                             rec_hash, reccm_helio);
+    }
+
+    // Bundle many args into a struct because the compiler was
+    // having trouble with all the arguments...
+    ThreadInfo my_info;
+    my_info.manager = manager;
+    my_info.logger = logger;
+    my_info.System = System;
+    // my_info.NumberOfRays = NumberOfRays / nthreads;
+    uint_fast64_t rem = NumberOfRays % nthreads;
+    uint_fast64_t nrays_per_thread = NumberOfRays / nthreads;
+
+    my_info.MaxNumberOfRays = MaxNumberOfRays / nthreads + 1;
+    my_info.IncludeSunShape = IncludeSunShape;
+    my_info.IncludeErrors = IncludeErrors;
+    my_info.AsPowerTower = AsPowerTower;
+    my_info.PosSunStage = PosSunStage;
+    my_info.sun_hash = &sun_hash;
+    my_info.rec_hash = &rec_hash;
+    my_info.reccm_helio = reccm_helio;
+
+    System->RayData.SetUp(nthreads, NumberOfRays);
+    System->SunRayCount = 0;
+
+    for (unsigned int k = 0; k < nthreads; ++k)
+    {
+        my_info.NumberOfRays = (k < rem
+                                    ? nrays_per_thread + 1
+                                    : nrays_per_thread);
+
+        ThreadManager::future my_future = std::async(
+            std::launch::async,
+            trace_single_compact,
+            k,
+            seeds[k],
+            my_info);
+
+        manager->manage(k, std::move(my_future));
+    }
+
+    return manager->monitor_until_completion();
+}
+
+RunnerStatus trace_single_thread(
+    unsigned thread_id,
+    thread_manager_ptr manager,
+    trace_logger_ptr logger,
+    TSystem *System,
+    unsigned int seed,
+    uint_fast64_t NumberOfRays,
+    uint_fast64_t MaxNumberOfRays,
+    bool IncludeSunShape,
+    bool IncludeErrors,
+    bool AsPowerTower,
+    const glm::dvec3 &PosSunStage,
+    st_hash_tree *sun_hash,
+    st_hash_tree *rec_hash,
+    const glm::dvec3 &reccm_helio)
+{
+    // Initialize variables
+    MTRand myrng(seed);
+
+    // std::stringstream ss;
+    // ss << "Thread " << thread_id
+    //    << " tracing " << NumberOfRays << " rays"
+    //    << std::endl;
+    // std::cout << ss.str();
+
+    // Determine if PT optimizations should be applied
+    bool PT_override = false;
+    if (System->StageList.size() > 0 &&
+        (System->StageList[0]->ElementList.size() < 10 ||
+         System->StageList.size() == 1))
+    {
+        PT_override = true;
+    }
+
+    uint_fast64_t update_rate = std::min(
+        std::max(static_cast<uint_fast64_t>(1), NumberOfRays / 10),
+        static_cast<uint_fast64_t>(1000));
+    uint_fast64_t update_count = 0;
+    double total_work = System->StageList.size() * NumberOfRays;
+
+    // Initialize Internal State Variables
+    uint_fast64_t RayNumber = 1; // Ray Number of current ray
+    bool PreviousStageHasRays = false;
+    uint_fast64_t LastRayNumberInPreviousStage = NumberOfRays;
+
+    // Define IncomingRays
+    std::vector<GlobalRay_refactored> IncomingRays; // Vector of rays from previous stage, going into next stage
+    IncomingRays.resize(NumberOfRays);
+
+    // Initialize stage variables
+    uint_fast64_t StageDataArrayIndex = 0;
+    uint_fast64_t PreviousStageDataArrayIndex = 0;
+    uint_fast64_t n_rays_active = NumberOfRays;
+    uint_fast64_t sun_ray_count_local = 0;
+
+    // Loop through stages
+    for (uint_fast64_t i = 0; i < System->StageList.size(); i++)
+    {
+        // std::cout << "Processing stage " << i << "..." << std::endl;
+        // Check if previous stage has rays
+        bool StageHasRays = true;
+        if (i > 0 && PreviousStageHasRays == false)
+        {
+            StageHasRays = false;
+        }
+
+        // Get Current Stage
+        tstage_ptr Stage = System->StageList[i];
+
+        // Initialize stage variables
+        StageDataArrayIndex = 0;
+        PreviousStageDataArrayIndex = 0;
+
+        // Loop through rays
+        while (StageHasRays)
+        {
+            // Initialize Global Coordinates
+            glm::dvec3 PosRayGlob = {0.0, 0.0, 0.0};
+            glm::dvec3 CosRayGlob = {0.0, 0.0, 0.0};
+
+            // Initialize Stage Coordinates
+            glm::dvec3 PosRayStage = {0.0, 0.0, 0.0};
+            glm::dvec3 CosRayStage = {0.0, 0.0, 0.0};
+
+            // Initialize PT Optimization variables
+            bool has_elements = true;
+            std::vector<void *> sunint_elements;
+
+            // Get Ray
+            if (i == 0)
+            {
+                // TODO: This function seems to ignore the MaxNumberOfRays
+                // argument. Should fix that.
+
+                // Make ray (if first stage)
+                glm::dvec3 PosRaySun;
+                GenerateRay(myrng, PosSunStage, Stage->Origin,
+                            Stage->RLocToRef, &System->Sun,
+                            PosRayGlob, CosRayGlob, PosRaySun);
+                sun_ray_count_local++;
+
+                // If using PT optimizations, check if stage has elements
+                // that could interact with ray
+                if (!PT_override)
+                {
+                    has_elements =
+                        sun_hash->get_all_data_at_loc(sunint_elements,
+                                                      PosRaySun.x,
+                                                      PosRaySun.y);
+                }
+            }
+            else
+            {
+                // Get ray from previous stage
+                RayNumber = IncomingRays[StageDataArrayIndex].Num;
+                PosRayGlob = IncomingRays[StageDataArrayIndex].Pos;
+                CosRayGlob = IncomingRays[StageDataArrayIndex].Cos;
+                StageDataArrayIndex++;
+            }
+
+            // transform the global incoming ray to local stage coordinates
+            TransformToLocal(PosRayGlob, CosRayGlob,
+                             Stage->Origin, Stage->RRefToLoc,
+                             PosRayStage, CosRayStage);
+
+            // Initialize internal variables for ray intersection tracing
+            bool RayInStage = true;
+            bool in_multi_hit_loop = false;
+
+            glm::dvec3 LastPosRaySurfElement(0.0);
+            glm::dvec3 LastCosRaySurfElement(0.0);
+            glm::dvec3 LastPosRaySurfStage(0.0);
+            glm::dvec3 LastCosRaySurfStage(0.0);
+            glm::dvec3 LastDFXYZ(0.0);
+
+            uint_fast64_t LastElementNumber = 0;
+            uint_fast64_t LastRayNumber = 0;
+
+            int ErrorFlag;
+            int LastHitBackSide;
+            bool StageHit;
+            int MultipleHitCount = 0;
+
+            glm::dvec3 PosRayOutElement(0.0);
+            glm::dvec3 CosRayOutElement(0.0);
+
+
+            // Start Loop to trace ray until it leaves stage
+            bool RayIsAbsorbed = false;
+            while (RayInStage)
+            {
+                // Set number of elements to search through
+                uint_fast64_t nintelements = 0;
+                std::vector<void *> reflint_elements;
+                if (!PT_override) // if using opt AND first stage
+                {
+                    nintelements = GetPTElements(AsPowerTower, Stage, i,
+                                                 in_multi_hit_loop, PosRayStage,
+                                                 reccm_helio, rec_hash,
+                                                 sunint_elements,
+                                                 reflint_elements, has_elements);
+                }
+                else
+                {
+                    nintelements = Stage->ElementList.size();
+                }
+
+                // Find the element the ray hits
+                FindElementHit(i, Stage, PT_override, AsPowerTower,
+                               nintelements, sunint_elements,
+                               reflint_elements,
+                               RayNumber, in_multi_hit_loop,
+                               PosRayStage, CosRayStage,
+                               LastPosRaySurfElement,
+                               LastCosRaySurfElement,
+                               LastDFXYZ,
+                               LastElementNumber, LastRayNumber,
+                               LastPosRaySurfStage, LastCosRaySurfStage,
+                               ErrorFlag, LastHitBackSide, StageHit);
+
+                // Breakout if ray left stage
+                if (!StageHit)
+                {
+                    RayInStage = false;
+                    break;
+                }
+
+                // Increment MultipleHitCount
+                MultipleHitCount++;
+
+                if (i == 0 && MultipleHitCount == 1)
+                {
+                    auto r = System->RayData.Append(thread_id,
+                                                    PosRayGlob,
+                                                    CosRayGlob,
+                                                    ELEMENT_NULL,
+                                                    i + 1,
+                                                    LastRayNumber,
+                                                    RayEvent::CREATE);
+                    if (r == nullptr)
+                    {
+                        std::stringstream ss;
+                        ss << "Thread " << thread_id
+                           << " failed to record ray data.\n";
+                        logger->error_log(ss.str());
+                    }
+                }
+
+                // Get optics and check for absorption
+                const OpticalProperties *optics = 0;
+                RayEvent rev = RayEvent::VIRTUAL;
+                if (Stage->Virtual)
+                {
+                    // If stage is virtual, there is no interaction
+                    PosRayOutElement = LastPosRaySurfElement;
+                    CosRayOutElement = LastCosRaySurfElement;
+                }
+                else
+                {
+                    // trace through the interaction
+                    telement_ptr optelm =
+                        Stage->ElementList[LastElementNumber - 1];
+
+                    if (LastHitBackSide)
+                        optics = &optelm->Optics.Back;
+                    else
+                        optics = &optelm->Optics.Front;
+
+                    bool good = determine_interaction_type(
+                        logger,
+                        i,
+                        0,
+                        myrng,
+                        optics,
+                        LastDFXYZ,
+                        LastCosRaySurfElement,
+                        rev);
+
+                    if (!good)
+                    {
+                        return RunnerStatus::ERROR;
+                    }
+
+                    if (rev == RayEvent::ABSORB)
+                    {
+                        RayIsAbsorbed = true;
+                        break;
+                    }
+                }
+
+                // Process Interaction
+                int_fast64_t k = LastElementNumber - 1;
+                ProcessInteraction(System,
+                                   myrng,
+                                   IncludeSunShape,
+                                   optics,
+                                   IncludeErrors,
+                                   i,
+                                   Stage,
+                                   MultipleHitCount,
+                                   LastDFXYZ,
+                                   LastCosRaySurfElement,
+                                   ErrorFlag,
+                                   CosRayOutElement,
+                                   LastPosRaySurfElement,
+                                   PosRayOutElement);
+
+                // Transform ray back to stage coordinate system
+                TransformToReference(PosRayOutElement,
+                                     CosRayOutElement,
+                                     Stage->ElementList[k]->Origin,
+                                     Stage->ElementList[k]->RLocToRef,
+                                     PosRayStage,
+                                     CosRayStage);
+                TransformToReference(PosRayStage,
+                                     CosRayStage,
+                                     Stage->Origin,
+                                     Stage->RLocToRef,
+                                     PosRayGlob,
+                                     CosRayGlob);
+
+                System->RayData.Append(thread_id,
+                                       PosRayGlob,
+                                       CosRayGlob,
+                                       LastElementNumber,
+                                       i + 1,
+                                       LastRayNumber,
+                                       rev);
+
+                // Break out if multiple hits are not allowed
+                if (!Stage->MultiHitsPerRay)
+                {
+                    StageHit = false;
+                    break;
+                }
+                else
+                {
+                    in_multi_hit_loop = true;
+                }
+            }
+
+            if (MultipleHitCount > 0)
+                ++update_count;
+
+            if (update_count % update_rate == 0)
+            {
+                double progress = update_count / total_work;
+                manager->progress_update(thread_id, progress);
+                if (manager->terminate(thread_id))
+                    return RunnerStatus::CANCEL;
+            }
+
+            // Handle if Ray was absorbed
+            if (RayIsAbsorbed)
+            {
+                TransformToReference(LastPosRaySurfStage,
+                                     LastCosRaySurfStage,
+                                     Stage->Origin,
+                                     Stage->RLocToRef,
+                                     PosRayGlob,
+                                     CosRayGlob);
+
+                System->RayData.Append(thread_id,
+                                       PosRayGlob,
+                                       CosRayGlob,
+                                       LastElementNumber,
+                                       i + 1,
+                                       LastRayNumber,
+                                       RayEvent::ABSORB);
+
+                n_rays_active--;
+
+                // ray was fully absorbed
+                if (RayNumber == LastRayNumberInPreviousStage)
+                {
+                    PreviousStageHasRays = false;
+                    if (PreviousStageDataArrayIndex > 0)
+                    {
+                        PreviousStageDataArrayIndex--;
+                        PreviousStageHasRays = true;
+                    }
+                    break;
+                }
+                else
+                {
+                    if (i == 0)
+                    {
+                        if (RayNumber == NumberOfRays)
+                            break;
+                        else
+                            RayNumber++;
+                    }
+
+                    // Next ray in loop
+                    continue;
+                }
+            }
+
+            // Ray has left the stage
+            bool FlagMiss = false;
+            if (i == 0)
+            {
+                if (MultipleHitCount == 0)
+                {
+                    // Ray in first stage missed stage entirely
+                    // Generate new ray
+                    continue;
+                }
+                else
+                {
+                    // Ray hit an element, so save it for next stage
+                    IncomingRays[PreviousStageDataArrayIndex].Pos = PosRayGlob;
+                    IncomingRays[PreviousStageDataArrayIndex].Cos = CosRayGlob;
+                    IncomingRays[PreviousStageDataArrayIndex].Num = RayNumber;
+
+                    // Is Ray the last in the stage?
+                    if (RayNumber == NumberOfRays)
+                    {
+                        StageHasRays = false;
+                        break;
+                    }
+
+                    PreviousStageDataArrayIndex++;
+                    PreviousStageHasRays = true;
+
+                    // Move on to next ray
+                    RayNumber++;
+                    continue;
+                }
+            }
+            else
+            {
+                // After the first stage
+                // Ray hit element OR is traced through stage
+                if (Stage->TraceThrough || MultipleHitCount > 0)
+                {
+                    // Ray is saved for the next stage
+                    IncomingRays[PreviousStageDataArrayIndex].Pos = PosRayGlob;
+                    IncomingRays[PreviousStageDataArrayIndex].Cos = CosRayGlob;
+                    IncomingRays[PreviousStageDataArrayIndex].Num = RayNumber;
+
+                    // Check if ray is last in stage
+                    if (RayNumber == LastRayNumberInPreviousStage)
+                    {
+                        StageHasRays = false;
+                        break;
+                    }
+
+                    PreviousStageDataArrayIndex++;
+                    PreviousStageHasRays = true;
+
+                    if (MultipleHitCount == 0)
+                    {
+                        FlagMiss = true;
+                    }
+
+                    // Go to next ray
+                    continue;
+                }
+                // Ray missed stage entirely and is not traced
+                else
+                {
+                    FlagMiss = true;
+                }
+
+                // Handle FlagMiss condition (
+                if (FlagMiss == true)
+                {
+                    LastRayNumber = RayNumber;
+
+                    System->RayData.Append(thread_id,
+                                           PosRayGlob,
+                                           CosRayGlob,
+                                           ELEMENT_NULL,
+                                           i + 1,
+                                           LastRayNumber,
+                                           RayEvent::EXIT);
+
+                    n_rays_active--;
+
+                    if (RayNumber == LastRayNumberInPreviousStage)
+                    {
+                        if (!Stage->TraceThrough)
+                        {
+                            PreviousStageHasRays = false;
+                            if (PreviousStageDataArrayIndex > 0)
+                            {
+                                PreviousStageHasRays = true;
+                                PreviousStageDataArrayIndex--; // last ray was previous one
+                            }
+                        }
+
+                        // Exit stage
+                        StageHasRays = false;
+                        break;
+                    }
+                    else
+                    {
+                        if (i == 0)
+                            RayNumber++; // generate new sun ray
+
+                        // Start new ray
+                        continue;
+                    }
+                }
+            }
+        }
+
+        // EndStage section...
+
+        // skipping save_st_data logic
+
+        if (!PreviousStageHasRays)
+        {
+            LastRayNumberInPreviousStage = 0;
+            continue; // No rays to carry forward
+        }
+
+        if (PreviousStageDataArrayIndex < IncomingRays.size())
+        {
+            LastRayNumberInPreviousStage = IncomingRays[PreviousStageDataArrayIndex].Num;
+            if (LastRayNumberInPreviousStage == 0)
+            {
+                return RunnerStatus::ERROR;
+            }
+        }
+        else
+        {
+            return RunnerStatus::ERROR;
+        }
+    }
+
+    // Close out any remaining rays as misses
+    unsigned idx = System->StageList.size() - 1;
+    tstage_ptr Stage = System->StageList[idx];
+    for (uint_fast64_t k = 0; k < n_rays_active; ++k)
+    {
+        GlobalRay_refactored ray = IncomingRays[k];
+        System->RayData.Append(thread_id,
+                               ray.Pos,
+                               ray.Cos,
+                               ELEMENT_NULL,
+                               idx + 1,
+                               ray.Num,
+                               RayEvent::EXIT);
+    }
+
+    // System->SunRayCount is atomic so this is thread safe
+    System->SunRayCount += sun_ray_count_local;
+
+    return RunnerStatus::SUCCESS;
+}
 
 } // namespace SolTrace::NativeRunner
