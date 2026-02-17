@@ -2,6 +2,10 @@
 
 #include "simulation_data_api.hpp"
 
+#include <glm/gtc/quaternion.hpp>
+
+#include <QDebug>
+#include <QQuaternion>
 #include <QVector3D>
 
 template <class... Ts>
@@ -28,10 +32,34 @@ U lerp(T x, T const& x0, T const& x1, U const& y0, U const& y1) {
 // NOTE that we are truncating vectors to floats...
 namespace SD = SolTrace::Data;
 
-inline QVector3D convert(SD::Vector3d v) {
-    return QVector3D(v[0], v[1], v[2]);
+inline QVector3D convert(glm::dvec3 v) {
+    return QVector3D(v.x, v.y, v.z);
 }
 
-inline SD::Vector3d convert(QVector3D v) {
+inline glm::dvec3 convert(QVector3D v) {
     return { v.x(), v.y(), v.z() };
+}
+
+
+inline QQuaternion convert(glm::dquat v) {
+    return QQuaternion(v.w, v.x, v.y, v.z);
+}
+
+inline glm::dquat convert(QQuaternion v) {
+    return { v.scalar(), v.x(), v.y(), v.z() };
+}
+
+
+inline QDebug operator<<(QDebug debug, glm::dvec3 const& type) {
+    QDebugStateSaver saver(debug);
+    debug.nospace() << "dvec3(" << type.x << ", " << type.y << ", " << type.z
+                    << ")";
+    return debug;
+}
+
+inline QDebug operator<<(QDebug debug, glm::dquat const& type) {
+    QDebugStateSaver saver(debug);
+    debug.nospace() << "dquat(" << type.x << ", " << type.y << ", " << type.z
+                    << ", " << type.w << ")";
+    return debug;
 }

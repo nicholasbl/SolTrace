@@ -1,11 +1,11 @@
 #pragma once
 
 #include <QObject>
-#include <QQuaternion>
-#include <QVector3D>
 #include <QVector>
 
 #include <entt/entt.hpp>
+
+#include <glm/gtc/quaternion.hpp>
 
 #include "simulation_data_api.hpp"
 
@@ -46,10 +46,10 @@ struct ChildrenComponent {
 
 /// Describe the attitude of this entity.
 struct TransformComponent {
-    QVector3D   position;
-    QQuaternion rotation;
+    glm::dvec3 position;
+    glm::dquat rotation;
 
-    QMatrix4x4 as_matrix() const;
+    glm::dmat4 as_matrix() const;
 };
 
 /// A Global describing the ray source.

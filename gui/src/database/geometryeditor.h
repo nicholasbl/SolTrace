@@ -249,28 +249,19 @@ class RectangleWrapper : public QObject {
 
     SD::Rectangle* m_ptr = nullptr;
 
-    Q_WRITABLE_PROPERTY_CUSTOM_STORAGE(double, x_length, m_ptr->x_length);
-    Q_WRITABLE_PROPERTY_CUSTOM_STORAGE(double, y_length, m_ptr->y_length);
-    Q_WRITABLE_PROPERTY_CUSTOM_STORAGE(double, x_coord, m_ptr->x_coord);
-    Q_WRITABLE_PROPERTY_CUSTOM_STORAGE(double, y_coord, m_ptr->y_coord);
+    Q_PROPERTY(QRectF rectangle READ rectangle WRITE set_rectangle NOTIFY
+                   rectangle_changed FINAL)
+
+    // Q_WRITABLE_PROPERTY_CUSTOM_STORAGE(double, x_length, m_ptr->x_length);
+    // Q_WRITABLE_PROPERTY_CUSTOM_STORAGE(double, y_length, m_ptr->y_length);
+    // Q_WRITABLE_PROPERTY_CUSTOM_STORAGE(double, x_coord, m_ptr->x_coord);
+    // Q_WRITABLE_PROPERTY_CUSTOM_STORAGE(double, y_coord, m_ptr->y_coord);
 
 public:
     explicit RectangleWrapper(SD::Rectangle* ptr, QObject* parent = nullptr)
         : QObject(parent), m_ptr(ptr) {
         connect(this,
-                &RectangleWrapper::x_length_changed,
-                this,
-                &RectangleWrapper::changed);
-        connect(this,
-                &RectangleWrapper::y_length_changed,
-                this,
-                &RectangleWrapper::changed);
-        connect(this,
-                &RectangleWrapper::x_coord_changed,
-                this,
-                &RectangleWrapper::changed);
-        connect(this,
-                &RectangleWrapper::y_coord_changed,
+                &RectangleWrapper::rectangle_changed,
                 this,
                 &RectangleWrapper::changed);
     }
@@ -278,6 +269,26 @@ public:
     ~RectangleWrapper() override = default;
 
     SD::Rectangle* raw() const { return m_ptr; }
+
+    QRectF rectangle() const {
+        return QRectF(m_ptr->x_coord(),
+                      m_ptr->y_coord(),
+                      m_ptr->x_length(),
+                      m_ptr->y_length());
+    }
+
+    void set_rectangle(QRectF const& new_value) {
+        if (rectangle() == new_value) return;
+
+        m_ptr->set_x_coord(new_value.left());
+        m_ptr->set_y_coord(new_value.top());
+        m_ptr->set_x_length(new_value.width());
+        m_ptr->set_y_length(new_value.height());
+
+        Q_EMIT rectangle_changed();
+    }
+Q_SIGNALS:
+    void rectangle_changed();
 
 signals:
     void changed();

@@ -66,7 +66,7 @@ void RayGeometry::rebuild_geometry() {
 
                 if (m_exclude_events.contains(interaction->event)) { continue; }
 
-                auto p = convert(interaction->location.data);
+                auto p = convert(interaction->location);
 
                 // if this is not the first
                 if (ray_interaction_count > 0) {
@@ -90,7 +90,7 @@ void RayGeometry::rebuild_geometry() {
 
                 if (m_exclude_events.contains(interaction->event)) { continue; }
 
-                auto p = convert(interaction->location.data);
+                auto p = convert(interaction->location);
 
                 // qDebug() << "Point" << p << "type" <<
                 // (int)interaction->event;

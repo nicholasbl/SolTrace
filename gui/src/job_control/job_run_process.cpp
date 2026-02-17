@@ -144,8 +144,8 @@ static SimDataPtr worker_start_flow(QByteArray work_dir) {
     return dataset;
 }
 
-inline QJsonArray to_json(SolTrace::Data::Vector3d v) {
-    return QJsonArray() << v.data[0] << v.data[1] << v.data[2];
+inline QJsonArray to_json(glm::vec3 v) {
+    return QJsonArray() << v.x << v.y << v.z;
 }
 
 static QJsonArray build_results(std::shared_ptr<ResultDB> results) {

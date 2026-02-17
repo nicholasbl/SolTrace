@@ -63,7 +63,7 @@ void construct_result(QPromise<SimResult>& promise,
 
             for (auto const& interaction : this_ray.interactions) {
 
-                auto p = convert(interaction->location.data);
+                auto p = convert(interaction->location);
 
                 bounds_min.setX(std::min(bounds_min.x(), p.x()));
                 bounds_min.setY(std::min(bounds_min.y(), p.y()));

@@ -1,6 +1,11 @@
 #include "conversion.h"
+#include "vector_utility.hpp"
 
+#include <glm/gtx/quaternion.hpp>
+
+#include <QDebug>
 #include <QtMath>
+
 #include <cmath>
 #include <random>
 
@@ -19,90 +24,83 @@ static inline double angle_diff(double a, double b) {
     return std::abs(wrap_pi(a - b));
 }
 
-static inline QQuaternion angle_axis_rad(double           angleRad,
-                                         QVector3D const& axisUnit) {
-    // Qt uses DEGREES for fromAxisAndAngle
-    return QQuaternion::fromAxisAndAngle(axisUnit, qRadiansToDegrees(angleRad));
-}
+static inline glm::dquat align_unit_vector(glm::dvec3 const& fromUnit,
+                                           glm::dvec3 const& toUnit) {
+    double d = glm::dot(fromUnit, toUnit);
 
-static inline QQuaternion align_unit_vector(QVector3D const& fromUnit,
-                                            QVector3D const& toUnit) {
-    double d = QVector3D::dotProduct(fromUnit, toUnit);
-
-    if (d > 1.0 - 1e-7) { return QQuaternion(); }
+    if (d > 1.0 - 1e-7) { return glm::identity<glm::dquat>(); }
 
     if (d < -1.0 + 1e-7) {
-        QVector3D ortho = (std::abs(fromUnit.z()) < 0.9) ? QVector3D(0, 0, 1)
-                                                         : QVector3D(0, 1, 0);
-        QVector3D axis  = QVector3D::crossProduct(fromUnit, ortho).normalized();
-        return QQuaternion::fromAxisAndAngle(axis, 180.0);
+        glm::dvec3 ortho = (std::abs(fromUnit.z) < 0.9) ? glm::dvec3(0, 0, 1)
+                                                        : glm::dvec3(0, 1, 0);
+        glm::dvec3 axis  = glm::normalize(glm::cross(fromUnit, ortho));
+        return glm::angleAxis(glm::pi<double>(), axis);
     }
 
-    return QQuaternion::rotationTo(fromUnit, toUnit);
+    return glm::rotation(fromUnit, toUnit);
 }
 
-QQuaternion dir_roll_to_quat(QVector3D const& directionWorld,
-                             double           zRollRadians) {
-    QVector3D dir = directionWorld;
-    double    len = dir.length();
-    if (len < 1e-8) return QQuaternion();
+glm::dquat dir_roll_to_quat(glm::dvec3 const& directionWorld,
+                            double            zRollRadians) {
+    glm::dvec3 dir = directionWorld;
+    double     len = glm::length(dir);
+    if (len < 1e-8) return glm::identity<glm::dquat>();
 
     dir /= len;
 
-    const QVector3D localForward(0, 0, 1);
+    const glm::dvec3 localForward(0, 0, 1);
     auto            qAlign = align_unit_vector(localForward, dir);
 
-    auto qRoll = angle_axis_rad(zRollRadians, dir);
+    auto qRoll = glm::angleAxis(zRollRadians, dir);
 
-    return (qRoll * qAlign).normalized();
+    return glm::normalize(qRoll * qAlign);
 }
 
-static inline QQuaternion twist_around_axis(QQuaternion const& q,
-                                            QVector3D const&   axisUnit) {
-    QVector3D v(q.x(), q.y(), q.z());
-    auto      proj = axisUnit * QVector3D::dotProduct(v, axisUnit);
+static inline glm::dquat twist_around_axis(glm::dquat const& q,
+                                           glm::dvec3 const& axisUnit) {
+    glm::dvec3 v(q.x, q.y, q.z);
+    auto       proj = axisUnit * glm::dot(v, axisUnit);
 
-    QQuaternion twist(q.scalar(), proj.x(), proj.y(), proj.z());
-    double      n = twist.length();
-    if (n < 1e-8) return QQuaternion();
+    glm::dquat twist(q.w, proj.x, proj.y, proj.z);
+    double     n = glm::length(twist);
+    if (n < 1e-8) return glm::identity<glm::dquat>();
 
-    twist.normalize();
-    return twist;
+    return glm::normalize(twist);
 }
 
-static inline double twist_angle_radians(QQuaternion const& twist,
-                                         QVector3D const&   axisUnit) {
-    auto t = twist.normalized();
+static inline double twist_angle_radians(glm::dquat const& twist,
+                                         glm::dvec3 const& axisUnit) {
+    auto t = glm::normalize(twist);
 
-    QVector3D v(t.x(), t.y(), t.z());
-    double    vlen = v.length();
-    double    w    = t.scalar();
+    glm::dvec3 v(t.x, t.y, t.z);
+    double     vlen = glm::length(v);
+    double     w    = t.w;
 
     double angle = 2.0 * std::atan2(vlen, w); // [0, 2pi)
-    double s     = QVector3D::dotProduct(v, axisUnit);
+    double s     = glm::dot(v, axisUnit);
     if (s < 0.0) angle = -angle;
 
     return wrap_pi(angle);
 }
 
-static inline bool approx_equal_quat(QQuaternion const& a,
-                                     QQuaternion const& b,
-                                     double             eps = 1e-5f) {
+static inline bool approx_equal_quat(glm::dquat const& a,
+                                     glm::dquat const& b,
+                                     double            eps = 1e-5f) {
     // q and -q represent the same rotation
-    return (a - b).length() <= eps || (a + b).length() <= eps;
+    return glm::length(a - b) <= eps || glm::length(a + b) <= eps;
 }
 
-void quat_to_dir_roll(QQuaternion const& qIn,
-                      QVector3D&         outDirectionWorld,
-                      double&            outZRollRadians) {
-    auto q = qIn.normalized();
+void quat_to_dir_roll(glm::dquat const& qIn,
+                      glm::dvec3&       outDirectionWorld,
+                      double&           outZRollRadians) {
+    auto q = glm::normalize(qIn);
 
-    const QVector3D localForward(0, 0, 1);
-    auto            dir = q.rotatedVector(localForward);
+    const glm::dvec3 localForward(0, 0, 1);
+    auto             dir = q * localForward;
 
-    double len = dir.length();
+    double len = glm::length(dir);
     if (len < 1e-8) {
-        outDirectionWorld = QVector3D(0, 0, 1);
+        outDirectionWorld = glm::dvec3(0, 0, 1);
         outZRollRadians   = 0.0;
         return;
     }
@@ -115,13 +113,13 @@ void quat_to_dir_roll(QQuaternion const& qIn,
 }
 
 
-static inline QVector3D random_unit_vec(std::mt19937& rng) {
+static inline glm::dvec3 random_unit_vec(std::mt19937& rng) {
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
-    QVector3D                             v;
+    glm::dvec3                            v;
     do {
-        v = QVector3D(dist(rng), dist(rng), dist(rng));
-    } while (v.lengthSquared() < 1e-8f);
-    return v.normalized();
+        v = glm::dvec3(dist(rng), dist(rng), dist(rng));
+    } while (glm::length2(v) < 1e-8f);
+    return glm::normalize(v);
 }
 
 static inline void runRoundTripTests(std::uint32_t seed  = 12345,
@@ -134,18 +132,18 @@ static inline void runRoundTripTests(std::uint32_t seed  = 12345,
     int   quatFailures = 0;
 
     for (int i = 0; i < iters; ++i) {
-        QVector3D dir0  = random_unit_vec(rng);
+        glm::dvec3 dir0  = random_unit_vec(rng);
         float     roll0 = rollDist(rng);
 
         auto q0 = dir_roll_to_quat(dir0, roll0);
 
-        QVector3D dir1;
+        glm::dvec3 dir1;
         double    roll1;
         quat_to_dir_roll(q0, dir1, roll1);
 
         auto q1 = dir_roll_to_quat(dir1, roll1);
 
-        float dirErr  = (dir0 - dir1).length();
+        float dirErr  = glm::length(dir0 - dir1);
         float rollErr = angle_diff(roll0, roll1);
 
         maxDirErr  = std::max(maxDirErr, dirErr);
@@ -161,19 +159,19 @@ static inline void runRoundTripTests(std::uint32_t seed  = 12345,
 }
 
 int test() {
-    auto  dir  = QVector3D(1, 2, 3).normalized();
+    auto  dir  = glm::normalize(glm::dvec3(1, 2, 3));
     float roll = 0.7f;
 
     auto q = dir_roll_to_quat(dir, roll);
 
-    QVector3D dir2;
+    glm::dvec3 dir2;
     double    roll2;
     quat_to_dir_roll(q, dir2, roll2);
 
-    qDebug() << "Original dir: (" << dir.x() << "," << dir.y() << "," << dir.z()
+    qDebug() << "Original dir: (" << dir.x << "," << dir.y << "," << dir.z
              << ")";
-    qDebug() << "Decoded  dir: (" << dir2.x() << "," << dir2.y() << ","
-             << dir2.z() << ")";
+    qDebug() << "Decoded  dir: (" << dir2.x << "," << dir2.y << "," << dir2.z
+             << ")";
     qDebug() << "Original roll: " << roll;
     qDebug() << "Decoded  roll: " << roll2;
 
@@ -183,13 +181,13 @@ int test() {
 
 int test2() {
 
-    std::vector<QVector3D> positions = {
+    std::vector<glm::dvec3> positions = {
         { 300.4760, 670.9580, 3.6927 },    { 300.0650, 669.9370, 2.6376 },
         { 299.6530, 668.9150, 1.5826 },    { 293.9950, 671.1970, 1.5826 },
         { -1214.6600, 163.1450, -0.5042 }, { -1082.3500, 360.9840, -3.5815 },
         { 209.9780, -847.9350, 2.9950 },   { -1003.4800, -476.8940, 3.2507 },
     };
-    std::vector<QVector3D> aims = {
+    std::vector<glm::dvec3> aims = {
         { 38.8543, 27.7015, 723.2590 },    { 38.7178, 27.3632, 722.9140 },
         { 38.5817, 27.0256, 722.5680 },    { 36.7186, 27.7769, 722.5680 },
         { -591.0470, -55.8965, 749.9110 }, { -501.2880, 28.8448, 739.4200 },
@@ -203,22 +201,21 @@ int test2() {
         auto a = aims.at(i);
         auto r = qDegreesToRadians(rots.at(i));
 
-        a = (a - p).normalized();
+        a = glm::normalize(a - p);
 
         auto q = dir_roll_to_quat(a, r);
 
-        QVector3D dir2;
+        glm::dvec3 dir2;
         double    roll2;
         quat_to_dir_roll(q, dir2, roll2);
 
         qDebug() << "-----";
-        qDebug() << "Original dir: (" << a.x() << "," << a.y() << "," << a.z()
-                 << ")";
-        qDebug() << "Decoded  dir: (" << dir2.x() << "," << dir2.y() << ","
-                 << dir2.z() << ")";
+        qDebug() << "Original dir: (" << a.x << "," << a.y << "," << a.z << ")";
+        qDebug() << "Decoded  dir: (" << dir2.x << "," << dir2.y << ","
+                 << dir2.z << ")";
         qDebug() << "Original roll: " << r;
         qDebug() << "Decoded  roll: " << roll2;
-        qDebug() << (a - p).length();
+        qDebug() << glm::length(a - p);
     }
     return 0;
 }

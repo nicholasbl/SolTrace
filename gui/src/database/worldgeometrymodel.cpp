@@ -1,4 +1,5 @@
 #include "worldgeometrymodel.h"
+#include "utilities/math_utility.h"
 
 namespace db {
 
@@ -19,8 +20,10 @@ void InstancedElements::on_group_change(entt::entity group) {
 
         auto global = m_database->global_transform(member);
 
-        auto entry = calculateTableEntryFromQuaternion(
-            global.position, QVector3D(1, 1, 1), global.rotation, Qt::white);
+        auto entry = calculateTableEntryFromQuaternion(convert(global.position),
+                                                       QVector3D(1, 1, 1),
+                                                       convert(global.rotation),
+                                                       Qt::white);
 
         m_instance_data.append(reinterpret_cast<const char*>(&entry),
                                sizeof(entry));
@@ -70,7 +73,10 @@ static VisibleGroup vis_assets_for_entity(Database& db, entt::entity e) {
 
     auto grp = db.group_parameters.get(e);
 
-    assert(grp);
+    if (!grp) {
+        qWarning() << "Unable to get group parameters";
+        return vg;
+    }
 
     vg.group_geometry->set(&db, e);
 

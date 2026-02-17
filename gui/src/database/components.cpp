@@ -30,11 +30,12 @@ bool operator==(SD::OpticalProperties const& a,
 
 namespace db {
 
-QMatrix4x4 TransformComponent::as_matrix() const {
-    QMatrix4x4 m;
-    m.setToIdentity();
-    m.translate(position);
-    m.rotate(rotation);
+glm::dmat4 TransformComponent::as_matrix() const {
+    glm::dmat4 m { 1.0 };
+
+    m = glm::translate(m, position);
+    m = m * glm::mat4_cast(rotation);
+
     return m;
 }
 
@@ -51,8 +52,8 @@ static bool operator==(SD::Hexagon const& a, SD::Hexagon const& b) {
     return a.circumscribe_diameter == b.circumscribe_diameter;
 }
 static bool operator==(SD::Rectangle const& a, SD::Rectangle const& b) {
-    return std::tie(a.x_length, a.y_length, a.x_coord, a.y_coord) ==
-           std::tie(b.x_length, b.y_length, b.x_coord, b.y_coord);
+    return a.x_length() == b.x_length() && a.y_length() == b.y_length() &&
+           a.x_coord() == b.x_coord() && a.y_coord() == b.y_coord();
 }
 static bool operator==(SD::EqualateralTriangle const& a,
                        SD::EqualateralTriangle const& b) {

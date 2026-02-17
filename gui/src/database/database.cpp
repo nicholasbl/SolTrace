@@ -11,6 +11,11 @@
 #include <cmath>
 #include <unordered_map>
 
+#define GLM_ENABLE_EXPERIMENTAL 1
+#include <glm/gtx/io.hpp>
+
+#include <QDebug>
+
 template <class T>
 void hash_combine(size_t& seed, T const& v) {
     seed ^= std::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
@@ -106,10 +111,10 @@ static size_t hash_aperture(SD::Aperture const& a) {
     case SolTrace::Data::RECTANGLE: {
         auto* aa = dynamic_cast<SD::Rectangle const*>(&a);
         if (!aa) break;
-        hash_combine(seed, aa->x_length);
-        hash_combine(seed, aa->y_length);
-        hash_combine(seed, aa->x_coord);
-        hash_combine(seed, aa->y_coord);
+        hash_combine(seed, aa->x_length());
+        hash_combine(seed, aa->y_length());
+        hash_combine(seed, aa->x_coord());
+        hash_combine(seed, aa->y_coord());
         break;
     }
     case SolTrace::Data::EQUILATERAL_TRIANGLE: {
@@ -197,45 +202,17 @@ static size_t hash_surface(SD::Surface const& a) {
 namespace db {
 
 
-QQuaternion convert(SD::Matrix3d const& m) {
-
-    auto mat = QMatrix3x3(Qt::Initialization::Uninitialized);
-
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            mat(i, j) = m.get_value(i, j);
-        }
-    }
-
-    return QQuaternion::fromRotationMatrix(mat);
-}
-
-SD::Matrix3d convert(QQuaternion const& m) {
-
-    SD::Matrix3d mat;
-
-    auto from = m.toRotationMatrix();
-
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            mat.set_value(i, j, from(i, j));
-        }
-    }
-
-    return mat;
-}
-
 TransformComponent extract_tf(SD::Element const& e) {
-    auto pos = ::convert(e.get_origin_ref());
+    auto pos = e.get_origin_ref();
 
-    auto aim = ::convert(e.get_aim_vector_ref());
+    auto aim = e.get_aim_vector_ref();
 
-    aim = (aim - pos).normalized();
+    aim = glm::normalize(aim - pos);
 
     auto quat = dir_roll_to_quat(aim, e.get_zrot_radians());
 
     // TODO FIX
-    auto quat2 = convert(e.get_local_to_reference());
+    auto quat2 = glm::quat_cast(e.get_local_to_reference());
 
     // qDebug() << quat << quat2;
 
@@ -244,15 +221,15 @@ TransformComponent extract_tf(SD::Element const& e) {
 
 
 TransformComponent extract_tf_stage(SD::Element const& e) {
-    auto pos = ::convert(e.get_origin_stage());
+    auto pos = e.get_origin_stage();
 
-    auto aim = ::convert(e.get_aim_vector_stage());
+    auto aim = e.get_aim_vector_stage();
 
-    aim = (aim - pos).normalized();
+    aim = glm::normalize(aim - pos);
 
     auto quat = dir_roll_to_quat(aim, e.get_zrot_radians());
 
-    auto quat2 = convert(e.get_local_to_reference());
+    auto quat2 = glm::quat_cast(e.get_local_to_reference());
 
     // qDebug() << quat << quat2;
 
@@ -465,8 +442,8 @@ void Database::import(SD::SimulationData& data) {
             // qDebug() << entt::to_integral(e);
 
             auto new_pos =
-                stage.stage_tf.position + stage.stage_tf.rotation.rotatedVector(
-                                              stage.this_in_stage.position);
+                stage.stage_tf.position +
+                stage.stage_tf.rotation * stage.this_in_stage.position;
             auto new_rot =
                 stage.stage_tf.rotation * stage.this_in_stage.rotation;
 
@@ -504,16 +481,16 @@ void Database::import(SD::SimulationData& data) {
 static void install_transform(SD::element_ptr           ptr,
                               TransformComponent const& tf_comp) {
 
-    QVector3D aim;
-    double    roll;
+    glm::dvec3 aim  = {};
+    double     roll = {};
     quat_to_dir_roll(tf_comp.rotation, aim, roll);
 
     auto origin = tf_comp.position;
-    ptr->set_origin(origin.x(), origin.y(), origin.z());
+    ptr->set_origin(origin.x, origin.y, origin.z);
 
-    aim = (origin + aim * 100);
+    aim = (origin + aim * 100.0);
 
-    ptr->set_aim_vector(aim.x(), aim.y(), aim.z());
+    ptr->set_aim_vector(aim.x, aim.y, aim.z);
 
     ptr->set_zrot_radians(roll);
 }
@@ -803,8 +780,8 @@ SD::SimulationParameters const& Database::get_sim_params() const {
 
 TransformComponent Database::global_transform(entt::entity item) const {
     TransformComponent out;
-    out.position = QVector3D(0.f, 0.f, 0.f);
-    out.rotation = QQuaternion(); // identity
+    out.position = glm::dvec3 { 0.0 };
+    out.rotation = glm::dquat { 1.0, 0.0, 0.0, 0.0 };
 
     entt::entity current = item;
 
@@ -812,8 +789,7 @@ TransformComponent Database::global_transform(entt::entity item) const {
         if (auto* t = m_registry.try_get<TransformComponent>(current)) {
             // apply current local, then whatever accumulated so
             // far.
-            out.position =
-                t->position + t->rotation.rotatedVector(out.position);
+            out.position = t->position + t->rotation * out.position;
             out.rotation = t->rotation * out.rotation;
         }
 

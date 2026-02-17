@@ -3,6 +3,7 @@
 #include "components.h"
 #include "database/database.h"
 #include "database/database_notification.h"
+#include "utilities/math_utility.h"
 
 namespace db {
 
@@ -347,7 +348,7 @@ QVector3D AnInstanceEditor::position() const {
 
     if (m_host and m_host->valid(m_entity)) {
         if (auto tf = m_host->transform.get(m_entity); tf) {
-            return tf->position;
+            return convert(tf->position);
         }
     }
 
@@ -360,8 +361,9 @@ void AnInstanceEditor::set_position(const QVector3D& newPosition) {
 
     FIND(transform);
 
-    component.patch(m_entity,
-                    [&](TransformComponent& a) { a.position = newPosition; });
+    component.patch(m_entity, [&](TransformComponent& a) {
+        a.position = convert(newPosition);
+    });
 
     emit position_changed();
 }
@@ -369,7 +371,7 @@ void AnInstanceEditor::set_position(const QVector3D& newPosition) {
 QQuaternion AnInstanceEditor::orientation() const {
     if (m_host and m_host->valid(m_entity)) {
         if (auto tf = m_host->transform.get(m_entity); tf) {
-            return tf->rotation;
+            return convert(tf->rotation);
         }
     }
     return {};
@@ -380,8 +382,9 @@ void AnInstanceEditor::set_orientation(const QQuaternion& newOrientation) {
 
     FIND(transform);
 
-    component.patch(
-        m_entity, [&](TransformComponent& a) { a.rotation = newOrientation; });
+    component.patch(m_entity, [&](TransformComponent& a) {
+        a.rotation = convert(newOrientation);
+    });
 
     emit orientation_changed();
 }
