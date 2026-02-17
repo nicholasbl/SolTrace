@@ -6,6 +6,8 @@
 
 #include "common.hpp"
 
+#include <glm/gtx/io.hpp>
+
 TEST(OpticalProperties, OutputOperator)
 {
     std::stringstream ss;
@@ -29,8 +31,8 @@ TEST(Element, ConstructionSmokeTest)
 TEST(Element, SingleElementAccessors)
 {
     SingleElement ref;
-    Vector3d zero(0.0, 0.0, 0.0);
-    Vector3d khat(0.0, 0.0, 1.0);
+    glm::dvec3 zero(0.0, 0.0, 0.0);
+    glm::dvec3 khat(0.0, 0.0, 1.0);
     EXPECT_TRUE(is_identical(ref.get_origin_ref(), zero));
     EXPECT_TRUE(is_identical(ref.get_aim_vector_ref(), khat));
     EXPECT_TRUE(is_identical(ref.get_euler_angles(), zero));
@@ -53,15 +55,15 @@ TEST(Element, SingleElementAccessors)
     ref.unmark_virtual();
     EXPECT_FALSE(ref.is_virtual());
 
-    auto pos = Vector3d(2.0, 1.0, -3.0);
+    auto pos = glm::dvec3(2.0, 1.0, -3.0);
     ref.set_origin(pos);
     EXPECT_TRUE(is_identical(ref.get_origin_ref(), pos));
 
-    auto aim = Vector3d(-1.0, 0.0, 1.0);
+    auto aim = glm::dvec3(-1.0, 0.0, 1.0);
     ref.set_aim_vector(aim);
     EXPECT_TRUE(is_identical(ref.get_aim_vector_ref(), aim));
 
-    // auto eulers = Vector3d(0.1, 0.2, -0.3);
+    // auto eulers = glm::dvec3(0.1, 0.2, -0.3);
     // // ref.set_euler_angles(eulers);
     // EXPECT_TRUE(is_identical(ref.get_euler_angles(), eulers));
 
@@ -125,8 +127,8 @@ TEST(Element, VirtualElement)
     EXPECT_NE(rptr, nullptr);
     if (rptr != nullptr)
     {
-        EXPECT_EQ(rptr->x_length, LX);
-        EXPECT_EQ(rptr->y_length, LY);
+        EXPECT_EQ(rptr->x_length(), LX);
+        EXPECT_EQ(rptr->y_length(), LY);
     }
 
     ve.set_surface(make_surface<Flat>());
@@ -173,8 +175,8 @@ TEST(Element, VirtualPlane)
     EXPECT_NE(rptr, nullptr);
     if (rptr != nullptr)
     {
-        EXPECT_EQ(rptr->x_length, LX);
-        EXPECT_EQ(rptr->y_length, LY);
+        EXPECT_EQ(rptr->x_length(), LX);
+        EXPECT_EQ(rptr->y_length(), LY);
     }
 
     // These functions should have no effects
@@ -314,12 +316,12 @@ TEST(Element, CoordinateComputationsIdentity)
 {
     auto el = make_configured_element();
     auto st = SolTrace::Data::make_stage(0);
-    Vector3d origin(0.0, 0.0, 0.0);
-    Vector3d aim(0.0, 0.0, 1.0);
-    Vector3d local(1.0, 1.0, 1.0);
-    Vector3d ref(1.0, 1.0, 1.0);
-    Vector3d result;
-    result.zero();
+    glm::dvec3 origin(0.0, 0.0, 0.0);
+    glm::dvec3 aim(0.0, 0.0, 1.0);
+    glm::dvec3 local(1.0, 1.0, 1.0);
+    glm::dvec3 ref(1.0, 1.0, 1.0);
+    glm::dvec3 result;
+    result = glm::dvec3(0.0);
     double zrot = 0.0;
 
     el->set_reference_frame_geometry(origin, aim, zrot);
@@ -328,34 +330,34 @@ TEST(Element, CoordinateComputationsIdentity)
     // Conversion test
     el->convert_local_to_global(result, local);
     EXPECT_TRUE(is_identical(ref, result));
-    result.zero();
+    result = glm::dvec3(0.0);
     el->convert_local_to_stage(result, local);
     EXPECT_TRUE(is_identical(ref, result));
-    result.zero();
+    result = glm::dvec3(0.0);
     el->convert_local_to_reference(result, local);
     EXPECT_TRUE(is_identical(ref, result));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     st->convert_local_to_global(result, local);
     EXPECT_TRUE(is_identical(ref, result));
-    result.zero();
+    result = glm::dvec3(0.0);
     st->convert_local_to_stage(result, local);
     EXPECT_TRUE(is_identical(ref, result));
-    result.zero();
+    result = glm::dvec3(0.0);
     st->convert_local_to_reference(result, local);
     EXPECT_TRUE(is_identical(ref, result));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     st->add_element(el);
     el->convert_local_to_global(result, local);
     EXPECT_TRUE(is_identical(ref, result));
-    result.zero();
+    result = glm::dvec3(0.0);
     el->convert_local_to_stage(result, local);
     EXPECT_TRUE(is_identical(ref, result));
-    result.zero();
+    result = glm::dvec3(0.0);
     el->convert_local_to_reference(result, local);
     EXPECT_TRUE(is_identical(ref, result));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     // Origin location tests
     EXPECT_TRUE(is_identical(origin, st->get_origin_ref()));
@@ -376,73 +378,70 @@ TEST(Element, CoordinateComputationsIdentity)
     EXPECT_TRUE(is_identical(aim, el->get_aim_vector_global()));
 
     // Operators
-    Matrix3d Q;
-    Q.identity();
-    Matrix3d RtoL = el->get_reference_to_local();
+    glm::dmat3 Q = glm::identity<glm::dmat3>();
+
+    glm::dmat3 RtoL = el->get_reference_to_local();
     EXPECT_TRUE(is_identical(RtoL, Q));
-    Matrix3d LtoR = el->get_local_to_reference();
+    glm::dmat3 LtoR = el->get_local_to_reference();
     EXPECT_TRUE(is_identical(LtoR, Q));
-    Matrix3d StoL = el->get_stage_to_local();
+    glm::dmat3 StoL = el->get_stage_to_local();
     EXPECT_TRUE(is_identical(StoL, Q));
-    Matrix3d LtoS = el->get_local_to_stage();
+    glm::dmat3 LtoS = el->get_local_to_stage();
     EXPECT_TRUE(is_identical(LtoS, Q));
-    Matrix3d GtoL = el->get_global_to_local();
+    glm::dmat3 GtoL = el->get_global_to_local();
     EXPECT_TRUE(is_identical(GtoL, Q));
-    Matrix3d LtoG = el->get_local_to_global();
+    glm::dmat3 LtoG = el->get_local_to_global();
     EXPECT_TRUE(is_identical(LtoG, Q));
 }
 
 TEST(Element, CoordinateComputationsRotations)
 {
-    using SolTrace::Data::MatrixTranspose;
     using SolTrace::Data::PI;
 
     // **** Setup Answers **** //
     // Origin
-    Vector3d Origin;
-    Origin.zero();
+    glm::dvec3 Origin;
+    Origin = {};
     // Coordinate transform matrix
-    Matrix3d Q1;
-    Q1.set_value(0, 0, 0.5);
-    Q1.set_value(1, 0, sqrt(3.0) / 2.0);
-    Q1.set_value(2, 0, 0.0);
-    Q1.set_value(0, 1, -1.0 / sqrt(2.0));
-    Q1.set_value(1, 1, 1.0 / sqrt(6.0));
-    Q1.set_value(2, 1, -1.0 / sqrt(3.0));
-    Q1.set_value(0, 2, -0.5);
-    Q1.set_value(1, 2, sqrt(3.0) / 6.0);
-    Q1.set_value(2, 2, sqrt(6.0) / 3.0);
-    Matrix3d Q1t;
-    MatrixTranspose(Q1.data, 3, Q1t.data);
+    glm::dmat3 Q1;
+    Q1[0][0] = 0.5;
+    Q1[1][0] = sqrt(3.0) / 2.0;
+    Q1[2][0] = 0.0;
+    Q1[0][1] = -1.0 / sqrt(2.0);
+    Q1[1][1] = 1.0 / sqrt(6.0);
+    Q1[2][1] = -1.0 / sqrt(3.0);
+    Q1[0][2] = -0.5;
+    Q1[1][2] = sqrt(3.0) / 6.0;
+    Q1[2][2] = sqrt(6.0) / 3.0;
+    //glm::dmat3 Q1t = glm::transpose(Q1);
     // Corresponding Euler angles in radians
     const double a1 = 0.0;
     const double b1 = asin(-1.0 / sqrt(3.0));
     const double g1 = acos(1.0 / cos(b1) * 1.0 / sqrt(6.0)); // approximately 0.615
     // Corresponding aim vector (local z-axis in reference coordinates)
-    // Vector3d aim1(0.0, -sqrt(3.0) / 2.0, sqrt(2.0 / 3.0));
-    Vector3d aim1(0.0, -1.0 / sqrt(3.0), sqrt(2.0 / 3.0));
+    // glm::dvec3 aim1(0.0, -sqrt(3.0) / 2.0, sqrt(2.0 / 3.0));
+    glm::dvec3 aim1(0.0, -1.0 / sqrt(3.0), sqrt(2.0 / 3.0));
 
     // Z-Rotation is the last of the Euler angles but in degrees
     const double zrot1 = g1 * 180.0 / PI;
 
-    Matrix3d Q2;
-    Q2.set_value(0, 0, (sqrt(8.0) + sqrt(6.0)) / 8.0);
-    Q2.set_value(0, 1, -0.75);
-    Q2.set_value(0, 2, (sqrt(6.0) - sqrt(8.0)) / 8.0);
-    Q2.set_value(1, 0, (2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0);
-    Q2.set_value(1, 1, sqrt(3.0) / 4.0);
-    Q2.set_value(1, 2, (-2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0);
-    Q2.set_value(2, 0, sqrt(6.0) / 4.0);
-    Q2.set_value(2, 1, 0.5);
-    Q2.set_value(2, 2, sqrt(6.0) / 4.0);
-    Matrix3d Q2t;
-    MatrixTranspose(Q2.data, 3, Q2t.data);
+    glm::dmat3 Q2;
+    Q2[0][0] = (sqrt(8.0) + sqrt(6.0)) / 8.0;
+    Q2[1][0] = (2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0;
+    Q2[2][0] = sqrt(6.0) / 4.0;
+    Q2[0][1] = -0.75;
+    Q2[1][1] = sqrt(3.0) / 4.0;
+    Q2[2][1] = 0.5;
+    Q2[0][2] = (sqrt(6.0) - sqrt(8.0)) / 8.0;
+    Q2[1][2] = (-2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0;
+    Q2[2][2] = sqrt(6.0) / 4.0;
+    //glm::dmat3 Q2t = glm::transpose(Q2);
     // Corresponding Euler angles in radians
     const double a2 = PI / 4.0;
     const double b2 = PI / 6.0;
     const double g2 = PI / 3.0;
     // Corresponding aim vector (local z-axis in reference coordinates)
-    Vector3d aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
+    glm::dvec3 aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
 
     // Z-Rotation is the last of the Euler angles but in degrees
     const double zrot2 = 60.0;
@@ -457,9 +456,9 @@ TEST(Element, CoordinateComputationsRotations)
 
     // **** Tests **** //
     const double TOL = 1e-12;
-    Vector3d scratch;
-    Vector3d result_vec;
-    Matrix3d result_mat;
+    glm::dvec3 scratch;
+    glm::dvec3 result_vec;
+    glm::dmat3 result_mat;
     // Origin tests
     EXPECT_TRUE(is_identical(el->get_origin_stage(), el->get_origin_ref()));
     EXPECT_TRUE(is_identical(el->get_origin_ref(), Origin));
@@ -478,28 +477,28 @@ TEST(Element, CoordinateComputationsRotations)
     // Aim vector tests
     EXPECT_TRUE(is_identical(el->get_aim_vector_ref(), aim1, TOL));
     EXPECT_TRUE(is_identical(el->get_aim_vector_stage(), el->get_aim_vector_ref(), TOL));
-    matrix_vector_product(Q2t, aim1, result_vec);
+    result_vec = Q2 * aim1;
     EXPECT_TRUE(is_identical(el->get_aim_vector_global(), result_vec, TOL));
 
-    Vector3d v_local(-1.0, 2.0, 4.0);
-    Vector3d v_stage;
-    Vector3d v_global;
-    matrix_vector_product(Q1t, v_local, v_stage);
-    matrix_vector_product(Q2t, v_stage, v_global);
+    glm::dvec3 v_local(-1.0, 2.0, 4.0);
+    glm::dvec3 v_stage;
+    glm::dvec3 v_global;
+    v_stage = Q1 * v_local;
+    v_global = Q2 * v_stage;
 
-    Vector3d result;
+    glm::dvec3 result;
 
     el->convert_local_to_stage(result, v_local);
     EXPECT_TRUE(is_identical(result, v_stage, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     el->convert_stage_to_local(result, v_stage);
     EXPECT_TRUE(is_identical(result, v_local, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     el->convert_local_to_global(result, v_local);
     EXPECT_TRUE(is_identical(result, v_global, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     el->convert_global_to_local(result, v_global);
     EXPECT_TRUE(is_identical(result, v_local, TOL));
@@ -509,24 +508,24 @@ TEST(Element, CoordinateComputationsTranslations)
 {
     // **** Setup Answers **** //
     // Origin
-    Vector3d Origin1(1.0, 2.0, 3.0);
+    glm::dvec3 Origin1(1.0, 2.0, 3.0);
     // Corresponding Euler angles in radians
     const double a = 0.0;
     const double b = 0.0;
     const double g = 0.0;
     // Corresponding aim vector (local z-axis in reference coordinates)
-    // Vector3d aim1(0.0, -sqrt(3.0) / 2.0, sqrt(2.0 / 3.0));
-    Vector3d aim1(0.0, 0.0, 1.0);
-    vector_add(1.0, Origin1, 1.0, aim1);
+    // glm::dvec3 aim1(0.0, -sqrt(3.0) / 2.0, sqrt(2.0 / 3.0));
+    glm::dvec3 aim1(0.0, 0.0, 1.0);
+    aim1 = 1.0 * Origin1 + 1.0 * aim1;
 
     // Z-Rotation is the last of the Euler angles but in degrees
     const double zrot = 0.0;
 
     // Origin
-    Vector3d Origin2(-3.0, 1.0, -5.0);
+    glm::dvec3 Origin2(-3.0, 1.0, -5.0);
     // Corresponding aim vector (local z-axis in reference coordinates)
-    Vector3d aim2(0.0, 0.0, 1.0);
-    vector_add(1.0, Origin2, 1.0, aim2);
+    glm::dvec3 aim2(0.0, 0.0, 1.0);
+    aim2 = 1.0 * Origin2 + 1.0 * aim2;
 
     // **** Setup Elements **** //
     auto el = make_configured_element();
@@ -538,13 +537,13 @@ TEST(Element, CoordinateComputationsTranslations)
 
     // **** Tests **** //
     const double TOL = 1e-12;
-    Vector3d scratch;
-    Vector3d result_vec;
-    Matrix3d result_mat;
+    glm::dvec3 scratch;
+    glm::dvec3 result_vec;
+    glm::dmat3 result_mat;
     // Origin tests
     EXPECT_TRUE(is_identical(el->get_origin_stage(), el->get_origin_ref()));
     EXPECT_TRUE(is_identical(el->get_origin_ref(), Origin1));
-    vector_add(1.0, Origin1, 1.0, Origin2, result_vec);
+    result_vec = 1.0 * Origin1 + 1.0 * Origin2;
     EXPECT_TRUE(is_identical(el->get_origin_global(), result_vec));
 
     // Euler angles tests
@@ -560,28 +559,28 @@ TEST(Element, CoordinateComputationsTranslations)
     // Aim vector tests
     EXPECT_TRUE(is_identical(el->get_aim_vector_ref(), aim1, TOL));
     EXPECT_TRUE(is_identical(el->get_aim_vector_stage(), el->get_aim_vector_ref(), TOL));
-    vector_add(1.0, Origin2, 1.0, aim1, result_vec);
+    result_vec = 1.0 * Origin2 + 1.0 * aim1;
     EXPECT_TRUE(is_identical(el->get_aim_vector_global(), result_vec, TOL));
 
-    Vector3d v_local(-1.0, 2.0, 4.0);
-    Vector3d v_stage;
-    Vector3d v_global;
-    vector_add(1.0, Origin1, 1.0, v_local, v_stage);
-    vector_add(1.0, Origin2, 1.0, v_stage, v_global);
+    glm::dvec3 v_local(-1.0, 2.0, 4.0);
+    glm::dvec3 v_stage;
+    glm::dvec3 v_global;
+    v_stage = 1.0 * Origin1 + 1.0 * v_local;
+    v_global = 1.0 * Origin2 + 1.0 * v_stage;
 
-    Vector3d result;
+    glm::dvec3 result;
 
     el->convert_local_to_stage(result, v_local);
     EXPECT_TRUE(is_identical(result, v_stage, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     el->convert_stage_to_local(result, v_stage);
     EXPECT_TRUE(is_identical(result, v_local, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     el->convert_local_to_global(result, v_local);
     EXPECT_TRUE(is_identical(result, v_global, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     el->convert_global_to_local(result, v_global);
     EXPECT_TRUE(is_identical(result, v_local, TOL));
@@ -594,56 +593,55 @@ TEST(Element, CoordinateComputations)
 
     // **** Setup Answers **** //
     // Origin
-    Vector3d Origin1(1.0, 2.0, 3.0);
+    glm::dvec3 Origin1(1.0, 2.0, 3.0);
     // Coordinate transform matrix -- stage to local
-    Matrix3d Q1;
-    Q1.set_value(0, 0, 0.5);
-    Q1.set_value(1, 0, sqrt(3.0) / 2.0);
-    Q1.set_value(2, 0, 0.0);
-    Q1.set_value(0, 1, -1.0 / sqrt(2.0));
-    Q1.set_value(1, 1, 1.0 / sqrt(6.0));
-    Q1.set_value(2, 1, -1.0 / sqrt(3.0));
-    Q1.set_value(0, 2, -0.5);
-    Q1.set_value(1, 2, sqrt(3.0) / 6.0);
-    Q1.set_value(2, 2, sqrt(6.0) / 3.0);
+    glm::dmat3 Q1;
+    Q1[0][0] = 0.5;
+    Q1[1][0] = sqrt(3.0) / 2.0;
+    Q1[2][0] = 0.0;
+    Q1[0][1] = -1.0 / sqrt(2.0);
+    Q1[1][1] = 1.0 / sqrt(6.0);
+    Q1[2][1] = -1.0 / sqrt(3.0);
+    Q1[0][2] = -0.5;
+    Q1[1][2] = sqrt(3.0) / 6.0;
+    Q1[2][2] = sqrt(6.0) / 3.0;
     // Local to stage matrix
-    Matrix3d Q1t;
-    MatrixTranspose(Q1.data, 3, Q1t.data);
+    //glm::dmat3 Q1t = glm::transpose(Q1);
     // Corresponding Euler angles in radians
     const double a1 = 0.0;
     const double b1 = asin(-1.0 / sqrt(3.0));
     const double g1 = acos(1.0 / cos(b1) * 1.0 / sqrt(6.0)); // approximately 0.615
     // Corresponding aim vector (local z-axis in reference coordinates)
-    // Vector3d aim1(0.0, -sqrt(3.0) / 2.0, sqrt(2.0 / 3.0));
-    Vector3d aim1(0.0, -1.0 / sqrt(3.0), sqrt(2.0 / 3.0));
-    vector_add(1.0, Origin1, 1.0, aim1);
+    // glm::dvec3 aim1(0.0, -sqrt(3.0) / 2.0, sqrt(2.0 / 3.0));
+    glm::dvec3 aim1(0.0, -1.0 / sqrt(3.0), sqrt(2.0 / 3.0));
+    aim1 = 1.0 * Origin1 + 1.0 * aim1;
 
     // Z-Rotation is the last of the Euler angles but in degrees
     const double zrot1 = g1 * 180.0 / PI;
 
     // Origin
-    Vector3d Origin2(-3.0, 1.0, -5.0);
+    glm::dvec3 Origin2(-3.0, 1.0, -5.0);
     // Global to stage matrix
-    Matrix3d Q2;
-    Q2.set_value(0, 0, (sqrt(8.0) + sqrt(6.0)) / 8.0);
-    Q2.set_value(0, 1, -0.75);
-    Q2.set_value(0, 2, (sqrt(6.0) - sqrt(8.0)) / 8.0);
-    Q2.set_value(1, 0, (2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0);
-    Q2.set_value(1, 1, sqrt(3.0) / 4.0);
-    Q2.set_value(1, 2, (-2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0);
-    Q2.set_value(2, 0, sqrt(6.0) / 4.0);
-    Q2.set_value(2, 1, 0.5);
-    Q2.set_value(2, 2, sqrt(6.0) / 4.0);
+    glm::dmat3 Q2;
+    Q2[0][0] = (sqrt(8.0) + sqrt(6.0)) / 8.0;
+    Q2[1][0] = (2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0;
+    Q2[2][0] = sqrt(6.0) / 4.0;
+    Q2[0][1] = -0.75;
+    Q2[1][1] = sqrt(3.0) / 4.0;
+    Q2[2][1] = 0.5;
+    Q2[0][2] = (sqrt(6.0) - sqrt(8.0)) / 8.0;
+    Q2[1][2] = (-2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0;
+    Q2[2][2] = sqrt(6.0) / 4.0;
     // Stage to global matrix
-    Matrix3d Q2t;
-    MatrixTranspose(Q2.data, 3, Q2t.data);
+    //glm::dmat3 Q2t = glm::transpose(Q2);
+    ;
     // Corresponding Euler angles in radians
     const double a2 = PI / 4.0;
     const double b2 = PI / 6.0;
     const double g2 = PI / 3.0;
     // Corresponding aim vector (local z-axis in reference coordinates)
-    Vector3d aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
-    vector_add(1.0, Origin2, 1.0, aim2);
+    glm::dvec3 aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
+    aim2 = 1.0 * Origin2 + 1.0 * aim2;
 
     // Z-Rotation is the last of the Euler angles but in degrees
     const double zrot2 = 60.0;
@@ -658,16 +656,16 @@ TEST(Element, CoordinateComputations)
 
     // **** Tests **** //
     const double TOL = 1e-12;
-    Vector3d scratch;
-    Vector3d result_vec;
-    Matrix3d result_mat;
+    glm::dvec3 scratch;
+    glm::dvec3 result_vec;
+    glm::dmat3 result_mat;
     // Origin tests
     EXPECT_TRUE(is_identical(el->get_origin_stage(), el->get_origin_ref()));
     EXPECT_TRUE(is_identical(el->get_origin_ref(), Origin1));
     // vector_add(1.0, Origin1, 1.0, Origin2, result_vec);
-    matrix_vector_product(Q2t, Origin1, result_vec);
-    vector_add(1.0, Origin2, 1.0, result_vec);
-    EXPECT_TRUE(is_identical(el->get_origin_global(), result_vec));
+    result_vec = Q2 * Origin1;
+    result_vec = Origin2 + result_vec;
+    EXPECT_TRUE(is_identical(el->get_origin_global(), result_vec, TOL));
 
     // Euler angles tests
     result_vec = el->get_euler_angles();
@@ -682,35 +680,35 @@ TEST(Element, CoordinateComputations)
     // Aim vector tests
     EXPECT_TRUE(is_identical(el->get_aim_vector_ref(), aim1, TOL));
     EXPECT_TRUE(is_identical(el->get_aim_vector_stage(), el->get_aim_vector_ref(), TOL));
-    matrix_vector_product(Q2t, aim1, result_vec);
-    vector_add(1.0, Origin2, 1.0, result_vec);
+    result_vec = Q2 * aim1;
+    result_vec = Origin2 + result_vec;
     EXPECT_TRUE(is_identical(el->get_aim_vector_global(), result_vec, TOL));
 
-    Vector3d v_local(-1.0, 2.0, 4.0);
-    Vector3d v_stage;
-    Vector3d v_global;
-    matrix_vector_product(Q1t, v_local, v_stage);
-    vector_add(1.0, Origin1, 1.0, v_stage);
-    matrix_vector_product(Q2t, v_stage, v_global);
-    vector_add(1.0, Origin2, 1.0, v_global);
+    glm::dvec3 v_local(-1.0, 2.0, 4.0);
+    glm::dvec3 v_stage;
+    glm::dvec3 v_global;
+    v_stage = Q1 * v_local;
+    v_stage = Origin1 + v_stage;
+    v_global = Q2 * v_stage;
+    v_global = Origin2 + v_global;
 
-    Vector3d result;
+    glm::dvec3 result;
 
     el->convert_local_to_stage(result, v_local);
     EXPECT_TRUE(is_identical(result, v_stage, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     el->convert_stage_to_local(result, v_stage);
     EXPECT_TRUE(is_identical(result, v_local, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     el->convert_local_to_global(result, v_local);
     EXPECT_TRUE(is_identical(result, v_global, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     el->convert_global_to_local(result, v_global);
     EXPECT_TRUE(is_identical(result, v_local, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     // Note: Global to reference and reference to global
     // use other conversion routines so just need to test
@@ -719,20 +717,20 @@ TEST(Element, CoordinateComputations)
     // Stage coordinates are the reference coordinates
     el->convert_global_to_reference(result, v_global);
     EXPECT_TRUE(is_identical(result, v_stage, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     el->convert_reference_to_global(result, v_stage);
     EXPECT_TRUE(is_identical(result, v_global, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     // Global coordinates are reference coordinates
     st->convert_global_to_reference(result, v_global);
     EXPECT_TRUE(is_identical(result, v_global, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     st->convert_reference_to_global(result, v_global);
     EXPECT_TRUE(is_identical(result, v_global, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 }
 
 TEST(Element, VectorCoordinateComputations)
@@ -742,56 +740,54 @@ TEST(Element, VectorCoordinateComputations)
 
     // **** Setup Answers **** //
     // Origin
-    Vector3d Origin1(1.0, 2.0, 3.0);
+    glm::dvec3 Origin1(1.0, 2.0, 3.0);
     // Coordinate transform matrix -- stage to local
-    Matrix3d Q1;
-    Q1.set_value(0, 0, 0.5);
-    Q1.set_value(1, 0, sqrt(3.0) / 2.0);
-    Q1.set_value(2, 0, 0.0);
-    Q1.set_value(0, 1, -1.0 / sqrt(2.0));
-    Q1.set_value(1, 1, 1.0 / sqrt(6.0));
-    Q1.set_value(2, 1, -1.0 / sqrt(3.0));
-    Q1.set_value(0, 2, -0.5);
-    Q1.set_value(1, 2, sqrt(3.0) / 6.0);
-    Q1.set_value(2, 2, sqrt(6.0) / 3.0);
+    glm::dmat3 Q1;
+    Q1[0][0] = 0.5;
+    Q1[1][0] = sqrt(3.0) / 2.0;
+    Q1[2][0] = 0.0;
+    Q1[0][1] = -1.0 / sqrt(2.0);
+    Q1[1][1] = 1.0 / sqrt(6.0);
+    Q1[2][1] = -1.0 / sqrt(3.0);
+    Q1[0][2] = -0.5;
+    Q1[1][2] = sqrt(3.0) / 6.0;
+    Q1[2][2] = sqrt(6.0) / 3.0;
     // Local to stage matrix
-    Matrix3d Q1t;
-    MatrixTranspose(Q1.data, 3, Q1t.data);
+    //glm::dmat3 Q1t = glm::transpose(Q1);
     // Corresponding Euler angles in radians
     const double a1 = 0.0;
     const double b1 = asin(-1.0 / sqrt(3.0));
     const double g1 = acos(1.0 / cos(b1) * 1.0 / sqrt(6.0)); // approximately 0.615
     // Corresponding aim vector (local z-axis in reference coordinates)
-    // Vector3d aim1(0.0, -sqrt(3.0) / 2.0, sqrt(2.0 / 3.0));
-    Vector3d aim1(0.0, -1.0 / sqrt(3.0), sqrt(2.0 / 3.0));
-    vector_add(1.0, Origin1, 1.0, aim1);
+    // glm::dvec3 aim1(0.0, -sqrt(3.0) / 2.0, sqrt(2.0 / 3.0));
+    glm::dvec3 aim1(0.0, -1.0 / sqrt(3.0), sqrt(2.0 / 3.0));
+    aim1 = Origin1 + aim1;
 
     // Z-Rotation is the last of the Euler angles but in degrees
     const double zrot1 = g1 * 180.0 / PI;
 
     // Origin
-    Vector3d Origin2(-3.0, 1.0, -5.0);
+    glm::dvec3 Origin2(-3.0, 1.0, -5.0);
     // Global to stage matrix
-    Matrix3d Q2;
-    Q2.set_value(0, 0, (sqrt(8.0) + sqrt(6.0)) / 8.0);
-    Q2.set_value(0, 1, -0.75);
-    Q2.set_value(0, 2, (sqrt(6.0) - sqrt(8.0)) / 8.0);
-    Q2.set_value(1, 0, (2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0);
-    Q2.set_value(1, 1, sqrt(3.0) / 4.0);
-    Q2.set_value(1, 2, (-2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0);
-    Q2.set_value(2, 0, sqrt(6.0) / 4.0);
-    Q2.set_value(2, 1, 0.5);
-    Q2.set_value(2, 2, sqrt(6.0) / 4.0);
+    glm::dmat3 Q2;
+    Q2[0][0] = (sqrt(8.0) + sqrt(6.0)) / 8.0;
+    Q2[1][0] = (2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0;
+    Q2[2][0] = sqrt(6.0) / 4.0;
+    Q2[0][1] = -0.75;
+    Q2[1][1] = sqrt(3.0) / 4.0;
+    Q2[2][1] = 0.5;
+    Q2[0][2] = (sqrt(6.0) - sqrt(8.0)) / 8.0;
+    Q2[1][2] = (-2.0 * sqrt(6.0) - sqrt(2.0)) / 8.0;
+    Q2[2][2] = sqrt(6.0) / 4.0;
     // Stage to global matrix
-    Matrix3d Q2t;
-    MatrixTranspose(Q2.data, 3, Q2t.data);
+    //glm::dmat3 Q2t = glm::transpose(Q2);
     // Corresponding Euler angles in radians
     const double a2 = PI / 4.0;
     const double b2 = PI / 6.0;
     const double g2 = PI / 3.0;
     // Corresponding aim vector (local z-axis in reference coordinates)
-    Vector3d aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
-    vector_add(1.0, Origin2, 1.0, aim2);
+    glm::dvec3 aim2(sqrt(3.0 / 8.0), 0.5, sqrt(3.0 / 8.0));
+    aim2 = Origin2 + aim2;
 
     // Z-Rotation is the last of the Euler angles but in degrees
     const double zrot2 = 60.0;
@@ -806,9 +802,9 @@ TEST(Element, VectorCoordinateComputations)
 
     // **** Tests **** //
     const double TOL = 1e-12;
-    Vector3d scratch;
-    Vector3d result_vec;
-    Matrix3d result_mat;
+    glm::dvec3 scratch;
+    glm::dvec3 result_vec;
+    glm::dmat3 result_mat;
 
     // Euler angles tests
     result_vec = el->get_euler_angles();
@@ -820,29 +816,29 @@ TEST(Element, VectorCoordinateComputations)
     EXPECT_NEAR(result_vec[1], b2, TOL);
     EXPECT_NEAR(result_vec[2], g2, TOL);
 
-    Vector3d v_local(-1.0, 2.0, 4.0);
-    Vector3d v_stage;
-    Vector3d v_global;
-    matrix_vector_product(Q1t, v_local, v_stage);
-    matrix_vector_product(Q2t, v_stage, v_global);
+    glm::dvec3 v_local(-1.0, 2.0, 4.0);
+    glm::dvec3 v_stage;
+    glm::dvec3 v_global;
+    v_stage = Q1 * v_local;
+    v_global = Q2 * v_stage;
 
-    Vector3d result;
+    glm::dvec3 result;
 
     el->convert_vector_local_to_stage(result, v_local);
     EXPECT_TRUE(is_identical(result, v_stage, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     el->convert_vector_stage_to_local(result, v_stage);
     EXPECT_TRUE(is_identical(result, v_local, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     el->convert_vector_local_to_global(result, v_local);
     EXPECT_TRUE(is_identical(result, v_global, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     el->convert_vector_global_to_local(result, v_global);
     EXPECT_TRUE(is_identical(result, v_local, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     // Note: Global to reference and reference to global
     // use other conversion routines so just need to test
@@ -851,20 +847,20 @@ TEST(Element, VectorCoordinateComputations)
     // Stage coordinates are the reference coordinates
     el->convert_vector_global_to_reference(result, v_global);
     EXPECT_TRUE(is_identical(result, v_stage, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     el->convert_vector_reference_to_global(result, v_stage);
     EXPECT_TRUE(is_identical(result, v_global, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     // Global coordinates are reference coordinates
     st->convert_vector_global_to_reference(result, v_global);
     EXPECT_TRUE(is_identical(result, v_global, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 
     st->convert_vector_reference_to_global(result, v_global);
     EXPECT_TRUE(is_identical(result, v_global, TOL));
-    result.zero();
+    result = glm::dvec3(0.0);
 }
 
 TEST(Element, SingleElementEnforceUserFieldsSet)

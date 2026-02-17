@@ -50,15 +50,15 @@ public:
     void create_geometry();
     void update_geometry(double azimuth, double elevation);
 
-    Vector3d get_tracking_origin() const
+    glm::dvec3 get_tracking_origin() const
     {
         return this->tracking_origin;
     }
-    Vector3d get_rotation_vector() const
+    glm::dvec3 get_rotation_vector() const
     {
         return this->rotation_axis;
     }
-    Vector3d get_neutral_normal() const
+    glm::dvec3 get_neutral_normal() const
     {
         return this->neutral_normal;
     }
@@ -105,9 +105,9 @@ private:
     // double tracking_angle;
     double tracking_limit_lower;
     double tracking_limit_upper;
-    Vector3d rotation_axis;
-    Vector3d neutral_normal;
-    Vector3d tracking_origin;
+    glm::dvec3 rotation_axis;
+    glm::dvec3 neutral_normal;
+    glm::dvec3 tracking_origin;
 
     std::vector<single_element_ptr> mirrors;
     std::vector<single_element_ptr> absorbers;

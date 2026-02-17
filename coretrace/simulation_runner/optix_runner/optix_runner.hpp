@@ -47,7 +47,7 @@ private:
         const SolTrace::Data::SimulationData *data);
 
     // helper function, convert Vector3d to Optix::Vec3d
-    OptixCSP::Vec3d ToVec3d(SolTrace::Data::Vector3d v);
+    OptixCSP::Vec3d ToVec3d(glm::dvec3 v);
 };
 
 #endif

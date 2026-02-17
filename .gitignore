@@ -322,3 +322,7 @@ straced
 google-tests/*.stinput
 google-tests/*.mon
 google-tests/*.csv
+
+**/*.DS_Store
+**/strace
+**/straced

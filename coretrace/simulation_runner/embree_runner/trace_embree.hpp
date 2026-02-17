@@ -42,7 +42,7 @@ namespace SolTrace::EmbreeRunner
         uint_fast64_t MaxNumberOfRays,
         bool IncludeSunShape,
         bool IncludeErrors,
-        const SolTrace::Data::Vector3d &PosSunStage,
+        const glm::dvec3 &PosSunStage,
         const RTCScene &embree_scene);
 
 } // namespace SolTrace::EmbreeRunner

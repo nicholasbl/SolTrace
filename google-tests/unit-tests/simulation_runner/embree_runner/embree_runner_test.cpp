@@ -29,12 +29,12 @@ TEST(EmbreeRunner, SingleRayValidationTest)
     double zref = R - sqrt(R * R - (x * x + y * y));
     double z = z0 - zref;
 
-    Vector3d u(0.0, 0.0, -1.0);
-    Vector3d v(2.0 * x, 2.0 * y, -2.0 * (z0 - z - R));
-    v.make_unit();
-    Vector3d w;
-    double alpha = dot_product(u, v);
-    vector_add(1.0, u, -2.0 * alpha, v, w);
+    glm::dvec3 u(0.0, 0.0, -1.0);
+    glm::dvec3 v(2.0 * x, 2.0 * y, -2.0 * (z0 - z - R));
+    v = glm::normalize(v);
+
+    double alpha = glm::dot(u, v);
+    glm::dvec3 w = u - (2.0 * alpha * v);
 
     SimulationData sd;
 
@@ -54,8 +54,8 @@ TEST(EmbreeRunner, SingleRayValidationTest)
     sd.add_ray_source(sun);
 
     auto sph = SolTrace::Data::make_element<SingleElement>();
-    Vector3d origin(0.0, 0.0, z0);
-    Vector3d aim(0.0, 0.0, -1.0);
+    glm::dvec3 origin(0.0, 0.0, z0);
+    glm::dvec3 aim(0.0, 0.0, -1.0);
     double zrot = 0.0;
     sph->set_reference_frame_geometry(origin, aim, zrot);
     sph->set_aperture(SolTrace::Data::make_aperture<Hexagon>(20.0));
@@ -66,8 +66,8 @@ TEST(EmbreeRunner, SingleRayValidationTest)
     sd.add_element(sph);
 
     auto para = SolTrace::Data::make_element<SingleElement>();
-    origin.set_values(0.0, 0.0, -1.0);
-    aim.set_values(0.0, 0.0, 0.0);
+    origin = {0.0, 0.0, -1.0};
+    aim = {0.0, 0.0, 0.0};
     zrot = 0.0;
     para->set_reference_frame_geometry(origin, aim, zrot);
     para->set_aperture(SolTrace::Data::make_aperture<Rectangle>(31.0, 31.0));
@@ -97,12 +97,11 @@ TEST(EmbreeRunner, SingleRayValidationTest)
 
     EXPECT_EQ(n, 3);
 
-    Vector3d ipoint, idir;
+    glm::dvec3 ipoint, idir;
     int element, stage;
     uint_fast64_t raynum;
     SolTrace::Result::RayEvent rev;
-    sys->RayData.Query(0, ipoint.data, idir.data,
-                       &element, &stage, &raynum, &rev);
+    sys->RayData.Query(0, ipoint, idir, &element, &stage, &raynum, &rev);
 
     EXPECT_EQ(raynum, 1);
     EXPECT_EQ(rev, SolTrace::Result::RayEvent::CREATE);
@@ -115,8 +114,7 @@ TEST(EmbreeRunner, SingleRayValidationTest)
     EXPECT_NEAR(idir[1], u[1], TOL);
     EXPECT_NEAR(idir[2], u[2], TOL);
 
-    sys->RayData.Query(1, ipoint.data, idir.data,
-                       &element, &stage, &raynum, &rev);
+    sys->RayData.Query(1, ipoint, idir, &element, &stage, &raynum, &rev);
 
     EXPECT_EQ(raynum, 1);
     EXPECT_EQ(rev, SolTrace::Result::RayEvent::REFLECT);
@@ -170,8 +168,8 @@ TEST(EmbreeRunner, PowerTowerSmokeTest)
     st0->set_origin(0.0, 0.0, 0.0);
     st0->set_aim_vector(0.0, 0.0, 1.0);
 
-    Vector3d rvec, svec, avec;
-    Vector3d aim, pos;
+    glm::dvec3 rvec, svec, avec;
+    glm::dvec3 aim, pos;
 
     const int NUM_ELEMENTS = 10;
     for (int k = 0; k < NUM_ELEMENTS; ++k)
@@ -180,17 +178,15 @@ TEST(EmbreeRunner, PowerTowerSmokeTest)
         foptics = el->get_front_optical_properties();
         foptics->reflectivity = 1.0;
 
-        pos.set_values(5 * sin(k * PI * 2.0 / NUM_ELEMENTS),
-                       5 * cos(k * PI * 2.0 / NUM_ELEMENTS),
-                       0.0);
-        vector_add(1.0, absorber->get_origin_global(),
-                   -1.0, pos,
-                   rvec);
-        make_unit_vector(rvec);
-        svec = sun->get_position();
-        make_unit_vector(svec);
-        vector_add(0.5, rvec, 0.5, svec, avec);
-        vector_add(1.0, pos, 100.0, avec, aim);
+        pos = {
+                5 * sin(k * PI * 2.0 / NUM_ELEMENTS),
+                5 * cos(k * PI * 2.0 / NUM_ELEMENTS),
+                0.0
+        };
+        rvec = glm::normalize(absorber->get_origin_global() - pos);
+        svec = glm::normalize(sun->get_position());
+        avec = 0.5 * rvec + 0.5 * svec;
+        aim = pos + 100.0 * avec;
 
         el->set_reference_frame_geometry(pos, aim, 0.0);
 

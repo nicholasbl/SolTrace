@@ -7,8 +7,9 @@
 #include <string>
 #include <vector>
 
+#include <glm/vec3.hpp>
+
 #include "element.hpp"
-#include "vector3d.hpp"
 
 namespace SolTrace::Result
 {
@@ -41,12 +42,12 @@ namespace SolTrace::Result
         // int_fast64_t index;
         SolTrace::Data::element_id element;
         RayEvent event;
-        SolTrace::Data::Vector3d location;
-        SolTrace::Data::Vector3d direction;
+        glm::dvec3 location;
+        glm::dvec3 direction;
 
         InteractionRecord(SolTrace::Data::element_id el, RayEvent rev,
-                          const SolTrace::Data::Vector3d &location,
-                          const SolTrace::Data::Vector3d &direction);
+                          const glm::dvec3 &location,
+                          const glm::dvec3 &direction);
         InteractionRecord(SolTrace::Data::element_id el, RayEvent rev,
                           double px, double py, double pz,
                           double dx, double dy, double dz);
@@ -91,10 +92,10 @@ namespace SolTrace::Result
             return get_event(this->interactions[idx]);
         }
 
-        void get_position(const interaction_ptr ip, SolTrace::Data::Vector3d &pos);
-        void get_position(int_fast64_t idx, SolTrace::Data::Vector3d &pos);
-        void get_direction(const interaction_ptr ip, SolTrace::Data::Vector3d &cos);
-        void get_direction(int_fast64_t idx, SolTrace::Data::Vector3d &cos);
+        void get_position(const interaction_ptr ip, glm::dvec3 &pos);
+        void get_position(int_fast64_t idx, glm::dvec3 &pos);
+        void get_direction(const interaction_ptr ip, glm::dvec3 &cos);
+        void get_direction(int_fast64_t idx, glm::dvec3 &cos);
 
         uint_fast64_t get_number_of_interactions()
         {

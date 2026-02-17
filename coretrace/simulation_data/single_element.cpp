@@ -7,7 +7,6 @@
 
 #include "aperture.hpp"
 #include "element.hpp"
-#include "vector3d.hpp"
 
 namespace SolTrace::Data {
 

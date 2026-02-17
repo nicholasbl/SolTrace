@@ -9,7 +9,6 @@
 #include <simulation_data_export.hpp>
 #include <single_element.hpp>
 #include <stage_element.hpp>
-#include <vector3d.hpp>
 
 #include <cmath>
 #include <iostream>
@@ -67,8 +66,8 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
     st0->set_aim_vector(0.0, 0.0, 1.0);
     st0->set_name("Stage 0--Reflectors");
 
-    Vector3d rvec, svec, avec;
-    Vector3d aim, pos;
+    glm::dvec3 rvec, svec, avec;
+    glm::dvec3 aim, pos;
 
     double spacing = PI / 4.0;
 
@@ -78,19 +77,15 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
         foptics = el->get_front_optical_properties();
         foptics->reflectivity = 1.0;
 
-        pos.set_values(5 * sin(i * spacing),
-                       5 * cos(i * spacing),
-                       0.0);
+        pos = {5 * sin(i * spacing),
+               5 * cos(i * spacing),
+               0.0};
         el->set_origin(pos);
-        vector_add(1.0, absorber->get_origin_global(),
-                   -1.0, pos,
-                   rvec);
-        make_unit_vector(rvec);
-        svec = sun->get_position();
-        make_unit_vector(svec);
-        vector_add(0.5, rvec, 0.5, svec, avec);
+        rvec = glm::normalize(absorber->get_origin_global() - pos);
+        svec = glm::normalize(sun->get_position());
+        avec = 0.5 * rvec + 0.5 * svec;
 
-        vector_add(1.0, pos, 100.0, avec, aim);
+        aim = pos + 100.0 * avec;
         el->set_aim_vector(aim);
 
         // TODO: Set zrot as in python file?

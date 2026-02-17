@@ -213,7 +213,7 @@ TEST(ParabolicDish, UpdateGeometry)
     // sun->set_position(0.0, 0.0, 1000.0);
     // double NaN = std::numeric_limits<double>::quiet_NaN();
     sun->set_shape(SolTrace::Data::SunShape::PILLBOX, 0.0, 1.0, 0.0);
-    sun_position_vector_degrees(sun->get_position(), sun_az, sun_el);
+    SolTrace::Data::sun_position_vector_degrees(sun->get_position(), sun_az, sun_el);
     // sun->get_position().scalar_mult(1000.0);
     // std::cout << "Sun Position: " << sun->get_position() << std::endl;
     my_sim.add_ray_source(sun);
@@ -255,7 +255,7 @@ TEST(ParabolicDish, UpdateGeometry)
     //     else if (el->is_composite())
     //     {
     //         dish = std::dynamic_pointer_cast<ParabolicDish>(el);
-    //         Vector3d aim_loc;
+    //         glm::dvec3 aim_loc;
     //         dish->convert_reference_to_local(aim_loc, dish->get_aim_vector_ref());
     //         std::cout << "\nElevation Axis: " << dish->get_elevation_axis()
     //                   << "\nAim (local): " << aim_loc
