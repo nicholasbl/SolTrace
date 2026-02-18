@@ -41,6 +41,8 @@ execute_solve_with(SolTrace::Runner::SimulationRunner* ptr) {
 
 void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
     try {
+        auto start_instant = std::chrono::high_resolution_clock::now();
+
         promise.setProgressRange(0, 100);
 
         auto current_runner =
@@ -48,9 +50,12 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
 
         SolTrace::Runner::RunnerStatus result;
 
-        current_runner->set_number_of_threads(7);
-        data->set_number_of_rays(1000);
-        data->set_max_rays_traced(10000);
+        size_t thread_count = std::thread::hardware_concurrency();
+        if (thread_count == 0) { thread_count = 1; }
+
+        current_runner->set_number_of_threads(thread_count);
+        data->set_number_of_rays(100000);
+        data->set_max_rays_traced(1000000);
         qDebug() << data->get_number_of_rays()
                  << data->get_max_number_rays_traced();
 
@@ -112,16 +117,15 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
                 last_progress = progress;
                 qDebug() << "sim progress " << progress;
             }
-
-            // if (progress > 1) {
-            //     current_runner->cancel_simulation();
-            //     break;
-            // }
         }
 
         auto run_result = run_future.result();
 
-        qDebug() << Q_FUNC_INFO << "Run complete";
+        auto end_instant = std::chrono::high_resolution_clock::now();
+
+        qDebug() << Q_FUNC_INFO << "Run complete in: "
+                 << std::chrono::duration<double>(end_instant - start_instant)
+                        .count();
 
         switch (run_result) {
         case SolTrace::Runner::RunnerStatus::CANCEL:

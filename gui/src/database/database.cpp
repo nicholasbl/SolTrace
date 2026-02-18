@@ -47,8 +47,8 @@ struct std::hash<SD::OpticalProperties> {
 
 
 template <>
-struct std::hash<db::GroupParameterComponent> {
-    std::size_t operator()(db::GroupParameterComponent const& a) const {
+struct std::hash<db::RenderGroupParameterComponent> {
+    std::size_t operator()(db::RenderGroupParameterComponent const& a) const {
         size_t seed = 0;
 
         if (a.aperture) hash_combine(seed, *a.aperture);
@@ -255,12 +255,12 @@ Database::Database(QObject* p)
 
 // =============================================================================
 
-static void
-import_optics(Database&                                          reg,
-              entt::entity                                       entity,
-              SD::Element const&                                 item,
-              std::unordered_map<GroupParameterComponent, entt::entity>& groups,
-              size_t& group_counter) {
+static void import_optics(
+    Database&                                                        reg,
+    entt::entity                                                     entity,
+    SD::Element const&                                               item,
+    std::unordered_map<RenderGroupParameterComponent, entt::entity>& groups,
+    size_t& group_counter) {
 
     auto& registry = reg.as_registry();
 
@@ -284,7 +284,7 @@ import_optics(Database&                                          reg,
         return;
     }
 
-    auto local = GroupParameterComponent {
+    auto local = RenderGroupParameterComponent {
         .aperture     = item.get_aperture(),
         .surface      = item.get_surface(),
         .optics_front = *item.get_front_optical_properties(),
@@ -301,17 +301,17 @@ import_optics(Database&                                          reg,
 
         auto new_group_params = local;
 
-        auto new_group = GroupComponent {};
+        auto new_group = RenderGroupComponent {};
 
         auto group_entity = reg.create();
 
-        registry.emplace<GroupComponent>(group_entity, new_group);
-        registry.emplace<GroupParameterComponent>(group_entity,
-                                                  new_group_params);
+        registry.emplace<RenderGroupComponent>(group_entity, new_group);
+        registry.emplace<RenderGroupParameterComponent>(group_entity,
+                                                        new_group_params);
         registry.emplace<IdentityComponent>(
             group_entity,
             IdentityComponent {
-                .name = QString("Group %1").arg(group_counter),
+                .name = QString("Material Group %1").arg(group_counter),
             });
 
         group_counter++;
@@ -354,7 +354,7 @@ void Database::import(SD::SimulationData& data) {
     };
 
     // MAP MAY NOT BE RE-USED!
-    std::unordered_map<GroupParameterComponent, entt::entity> groups;
+    std::unordered_map<RenderGroupParameterComponent, entt::entity> groups;
 
     size_t group_counter = 0;
 
@@ -473,7 +473,8 @@ void Database::import(SD::SimulationData& data) {
     qInfo() << "Imported" << this->m_registry.view<ElementComponent>()->size()
             << "elements";
 
-    qInfo() << "Imported" << this->m_registry.view<GroupComponent>()->size()
+    qInfo() << "Imported"
+            << this->m_registry.view<RenderGroupComponent>()->size()
             << "groups";
 }
 
@@ -495,7 +496,8 @@ static void install_transform(SD::element_ptr           ptr,
     ptr->set_zrot_radians(roll);
 }
 
-static void install_group(SD::element_ptr ptr, GroupParameterComponent const& param) {
+static void install_group(SD::element_ptr                      ptr,
+                          RenderGroupParameterComponent const& param) {
     ptr->set_aperture(param.aperture);
     ptr->set_surface(param.surface);
 
@@ -563,12 +565,12 @@ std::shared_ptr<SD::SimulationData> Database::export_to_simdata() {
     }
 
     {
-        auto view = m_registry.view<const GroupMemberComponent>();
+        auto view = m_registry.view<const RenderGroupMemberComponent>();
         for (auto const& [e, gm] : view.each()) {
 
             // get group, we assume this is valid
             auto const& group =
-                m_registry.get<GroupParameterComponent>(gm.group);
+                m_registry.get<RenderGroupParameterComponent>(gm.group);
 
             auto element = entity_element_map.at(e);
 
@@ -730,15 +732,16 @@ entt::entity Database::parent_of(entt::entity child) const {
 
 void Database::unset_group(entt::entity child) {
     // is this a member of a group?
-    auto child_comp = m_registry.try_get<GroupMemberComponent>(child);
+    auto child_comp = m_registry.try_get<RenderGroupMemberComponent>(child);
 
     if (!child_comp) return;
 
     // Check if the group parent exists
-    auto parent_comp = m_registry.try_get<GroupComponent>(child_comp->group);
+    auto parent_comp =
+        m_registry.try_get<RenderGroupComponent>(child_comp->group);
 
     // remove us from a member of the group
-    m_registry.erase<GroupMemberComponent>(child);
+    m_registry.erase<RenderGroupMemberComponent>(child);
 
     if (!parent_comp) { return; }
 
@@ -749,15 +752,15 @@ void Database::unset_group(entt::entity child) {
 void Database::assign_group(entt::entity child, entt::entity group) {
     if (!valid(child) or !valid(group)) return;
 
-    if (!m_registry.all_of<GroupComponent>(group)) return;
+    if (!m_registry.all_of<RenderGroupComponent>(group)) return;
 
     unset_group(child);
 
-    m_registry.emplace_or_replace<GroupMemberComponent>(
-        child, GroupMemberComponent { .group = group });
+    m_registry.emplace_or_replace<RenderGroupMemberComponent>(
+        child, RenderGroupMemberComponent { .group = group });
 
-    ::db::emplace_patch<GroupComponent>(
-        m_registry, group, [child](GroupComponent& c) {
+    ::db::emplace_patch<RenderGroupComponent>(
+        m_registry, group, [child](RenderGroupComponent& c) {
             c.members.push_back(child);
         });
 }
@@ -886,18 +889,19 @@ QString Database::name_of(entt::entity item) const {
 }
 
 
-entt::entity Database::add_group(QString               new_name,
-                                 QVector<entt::entity> members,
-                                 entt::entity          clone_from) {
+entt::entity Database::add_render_group(QString               new_name,
+                                        QVector<entt::entity> members,
+                                        entt::entity          clone_from) {
     auto set = std::unordered_set(members.begin(), members.end());
 
 
-    GroupParameterComponent params;
+    RenderGroupParameterComponent params;
 
     if (m_registry.valid(clone_from) and
-        m_registry.all_of<GroupParameterComponent>(clone_from)) {
+        m_registry.all_of<RenderGroupParameterComponent>(clone_from)) {
 
-        auto& other_p = m_registry.get<GroupParameterComponent>(clone_from);
+        auto& other_p =
+            m_registry.get<RenderGroupParameterComponent>(clone_from);
 
         // horrible, but it works. library classes don't all have clone()
         nlohmann::ordered_json node;
@@ -918,26 +922,27 @@ entt::entity Database::add_group(QString               new_name,
     }
 
     auto ent = m_registry.create();
-    m_registry.emplace<GroupComponent>(
+    m_registry.emplace<RenderGroupComponent>(
         ent,
-        GroupComponent {
+        RenderGroupComponent {
             .members = QVector<entt::entity>(set.begin(), set.end()),
         });
-    m_registry.emplace<GroupParameterComponent>(ent, params);
+    m_registry.emplace<RenderGroupParameterComponent>(ent, params);
 
 
     m_registry.emplace<IdentityComponent>(
         ent, IdentityComponent { .name = new_name });
 
     for (auto child : set) {
-        m_registry.emplace_or_replace<GroupMemberComponent>(
-            child, GroupMemberComponent { .group = ent });
+        m_registry.emplace_or_replace<RenderGroupMemberComponent>(
+            child, RenderGroupMemberComponent { .group = ent });
     }
 
     return ent;
 }
 
-void Database::delete_group(entt::entity to_delete, entt::entity move_to) {
+void Database::delete_render_group(entt::entity to_delete,
+                                   entt::entity move_to) {
     if (to_delete == move_to) {
         qWarning()
             << "Trying to delete a group and move members to the same group!";
@@ -945,32 +950,35 @@ void Database::delete_group(entt::entity to_delete, entt::entity move_to) {
     }
 
     // if not a group, bail
-    if (!m_registry.all_of<GroupComponent>(to_delete)) { return; }
+    if (!m_registry.all_of<RenderGroupComponent>(to_delete)) { return; }
 
     // steal current member list
-    auto members = std::move(m_registry.get<GroupComponent>(to_delete).members);
+    auto members =
+        std::move(m_registry.get<RenderGroupComponent>(to_delete).members);
 
     // destroy current group entity
     m_registry.destroy(to_delete);
 
 
     if (m_registry.valid(move_to) and
-        m_registry.all_of<GroupComponent>(move_to)) {
+        m_registry.all_of<RenderGroupComponent>(move_to)) {
         // moving to valid target
 
         // reset member list membership
         for (auto child : members) {
-            m_registry.emplace_or_replace<GroupMemberComponent>(
-                child, GroupMemberComponent { .group = move_to });
+            m_registry.emplace_or_replace<RenderGroupMemberComponent>(
+                child, RenderGroupMemberComponent { .group = move_to });
         }
 
-        m_registry.patch<GroupComponent>(move_to, [&](GroupComponent& a) {
-            a.members.append(members.begin(), members.end());
-        });
+        m_registry.patch<RenderGroupComponent>(
+            move_to, [&](RenderGroupComponent& a) {
+                a.members.append(members.begin(), members.end());
+            });
     } else {
         // invalid target. clear
 
-        m_registry.remove<GroupMemberComponent>(members.begin(), members.end());
+        m_registry.remove<RenderGroupMemberComponent>(members.begin(),
+                                                      members.end());
     }
 }
 

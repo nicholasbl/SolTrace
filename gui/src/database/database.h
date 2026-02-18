@@ -28,6 +28,17 @@ void emplace_patch(entt::registry& reg, entt::entity entity, Function&& f) {
 }
 
 
+/// Helper function, find a corresponding key to a value in a map
+/// Slow, but OK for UI work
+template <class K, class V>
+std::optional<K> reverse_lookup(std::map<K, V> const& map, V const& value) {
+    for (auto const& [k, v] : map) {
+        if (v == value) return k;
+    }
+    return std::nullopt;
+}
+
+
 class Database : public QObject {
     entt::registry m_registry;
 
@@ -53,16 +64,16 @@ public:
     entt::registry const& as_registry() const { return m_registry; }
 
 public:
-    ComponentAPIUpdate<IdentityComponent>       identity;
-    ComponentAPIUpdate<TransformComponent>      transform;
-    ComponentAPIUpdate<InvisibleComponent>      invisible;
-    ComponentAPI<ChildOfComponent>              parent;
-    ComponentAPI<TagComponent>                  tag_root;
-    ComponentAPI<GroupComponent>                group_root;
-    ComponentAPIUpdate<GroupParameterComponent> group_parameters;
-    ComponentAPI<ChildrenComponent>             children;
-    ComponentAPI<GroupMemberComponent>          group_membership;
-    ComponentAPI<TagMembershipComponent>        tag_membership;
+    ComponentAPIUpdate<IdentityComponent>             identity;
+    ComponentAPIUpdate<TransformComponent>            transform;
+    ComponentAPIUpdate<InvisibleComponent>            invisible;
+    ComponentAPI<ChildOfComponent>                    parent;
+    ComponentAPI<TagComponent>                        tag_root;
+    ComponentAPI<RenderGroupComponent>                group_root;
+    ComponentAPIUpdate<RenderGroupParameterComponent> group_parameters;
+    ComponentAPI<ChildrenComponent>                   children;
+    ComponentAPI<RenderGroupMemberComponent>          group_membership;
+    ComponentAPI<TagMembershipComponent>              tag_membership;
 
 public:
     /// Helper function: patch a component, creating it if it does not exist.
@@ -127,12 +138,12 @@ public:
 
 
 public slots:
-    entt::entity add_group(QString               new_name,
-                           QVector<entt::entity> members,
-                           entt::entity          clone_from = entt::null);
+    entt::entity add_render_group(QString               new_name,
+                                  QVector<entt::entity> members,
+                                  entt::entity clone_from = entt::null);
 
-    void delete_group(entt::entity to_delete,
-                      entt::entity move_to = entt::null);
+    void delete_render_group(entt::entity to_delete,
+                             entt::entity move_to = entt::null);
 };
 
 
@@ -145,7 +156,7 @@ protected:
     void observe(Database* ptr) {
         if (ptr == m_database) return;
         if (m_database) {
-            for (auto const& c : m_database_conns) {
+            for (auto const& c : std::as_const(m_database_conns)) {
                 QObject::disconnect(c);
             }
             m_database_conns.clear();
@@ -158,9 +169,15 @@ protected:
         m_database_conns.push_back(c);
     }
 
-    Database* database() { return m_database; }
+    Database*       database() { return m_database; }
+    Database const* database() const { return m_database; }
 
     virtual void set_new_database_connections(Database* ptr) = 0;
+
+    template <class F>
+    void with_db(F&& f) {
+        if (m_database) { f(m_database); }
+    }
 
 public:
     DatabaseObserver()          = default;

@@ -143,68 +143,48 @@ void SurfaceGeometry::rebuild_geometry() {
 
 using SurfaceEditor = GroupEditor;
 
-static SD::SurfaceType convert(GroupEditor::SurfaceKind k) {
-    switch (k) {
-    case GroupEditor::SurfaceKind::Cone: return SD::SurfaceType::CONE;
-    case GroupEditor::SurfaceKind::Cylinder: return SD::SurfaceType::CYLINDER;
-    case GroupEditor::SurfaceKind::Flat: return SD::SurfaceType::FLAT;
-    case GroupEditor::SurfaceKind::Parabola: return SD::SurfaceType::PARABOLA;
-    case GroupEditor::SurfaceKind::Sphere: return SD::SurfaceType::SPHERE;
-    default: return SD::SurfaceType::SURFACE_UNKNOWN;
-    }
+inline SD::SurfaceType string_to_surface(QString str) {
+    auto string = str.toStdString();
+
+    auto ret = reverse_lookup(SD::SurfaceTypeMap, string);
+
+    if (ret) return *ret;
+    return SD::SurfaceType::SURFACE_UNKNOWN;
 }
 
-static GroupEditor::SurfaceKind convert(SD::SurfaceType k) {
-    switch (k) {
-    case SolTrace::Data::CONE: return GroupEditor::SurfaceKind::Cone;
-    case SolTrace::Data::CYLINDER: return GroupEditor::SurfaceKind::Cylinder;
-    case SolTrace::Data::FLAT: return GroupEditor::SurfaceKind::Flat;
-    case SolTrace::Data::PARABOLA: return GroupEditor::SurfaceKind::Parabola;
-    case SolTrace::Data::SPHERE: return GroupEditor::SurfaceKind::Sphere;
-    default: return GroupEditor::SurfaceKind::Unknown;
-    }
+inline SD::ApertureType string_to_aperture(QString str) {
+    auto string = str.toStdString();
+
+    auto ret = reverse_lookup(SD::ApertureTypeMap, string);
+
+    if (ret) return *ret;
+    return SD::ApertureType::APERTURE_UNKNOWN;
 }
 
-static SD::ApertureType convert(GroupEditor::ApertureKind k) {
-    switch (k) {
-    case GroupEditor::ApertureKind::Annulus: return SD::ApertureType::ANNULUS;
-    case GroupEditor::ApertureKind::Circle: return SD::ApertureType::CIRCLE;
-    case GroupEditor::ApertureKind::Hexagon: return SD::ApertureType::HEXAGON;
-    case GroupEditor::ApertureKind::Rectangle:
-        return SD::ApertureType::RECTANGLE;
-    case GroupEditor::ApertureKind::Equilateral_Triangle:
-        return SD::ApertureType::EQUILATERAL_TRIANGLE;
-    case GroupEditor::ApertureKind::Single_Axis_Curvature_Section:
-        return SD::ApertureType::SINGLE_AXIS_CURVATURE_SECTION;
-    case GroupEditor::ApertureKind::Irregular_Triangle:
-        return SD::ApertureType::IRREGULAR_TRIANGLE;
-    case GroupEditor::ApertureKind::Irregular_Quadrilateral:
-        return SD::ApertureType::IRREGULAR_QUADRILATERAL;
-    default: return SD::ApertureType::APERTURE_UNKNOWN;
-    }
-}
+template <class K>
+void build_options(QStringListModel&               dest,
+                   std::map<K, std::string> const& opts) {
+    QStringList items;
 
-static GroupEditor::ApertureKind convert(SD::ApertureType k) {
-    switch (k) {
-    case SolTrace::Data::ANNULUS: return GroupEditor::ApertureKind::Annulus;
-    case SolTrace::Data::CIRCLE: return GroupEditor::ApertureKind::Circle;
-    case SolTrace::Data::HEXAGON: return GroupEditor::ApertureKind::Hexagon;
-    case SolTrace::Data::RECTANGLE: return GroupEditor::ApertureKind::Rectangle;
-    case SolTrace::Data::EQUILATERAL_TRIANGLE:
-        return GroupEditor::ApertureKind::Equilateral_Triangle;
-    case SolTrace::Data::SINGLE_AXIS_CURVATURE_SECTION:
-        return GroupEditor::ApertureKind::Single_Axis_Curvature_Section;
-    case SolTrace::Data::IRREGULAR_TRIANGLE:
-        return GroupEditor::ApertureKind::Irregular_Triangle;
-    case SolTrace::Data::IRREGULAR_QUADRILATERAL:
-        return GroupEditor::ApertureKind::Irregular_Quadrilateral;
-    default: return GroupEditor::ApertureKind::Unknown;
+    for (auto const& iter : opts) {
+        auto val = QString::fromStdString(iter.second);
+
+        items.push_back(val);
     }
+
+    dest.setStringList(items);
 }
 
 GroupEditor::GroupEditor(QObject* parent)
-    : QObject { parent }, m_surface_geometry(new SurfaceGeometry()) {
+    : QObject { parent },
+      m_surface_geometry(new SurfaceGeometry()),
+      m_back_editor(new OpticalPropertiesObject(true, this)),
+      m_front_editor(new OpticalPropertiesObject(false, this)) {
 
+    build_options(m_interaction_type_model, SD::InteractionTypeMap);
+    build_options(m_distribution_type_model, SD::DistributionTypeMap);
+    build_options(m_surface_type_model, SD::SurfaceTypeMap);
+    build_options(m_aperture_type_model, SD::ApertureTypeMap);
 
     connect(
         this, &GroupEditor::surface_kind_changed, this, &GroupEditor::updated);
@@ -212,26 +192,30 @@ GroupEditor::GroupEditor(QObject* parent)
     connect(this, &GroupEditor::kind_changed, this, &GroupEditor::updated);
 
     connect(this, &GroupEditor::surface_arguments_changed, this, [this]() {
-        make_new_surface(m_surf_kind);
+        make_new_surface(string_to_surface(m_surf_kind));
     });
 
-    make_new_aperture(ApertureKind::Rectangle);
+    make_new_aperture(SolTrace::Data::APERTURE_UNKNOWN);
 }
 
 GroupEditor::~GroupEditor() {
     delete m_surface_geometry;
 }
 
-void GroupEditor::parameters_changed(entt::entity e) { }
-
-void GroupEditor::set_new_database_connections(Database* ptr) {
-    connect(ptr->group_parameters.self(),
-            &ComponentAPIBase::changed,
-            this,
-            &GroupEditor::parameters_changed);
+void GroupEditor::parameters_changed(entt::entity e) {
+    if (this->m_current_group != e) return;
+    emit surface_kind_changed();
+    emit kind_changed();
 }
 
-void GroupEditor::make_new_aperture(ApertureKind type) {
+void GroupEditor::set_new_database_connections(Database* ptr) {
+    add_connection(connect(ptr->group_parameters.self(),
+                           &ComponentAPIBase::changed,
+                           this,
+                           &GroupEditor::parameters_changed));
+}
+
+void GroupEditor::make_new_aperture(SD::ApertureType type) {
     if (!database()) return;
 
     if (m_aperture_editor) {
@@ -250,9 +234,9 @@ void GroupEditor::make_new_aperture(ApertureKind type) {
     }                                                                          \
     break;
 
-    database()->as_registry().patch<GroupParameterComponent>(
-        m_current_group, [this, type](GroupParameterComponent& params) {
-            switch (convert(type)) {
+    database()->as_registry().patch<RenderGroupParameterComponent>(
+        m_current_group, [this, type](RenderGroupParameterComponent& params) {
+            switch (type) {
             case SolTrace::Data::ANNULUS:
                 EDIT_CASE(Annulus, 0.0, 1.0, 2 * M_PI);
             case SolTrace::Data::CIRCLE: EDIT_CASE(Circle, 1.0);
@@ -264,18 +248,18 @@ void GroupEditor::make_new_aperture(ApertureKind type) {
                 EDIT_CASE(IrregularTriangle, 0, 1, 0, 0, 1, 0);
             case SolTrace::Data::IRREGULAR_QUADRILATERAL:
                 EDIT_CASE(IrregularQuadrilateral, -1, -1, -1, 1, 1, 1, 1, -1);
-            default: return make_new_aperture(ApertureKind::Circle);
+            default: return make_new_aperture(SolTrace::Data::APERTURE_UNKNOWN);
             }
         });
 }
 
-void GroupEditor::make_new_surface(SurfaceKind type) {
+void GroupEditor::make_new_surface(SD::SurfaceType type) {
     // weeeee
     auto const& l      = surface_arguments();
     auto        sdvec  = std::vector<double> { l.begin(), l.end() };
-    database()->as_registry().patch<GroupParameterComponent>(
-        m_current_group, [sdvec, type](GroupParameterComponent& params) {
-            params.surface = SD::make_surface_from_type(convert(type), sdvec);
+    database()->as_registry().patch<RenderGroupParameterComponent>(
+        m_current_group, [sdvec, type](RenderGroupParameterComponent& params) {
+            params.surface = SD::make_surface_from_type(type, sdvec);
         });
 }
 
@@ -286,25 +270,25 @@ void GroupEditor::set(Database* database, entt::entity group) {
     emit updated();
 }
 
-GroupEditor::ApertureKind GroupEditor::kind() const {
+QString GroupEditor::kind() const {
     return m_kind;
 }
 
-void GroupEditor::set_kind(ApertureKind newKind) {
+void GroupEditor::set_kind(QString newKind) {
     if (m_kind == newKind) return;
     m_kind = newKind;
-    make_new_aperture(m_kind);
+    make_new_aperture(string_to_aperture(m_kind));
     emit kind_changed();
 }
 
-GroupEditor::SurfaceKind GroupEditor::surface_kind() const {
+QString GroupEditor::surface_kind() const {
     return m_surf_kind;
 }
 
-void GroupEditor::set_surface_kind(SurfaceKind newSurface_kind) {
+void GroupEditor::set_surface_kind(QString newSurface_kind) {
     if (m_surf_kind == newSurface_kind) return;
     m_surf_kind = newSurface_kind;
-    make_new_surface(m_surf_kind);
+    make_new_surface(string_to_surface(m_surf_kind));
     emit surface_kind_changed();
 }
 

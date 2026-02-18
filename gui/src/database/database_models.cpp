@@ -138,13 +138,13 @@ void ChildModel::reset(Database* database) {
 
 // =============================================================================
 
-QVector<EntityNamePair> GroupsModel::rebuild_lists() {
+QVector<EntityNamePair> RenderGroupsModel::rebuild_lists() {
     QVector<EntityNamePair> new_recs;
     m_reverse.clear();
 
     if (!m_host) return {};
 
-    auto view = m_host->as_registry().view<GroupComponent>();
+    auto view = m_host->as_registry().view<RenderGroupComponent>();
 
     for (auto const& [e, group] : view.each()) {
         new_recs.push_back(rec_for_node(*m_host, e));
@@ -157,13 +157,13 @@ QVector<EntityNamePair> GroupsModel::rebuild_lists() {
     return new_recs;
 }
 
-void GroupsModel::recompute() {
+void RenderGroupsModel::recompute() {
     auto r = rebuild_lists();
 
     this->store_reset(r);
 }
 
-void GroupsModel::group_changed(entt::entity e) {
+void RenderGroupsModel::group_changed(entt::entity e) {
     if (!m_host) return;
 
     auto iter = m_reverse.find(e);
@@ -172,13 +172,14 @@ void GroupsModel::group_changed(entt::entity e) {
 
     this->store_push_update(iter->second, rec_for_node(*m_host, e));
 }
-void GroupsModel::group_removed(entt::entity e) {
+void RenderGroupsModel::group_removed(entt::entity e) {
     recompute();
 }
 
-GroupsModel::GroupsModel(QObject* parent) : StructModelAdapter(parent) { }
+RenderGroupsModel::RenderGroupsModel(QObject* parent)
+    : StructModelAdapter(parent) { }
 
-void GroupsModel::reset(Database* database) {
+void RenderGroupsModel::reset(Database* database) {
     m_host = database;
     recompute();
 
@@ -187,17 +188,17 @@ void GroupsModel::reset(Database* database) {
     connect(database->group_root.self(),
             &ComponentAPIBase::changed,
             this,
-            &GroupsModel::group_changed);
+            &RenderGroupsModel::group_changed);
 
     connect(database->group_root.self(),
             &ComponentAPIBase::removed,
             this,
-            &GroupsModel::group_removed);
+            &RenderGroupsModel::group_removed);
 
     connect(database->identity.self(),
             &ComponentAPIBase::changed,
             this,
-            &GroupsModel::group_changed);
+            &RenderGroupsModel::group_changed);
 }
 
 // =============================================================================

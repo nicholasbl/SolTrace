@@ -69,7 +69,7 @@ public:
 // =============================================================================
 
 /// A model providing the active groups in a database
-class GroupsModel : public StructModelAdapter<EntityNamePair> {
+class RenderGroupsModel : public StructModelAdapter<EntityNamePair> {
     Q_OBJECT
 
     QPointer<Database> m_host;
@@ -85,8 +85,8 @@ private slots:
     void group_removed(entt::entity);
 
 public:
-    explicit GroupsModel(QObject* parent = nullptr);
-    virtual ~GroupsModel() = default;
+    explicit RenderGroupsModel(QObject* parent = nullptr);
+    virtual ~RenderGroupsModel() = default;
 
     void reset(Database* database);
 };

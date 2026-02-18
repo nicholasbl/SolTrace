@@ -90,7 +90,7 @@ QVector<VisibleGroup> WorldGeometryModel::rebuild_lists() {
 
     if (!m_host) return {};
 
-    auto view = m_host->as_registry().view<GroupComponent>();
+    auto view = m_host->as_registry().view<RenderGroupComponent>();
 
     for (auto const& [e, group] : view.each()) {
         new_recs.push_back(vis_assets_for_entity(*m_host, e));

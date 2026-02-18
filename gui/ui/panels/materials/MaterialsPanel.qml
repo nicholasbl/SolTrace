@@ -91,10 +91,10 @@ Column {
         OpticalMaterialsTable {}
     }
     Repeater {
-        model: ["Group1", "Group2"]
+        model: Backend.render_groups_model
         SectionCallout {
-            required property string modelData
-            title: modelData
+            required property string name
+            title: name
             OpticalMaterialsTable {}
         }
     }

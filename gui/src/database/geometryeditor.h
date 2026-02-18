@@ -9,6 +9,7 @@
 #include "qt_helpers.h"
 
 #include "aperture.hpp"
+#include "opticaleditor.h"
 #include "surface.hpp"
 
 namespace SD = SolTrace::Data;
@@ -16,7 +17,7 @@ namespace SD = SolTrace::Data;
 
 namespace db {
 
-struct GroupParameterComponent;
+struct RenderGroupParameterComponent;
 
 /// Surface geometry visualization. Creates geometry for Quick3D for a given
 /// group
@@ -48,27 +49,7 @@ public:
 class GroupEditor : public QObject, public DatabaseObserver {
     Q_OBJECT
 
-    // TODO: Front and back optics
-
-public:
-    enum class ApertureKind {
-        Annulus,
-        Circle,
-        Hexagon,
-        Rectangle,
-        Equilateral_Triangle,
-        Single_Axis_Curvature_Section,
-        Irregular_Triangle,
-        Irregular_Quadrilateral,
-        Unknown
-    };
-    Q_ENUM(ApertureKind);
-
-    enum class SurfaceKind { Cone, Cylinder, Flat, Parabola, Sphere, Unknown };
-    Q_ENUM(SurfaceKind);
-
-private:
-    entt::entity m_current_group;
+    entt::entity m_current_group = entt::null;
 
     void set_new_database_connections(Database* ptr) override;
 
@@ -77,20 +58,36 @@ private:
     /// Content for the aperture is defined by the Kind. See wrappers below.
     QOBJECT_WRITABLE_PROPERTY(QObject, aperture_editor);
 
-    ApertureKind m_kind;
-    Q_PROPERTY(ApertureKind aperture_kind READ kind WRITE set_kind NOTIFY
+    QString m_kind;
+    Q_PROPERTY(QString aperture_kind READ kind WRITE set_kind NOTIFY
                    kind_changed FINAL)
 
-    SurfaceKind m_surf_kind;
-    Q_PROPERTY(SurfaceKind surface_kind READ surface_kind WRITE set_surface_kind
+    QString m_surf_kind;
+    Q_PROPERTY(QString surface_kind READ surface_kind WRITE set_surface_kind
                    NOTIFY surface_kind_changed FINAL)
 
     // the surface information is usually packed into lists
 
     Q_WRITABLE_PROPERTY(QVector<double>, surface_arguments, {});
 
-    void make_new_aperture(ApertureKind);
-    void make_new_surface(SurfaceKind);
+    QOBJECT_WRITABLE_PROPERTY(OpticalPropertiesObject, back_editor);
+    QOBJECT_WRITABLE_PROPERTY(OpticalPropertiesObject, front_editor);
+
+    // UX Helpers
+
+    QStringListModel m_interaction_type_model;
+    QStringListModel m_distribution_type_model;
+    QStringListModel m_surface_type_model;
+    QStringListModel m_aperture_type_model;
+
+    Q_PROPERTY(QStringListModel* interactions READ interactions FINAL)
+    Q_PROPERTY(QStringListModel* distributions READ distributions FINAL)
+    Q_PROPERTY(QStringListModel* surfaces READ surfaces FINAL)
+    Q_PROPERTY(QStringListModel* apertures READ apertures FINAL)
+
+    //
+    void make_new_aperture(SD::ApertureType);
+    void make_new_surface(SD::SurfaceType);
 
 private slots:
     void parameters_changed(entt::entity);
@@ -102,11 +99,16 @@ public:
     void set(Database*, entt::entity group);
 
 public slots:
-    ApertureKind kind() const;
-    void         set_kind(ApertureKind newKind);
+    QString kind() const;
+    void    set_kind(QString newKind);
 
-    SurfaceKind surface_kind() const;
-    void        set_surface_kind(SurfaceKind newSurface_kind);
+    QString surface_kind() const;
+    void    set_surface_kind(QString newSurface_kind);
+
+    QStringListModel* interactions() { return &m_interaction_type_model; }
+    QStringListModel* distributions() { return &m_distribution_type_model; }
+    QStringListModel* surfaces() { return &m_surface_type_model; }
+    QStringListModel* apertures() { return &m_aperture_type_model; }
 
 signals:
     void updated();
