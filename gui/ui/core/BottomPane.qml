@@ -8,7 +8,7 @@ Item {
     property int iconSize: 22
     property real horizontalMargin: 25
     property real verticalMargin: 0
-    property real iconSpacing: 8
+    property real iconSpacing: 5
 
     width: parent.width
     height: scrollView.height
@@ -20,7 +20,7 @@ Item {
 
     property list<QtObject> model: [
         QtObject {
-            property string name: "Configure"
+            property string name: "Configuration"
             property list<QtObject> panels: [
                 QtObject {
                     property string name: "Sun"
@@ -31,24 +31,24 @@ Item {
                     property string icon: "qrc:/icons/assets/icons/blocks.svg"
                 },
                 QtObject {
-                    property string name: "Staging"
+                    property string name: "Tracing"
                     property string icon: "qrc:/icons/assets/icons/placeholder.svg"
                 },
                 QtObject {
-                    property string name: "Tracing"
+                    property string name: "Geometry"
                     property string icon: "qrc:/icons/assets/icons/placeholder.svg"
                 }
             ]
         },
         QtObject {
-            property string name: "Trace"
+            property string name: "Simulation"
             property list<QtObject> panels: [
                 QtObject {
-                    property string name: "View"
+                    property string name: "Execution"
                     property string icon: "qrc:/icons/assets/icons/placeholder.svg"
                 },
                 QtObject {
-                    property string name: "Run"
+                    property string name: "Navigation"
                     property string icon: "qrc:/icons/assets/icons/play.svg"
                 },
                 /* QtObject {
@@ -56,13 +56,13 @@ Item {
                     property string icon: "qrc:/icons/assets/icons/placeholder.svg"
                 }, */
                 QtObject {
-                    property string name: "Debug"
+                    property string name: "Diagnostics"
                     property string icon: "qrc:/icons/assets/icons/placeholder.svg"
                 }
             ]
         },
         QtObject {
-            property string name: "Analyze"
+            property string name: "Analysis"
             property list<QtObject> panels: [
                 QtObject {
                     property string name: "Intersections"
@@ -88,7 +88,7 @@ Item {
     // Vertical divider component
     component VerticalDivider: Rectangle {
         width: 1
-        height: parent.height - 10
+        height: parent.height - 20
         color: "white"
         opacity: 0.5
         anchors.verticalCenter: parent.verticalCenter
@@ -129,6 +129,7 @@ Item {
             spacing: 15
             x: Math.max(0, (scrollView.width - width) / 2)
 
+
             // Configure Phase
             GlassRectangle {
                 width: configureRow.width + 2 * root.horizontalMargin
@@ -137,7 +138,7 @@ Item {
 
                 Row {
                     id: configureRow
-                    spacing: 20
+                    spacing: 10
                     anchors.centerIn: parent
 
                     PhaseTitle {
@@ -177,7 +178,7 @@ Item {
 
                 Row {
                     id: simulateRow
-                    spacing: 20
+                    spacing: 10
                     anchors.centerIn: parent
 
                     PhaseTitle {
@@ -217,7 +218,7 @@ Item {
 
                 Row {
                     id: analyzeRow
-                    spacing: 20
+                    spacing: 10
                     anchors.centerIn: parent
 
                     PhaseTitle {

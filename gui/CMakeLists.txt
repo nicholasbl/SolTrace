@@ -205,6 +205,7 @@ qt_add_qml_module(SolTrace
         src/database/worldgeometrymodel.h src/database/worldgeometrymodel.cpp
         src/database/conversion.h src/database/conversion.cpp
         src/database/opticaleditor.h src/database/opticaleditor.cpp
+        src/session.h src/session.cpp
 )
 
 CPMAddPackage(

@@ -56,7 +56,7 @@ Item {
                             spacing: 0
 
                             Body {
-                                text: "Configuration"
+                                text: root.panels[Session.core.sectionIndex]
                                 font.family: "CMU Serif"
                                 font.bold: true
                             }
@@ -108,7 +108,7 @@ Item {
                         }
 
                         GlassComboBox {
-                            model: ["Current (Unsaved)", "Other Config (Last Run)"]
+                            model: ["Current Config (Unsaved)", "Other Config (Last Run)"]
                             width: parent.width
                             height: 30
                             labelFontSize: Theme.textSizeSmall
