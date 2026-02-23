@@ -175,7 +175,8 @@ void SolTraceSystem::run() {
         CUDA_SYNC_CHECK();
 
         // Collect results
-        get_buffer_results(m_hp_vec, m_raynumber_vec, m_element_id_vec, m_hit_type_vec, m_sun_ray_dir_vec);
+        get_buffer_results(m_hp_vec, m_raynumber_vec, m_element_id_vec, m_hit_type_vec, 
+            m_sun_ray_dir_vec, m_sunraynumber_vec);
         N_ray_hit = m_raynumber_vec.empty() ? 0 : m_raynumber_vec.back();
         N_ray_gen += width;
     }
@@ -189,6 +190,7 @@ void SolTraceSystem::run() {
             m_raynumber_vec.pop_back();
             m_element_id_vec.pop_back();
             m_hit_type_vec.pop_back();
+            m_sunraynumber_vec.pop_back();
         }
     }
 
@@ -634,7 +636,8 @@ void SolTraceSystem::setup_device_buffer()
 // Collects results from device buffer
 // only keeps rays that hit elements
 void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector<int>& raynumber_vec,
-    std::vector<int>& element_id_vec, std::vector<uint8_t>& hit_type_vec, std::vector<float3>& sun_ray_dir_vec)
+    std::vector<int>& element_id_vec, std::vector<uint8_t>& hit_type_vec, std::vector<float3>& sun_ray_dir_vec,
+    std::vector<int>& sunraynumber_vec)
 {
     const int max_depth = data_manager->launch_params_H.max_depth;
     const int num_rays = data_manager->launch_params_H.width * data_manager->launch_params_H.height;
@@ -650,6 +653,7 @@ void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector
 
     // Loop through each buffer slot
     int ray_number = raynumber_vec.empty() ? 0 : raynumber_vec.back();
+    int sunray_number = sunraynumber_vec.empty() ? 0 : sunraynumber_vec.back();
     for (int i = 0; i < output_size; ++i) {
 
         // Get hit type
@@ -671,11 +675,15 @@ void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector
                 raynumber_vec.pop_back();
                 hit_type_vec.pop_back();
                 element_id_vec.pop_back();
+                sunraynumber_vec.pop_back();
                 ray_number--;
             }
 
             // New ray
             ray_number++;
+
+            // Sun ray number always increments, even if no hit
+            sunray_number++;
         }
 
         // Get hit record, element_id
@@ -687,6 +695,7 @@ void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector
         raynumber_vec.push_back(ray_number);
         hit_type_vec.push_back(hit_type);
         element_id_vec.push_back(element_id);
+        sunraynumber_vec.push_back(sunray_number);
     }
 
     // Remove last ray if it is only CREATE
@@ -695,6 +704,7 @@ void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector
         raynumber_vec.pop_back();
         element_id_vec.pop_back();
         hit_type_vec.pop_back();
+        sunraynumber_vec.pop_back();
     }
 
     // Get sun dir output
@@ -1147,4 +1157,17 @@ bool SolTraceSystem::read_system(FILE* fp) {
 		if (!read_stage( fp )) return false;
 
 	return true;
+}
+
+double SolTraceSystem::get_sun_plane_area() const
+{
+    const LaunchParams& lp = data_manager->launch_params_H;
+    // Parallelogram area spanned by two adjacent edges of the sun box
+    const float3 a = make_float3(lp.sun_v0.x - lp.sun_v1.x, lp.sun_v0.y - lp.sun_v1.y, lp.sun_v0.z - lp.sun_v1.z);
+    const float3 b = make_float3(lp.sun_v1.x - lp.sun_v2.x, lp.sun_v1.y - lp.sun_v2.y, lp.sun_v1.z - lp.sun_v2.z);
+    const float3 cross = make_float3(
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x);
+    return static_cast<double>(sqrtf(cross.x * cross.x + cross.y * cross.y + cross.z * cross.z));
 }
