@@ -147,8 +147,23 @@ namespace SolTrace::Result
         friend std::ostream &operator<<(std::ostream &os,
                                         const SimulationResult &simres);
 
+        // Sun results
+        void set_sun_ray_count(uint_fast16_t ray_count) { this->sun_ray_count = ray_count; }
+        uint_fast16_t get_sun_ray_count() { return this->sun_ray_count; }
+        void set_sun_dimensions(double width, double height) { this->sun_width = width; this->sun_height = height; }
+        void get_sun_dimensions(double& width, double& height) { width = this->sun_width; height = this->sun_height; }
+        void set_sun_A_box(double A) { this->A_sun_box = A; }
+        double get_sun_A_box() { return this->A_sun_box; }
+
     private:
         RayRecordContainer ray_history;
+
+        // Sun results
+        uint_fast64_t sun_ray_count = 0;
+        double sun_width = 0;
+        double sun_height = 0;
+        double A_sun_box = 0;
+        
     };
 
 } // namespace SolTrace::Result

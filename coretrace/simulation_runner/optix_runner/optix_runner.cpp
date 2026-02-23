@@ -294,6 +294,11 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
         rec->add_interaction_record(intr);
     }
 
+    // Attach other results
+    result->set_sun_ray_count(this->get_N_sun_rays());
+    result->set_sun_dimensions(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
+    result->set_sun_A_box(this->get_sun_plane_area());
+
     return RunnerStatus::SUCCESS;
 }
 

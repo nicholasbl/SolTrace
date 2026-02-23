@@ -396,6 +396,15 @@ namespace SolTrace::NativeRunner
             rec->add_interaction_record(intr);
         }
 
+        // Attach sun results
+        result->set_sun_ray_count(this->tsys.SunRayCount);
+
+        TSun& sun = this->tsys.Sun;
+        double sun_width = sun.MaxXSun - sun.MinXSun;
+        double sun_height = sun.MaxYSun - sun.MinYSun;
+        result->set_sun_dimensions(sun_width, sun_height);
+        result->set_sun_A_box(sun_width * sun_height);
+
         return retval;
     }
 
