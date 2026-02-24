@@ -12,8 +12,8 @@
 #include <QQmlEngine>
 #include <QSharedPointer>
 
-
-class JobBackend : public QObject {
+// Previously JobBackend
+class SimulationBackend : public QObject {
     Q_OBJECT
 
     // Current content
@@ -33,8 +33,8 @@ class JobBackend : public QObject {
     Q_WRITABLE_PROPERTY(QString, job_log, {});
 
 public:
-    explicit JobBackend(QObject* parent = nullptr);
-    virtual ~JobBackend() = default;
+    explicit SimulationBackend(QObject* parent = nullptr);
+    virtual ~SimulationBackend() = default;
 
     void install(db::Database*);
 
@@ -53,6 +53,7 @@ signals:
 
 //==============================================================================
 
+// Shared backend resource, accessed by multiple domain modules (Intersections, Flux)
 class ResultsBackend : public QObject {
     Q_OBJECT
 
@@ -78,6 +79,66 @@ signals:
 
 //==============================================================================
 
+class SunBackend : public QObject {
+    Q_OBJECT
+
+public:
+    explicit SunBackend(QObject* parent = nullptr);
+
+    // bridge here
+    // translate SolTrace::App::Sun to SolTrace::Data::Sun
+};
+
+class TracingBackend : public QObject {
+    Q_OBJECT
+
+public:
+    explicit TracingBackend(QObject* parent = nullptr);
+
+    // bridge here
+    // translate SolTrace::App::Tracing to SolTrace::Data::SimulationData
+};
+
+class MaterialsBackend : public QObject {
+    Q_OBJECT
+
+public:
+    explicit MaterialsBackend(QObject* parent = nullptr);
+
+    QOBJECT_READONLY_PROPERTY(db::BreadcrumbModel, breadcrumb_model);
+    QOBJECT_READONLY_PROPERTY(db::ChildModel, child_model);
+    QOBJECT_READONLY_PROPERTY(db::RenderGroupsModel, render_groups_model);
+    QOBJECT_READONLY_PROPERTY(db::TagsModel, tags_model);
+};
+
+class GeometryBackend : public QObject {
+    Q_OBJECT
+
+public:
+    explicit GeometryBackend(QObject* parent = nullptr);
+
+    QOBJECT_READONLY_PROPERTY(db::AnInstanceEditor, instance_edit_model);
+    QOBJECT_READONLY_PROPERTY(db::WorldGeometryModel, world_geometry_model);
+};
+
+class IntersectionsBackend : public QObject {
+    Q_OBJECT
+
+public:
+    explicit IntersectionsBackend(QObject* parent = nullptr);
+
+    // install db here
+};
+
+class FluxBackend : public QObject {
+    Q_OBJECT
+
+public:
+    explicit FluxBackend(QObject* parent = nullptr);
+
+    // install db here
+};
+
 class Backend : public QObject {
     Q_OBJECT
 
@@ -90,15 +151,17 @@ class Backend : public QObject {
     // Current content
     QPointer<db::Database> m_current_database;
 
-    QOBJECT_READONLY_PROPERTY(JobBackend, job_backend);
-    QOBJECT_READONLY_PROPERTY(ResultsBackend, results_backend);
+    // Shared resources, such as results
+    QOBJECT_READONLY_PROPERTY(ResultsBackend, results);
 
-    QOBJECT_READONLY_PROPERTY(db::BreadcrumbModel, breadcrumb_model);
-    QOBJECT_READONLY_PROPERTY(db::ChildModel, child_model);
-    QOBJECT_READONLY_PROPERTY(db::RenderGroupsModel, render_groups_model);
-    QOBJECT_READONLY_PROPERTY(db::TagsModel, tags_model);
-    QOBJECT_READONLY_PROPERTY(db::AnInstanceEditor, instance_edit_model);
-    QOBJECT_READONLY_PROPERTY(db::WorldGeometryModel, world_geometry_model);
+    // Clear ownership and access semantics using separate modules
+    QOBJECT_READONLY_PROPERTY(SunBackend, sun);
+    QOBJECT_READONLY_PROPERTY(TracingBackend, tracing);
+    QOBJECT_READONLY_PROPERTY(MaterialsBackend, materials);
+    QOBJECT_READONLY_PROPERTY(GeometryBackend, geometry);
+    QOBJECT_READONLY_PROPERTY(SimulationBackend, simulation);
+    QOBJECT_READONLY_PROPERTY(IntersectionsBackend, intersections);
+    QOBJECT_READONLY_PROPERTY(FluxBackend, flux);
 
 
     void install(db::Database*);
