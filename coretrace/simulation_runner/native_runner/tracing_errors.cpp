@@ -73,7 +73,6 @@ void SurfaceNormalErrors(MTRand &myrng,
 
 	CalculateTransformMatrices(Euler, RRefToLoc, RLocToRef);
 
-	// TODO: Add distribution type to optical properties
 	// dist = OptProperties->DistributionType;
 	dist = OptProperties->error_distribution_type;
 	// delop = OptProperties->RMSSlopeError / 1000.0;
@@ -85,7 +84,6 @@ void SurfaceNormalErrors(MTRand &myrng,
 		// gaussian distribution
 		thetax = myrng.randNorm(0., delop);
 		thetay = myrng.randNorm(0., delop);
-
 		theta2 = thetax * thetax + thetay * thetay;
 		break;
 	case DistributionType::PILLBOX:			// case 'p':
@@ -262,6 +260,7 @@ void Errors(
 			} while ((myrng() > (stest / Sun->MaxIntensity)) || (theta2 > (Sun->MaxAngle * Sun->MaxAngle)));
 			break;
 		default:
+			// TODO: This shouldn't throw here...
 			throw std::invalid_argument("Unsupported sun shape in Errors function.");
 		}
 	}
@@ -305,9 +304,7 @@ void Errors(
 	TransformToLocal(PosIn, CosIn, Origin, RRefToLoc, PosOut, CosOut);
 
 	// {Generate errors in terms of direction cosines in local ray coordinate system}
-	theta = sqrt(theta2);
-	theta = theta / 1.e3; // convert from mrad to rad
-
+	theta = 1e-3 * sqrt(theta2); // convert from mrad to rad
 
 	// phi = atan2(thetay, thetax); //This function appears to  present irregularities that bias results incorrectly for small values of thetay or thetax
 	phi = myrng() * 2.0 * PI; // Therefore have chosen to randomize phi rather than calculate from randomized theta components

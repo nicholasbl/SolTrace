@@ -375,6 +375,8 @@ bool CspElement::in_plane(const Vec3d& point) const {
         }
     }
 
+    return false;
+
     // todo: do this for other aperture and surface types, not that this should be for post processing only
 }
 

@@ -12,4 +12,4 @@ namespace OptixCSP
         float specularity_error;
 		bool  use_refraction;  // todo: for now, the ray goes through the object if true, otherwise it reflects
     };
-}   
+}
