@@ -6,6 +6,12 @@
 #include "soltrace_constants.h"
 #include "curand_kernel.h"
 
+// Launch parameters for soltrace
+extern "C"
+{
+    __constant__ OptixCSP::LaunchParams params;
+}
+
 namespace OptixCSP
 {
     static __device__ __inline__ OptixCSP::PerRayData getPayload()
@@ -22,24 +28,46 @@ namespace OptixCSP
         optixSetPayload_1(prd.depth);
     }
 
-    // 32-bit avalanche mix (fast, good diffusion)
-    static __device__ __inline__ float rng_uniform(uint32_t x)
-    {
+    // // 32-bit avalanche mix (fast, good diffusion)
+    // static __device__ __inline__ float rng_uniform(uint32_t x)
+    // {
+    //     x ^= x >> 16;
+    //     x *= 0x85EBCA6Bu;
+    //     x ^= x >> 13;
+    //     x *= 0xC2B2AE35u;
+    //     x ^= x >> 16;
+    //     return float(x >> 8) * (1.0f / 16777216.0f); // Scale to [0, 1)
+    // }
 
-        x ^= x >> 16;
-        x *= 0x85EBCA6Bu;
-        x ^= x >> 13;
-        x *= 0xC2B2AE35u;
-        x ^= x >> 16;
-        return float(x >> 8) * (1.0f / 16777216.0f); // Scale to [0, 1)
+    static __device__ __inline__ float rng_uniform(OptixCSP::PerRayData &prd)
+    {
+        curandState local_rng = params.rng_states[prd.ray_path_index];
+        const float sample = curand_uniform(&local_rng);
+        params.rng_states[prd.ray_path_index] = local_rng;
+        return sample;
+    }
+
+    static __device__ __inline__ float rng_normal(OptixCSP::PerRayData &prd)
+    {
+        curandState local_rng = params.rng_states[prd.ray_path_index];
+        const float sample = curand_normal(&local_rng);
+        params.rng_states[prd.ray_path_index] = local_rng;
+        return sample;
     }
 
 }
 
-// Launch parameters for soltrace
-extern "C"
+// Add perturbation ortogonal to given vector. Magnitude is Gaussian with
+// standard deviation sigma and the angle is uniform over [-pi, pi).
+// Returned vector is a unit vector.
+extern "C" __device__ float3 apply_gaussian_errors(float sigma, float3 n, OptixCSP::PerRayData &prd)
 {
-    __constant__ OptixCSP::LaunchParams params;
+    float3 eta = make_float3(OptixCSP::rng_normal(prd),
+                             OptixCSP::rng_normal(prd),
+                             OptixCSP::rng_normal(prd));
+    float3 xi = sigma * normalize(cross(n, eta));
+    eta = normalize(n + xi);
+    return eta;
 }
 
 // Add perturbation ortogonal to given vector. Magnitude is Gaussian with
@@ -102,12 +130,10 @@ extern "C" __global__ void __closesthit__mirror()
     float spec_sigma = material.specularity_error;
 
     // now we figure out the random number to determine if the ray is absorbed or refracted
-    uint32_t seed = params.sun_dir_seed ^ (prd.ray_path_index * 0x9E3779B9u) // golden ratio mix
-                    ^ (prd.depth * 0x85EBCA6Bu);
-    float xi = OptixCSP::rng_uniform(seed); // random number in [0,1)
+    float xi = OptixCSP::rng_uniform(prd); // random number in [0,1)
 
     // Surface normal (macro-surface) errors
-    ffnormal = apply_gaussian_errors(normal_sigma, ffnormal);
+    ffnormal = apply_gaussian_errors(normal_sigma, ffnormal, prd);
 
     if (use_transmissivity)
     {
@@ -139,7 +165,7 @@ extern "C" __global__ void __closesthit__mirror()
     }
 
     // Optical (micro-surface) errors
-    new_dir = apply_gaussian_errors(spec_sigma, new_dir);
+    new_dir = apply_gaussian_errors(spec_sigma, new_dir, prd);
 
     // Check if the maximum recursion depth has not been reached
     if (new_depth < params.max_depth)

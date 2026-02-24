@@ -10,6 +10,21 @@
 
 namespace OptixCSP {
 
+    __global__ void initializeCurandStates_Kernel(
+        curandState* rng_states,
+        unsigned int num_states,
+        unsigned long long seed,
+        unsigned int sequence_offset)
+    {
+        const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+        if (idx >= num_states)
+        {
+            return;
+        }
+
+        curand_init(seed, sequence_offset + idx, 0ULL, &rng_states[idx]);
+    }
+
     // TODO: need to figure out native support to this, there has to be a way 
     // to call atomicMax with float 
     __device__ float atomicMaxFloat(float* address, float val) {
@@ -229,5 +244,27 @@ namespace OptixCSP {
             tan_max_angle,
             d_out_uv_bounds
             );
+    }
+
+    void initialize_curand_states_on_gpu(
+        curandState* d_rng_states,
+        unsigned int num_states,
+        unsigned long long seed,
+        unsigned int sequence_offset,
+        cudaStream_t stream)
+    {
+        if (d_rng_states == nullptr || num_states == 0)
+        {
+            return;
+        }
+
+        constexpr int threads_per_block = 256;
+        const int blocks_per_grid = static_cast<int>((num_states + threads_per_block - 1) / threads_per_block);
+
+        initializeCurandStates_Kernel<<<blocks_per_grid, threads_per_block, 0, stream>>>(
+            d_rng_states,
+            num_states,
+            seed,
+            sequence_offset);
     }
 }

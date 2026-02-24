@@ -5,6 +5,7 @@
 
 #include <vector_types.h>
 #include <optix.h>
+#include <curand_kernel.h>
 
 namespace OptixCSP{
 
@@ -41,6 +42,7 @@ namespace OptixCSP{
 
         float4*                     hit_point_buffer;
         float3*                     sun_dir_buffer;
+        curandState*                rng_states;
         OptixTraversableHandle      handle;
         int32_t*                    element_id_buffer;
         uint8_t*                    hit_type_buffer;

@@ -7,10 +7,17 @@
 #include <chrono>
 #include <iostream>
 #include <iomanip>
+#include "sun_utils.h"
 
 using namespace OptixCSP;
 
-dataManager::dataManager() : launch_params_D(nullptr) {
+dataManager::dataManager()
+    : launch_params_D(nullptr),
+      geometry_data_array_D(nullptr),
+      material_data_array_front_D(nullptr),
+      material_data_array_back_D(nullptr),
+      rng_states_D(nullptr),
+      rng_states_capacity(0) {
 	
     // Initialize launch parameters with default values
 	launch_params_H.width = 10;
@@ -20,6 +27,7 @@ dataManager::dataManager() : launch_params_D(nullptr) {
 
 	launch_params_H.hit_point_buffer = nullptr;
 	launch_params_H.sun_dir_buffer = nullptr;
+	launch_params_H.rng_states = nullptr;
 	launch_params_H.sun_vector = make_float3(0.0f, 0.0f, 10.0f);
 	launch_params_H.max_sun_angle = 0.0f;
 
@@ -43,6 +51,29 @@ void dataManager::allocateLaunchParams() {
 
 void dataManager::updateLaunchParams() {
     CUDA_CHECK(cudaMemcpy(launch_params_D, &launch_params_H, sizeof(LaunchParams), cudaMemcpyHostToDevice));
+}
+
+void dataManager::ensureCurandStates(unsigned int num_states,
+	unsigned long long seed,
+	unsigned int sequence_offset,
+	cudaStream_t stream) {
+
+	if (num_states == 0) {
+		launch_params_H.rng_states = nullptr;
+		return;
+	}
+
+	if (rng_states_capacity < num_states) {
+		if (rng_states_D != nullptr) {
+			CUDA_CHECK(cudaFree(rng_states_D));
+		}
+
+		CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&rng_states_D), num_states * sizeof(curandState)));
+		rng_states_capacity = num_states;
+	}
+
+	initialize_curand_states_on_gpu(rng_states_D, num_states, seed, sequence_offset, stream);
+	launch_params_H.rng_states = rng_states_D;
 }
 
 void dataManager::allocateGeometryDataArray(std::vector<GeometryDataST> geometry_data_array_H) {
@@ -107,6 +138,12 @@ void dataManager::updateMaterialDataArray(std::vector<MaterialData> material_dat
 void dataManager::cleanup() {
 	CUDA_CHECK(cudaFree(launch_params_D));
 	launch_params_D = nullptr;
+
+	if (rng_states_D != nullptr) {
+		CUDA_CHECK(cudaFree(rng_states_D));
+		rng_states_D = nullptr;
+		rng_states_capacity = 0;
+	}
 
 	CUDA_CHECK(cudaFree(geometry_data_array_D));
 	geometry_data_array_D = nullptr;
