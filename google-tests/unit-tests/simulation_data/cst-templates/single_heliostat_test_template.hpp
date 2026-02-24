@@ -23,13 +23,6 @@
 
 using Heliostat = SolTrace::Data::Heliostat;
 using SolTrace::Runner::RunnerStatus;
-using SolTrace::NativeRunner::TRayData;
-using SolTrace::NativeRunner::TSystem;
-using SolTrace::NativeRunner::TSun;
-using SolTrace::NativeRunner::NativeRunner;
-#ifdef SOLTRACE_BUILD_EMBREE_SUPPORT
-using SolTrace::EmbreeRunner::EmbreeRunner;
-#endif
 
 // Helper class for single heliostat simulation logic reusable inside tests
 // RunnerT must implement the same interface as NativeRunner/EmbreeRunner/OptixRunner

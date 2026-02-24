@@ -2,6 +2,7 @@
 #include <native_runner.hpp>
 #include "single_heliostat_test_template.hpp"
 
+using SolTrace::NativeRunner::NativeRunner;
 using OptixRunnerType = OptixRunner;
 using NativeRunnerType = NativeRunner;
 
