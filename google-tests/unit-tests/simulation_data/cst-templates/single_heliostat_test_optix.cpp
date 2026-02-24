@@ -19,12 +19,16 @@ TEST_F(SingleHeliostatSimulationOptix, SingleFacetFlat_North)
 
 TEST(SingleHeliostatSimulationNativeOptixComparison, SingleFacetFlat_North)
 {
-    int N_rays = 10000;
+    int N_rays = 100000;
+    double err_frac = 0.005;
+    double err_abs = err_frac * (double)N_rays;
+
 
     // Run Native
     SingleHeliostatSimulationHelper<NativeRunner> sim_native;
     sim_native.runner.disable_stages(); // Disable stages
     sim_native.use_optical_errors = false;
+    sim_native.use_sunshape_errors = false;
     sim_native.initialize();
     sim_native.setup_simData();
     sim_native.update_simulation_geometry(sim_native.solar_azimuth, sim_native.solar_elevation);
@@ -34,6 +38,8 @@ TEST(SingleHeliostatSimulationNativeOptixComparison, SingleFacetFlat_North)
 
     // Run Optix
     SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
+    sim_optix.use_optical_errors = false;
+    sim_optix.use_sunshape_errors = false;
     sim_optix.initialize();
     sim_optix.setup_simData();
     sim_optix.update_simulation_geometry(sim_optix.solar_azimuth, sim_optix.solar_elevation);
@@ -43,13 +49,13 @@ TEST(SingleHeliostatSimulationNativeOptixComparison, SingleFacetFlat_North)
 
     // Compare
     ASSERT_EQ(result_native.get_number_of_records(), result_optix.get_number_of_records());
-    EXPECT_NEAR(sim_native.helio_hit_count, sim_optix.helio_hit_count, 1000);
-    EXPECT_NEAR(sim_native.reflect_count, sim_optix.reflect_count, 1000);
-    EXPECT_NEAR(sim_native.helio_absorb_count, sim_optix.helio_absorb_count, 1000);
-    EXPECT_NEAR(sim_native.rec_absorb_count, sim_optix.rec_absorb_count, 1000);
-    EXPECT_NEAR(sim_native.rec_hit_count, sim_optix.rec_hit_count, 1000);
-    EXPECT_NEAR(sim_native.rec_direct_hit_count, sim_optix.rec_direct_hit_count, 1000);
-    EXPECT_NEAR(sim_native.rec_via_helio_hit_count, sim_optix.rec_via_helio_hit_count, 1000);
+    EXPECT_NEAR(sim_native.helio_hit_count, sim_optix.helio_hit_count, err_abs);
+    EXPECT_NEAR(sim_native.reflect_count, sim_optix.reflect_count, err_abs);
+    EXPECT_NEAR(sim_native.helio_absorb_count, sim_optix.helio_absorb_count, err_abs);
+    EXPECT_NEAR(sim_native.rec_absorb_count, sim_optix.rec_absorb_count, err_abs);
+    EXPECT_NEAR(sim_native.rec_hit_count, sim_optix.rec_hit_count, err_abs);
+    EXPECT_NEAR(sim_native.rec_direct_hit_count, sim_optix.rec_direct_hit_count, err_abs);
+    EXPECT_NEAR(sim_native.rec_via_helio_hit_count, sim_optix.rec_via_helio_hit_count, err_abs);
     
     int sun_count_native = sim_native.sun_ray_count;
     int sun_count_optix = sim_optix.sun_ray_count; 
@@ -63,10 +69,10 @@ TEST(SingleHeliostatSimulationNativeOptixComparison, SingleFacetFlat_North)
     // Compare power per ray and sun area
 
     double n_records = (double)result_native.get_number_of_records();
-    EXPECT_NEAR((double)sim_native.helio_hit_count / n_records, (double)sim_optix.helio_hit_count / n_records, 0.01);
-    EXPECT_NEAR((double)sim_native.reflect_count / n_records, (double)sim_optix.reflect_count / n_records, 0.01);
-    EXPECT_NEAR((double)sim_native.helio_absorb_count / n_records, (double)sim_optix.helio_absorb_count / n_records, 0.01);
-    EXPECT_NEAR((double)sim_native.rec_absorb_count / n_records, (double)sim_optix.rec_absorb_count / n_records, 0.01);
+    EXPECT_NEAR((double)sim_native.helio_hit_count / n_records, (double)sim_optix.helio_hit_count / n_records, err_frac);
+    EXPECT_NEAR((double)sim_native.reflect_count / n_records, (double)sim_optix.reflect_count / n_records, err_frac);
+    EXPECT_NEAR((double)sim_native.helio_absorb_count / n_records, (double)sim_optix.helio_absorb_count / n_records, err_frac);
+    EXPECT_NEAR((double)sim_native.rec_absorb_count / n_records, (double)sim_optix.rec_absorb_count / n_records, err_frac);
     //EXPECT_NEAR((double)sim_native.miss_count / n_records, (double)sim_optix.miss_count / n_records, 0.1);
 
 
