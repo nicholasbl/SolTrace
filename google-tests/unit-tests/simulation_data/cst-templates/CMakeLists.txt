@@ -21,31 +21,68 @@ set(CST_TEST_SRC
 	parabolic_trough_test.cpp
 	parabolic_dish_test.cpp
 	heliostat_test.cpp
-	single_heliostat_test.cpp
-	heliostat_field_test.cpp
+	single_heliostat_test_native.cpp
+)
+
+# Conditionally include OptiX tests
+if(SOLTRACE_BUILD_OPTIX_SUPPORT)
+	list(APPEND CST_TEST_SRC
+		single_heliostat_test_optix.cpp
+	)
+endif()
+
+# Conditionally include Embree tests
+if(SOLTRACE_BUILD_EMBREE_SUPPORT)
+	list(APPEND CST_TEST_SRC
+		single_heliostat_test_embree.cpp
+		heliostat_field_test.cpp
+	)
+endif()
+
+# Add headers for Visual Studio solution
+set(CST_TEST_HEADERS
+	single_heliostat_test_template.hpp
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release" OR FULL_FIELD_VALIDATION_TEST)
-	list(APPEND 
-	CST_TEST_SRC
-	single_heliostat_test.cpp
-	heliostat_field_test.cpp
-	)
+	# In release or full-field validation builds, also add backend-specific tests
+	if(SOLTRACE_BUILD_OPTIX_SUPPORT)
+		list(APPEND CST_TEST_SRC
+			single_heliostat_test_optix.cpp
+		)
+	endif()
+	if(SOLTRACE_BUILD_EMBREE_SUPPORT)
+		list(APPEND CST_TEST_SRC
+			single_heliostat_test_native.cpp
+			single_heliostat_test_embree.cpp
+			heliostat_field_test.cpp
+		)
+	endif()
 endif()
 
 add_executable(CSTUnitTests
 	${CST_TEST_SRC}
+	${CST_TEST_HEADERS}
 )
 
-target_link_libraries(
-	CSTUnitTests
+# Always link core simdata and native runner
+set(CST_LIBS
 	simdata
 	native_runner
-	optix_runner
 	testtools
 	GTest::gtest_main
-    embree_runner
 )
+
+# Conditionally link OptiX and Embree runners
+if(SOLTRACE_BUILD_OPTIX_SUPPORT)
+	list(APPEND CST_LIBS optix_runner)
+endif()
+
+if(SOLTRACE_BUILD_EMBREE_SUPPORT)
+	list(APPEND CST_LIBS embree_runner)
+endif()
+
+target_link_libraries(CSTUnitTests ${CST_LIBS})
 
 if (ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
 	target_link_options(CSTUnitTests PRIVATE --coverage)
