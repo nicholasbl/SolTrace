@@ -58,15 +58,11 @@ TEST(OpticalErrors, Gaussian)
     params.include_sun_shape_errors = false;
     params.seed = 123;
 
-    std::cout << "Running ray tracing..." << std::endl;
-
     // Run simulation with errors
     sts = runner.setup_simulation(&sd);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.run_simulation();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
-
-    std::cout << "Collecting results..." << std::endl;
 
     // Collect results
     SimulationResult result_error;
@@ -77,8 +73,6 @@ TEST(OpticalErrors, Gaussian)
     element_id plate_id = plate->get_id();
     Vector3d nhat(0.0, 0.0, 1.0);
     Vector3d u;
-
-    std::cout << "Checking results..." << std::endl;
 
     // auto it_ideal = result_ideal.get_ray_record_iterator();
     auto it_error = result_error.get_ray_record_iterator();
@@ -96,7 +90,7 @@ TEST(OpticalErrors, Gaussian)
 
         EXPECT_EQ(err->get_element(1), plate_id);
 
-        err->get_direction(2, u);
+        err->get_direction(1, u);
         // Extend u so that dot_product(nhat, u - nhat) == 0
         double alpha = 1.0 / dot_product(nhat, u);
         u.scalar_mult(alpha);
@@ -168,15 +162,11 @@ TEST(OpticalErrors, Uniform)
     params.include_sun_shape_errors = false;
     params.seed = 123;
 
-    std::cout << "Running ray tracing..." << std::endl;
-
     // Run simulation with errors
     sts = runner.setup_simulation(&sd);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.run_simulation();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
-
-    std::cout << "Collecting results..." << std::endl;
 
     // Collect results
     SimulationResult result_error;
@@ -187,8 +177,6 @@ TEST(OpticalErrors, Uniform)
     element_id plate_id = plate->get_id();
     Vector3d nhat(0.0, 0.0, 1.0);
     Vector3d u;
-
-    std::cout << "Checking results..." << std::endl;
 
     // auto it_ideal = result_ideal.get_ray_record_iterator();
     auto it_error = result_error.get_ray_record_iterator();
@@ -206,7 +194,7 @@ TEST(OpticalErrors, Uniform)
 
         EXPECT_EQ(err->get_element(1), plate_id);
 
-        err->get_direction(2, u);
+        err->get_direction(1, u);
         // Extend u so that dot_product(nhat, u - nhat) == 0
         double alpha = 1.0 / dot_product(nhat, u);
         u.scalar_mult(alpha);

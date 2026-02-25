@@ -43,8 +43,8 @@ namespace OptixCSP
 extern "C" __device__ __inline__ float3 orthonormal_vector(float3 v)
 {
     // TODO: Need to handle w = c * v case...
-    w = make_float3(1.0f, 0.0f, 0.0f);
-    u = normalize(cross(v, w));
+    float3 w = make_float3(1.0f, 0.0f, 0.0f);
+    float3 u = normalize(cross(v, w));
     return u;
 }
 
@@ -52,7 +52,7 @@ extern "C" __device__ __inline__ float3 orthonormal_vector(float3 v)
 // a disk of radius a centered at the vector n. Returned vector is a
 // unit vector.
 extern "C" __device__ float3 apply_uniform_errors(float a,
-                                                  float3 n,
+                                                  float3 v,
                                                   OptixCSP::PerRayData &prd)
 {
     curandState local_rng = params.rng_states[prd.ray_path_index];
@@ -62,7 +62,7 @@ extern "C" __device__ float3 apply_uniform_errors(float a,
     float r = sqrt(curand_uniform(&local_rng));
     eta = r * cos(phi) * eta + r * sin(phi) * xi;
     params.rng_states[prd.ray_path_index] = local_rng;
-    return normalize(n + eta);
+    return normalize(v + eta);
 }
 
 // Add perturbation orthogonal to given vector. Magnitude is Gaussian with
@@ -80,15 +80,15 @@ extern "C" __device__ float3 apply_gaussian_errors(float sigma,
     params.rng_states[prd.ray_path_index] = local_rng;
     return normalize(n + xi);
 
-    // Could also do the below but it is slower in CPU trials...
-    curandState local_rng = params.rng_states[prd.ray_path_index];
-    float3 eta = orthonormal_vector(v);
-    float3 xi = cross(v, eta);
-    float phi = 2 * M_PI * curand_uniform(&local_rng);
-    float r = sigma * curand_normal(&local_rng);
-    eta = r * cos(phi) * eta + r * sin(phi) * xi;
-    params.rng_states[prd.ray_path_index] = local_rng;
-    return normalize(n + eta);
+    // // Could also do the below but it is slower in CPU trials...
+    // curandState local_rng = params.rng_states[prd.ray_path_index];
+    // float3 eta = orthonormal_vector(v);
+    // float3 xi = cross(v, eta);
+    // float phi = 2 * M_PI * curand_uniform(&local_rng);
+    // float r = sigma * curand_normal(&local_rng);
+    // eta = r * cos(phi) * eta + r * sin(phi) * xi;
+    // params.rng_states[prd.ray_path_index] = local_rng;
+    // return normalize(n + eta);
 }
 
 
@@ -137,7 +137,7 @@ extern "C" __global__ void __closesthit__mirror()
 
     // now we figure out the random number to determine if the ray is absorbed or refracted
     // float xi = OptixCSP::rng_uniform(prd); // random number in [0,1)
-    float xi = curand_uniform(params.rng_states[prd.ray_path_index]);
+    float xi = curand_uniform(&params.rng_states[prd.ray_path_index]);
 
     // Surface normal (macro-surface) errors
     ffnormal = apply_gaussian_errors(normal_sigma, ffnormal, prd);
@@ -346,6 +346,17 @@ extern "C" __global__ void __closesthit__mirror__parabolic()
     OptixCSP::PerRayData prd = OptixCSP::getPayload();
     const int new_depth = prd.depth + 1; // Increase recursion depth.
 
+    // we have two scenarios here
+    // if we use refraction, then we look at transmissivity to determine if the ray will refract
+    // or get obsorbed. otherwise, it will get reflected.
+    float3 new_dir;
+    bool absorbed = false; // determine whether the ray is absorbed or not, this is montecarlo based, should be applied to reflection and refraction
+    uint8_t hit_type = OptixCSP::HitType::HIT_UNASSIGNED;
+
+    // Determine hit direction (front or back)
+    const float dot_nd = dot(ray_dir, world_normal);
+    const bool hit_front_face = (dot_nd < 0.0f);
+
     // Get optical properties
     OptixCSP::MaterialData material = hit_front_face ? params.material_data_array_front[optixGetPrimitiveIndex()]
                                                      : params.material_data_array_back[optixGetPrimitiveIndex()];
@@ -356,9 +367,10 @@ extern "C" __global__ void __closesthit__mirror__parabolic()
     float spec_sigma = material.specularity_error;
 
     // Compute the reflected ray direction.
-    ffnormal = apply_gaussian_errors(normal_sigma, ffnormal);
+    ffnormal = apply_gaussian_errors(normal_sigma, ffnormal, prd);
 
-    float xi = curand_uniform(params.rng_states[prd.ray_path_index]);
+    float xi = curand_uniform(&params.rng_states[prd.ray_path_index]);
+
     if (use_transmissivity)
     {
         if (xi > transmissivity)
@@ -388,7 +400,7 @@ extern "C" __global__ void __closesthit__mirror__parabolic()
         }
     }
 
-    reflected_dir = apply_gaussian_errors(spec_sigma, reflected_dir);
+    new_dir = apply_gaussian_errors(spec_sigma, new_dir, prd);
 
     // If the new depth is below the maximum, trace the reflected ray.
     if (new_depth < params.max_depth)
@@ -398,24 +410,27 @@ extern "C" __global__ void __closesthit__mirror__parabolic()
         params.hit_point_buffer[slot] = make_float4(new_depth, hit_point);
         const int32_t elementId = params.geometry_data_array[optixGetPrimitiveIndex()].id;
         params.element_id_buffer[slot] = elementId;
-        params.hit_type_buffer[slot] = OptixCSP::HitType::HIT_REFLECT;
+        params.hit_type_buffer[slot] = hit_type;
 
         prd.depth = new_depth;
-        optixTrace(
-            params.handle,                                        // Acceleration structure handle.
-            hit_point,                                            // Ray origin.
-            reflected_dir,                                        // Ray direction.
-            0.01f,                                                // Minimum t to avoid self-intersection.
-            1e16f,                                                // Maximum t.
-            0.0f,                                                 // Ray time.
-            OptixVisibilityMask(1),                               // Visibility mask.
-            OPTIX_RAY_FLAG_NONE,                                  // Ray flags.
-            OptixCSP::RAY_TYPE_RADIANCE,                          // Ray type.
-            OptixCSP::RAY_TYPE_COUNT,                             // Number of ray types.
-            OptixCSP::RAY_TYPE_RADIANCE,                          // SBT offset for this ray type.
-            reinterpret_cast<unsigned int &>(prd.ray_path_index), // Ray path index.
-            reinterpret_cast<unsigned int &>(prd.depth)           // Current recursion depth.
-        );
+	if (!absorbed)
+	{
+	    optixTrace(
+		       params.handle,                                        // Acceleration structure handle.
+		       hit_point,                                            // Ray origin.
+		       new_dir,                                              // Ray direction.
+		       0.01f,                                                // Minimum t to avoid self-intersection.
+		       1e16f,                                                // Maximum t.
+		       0.0f,                                                 // Ray time.
+		       OptixVisibilityMask(1),                               // Visibility mask.
+		       OPTIX_RAY_FLAG_NONE,                                  // Ray flags.
+		       OptixCSP::RAY_TYPE_RADIANCE,                          // Ray type.
+		       OptixCSP::RAY_TYPE_COUNT,                             // Number of ray types.
+		       OptixCSP::RAY_TYPE_RADIANCE,                          // SBT offset for this ray type.
+		       reinterpret_cast<unsigned int &>(prd.ray_path_index), // Ray path index.
+		       reinterpret_cast<unsigned int &>(prd.depth)           // Current recursion depth.
+		       );
+	}
     }
 
     // Store the updated payload.
