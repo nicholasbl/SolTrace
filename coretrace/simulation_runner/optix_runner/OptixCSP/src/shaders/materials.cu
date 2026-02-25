@@ -70,22 +70,22 @@ extern "C" __device__ float3 apply_gaussian_errors(float sigma, float3 n, OptixC
     return eta;
 }
 
-// Add perturbation ortogonal to given vector. Magnitude is Gaussian with
-// standard deviation sigma and the angle is uniform over [-pi, pi).
-// Returned vector is a unit vector.
-extern "C" __device__ float3 apply_gaussian_errors(float sigma, float3 n)
-{
-    // TODO: Need to initialize once, also need seed and other arguments
-    curandState rng;
-    curand_init(123, 456, 789, &rng);
+// // Add perturbation ortogonal to given vector. Magnitude is Gaussian with
+// // standard deviation sigma and the angle is uniform over [-pi, pi).
+// // Returned vector is a unit vector.
+// extern "C" __device__ float3 apply_gaussian_errors(float sigma, float3 n)
+// {
+//     // TODO: Need to initialize once, also need seed and other arguments
+//     curandState rng;
+//     curand_init(123, 456, 789, &rng);
 
-    float3 eta = make_float3(curand_normal(&rng),
-                             curand_normal(&rng),
-                             curand_normal(&rng));
-    float3 xi = sigma * normalize(cross(n, eta));
-    eta = normalize(n + xi);
-    return eta;
-}
+//     float3 eta = make_float3(curand_normal(&rng),
+//                              curand_normal(&rng),
+//                              curand_normal(&rng));
+//     float3 xi = sigma * normalize(cross(n, eta));
+//     eta = normalize(n + xi);
+//     return eta;
+// }
 
 extern "C" __global__ void __closesthit__mirror()
 {
