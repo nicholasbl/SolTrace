@@ -205,9 +205,10 @@ qt_add_qml_module(SolTrace
         src/database/conversion.h src/database/conversion.cpp
         src/database/opticaleditor.h src/database/opticaleditor.cpp
         src/app.h src/app.cpp
-        src/modules/simulationmodule.h src/modules/simulationmodule.cpp
+        src/modules/simulation_module.h src/modules/simulation_module.cpp
         SOURCES src/modules/module_common.h src/modules/module_common.cpp
         SOURCES src/modules/file_source_module.h src/modules/file_source_module.cpp
+        SOURCES src/modules/sun_module.h src/modules/sun_module.cpp
 )
 
 CPMAddPackage(

@@ -12,7 +12,7 @@
 namespace SolTrace::GUI::App {
 
 /**
- * @class Simulation
+ * @class SimulationModule
  * @brief Simulation execution and progress tracking module.
  *
  * Mediates between QML controls and the job runner.

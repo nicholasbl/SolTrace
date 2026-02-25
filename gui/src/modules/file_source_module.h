@@ -9,7 +9,7 @@
 
 namespace SolTrace::GUI::App {
 
-class FileSource : public QObject {
+class FileSourceModule : public QObject {
     Q_OBJECT
 
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
@@ -25,7 +25,7 @@ signals:
     void cancel_current_load(QPrivateSignal);
 
 public:
-    FileSource(QObject* parent = nullptr);
+    FileSourceModule(QObject* parent = nullptr);
 
 signals:
     void notify(ANotification);

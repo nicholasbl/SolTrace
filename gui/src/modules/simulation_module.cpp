@@ -1,4 +1,4 @@
-#include "simulationmodule.h"
+#include "simulation_module.h"
 
 namespace SolTrace::GUI::App {
 

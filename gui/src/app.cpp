@@ -9,15 +9,15 @@ namespace SolTrace::GUI::App {
 // App =========================================================================
 
 App::App(QObject* parent, const QString& documentation_directory)
-    : m_workflow(new Workflow(this)),
-      m_docs(new Documentation(this)),
-      m_sun(new Sun(this)),
-      m_tracing(new Tracing(this)),
-      m_materials(new Materials(this)),
-      m_geometry(new Geometry(this)),
+    : m_workflow(new WorkflowModule(this)),
+      m_docs(new DocumentationModule(this)),
+      m_sun(new SunModule(this)),
+      m_tracing(new TracingModule(this)),
+      m_materials(new MaterialsModule(this)),
+      m_geometry(new GeometryModule(this)),
       m_simulation(new SimulationModule(this)),
-      m_intersections(new Intersections(this)),
-      m_flux(new Flux(this)) {
+      m_intersections(new IntersectionsModule(this)),
+      m_flux(new FluxModule(this)) {
 
     m_docs->load();
 
@@ -28,6 +28,16 @@ App::App(QObject* parent, const QString& documentation_directory)
 
     connect(
         m_simulation, &SimulationModule::new_results, this, &App::new_results);
+}
+
+void App::install(QPointer<Backend> backend)
+{
+    m_sun->set_backend(QPointer(backend->sun()));
+    m_tracing->set_backend(QPointer(backend->tracing()));
+    m_materials->set_backend(QPointer(backend->materials()));
+    m_geometry->set_backend(QPointer(backend->geometry()));
+    m_intersections->set_backend(QPointer(backend->intersections()));
+    m_flux->set_backend(QPointer(backend->flux()));
 }
 
 

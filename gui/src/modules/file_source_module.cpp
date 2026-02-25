@@ -68,7 +68,7 @@ static void load_file(QPromise<LoadResult>& result,
 }
 
 
-void FileSource::file_ready() {
+void FileSourceModule::file_ready() {
     qDebug() << Q_FUNC_INFO;
     auto from = dynamic_cast<ResultFuture*>(sender());
 
@@ -93,7 +93,7 @@ void FileSource::file_ready() {
         result);
 }
 
-void FileSource::handle_source_update() {
+void FileSourceModule::handle_source_update() {
     if (is_loading()) { emit cancel_current_load(QPrivateSignal {}); }
     set_is_loading(false);
 
@@ -111,9 +111,9 @@ void FileSource::handle_source_update() {
     auto watcher = new ResultFuture(this);
 
     connect(
-        this, &FileSource::cancel_current_load, watcher, &ResultFuture::cancel);
+        this, &FileSourceModule::cancel_current_load, watcher, &ResultFuture::cancel);
 
-    connect(watcher, &ResultFuture::finished, this, &FileSource::file_ready);
+    connect(watcher, &ResultFuture::finished, this, &FileSourceModule::file_ready);
 
     connect(watcher, &ResultFuture::finished, watcher, &QObject::deleteLater);
 
@@ -124,11 +124,11 @@ void FileSource::handle_source_update() {
     watcher->setFuture(future);
 }
 
-FileSource::FileSource(QObject* parent) : QObject { parent } {
+FileSourceModule::FileSourceModule(QObject* parent) : QObject { parent } {
     connect(this,
-            &FileSource::source_changed,
+            &FileSourceModule::source_changed,
             this,
-            &FileSource::handle_source_update);
+            &FileSourceModule::handle_source_update);
 }
 
 

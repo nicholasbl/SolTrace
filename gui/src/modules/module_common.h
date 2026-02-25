@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QAbstractListModel>
 
 namespace SolTrace::GUI::App {
 /**
@@ -52,6 +53,68 @@ public:
 
 private:
     Status m_status;
+};
+
+/**
+ * @class PresetComponentBase
+ * @brief QML-facing base class for preset management.
+ *
+ * Exposes preset operations to QML via Q_INVOKABLE methods.
+ * Inherits QAbstractListModel so QML can display the list of available
+ * presets directly (name + description per row).
+ *
+ * Actual file I/O is delegated to the backend's file utilities service.
+ * This class is the thin QML adapter — it does not own persistence logic.
+ *
+ * Roles:
+ * - NameRole:        Display name of the preset
+ * - DescriptionRole: Optional description string
+ */
+class PresetComponentBase : public QAbstractListModel {
+    Q_OBJECT
+public:
+    enum Roles { NameRole = Qt::UserRole + 1, DescriptionRole };
+
+    Q_INVOKABLE bool load(const QString& name);
+    Q_INVOKABLE bool save(const QString& name, const QString& description = "");
+    Q_INVOKABLE bool remove(const QString& name);
+    Q_INVOKABLE bool import_preset(const QString& filepath);
+    Q_INVOKABLE bool export_preset(const QString& name,
+                                   const QString& filepath);
+
+    int      rowCount(const QModelIndex& parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex& index,
+                                int                role = Qt::DisplayRole) const override;
+    QHash<int, QByteArray> roleNames() const override;
+};
+
+/**
+ * @class PresetComponent
+ * @brief Typed preset storage and active selection management.
+ *
+ * Template subclass of PresetComponentBase that adds typed storage
+ * and tracks the currently active preset.
+ *
+ * @tparam T The domain type being managed (e.g. SunDefinition,
+ * DirectionalSunPosition)
+ *
+ * active_preset reflects the currently loaded configuration. QML binds
+ * to this to display and edit the active parameters. Changing active_preset
+ * does not automatically save — the user must explicitly call save().
+ *
+ * m_keys preserves insertion order for stable row indexing in the list model.
+ */
+
+template <typename T>
+class PresetComponent : public PresetComponentBase {
+public:
+    QPointer<T> active() const;
+    void        set_active(T* preset);
+
+private:
+    QHash<QString, T*> m_presets;
+    QList<QString>     m_keys;
+    QPointer<T>        m_active_preset;
 };
 
 } // namespace SolTrace::GUI::App
