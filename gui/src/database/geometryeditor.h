@@ -6,7 +6,7 @@
 
 #include "database/components.h"
 #include "database/database.h"
-#include "qt_helpers.h"
+#include "utilities/qt_helpers.h"
 
 #include "aperture.hpp"
 #include "opticaleditor.h"

@@ -9,7 +9,6 @@
 #include <QTemporaryDir>
 #include <QTimer>
 
-#include "dataset.h"
 #include "job_run.h"
 
 // Stdin polling is not very clean across platforms. We'll use a control file

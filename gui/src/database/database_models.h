@@ -2,7 +2,7 @@
 
 
 #include "database/database.h"
-#include "qt_helpers.h"
+#include "utilities/qt_helpers.h"
 #include "utilities/structmodel.h"
 
 #include <entt/entity/fwd.hpp>

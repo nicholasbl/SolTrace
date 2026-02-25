@@ -1,12 +1,18 @@
 #pragma once
+#include <QAbstractListModel>
+#include <QHash>
+#include <QJsonObject>
 #include <QObject>
 #include <QQmlEngine>
 #include <QSharedPointer>
-#include <qt_helpers.h>
-#include <QAbstractListModel>
+
+#include "utilities/qt_helpers.h"
+
 #include <backend.h>
-#include <QJsonObject>
-#include <QHash>
+
+#include <modules/file_source_module.h>
+#include <modules/module_common.h>
+#include <modules/simulationmodule.h>
 
 /**
  * @namespace SolTrace::GUI::App
@@ -15,7 +21,8 @@
  * This namespace defines the GUI application layer for SolTrace. It mediates
  * between the QML presentation layer and the simulation backend, providing:
  *
- * - Domain-driven module decomposition (Sun, Tracing, Materials, Geometry, etc.)
+ * - Domain-driven module decomposition (Sun, Tracing, Materials, Geometry,
+ * etc.)
  * - Status lifecycle tracking per module
  * - Preset management for user-configurable parameters
  * - Inline documentation loaded from markdown files
@@ -32,50 +39,9 @@
 
 namespace SolTrace::GUI::App {
 
-//─── Application Components ───────────────────────────────────────────────────────────────────
+// ─── Application Components
+// ───────────────────────────────────────────────────────────────────
 
-/**
- * @class StatusComponent
- * @brief Tracks the lifecycle state of an application module.
- *
- * Every app module owns a StatusComponent to communicate its readiness
- * to the QML layer. Status transitions follow a defined lifecycle:
- *
- * @code
- *   Unset → Loading → Incomplete → Ready → Complete → Stale → Error
- * @endcode
- *
- * - Unset:      Initial state, no data loaded
- * - Loading:    Actively reading from disk or backend
- * - Incomplete: Data loaded but required fields are missing
- * - Ready:      Data loaded and validated, ready for use
- * - Complete:   Fully configured and simulation-ready
- * - Stale:      Valid but potentially outdated (backend state changed)
- * - Error:      Validation failed or I/O error occurred
- *
- * QML binds to status to drive loading indicators, error banners,
- * and workflow gating (e.g. disabling "Run" if any module is Incomplete).
- */
-class StatusComponent : public QObject {
-    Q_OBJECT
-public:
-    StatusComponent(QObject* parent = nullptr);
-
-    enum class Status { Incomplete, Loading, Ready, Error, Stale, Complete, Unset };
-
-    Q_ENUM(Status)
-
-    Q_INVOKABLE void mark_incomplete(const QString& message = "");
-    Q_INVOKABLE void mark_loading(const QString& message = "");
-    Q_INVOKABLE void mark_ready(const QString& message = "Ready");
-    Q_INVOKABLE void mark_error(const QString& message);
-    Q_INVOKABLE void mark_stale(const QString& message = "");
-    Q_INVOKABLE void mark_complete(const QString& message = "");
-    Q_INVOKABLE void mark_unset(const QString& message = "");
-
-private:
-    Status m_status;
-};
 
 /**
  * @class PresetComponentBase
@@ -101,10 +67,12 @@ public:
     Q_INVOKABLE bool save(const QString& name, const QString& description = "");
     Q_INVOKABLE bool remove(const QString& name);
     Q_INVOKABLE bool import_preset(const QString& filepath);
-    Q_INVOKABLE bool export_preset(const QString& name, const QString& filepath);
+    Q_INVOKABLE bool export_preset(const QString& name,
+                                   const QString& filepath);
 
-    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
-    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+    int      rowCount(const QModelIndex& parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex& index,
+                  int                role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
 };
 
@@ -115,7 +83,8 @@ public:
  * Template subclass of PresetComponentBase that adds typed storage
  * and tracks the currently active preset.
  *
- * @tparam T The domain type being managed (e.g. SunDefinition, DirectionalSunPosition)
+ * @tparam T The domain type being managed (e.g. SunDefinition,
+ * DirectionalSunPosition)
  *
  * active_preset reflects the currently loaded configuration. QML binds
  * to this to display and edit the active parameters. Changing active_preset
@@ -124,27 +93,30 @@ public:
  * m_keys preserves insertion order for stable row indexing in the list model.
  */
 
-template<typename T>
+template <typename T>
 class PresetComponent : public PresetComponentBase {
 public:
     QPointer<T> active() const;
-    void set_active(T* preset);
+    void        set_active(T* preset);
+
 private:
     QHash<QString, T*> m_presets;
-    QList<QString> m_keys;
-    QPointer<T> m_active_preset;
+    QList<QString>     m_keys;
+    QPointer<T>        m_active_preset;
 };
 
-//─── Application Modules ───────────────────────────────────────────────────────────────────
+// ─── Application Modules
+// ───────────────────────────────────────────────────────────────────
+
 
 /**
  * @class SunDefinition
  * @brief Sun type and emission profile parameters.
  *
  * Defines what kind of sun is being simulated and how its light is emitted.
- * Separated from position to allow reuse across multiple position configurations —
- * the same emission profile can be evaluated at different times and locations
- * without duplication.
+ * Separated from position to allow reuse across multiple position
+ * configurations — the same emission profile can be evaluated at different
+ * times and locations without duplication.
  *
  * Active shape parameters (std, half_width, csr, num_points) are all stored
  * simultaneously; only the fields relevant to the active sun_shape are used
@@ -157,8 +129,8 @@ class SunDefinition : public QObject {
 public:
     SunDefinition(QObject* parent = nullptr);
 
-    enum class SunType {Directional, PointSource};
-    enum class SunShape {Gaussian, Pillbox, CSR, Custom};
+    enum class SunType { Directional, PointSource };
+    enum class SunShape { Gaussian, Pillbox, CSR, Custom };
 
     Q_ENUM(SunType)
     Q_ENUM(SunShape)
@@ -190,7 +162,8 @@ public:
  * - Legacy:  Uses azimuth/elevation directly
  * - Duffie:  Uses latitude, longitude, date, time
  * - SOLPOS:  Uses latitude, longitude, date, time, interval
- * - SPA:     Uses all fields including optional pressure/temperature corrections
+ * - SPA:     Uses all fields including optional pressure/temperature
+ * corrections
  *
  * Multiple DirectionalSunPosition presets can be saved and switched between,
  * enabling comparison of the same system across different times or locations.
@@ -203,13 +176,16 @@ class DirectionalSunPosition : public QObject {
 public:
     DirectionalSunPosition(QObject* parent = nullptr);
 
-    QOBJECT_READONLY_PROPERTY(PresetComponent<DirectionalSunPosition>, preset_manager)
+    QOBJECT_READONLY_PROPERTY(PresetComponent<DirectionalSunPosition>,
+                              preset_manager)
 
-    enum class PositionCalculator {Legacy, Duffie, SOLPOS, SPA};
+    enum class PositionCalculator { Legacy, Duffie, SOLPOS, SPA };
 
     Q_ENUM(PositionCalculator)
 
-    Q_WRITABLE_PROPERTY(PositionCalculator, position_calculator, PositionCalculator::Legacy)
+    Q_WRITABLE_PROPERTY(PositionCalculator,
+                        position_calculator,
+                        PositionCalculator::Legacy)
 
     // Position
     Q_WRITABLE_PROPERTY(double, latitude, 35.04)
@@ -252,7 +228,8 @@ class PointSourceSunPosition : public QObject {
 public:
     PointSourceSunPosition(QObject* parent = nullptr);
 
-    QOBJECT_READONLY_PROPERTY(PresetComponent<PointSourceSunPosition>, preset_manager)
+    QOBJECT_READONLY_PROPERTY(PresetComponent<PointSourceSunPosition>,
+                              preset_manager)
 
     Q_WRITABLE_PROPERTY(double, x, 1000)
     Q_WRITABLE_PROPERTY(double, y, 1000)
@@ -277,13 +254,15 @@ class Sun : public QObject {
     Q_OBJECT
 
 public:
-    Sun(QObject* parent = nullptr) : QObject(parent) {}
+    Sun(QObject* parent = nullptr) : QObject(parent) { }
 
     QPOINTER_WRITABLE_PROPERTY(SunBackend, backend)
     QOBJECT_READONLY_PROPERTY(StatusComponent, status)
     QOBJECT_READONLY_PROPERTY(PresetComponent<SunDefinition>, definition)
-    QOBJECT_READONLY_PROPERTY(PresetComponent<DirectionalSunPosition>, ds_positions)
-    QOBJECT_READONLY_PROPERTY(PresetComponent<PointSourceSunPosition>, pss_positions)
+    QOBJECT_READONLY_PROPERTY(PresetComponent<DirectionalSunPosition>,
+                              ds_positions)
+    QOBJECT_READONLY_PROPERTY(PresetComponent<PointSourceSunPosition>,
+                              pss_positions)
 };
 
 /**
@@ -308,24 +287,27 @@ public:
     QPOINTER_WRITABLE_PROPERTY(TracingBackend, backend)
     QOBJECT_READONLY_PROPERTY(StatusComponent, status)
 
-    enum class Tracer {Legacy, Refactored, GPU};
+    enum class Tracer { Legacy, Refactored, GPU };
 
     Q_ENUM(Tracer)
 
     Q_WRITABLE_PROPERTY(Tracer, tracer, Tracer::GPU)
 
-    //─── Engine Properties ───────────────────────────────────────────────────────────────────
+    // ─── Engine Properties
+    // ───────────────────────────────────────────────────────────────────
 
     Q_WRITABLE_PROPERTY(double, max_intersections, 3.5e6)
     Q_WRITABLE_PROPERTY(double, max_rays, 1e6)
     Q_WRITABLE_PROPERTY(bool, sun_shape, false)
 
-    //─── Execution Properties ───────────────────────────────────────────────────────────────────
+    // ─── Execution Properties
+    // ───────────────────────────────────────────────────────────────────
 
     Q_WRITABLE_PROPERTY(int, cpu_cores, 4)
     Q_WRITABLE_PROPERTY(int, seed_value, 12345)
 
-    //─── Optimization Properties ───────────────────────────────────────────────────────────────────
+    // ─── Optimization Properties
+    // ───────────────────────────────────────────────────────────────────
 
     Q_WRITABLE_PROPERTY(bool, optical_errors, false)
     Q_WRITABLE_PROPERTY(bool, point_focus_system, false)
@@ -335,9 +317,10 @@ public:
  * @class Materials
  * @brief Materials configuration module.
  *
- * Provides QML access to the materials database models owned by MaterialsBackend.
- * This module does not own the models — it holds a non-owning QPointer reference
- * to the backend slice, constraining access to materials-specific functionality.
+ * Provides QML access to the materials database models owned by
+ * MaterialsBackend. This module does not own the models — it holds a non-owning
+ * QPointer reference to the backend slice, constraining access to
+ * materials-specific functionality.
  *
  * QML access pattern: App.materials.backend.child_model
  */
@@ -377,37 +360,6 @@ public:
 };
 
 /**
- * @class Simulation
- * @brief Simulation execution and progress tracking module.
- *
- * Mediates between QML controls and the SimulationBackend job runner.
- * Exposes progress, timing metadata, and execution control to QML.
- *
- * start(), stop(), and pause() delegate to the backend after validating
- * that all required configuration modules are in a Ready or Complete state.
- *
- * QML access pattern: App.simulation.start()
- */
-class Simulation : public QObject {
-    Q_OBJECT
-public:
-    Simulation(QObject* parent = nullptr);
-
-    QOBJECT_READONLY_PROPERTY(StatusComponent, status);
-    QPOINTER_WRITABLE_PROPERTY(SimulationBackend, backend)
-
-    Q_READONLY_PROPERTY(double, progress)       /// Ray tracing progress, 0.0 to 1.0
-    Q_READONLY_PROPERTY(QString, current_stage) /// e.g. "Initializing", "Ray tracing", "Complete"
-    Q_READONLY_PROPERTY(QDateTime, last_run_time)
-    Q_READONLY_PROPERTY(double, elapsed_seconds)
-
-    Q_INVOKABLE void run();
-    Q_INVOKABLE void pause();
-    Q_INVOKABLE void resume();
-    Q_INVOKABLE void cancel();
-};
-
-/**
  * @class Workflow
  * @brief Models the application workflow structure for QML navigation.
  *
@@ -417,7 +369,8 @@ public:
  * - Section: Sub-groupings within each phase
  *
  * The phase and section properties drive which panel is displayed in the UI.
- * The static get_*_sections() methods provide display strings for tab rendering.
+ * The static get_*_sections() methods provide display strings for tab
+ * rendering.
  *
  * Note: Phase and section enums are currently hardcoded.
  */
@@ -428,9 +381,9 @@ public:
     Workflow(QObject* parent = nullptr);
 
     enum class Phase { Configuration, Simulation, Analysis };
-    enum class ConfigurationSection { Sun, Tracing, Materials, Geometry};
-    enum class SimulationSection {Execution, Navigation, Diagnostics};
-    enum class AnalysisSection {Intersections, Flux};
+    enum class ConfigurationSection { Sun, Tracing, Materials, Geometry };
+    enum class SimulationSection { Execution, Navigation, Diagnostics };
+    enum class AnalysisSection { Intersections, Flux };
 
     Q_ENUM(Phase)
     Q_ENUM(ConfigurationSection)
@@ -438,9 +391,15 @@ public:
     Q_ENUM(AnalysisSection)
 
     Q_WRITABLE_PROPERTY(Phase, phase, Phase::Configuration)
-    Q_WRITABLE_PROPERTY(ConfigurationSection, configuration_section, ConfigurationSection::Sun);
-    Q_WRITABLE_PROPERTY(SimulationSection, simulation_section, SimulationSection::Execution);
-    Q_WRITABLE_PROPERTY(AnalysisSection, analysis_section, AnalysisSection::Intersections);
+    Q_WRITABLE_PROPERTY(ConfigurationSection,
+                        configuration_section,
+                        ConfigurationSection::Sun);
+    Q_WRITABLE_PROPERTY(SimulationSection,
+                        simulation_section,
+                        SimulationSection::Execution);
+    Q_WRITABLE_PROPERTY(AnalysisSection,
+                        analysis_section,
+                        AnalysisSection::Intersections);
 
     Q_INVOKABLE static QStringList phases();
     Q_INVOKABLE static QStringList configuration_sections();
@@ -561,8 +520,8 @@ public:
      * @brief Eagerly loads all documentation from the locale directory.
      *
      * Walks the directory tree using manifest.txt files in each subdirectory
-     * to determine file order. Assigns section numbers based on traversal order.
-     * Stores all content in m_content keyed by path-schema IDs.
+     * to determine file order. Assigns section numbers based on traversal
+     * order. Stores all content in m_content keyed by path-schema IDs.
      *
      * Call once at startup before QML begins binding.
      */
@@ -579,7 +538,8 @@ private:
     QHash<QString, QString> m_content; /// <- key → markdown content
 };
 
-//─── QML Entrypoint ───────────────────────────────────────────────────────────────────
+// ─── QML Entrypoint
+// ───────────────────────────────────────────────────────────────────
 
 /**
  * @class App
@@ -609,6 +569,11 @@ class App : public QObject {
 public:
     App(QObject* parent = nullptr, const QString& documentation_directory = "");
 
+    QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
+
+    /// App.file_source.source
+    QOBJECT_READONLY_PROPERTY(FileSource, file_source)
+
     /// App.workflow.phases()
     QOBJECT_READONLY_PROPERTY(Workflow, workflow)
 
@@ -628,14 +593,18 @@ public:
     QOBJECT_READONLY_PROPERTY(Geometry, geometry)
 
     /// App.simulation.start()
-    QOBJECT_READONLY_PROPERTY(Simulation, simulation)
+    QOBJECT_READONLY_PROPERTY(SimulationModule, simulation)
 
     /// App.intersections.results
     QOBJECT_READONLY_PROPERTY(Intersections, intersections)
 
     /// App.flux.results
     QOBJECT_READONLY_PROPERTY(Flux, flux)
+
+signals:
+    void notification(ANotification);
+    void new_results(std::shared_ptr<ResultDB>);
+    void new_database(db::Database*);
 };
 
-}
-
+} // namespace SolTrace::GUI::App

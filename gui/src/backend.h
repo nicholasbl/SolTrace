@@ -5,51 +5,12 @@
 #include "database/database_models.h"
 #include "database/worldgeometrymodel.h"
 #include "job_control/job_run.h"
-#include "qt_helpers.h"
 #include "utilities/notification.h"
+#include "utilities/qt_helpers.h"
 
 #include <QObject>
 #include <QQmlEngine>
 #include <QSharedPointer>
-
-// Previously JobBackend
-class SimulationBackend : public QObject {
-    Q_OBJECT
-
-    // Current content
-    QPointer<db::Database> m_current_database;
-
-    QPointer<RunningJob> m_running;
-
-    enum class State {
-        IDLE,
-        RUNNING,
-    };
-
-    Q_ENUM(State);
-
-    Q_WRITABLE_PROPERTY(State, state, State::IDLE);
-    Q_WRITABLE_PROPERTY(int, progress, 0);
-    Q_WRITABLE_PROPERTY(QString, job_log, {});
-
-public:
-    explicit SimulationBackend(QObject* parent = nullptr);
-    virtual ~SimulationBackend() = default;
-
-    void install(db::Database*);
-
-private slots:
-    void job_done();
-
-public slots:
-    void start();
-    void stop();
-
-signals:
-    void notify(ANotification);
-
-    void new_results(std::shared_ptr<ResultDB>);
-};
 
 //==============================================================================
 
@@ -159,7 +120,6 @@ class Backend : public QObject {
     QOBJECT_READONLY_PROPERTY(TracingBackend, tracing);
     QOBJECT_READONLY_PROPERTY(MaterialsBackend, materials);
     QOBJECT_READONLY_PROPERTY(GeometryBackend, geometry);
-    QOBJECT_READONLY_PROPERTY(SimulationBackend, simulation);
     QOBJECT_READONLY_PROPERTY(IntersectionsBackend, intersections);
     QOBJECT_READONLY_PROPERTY(FluxBackend, flux);
 

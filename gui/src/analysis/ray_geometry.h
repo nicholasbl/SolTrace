@@ -2,8 +2,8 @@
 
 
 #include "job_control/job_run_common.h"
-#include "qt_helpers.h"
 #include "ray_volume.h"
+#include "utilities/qt_helpers.h"
 
 #include <QtQuick3D/qquick3dgeometry.h>
 

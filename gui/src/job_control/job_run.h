@@ -5,7 +5,7 @@
 #include <QtQuick3D/QQuick3DInstancing>
 
 #include "job_run_common.h"
-#include "qt_helpers.h"
+#include "utilities/qt_helpers.h"
 #include "simulation_data_api.hpp"
 #include "simulation_result.hpp"
 

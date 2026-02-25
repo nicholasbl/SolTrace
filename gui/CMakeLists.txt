@@ -179,8 +179,7 @@ qt_add_qml_module(SolTrace
 
     SOURCES
         src/backend.h src/backend.cpp
-        src/qt_helpers.h
-        src/dataset.h src/dataset.cpp
+        src/utilities/qt_helpers.h
         src/utilities/indirect_model.h src/utilities/indirect_model.cpp
         src/job_control/job_run_thread.h
         src/job_control/job_run_process.cpp
@@ -205,8 +204,10 @@ qt_add_qml_module(SolTrace
         src/database/worldgeometrymodel.h src/database/worldgeometrymodel.cpp
         src/database/conversion.h src/database/conversion.cpp
         src/database/opticaleditor.h src/database/opticaleditor.cpp
-
-        SOURCES src/app.h src/app.cpp
+        src/app.h src/app.cpp
+        src/modules/simulationmodule.h src/modules/simulationmodule.cpp
+        SOURCES src/modules/module_common.h src/modules/module_common.cpp
+        SOURCES src/modules/file_source_module.h src/modules/file_source_module.cpp
 )
 
 CPMAddPackage(
