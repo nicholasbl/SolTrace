@@ -3,21 +3,11 @@
 #include <filesystem>
 #include <sstream>
 
-#include <simulation_result.hpp>
+#include <simulation_data_export.hpp>
+#include <simulation_result_export.hpp>
 #include <vector3d.hpp>
 
 #include "common.hpp"
-
-using SolTrace::Result::InteractionRecord;
-using SolTrace::Result::RayEvent;
-using SolTrace::Result::RayRecord;
-using SolTrace::Result::SimulationResult;
-
-using SolTrace::Result::interaction_ptr;
-using SolTrace::Result::ray_record_ptr;
-
-using SolTrace::Result::make_interaction_record;
-using SolTrace::Result::make_ray_record;
 
 TEST(InteractionRecord, Constructors)
 {
@@ -154,6 +144,36 @@ TEST(RayRecord, OutputOperator)
     std::stringstream ss;
     ss << rr;
     EXPECT_TRUE(ss.str().size() > 0);
+}
+
+TEST(ElementRecord, OutputOperator)
+{
+    // Test constants
+    const uint_fast32_t NINTER = 5;
+    const int_fast64_t ID = 5;
+    RayEvent my_types[NINTER] = {
+        RayEvent::CREATE,
+        RayEvent::TRANSMIT,
+        RayEvent::REFLECT,
+        RayEvent::ABSORB,
+        RayEvent::EXIT};
+
+    // Adding records and sizing
+    ElementRecord erec(ID);
+    for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
+    {
+        Vector3d loc(1.0 * ell * ell, 2.0 * ell * ell, 3.0 * ell * ell);
+        Vector3d dir(2.0 * ell + 1.0, 4.0 * ell + 2.0, 6.0 * ell + 3.0);
+        RayEvent it = my_types[ell];
+        interaction_ptr ir = make_interaction_record(ell, it, loc, dir);
+        erec.add_interaction_record(ir);
+    }
+
+    std::stringstream ss;
+    ss << erec;
+    EXPECT_TRUE(ss.str().size() > 0);
+
+    std::cout << ss.str() << std::endl;
 }
 
 TEST(SimulationResult, Accessors)
