@@ -59,8 +59,9 @@ namespace OptixCSP {
         float z = cosTheta + (1.0f - cosTheta) * rand2;
         float r = sqrtf(1.0f - z * z);
 
-        // Transform to world space
         params.rng_states[ray_number] = rng_state;
+
+        // Transform to world space
         return normalize(r * (cosf(phi) * u + sinf(phi) * v) + z * w);
     }
 
@@ -81,7 +82,7 @@ namespace OptixCSP {
         float theta2 = thetax * thetax + thetay * thetay;
         float z = sqrtf(1.0f - theta2);
 
-        // params.rng_states[ray_number] = rng;
+        params.rng_states[ray_number] = rng;
 
         // Transform to world space
         return normalize(thetax * u + thetay * v + z * w);

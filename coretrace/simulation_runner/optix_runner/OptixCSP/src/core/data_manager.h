@@ -5,26 +5,28 @@
 #include <vector>
 #include <cuda_runtime_api.h>
 
-namespace OptixCSP {
+namespace OptixCSP
+{
 
     // Class to manage data on the host and device.
-    class dataManager {
+    class dataManager
+    {
     public:
-        // TODO: move this to private member for best practice 
+        // TODO: move this to private member for best practice
         // Host copy of launch parameters.
         OptixCSP::LaunchParams launch_params_H;
         // Device pointer to launch parameters.
-        OptixCSP::LaunchParams* launch_params_D;
+        OptixCSP::LaunchParams *launch_params_D;
 
         // device pointer to geometry data
-        GeometryDataST* geometry_data_array_D;
+        GeometryDataST *geometry_data_array_D;
 
         // device pointer to material data
-		MaterialData* material_data_array_front_D;
-        MaterialData* material_data_array_back_D;
+        MaterialData *material_data_array_front_D;
+        MaterialData *material_data_array_back_D;
 
         // CURAND state memory on device
-        curandState* rng_states_D;
+        curandState *rng_states_D;
         size_t rng_states_capacity;
 
         dataManager();
@@ -32,7 +34,7 @@ namespace OptixCSP {
 
         void cleanup();
 
-        OptixCSP::LaunchParams* getDeviceLaunchParams() const;
+        OptixCSP::LaunchParams *getDeviceLaunchParams() const;
 
         void allocateLaunchParams();
 
@@ -49,17 +51,15 @@ namespace OptixCSP {
         // create material_data_array_D on the device
         // then launch_params_D.material_data_array = material_data_array_D gets a copy.
         void allocateMaterialDataArray(std::vector<MaterialData> material_data_array_front,
-            std::vector<MaterialData> material_data_array_back);
+                                       std::vector<MaterialData> material_data_array_back);
 
         // update material_data_array_D on the device
         // then launch_params_D.material_data_array = material_data_array_D gets a copy.
         void updateMaterialDataArray(std::vector<MaterialData> material_data_array_H);
 
         void ensureCurandStates(unsigned int num_states,
-            unsigned long long seed,
-            unsigned int sequence_offset,
-            cudaStream_t stream);
-
-
+                                unsigned long long seed,
+                                unsigned int sequence_offset,
+                                cudaStream_t stream);
     };
 }

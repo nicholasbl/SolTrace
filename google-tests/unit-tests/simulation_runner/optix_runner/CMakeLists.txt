@@ -14,6 +14,7 @@ include_directories(
 # Add test files for optix_runner
 set(OPTIX_RUNNER_TEST_SRC
     ../../common/common.cpp
+    vector_error_test.cpp
     gpu_tower_demo.cpp
     flat_optical_test.cpp
     two_plate_test.cpp

@@ -187,7 +187,7 @@ TEST(SimulationResult, Accessors)
     }
 
     int_fast64_t idx = 0;
-    for (auto iter = sr.get_ray_record_iteratior(); !sr.is_at_end(iter); ++iter)
+    for (auto iter = sr.get_ray_record_iterator(); !sr.is_at_end(iter); ++iter)
     {
         EXPECT_EQ(*iter, sr[idx]);
         ++idx;

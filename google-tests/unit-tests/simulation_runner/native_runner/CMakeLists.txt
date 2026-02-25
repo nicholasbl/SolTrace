@@ -22,6 +22,7 @@ set(NATIVE_RUNNER_TEST_SRC
     calculator_factory_test.cpp
     thread_manager_test.cpp
     native_runner_test.cpp
+    optical_error_test.cpp
     tower_demo.cpp
 )
 

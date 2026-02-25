@@ -12,14 +12,15 @@
 using namespace OptixCSP;
 
 dataManager::dataManager()
-    : launch_params_D(nullptr),
-      geometry_data_array_D(nullptr),
-      material_data_array_front_D(nullptr),
-      material_data_array_back_D(nullptr),
-      rng_states_D(nullptr),
-      rng_states_capacity(0) {
-	
-    // Initialize launch parameters with default values
+	: launch_params_D(nullptr),
+	  geometry_data_array_D(nullptr),
+	  material_data_array_front_D(nullptr),
+	  material_data_array_back_D(nullptr),
+	  rng_states_D(nullptr),
+	  rng_states_capacity(0)
+{
+
+	// Initialize launch parameters with default values
 	launch_params_H.width = 10;
 	launch_params_H.height = 1;
 	launch_params_H.max_depth = 5;
@@ -37,38 +38,44 @@ dataManager::dataManager()
 	launch_params_H.sun_v3 = make_float3(0.0f, 0.0f, 0.0f);
 }
 
-dataManager::~dataManager() {
-	cleanup(); 
+dataManager::~dataManager()
+{
+	cleanup();
 }
 
+OptixCSP::LaunchParams *dataManager::getDeviceLaunchParams() const { return launch_params_D; }
 
-OptixCSP::LaunchParams* dataManager::getDeviceLaunchParams() const { return launch_params_D; }
-
-
-void dataManager::allocateLaunchParams() {
-    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&launch_params_D), sizeof(LaunchParams)));
+void dataManager::allocateLaunchParams()
+{
+	CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&launch_params_D), sizeof(LaunchParams)));
 }
 
-void dataManager::updateLaunchParams() {
-    CUDA_CHECK(cudaMemcpy(launch_params_D, &launch_params_H, sizeof(LaunchParams), cudaMemcpyHostToDevice));
+void dataManager::updateLaunchParams()
+{
+	CUDA_CHECK(cudaMemcpy(launch_params_D, &launch_params_H, sizeof(LaunchParams), cudaMemcpyHostToDevice));
 }
 
-void dataManager::ensureCurandStates(unsigned int num_states,
+void dataManager::ensureCurandStates(
+	unsigned int num_states,
 	unsigned long long seed,
 	unsigned int sequence_offset,
-	cudaStream_t stream) {
+	cudaStream_t stream)
+{
 
-	if (num_states == 0) {
+	if (num_states == 0)
+	{
 		launch_params_H.rng_states = nullptr;
 		return;
 	}
 
-	if (rng_states_capacity < num_states) {
-		if (rng_states_D != nullptr) {
+	if (rng_states_capacity < num_states)
+	{
+		if (rng_states_D != nullptr)
+		{
 			CUDA_CHECK(cudaFree(rng_states_D));
 		}
 
-		CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&rng_states_D), num_states * sizeof(curandState)));
+		CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&rng_states_D), num_states * sizeof(curandState)));
 		rng_states_capacity = num_states;
 	}
 
@@ -76,70 +83,73 @@ void dataManager::ensureCurandStates(unsigned int num_states,
 	launch_params_H.rng_states = rng_states_D;
 }
 
-void dataManager::allocateGeometryDataArray(std::vector<GeometryDataST> geometry_data_array_H) {
+void dataManager::allocateGeometryDataArray(std::vector<GeometryDataST> geometry_data_array_H)
+{
 
-
-    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&geometry_data_array_D),
-        geometry_data_array_H.size() * sizeof(GeometryDataST)));
+	CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&geometry_data_array_D),
+						  geometry_data_array_H.size() * sizeof(GeometryDataST)));
 
 	CUDA_CHECK(cudaMemcpy(geometry_data_array_D, geometry_data_array_H.data(),
-		geometry_data_array_H.size() * sizeof(GeometryDataST), cudaMemcpyHostToDevice));
+						  geometry_data_array_H.size() * sizeof(GeometryDataST), cudaMemcpyHostToDevice));
 	// make sure launch_params_H is updated with the new geometry data array
 	launch_params_H.geometry_data_array = geometry_data_array_D;
-
 }
 
-void dataManager::updateGeometryDataArray(std::vector<GeometryDataST> geometry_data_array_H) {
+void dataManager::updateGeometryDataArray(std::vector<GeometryDataST> geometry_data_array_H)
+{
 
-	if (geometry_data_array_D == nullptr) {
+	if (geometry_data_array_D == nullptr)
+	{
 		throw std::runtime_error("Geometry data array is not allocated.");
 	}
 
 	CUDA_CHECK(cudaMemcpy(geometry_data_array_D, geometry_data_array_H.data(),
-		geometry_data_array_H.size() * sizeof(GeometryDataST), cudaMemcpyHostToDevice));
+						  geometry_data_array_H.size() * sizeof(GeometryDataST), cudaMemcpyHostToDevice));
 
-	//launch_params_H.geometry_data_array = geometry_data_array_D;
-
+	// launch_params_H.geometry_data_array = geometry_data_array_D;
 }
 
 void dataManager::allocateMaterialDataArray(std::vector<MaterialData> material_data_array_front_H,
-	std::vector<MaterialData> material_data_array_back_H) {
+											std::vector<MaterialData> material_data_array_back_H)
+{
 
-	CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&material_data_array_front_D),
-		material_data_array_front_H.size() * sizeof(MaterialData)));
+	CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&material_data_array_front_D),
+						  material_data_array_front_H.size() * sizeof(MaterialData)));
 
 	CUDA_CHECK(cudaMemcpy(material_data_array_front_D, material_data_array_front_H.data(),
-		material_data_array_front_H.size() * sizeof(MaterialData), cudaMemcpyHostToDevice));
+						  material_data_array_front_H.size() * sizeof(MaterialData), cudaMemcpyHostToDevice));
 	// make sure launch_params_H is updated with the new geometry data array
 	launch_params_H.material_data_array_front = material_data_array_front_D;
 
-
-	CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&material_data_array_back_D),
-		material_data_array_back_H.size() * sizeof(MaterialData)));
+	CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&material_data_array_back_D),
+						  material_data_array_back_H.size() * sizeof(MaterialData)));
 
 	CUDA_CHECK(cudaMemcpy(material_data_array_back_D, material_data_array_back_H.data(),
-		material_data_array_back_H.size() * sizeof(MaterialData), cudaMemcpyHostToDevice));
+						  material_data_array_back_H.size() * sizeof(MaterialData), cudaMemcpyHostToDevice));
 	// make sure launch_params_H is updated with the new geometry data array
 	launch_params_H.material_data_array_back = material_data_array_back_D;
-
 }
 
-void dataManager::updateMaterialDataArray(std::vector<MaterialData> material_data_array_H) {
-	if (material_data_array_front_D == nullptr) {
+void dataManager::updateMaterialDataArray(std::vector<MaterialData> material_data_array_H)
+{
+	if (material_data_array_front_D == nullptr)
+	{
 		throw std::runtime_error("Not implemented yet ... does material data change??");
 	}
 
-	if (material_data_array_back_D == nullptr) {
+	if (material_data_array_back_D == nullptr)
+	{
 		throw std::runtime_error("Not implemented yet ... does material data change??");
 	}
 }
 
-
-void dataManager::cleanup() {
+void dataManager::cleanup()
+{
 	CUDA_CHECK(cudaFree(launch_params_D));
 	launch_params_D = nullptr;
 
-	if (rng_states_D != nullptr) {
+	if (rng_states_D != nullptr)
+	{
 		CUDA_CHECK(cudaFree(rng_states_D));
 		rng_states_D = nullptr;
 		rng_states_capacity = 0;

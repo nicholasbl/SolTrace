@@ -159,13 +159,13 @@ namespace SolTrace::Result
     }
 
     void SimulationResult::write_csv_file(std::string csv_name,
-                                          int precision)
+                                          int precision) const
     {
         return this->write_csv_file(csv_name.c_str(), precision);
     }
 
     void SimulationResult::write_csv_file(const char *csv_name,
-                                          int precision)
+                                          int precision) const
     {
         std::ofstream csv(csv_name);
         csv.precision(precision);

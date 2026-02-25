@@ -38,54 +38,60 @@ namespace OptixCSP
     //     x ^= x >> 16;
     //     return float(x >> 8) * (1.0f / 16777216.0f); // Scale to [0, 1)
     // }
-
-    static __device__ __inline__ float rng_uniform(OptixCSP::PerRayData &prd)
-    {
-        curandState local_rng = params.rng_states[prd.ray_path_index];
-        const float sample = curand_uniform(&local_rng);
-        params.rng_states[prd.ray_path_index] = local_rng;
-        return sample;
-    }
-
-    static __device__ __inline__ float rng_normal(OptixCSP::PerRayData &prd)
-    {
-        curandState local_rng = params.rng_states[prd.ray_path_index];
-        const float sample = curand_normal(&local_rng);
-        params.rng_states[prd.ray_path_index] = local_rng;
-        return sample;
-    }
-
 }
 
-// Add perturbation ortogonal to given vector. Magnitude is Gaussian with
+extern "C" __device__ __inline__ float3 orthonormal_vector(float3 v)
+{
+    // TODO: Need to handle w = c * v case...
+    w = make_float3(1.0f, 0.0f, 0.0f);
+    u = normalize(cross(v, w));
+    return u;
+}
+
+// Add perturbation ortogonal to given vector. Perturbation is uniform over
+// a disk of radius a centered at the vector n. Returned vector is a
+// unit vector.
+extern "C" __device__ float3 apply_uniform_errors(float a,
+                                                  float3 n,
+                                                  OptixCSP::PerRayData &prd)
+{
+    curandState local_rng = params.rng_states[prd.ray_path_index];
+    float3 eta = orthonormal_vector(v);
+    float3 xi = cross(v, eta);
+    float phi = 2 * M_PI * curand_uniform(&local_rng);
+    float r = sqrt(curand_uniform(&local_rng));
+    eta = r * cos(phi) * eta + r * sin(phi) * xi;
+    params.rng_states[prd.ray_path_index] = local_rng;
+    return normalize(n + eta);
+}
+
+// Add perturbation orthogonal to given vector. Magnitude is Gaussian with
 // standard deviation sigma and the angle is uniform over [-pi, pi).
 // Returned vector is a unit vector.
-extern "C" __device__ float3 apply_gaussian_errors(float sigma, float3 n, OptixCSP::PerRayData &prd)
+extern "C" __device__ float3 apply_gaussian_errors(float sigma,
+                                                   float3 n,
+                                                   OptixCSP::PerRayData &prd)
 {
-    float3 eta = make_float3(OptixCSP::rng_normal(prd),
-                             OptixCSP::rng_normal(prd),
-                             OptixCSP::rng_normal(prd));
-    float3 xi = sigma * normalize(cross(n, eta));
-    eta = normalize(n + xi);
-    return eta;
+    curandState local_rng = params.rng_states[prd.ray_path_index];
+    float3 eta = make_float3(curand_normal(&local_rng),
+                             curand_normal(&local_rng),
+                             curand_normal(&local_rng));
+    float3 xi = sigma * curand_normal(&local_rng) * normalize(cross(n, eta));
+    params.rng_states[prd.ray_path_index] = local_rng;
+    return normalize(n + xi);
+
+    // Could also do the below but it is slower in CPU trials...
+    curandState local_rng = params.rng_states[prd.ray_path_index];
+    float3 eta = orthonormal_vector(v);
+    float3 xi = cross(v, eta);
+    float phi = 2 * M_PI * curand_uniform(&local_rng);
+    float r = sigma * curand_normal(&local_rng);
+    eta = r * cos(phi) * eta + r * sin(phi) * xi;
+    params.rng_states[prd.ray_path_index] = local_rng;
+    return normalize(n + eta);
 }
 
-// // Add perturbation ortogonal to given vector. Magnitude is Gaussian with
-// // standard deviation sigma and the angle is uniform over [-pi, pi).
-// // Returned vector is a unit vector.
-// extern "C" __device__ float3 apply_gaussian_errors(float sigma, float3 n)
-// {
-//     // TODO: Need to initialize once, also need seed and other arguments
-//     curandState rng;
-//     curand_init(123, 456, 789, &rng);
 
-//     float3 eta = make_float3(curand_normal(&rng),
-//                              curand_normal(&rng),
-//                              curand_normal(&rng));
-//     float3 xi = sigma * normalize(cross(n, eta));
-//     eta = normalize(n + xi);
-//     return eta;
-// }
 
 extern "C" __global__ void __closesthit__mirror()
 {
@@ -130,7 +136,8 @@ extern "C" __global__ void __closesthit__mirror()
     float spec_sigma = material.specularity_error;
 
     // now we figure out the random number to determine if the ray is absorbed or refracted
-    float xi = OptixCSP::rng_uniform(prd); // random number in [0,1)
+    // float xi = OptixCSP::rng_uniform(prd); // random number in [0,1)
+    float xi = curand_uniform(params.rng_states[prd.ray_path_index]);
 
     // Surface normal (macro-surface) errors
     ffnormal = apply_gaussian_errors(normal_sigma, ffnormal, prd);
@@ -335,14 +342,53 @@ extern "C" __global__ void __closesthit__mirror__parabolic()
     // Compute the hit point.
     const float3 hit_point = ray_orig + ray_t * ray_dir;
 
-    // Retrieve per�ray payload.
+    // Retrieve per ray payload.
     OptixCSP::PerRayData prd = OptixCSP::getPayload();
     const int new_depth = prd.depth + 1; // Increase recursion depth.
 
-    // Compute the reflected ray direction.
-    float3 reflected_dir = reflect(ray_dir, ffnormal);
+    // Get optical properties
+    OptixCSP::MaterialData material = hit_front_face ? params.material_data_array_front[optixGetPrimitiveIndex()]
+                                                     : params.material_data_array_back[optixGetPrimitiveIndex()];
+    float transmissivity = material.transmissivity;
+    bool use_transmissivity = material.use_refraction;
+    float reflectivity = material.reflectivity;
+    float normal_sigma = 1e-3f * material.slope_error;
+    float spec_sigma = material.specularity_error;
 
-    // (Optional: Add noise to reflected_dir if desired.)
+    // Compute the reflected ray direction.
+    ffnormal = apply_gaussian_errors(normal_sigma, ffnormal);
+
+    float xi = curand_uniform(params.rng_states[prd.ray_path_index]);
+    if (use_transmissivity)
+    {
+        if (xi > transmissivity)
+        {
+            absorbed = true;
+            hit_type = OptixCSP::HitType::HIT_ABSORB;
+            // printf("ray is absorbed! ray index is %d, depth %d\n", prd.ray_path_index, prd.depth);
+        } // ray is absorbed
+        else
+        {
+            new_dir = refract(ray_dir, ffnormal);
+            hit_type = OptixCSP::HitType::HIT_TRANSMIT;
+        }
+    }
+    else
+    {
+        if (xi > reflectivity)
+        {
+            absorbed = true;
+            hit_type = OptixCSP::HitType::HIT_ABSORB;
+            // printf("ray is absorbed! ray index is %d, depth %d\n", prd.ray_path_index, prd.depth);
+        } // ray is absorbed
+        else
+        {
+            new_dir = reflect(ray_dir, ffnormal);
+            hit_type = OptixCSP::HitType::HIT_REFLECT;
+        }
+    }
+
+    reflected_dir = apply_gaussian_errors(spec_sigma, reflected_dir);
 
     // If the new depth is below the maximum, trace the reflected ray.
     if (new_depth < params.max_depth)

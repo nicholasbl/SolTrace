@@ -126,17 +126,17 @@ namespace SolTrace::Result
         {
             return this->ray_history.size();
         }
-        RayRecordContainer::const_iterator get_ray_record_iteratior()
+        RayRecordContainer::const_iterator get_ray_record_iterator() const
         {
             return ray_history.cbegin();
         }
-        bool is_at_end(RayRecordContainer::const_iterator citer)
+        bool is_at_end(RayRecordContainer::const_iterator citer) const
         {
             return citer == this->ray_history.cend();
         }
 
-        void write_csv_file(std::string csv_name, int precision=12);
-        void write_csv_file(const char *csv_name, int precision=12);
+        void write_csv_file(std::string csv_name, int precision=12) const;
+        void write_csv_file(const char *csv_name, int precision=12) const;
 
         // Legacy stuff -- TODO:
         // void results_to_legacy_csv(std::string csv_name,
