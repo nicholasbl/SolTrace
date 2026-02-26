@@ -25,9 +25,16 @@ namespace OptixCSP {
     class Vec3d;
     class Surface;
 
+    static constexpr SolTrace::Data::SunShape kSupportedSunshapes[] = {
+            SolTrace::Data::SunShape::GAUSSIAN,
+            SolTrace::Data::SunShape::PILLBOX
+    };
+
     class SolTraceSystem {
+
     public:
-        SolTraceSystem(int numSunPoints, int maxSunPoints);
+        
+        SolTraceSystem();
         ~SolTraceSystem();
 
         /// Call to this function mark the completion of the simulation setup
@@ -122,6 +129,8 @@ namespace OptixCSP {
         std::vector<float3> get_sunraydir_vec() const { return m_sun_ray_dir_vec; }
 
         void set_sun_shape_errors(bool flag) { this->m_include_sun_shape_errors = flag; }
+
+        
 
     private:
 

@@ -54,9 +54,9 @@ void SolTraceSystem::print_launch_params() {
     std::cout << "sun_box_edge_b     : " << sun_box_edge_b << std::endl;
 }
 
-SolTraceSystem::SolTraceSystem(int numSunPoints, int maxSunPoints)
-    : m_number_of_rays(numSunPoints),
-      m_max_number_of_rays(maxSunPoints),
+SolTraceSystem::SolTraceSystem()
+    : m_number_of_rays(0),
+      m_max_number_of_rays(0),
       m_verbose(false),
       m_mem_free_before(0),
       m_mem_free_after(0),
@@ -67,15 +67,10 @@ SolTraceSystem::SolTraceSystem(int numSunPoints, int maxSunPoints)
       pipeline_manager(std::make_shared<pipelineManager>(m_state)),
       m_sun(nullptr)
 {
-    CUDA_CHECK(cudaFree(0));
-    CUcontext cuCtx = 0;
-    OPTIX_CHECK(optixInit());
-    OptixDeviceContextOptions options = {};
-    options.logCallbackFunction = [](unsigned int level, const char* tag, const char* message, void*) {
-        std::cerr << "[" << std::setw(2) << level << "][" << std::setw(12) << tag << "]: " << message << "\n";
-    };
-    options.logCallbackLevel = 4;
-    OPTIX_CHECK(optixDeviceContextCreate(cuCtx, &options, &m_state.context));
+    m_state.context = nullptr;
+    m_state.stream = nullptr;
+    m_state.sbt = {};
+    m_state.d_gas_output_buffer = 0;
 }
 
 SolTraceSystem::~SolTraceSystem() {
@@ -83,6 +78,21 @@ SolTraceSystem::~SolTraceSystem() {
 }
 
 void SolTraceSystem::initialize() {
+
+    // Create OptiX context on first initialize
+    if (!m_state.context)
+    {
+        CUDA_CHECK(cudaFree(0));
+        CUcontext cuCtx = 0;
+        OPTIX_CHECK(optixInit());
+        OptixDeviceContextOptions options = {};
+        options.logCallbackFunction = [](unsigned int level, const char* tag, const char* message, void*) {
+            std::cerr << "[" << std::setw(2) << level << "][" << std::setw(12) << tag << "]: " << message << "\n";
+            };
+        options.logCallbackLevel = 4;
+        OPTIX_CHECK(optixDeviceContextCreate(cuCtx, &options, &m_state.context));
+    }
+
 	cudaMemGetInfo(&m_mem_free_before, nullptr);
     m_timer_setup.start();
 
@@ -465,6 +475,11 @@ void SolTraceSystem::write_sun_output(const std::string& filename) {
 
 void SolTraceSystem::clean_up() {
 
+    // Nothing to clean if device not initialized
+    if (!m_state.context)
+    {
+        return;
+    }
 
     CUDA_CHECK(cudaDeviceSynchronize());
     // destroy pipeline related resources

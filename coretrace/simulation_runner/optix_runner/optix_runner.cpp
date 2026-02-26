@@ -11,7 +11,7 @@ using SolTrace::Result::SimulationResult;
 
 OptixRunner::OptixRunner() : SimulationRunner(),
                              m_simdata(nullptr),
-                             m_sys(10000, 10000*10) {}
+                             m_sys() {}
 
 OptixRunner::~OptixRunner()
 {
@@ -87,10 +87,22 @@ RunnerStatus OptixRunner::setup_sun(const SimulationData *data)
     m_sys.set_sun(sun.get());
 
     // Check if sun shape is assigned
-    if (data->get_simulation_parameters().include_sun_shape_errors
-        && sun->get_shape() == SolTrace::Data::SunShape::UNKNOWN)
+    if (data->get_simulation_parameters().include_sun_shape_errors)
     {
-        return RunnerStatus::ERROR;
+        const SolTrace::Data::SunShape shape = sun->get_shape();
+        bool is_supported = false;
+        for (auto supported_shape : OptixCSP::kSupportedSunshapes)
+        {
+            if (shape == supported_shape)
+            {
+                is_supported = true;
+                break;
+            }
+        }
+        if (!is_supported)
+        {
+            return RunnerStatus::ERROR;
+        }
     }
 
     return RunnerStatus::SUCCESS;
