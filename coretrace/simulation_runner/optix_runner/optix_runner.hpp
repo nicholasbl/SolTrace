@@ -52,6 +52,8 @@ private:
 
     // helper function, convert Vector3d to Optix::Vec3d
     OptixCSP::Vec3d ToVec3d(SolTrace::Data::Vector3d v);
+    // helper function, convert SolTrace::Data::DistributionType to Optix::OpticalDistribution
+    OptixCSP::OpticalDistribution to_optical_distribution(SolTrace::Data::DistributionType dt);
 };
 
 #endif

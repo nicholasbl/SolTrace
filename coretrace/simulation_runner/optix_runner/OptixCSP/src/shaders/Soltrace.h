@@ -2,6 +2,7 @@
 
 #include "GeometryDataST.h"
 #include "MaterialDataST.h"
+#include "soltrace_constants.h"
 
 #include <vector_types.h>
 #include <optix.h>
@@ -35,6 +36,9 @@ namespace OptixCSP{
 
     struct LaunchParams
     {
+        bool                        optical_errors;
+        bool                        sun_shape;
+
         unsigned int                width;   // essentially number of rays launched and sun points 
         unsigned int                height;
         int                         max_depth;

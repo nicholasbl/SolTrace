@@ -17,6 +17,7 @@ namespace SolTrace::Data {
 // Add to DistributionTypeMap when adding to DistributionType
 enum class DistributionType
 {
+    NONE,
     GAUSSIAN,
     PILLBOX,
     DIFFUSE,
@@ -26,6 +27,7 @@ enum class DistributionType
 
 inline const std::map<DistributionType, std::string> DistributionTypeMap =
 {
+    {DistributionType::NONE, "NONE"},
     {DistributionType::GAUSSIAN, "GAUSSIAN"},
     {DistributionType::PILLBOX, "PILLBOX"},
     {DistributionType::DIFFUSE, "DIFFUSE"},

@@ -23,6 +23,7 @@ namespace SolTrace::Data {
 // Add new enums to SunShapeMap too
 enum class SunShape
 {
+    NONE,
     GAUSSIAN,
     PILLBOX,
     LIMBDARKENED,
@@ -33,6 +34,7 @@ enum class SunShape
 
 inline const std::map<SunShape, std::string> SunShapeMap =
 {
+    {SunShape::NONE, "NONE"},
     {SunShape::GAUSSIAN, "GAUSSIAN"},
     {SunShape::PILLBOX, "PILLBOX"},
     {SunShape::LIMBDARKENED, "LIMBDARKENED"},

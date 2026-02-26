@@ -59,6 +59,8 @@ SolTraceSystem::SolTraceSystem(int numSunPoints, int maxSunPoints)
       m_mem_free_before(0),
       m_mem_free_after(0),
       m_sun_angle(0.0),
+      m_optical_errors(false),
+      m_sun_shape(false),
       m_timer_setup(),
       m_timer_trace(),
       geometry_manager(std::make_shared<GeometryManager>(m_state)),
@@ -117,8 +119,10 @@ void SolTraceSystem::initialize() {
     sbt_timer.stop();
 	std::cout << "Time to create SBT: " << sbt_timer.get_time_sec() << " seconds" << std::endl;
 
-	// seed for sun ray randomization
+	// seed for randomization
     data_manager->launch_params_H.sun_dir_seed = m_seed;
+    data_manager->launch_params_H.optical_errors = m_optical_errors;
+    data_manager->launch_params_H.sun_shape = m_sun_shape;
 
     // Create a CUDA stream for asynchronous operations.
     CUDA_CHECK(cudaStreamCreate(&m_state.stream));

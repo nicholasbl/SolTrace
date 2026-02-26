@@ -91,10 +91,11 @@ extern "C" __device__ float3 apply_gaussian_errors(float sigma,
     // return normalize(n + eta);
 }
 
-
-
 extern "C" __global__ void __closesthit__mirror()
 {
+    // Determine if we are using optical errors
+    const bool optical_errors = params.optical_errors;
+
     // Fetch the normal vector from the hit attributes passed by OptiX
     float3 object_normal = make_float3(__uint_as_float(optixGetAttribute_0()), __uint_as_float(optixGetAttribute_1()),
                                        __uint_as_float(optixGetAttribute_2()));
@@ -129,18 +130,33 @@ extern "C" __global__ void __closesthit__mirror()
     // Get optical properties
     OptixCSP::MaterialData material = hit_front_face ? params.material_data_array_front[optixGetPrimitiveIndex()]
                                                      : params.material_data_array_back[optixGetPrimitiveIndex()];
-    float transmissivity = material.transmissivity;
-    bool use_transmissivity = material.use_refraction;
-    float reflectivity = material.reflectivity;
-    float normal_sigma = 1e-3f * material.slope_error;
-    float spec_sigma = material.specularity_error;
+    const float transmissivity = material.transmissivity;
+    const bool use_transmissivity = material.use_refraction;
+    const float reflectivity = material.reflectivity;
+    const float normal_sigma = 1e-3f * material.slope_error;
+    const float spec_sigma = material.specularity_error;
+    const uint8_t error_type = material.optical_dist;
+
+    // Surface normal (macro-surface) errors
+    if (optical_errors)
+    {
+        if (error_type == OptixCSP::OpticalDistribution::GAUSSIAN)
+        {
+            ffnormal = apply_gaussian_errors(normal_sigma, ffnormal, prd);
+        }
+        else if (error_type == OptixCSP::OpticalDistribution::PILLBOX)
+        {
+            ffnormal = apply_uniform_errors(normal_sigma, ffnormal, prd);
+        }
+        else
+        {
+            ; // Intentional no-op
+        }
+    }
 
     // now we figure out the random number to determine if the ray is absorbed or refracted
     // float xi = OptixCSP::rng_uniform(prd); // random number in [0,1)
-    float xi = curand_uniform(&params.rng_states[prd.ray_path_index]);
-
-    // Surface normal (macro-surface) errors
-    ffnormal = apply_gaussian_errors(normal_sigma, ffnormal, prd);
+    const float xi = curand_uniform(&params.rng_states[prd.ray_path_index]);
 
     if (use_transmissivity)
     {
@@ -171,8 +187,47 @@ extern "C" __global__ void __closesthit__mirror()
         }
     }
 
-    // Optical (micro-surface) errors
-    new_dir = apply_gaussian_errors(spec_sigma, new_dir, prd);
+    if (optical_errors)
+    {
+        // Optical (micro-surface) errors
+        if (error_type == OptixCSP::OpticalDistribution::GAUSSIAN)
+        {
+            new_dir = apply_gaussian_errors(spec_sigma, new_dir, prd);
+        }
+        else if (error_type == OptixCSP::OpticalDistribution::PILLBOX)
+        {
+            new_dir = apply_uniform_errors(spec_sigma, new_dir, prd);
+        }
+        else
+        {
+            ; // Intentional no-op
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////
+    // // Alternative to the above doing this twice is to combine it
+    // // into a single spot...may not work as intended for pillbox?
+    // // Would be more efficient since we could combine the two
+    // // error values during setup and then we would only need one
+    // // field and we would avoid a whole if clause.
+    // const float sigma = sqrt(4.0f * normal_sigma + spec_sigma);
+    // if (optical_errors)
+    // {
+    //     // Optical (micro-surface) errors
+    //     if (error_type == OptixCSP::OpticalDistribution::GAUSSIAN)
+    //     {
+    //         new_dir = apply_gaussian_errors(sigma, new_dir, prd);
+    //     }
+    //     else if (error_type == OptixCSP::OpticalDistribution::PILLBOX)
+    //     {
+    //         new_dir = apply_uniform_errors(sigma, new_dir, prd);
+    //     }
+    //     else
+    //     {
+    //         ; // Intentional no-op
+    //     }
+    // }
+    /////////////////////////////////////////////////////////////////
 
     // Check if the maximum recursion depth has not been reached
     if (new_depth < params.max_depth)
@@ -321,6 +376,9 @@ extern "C" __global__ void __closesthit__mirror__parabolic()
     // const OptixCSP::HitGroupData* sbt_data = reinterpret_cast<OptixCSP::HitGroupData*>( optixGetSbtDataPointer() );
     // const MaterialData::Mirror& mirror = sbt_data->material_data.mirror;
 
+    // Determine if we are using optical errors
+    const bool optical_errors = params.enable_optical_errors;
+
     // Retrieve the hit normal from the attributes.
     // The intersection shader for the parabolic surface reported the normal (using float3_as_args)
     // in the hit attributes. In many cases this normal is already in world space.
@@ -360,16 +418,33 @@ extern "C" __global__ void __closesthit__mirror__parabolic()
     // Get optical properties
     OptixCSP::MaterialData material = hit_front_face ? params.material_data_array_front[optixGetPrimitiveIndex()]
                                                      : params.material_data_array_back[optixGetPrimitiveIndex()];
-    float transmissivity = material.transmissivity;
-    bool use_transmissivity = material.use_refraction;
-    float reflectivity = material.reflectivity;
-    float normal_sigma = 1e-3f * material.slope_error;
-    float spec_sigma = material.specularity_error;
+    const float transmissivity = material.transmissivity;
+    const bool use_transmissivity = material.use_refraction;
+    const float reflectivity = material.reflectivity;
+    const float normal_sigma = 1e-3f * material.slope_error;
+    const float spec_sigma = material.specularity_error;
+    const uint8_t error_type = material.optical_dist;
 
-    // Compute the reflected ray direction.
-    ffnormal = apply_gaussian_errors(normal_sigma, ffnormal, prd);
+    if (optical_errors)
+    {
+        // Surface normal (macro-surface) errors
+        if (error_type == OptixCSP::OpticalDistribution::GAUSSIAN)
+        {
+            ffnormal = apply_gaussian_errors(normal_sigma, ffnormal, prd);
+        }
+        else if (error_type == OptixCSP::OpticalDistribution::PILLBOX)
+        {
+            ffnormal = apply_uniform_errors(normal_sigma, ffnormal, prd);
+        }
+        else
+        {
+            ; // Intentional no-op
+        }
+    }
 
-    float xi = curand_uniform(&params.rng_states[prd.ray_path_index]);
+    // now we figure out the random number to determine if the ray is absorbed or refracted
+    // float xi = OptixCSP::rng_uniform(prd); // random number in [0,1)
+    const float xi = curand_uniform(&params.rng_states[prd.ray_path_index]);
 
     if (use_transmissivity)
     {
@@ -400,7 +475,22 @@ extern "C" __global__ void __closesthit__mirror__parabolic()
         }
     }
 
-    new_dir = apply_gaussian_errors(spec_sigma, new_dir, prd);
+    if (optical_errors)
+    {
+        // Optical (micro-surface) errors
+        if (error_type == OptixCSP::OpticalDistribution::GAUSSIAN)
+        {
+            new_dir = apply_gaussian_errors(spec_sigma, new_dir, prd);
+        }
+        else if (error_type == OptixCSP::OpticalDistribution::PILLBOX)
+        {
+            new_dir = apply_uniform_errors(spec_sigma, new_dir, prd);
+        }
+        else
+        {
+            ; // Intentional no-op
+        }
+    }
 
     // If the new depth is below the maximum, trace the reflected ray.
     if (new_depth < params.max_depth)
@@ -413,24 +503,24 @@ extern "C" __global__ void __closesthit__mirror__parabolic()
         params.hit_type_buffer[slot] = hit_type;
 
         prd.depth = new_depth;
-	if (!absorbed)
-	{
-	    optixTrace(
-		       params.handle,                                        // Acceleration structure handle.
-		       hit_point,                                            // Ray origin.
-		       new_dir,                                              // Ray direction.
-		       0.01f,                                                // Minimum t to avoid self-intersection.
-		       1e16f,                                                // Maximum t.
-		       0.0f,                                                 // Ray time.
-		       OptixVisibilityMask(1),                               // Visibility mask.
-		       OPTIX_RAY_FLAG_NONE,                                  // Ray flags.
-		       OptixCSP::RAY_TYPE_RADIANCE,                          // Ray type.
-		       OptixCSP::RAY_TYPE_COUNT,                             // Number of ray types.
-		       OptixCSP::RAY_TYPE_RADIANCE,                          // SBT offset for this ray type.
-		       reinterpret_cast<unsigned int &>(prd.ray_path_index), // Ray path index.
-		       reinterpret_cast<unsigned int &>(prd.depth)           // Current recursion depth.
-		       );
-	}
+        if (!absorbed)
+        {
+            optixTrace(
+                params.handle,                                        // Acceleration structure handle.
+                hit_point,                                            // Ray origin.
+                new_dir,                                              // Ray direction.
+                0.01f,                                                // Minimum t to avoid self-intersection.
+                1e16f,                                                // Maximum t.
+                0.0f,                                                 // Ray time.
+                OptixVisibilityMask(1),                               // Visibility mask.
+                OPTIX_RAY_FLAG_NONE,                                  // Ray flags.
+                OptixCSP::RAY_TYPE_RADIANCE,                          // Ray type.
+                OptixCSP::RAY_TYPE_COUNT,                             // Number of ray types.
+                OptixCSP::RAY_TYPE_RADIANCE,                          // SBT offset for this ray type.
+                reinterpret_cast<unsigned int &>(prd.ray_path_index), // Ray path index.
+                reinterpret_cast<unsigned int &>(prd.depth)           // Current recursion depth.
+            );
+        }
     }
 
     // Store the updated payload.

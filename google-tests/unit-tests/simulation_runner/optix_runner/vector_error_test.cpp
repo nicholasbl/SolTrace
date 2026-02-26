@@ -74,8 +74,6 @@ TEST(OpticalErrors, Gaussian)
     Vector3d nhat(0.0, 0.0, 1.0);
     Vector3d u;
 
-    // std::cout << result_error << std::endl;
-
     // auto it_ideal = result_ideal.get_ray_record_iterator();
     auto it_error = result_error.get_ray_record_iterator();
 
@@ -91,8 +89,8 @@ TEST(OpticalErrors, Gaussian)
 
         EXPECT_EQ(err->get_element(1), plate_id);
 
-	// TODO: Need to get direction information in results before
-	// the below can be implemented.
+        // TODO: Need to get direction information in results before
+        // the below can be implemented.
 
         // err->get_direction(1, u);
         // // Extend u so that dot_product(nhat, u - nhat) == 0
