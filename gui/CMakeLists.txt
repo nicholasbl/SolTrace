@@ -206,10 +206,16 @@ qt_add_qml_module(SolTrace
         src/database/opticaleditor.h src/database/opticaleditor.cpp
         src/app.h src/app.cpp
         src/modules/simulation_module.h src/modules/simulation_module.cpp
-        SOURCES src/modules/module_common.h src/modules/module_common.cpp
-        SOURCES src/modules/file_source_module.h src/modules/file_source_module.cpp
-        SOURCES src/modules/sun_module.h src/modules/sun_module.cpp
-        SOURCES src/modules/documentation_module.h src/modules/documentation_module.cpp
+        src/modules/module_common.h src/modules/module_common.cpp
+        src/modules/file_source_module.h src/modules/file_source_module.cpp
+        src/modules/sun_module.h src/modules/sun_module.cpp
+        src/modules/documentation_module.h src/modules/documentation_module.cpp
+        src/modules/tracing_module.h src/modules/tracing_module.cpp
+        src/modules/materials_module.h src/modules/materials_module.cpp
+        src/modules/intersections_module.h src/modules/intersections_module.cpp
+        src/modules/flux_module.h src/modules/flux_module.cpp
+        src/modules/geometry_module.h src/modules/geometry_module.cpp
+        src/modules/workflow_module.h src/modules/workflow_module.cpp
 )
 
 CPMAddPackage(

@@ -57,3 +57,33 @@ void Backend::reset() {
 }
 
 void Backend::start_load_file(QUrl file) { }
+
+SunBackend::SunBackend(QObject *parent) :
+    QObject(parent)
+{}
+
+TracingBackend::TracingBackend(QObject *parent) :
+    QObject(parent)
+{}
+
+MaterialsBackend::MaterialsBackend(QObject *parent) :
+    QObject(parent)
+{}
+
+GeometryBackend::GeometryBackend(QObject *parent) :
+    QObject(parent)
+{}
+
+IntersectionsBackend::IntersectionsBackend(QObject *parent) :
+    QObject(parent)
+{}
+
+FluxBackend::FluxBackend(QObject *parent) :
+    QObject(parent)
+{}
+
+
+void Backend::file_ready()
+{
+    // stub
+}

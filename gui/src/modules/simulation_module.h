@@ -32,7 +32,7 @@ private slots:
     void job_done();
 
 public:
-    SimulationModule(QObject* parent = nullptr);
+    explicit SimulationModule(QObject* parent = nullptr);
 
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
     QOBJECT_READONLY_PROPERTY(StatusComponent, status);

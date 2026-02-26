@@ -9,7 +9,7 @@ namespace SolTrace::GUI::App {
 class CustomSunShapeModel : public QAbstractListModel {
     Q_OBJECT
 public:
-    CustomSunShapeModel(QObject* parent = nullptr);
+    explicit CustomSunShapeModel(QObject* parent = nullptr);
 
     enum Roles {
         AngleRole = Qt::UserRole + 1,
@@ -49,7 +49,7 @@ private:
 class SunDefinition : public QObject {
     Q_OBJECT
 public:
-    SunDefinition(QObject* parent = nullptr);
+    explicit SunDefinition(QObject* parent = nullptr);
 
     enum class SunType { Directional, PointSource };
     enum class SunShape { Gaussian, Pillbox, CSR, Custom };
@@ -79,7 +79,7 @@ class DirectionalSunPosition : public QObject {
     Q_OBJECT
 
 public:
-    DirectionalSunPosition(QObject* parent = nullptr);
+    explicit DirectionalSunPosition(QObject* parent = nullptr);
 
     enum class PositionCalculator { Legacy, Duffie, SOLPOS, SPA };
 
@@ -120,7 +120,7 @@ class PointSourcePosition : public QObject {
     Q_OBJECT
 
 public:
-    PointSourcePosition(QObject* parent = nullptr);
+    explicit PointSourcePosition(QObject* parent = nullptr);
 
     Q_WRITABLE_PROPERTY(double, x, 1000)
     Q_WRITABLE_PROPERTY(double, y, 1000)
@@ -132,7 +132,7 @@ class SunModule : public QObject {
     Q_OBJECT
 
 public:
-    SunModule(QObject* parent = nullptr);
+    explicit SunModule(QObject* parent = nullptr);
 
     QPOINTER_WRITABLE_PROPERTY(SunBackend, backend)
     QOBJECT_READONLY_PROPERTY(StatusComponent, status)
@@ -143,5 +143,6 @@ public:
                               ps_positions)
 
 };
-}
+} // namespace SolTrace::GUI::App
+
 

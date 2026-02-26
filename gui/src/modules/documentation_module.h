@@ -64,8 +64,8 @@ class DocumentationContent : public QObject {
     Q_OBJECT
 
 public:
-    DocumentationContent(QObject* parent = nullptr);
-    DocumentationContent(QObject* parent = nullptr, QString section_number = "", QString header = "", QString body = "");
+    explicit DocumentationContent(QObject* parent = nullptr);
+    explicit DocumentationContent(QObject* parent = nullptr, QString section_number = "", QString header = "", QString body = "");
 
     Q_WRITABLE_PROPERTY(QString, section_number, "")
     Q_WRITABLE_PROPERTY(QString, header, "")

@@ -162,4 +162,4 @@ void CustomSunShapeModel::paste_from_clipboard()
     setData(rows);
 }
 
-}
+} // namespace SolTrace::GUI::App

@@ -3,10 +3,6 @@
 
 namespace SolTrace::GUI::App {
 
-// Simlation ===================================================================
-
-
-// App =========================================================================
 
 App::App(QObject* parent, const QString& documentation_directory)
     : m_workflow(new WorkflowModule(this)),

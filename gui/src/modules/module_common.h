@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QAbstractListModel>
+#include "utilities/qt_helpers.h"
 
 namespace SolTrace::GUI::App {
 /**
@@ -29,7 +30,7 @@ namespace SolTrace::GUI::App {
 class StatusComponent : public QObject {
     Q_OBJECT
 public:
-    StatusComponent(QObject* parent = nullptr);
+    explicit StatusComponent(QObject* parent = nullptr);
 
     enum class Status {
         Incomplete,
@@ -43,6 +44,9 @@ public:
 
     Q_ENUM(Status)
 
+    Q_WRITABLE_PROPERTY(Status, status, Status::Unset)
+    Q_WRITABLE_PROPERTY(QString, message, "")
+
     Q_INVOKABLE void mark_incomplete(const QString& message = "");
     Q_INVOKABLE void mark_loading(const QString& message = "");
     Q_INVOKABLE void mark_ready(const QString& message = "Ready");
@@ -51,8 +55,6 @@ public:
     Q_INVOKABLE void mark_complete(const QString& message = "");
     Q_INVOKABLE void mark_unset(const QString& message = "");
 
-private:
-    Status m_status;
 };
 
 /**
@@ -73,19 +75,27 @@ private:
 class PresetComponentBase : public QAbstractListModel {
     Q_OBJECT
 public:
-    enum Roles { NameRole = Qt::UserRole + 1, DescriptionRole };
 
+    enum Roles { NameRole = Qt::UserRole + 1, DescriptionRole };
+    QHash<int, QByteArray> roleNames() const override;
+
+    Q_INVOKABLE bool create(const QString& name, const QString& description);
     Q_INVOKABLE bool load(const QString& name);
+    Q_INVOKABLE bool modify(const QString& name);
     Q_INVOKABLE bool save(const QString& name, const QString& description = "");
     Q_INVOKABLE bool remove(const QString& name);
     Q_INVOKABLE bool import_preset(const QString& filepath);
     Q_INVOKABLE bool export_preset(const QString& name,
                                    const QString& filepath);
 
-    int      rowCount(const QModelIndex& parent = QModelIndex()) const override;
-    QVariant data(const QModelIndex& index,
-                                int                role = Qt::DisplayRole) const override;
-    QHash<int, QByteArray> roleNames() const override;
+protected:
+    virtual bool create_impl(const QString& name, const QString& description) = 0;
+    virtual bool load_impl(const QString& name) = 0;
+    virtual bool modify_impl(const QString& name) = 0;
+    virtual bool save_impl(const QString& name, const QString& description = "") = 0;
+    virtual bool remove_impl(const QString& name) = 0;
+    virtual bool import_preset_impl(const QString& filepath) = 0;
+    virtual bool export_preset_impl(const QString& name, const QString& filepath) = 0;
 };
 
 /**
@@ -106,15 +116,96 @@ public:
  */
 
 template <typename T>
+struct Preset {
+    QString description;
+    QString file_path; // empty = never saved
+    T* data;
+    bool modified = false;
+};
+
+template <typename T>
 class PresetComponent : public PresetComponentBase {
+
 public:
-    QPointer<T> active() const;
-    void        set_active(T* preset);
+    QPointer<T> active_preset();
+    QPointer<T> set_active_preset(QString key);
+
+    int rowCount(const QModelIndex &parent) const override
+    {
+        if (parent.isValid()) return 0;
+        return m_presets.count();
+    }
+
+    QVariant data(const QModelIndex &index, int role) const override
+    {
+        if (!index.isValid()) return {};
+        if (index.row() > m_keys.count()) return {};
+        QString key = m_keys[index.row()];
+        switch (role) {
+        case Roles::NameRole: return key;
+        case Roles::DescriptionRole: return m_presets[key].description;
+        default: return {};
+        }
+    }
+
+protected:
+    bool create_impl(const QString& name, const QString& description) override {
+        QString key_name = name;
+
+        if (m_presets.contains(key_name)) {
+            for (int i = 1; ; i++) {
+                QString str = name + " (" + QString::number(i) + ")";
+                if (!m_presets.contains(str)) {
+                    key_name = str;
+                    break;
+                }
+            }
+        }
+
+        m_presets.insert(key_name, Preset<T>{.description=description, .data = new T()});
+        m_keys.append(key_name);
+        m_active = key_name;
+
+        return true;
+    }
+
+    bool modify_impl(const QString& name) override {
+        if (!m_presets.contains(name)) return false;
+        m_presets[name].modified = true;
+        return true;
+    }
+
+    bool load_impl(const QString& name) override {
+        if (!m_presets.contains(name)) return false;
+        m_active = name;
+        return true;
+    }
+
+    bool save_impl(const QString& name, const QString& description = "") override {
+        if (!m_presets.contains(name)) return false;
+        // stub
+        return true;
+    }
+
+    bool remove_impl(const QString& name) override {
+        return m_presets.remove(name);
+    }
+
+    bool import_preset_impl(const QString& filepath) override {
+        // stub
+        return false;
+    }
+
+    bool export_preset_impl(const QString& name, const QString& filepath) override {
+        if (!m_presets.contains(name)) return false;
+        // stub
+        return false;
+    }
 
 private:
-    QHash<QString, T*> m_presets;
+    QHash<QString,Preset<T>> m_presets;
     QList<QString>     m_keys;
-    QPointer<T>        m_active_preset;
+    QString m_active;
 };
 
 } // namespace SolTrace::GUI::App
