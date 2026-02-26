@@ -36,9 +36,15 @@ RunnerStatus OptixRunner::setup_simulation(const SimulationData *data)
 
     // this->simdata = data;
 
-    this->setup_parameters(data);
-    this->setup_sun(data);
+    sts = this->setup_parameters(data);
+    if (sts != RunnerStatus::SUCCESS)
+        return sts;
+    sts = this->setup_sun(data);
+    if (sts != RunnerStatus::SUCCESS)
+        return sts;
     sts = this->setup_elements(data);
+    if (sts != RunnerStatus::SUCCESS)
+        return sts;
 
     m_sys.initialize();
 
@@ -56,7 +62,8 @@ RunnerStatus OptixRunner::setup_parameters(const SimulationData *data)
     m_sys.set_number_of_rays(sim_params.number_of_rays, sim_params.max_number_of_rays);
     m_sys.set_seed(static_cast<uint64_t>(sim_params.seed));
     
-    //this->tsys.sim_errors_sunshape = sim_params.include_sun_shape_errors;
+    m_sys.set_sun_shape_errors(sim_params.include_sun_shape_errors);
+
     //this->tsys.sim_errors_optical = sim_params.include_optical_errors;
     //this->tsys.sim_raycount = sim_params.number_of_rays;
     //this->tsys.sim_raymax = sim_params.max_number_of_rays;
@@ -69,9 +76,22 @@ RunnerStatus OptixRunner::setup_sun(const SimulationData *data)
     // Get RaySource data (this runner assumes there is only the Sun)
     assert(data->get_number_of_ray_sources() == 1);
 
-    m_sys.set_sun_vector(ToVec3d(data->get_ray_source()->get_position()));
+    // Verify that the only ray source is a Sun
+    auto src = data->get_ray_source();
+    auto sun = std::dynamic_pointer_cast<SolTrace::Data::Sun>(src);
+    if (!sun)
+    {
+        // Needs to be a Sun
+        return RunnerStatus::ERROR;
+    }
+    m_sys.set_sun(sun.get());
 
-    //  TODO: sun angle and sun models
+    // Check if sun shape is assigned
+    if (data->get_simulation_parameters().include_sun_shape_errors
+        && sun->get_shape() == SolTrace::Data::SunShape::UNKNOWN)
+    {
+        return RunnerStatus::ERROR;
+    }
 
     return RunnerStatus::SUCCESS;
 }

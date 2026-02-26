@@ -5,7 +5,7 @@
 #ifndef BASIC_SUN_H
 #define BASIC_SUN_H
 
-#include "simulation_data.hpp"
+#include "../simulation_data.hpp"
 
 namespace SolTrace::Data {
 

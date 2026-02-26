@@ -2,6 +2,7 @@
 
 #include "GeometryDataST.h"
 #include "MaterialDataST.h"
+#include "soltrace_constants.h"
 
 #include <vector_types.h>
 #include <optix.h>
@@ -46,9 +47,14 @@ namespace OptixCSP{
         uint8_t*                    hit_type_buffer;
 
         float3                      sun_vector;
-        float                       max_sun_angle;
-		unsigned long long          sun_dir_seed; // seed for the sun direction randomization
-
+        bool                        include_sun_shape_errors;
+        SunShape                    sun_shape;      // OptixCSP::SunShape (mirrors SolTrace::Data::SunShape)
+        float                       sigma;          // [mrad] for GAUSSIAN
+        float                       half_width;     // [mrad] For PILLBOX
+        float                       circumsolar_ratio;
+        float                       sun_max_angle;  // Calculated based on sunshape within SimulationData
+		unsigned long long          sun_dir_seed;   // seed for the sun direction randomization
+        
         float3                      sun_v0;
         float3                      sun_v1;
         float3                      sun_v2;

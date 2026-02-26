@@ -424,7 +424,6 @@ int run_optix_file_runner(TSystem* sys, const char* file_name)
     // Directly run OptixCSP using stinput file (debug use ONLY)
     OptixCSP::SolTraceSystem sys_optix(sys->sim_raycount, sys->sim_raymax);
     bool ok = sys_optix.read_st_input(file_name);
-    sys_optix.set_sun_angle(0.00465);
     sys_optix.initialize();
     sys_optix.run();
 

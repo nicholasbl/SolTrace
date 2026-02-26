@@ -57,6 +57,7 @@ public:
                            std::vector<double> _user_angle = {},
                            std::vector<double> _user_intensity = {});
     virtual void calculate_buie_parameters(double& kappa, double& gamma);
+    virtual double get_max_sun_angle(double gaussian_coverage = 0.999) const override;  //  [mrad]
 
 private:
     void set_gaussian_distribution(double _sigma);

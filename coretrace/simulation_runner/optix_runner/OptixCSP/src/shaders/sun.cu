@@ -43,9 +43,11 @@ namespace OptixCSP {
     }
 
     // Sample a random ray direction within a cone defined by a maximum angle
-    __device__ float3 sampleRayDirectionInCone_Pillbox(float3 dir, float half_angle, unsigned int ray_number) {
+    __device__ float3 sampleRayDirectionInCone_Pillbox(float3 dir, float half_angle /*mrad*/, unsigned int ray_number) {
         curandState rng_state;
         curand_init(params.sun_dir_seed, ray_number + params.ray_offset, 0, &rng_state);
+
+        float half_angle_rad = half_angle * 0.001f; // Convert to rad
 
         // Build an orthonormal basis
         float3 w = normalize(dir);
@@ -53,7 +55,7 @@ namespace OptixCSP {
         float3 v = cross(w, u);
 
         // Random angles
-        float cosTheta = cosf(half_angle);
+        float cosTheta = cosf(half_angle_rad);
         float rand1 = curand_uniform(&rng_state);
         float rand2 = curand_uniform(&rng_state);
         float phi = 2.0f * M_PIf * rand1;
@@ -64,9 +66,11 @@ namespace OptixCSP {
         return normalize(r * (cosf(phi) * u + sinf(phi) * v) + z * w);
     }
 
-    __device__ float3 sampleRayDirectionInCone_Gaussian(float3 dir, float half_angle, unsigned int ray_number) {
+    __device__ float3 sampleRayDirectionInCone_Gaussian(float3 dir, float sigma /*mrad*/, unsigned int ray_number) {
         curandState rng;
         curand_init(params.sun_dir_seed, ray_number + params.ray_offset, 0, &rng);
+
+        float sigma_rad = sigma * 0.001f;   // Convert to rad
 
         // Build an orthonormal basis
         float3 w = normalize(dir);
@@ -76,13 +80,10 @@ namespace OptixCSP {
         float gx = curand_normal(&rng);
         float gy = curand_normal(&rng);
 
-
-        float thetax = half_angle * gx;
-        float thetay = half_angle * gy;
+        float thetax = sigma_rad * gx;
+        float thetay = sigma_rad * gy;
         float theta2 = thetax * thetax + thetay * thetay;
         float z = sqrtf(1.0f - theta2);
-
-
 
         // Transform to world space
         return normalize(thetax * u + thetay * v + z * w);
@@ -104,7 +105,31 @@ extern "C" __global__ void __raygen__sun_source()
     const float3 ray_gen_pos = sun_sample_pos;
 
     float3 init_ray_dir = -normalize(params.sun_vector);
-    float3 ray_dir = OptixCSP::sampleRayDirectionInCone_Pillbox(init_ray_dir, params.max_sun_angle, ray_number);
+
+    // Apply sun shape errors
+    float3 ray_dir;
+    if (params.include_sun_shape_errors)
+    {
+        switch (params.sun_shape)
+        {
+            case(OptixCSP::SunShape::PILLBOX):
+                ray_dir = OptixCSP::sampleRayDirectionInCone_Pillbox(init_ray_dir, params.half_width, ray_number);
+                break;
+            case(OptixCSP::SunShape::GAUSSIAN):
+                ray_dir = OptixCSP::sampleRayDirectionInCone_Gaussian(init_ray_dir, params.sigma, ray_number);
+                break;
+            default:
+                assert(false);
+                // Just return since the sun shape is not supported
+                return;
+        }
+    }
+    else
+    {
+        ray_dir = init_ray_dir;
+    }
+    
+    
     //float3 ray_dir = OptixCSP::sampleRayDirectionInCone_Gaussian(init_ray_dir, params.max_sun_angle, ray_number);
 
     // Create the PerRayData structure to track ray state (e.g., path index and recursion depth)

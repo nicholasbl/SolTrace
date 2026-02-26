@@ -159,4 +159,47 @@ void Sun::set_shape(SunShape shape,
     return;
 }
 
+double Sun::get_max_sun_angle(double gaussian_coverage) const   // [mrad]
+{
+    switch (this->my_shape)
+    {
+        case (SunShape::PILLBOX):
+            return this->half_width;
+        case (SunShape::GAUSSIAN):
+        {
+            // Returns maximum angle given the desired coverage area
+            // With 100% coverage area, r is inf
+            if (std::isnan(gaussian_coverage) || std::isinf(gaussian_coverage) ||
+                gaussian_coverage <= 0.0 || gaussian_coverage >= 1.0)
+            {
+                throw std::runtime_error(
+                    "Sun::get_max_sun_angle: coverage fraction must be in (0, 1) for gaussian sunshape");
+            }
+            if (std::isnan(this->sigma) || std::isinf(this->sigma) || this->sigma <= 0.0)
+            {
+                throw std::runtime_error(
+                    "Sun::get_max_sun_angle: invalid sigma for gaussian sunshape");
+            }
+            const double r = this->sigma * std::sqrt(-2.0 * std::log(1.0 - gaussian_coverage));
+            return r;
+        }
+        case (SunShape::LIMBDARKENED):
+            return 4.65;    // Will need to update if we make this user input
+        case (SunShape::BUIE_CSR):
+            return 43.6;    // Constant
+        case (SunShape::USER_DEFINED):
+        {
+            if (this->user_angle.empty())
+            {
+                throw std::runtime_error("Sun::get_max_sun_angle: user-defined sun shape has no angles");
+            }
+            return *std::max_element(this->user_angle.begin(), this->user_angle.end());
+        }
+        default:
+        {
+            throw std::runtime_error("Sun::get_max_sun_angle: sun shape not currently supported");
+        }
+    }
+}
+
 } // namespace SolTrace::Data

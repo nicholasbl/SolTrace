@@ -16,7 +16,13 @@ set_target_properties(OptixCSP_core PROPERTIES
     WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 
-target_link_libraries(OptixCSP_core PRIVATE CUDA::cuda_driver CUDA::cudart)  # or cudart_static   
+# Link against CUDA and simulation_data (simdata)
+target_link_libraries(OptixCSP_core PRIVATE
+    CUDA::cuda_driver
+    CUDA::cudart
+    simdata
+)
+
 find_package(CUDAToolkit REQUIRED)
 find_package(OptiX REQUIRED)
 

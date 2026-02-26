@@ -23,7 +23,12 @@ dataManager::dataManager() : launch_params_D(nullptr) {
 	launch_params_H.element_id_buffer = nullptr;
 	launch_params_H.hit_type_buffer = nullptr;
 	launch_params_H.sun_vector = make_float3(0.0f, 0.0f, 10.0f);
-	launch_params_H.max_sun_angle = 0.0f;
+	launch_params_H.sun_shape = OptixCSP::SunShape::UNKNOWN;
+	launch_params_H.include_sun_shape_errors = false;
+	launch_params_H.sigma = 0.0f;
+	launch_params_H.half_width = 0.0f;
+	launch_params_H.circumsolar_ratio = 0.0f;
+	launch_params_H.sun_max_angle = 0.0f;
 
 	launch_params_H.sun_v0 = make_float3(0.0f, 0.0f, 0.0f);
 	launch_params_H.sun_v1 = make_float3(0.0f, 0.0f, 0.0f);

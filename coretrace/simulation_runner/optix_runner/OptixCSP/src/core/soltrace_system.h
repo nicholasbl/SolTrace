@@ -14,6 +14,8 @@
 #include "core/CspElement.h" // CspElement
 #include "core/Surface.h"    // Surface and derived classes
 
+#include "../../../../../simulation_data/simulation_data_export.hpp"
+
 namespace OptixCSP {
 
     class GeometryManager;
@@ -73,9 +75,11 @@ namespace OptixCSP {
         /// set normalized sun vector
         /// </summary>
         /// <param name="sunVector"></param>
-        void set_sun_vector(OptixCSP::Vec3d vect);
+        //void set_sun_vector(OptixCSP::Vec3d vect);
 
-        void set_sun_angle(double angle) { m_sun_angle = angle; } // Set the sun angle
+        //void set_sun_angle(double angle) { m_sun_angle = angle; } // Set the sun angle
+
+        void set_sun(SolTrace::Data::Sun* sun) { m_sun = sun; }
 
         void set_seed(uint64_t seed) { m_seed = seed; }  // Set sun seed
 
@@ -117,6 +121,8 @@ namespace OptixCSP {
         std::vector<int> get_sunraynumber_vec() const { return m_sunraynumber_vec; }
         std::vector<float3> get_sunraydir_vec() const { return m_sun_ray_dir_vec; }
 
+        void set_sun_shape_errors(bool flag) { this->m_include_sun_shape_errors = flag; }
+
     private:
 
         std::shared_ptr<GeometryManager> geometry_manager;
@@ -128,8 +134,14 @@ namespace OptixCSP {
 
         bool m_verbose;
 
-        OptixCSP::Vec3d m_sun_vector;
-        double m_sun_angle;
+        // Sun
+        //OptixCSP::Vec3d m_sun_vector;
+        //double m_sun_angle;
+        
+        SolTrace::Data::Sun* m_sun;
+        bool m_include_sun_shape_errors = false;
+
+
         uint64_t m_seed = 123456ULL;
         OptixCSP::SoltraceState m_state;
 
