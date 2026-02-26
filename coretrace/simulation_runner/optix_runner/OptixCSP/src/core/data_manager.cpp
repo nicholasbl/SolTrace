@@ -10,7 +10,11 @@
 
 using namespace OptixCSP;
 
-dataManager::dataManager() : launch_params_D(nullptr) {
+dataManager::dataManager() : launch_params_D(nullptr),
+	geometry_data_array_D(nullptr),
+	material_data_array_front_D(nullptr),
+	material_data_array_back_D(nullptr)
+{
 	
     // Initialize launch parameters with default values
 	launch_params_H.width = 10;
@@ -112,9 +116,23 @@ void dataManager::updateMaterialDataArray(std::vector<MaterialData> material_dat
 
 
 void dataManager::cleanup() {
-	CUDA_CHECK(cudaFree(launch_params_D));
-	launch_params_D = nullptr;
+	if (launch_params_D) {
+		CUDA_CHECK(cudaFree(launch_params_D));
+		launch_params_D = nullptr;
+	}
 
-	CUDA_CHECK(cudaFree(geometry_data_array_D));
-	geometry_data_array_D = nullptr;
+	if (geometry_data_array_D) {
+		CUDA_CHECK(cudaFree(geometry_data_array_D));
+		geometry_data_array_D = nullptr;
+	}
+
+	if (material_data_array_front_D) {
+		CUDA_CHECK(cudaFree(material_data_array_front_D));
+		material_data_array_front_D = nullptr;
+	}
+
+	if (material_data_array_back_D) {
+		CUDA_CHECK(cudaFree(material_data_array_back_D));
+		material_data_array_back_D = nullptr;
+	}
 }
