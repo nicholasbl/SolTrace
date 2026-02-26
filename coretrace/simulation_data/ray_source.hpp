@@ -76,6 +76,7 @@ public:
     }
     virtual void calculate_buie_parameters(double& kappa, double& gamma) = 0;
     virtual double get_max_sun_angle(double gaussian_coverage) const = 0;
+    virtual double get_max_intensity() const = 0;
 
 protected:
     double sigma = std::numeric_limits<double>::quiet_NaN();            // [mrad]

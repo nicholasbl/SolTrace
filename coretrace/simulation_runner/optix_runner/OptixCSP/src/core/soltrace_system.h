@@ -27,7 +27,8 @@ namespace OptixCSP {
 
     static constexpr SolTrace::Data::SunShape kSupportedSunshapes[] = {
             SolTrace::Data::SunShape::GAUSSIAN,
-            SolTrace::Data::SunShape::PILLBOX
+            SolTrace::Data::SunShape::PILLBOX,
+            SolTrace::Data::SunShape::BUIE_CSR
     };
 
     class SolTraceSystem {

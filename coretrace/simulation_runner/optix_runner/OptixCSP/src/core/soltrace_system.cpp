@@ -112,16 +112,24 @@ void SolTraceSystem::initialize() {
         switch (m_sun->get_shape()) {
             case SolTrace::Data::SunShape::GAUSSIAN:
                 data_manager->launch_params_H.sun_shape = SunShape::GAUSSIAN;
+                data_manager->launch_params_H.sigma = static_cast<float>(m_sun->get_sigma());
                 break;
             case SolTrace::Data::SunShape::PILLBOX:
                 data_manager->launch_params_H.sun_shape = SunShape::PILLBOX;
+                data_manager->launch_params_H.half_width = static_cast<float>(m_sun->get_half_width());
                 break;
             case SolTrace::Data::SunShape::LIMBDARKENED:
                 data_manager->launch_params_H.sun_shape = SunShape::LIMBDARKENED;
                 break;
             case SolTrace::Data::SunShape::BUIE_CSR:
+            {
                 data_manager->launch_params_H.sun_shape = SunShape::BUIE_CSR;
+                double kappa, gamma;
+                m_sun->calculate_buie_parameters(kappa, gamma);
+                data_manager->launch_params_H.buie_kappa = kappa;
+                data_manager->launch_params_H.buie_gamma = gamma;
                 break;
+            }
             case SolTrace::Data::SunShape::USER_DEFINED:
                 data_manager->launch_params_H.sun_shape = SunShape::USER_DEFINED;
                 break;
@@ -130,11 +138,9 @@ void SolTraceSystem::initialize() {
                 data_manager->launch_params_H.sun_shape = SunShape::UNKNOWN;
                 break;
         }
-
-        data_manager->launch_params_H.sigma = static_cast<float>(m_sun->get_sigma());
-        data_manager->launch_params_H.half_width = static_cast<float>(m_sun->get_half_width());
-        data_manager->launch_params_H.circumsolar_ratio = static_cast<float>(m_sun->get_circumsolar_ratio());
+        
         data_manager->launch_params_H.sun_max_angle = static_cast<float>(m_sun->get_max_sun_angle());
+        data_manager->launch_params_H.sun_max_intensity = static_cast<float>(m_sun->get_max_intensity());
     }
     
 

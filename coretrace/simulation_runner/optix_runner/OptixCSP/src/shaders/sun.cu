@@ -70,7 +70,7 @@ namespace OptixCSP {
         curandState rng;
         curand_init(params.sun_dir_seed, ray_number + params.ray_offset, 0, &rng);
 
-        float sigma_rad = sigma * 0.001f;   // Convert to rad
+        const float sigma_rad = sigma * 0.001f;   // Convert to rad
 
         // Build an orthonormal basis
         float3 w = normalize(dir);
@@ -87,6 +87,68 @@ namespace OptixCSP {
 
         // Transform to world space
         return normalize(thetax * u + thetay * v + z * w);
+    }
+
+    __device__ float3 sampleRayDirectionInCone_BuieCSR(float3 dir, float buie_kappa, float buie_gamma, unsigned int ray_number)
+    {
+        curandState rng;
+        curand_init(params.sun_dir_seed, ray_number + params.ray_offset, 0, &rng);
+
+        const float max_angle_mrad = params.sun_max_angle;      // [mrad]
+
+        // Orthonormal basis about dir
+        float3 w = normalize(dir);
+        float3 u = normalize(cross(fabsf(w.x) > 0.99f ? make_float3(0, 1, 0) : make_float3(1, 0, 0), w));
+        float3 v = cross(w, u);
+
+        float theta = 0.0f;
+        float theta2 = 0.0f;
+        float stest = 0.0f;
+        float max_int = params.sun_max_intensity;
+
+        // Rejection sampling in theta-space, matching CPU logic
+        do
+        {
+            // Uniform sample in square [-max_angle, max_angle]^2 in mrad
+            float thetax = (2.0f * curand_uniform(&rng) - 1.0f) * max_angle_mrad;
+            float thetay = (2.0f * curand_uniform(&rng) - 1.0f) * max_angle_mrad;
+
+            theta2 = thetax * thetax + thetay * thetay;
+            theta = sqrtf(theta2);
+
+            if (theta <= 4.65f)  // within solar disc (mrad, as in CPU code)
+            {
+                // stest = cos(0.326 * theta) / cos(0.308 * theta);
+                float t = theta;
+                stest = cosf(0.326f * t) / cosf(0.308f * t);
+            }
+            else // within circumsolar region
+            {
+                // stest = exp(kappa) * pow(|theta|, gamma);
+                stest = expf(buie_kappa) * powf(fabsf(theta), buie_gamma);
+            }
+
+            // Reject if outside max_angle or fails intensity test
+        } while ((curand_uniform(&rng) > (stest / max_int)) || (theta2 > (max_angle_mrad * max_angle_mrad)));
+
+        // Convert theta (mrad) to radians
+        float theta_rad = theta * 0.001f;
+
+        // Random azimuth
+        float phi = 2.0f * M_PIf * curand_uniform(&rng);
+
+        // Local direction in cone coordinates
+        float sin_t = sinf(theta_rad);
+        float cos_t = cosf(theta_rad);
+        float3 local_dir = make_float3(
+            sin_t * cosf(phi),
+            sin_t * sinf(phi),
+            cos_t
+        );
+
+        // Transform to world space
+        float3 world_dir = normalize(local_dir.x * u + local_dir.y * v + local_dir.z * w);
+        return world_dir;
     }
 
 }
@@ -117,6 +179,9 @@ extern "C" __global__ void __raygen__sun_source()
                 break;
             case(OptixCSP::SunShape::GAUSSIAN):
                 ray_dir = OptixCSP::sampleRayDirectionInCone_Gaussian(init_ray_dir, params.sigma, ray_number);
+                break;
+            case(OptixCSP::SunShape::BUIE_CSR):
+                ray_dir = OptixCSP::sampleRayDirectionInCone_BuieCSR(init_ray_dir, params.buie_kappa, params.buie_gamma, ray_number);
                 break;
             default:
                 assert(false);

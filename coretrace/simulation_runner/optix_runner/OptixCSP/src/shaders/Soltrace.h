@@ -51,8 +51,10 @@ namespace OptixCSP{
         SunShape                    sun_shape;      // OptixCSP::SunShape (mirrors SolTrace::Data::SunShape)
         float                       sigma;          // [mrad] for GAUSSIAN
         float                       half_width;     // [mrad] For PILLBOX
-        float                       circumsolar_ratio;
+        float                       buie_kappa;     // Used by buie csr
+        float                       buie_gamma;     // Used by buie csr
         float                       sun_max_angle;  // Calculated based on sunshape within SimulationData
+        float                       sun_max_intensity;  // ^
 		unsigned long long          sun_dir_seed;   // seed for the sun direction randomization
         
         float3                      sun_v0;

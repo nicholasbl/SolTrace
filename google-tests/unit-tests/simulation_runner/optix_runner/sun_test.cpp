@@ -153,7 +153,8 @@ static void make_sun_sd(SimulationData& sd,
                         double sigma_mrad,
                         double half_width_mrad,
                         bool include_sun_shape_errors,
-                        const Vector3d& sun_pos)
+                        const Vector3d& sun_pos,
+                        double csr = 0)
 {
     element_ptr plate;
     make_default_sd_sun(sd, plate);
@@ -163,7 +164,7 @@ static void make_sun_sd(SimulationData& sd,
 
     auto sun = make_ray_source<Sun>();
     sun->set_position(sun_pos[0], sun_pos[1], sun_pos[2]);
-    sun->set_shape(shape, sigma_mrad, half_width_mrad, 0.0);
+    sun->set_shape(shape, sigma_mrad, half_width_mrad, csr);
     sd.add_ray_source(sun);
 }
 
@@ -350,6 +351,78 @@ TEST(Sun, PillboxSunAngleDistribution)
 
     // Pillbox should not exceed its configured half-width by more than a small tolerance
     EXPECT_LE(max_theta, HALF_WIDTH_MRAD + 0.1);
+}
+
+// Check that Buie CSR sun angle distribution is bounded by MaxAngle and has a tail
+TEST(Sun, BuieCSRSunAngleDistribution)
+{
+    const int N_RAYS = 200e3;
+    const double MAX_ANGLE_MRAD = 43.6; // Matches NativeRunner::setup_sun for BUIE_CSR
+
+    SimulationData sd_buie;
+    auto sun_pos = Vector3d(0.0, 0.0, 100.0);
+
+    make_sun_sd(sd_buie, SolTrace::Data::SunShape::BUIE_CSR,
+                0.0, 0.0, true, sun_pos, 0.1);
+
+    sd_buie.get_simulation_parameters().number_of_rays = N_RAYS;
+    sd_buie.get_simulation_parameters().max_number_of_rays = N_RAYS * 10;
+
+    OptixRunner runner_buie;
+    ASSERT_EQ(runner_buie.initialize(), RunnerStatus::SUCCESS);
+    ASSERT_EQ(runner_buie.setup_simulation(&sd_buie), RunnerStatus::SUCCESS);
+    ASSERT_EQ(runner_buie.run_simulation(), RunnerStatus::SUCCESS);
+
+    OptixCSP::SolTraceSystem* sys_buie = runner_buie.get_optix_system();
+    ASSERT_NE(sys_buie, nullptr);
+
+    const std::vector<float3>& dirs = sys_buie->get_sunraydir_vec();
+    EXPECT_FALSE(dirs.empty());
+
+    float3 sun_dir_nominal = make_float3(
+        static_cast<float>(sun_pos[0]),
+        static_cast<float>(sun_pos[1]),
+        static_cast<float>(sun_pos[2]));
+    {
+        double nx = sun_dir_nominal.x;
+        double ny = sun_dir_nominal.y;
+        double nz = sun_dir_nominal.z;
+        double n = std::sqrt(nx * nx + ny * ny + nz * nz);
+        ASSERT_GT(n, 0.0);
+        sun_dir_nominal.x = static_cast<float>(nx / n);
+        sun_dir_nominal.y = static_cast<float>(ny / n);
+        sun_dir_nominal.z = static_cast<float>(nz / n);
+    }
+    sun_dir_nominal.x = -sun_dir_nominal.x;
+    sun_dir_nominal.y = -sun_dir_nominal.y;
+    sun_dir_nominal.z = -sun_dir_nominal.z;
+
+    double max_theta = 0.0;
+    int count_valid = 0;
+    int count_beyond_disc = 0; // beyond nominal 4.65 mrad solar disc
+
+    for (const auto& d : dirs)
+    {
+        if (!is_valid_dir(d))
+            continue;
+
+        double theta = angle_mrad(d, sun_dir_nominal);
+        ++count_valid;
+        if (theta > max_theta)
+            max_theta = theta;
+        if (theta > 4.65)
+            ++count_beyond_disc;
+    }
+
+    EXPECT_GT(count_valid, 0);
+
+    // Buie CSR should not exceed its configured MaxAngle by more than a small tolerance
+    EXPECT_LE(max_theta, MAX_ANGLE_MRAD + 0.5);
+
+    // There should be a noticeable circumsolar tail beyond the nominal solar disc (~4.65 mrad)
+    const double frac_beyond_disc = static_cast<double>(count_beyond_disc) /
+                                     static_cast<double>(count_valid);
+    EXPECT_GT(frac_beyond_disc, 0.05);
 }
 
 

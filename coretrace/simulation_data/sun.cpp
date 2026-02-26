@@ -202,4 +202,21 @@ double Sun::get_max_sun_angle(double gaussian_coverage) const   // [mrad]
     }
 }
 
+double Sun::get_max_intensity() const
+{
+    switch (this->my_shape)
+    {
+        case (SunShape::USER_DEFINED):
+        {
+            if (this->user_intensity.empty())
+            {
+                throw std::runtime_error("Sun::get_max_intensity: user-defined sun shape has no intensities");
+            }
+            return *std::max_element(this->user_intensity.begin(), this->user_intensity.end());
+        }  
+        default:
+            return 1;
+    }
+}
+
 } // namespace SolTrace::Data
