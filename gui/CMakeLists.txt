@@ -209,6 +209,7 @@ qt_add_qml_module(SolTrace
         SOURCES src/modules/module_common.h src/modules/module_common.cpp
         SOURCES src/modules/file_source_module.h src/modules/file_source_module.cpp
         SOURCES src/modules/sun_module.h src/modules/sun_module.cpp
+        SOURCES src/modules/documentation_module.h src/modules/documentation_module.cpp
 )
 
 CPMAddPackage(

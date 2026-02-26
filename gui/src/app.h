@@ -14,6 +14,7 @@
 #include <modules/module_common.h>
 #include <modules/sun_module.h>
 #include <modules/simulation_module.h>
+#include <modules/documentation_module.h>
 
 /**
  * @namespace SolTrace::GUI::App
@@ -46,7 +47,7 @@ namespace SolTrace::GUI::App {
 
 
 /**
- * @class Tracing
+ * @class TracingModule
  * @brief Ray tracing engine configuration module.
  *
  * Configures the ray tracing engine used for simulation execution.
@@ -94,7 +95,7 @@ public:
 };
 
 /**
- * @class Materials
+ * @class MaterialsModule
  * @brief Materials configuration module.
  *
  * Provides QML access to the materials database models owned by
@@ -118,7 +119,7 @@ public:
 };
 
 /**
- * @class Geometry
+ * @class GeometryModule
  * @brief Geometry configuration module.
  *
  * Provides QML access to the geometry database models owned by GeometryBackend.
@@ -188,7 +189,7 @@ public:
 };
 
 /**
- * @class Intersections
+ * @class IntersectionsModule
  * @brief Ray intersection analysis module.
  *
  * Provides access to intersection results from the simulation.
@@ -208,7 +209,7 @@ public:
 };
 
 /**
- * @class Flux
+ * @class FluxModule
  * @brief Flux analysis module.
  *
  * Provides access to flux distribution results from the simulation.
@@ -225,97 +226,6 @@ public:
 
     QPOINTER_WRITABLE_PROPERTY(ResultsBackend, results)
     QPOINTER_WRITABLE_PROPERTY(FluxBackend, backend)
-};
-
-/**
- * @class Documentation
- * @brief Inline documentation registry for the SolTrace GUI.
- *
- * Loads and provides access to documentation segments displayed
- * inline alongside controls in the application.
- *
- * ## File Structure
- * Documentation is organized in a locale-aware directory hierarchy:
- * @code
- *   docs/
- *     en/
- *       configuration/
- *         sun/
- *           sun_type.md
- *           gaussian.md
- *           ...
- *         tracing/
- *           ...
- *     es/
- *       configuration/
- *         sun/
- *           sun_type.md       <- same filenames, different locale
- *           ...
- * @endcode
- *
- * ## Ordering
- * Each directory contains a manifest file (manifest.txt) that declares
- * the ordered list of files for section number derivation:
- * @code
- *   sun_type.md
- *   gaussian.md
- *   pillbox.md
- * @endcode
- * The registry walks manifests recursively at load time and assigns
- * section numbers based on traversal order. Section numbers are a
- * rendering concern — they are not stored in the files themselves.
- *
- *
- * ## Access Pattern
- * Keys follow the path schema convention using dots as separators,
- * mirroring the directory structure with slashes replaced by dots:
- * @code
- *   docs/en/configuration/sun/sun_type.md  →  "configuration.sun.sun_type"
- * @endcode
- *
- * QML access: App.docs.get("configuration.sun.sun_type")
- *
- * ## Pandoc Pipeline
- * The same directory structure is consumed by the pandoc publishing
- * pipeline to generate academic papers and technical documentation.
- * The manifest ordering determines section structure in published output.
- * Short labels for controls use Qt's tr() / .ts localization system;
- * this class handles long-form documentation body text only.
- */
-class DocumentationModule : public QObject {
-    Q_OBJECT
-
-public:
-    /**
-     * @param directory Root documentation directory for the active locale.
-     *  e.g. ":/docs/en" or an absolute filesystem path.
-     */
-    DocumentationModule(QObject* parent = nullptr, QString directory = "");
-
-    /// True after load() has completed successfully.
-    Q_READONLY_PROPERTY(bool, loaded)
-    Q_WRITABLE_PROPERTY(QString, directory, "")
-
-    /**
-     * @brief Eagerly loads all documentation from the locale directory.
-     *
-     * Walks the directory tree using manifest.txt files in each subdirectory
-     * to determine file order. Assigns section numbers based on traversal
-     * order. Stores all content in m_content keyed by path-schema IDs.
-     *
-     * Call once at startup before QML begins binding.
-     */
-    void load();
-
-    /**
-     * @brief Returns the documentation body for the given key.
-     * @param key Path-schema ID, e.g. "configuration.sun.sun_type"
-     * @return Markdown content string, or empty string if key not found.
-     */
-    Q_INVOKABLE QString get(QString key);
-
-private:
-    QHash<QString, QString> m_content; /// <- key → markdown content
 };
 
 // ─── QML Entrypoint ───────────────────────────────────────────────────────────────────
