@@ -58,7 +58,7 @@ extern "C" __device__ float3 apply_uniform_errors(float a,
     curandState local_rng = params.rng_states[prd.ray_path_index];
     float3 eta = orthonormal_vector(v);
     float3 xi = cross(v, eta);
-    float phi = 2 * M_PI * curand_uniform(&local_rng);
+    float phi = 2 * M_PIf * curand_uniform(&local_rng);
     float r = sqrt(curand_uniform(&local_rng));
     eta = r * cos(phi) * eta + r * sin(phi) * xi;
     params.rng_states[prd.ray_path_index] = local_rng;
@@ -84,7 +84,7 @@ extern "C" __device__ float3 apply_gaussian_errors(float sigma,
     // curandState local_rng = params.rng_states[prd.ray_path_index];
     // float3 eta = orthonormal_vector(v);
     // float3 xi = cross(v, eta);
-    // float phi = 2 * M_PI * curand_uniform(&local_rng);
+    // float phi = 2 * M_PIf * curand_uniform(&local_rng);
     // float r = sigma * curand_normal(&local_rng);
     // eta = r * cos(phi) * eta + r * sin(phi) * xi;
     // params.rng_states[prd.ray_path_index] = local_rng;
@@ -140,11 +140,11 @@ extern "C" __global__ void __closesthit__mirror()
     // Surface normal (macro-surface) errors
     if (optical_errors)
     {
-        if (error_type == OptixCSP::OpticalDistribution::GAUSSIAN)
+        if (error_type == OptixCSP::OpticalDistribution::OPT_GAUSSIAN)
         {
             ffnormal = apply_gaussian_errors(normal_sigma, ffnormal, prd);
         }
-        else if (error_type == OptixCSP::OpticalDistribution::PILLBOX)
+        else if (error_type == OptixCSP::OpticalDistribution::OPT_PILLBOX)
         {
             ffnormal = apply_uniform_errors(normal_sigma, ffnormal, prd);
         }
@@ -190,11 +190,11 @@ extern "C" __global__ void __closesthit__mirror()
     if (optical_errors)
     {
         // Optical (micro-surface) errors
-        if (error_type == OptixCSP::OpticalDistribution::GAUSSIAN)
+        if (error_type == OptixCSP::OpticalDistribution::OPT_GAUSSIAN)
         {
             new_dir = apply_gaussian_errors(spec_sigma, new_dir, prd);
         }
-        else if (error_type == OptixCSP::OpticalDistribution::PILLBOX)
+        else if (error_type == OptixCSP::OpticalDistribution::OPT_PILLBOX)
         {
             new_dir = apply_uniform_errors(spec_sigma, new_dir, prd);
         }
@@ -214,11 +214,11 @@ extern "C" __global__ void __closesthit__mirror()
     // if (optical_errors)
     // {
     //     // Optical (micro-surface) errors
-    //     if (error_type == OptixCSP::OpticalDistribution::GAUSSIAN)
+    //     if (error_type == OptixCSP::OpticalDistribution::OPT_GAUSSIAN)
     //     {
     //         new_dir = apply_gaussian_errors(sigma, new_dir, prd);
     //     }
-    //     else if (error_type == OptixCSP::OpticalDistribution::PILLBOX)
+    //     else if (error_type == OptixCSP::OpticalDistribution::OPT_PILLBOX)
     //     {
     //         new_dir = apply_uniform_errors(sigma, new_dir, prd);
     //     }
@@ -377,7 +377,7 @@ extern "C" __global__ void __closesthit__mirror__parabolic()
     // const MaterialData::Mirror& mirror = sbt_data->material_data.mirror;
 
     // Determine if we are using optical errors
-    const bool optical_errors = params.enable_optical_errors;
+    const bool optical_errors = params.optical_errors;
 
     // Retrieve the hit normal from the attributes.
     // The intersection shader for the parabolic surface reported the normal (using float3_as_args)
@@ -428,11 +428,11 @@ extern "C" __global__ void __closesthit__mirror__parabolic()
     if (optical_errors)
     {
         // Surface normal (macro-surface) errors
-        if (error_type == OptixCSP::OpticalDistribution::GAUSSIAN)
+        if (error_type == OptixCSP::OpticalDistribution::OPT_GAUSSIAN)
         {
             ffnormal = apply_gaussian_errors(normal_sigma, ffnormal, prd);
         }
-        else if (error_type == OptixCSP::OpticalDistribution::PILLBOX)
+        else if (error_type == OptixCSP::OpticalDistribution::OPT_PILLBOX)
         {
             ffnormal = apply_uniform_errors(normal_sigma, ffnormal, prd);
         }
@@ -478,11 +478,11 @@ extern "C" __global__ void __closesthit__mirror__parabolic()
     if (optical_errors)
     {
         // Optical (micro-surface) errors
-        if (error_type == OptixCSP::OpticalDistribution::GAUSSIAN)
+        if (error_type == OptixCSP::OpticalDistribution::OPT_GAUSSIAN)
         {
             new_dir = apply_gaussian_errors(spec_sigma, new_dir, prd);
         }
-        else if (error_type == OptixCSP::OpticalDistribution::PILLBOX)
+        else if (error_type == OptixCSP::OpticalDistribution::OPT_PILLBOX)
         {
             new_dir = apply_uniform_errors(spec_sigma, new_dir, prd);
         }

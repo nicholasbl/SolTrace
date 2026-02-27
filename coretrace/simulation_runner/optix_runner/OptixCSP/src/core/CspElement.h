@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "vec3d.h"
+#include "soltrace_constants.h"
 #include "soltrace_type.h"
 #include "Surface.h"
 #include "Aperture.h"
@@ -72,9 +73,11 @@ namespace OptixCSP {
         void set_aperture(const std::shared_ptr<Aperture>& aperture);
         void set_surface(const std::shared_ptr<Surface>& surface);
         void set_optics_front(const bool use_refraction, const float reflectivity,
-            const float transmissivity, const float slope_error, const float specularity_error);
+			      const float transmissivity, const float slope_error, const float specularity_error,
+			      const OpticalDistribution od);
         void set_optics_back(const bool use_refraction, const float reflectivity,
-            const float transmissivity, const float slope_error, const float specularity_error);
+			     const float transmissivity, const float slope_error, const float specularity_error,
+			     const OpticalDistribution od);
 
         // set orientation based on aimpoint and zrot
         void update_euler_angles(const Vec3d& aim_point, const double zrot);
@@ -114,7 +117,8 @@ namespace OptixCSP {
     private:
 
         void set_optics(const bool is_front, const bool use_refraction, const float reflectivity,
-            const float transmissivity, const float slope_error, const float specularity_error);
+			const float transmissivity, const float slope_error, const float specularity_error,
+			const OpticalDistribution od);
 
         Vec3d m_origin;
         Vec3d m_aim_point;

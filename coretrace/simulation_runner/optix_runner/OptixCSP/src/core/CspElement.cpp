@@ -29,8 +29,8 @@ CspElement::CspElement()
     m_receiver = false;
     m_id = kElementIdUnassigned;
 
-    set_optics_front(false, 1.f, 0.f, 0.f, 0.f, OpticalDistribution::NONE);
-    set_optics_back(false, 1.f, 0.f, 0.f, 0.f, OpticalDistribution::NONE);
+    set_optics_front(false, 1.f, 0.f, 0.f, 0.f, OpticalDistribution::OPT_NONE);
+    set_optics_back(false, 1.f, 0.f, 0.f, 0.f, OpticalDistribution::OPT_NONE);
 }
 
 // set and get origin

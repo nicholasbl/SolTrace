@@ -2,7 +2,7 @@
 
 #include <cuda_runtime.h>
 
-#include <soltrace_constants.h>>
+#include "soltrace_constants.h"
 
 namespace OptixCSP
 {

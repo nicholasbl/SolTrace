@@ -104,12 +104,14 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
             // Add optical properties
             OpticalProperties *opt_front = el->get_front_optical_properties();
+	    OptixCSP::OpticalDistribution od = this->to_optical_distribution(opt_front->error_distribution_type);
             optix_el->set_optics_front(opt_front->my_type == InteractionType::REFRACTION, opt_front->reflectivity,
-                                       opt_front->transmitivity, opt_front->slope_error, opt_front->specularity_error);
+                                       opt_front->transmitivity, opt_front->slope_error, opt_front->specularity_error, od);
 
             OpticalProperties *opt_back = el->get_back_optical_properties();
+	    od = this->to_optical_distribution(opt_back->error_distribution_type);
             optix_el->set_optics_back(opt_back->my_type == InteractionType::REFRACTION, opt_back->reflectivity,
-                                      opt_back->transmitivity, opt_back->slope_error, opt_back->specularity_error);
+                                      opt_back->transmitivity, opt_back->slope_error, opt_back->specularity_error, od);
 
             std::cout << "adding elements " << el->get_name() << std::endl;
             std::cout << "Origin: " << origin[0] << ", " << origin[1] << ", " << origin[2] << std::endl;
@@ -315,15 +317,15 @@ OptixCSP::OpticalDistribution OptixRunner::to_optical_distribution(SolTrace::Dat
 {
     OptixCSP::OpticalDistribution od;
     if (dt == SolTrace::Data::DistributionType::NONE)
-        od = OptixCSP::OpticalDistribution::NONE;
+        od = OptixCSP::OpticalDistribution::OPT_NONE;
     else if (dt == SolTrace::Data::DistributionType::GAUSSIAN)
-        od = OptixCSP::OpticalDistribution::GAUSSIAN;
+        od = OptixCSP::OpticalDistribution::OPT_GAUSSIAN;
     else if (dt == SolTrace::Data::DistributionType::PILLBOX)
-        od = OptixCSP::OpticalDistribution::PILLBOX;
+        od = OptixCSP::OpticalDistribution::OPT_PILLBOX;
     else
     {
         // TODO: This should probably complain loudly...
-        od = OptixCSP::OpticalDistributin::NONE;
+        od = OptixCSP::OpticalDistribution::OPT_NONE;
     }
     return od;
 }
