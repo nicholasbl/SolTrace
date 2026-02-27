@@ -67,6 +67,14 @@ SolTraceSystem::SolTraceSystem(int numSunPoints, int maxSunPoints)
       data_manager(std::make_shared<dataManager>()),
       pipeline_manager(std::make_shared<pipelineManager>(m_state))
 {
+    unsigned int major = OPTIX_VERSION / 10000;
+    unsigned int minor = (OPTIX_VERSION % 10000) / 100;
+    unsigned int micro = OPTIX_VERSION % 100;
+    std::cout << "Using OPTIX Version: " << major
+              << "." << minor
+              << "." << micro
+              << std::endl;
+
     CUDA_CHECK(cudaFree(0));
     CUcontext cuCtx = 0;
     OPTIX_CHECK(optixInit());
