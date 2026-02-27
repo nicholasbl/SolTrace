@@ -173,7 +173,6 @@ TEST(ElementRecord, OutputOperator)
     ss << erec;
     EXPECT_TRUE(ss.str().size() > 0);
 
-    std::cout << ss.str() << std::endl;
 }
 
 TEST(SimulationResult, Accessors)

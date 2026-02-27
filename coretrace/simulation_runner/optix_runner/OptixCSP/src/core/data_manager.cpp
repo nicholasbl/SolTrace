@@ -157,4 +157,10 @@ void dataManager::cleanup()
 
 	CUDA_CHECK(cudaFree(geometry_data_array_D));
 	geometry_data_array_D = nullptr;
+
+	CUDA_CHECK(cudaFree(material_data_array_front_D));
+	material_data_array_front_D = nullptr;
+
+	CUDA_CHECK(cudaFree(material_data_array_back_D));
+	material_data_array_back_D = nullptr;
 }

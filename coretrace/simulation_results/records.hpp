@@ -4,6 +4,10 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <ostream>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include <element.hpp>
 #include <vector3d.hpp>

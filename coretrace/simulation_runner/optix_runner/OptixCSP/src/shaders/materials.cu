@@ -40,12 +40,26 @@ namespace OptixCSP
     // }
 }
 
+// Assumes that v is a unit vector
 extern "C" __device__ __inline__ float3 orthonormal_vector(float3 v)
 {
     // TODO: Need to handle w = c * v case...
-    float3 w = make_float3(1.0f, 0.0f, 0.0f);
-    float3 u = normalize(cross(v, w));
-    return u;
+    float3 w;
+    if (fabs(v.x) < 0.9f)
+    {
+        // Code does the following:
+        // w = make_float3(1.0f, 0.0f, 0.0f);
+        // u = cross(v, w);
+        u = make_float3(0.0f, v.z, -v.y);
+    }
+    else
+    {
+        // Code does the following:
+        // w = make_float3(0.0f, 1.0f, 0.0f);
+        // u = cross(v, w);
+        u = make_float3(-v.z, 0.0f, v.x);
+    }    
+    return normalize(u);
 }
 
 // Add perturbation ortogonal to given vector. Perturbation is uniform over
@@ -58,9 +72,9 @@ extern "C" __device__ float3 apply_uniform_errors(float a,
     curandState local_rng = params.rng_states[prd.ray_path_index];
     float3 eta = orthonormal_vector(v);
     float3 xi = cross(v, eta);
-    float phi = 2 * M_PIf * curand_uniform(&local_rng);
-    float r = sqrt(curand_uniform(&local_rng));
-    eta = r * cos(phi) * eta + r * sin(phi) * xi;
+    float phi = 2.0f * M_PIf * curand_uniform(&local_rng);
+    float r = sqrtf(curand_uniform(&local_rng));
+    eta = r * cosf(phi) * eta + r * sinf(phi) * xi;
     params.rng_states[prd.ray_path_index] = local_rng;
     return normalize(v + eta);
 }
@@ -84,9 +98,9 @@ extern "C" __device__ float3 apply_gaussian_errors(float sigma,
     // curandState local_rng = params.rng_states[prd.ray_path_index];
     // float3 eta = orthonormal_vector(v);
     // float3 xi = cross(v, eta);
-    // float phi = 2 * M_PIf * curand_uniform(&local_rng);
+    // float phi = 2.0f * M_PIf * curand_uniform(&local_rng);
     // float r = sigma * curand_normal(&local_rng);
-    // eta = r * cos(phi) * eta + r * sin(phi) * xi;
+    // eta = r * cosf(phi) * eta + r * sinf(phi) * xi;
     // params.rng_states[prd.ray_path_index] = local_rng;
     // return normalize(n + eta);
 }

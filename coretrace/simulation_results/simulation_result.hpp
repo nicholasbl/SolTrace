@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <vector>
 
 // SimulationData headers
 #include "element.hpp"
@@ -44,7 +45,7 @@ namespace SolTrace::Result
         {
             return element_view.cbegin();
         }
-        bool is_at_end(ElementRecordContainer::const_iterator citer)
+        bool is_at_end(ElementRecordContainer::const_iterator citer) const
         {
             return citer == this->element_view.cend();
         }

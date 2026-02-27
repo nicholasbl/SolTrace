@@ -81,7 +81,6 @@ TEST(OpticalErrors, Gaussian)
     {
         auto err = *it_error;
         EXPECT_EQ(err->get_number_of_interactions(), 3);
-        EXPECT_GT(err->get_number_of_interactions(), 2);
 
         // The way this test is setup, all rays without errors come in
         // parallel (but opposite direction) to the normal of the plane and so
