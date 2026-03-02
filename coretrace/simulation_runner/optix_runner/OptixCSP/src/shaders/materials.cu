@@ -44,7 +44,7 @@ namespace OptixCSP
 extern "C" __device__ __inline__ float3 orthonormal_vector(float3 v)
 {
     // TODO: Need to handle w = c * v case...
-    float3 w;
+    float3 u;
     if (fabs(v.x) < 0.9f)
     {
         // Code does the following:
