@@ -18,6 +18,7 @@ set(OPTIX_RUNNER_TEST_SRC
     gpu_tower_demo.cpp
     flat_optical_test.cpp
     two_plate_test.cpp
+    sun_test.cpp
 )
 
 add_executable(OptixRunnerUnitTests

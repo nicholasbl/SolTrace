@@ -6,6 +6,8 @@
 #include "CspElement.h"
 #include "timer.h"
 #include "soltrace_constants.h"
+#include "../../../../../simulation_data/simdata_io.hpp"
+#include "../../../../../simulation_data/solar_position_calculators/basic_sun_position.hpp"
 
 #include "utils/util_record.hpp"
 #include "utils/util_check.hpp"
@@ -43,7 +45,7 @@ void SolTraceSystem::print_launch_params() {
     std::cout << "hit_point_buffer   : " << params.hit_point_buffer << std::endl;
 	std::cout << "sun_dir_buffer     : " << params.sun_dir_buffer << std::endl;
     std::cout << "sun_vector         : " << params.sun_vector.x << " " <<params.sun_vector.y << " " <<params.sun_vector.z << std::endl;
-    std::cout << "max_sun_angle      : " << params.max_sun_angle << std::endl;
+    //std::cout << "max_sun_angle      : " << params.max_sun_angle << std::endl;
     std::cout << "sun_v0             : " << params.sun_v0.x << " " <<params.sun_v0.y << " " <<params.sun_v0.z << std::endl;
     std::cout << "sun_v1             : " << params.sun_v1.x << " " <<params.sun_v1.y << " " <<params.sun_v1.z << std::endl;
     std::cout << "sun_v2             : " << params.sun_v2.x << " " <<params.sun_v2.y << " " <<params.sun_v2.z << std::endl;
@@ -52,20 +54,20 @@ void SolTraceSystem::print_launch_params() {
     std::cout << "sun_box_edge_b     : " << sun_box_edge_b << std::endl;
 }
 
-SolTraceSystem::SolTraceSystem(int numSunPoints, int maxSunPoints)
-    : m_number_of_rays(numSunPoints),
-      m_max_number_of_rays(maxSunPoints),
+SolTraceSystem::SolTraceSystem()
+    : m_number_of_rays(0),
+      m_max_number_of_rays(0),
       m_verbose(false),
       m_mem_free_before(0),
       m_mem_free_after(0),
-      m_sun_angle(0.0),
       m_optical_errors(false),
-      m_sun_shape(false),
+      m_include_sun_shape_errors(false),
       m_timer_setup(),
       m_timer_trace(),
       geometry_manager(std::make_shared<GeometryManager>(m_state)),
       data_manager(std::make_shared<dataManager>()),
-      pipeline_manager(std::make_shared<pipelineManager>(m_state))
+      pipeline_manager(std::make_shared<pipelineManager>(m_state)),
+      m_sun(nullptr)
 {
     unsigned int major = OPTIX_VERSION / 10000;
     unsigned int minor = (OPTIX_VERSION % 10000) / 100;
@@ -84,6 +86,10 @@ SolTraceSystem::SolTraceSystem(int numSunPoints, int maxSunPoints)
     };
     options.logCallbackLevel = 4;
     OPTIX_CHECK(optixDeviceContextCreate(cuCtx, &options, &m_state.context));
+    m_state.context = nullptr;
+    m_state.stream = nullptr;
+    m_state.sbt = {};
+    m_state.d_gas_output_buffer = 0;
 }
 
 SolTraceSystem::~SolTraceSystem() {
@@ -91,15 +97,71 @@ SolTraceSystem::~SolTraceSystem() {
 }
 
 void SolTraceSystem::initialize() {
+
+    // Create OptiX context on first initialize
+    if (!m_state.context)
+    {
+        CUDA_CHECK(cudaFree(0));
+        CUcontext cuCtx = 0;
+        OPTIX_CHECK(optixInit());
+        OptixDeviceContextOptions options = {};
+        options.logCallbackFunction = [](unsigned int level, const char* tag, const char* message, void*) {
+            std::cerr << "[" << std::setw(2) << level << "][" << std::setw(12) << tag << "]: " << message << "\n";
+            };
+        options.logCallbackLevel = 4;
+        OPTIX_CHECK(optixDeviceContextCreate(cuCtx, &options, &m_state.context));
+    }
+
 	cudaMemGetInfo(&m_mem_free_before, nullptr);
     m_timer_setup.start();
 
-
-	Vec3d sun_vec = m_sun_vector.normalized(); // normalize the sun vector
-
     // set up input related to sun
-	data_manager->launch_params_H.sun_vector = OptixCSP::toFloat3(sun_vec);
-    data_manager->launch_params_H.max_sun_angle = (float)(m_sun_angle);
+    Vector3d sun_vec = m_sun->get_position();
+    Vector3d sun_vec_norm = sun_vec;
+    sun_vec_norm.make_unit();
+    
+    data_manager->launch_params_H.sun_vector = make_float3(static_cast<float>(sun_vec_norm[0]),
+        static_cast<float>(sun_vec_norm[1]), static_cast<float>(sun_vec_norm[2]));
+    
+    // Assign sun shape parameters (if necessary)
+    data_manager->launch_params_H.include_sun_shape_errors = this->m_include_sun_shape_errors;
+    if (this->m_include_sun_shape_errors)
+    {
+        // Map SolTrace::Data::SunShape to OptixCSP::SunShape for device code
+        switch (m_sun->get_shape()) {
+            case SolTrace::Data::SunShape::GAUSSIAN:
+                data_manager->launch_params_H.sun_shape = SunShape::GAUSSIAN;
+                data_manager->launch_params_H.sigma = static_cast<float>(m_sun->get_sigma());
+                break;
+            case SolTrace::Data::SunShape::PILLBOX:
+                data_manager->launch_params_H.sun_shape = SunShape::PILLBOX;
+                data_manager->launch_params_H.half_width = static_cast<float>(m_sun->get_half_width());
+                break;
+            case SolTrace::Data::SunShape::LIMBDARKENED:
+                data_manager->launch_params_H.sun_shape = SunShape::LIMBDARKENED;
+                break;
+            case SolTrace::Data::SunShape::BUIE_CSR:
+            {
+                data_manager->launch_params_H.sun_shape = SunShape::BUIE_CSR;
+                double kappa, gamma;
+                m_sun->calculate_buie_parameters(kappa, gamma);
+                data_manager->launch_params_H.buie_kappa = kappa;
+                data_manager->launch_params_H.buie_gamma = gamma;
+                break;
+            }
+            case SolTrace::Data::SunShape::USER_DEFINED:
+                data_manager->launch_params_H.sun_shape = SunShape::USER_DEFINED;
+                break;
+            case SolTrace::Data::SunShape::UNKNOWN:
+            default:
+                data_manager->launch_params_H.sun_shape = SunShape::UNKNOWN;
+                break;
+        }
+        
+        data_manager->launch_params_H.sun_max_angle = static_cast<float>(m_sun->get_max_sun_angle());
+        data_manager->launch_params_H.sun_max_intensity = static_cast<float>(m_sun->get_max_intensity());
+    }
+    
 
     Timer AABB_timer;
     AABB_timer.start();
@@ -187,7 +249,8 @@ void SolTraceSystem::run() {
         CUDA_SYNC_CHECK();
 
         // Collect results
-        get_buffer_results(m_hp_vec, m_raynumber_vec, m_element_id_vec, m_hit_type_vec, m_sun_ray_dir_vec);
+        get_buffer_results(m_hp_vec, m_raynumber_vec, m_element_id_vec, m_hit_type_vec, 
+            m_sun_ray_dir_vec, m_sunraynumber_vec);
         N_ray_hit = m_raynumber_vec.empty() ? 0 : m_raynumber_vec.back();
         N_ray_gen += width;
     }
@@ -201,6 +264,7 @@ void SolTraceSystem::run() {
             m_raynumber_vec.pop_back();
             m_element_id_vec.pop_back();
             m_hit_type_vec.pop_back();
+            m_sunraynumber_vec.pop_back();
         }
     }
 
@@ -329,7 +393,7 @@ void SolTraceSystem::write_simulation_json(const std::string& filename) {
     out << "  \"sun\": {\n";
     out << "    \"number_of_sunpoints\": " << m_number_of_rays << ",\n";
     out << "    \"sun_vector\": ["
-        << m_sun_vector[0] << ", " << m_sun_vector[1] << ", " << m_sun_vector[2] << "],\n";
+        << m_sun->get_position()[0] << ", " << m_sun->get_position()[1] << ", " << m_sun->get_position()[2] << "],\n";
     out << "    \"sun_box_edge_a\": " << sun_box_edge_a << ",\n";
     out << "    \"sun_box_edge_b\": " << sun_box_edge_b << "\n";
     out << "  },\n";
@@ -438,6 +502,11 @@ void SolTraceSystem::write_sun_output(const std::string& filename) {
 
 void SolTraceSystem::clean_up() {
 
+    // Nothing to clean if device not initialized
+    if (!m_state.context)
+    {
+        return;
+    }
 
     CUDA_CHECK(cudaDeviceSynchronize());
     // destroy pipeline related resources
@@ -653,7 +722,8 @@ void SolTraceSystem::setup_device_buffer()
 // Collects results from device buffer
 // only keeps rays that hit elements
 void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector<int>& raynumber_vec,
-    std::vector<int>& element_id_vec, std::vector<uint8_t>& hit_type_vec, std::vector<float3>& sun_ray_dir_vec)
+    std::vector<int>& element_id_vec, std::vector<uint8_t>& hit_type_vec, std::vector<float3>& sun_ray_dir_vec,
+    std::vector<int>& sunraynumber_vec)
 {
     const int max_depth = data_manager->launch_params_H.max_depth;
     const int num_rays = data_manager->launch_params_H.width * data_manager->launch_params_H.height;
@@ -669,6 +739,7 @@ void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector
 
     // Loop through each buffer slot
     int ray_number = raynumber_vec.empty() ? 0 : raynumber_vec.back();
+    int sunray_number = sunraynumber_vec.empty() ? 0 : sunraynumber_vec.back();
     for (int i = 0; i < output_size; ++i) {
 
         // Get hit type
@@ -690,11 +761,15 @@ void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector
                 raynumber_vec.pop_back();
                 hit_type_vec.pop_back();
                 element_id_vec.pop_back();
+                sunraynumber_vec.pop_back();
                 ray_number--;
             }
 
             // New ray
             ray_number++;
+
+            // Sun ray number always increments, even if no hit
+            sunray_number++;
         }
 
         // Get hit record, element_id
@@ -706,6 +781,7 @@ void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector
         raynumber_vec.push_back(ray_number);
         hit_type_vec.push_back(hit_type);
         element_id_vec.push_back(element_id);
+        sunraynumber_vec.push_back(sunray_number);
     }
 
     // Remove last ray if it is only CREATE
@@ -714,6 +790,7 @@ void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector
         raynumber_vec.pop_back();
         element_id_vec.pop_back();
         hit_type_vec.pop_back();
+        sunraynumber_vec.pop_back();
     }
 
     // Get sun dir output
@@ -748,11 +825,11 @@ double SolTraceSystem::get_time_setup() {
 	return m_timer_setup.get_time_sec();
 }
 
-void SolTraceSystem::set_sun_vector(Vec3d vect) {
-    m_sun_vector = vect;
-    Vec3d sun_v = m_sun_vector.normalized(); // Normalize the sun vector
-	data_manager->launch_params_H.sun_vector = OptixCSP::toFloat3(sun_v);
-}
+//void SolTraceSystem::set_sun_vector(Vec3d vect) {
+//    m_sun_vector = vect;
+//    Vec3d sun_v = m_sun_vector.normalized(); // Normalize the sun vector
+//	data_manager->launch_params_H.sun_vector = OptixCSP::toFloat3(sun_v);
+//}
 
 std::vector<int> SolTraceSystem::get_receiver_indices() {
 
@@ -820,61 +897,40 @@ bool SolTraceSystem::read_sun(FILE* fp) {
     if (!fp) return false;
 
 	char buf[1024];
-	int bi = 0, count = 0;
-	char cshape = 'g';
-	double Sigma, HalfWidth;
-	bool PointSource;
 
-	read_line( buf, 1023, fp );
+    // Read Sun info
+    int bi = 0, count = 0;
+    char cshape = 'g';
+    double Sigma, HalfWidth;
+    bool PointSource;
+    double X, Y, Z, Latitude, Day, Hour;
+    bool UseLDHSpec;
 
-	sscanf(buf, "SUN\tPTSRC\t%d\tSHAPE\t%c\tSIGMA\t%lg\tHALFWIDTH\t%lg",
-		&bi, &cshape, &Sigma, &HalfWidth);
-	PointSource = (bi!=0);
-	cshape = tolower(cshape);
+    read_line(buf, 1023, fp);
+    sscanf(buf, "SUN\tPTSRC\t%d\tSHAPE\t%c\tSIGMA\t%lg\tHALFWIDTH\t%lg",
+        &bi, &cshape, &Sigma, &HalfWidth);
+    PointSource = (bi != 0);
+    cshape = tolower(cshape);
 
-    // TODO: Update if supporting other sun shapes
-    set_sun_angle(Sigma * 0.001);
+    read_line(buf, 1023, fp);
 
-	read_line( buf, 1023, fp );
-	double X, Y, Z, Latitude, Day, Hour;
-	bool UseLDHSpec;
-	sscanf(buf, "XYZ\t%lg\t%lg\t%lg\tUSELDH\t%d\tLDH\t%lg\t%lg\t%lg",
-		&X, &Y, &Z, &bi, &Latitude, &Day, &Hour);
-	UseLDHSpec = (bi!=0);
-	
-    // TODO: Update if supporting LDHSpec
-	// if ( UseLDHSpec )
-	// {
-	// 	st_sun_position(cxt, Latitude, Day, Hour, &X, &Y, &Z);
-	// }
+    sscanf(buf, "XYZ\t%lg\t%lg\t%lg\tUSELDH\t%d\tLDH\t%lg\t%lg\t%lg",
+        &X, &Y, &Z, &bi, &Latitude, &Day, &Hour);
+    UseLDHSpec = (bi != 0);
 
-    Vec3d sun_vector(X, Y, Z);
-	set_sun_vector(sun_vector);
+    // Make sun
+    auto sun = make_ray_source<Sun>();
 
-	//printf("sun ps? %d cs: %c  %lg %lg %lg\n", PointSource?1:0, cshape, X, Y, Z);
+    // Define sun position
+    if (UseLDHSpec)
+    {
+        SolTrace::Data::st_sun_position(Latitude, Day, Hour, &X, &Y, &Z);
+    }
+    sun->set_position(X, Y, Z);
+    SolTrace::Data::SunShape sun_shape = SolTrace::Data::char_to_sunshape(cshape);
+    sun->set_shape(sun_shape, Sigma, HalfWidth, 0.0);
 
-	read_line( buf, 1023, fp );
-	sscanf(buf, "USER SHAPE DATA\t%d", &count);
-    // TODO: Update if supporting user shape data
-	if (count > 0)
-	{
-		double *angle = new double[count];
-		double *intensity = new double[count];
-
-		for (int i=0;i<count;i++)
-		{
-			double x, y;
-			read_line( buf, 1023, fp );
-			sscanf(buf, "%lg\t%lg", &x, &y);
-			angle[i] = x;
-			intensity[i] = y;
-		}
-
-		//st_sun_userdata(cxt, count, angle, intensity );
-
-		delete [] angle;
-		delete [] intensity;	
-	}
+    this->m_sun = sun.get();
 
 	return true;
 }
@@ -1166,4 +1222,17 @@ bool SolTraceSystem::read_system(FILE* fp) {
 		if (!read_stage( fp )) return false;
 
 	return true;
+}
+
+double SolTraceSystem::get_sun_plane_area() const
+{
+    const LaunchParams& lp = data_manager->launch_params_H;
+    // Parallelogram area spanned by two adjacent edges of the sun box
+    const float3 a = make_float3(lp.sun_v0.x - lp.sun_v1.x, lp.sun_v0.y - lp.sun_v1.y, lp.sun_v0.z - lp.sun_v1.z);
+    const float3 b = make_float3(lp.sun_v1.x - lp.sun_v2.x, lp.sun_v1.y - lp.sun_v2.y, lp.sun_v1.z - lp.sun_v2.z);
+    const float3 cross = make_float3(
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x);
+    return static_cast<double>(sqrtf(cross.x * cross.x + cross.y * cross.y + cross.z * cross.z));
 }

@@ -14,7 +14,7 @@ using SolTrace::Result::SimulationResult;
 
 OptixRunner::OptixRunner() : SimulationRunner(),
                              m_simdata(nullptr),
-                             m_sys(10000, 10000 * 10) {}
+                             m_sys() {}
 
 OptixRunner::~OptixRunner()
 {
@@ -39,9 +39,15 @@ RunnerStatus OptixRunner::setup_simulation(const SimulationData *data)
 
     // this->simdata = data;
 
-    this->setup_parameters(data);
-    this->setup_sun(data);
+    sts = this->setup_parameters(data);
+    if (sts != RunnerStatus::SUCCESS)
+        return sts;
+    sts = this->setup_sun(data);
+    if (sts != RunnerStatus::SUCCESS)
+        return sts;
     sts = this->setup_elements(data);
+    if (sts != RunnerStatus::SUCCESS)
+        return sts;
 
     m_sys.initialize();
 
@@ -58,9 +64,13 @@ RunnerStatus OptixRunner::setup_parameters(const SimulationData *data)
     m_sys.set_number_of_rays(sim_params.number_of_rays, sim_params.max_number_of_rays);
     m_sys.set_seed(static_cast<uint64_t>(sim_params.seed));
 
-    m_sys.set_optical_errors(sim_params.include_optical_errors);
-    m_sys.set_sun_shape(sim_params.include_sun_shape_errors);
+    m_sys.set_optical_errors(sim_params.include_optical_errors);   
+    m_sys.set_sun_shape_errors(sim_params.include_sun_shape_errors);
 
+    //this->tsys.sim_errors_optical = sim_params.include_optical_errors;
+    //this->tsys.sim_raycount = sim_params.number_of_rays;
+    //this->tsys.sim_raymax = sim_params.max_number_of_rays;
+    //this->tsys.seed = sim_params.seed;
     return RunnerStatus::SUCCESS;
 }
 
@@ -69,9 +79,34 @@ RunnerStatus OptixRunner::setup_sun(const SimulationData *data)
     // Get RaySource data (this runner assumes there is only the Sun)
     assert(data->get_number_of_ray_sources() == 1);
 
-    m_sys.set_sun_vector(ToVec3d(data->get_ray_source()->get_position()));
+    // Verify that the only ray source is a Sun
+    auto src = data->get_ray_source();
+    auto sun = std::dynamic_pointer_cast<SolTrace::Data::Sun>(src);
+    if (!sun)
+    {
+        // Needs to be a Sun
+        return RunnerStatus::ERROR;
+    }
+    m_sys.set_sun(sun.get());
 
-    //  TODO: sun angle and sun models
+    // Check if sun shape is assigned
+    if (data->get_simulation_parameters().include_sun_shape_errors)
+    {
+        const SolTrace::Data::SunShape shape = sun->get_shape();
+        bool is_supported = false;
+        for (auto supported_shape : OptixCSP::kSupportedSunshapes)
+        {
+            if (shape == supported_shape)
+            {
+                is_supported = true;
+                break;
+            }
+        }
+        if (!is_supported)
+        {
+            return RunnerStatus::ERROR;
+        }
+    }
 
     return RunnerStatus::SUCCESS;
 }
@@ -201,7 +236,7 @@ RunnerStatus OptixRunner::update_simulation(const SimulationData *data)
 
 RunnerStatus OptixRunner::run_simulation()
 {
-    return run_simulation_core(true);
+    return run_simulation_core(false);
 }
 
 RunnerStatus OptixRunner::run_simulation_core(bool write_output)
@@ -296,6 +331,11 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
         intr = SolTrace::Result::make_interaction_record(element_id, rev, pos, cos);
         rec->add_interaction_record(intr);
     }
+
+    // Attach other results
+    result->set_sun_ray_count(this->get_N_sun_rays());
+    result->set_sun_dimensions(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
+    result->set_sun_A_box(this->get_sun_plane_area());
 
     return RunnerStatus::SUCCESS;
 }

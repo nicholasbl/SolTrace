@@ -29,8 +29,17 @@ dataManager::dataManager()
 	launch_params_H.hit_point_buffer = nullptr;
 	launch_params_H.sun_dir_buffer = nullptr;
 	launch_params_H.rng_states = nullptr;
+	launch_params_H.element_id_buffer = nullptr;
+	launch_params_H.hit_type_buffer = nullptr;
 	launch_params_H.sun_vector = make_float3(0.0f, 0.0f, 10.0f);
-	launch_params_H.max_sun_angle = 0.0f;
+	launch_params_H.sun_shape = OptixCSP::SunShape::UNKNOWN;
+	launch_params_H.include_sun_shape_errors = false;
+	launch_params_H.sigma = 0.0f;
+	launch_params_H.half_width = 0.0f;
+	launch_params_H.buie_kappa = 0.0f;
+	launch_params_H.buie_gamma = 0.0f;
+	launch_params_H.sun_max_angle = 0.0f;
+	launch_params_H.sun_max_intensity = 0.0f;
 
 	launch_params_H.sun_v0 = make_float3(0.0f, 0.0f, 0.0f);
 	launch_params_H.sun_v1 = make_float3(0.0f, 0.0f, 0.0f);
@@ -143,10 +152,26 @@ void dataManager::updateMaterialDataArray(std::vector<MaterialData> material_dat
 	}
 }
 
-void dataManager::cleanup()
-{
-	CUDA_CHECK(cudaFree(launch_params_D));
-	launch_params_D = nullptr;
+void dataManager::cleanup() {
+	if (launch_params_D) {
+		CUDA_CHECK(cudaFree(launch_params_D));
+		launch_params_D = nullptr;
+	}
+
+	if (geometry_data_array_D) {
+		CUDA_CHECK(cudaFree(geometry_data_array_D));
+		geometry_data_array_D = nullptr;
+	}
+
+	if (material_data_array_front_D) {
+		CUDA_CHECK(cudaFree(material_data_array_front_D));
+		material_data_array_front_D = nullptr;
+	}
+
+	if (material_data_array_back_D) {
+		CUDA_CHECK(cudaFree(material_data_array_back_D));
+		material_data_array_back_D = nullptr;
+	}
 
 	if (rng_states_D != nullptr)
 	{
@@ -154,13 +179,4 @@ void dataManager::cleanup()
 		rng_states_D = nullptr;
 		rng_states_capacity = 0;
 	}
-
-	CUDA_CHECK(cudaFree(geometry_data_array_D));
-	geometry_data_array_D = nullptr;
-
-	CUDA_CHECK(cudaFree(material_data_array_front_D));
-	material_data_array_front_D = nullptr;
-
-	CUDA_CHECK(cudaFree(material_data_array_back_D));
-	material_data_array_back_D = nullptr;
 }

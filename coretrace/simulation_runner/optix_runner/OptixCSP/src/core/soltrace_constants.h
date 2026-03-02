@@ -4,6 +4,17 @@
 
 namespace OptixCSP {
 
+    // Mirror of SolTrace::Data::SunShape for OptiX/device code.
+    // Keep values in sync with SolTrace::Data::SunShape in ray_source.hpp.
+    enum class SunShape : uint8_t {
+        GAUSSIAN = 0,
+        PILLBOX = 1,
+        LIMBDARKENED = 2,
+        BUIE_CSR = 3,
+        USER_DEFINED = 4,
+        UNKNOWN = 5
+    };
+
     // Hit type
     // TODO: Replace this with RayEvent from simulation_result.hpp?
     enum HitType : uint8_t {

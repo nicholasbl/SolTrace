@@ -30,6 +30,10 @@ public:
     SolTrace::Runner::RunnerStatus get_hp_output(std::vector<float4>& hp_vec,
         std::vector<int>& raynumber_vec, std::vector<int>& element_id_vec);
 
+    double get_sun_plane_area() { return m_sys.get_sun_plane_area(); }
+
+    double get_N_sun_rays() { return m_sys.get_N_sun_rays(); }
+
     // Runner options
     // void disable_sun_shape_errors() { this->include_sun_shape_errors = false; }
     // void enable_sun_shape_errors() { this->include_sun_shape_errors = true; }
@@ -37,7 +41,7 @@ public:
     // void enable_errors() { this->include_errors = true; }
 
     // Runner accessors
-    // const TSystem *get_system() const { return &this->tsys; }
+    OptixCSP::SolTraceSystem *get_optix_system() { return &this->m_sys; }
 
 private:
     OptixCSP::SolTraceSystem m_sys;

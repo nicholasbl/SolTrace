@@ -24,6 +24,7 @@ set(NATIVE_RUNNER_TEST_SRC
     native_runner_test.cpp
     optical_error_test.cpp
     tower_demo.cpp
+    stage_test.cpp
 )
 
 if (NOT ENABLE_COVERAGE)

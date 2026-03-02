@@ -169,56 +169,57 @@ namespace SolTrace::NativeRunner
             throw std::invalid_argument("SimulationData has no elements.");
         }
 
-        for (auto iter = data->get_const_iterator();
-             !data->is_at_end(iter);
-             ++iter)
+        if (use_stages)
         {
-            element_ptr el = iter->second;
-            if (el->is_enabled() && el->is_stage())
+            for (auto iter = data->get_const_iterator();
+                !data->is_at_end(iter);
+                ++iter)
             {
-                tstage_ptr stage = make_tstage(el, this->eparams);
-                auto retval = my_map.insert(
-                    std::make_pair(el->get_stage(), stage));
-
-                // current_stage_id = stage->stage_id;
-
-                // std::cout << "Created stage " << el->get_stage()
-                //           << " with " << stage->ElementList.size() << " elements"
-                //           << std::endl;
-
-                if (retval.second == false)
+                element_ptr el = iter->second;
+                if (el->is_enabled() && el->is_stage())
                 {
-                    // TODO: Duplicate stage numbers. Need to make an error
-                    // message.
-                    throw std::runtime_error("Duplicate stage numbers found.");
-                    sts = RunnerStatus::ERROR;
-                }
+                    tstage_ptr stage = make_tstage(el, this->eparams);
+                    auto retval = my_map.insert(
+                        std::make_pair(el->get_stage(), stage));
 
-                current_stage = stage;
-                // element_number = 1;
-            }
-            else if (el->is_enabled() && el->is_single())
-            {
-                if (current_stage == nullptr)
-                {
-                    element_found_before_stage = true;
-                    continue;
-                }
-                else if (el->get_stage() != current_stage->stage_id)
-                {
-                    throw std::runtime_error(
-                        "Element does not match current stage");
-                }
+                    // current_stage_id = stage->stage_id;
 
-                telement_ptr elem = make_telement(iter->second,
-                                                  current_stage,
-                                                  this->eparams);
-                // ++element_number;
-                // current_stage->ElementList.push_back(elem);
-                current_stage->add_element(elem);
+                    // std::cout << "Created stage " << el->get_stage()
+                    //           << " with " << stage->ElementList.size() << " elements"
+                    //           << std::endl;
+
+                    if (retval.second == false)
+                    {
+                        throw std::runtime_error("Duplicate stage numbers found.");
+                        sts = RunnerStatus::ERROR;
+                    }
+
+                    current_stage = stage;
+                    // element_number = 1;
+                }
+                else if (el->is_enabled() && el->is_single())
+                {
+                    if (current_stage == nullptr)
+                    {
+                        element_found_before_stage = true;
+                        continue;
+                    }
+                    else if (el->get_stage() != current_stage->stage_id)
+                    {
+                        throw std::runtime_error(
+                            "Element does not match current stage");
+                    }
+
+                    telement_ptr elem = make_telement(iter->second,
+                        current_stage,
+                        this->eparams);
+                    // ++element_number;
+                    // current_stage->ElementList.push_back(elem);
+                    current_stage->add_element(elem);
+                }
             }
         }
-
+        
         if (my_map.size() != 0 && element_found_before_stage)
         {
             throw std::runtime_error("Element found without a stage");
@@ -394,6 +395,15 @@ namespace SolTrace::NativeRunner
             intr = make_interaction_record(elid, rev, point, cosines);
             rec->add_interaction_record(intr);
         }
+
+        // Attach sun results
+        result->set_sun_ray_count(this->tsys.SunRayCount);
+
+        TSun& sun = this->tsys.Sun;
+        double sun_width = sun.MaxXSun - sun.MinXSun;
+        double sun_height = sun.MaxYSun - sun.MinYSun;
+        result->set_sun_dimensions(sun_width, sun_height);
+        result->set_sun_A_box(sun_width * sun_height);
 
         return retval;
     }

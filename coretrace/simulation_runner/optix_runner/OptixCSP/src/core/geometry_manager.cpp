@@ -143,7 +143,7 @@ void GeometryManager::compute_sun_plane_H(LaunchParams& params) {
         sun_vector,
         sun_u,
         sun_v,
-        tan(params.max_sun_angle),
+        tan(params.sun_max_angle * 1e-3),   // Convert from mrad to rad
         sun_uv_bounds_D);
 
     // Copy the computed bounds back to the host
