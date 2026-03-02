@@ -192,7 +192,6 @@ void SolTraceSystem::initialize() {
 	// seed for randomization
     data_manager->launch_params_H.sun_dir_seed = m_seed;
     data_manager->launch_params_H.optical_errors = m_optical_errors;
-    data_manager->launch_params_H.sun_shape = m_sun_shape;
 
     // Create a CUDA stream for asynchronous operations.
     CUDA_CHECK(cudaStreamCreate(&m_state.stream));

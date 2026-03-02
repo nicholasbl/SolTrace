@@ -67,7 +67,7 @@ namespace OptixCSP {
         return normalize(r * (cosf(phi) * u + sinf(phi) * v) + z * w);
     }
 
-    __device__ float3 sampleRayDirectionInCone_Gaussian(float3 dir, float half_angle, unsigned int ray_number) {
+    __device__ float3 sampleRayDirectionInCone_Gaussian(float3 dir, float sigma, unsigned int ray_number) {
         curandState rng = params.rng_states[ray_number];
 
         const float sigma_rad = sigma * 0.001f;   // Convert to rad
@@ -93,8 +93,7 @@ namespace OptixCSP {
 
     __device__ float3 sampleRayDirectionInCone_BuieCSR(float3 dir, float buie_kappa, float buie_gamma, unsigned int ray_number)
     {
-        curandState rng;
-        curand_init(params.sun_dir_seed, ray_number + params.ray_offset, 0, &rng);
+        curandState rng = params.rng_states[ray_number];
 
         const float max_angle_mrad = params.sun_max_angle;      // [mrad]
 

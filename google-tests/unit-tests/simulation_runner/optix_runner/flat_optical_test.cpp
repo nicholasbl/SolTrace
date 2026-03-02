@@ -29,7 +29,7 @@ void make_default_sd(SimulationData& sd, element_ptr& plate)
 	plate->set_surface(make_surface<Flat>());
 	plate->set_aperture(make_aperture<Rectangle>(5, 5));
 	InteractionType itype = InteractionType::REFLECTION;
-	DistributionType dtype = DistributionType::UNKNOWN;	// No errors
+	DistributionType dtype = DistributionType::NONE;	// No errors
 	double transmissivity = 0;
 	double reflectivity = 1;
 	double slope_err = 0;	// Error not supported

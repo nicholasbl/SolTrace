@@ -57,7 +57,7 @@ void make_default_sd_sun(SimulationData& sd, element_ptr& plate)
     plate->set_surface(make_surface<Flat>());
     plate->set_aperture(make_aperture<Rectangle>(5, 5));
     InteractionType itype = InteractionType::REFLECTION;
-    DistributionType dtype = DistributionType::UNKNOWN; // No errors
+    DistributionType dtype = DistributionType::NONE; // No errors
     double transmissivity = 0;
     double reflectivity = 1;
     double slope_err = 0;  // Error not supported
@@ -198,7 +198,16 @@ TEST(Sun, SunShapeSupportMatrix)
         }
 
         // Reuse same SimulationData; just change the sun shape
-        sun->set_shape(shape, 1, 1, 0.5, {0}, {0});
+        try
+        {
+            sun->set_shape(shape, 1, 1, 0.5, { 0 }, { 0 });
+        }
+        catch (...)
+        {
+            EXPECT_EQ(is_supported, false);
+            continue;
+        }
+        
 
         OptixRunner runner;
         ASSERT_EQ(runner.initialize(), RunnerStatus::SUCCESS);

@@ -35,13 +35,6 @@ namespace OptixCSP {
         OPT_UNKNOWN = 255
     };
 
-    enum SunShape :uint8_t {
-        SHAPE_NONE = 0,
-        SHAPE_GAUSSIAN = 1,
-        SHAPE_PILLBOX = 2,
-        SHAPE_UNKNOWN = 255
-    };
-
     // Element ID consts
     constexpr int32_t kElementIdBuffer = 0;
     constexpr int32_t kElementIdRayGen = -1;

@@ -37,7 +37,6 @@ namespace OptixCSP{
     struct LaunchParams
     {
         bool                        optical_errors;
-        bool                        sun_shape;
 
         unsigned int                width;   // essentially number of rays launched and sun points 
         unsigned int                height;
