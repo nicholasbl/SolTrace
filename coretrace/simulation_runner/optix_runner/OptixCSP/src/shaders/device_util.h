@@ -137,7 +137,8 @@ INLINE HOSTDEVICE float4 make_float4(const float v0, const float3& v1) { return 
 * Note that this is opposite of what faceforward does in Cg and GLSL */
 INLINE HOSTDEVICE float3 faceforward(const float3& n, const float3& i, const float3& nref)
 {
-    return n * copysignf(1.0f, dot(i, nref));
+  // return n * copysignf(1.0f, dot(i, nref));
+  return dot(i, nref) >= 0.0f ? n : -n;
 }
 
 /** reflect */

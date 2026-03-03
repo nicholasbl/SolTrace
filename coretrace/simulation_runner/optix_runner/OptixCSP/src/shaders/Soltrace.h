@@ -6,6 +6,7 @@
 
 #include <vector_types.h>
 #include <optix.h>
+#include <curand_kernel.h>
 
 namespace OptixCSP{
 
@@ -29,12 +30,14 @@ namespace OptixCSP{
         RECTANGLE_PARABOLIC_MIRROR    = 1,
         RECTANGLE_FLAT_RECEIVER       = 2,
         CYLINDRICAL_RECEIVER          = 3,
-		TRIANGLE_FLAT_RECEIVER        = 4,
-	    NUM_OPTICAL_ENTITY_TYPES
+        TRIANGLE_FLAT_RECEIVER        = 4,
+	NUM_OPTICAL_ENTITY_TYPES
     };
 
     struct LaunchParams
     {
+        bool                        optical_errors;
+
         unsigned int                width;   // essentially number of rays launched and sun points 
         unsigned int                height;
         int                         max_depth;
@@ -42,6 +45,7 @@ namespace OptixCSP{
 
         float4*                     hit_point_buffer;
         float3*                     sun_dir_buffer;
+        curandState*                rng_states;
         OptixTraversableHandle      handle;
         int32_t*                    element_id_buffer;
         uint8_t*                    hit_type_buffer;

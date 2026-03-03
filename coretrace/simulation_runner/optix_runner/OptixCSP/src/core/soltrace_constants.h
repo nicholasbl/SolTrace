@@ -28,6 +28,13 @@ namespace OptixCSP {
         HIT_UNKNOWN = 255
     };
 
+    enum OpticalDistribution : uint8_t {
+        OPT_NONE = 0,
+        OPT_GAUSSIAN = 1,
+        OPT_PILLBOX = 2,
+        OPT_UNKNOWN = 255
+    };
+
     // Element ID consts
     constexpr int32_t kElementIdBuffer = 0;
     constexpr int32_t kElementIdRayGen = -1;

@@ -43,9 +43,8 @@ namespace OptixCSP {
     }
 
     // Sample a random ray direction within a cone defined by a maximum angle
-    __device__ float3 sampleRayDirectionInCone_Pillbox(float3 dir, float half_angle /*mrad*/, unsigned int ray_number) {
-        curandState rng_state;
-        curand_init(params.sun_dir_seed, ray_number + params.ray_offset, 0, &rng_state);
+    __device__ float3 sampleRayDirectionInCone_Pillbox(float3 dir, float half_angle, unsigned int ray_number) {
+        curandState rng_state = params.rng_states[ray_number];
 
         float half_angle_rad = half_angle * 0.001f; // Convert to rad
 
@@ -62,13 +61,14 @@ namespace OptixCSP {
         float z = cosTheta + (1.0f - cosTheta) * rand2;
         float r = sqrtf(1.0f - z * z);
 
+        params.rng_states[ray_number] = rng_state;
+
         // Transform to world space
         return normalize(r * (cosf(phi) * u + sinf(phi) * v) + z * w);
     }
 
-    __device__ float3 sampleRayDirectionInCone_Gaussian(float3 dir, float sigma /*mrad*/, unsigned int ray_number) {
-        curandState rng;
-        curand_init(params.sun_dir_seed, ray_number + params.ray_offset, 0, &rng);
+    __device__ float3 sampleRayDirectionInCone_Gaussian(float3 dir, float sigma, unsigned int ray_number) {
+        curandState rng = params.rng_states[ray_number];
 
         const float sigma_rad = sigma * 0.001f;   // Convert to rad
 
@@ -85,14 +85,15 @@ namespace OptixCSP {
         float theta2 = thetax * thetax + thetay * thetay;
         float z = sqrtf(1.0f - theta2);
 
+        params.rng_states[ray_number] = rng;
+
         // Transform to world space
         return normalize(thetax * u + thetay * v + z * w);
     }
 
     __device__ float3 sampleRayDirectionInCone_BuieCSR(float3 dir, float buie_kappa, float buie_gamma, unsigned int ray_number)
     {
-        curandState rng;
-        curand_init(params.sun_dir_seed, ray_number + params.ray_offset, 0, &rng);
+        curandState rng = params.rng_states[ray_number];
 
         const float max_angle_mrad = params.sun_max_angle;      // [mrad]
 

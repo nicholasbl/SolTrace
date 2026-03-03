@@ -91,6 +91,11 @@ namespace OptixCSP {
 
         void set_seed(uint64_t seed) { m_seed = seed; }  // Set sun seed
 
+        void set_optical_errors(bool include_optical_errors)
+        {
+            m_optical_errors = include_optical_errors;
+        }
+
         /// <summary>
         /// compute number of heliostat CspElements added to the system 
         /// </summary>
@@ -153,6 +158,7 @@ namespace OptixCSP {
 
 
         uint64_t m_seed = 123456ULL;
+        bool m_optical_errors;
         OptixCSP::SoltraceState m_state;
 
         // Results

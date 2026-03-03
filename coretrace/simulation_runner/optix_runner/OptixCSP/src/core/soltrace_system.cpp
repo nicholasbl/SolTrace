@@ -60,6 +60,8 @@ SolTraceSystem::SolTraceSystem()
       m_verbose(false),
       m_mem_free_before(0),
       m_mem_free_after(0),
+      m_optical_errors(false),
+      m_include_sun_shape_errors(false),
       m_timer_setup(),
       m_timer_trace(),
       geometry_manager(std::make_shared<GeometryManager>(m_state)),
@@ -67,6 +69,23 @@ SolTraceSystem::SolTraceSystem()
       pipeline_manager(std::make_shared<pipelineManager>(m_state)),
       m_sun(nullptr)
 {
+    unsigned int major = OPTIX_VERSION / 10000;
+    unsigned int minor = (OPTIX_VERSION % 10000) / 100;
+    unsigned int micro = OPTIX_VERSION % 100;
+    std::cout << "Using OPTIX Version: " << major
+              << "." << minor
+              << "." << micro
+              << std::endl;
+
+    CUDA_CHECK(cudaFree(0));
+    CUcontext cuCtx = 0;
+    OPTIX_CHECK(optixInit());
+    OptixDeviceContextOptions options = {};
+    options.logCallbackFunction = [](unsigned int level, const char* tag, const char* message, void*) {
+        std::cerr << "[" << std::setw(2) << level << "][" << std::setw(12) << tag << "]: " << message << "\n";
+    };
+    options.logCallbackLevel = 4;
+    OPTIX_CHECK(optixDeviceContextCreate(cuCtx, &options, &m_state.context));
     m_state.context = nullptr;
     m_state.stream = nullptr;
     m_state.sbt = {};
@@ -170,8 +189,9 @@ void SolTraceSystem::initialize() {
     sbt_timer.stop();
 	std::cout << "Time to create SBT: " << sbt_timer.get_time_sec() << " seconds" << std::endl;
 
-	// seed for sun ray randomization
+	// seed for randomization
     data_manager->launch_params_H.sun_dir_seed = m_seed;
+    data_manager->launch_params_H.optical_errors = m_optical_errors;
 
     // Create a CUDA stream for asynchronous operations.
     CUDA_CHECK(cudaStreamCreate(&m_state.stream));
@@ -687,6 +707,13 @@ void SolTraceSystem::setup_device_buffer()
 
     CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&data_manager->launch_params_H.sun_dir_buffer), sun_dir_size));
     CUDA_CHECK(cudaMemset(data_manager->launch_params_H.sun_dir_buffer, 0, sun_dir_size));
+
+    const unsigned int num_rng_states = static_cast<unsigned int>(data_manager->launch_params_H.width * data_manager->launch_params_H.height);
+    data_manager->ensureCurandStates(
+        num_rng_states,
+        data_manager->launch_params_H.sun_dir_seed,
+        data_manager->launch_params_H.ray_offset,
+        m_state.stream);
 
     data_manager->updateLaunchParams();
 }

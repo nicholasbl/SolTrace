@@ -44,8 +44,8 @@ namespace SolTrace::NativeRunner
         void enable_power_tower() { this->as_power_tower = true; }
         void disable_point_focus() { this->tsys.sim_dynamic_group = false; }
         void enable_point_focus() { this->tsys.sim_dynamic_group = true; }
-        
-            // Only applies BEFORE setup_simulation()
+
+        // Only applies BEFORE setup_simulation()
         void disable_stages() { this->use_stages = false; }
         void enable_stages() { this->use_stages = true; }
 
@@ -137,6 +137,10 @@ namespace SolTrace::NativeRunner
         bool aperture_plane(telement_ptr Element);
 
         void set_seeds();
+
+        void check_supported_optical_distribution(
+            SolTrace::Data::DistributionType dt);
+        void check_supported_options(telement_ptr telem);
 
     private:
     };

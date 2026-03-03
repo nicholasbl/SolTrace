@@ -27,26 +27,26 @@ public:
     { this->my_position.zero(); }
     virtual ~Sun() {}
 
-    virtual const Vector3d &get_position() const
+    virtual const Vector3d &get_position() const override
     {
         return this->my_position;
     }
-    virtual Vector3d &get_position()
+    virtual Vector3d &get_position() override
     {
         return this->my_position;
     }
-    virtual void set_position(const Vector3d &pos)
+    virtual void set_position(const Vector3d &pos) override
     {
         this->my_position = pos;
         return;
     }
-    virtual void set_position(double x, double y, double z)
+    virtual void set_position(double x, double y, double z) override
     {
         this->my_position.set_values(x, y, z);
         return;
     }
-    virtual void set_position(const DateTime &, double lat, double long) {}
-    virtual SunShape get_shape() const
+    virtual void set_position(const DateTime &, double lat, double long) override {}
+    virtual SunShape get_shape() const override
     {
         return this->my_shape;
     }
@@ -55,8 +55,8 @@ public:
                            double _half_width,
                            double _csr,        
                            std::vector<double> _user_angle = {},
-                           std::vector<double> _user_intensity = {});
-    virtual void calculate_buie_parameters(double& kappa, double& gamma);
+                           std::vector<double> _user_intensity = {}) override;
+    virtual void calculate_buie_parameters(double& kappa, double& gamma) override;
     virtual double get_max_sun_angle(double gaussian_coverage = 0.999) const override;  //  [mrad]
     virtual double get_max_intensity() const override;
 

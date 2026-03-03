@@ -172,8 +172,8 @@ namespace SolTrace::NativeRunner
         if (use_stages)
         {
             for (auto iter = data->get_const_iterator();
-                !data->is_at_end(iter);
-                ++iter)
+                 !data->is_at_end(iter);
+                 ++iter)
             {
                 element_ptr el = iter->second;
                 if (el->is_enabled() && el->is_stage())
@@ -211,15 +211,15 @@ namespace SolTrace::NativeRunner
                     }
 
                     telement_ptr elem = make_telement(iter->second,
-                        current_stage,
-                        this->eparams);
+                                                      current_stage,
+                                                      this->eparams);
                     // ++element_number;
                     // current_stage->ElementList.push_back(elem);
                     current_stage->add_element(elem);
                 }
             }
         }
-        
+
         if (my_map.size() != 0 && element_found_before_stage)
         {
             throw std::runtime_error("Element found without a stage");
@@ -248,6 +248,7 @@ namespace SolTrace::NativeRunner
                                                      this->eparams);
                     // stage->ElementList.push_back(tel);
                     // ++element_number;
+                    this->check_supported_options(tel);
                     stage->add_element(tel);
                 }
             }
@@ -399,7 +400,7 @@ namespace SolTrace::NativeRunner
         // Attach sun results
         result->set_sun_ray_count(this->tsys.SunRayCount);
 
-        TSun& sun = this->tsys.Sun;
+        TSun &sun = this->tsys.Sun;
         double sun_width = sun.MaxXSun - sun.MinXSun;
         double sun_height = sun.MaxYSun - sun.MinYSun;
         result->set_sun_dimensions(sun_width, sun_height);
@@ -472,6 +473,39 @@ namespace SolTrace::NativeRunner
         {
             ; // Intentional no-op
         }
+        return;
+    }
+
+    void NativeRunner::check_supported_optical_distribution(DistributionType dt)
+    {
+        if (dt == DistributionType::NONE ||
+            dt == DistributionType::GAUSSIAN ||
+            dt == DistributionType::PILLBOX)
+
+            // Intentional no-op
+            ;
+
+        else
+        {
+            std::stringstream ss;
+            ss << "Unimplemented error distribution: "
+               << distribution_string(dt)
+               << std::endl;
+
+            throw std::invalid_argument(ss.str());
+        }
+        return;
+    }
+
+    void NativeRunner::check_supported_options(telement_ptr telem)
+    {
+        check_supported_optical_distribution(
+            telem->Optics.Front.error_distribution_type);
+        check_supported_optical_distribution(
+            telem->Optics.Back.error_distribution_type);
+
+        // TODO: Put other checks here
+
         return;
     }
 

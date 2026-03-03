@@ -24,7 +24,7 @@ namespace SolTrace::NativeRunner
                               double PosXYZ[3],
                               double CosKLM[3],
                               double DFXYZ[3],
-                              double *PathLength);
+                              double *PathLength) override;
 
         // For x = PosXYZ[0], y = PosXYZ[1], make a guess at
         // value of z and place in PosXYZ[2].

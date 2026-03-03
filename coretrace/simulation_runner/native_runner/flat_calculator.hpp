@@ -19,9 +19,9 @@ namespace SolTrace::NativeRunner
                               double PosXYZ[3],
                               double CosKLM[3],
                               double DFXYZ[3],
-                              double *PathLength);
+                              double *PathLength) override;
 
-        virtual double compute_z_aperture(SolTrace::Data::aperture_ptr ap);
+        virtual double compute_z_aperture(SolTrace::Data::aperture_ptr ap) override;
 
     private:
         SolTrace::Data::aperture_ptr aper;

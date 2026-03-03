@@ -8,7 +8,15 @@ include_directories(
 # include_directories(cst_templates)
 
 set(SIMRES_SRC
+    records.cpp
     simulation_result.cpp
+)
+
+set(SIMRES_HDRS
+    records.hpp
+    simulation_result.hpp
+    simulation_result_api.hpp
+    simulation_result_export.hpp
 )
 
 set(POSITION_INDEPENDENT_CODE ON)
