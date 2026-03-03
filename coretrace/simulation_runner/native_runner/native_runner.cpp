@@ -5,6 +5,7 @@
 #include <exception>
 #include <map>
 #include <mutex>
+#include <sstream>
 #include <thread>
 
 // SimulationData headers
