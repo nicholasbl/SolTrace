@@ -90,15 +90,11 @@ class GroupEditor : public QObject, public DatabaseObserver {
 
     // UX Helpers
 
-    QStringListModel m_interaction_type_model;
-    QStringListModel m_distribution_type_model;
-    QStringListModel m_surface_type_model;
-    QStringListModel m_aperture_type_model;
 
-    Q_PROPERTY(QStringListModel* interactions READ interactions FINAL)
-    Q_PROPERTY(QStringListModel* distributions READ distributions FINAL)
-    Q_PROPERTY(QStringListModel* surfaces READ surfaces FINAL)
-    Q_PROPERTY(QStringListModel* apertures READ apertures FINAL)
+    QOBJECT_READONLY_PROPERTY(QStringListModel, interaction_type_model);
+    QOBJECT_READONLY_PROPERTY(QStringListModel, distribution_type_model);
+    QOBJECT_READONLY_PROPERTY(QStringListModel, surface_type_model);
+    QOBJECT_READONLY_PROPERTY(QStringListModel, aperture_type_model);
 
     //
     void make_new_aperture(SD::ApertureType);
@@ -119,11 +115,6 @@ public slots:
 
     QString surface_kind() const;
     void    set_surface_kind(QString newSurface_kind);
-
-    QStringListModel* interactions() { return &m_interaction_type_model; }
-    QStringListModel* distributions() { return &m_distribution_type_model; }
-    QStringListModel* surfaces() { return &m_surface_type_model; }
-    QStringListModel* apertures() { return &m_aperture_type_model; }
 
 signals:
     void updated();

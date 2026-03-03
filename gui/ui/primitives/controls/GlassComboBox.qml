@@ -6,7 +6,7 @@ import SolTraceProto
 Item {
     id: root
 
-    property var model: []
+    property var model
     property int currentIndex: 0
     property string currentText: model[currentIndex] || ""
     property color textColor: "white"
@@ -101,7 +101,7 @@ Item {
                     radius: background.radius
 
                     Text {
-                        text: modelData
+                        text: modelData ? modelData : model.display
                         color: root.textColor
                         font.family: root.optionFontFamily
                         font.pixelSize: root.optionFontSize

@@ -194,12 +194,18 @@ GroupEditor::GroupEditor(QObject* parent)
     : QObject { parent },
       m_surface_geometry(new SurfaceGeometry()),
       m_back_editor(new OpticalPropertiesObject(true, this)),
-      m_front_editor(new OpticalPropertiesObject(false, this)) {
+      m_front_editor(new OpticalPropertiesObject(false, this)),
+      m_interaction_type_model(new QStringListModel(this)),
+      m_distribution_type_model(new QStringListModel(this)),
+      m_surface_type_model(new QStringListModel(this)),
+      m_aperture_type_model(new QStringListModel(this))
 
-    build_options(m_interaction_type_model, SD::InteractionTypeMap);
-    build_options(m_distribution_type_model, SD::DistributionTypeMap);
-    build_options(m_surface_type_model, SD::SurfaceTypeMap);
-    build_options(m_aperture_type_model, SD::ApertureTypeMap);
+{
+
+    build_options(*m_interaction_type_model, SD::InteractionTypeMap);
+    build_options(*m_distribution_type_model, SD::DistributionTypeMap);
+    build_options(*m_surface_type_model, SD::SurfaceTypeMap);
+    build_options(*m_aperture_type_model, SD::ApertureTypeMap);
 
     connect(
         this, &GroupEditor::surface_kind_changed, this, &GroupEditor::updated);
