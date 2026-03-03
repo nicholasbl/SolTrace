@@ -25,6 +25,7 @@ if(SOLTRACE_ENABLE_ASAN)
 	if(MSVC)
 		message(WARNING "SOLTRACE_ENABLE_ASAN is not supported with MSVC")
 	elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+		message(STATUS "Enabling address sanitizer")
 		add_compile_options(
 			$<$<COMPILE_LANGUAGE:C,CXX>:-fsanitize=address>
 			$<$<COMPILE_LANGUAGE:C,CXX>:-fno-omit-frame-pointer>
