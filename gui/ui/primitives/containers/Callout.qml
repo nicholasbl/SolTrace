@@ -10,7 +10,7 @@ Item {
     property string title: "Title"
     property int titleSize: 14
     property string titleFont: ""
-    property var titleWeight: Font.Normal
+    property int titleWeight: Font.Normal
     property int bodySize: 14
     property string bodyFont: titleFont
     property color titleColor: Theme.textColor

@@ -27,7 +27,7 @@ public:
 
            /// Non-owning reference to the geometry backend slice.
            /// Constrains QML access to geometry-specific backend functionality only.
-    QPOINTER_WRITABLE_PROPERTY(GeometryBackend, backend);
+    QOBJECT_WRITABLE_PROPERTY(GeometryBackend, backend);
 };
 
 

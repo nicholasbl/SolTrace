@@ -19,4 +19,6 @@ QtObject {
     readonly property int textSize: 16
     readonly property int textSizeSmall: 14
 
+    readonly property real listItemRectRadius: 6
+
 }

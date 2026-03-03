@@ -101,7 +101,7 @@ Item {
                     label: "New"
                     source: "qrc:/icons/assets/icons/placeholder.svg"
                     anchors.verticalCenter: parent.verticalCenter
-                    onClicked: Backend.reset()
+                    onClicked: App.file_source.source = ""
                 }
 
                 IconButton {
@@ -115,7 +115,7 @@ Item {
                         currentFolder: StandardPaths.standardLocations(
                                            StandardPaths.DocumentsLocation
                                            )[0]
-                        onAccepted: Backend.start_load_file(selectedFile)
+                        onAccepted: App.file_source.source = selectedFile
                     }
                 }
 

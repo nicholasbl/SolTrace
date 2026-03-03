@@ -38,7 +38,7 @@ public:
 
 struct EntityNamePair {
     QString      name;
-    entt::entity entity;
+    Entity       entity;
 
     RECORD_META(db::EntityNamePair, SM_EXPOSE_RW(name), SM_EXPOSE_RO(entity), );
 };

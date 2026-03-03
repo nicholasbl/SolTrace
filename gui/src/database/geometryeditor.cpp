@@ -66,6 +66,8 @@ void SurfaceGeometry::rebuild_geometry() {
 
         verts[i].position = position;
 
+        // qDebug() << position;
+
         boundsMin.setX(std::min(boundsMin.x(), position.x()));
         boundsMin.setY(std::min(boundsMin.y(), position.y()));
         boundsMin.setZ(std::min(boundsMin.z(), position.z()));
@@ -92,15 +94,21 @@ void SurfaceGeometry::rebuild_geometry() {
         verts[c].normal += normal;
     }
 
+    float dx = boundsMax.x() - boundsMin.x();
+    float dy = boundsMax.y() - boundsMin.y();
+    if (dx == 0) dx = 1;
+    if (dy == 0) dy = 1;
+
     // Compute uv and normalize
     for (int i = 0; i < verts.size(); ++i) {
 
-        verts[i].normal.normalize();
+        auto& n = verts[i].normal;
+        if (!qFuzzyIsNull(n.lengthSquared())) {
+            n.normalize();
+        } else {
+            n = QVector3D(0, 0, 1);
+        }
 
-        float dx = boundsMax.x() - boundsMin.x();
-        float dy = boundsMax.y() - boundsMin.y();
-        if (dx == 0) dx = 1;
-        if (dy == 0) dy = 1;
 
         verts[i].uv.setX((verts[i].position.x() - boundsMin.x()) / dx);
         verts[i].uv.setY((verts[i].position.y() - boundsMin.y()) / dy);
@@ -133,8 +141,15 @@ void SurfaceGeometry::rebuild_geometry() {
     setBounds(boundsMin, boundsMax);
     setPrimitiveType(QQuick3DGeometry::PrimitiveType::Triangles);
 
+    set_bounding_box(BoundingBox {
+        .min = boundsMin,
+        .max = boundsMax,
+    });
+
     qDebug() << Q_FUNC_INFO << entt::to_integral(m_current_group)
              << verts.size() << indices.size();
+    qDebug() << Q_FUNC_INFO << boundsMin << boundsMax;
+    // qDebug() << verts;
 
     update();
 }
@@ -191,6 +206,7 @@ GroupEditor::GroupEditor(QObject* parent)
 
     connect(this, &GroupEditor::kind_changed, this, &GroupEditor::updated);
 
+    // TODO spurious rebuilds
     connect(this, &GroupEditor::surface_arguments_changed, this, [this]() {
         make_new_surface(string_to_surface(m_surf_kind));
     });

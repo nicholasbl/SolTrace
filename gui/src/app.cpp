@@ -5,7 +5,8 @@ namespace SolTrace::GUI::App {
 
 
 App::App(QObject* parent, const QString& documentation_directory)
-    : m_workflow(new WorkflowModule(this)),
+    : m_file_source(new FileSourceModule(this)),
+      m_workflow(new WorkflowModule(this)),
       m_docs(new DocumentationModule(this)),
       m_sun(new SunModule(this)),
       m_tracing(new TracingModule(this)),
@@ -16,6 +17,11 @@ App::App(QObject* parent, const QString& documentation_directory)
       m_flux(new FluxModule(this)) {
 
     m_docs->load();
+
+    connect(m_file_source,
+            &FileSourceModule::current_database_value_changed,
+            this,
+            [this](auto* ptr) { emit this->new_database(ptr); });
 
     connect(this,
             &App::new_database,

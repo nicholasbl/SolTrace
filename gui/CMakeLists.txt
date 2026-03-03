@@ -152,6 +152,8 @@ qt_add_qml_module(SolTrace
         ui/primitives/spacing/Spacer.qml
         ui/primitives/spacing/EndSpacer.qml
 
+        ui/widgets/common/Label.qml
+
         ui/widgets/fields/NumberField.qml
         ui/widgets/fields/TimeField.qml
         ui/widgets/fields/DateField.qml
@@ -216,6 +218,8 @@ qt_add_qml_module(SolTrace
         src/modules/flux_module.h src/modules/flux_module.cpp
         src/modules/geometry_module.h src/modules/geometry_module.cpp
         src/modules/workflow_module.h src/modules/workflow_module.cpp
+        QML_FILES ui/core/ConfigureSidebarBody.qml
+        QML_FILES ui/widgets/common/LabeledListItem.qml
 )
 
 CPMAddPackage(

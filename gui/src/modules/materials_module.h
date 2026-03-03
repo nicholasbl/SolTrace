@@ -1,9 +1,12 @@
 #pragma once
 
-#include <QObject>
-#include "utilities/qt_helpers.h"
-#include "backend.h"
+#include "database/database.h"
+#include "database/database_models.h"
+#include "database/geometryeditor.h"
 #include "module_common.h"
+#include "utilities/qt_helpers.h"
+
+#include <QObject>
 
 namespace SolTrace::GUI::App {
 
@@ -21,12 +24,21 @@ namespace SolTrace::GUI::App {
 class MaterialsModule : public QObject {
     Q_OBJECT
 
+
+private slots:
+    void select_first_material();
+    void new_material_selected();
+
 public:
     explicit MaterialsModule(QObject* parent = nullptr);
 
     QOBJECT_READONLY_PROPERTY(StatusComponent, status);
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
-    QPOINTER_WRITABLE_PROPERTY(MaterialsBackend, materials_list)
+    QOBJECT_WRITABLE_PROPERTY(db::RenderGroupsModel, materials_list)
+    QOBJECT_WRITABLE_PROPERTY(db::GroupEditor, group_edit);
+
+    Q_WRITABLE_PROPERTY(db::Entity, current_material, {})
+    Q_READONLY_PROPERTY(QString, current_material_name)
 };
 
 } // namespace SolTrace::GUI::App

@@ -26,7 +26,7 @@ class TracingModule : public QObject {
 public:
     explicit TracingModule(QObject* parent = nullptr);
 
-    QPOINTER_WRITABLE_PROPERTY(TracingBackend, backend)
+    QOBJECT_WRITABLE_PROPERTY(TracingBackend, backend)
     QOBJECT_READONLY_PROPERTY(StatusComponent, status)
 
     enum class Tracer { Legacy, Refactored, GPU };

@@ -22,9 +22,11 @@ public Q_SLOTS:                                                                \
         if (m_##PROPERTY_NAME == new_value) return;                            \
         m_##PROPERTY_NAME = new_value;                                         \
         Q_EMIT PROPERTY_NAME##_changed();                                      \
+        Q_EMIT PROPERTY_NAME##_value_changed(new_value);                       \
     }                                                                          \
 Q_SIGNALS:                                                                     \
     void PROPERTY_NAME##_changed();                                            \
+    void PROPERTY_NAME##_value_changed(TYPE* new_value);                       \
                                                                                \
 public:
 
@@ -126,33 +128,6 @@ Q_SIGNALS:                                                                     \
     void PROPERTY_NAME##_changed();                                            \
                                                                                \
 public:
-
-
-#define QPOINTER_WRITABLE_PROPERTY(TYPE, NAME)                                 \
-public:                                                                        \
-    Q_PROPERTY(TYPE* NAME READ NAME WRITE set_##NAME NOTIFY NAME##_changed)    \
-    protected:                                                                 \
-    QPointer<TYPE> m_##NAME = nullptr;                                         \
-    public:                                                                    \
-    QPointer<TYPE> NAME() const { return m_##NAME; }                           \
-    public Q_SLOTS:                                                            \
-    void set_##NAME(TYPE* new_value) {                                         \
-        if (m_##NAME == new_value) return;                                     \
-        m_##NAME = QPointer<TYPE>(new_value);                                  \
-        Q_EMIT NAME##_changed();                                               \
-}                                                                              \
-    Q_SIGNALS:                                                                 \
-    void NAME##_changed();                                                     \
-    public:
-
-#define QPOINTER_READONLY_PROPERTY(TYPE, NAME)                                 \
-    Q_PROPERTY(TYPE* NAME READ NAME CONSTANT)                                  \
-    public:                                                                    \
-    QPointer<TYPE> NAME() const { return m_##NAME; }                           \
-    private:                                                                   \
-    QPointer<TYPE> m_##NAME;                                                   \
-                                                                               \
-    public:
 
 //─── Helper methods ───────────────────────────────────────────────────────────────────
 

@@ -6,6 +6,8 @@
 #include "database/database_notification.h"
 
 #include <QPointer>
+#include <QtTypes>
+#include <qqmlintegration.h>
 
 
 // TODO BETTER COMPOSITE SUPPORT
@@ -40,6 +42,7 @@ std::optional<K> reverse_lookup(std::map<K, V> const& map, V const& value) {
 
 
 class Database : public QObject {
+    Q_OBJECT
     entt::registry m_registry;
 
 public:
@@ -189,4 +192,23 @@ public:
     DatabaseObserver& operator=(DatabaseObserver&&)      = delete;
 };
 
+/// Wrapper type for Qt/QML interface
+struct Entity {
+    Q_GADGET
+    QML_VALUE_TYPE(db_entity);
+    // Q_PROPERTY(qint64 value MEMBER value);
+
+public:
+    Entity() = default;
+    Entity(entt::entity e) : value(e) { }
+
+    entt::entity value = entt::null;
+
+    bool operator<=>(Entity const& other) const = default;
+
+    operator entt::entity() const { return value; }
+};
+
 } // namespace db
+
+Q_DECLARE_METATYPE(db::Entity);

@@ -60,6 +60,8 @@ public:
         }
         return nullptr;
     }
+
+    auto view() const { return m_host.view<Component const>(); }
 };
 
 template <class Component>

@@ -180,6 +180,7 @@ RenderGroupsModel::RenderGroupsModel(QObject* parent)
     : StructModelAdapter(parent) { }
 
 void RenderGroupsModel::reset(Database* database) {
+    qDebug() << Q_FUNC_INFO << database;
     m_host = database;
     recompute();
 

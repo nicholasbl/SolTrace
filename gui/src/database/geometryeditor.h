@@ -19,12 +19,25 @@ namespace db {
 
 struct RenderGroupParameterComponent;
 
+class BoundingBox {
+    Q_GADGET
+    Q_PROPERTY(QVector3D min MEMBER min)
+    Q_PROPERTY(QVector3D max MEMBER max)
+
+public:
+    QVector3D min;
+    QVector3D max;
+
+    bool operator==(BoundingBox const&) const = default;
+};
+
+
 /// Surface geometry visualization. Creates geometry for Quick3D for a given
 /// group
 class SurfaceGeometry : public QQuick3DGeometry, public DatabaseObserver {
     Q_OBJECT
 
-    entt::entity m_current_group;
+    entt::entity m_current_group = entt::null;
 
     struct Vertex {
         QVector3D position;
@@ -40,6 +53,8 @@ private slots:
 
 public:
     SurfaceGeometry();
+
+    Q_READONLY_PROPERTY(BoundingBox, bounding_box)
 
     void set(Database*, entt::entity group);
 };
@@ -411,3 +426,5 @@ signals:
 };
 
 } // namespace db
+
+Q_DECLARE_METATYPE(db::BoundingBox)

@@ -23,8 +23,8 @@ class FluxModule : public QObject {
 public:
     explicit FluxModule(QObject* parent = nullptr);
 
-    QPOINTER_WRITABLE_PROPERTY(ResultsBackend, results)
-    QPOINTER_WRITABLE_PROPERTY(FluxBackend, backend)
+    QOBJECT_WRITABLE_PROPERTY(ResultsBackend, results)
+    QOBJECT_WRITABLE_PROPERTY(FluxBackend, backend)
 };
 
 } // namespace SolTrace::GUI::App

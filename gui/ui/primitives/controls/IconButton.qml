@@ -18,8 +18,8 @@ Item {
     property color labelColor: "white"
     property int labelSize: 14
     property int iconSize: 20
-    property var labelFont: ""
-    property var labelWeight: Font.Normal
+    property string labelFont: ""
+    property int labelWeight: Font.Normal
     property bool underline: false
 
     signal clicked()
