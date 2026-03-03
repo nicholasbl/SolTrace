@@ -22,6 +22,11 @@ App::App(QObject* parent, const QString& documentation_directory)
             m_simulation,
             &SimulationModule::set_current_database);
 
+    connect(this,
+            &App::new_database,
+            m_materials,
+            &MaterialsModule::set_current_database);
+
     connect(
         m_simulation, &SimulationModule::new_results, this, &App::new_results);
 }
@@ -30,8 +35,6 @@ void App::install(QPointer<Backend> backend)
 {
     m_sun->set_backend(QPointer(backend->sun()));
     m_tracing->set_backend(QPointer(backend->tracing()));
-    m_materials->set_backend(QPointer(backend->materials()));
-    m_geometry->set_backend(QPointer(backend->geometry()));
     m_intersections->set_backend(QPointer(backend->intersections()));
     m_flux->set_backend(QPointer(backend->flux()));
 }

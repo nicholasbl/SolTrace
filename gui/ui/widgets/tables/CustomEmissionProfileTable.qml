@@ -7,9 +7,7 @@ Column {
     id: root
     spacing: 10
 
-    CustomSunShapeModel {
-        id: model
-    }
+    property var model: App.sun.custom_sun_shape
 
     Row {
         spacing: 8

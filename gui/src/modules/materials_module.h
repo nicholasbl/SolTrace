@@ -25,10 +25,8 @@ public:
     explicit MaterialsModule(QObject* parent = nullptr);
 
     QOBJECT_READONLY_PROPERTY(StatusComponent, status);
-
-    /// Non-owning reference to the materials backend slice.
-    /// Constrains QML access to materials-specific backend functionality only.
-    QPOINTER_WRITABLE_PROPERTY(MaterialsBackend, backend)
+    QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
+    QPOINTER_WRITABLE_PROPERTY(MaterialsBackend, materials_list)
 };
 
 } // namespace SolTrace::GUI::App

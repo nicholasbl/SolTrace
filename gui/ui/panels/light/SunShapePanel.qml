@@ -158,11 +158,11 @@ Column {
                 CustomEmissionProfileTable {
                     id: customEmissionProfileTable
 
-                    onNumberOfPointsChanged: {
-                        if (root.currentIndex === 3) {
-                            customSpinBox.value = numberOfPoints
-                        }
-                    }
+                    // onNumberOfPointsChanged: {
+                    //     if (root.currentIndex === 3) {
+                    //         customSpinBox.value = numberOfPoints
+                    //     }
+                    // }
                 }
             }
         }

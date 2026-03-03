@@ -4,14 +4,14 @@
 #include <QRegularExpression>
 
 namespace SolTrace::GUI::App {
-SunModule::SunModule(QObject *parent) :
-    QObject(parent),
-    m_backend(nullptr),
-    m_status(new StatusComponent()),
-    m_definition(new PresetComponent<SunDefinition>()),
-    m_ds_positions(new PresetComponent<DirectionalSunPosition>()),
-    m_ps_positions(new PresetComponent<PointSourcePosition>())
-{}
+SunModule::SunModule(QObject* parent)
+    : QObject(parent),
+      m_backend(nullptr),
+      m_status(new StatusComponent()),
+      m_custom_sun_shape(new CustomSunShapeModel(this)),
+      m_definition(new PresetComponent<SunDefinition>()),
+      m_ds_positions(new PresetComponent<DirectionalSunPosition>()),
+      m_ps_positions(new PresetComponent<PointSourcePosition>()) { }
 
 
 SunDefinition::SunDefinition(QObject *parent) :
