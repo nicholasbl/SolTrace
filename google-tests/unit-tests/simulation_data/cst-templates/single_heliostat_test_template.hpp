@@ -605,6 +605,8 @@ public:
             std::cout << "Uniformity: " << Uniformity << std::endl;
             std::cout << "Centroid: (" << Centroid[0] << ", " << Centroid[1] << ", " << Centroid[2] << ")" << std::endl;
         }
+
+        return true;
     }
 
     void check_outputs(SimulationResult result, std::string position) {

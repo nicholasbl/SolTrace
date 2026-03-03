@@ -116,6 +116,35 @@ TEST(TraceLogger, Logging)
     EXPECT_GT(ss.str().size(), 0);
 }
 
+TEST(NativeRunner, ErrorOnUnsupportedOptions)
+{
+    NativeRunner runner;
+    SimulationData my_sim;
+
+    SimulationParameters &params = my_sim.get_simulation_parameters();
+    params.include_optical_errors = true;
+    params.include_sun_shape_errors = true;
+
+    auto sun = SolTrace::Data::make_ray_source<Sun>();
+    sun->set_position(0.0, 0.0, 100.0);
+    sun->set_shape(SolTrace::Data::SunShape::GAUSSIAN, 1.0, -5.0, 0.0);
+    my_sim.add_ray_source(sun);
+
+    auto mirror = SolTrace::Data::make_element<SingleElement>();
+    mirror->set_aperture(make_aperture<Rectangle>(10.0, 10.0));
+    mirror->set_surface(make_surface<Flat>());
+    auto opf = mirror->get_front_optical_properties();
+    opf->set_ideal_reflection();
+    opf->error_distribution_type = DistributionType::UNKNOWN;
+
+    RunnerStatus sts;
+    sts = runner.initialize();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+
+    EXPECT_THROW(runner.setup_simulation(&my_sim), std::invalid_argument);
+}
+
+
 TEST(NativeRunner, SmokeTest)
 {
     const unsigned NRAYS = 10;

@@ -23,14 +23,14 @@ public:
     {
     }
     virtual ~ParabolaNewton() {}
-    virtual void set_zstart(double PosXYZ[3])
+    virtual void set_zstart(double PosXYZ[3]) override
     {
         PosXYZ[2] = 0.0;
         return;
     }
     virtual void surface_and_jacobian(const double PosXYZ[3],
                                       double *F,
-                                      double DFXYZ[3])
+                                      double DFXYZ[3]) override
     {
         double x0 = PosXYZ[0];
         double y0 = PosXYZ[1];
@@ -45,7 +45,7 @@ public:
     double cy;
 
     // Unused -- here so that this is not a pure virtual class
-    virtual double compute_z_aperture(aperture_ptr ap)
+    virtual double compute_z_aperture(aperture_ptr ap) override
     {
         return 0.0;
     }

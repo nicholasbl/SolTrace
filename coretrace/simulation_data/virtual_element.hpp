@@ -37,8 +37,8 @@ public:
     VirtualPlane(double x_len, double y_len);
     virtual ~VirtualPlane();
 
-    void set_aperture(aperture_ptr ap) {}
-    void set_surface(surface_ptr sp) {}
+    void set_aperture(aperture_ptr ap) override {}
+    void set_surface(surface_ptr sp) override {}
 
 private:
 };

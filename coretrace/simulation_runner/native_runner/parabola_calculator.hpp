@@ -20,11 +20,11 @@ namespace SolTrace::NativeRunner
                               double PosXYZ[3],
                               double CosKLM[3],
                               double DFXYZ[3],
-                              double *PathLength);
+                              double *PathLength) override;
 
         void surface_normal(const double PosXYZ[3], double DFXYZ[3]);
 
-        virtual double compute_z_aperture(SolTrace::Data::aperture_ptr ap);
+        virtual double compute_z_aperture(SolTrace::Data::aperture_ptr ap) override;
 
     private:
         double cx;
