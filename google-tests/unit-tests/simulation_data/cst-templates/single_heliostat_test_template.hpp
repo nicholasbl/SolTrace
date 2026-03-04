@@ -60,6 +60,9 @@ public:
 
     bool use_optical_errors = true;
     bool use_sunshape_errors = true;
+    DistributionType error_dist = DistributionType::GAUSSIAN;
+    double spec_error = 0.0;
+    double slope_error = 2.0;
 
     SimulationData simData;
     RunnerT runner;
@@ -113,9 +116,9 @@ public:
         OpticalProperties mirror;
         mirror.set_ideal_reflection();
         mirror.reflectivity = 0.9;
-        mirror.slope_error = 2.0;       // mrad
-        mirror.specularity_error = 0.0; // mrad
-        mirror.error_distribution_type = DistributionType::GAUSSIAN;
+        mirror.slope_error = this->slope_error;       // mrad
+        mirror.specularity_error = this->spec_error; // mrad
+        mirror.error_distribution_type = this->error_dist;
         // Backside is absorbing
         OpticalProperties mirror_back;
         mirror_back.set_ideal_absorption();
