@@ -62,6 +62,35 @@ extern "C" __device__ __inline__ float3 orthonormal_vector(float3 v)
     return normalize(u);
 }
 
+// Apply gaussian angular perturbation in the same manner as the native runner's
+// `SurfaceNormalErrors`: sample thetax/thetay from N(0, sigma) in radians,
+// choose a uniform azimuth phi, and construct a perturbed direction in the
+// local frame of the input vector.
+extern "C" __device__ float3 apply_gaussian_slope_errors_native(float sigma_rad,
+                                                                float3 n,
+                                                                OptixCSP::PerRayData &prd)
+{
+    curandState local_rng = params.rng_states[prd.ray_path_index];
+
+    const float thetax = sigma_rad * curand_normal(&local_rng);
+    const float thetay = sigma_rad * curand_normal(&local_rng);
+    const float theta2 = thetax * thetax + thetay * thetay;
+    const float theta = sqrtf(theta2);
+    const float phi = 2.0f * M_PIf * curand_uniform(&local_rng);
+
+    // Local frame around n
+    const float3 e1 = orthonormal_vector(n);
+    const float3 e2 = cross(n, e1);
+
+    // Match native: [sin(theta)cos(phi), sin(theta)sin(phi), cos(theta)]
+    const float s = sinf(theta);
+    const float c = cosf(theta);
+    const float3 n_pert = s * cosf(phi) * e1 + s * sinf(phi) * e2 + c * n;
+
+    params.rng_states[prd.ray_path_index] = local_rng;
+    return normalize(n_pert);
+}
+
 // Add perturbation ortogonal to given vector. Perturbation is uniform over
 // a disk of radius a centered at the vector n. Returned vector is a
 // unit vector.
@@ -156,7 +185,7 @@ extern "C" __global__ void __closesthit__mirror()
     {
         if (error_type == OptixCSP::OpticalDistribution::OPT_GAUSSIAN)
         {
-            ffnormal = apply_gaussian_errors(normal_sigma, ffnormal, prd);
+            ffnormal = apply_gaussian_slope_errors_native(normal_sigma, ffnormal, prd);
         }
         else if (error_type == OptixCSP::OpticalDistribution::OPT_PILLBOX)
         {
@@ -444,7 +473,7 @@ extern "C" __global__ void __closesthit__mirror__parabolic()
         // Surface normal (macro-surface) errors
         if (error_type == OptixCSP::OpticalDistribution::OPT_GAUSSIAN)
         {
-            ffnormal = apply_gaussian_errors(normal_sigma, ffnormal, prd);
+            ffnormal = apply_gaussian_slope_errors_native(normal_sigma, ffnormal, prd);
         }
         else if (error_type == OptixCSP::OpticalDistribution::OPT_PILLBOX)
         {
