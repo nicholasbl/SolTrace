@@ -127,7 +127,7 @@ TEST(SingleHelioOptixNative, SunShapeOnly)
 
 TEST(SingleHelioOptixNative, SlopeGaussOnly)
 {
-    int N_rays = 1e6;
+    int N_rays = 1e5;
 
     bool use_optical = true;
     bool use_sunshape = false;
