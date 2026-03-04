@@ -73,7 +73,7 @@ extern "C" __device__ float3 apply_uniform_errors(float a,
     float3 eta = orthonormal_vector(v);
     float3 xi = cross(v, eta);
     float phi = 2.0f * M_PIf * curand_uniform(&local_rng);
-    float r = sqrtf(curand_uniform(&local_rng));
+    float r = a * sqrtf(curand_uniform(&local_rng));
     eta = r * cosf(phi) * eta + r * sinf(phi) * xi;
     params.rng_states[prd.ray_path_index] = local_rng;
     return normalize(v + eta);
