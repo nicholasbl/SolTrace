@@ -39,8 +39,8 @@ namespace SolTrace::Data
         DistributionType error_distribution_type;
         double transmitivity;
         double reflectivity;
-        double slope_error;
-        double specularity_error;
+        double slope_error;                 // [mrad]
+        double specularity_error;           // [mrad]
         double refraction_index_front;
         double refraction_index_back;
 

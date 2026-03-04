@@ -150,8 +150,8 @@ extern "C" __global__ void __closesthit__mirror()
     const float transmissivity = material.transmissivity;
     const bool use_transmissivity = material.use_refraction;
     const float reflectivity = material.reflectivity;
-    const float normal_sigma = 1e-3f * material.slope_error;
-    const float spec_sigma = material.specularity_error;
+    const float normal_sigma = 1e-3f * material.slope_error;        // Convert mrad to rad
+    const float spec_sigma = 1e-3f * material.specularity_error;    // Convert mrad to rad
     const uint8_t error_type = material.optical_dist;
 
     // Surface normal (macro-surface) errors
