@@ -23,8 +23,8 @@ option(FULL_FIELD_VALIDATION_TEST "Include full field validation tests" OFF)
 
 if(SOLTRACE_ENABLE_ASAN)
 	if(MSVC)
-		message(WARNING "SOLTRACE_ENABLE_ASAN is not supported with MSVC")
-	elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+		message(WARNING "SOLTRACE_ENABLE_ASAN is not yet supported with MSVC or GCC")
+	elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang")
 		message(STATUS "Enabling address sanitizer")
 		add_compile_options(
 			$<$<COMPILE_LANGUAGE:C,CXX>:-fsanitize=address>
@@ -32,7 +32,7 @@ if(SOLTRACE_ENABLE_ASAN)
 		)
 		add_link_options(-fsanitize=address)
 	else()
-		message(WARNING "SOLTRACE_ENABLE_ASAN is only supported with Clang and GCC")
+		message(WARNING "SOLTRACE_ENABLE_ASAN is only supported with Clang")
 	endif()
 endif()
 
