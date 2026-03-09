@@ -2,6 +2,22 @@ Project(optix_runner)
 
 add_subdirectory(OptixCSP)
 
+# OptixCSP_core's INTERFACE_INCLUDE_DIRECTORIES were set with plain absolute paths
+# inside the submodule. Wrap them all in BUILD_INTERFACE so they don't leak into
+# the installed targets file, and add an INSTALL_INTERFACE path for consumers.
+get_target_property(_optixcsp_raw_includes OptixCSP_core INTERFACE_INCLUDE_DIRECTORIES)
+set(_optixcsp_wrapped_includes)
+foreach(_inc IN LISTS _optixcsp_raw_includes)
+    list(APPEND _optixcsp_wrapped_includes "$<BUILD_INTERFACE:${_inc}>")
+endforeach()
+list(APPEND _optixcsp_wrapped_includes
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/optix>"
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/optix/core>"
+)
+set_property(TARGET OptixCSP_core PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+    ${_optixcsp_wrapped_includes}
+)
+
 set(OPTIX_RUNNER_SRC
     optix_runner.cpp
 )
@@ -42,7 +58,7 @@ target_link_libraries(optix_runner
     PUBLIC  simdata
 )
 
-install(TARGETS optix_runner
+install(TARGETS optix_runner OptixCSP_core
     EXPORT SolTraceTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -52,4 +68,12 @@ install(TARGETS optix_runner
 
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/optix_runner.hpp"
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/simulation_runner/optix_runner
+)
+
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/OptixCSP/src/"
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/optix
+    FILES_MATCHING
+        PATTERN "*.hpp"
+        PATTERN "*.h"
+        PATTERN "CMakeLists.txt" EXCLUDE
 )

@@ -39,6 +39,7 @@ write_basic_package_version_file(
 install(FILES
 	"${CMAKE_CURRENT_BINARY_DIR}/SolTraceConfig.cmake"
 	"${CMAKE_CURRENT_BINARY_DIR}/SolTraceConfigVersion.cmake"
+	"${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOptiX.cmake"
 	DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/SolTrace"
 )
 
