@@ -38,7 +38,10 @@ set_target_properties(
 	PREFIX ""
 )
 
-# Publish include directories so dependents inherit them
+# Publish include directories so dependents inherit them.
+# optix_runner.hpp includes core/soltrace_system.h -> <optix.h>, so OptiX and
+# CUDA include paths must be PUBLIC so any consumer that includes optix_runner.hpp
+# can find those system headers.
 target_include_directories(optix_runner
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -48,14 +51,16 @@ target_include_directories(optix_runner
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_results>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../../../app/deploy/samples>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/OptixCSP/src>
+        $<BUILD_INTERFACE:${OptiX_ROOT_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/simulation_runner/optix_runner>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/simulation_runner>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/optix>
 )
 
 target_link_libraries(optix_runner
     PRIVATE OptixCSP::OptixCSP_core
-            CUDA::cuda_driver
-    PUBLIC  simdata
+    PUBLIC  CUDA::cuda_driver
+            simdata
 )
 
 install(TARGETS optix_runner OptixCSP_core
