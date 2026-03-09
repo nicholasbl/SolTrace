@@ -26,11 +26,10 @@ namespace OptixCSP{
     };
 
     enum OpticalEntityType : unsigned int {
-        RECTANGLE_FLAT_MIRROR         = 0,
-        RECTANGLE_PARABOLIC_MIRROR    = 1,
-        RECTANGLE_FLAT_RECEIVER       = 2,
-        CYLINDRICAL_RECEIVER          = 3,
-        TRIANGLE_FLAT_RECEIVER        = 4,
+        RECTANGLE_FLAT       = 0,
+        RECTANGLE_PARABOLIC  = 1,
+        CYLINDRICAL          = 2,
+        TRIANGLE_FLAT        = 3,
 	NUM_OPTICAL_ENTITY_TYPES
     };
 

@@ -56,17 +56,18 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
 			m_max.z = (float)(element->get_upper_bounding_box()[2]);
 
             if (element->get_surface_type() == SurfaceType::PARABOLIC) {
-                sbt_offset = static_cast<uint32_t>(OpticalEntityType::RECTANGLE_PARABOLIC_MIRROR);
+                sbt_offset = static_cast<uint32_t>(OpticalEntityType::RECTANGLE_PARABOLIC);
                 // no receiver only mirrors
             }
             else if (element->get_surface_type() == SurfaceType::FLAT) {
-                if (element->is_receiver())
-                    sbt_offset = static_cast<uint32_t>(OpticalEntityType::RECTANGLE_FLAT_RECEIVER);
-                else 
-					sbt_offset = static_cast<uint32_t>(OpticalEntityType::RECTANGLE_FLAT_MIRROR);
+                // if (element->is_receiver())
+                //     sbt_offset = static_cast<uint32_t>(OpticalEntityType::RECTANGLE_FLAT_RECEIVER);
+                // else 
+		// 			sbt_offset = static_cast<uint32_t>(OpticalEntityType::RECTANGLE_FLAT_MIRROR);
+                sbt_offset = static_cast<uint32_t>(OpticalEntityType::RECTANGLE_FLAT);
             }
             else if (element->get_surface_type() == SurfaceType::CYLINDER){
-                sbt_offset = static_cast<uint32_t>(OpticalEntityType::CYLINDRICAL_RECEIVER);
+                sbt_offset = static_cast<uint32_t>(OpticalEntityType::CYLINDRICAL);
             }
 			else {
             }
@@ -81,8 +82,8 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
 			m_max.y = (float)(element->get_upper_bounding_box()[1]);
 			m_max.z = (float)(element->get_upper_bounding_box()[2]);
 
-            if (element->is_receiver())
-                sbt_offset = static_cast<uint32_t>(OpticalEntityType::TRIANGLE_FLAT_RECEIVER);
+			// if (element->is_receiver())
+            sbt_offset = static_cast<uint32_t>(OpticalEntityType::TRIANGLE_FLAT);
 
         }
 

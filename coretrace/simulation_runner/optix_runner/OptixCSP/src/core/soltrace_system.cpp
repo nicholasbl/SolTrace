@@ -378,97 +378,97 @@ void SolTraceSystem::get_hp_output(std::vector<float4>& hp_vec,
 // receiver stats, dimension, type, location, rotation matrix. 
 // writing timing?
 
-void SolTraceSystem::write_simulation_json(const std::string& filename) {
-	std::ofstream out(filename);
+// void SolTraceSystem::write_simulation_json(const std::string& filename) {
+// 	std::ofstream out(filename);
     
-    // process sun stats
-    float3 sun_box_a = data_manager->launch_params_H.sun_v0 - data_manager->launch_params_H.sun_v1;
-    float3 sun_box_b = data_manager->launch_params_H.sun_v1 - data_manager->launch_params_H.sun_v2;
+//     // process sun stats
+//     float3 sun_box_a = data_manager->launch_params_H.sun_v0 - data_manager->launch_params_H.sun_v1;
+//     float3 sun_box_b = data_manager->launch_params_H.sun_v1 - data_manager->launch_params_H.sun_v2;
 
-	float sun_box_edge_a = length(sun_box_a);
-	float sun_box_edge_b = length(sun_box_b);
+// 	float sun_box_edge_a = length(sun_box_a);
+// 	float sun_box_edge_b = length(sun_box_b);
 
-    out << "{\n";
-    out << "  \"sun\": {\n";
-    out << "    \"number_of_sunpoints\": " << m_number_of_rays << ",\n";
-    out << "    \"sun_vector\": ["
-        << m_sun->get_position()[0] << ", " << m_sun->get_position()[1] << ", " << m_sun->get_position()[2] << "],\n";
-    out << "    \"sun_box_edge_a\": " << sun_box_edge_a << ",\n";
-    out << "    \"sun_box_edge_b\": " << sun_box_edge_b << "\n";
-    out << "  },\n";
-
-
-	std::vector<int> receiver_indices = get_receiver_indices();
-
-    if (receiver_indices.size() == 0) {
-        std::cerr << "Error: No receiver found in the system. Cannot write simulation JSON." << std::endl;
-        return;
-    }
-    if (receiver_indices.size() > 1) {
-		std::cerr << "Error: More than one receiver found in the system. Luning needs to implement this!" << std::endl;
-	}
-
-    std::shared_ptr<CspElement> receiver = m_element_list[receiver_indices[0]];
-
-    out << "  \"receiver\": {\n";
-
-	// use enum to get the type of the receiver
-	std::string receiver_type = "unknown";
-
-    switch (receiver->get_surface_type()) {
-        case SurfaceType::FLAT:
-            receiver_type = "flat";
-            out << "    \"type\": \"" << receiver_type << "\",\n";
-			out << "    \"dimensions\": [" << receiver->get_aperture()->get_width() << ", " << 
-                                              receiver->get_aperture()->get_height() << "],\n";
-
-            break;
-        case SurfaceType::CYLINDER:
-            receiver_type = "cylinder";
-            out << "    \"type\": \"" << receiver_type << "\",\n";
-			out << "    \"radius\": " << receiver->get_aperture()->get_width() / 2.0f << ",\n";
-			out << "    \"height\": " << receiver->get_aperture()->get_height() << ",\n";
-
-            break;
-        case SurfaceType::PARABOLIC:
-            //TODO
-            // can we have parabolic receiver?
-            receiver_type = "parabolic";
-            break;
-        default:
-            receiver_type = "unknown";
-			break;
-    }
-
-	Vec3d receiver_location = receiver->get_origin();
-	Matrix33d rotation_matrix = receiver->get_rotation_matrix(); // get the rotation matrix
-	Vec3d receiver_x_basis = rotation_matrix.get_x_basis();
-	Vec3d receiver_y_basis = rotation_matrix.get_y_basis();
-	Vec3d receiver_z_basis = rotation_matrix.get_z_basis();
-
-    out << "    \"location\": ["
-        << receiver_location[0] << ", " << receiver_location[1] << ", " << receiver_location[2] << "],\n";
-
-    out << "    \"num_hits\": "
-        << get_num_hits_receiver(*receiver) << ",\n";
+//     out << "{\n";
+//     out << "  \"sun\": {\n";
+//     out << "    \"number_of_sunpoints\": " << m_number_of_rays << ",\n";
+//     out << "    \"sun_vector\": ["
+//         << m_sun->get_position()[0] << ", " << m_sun->get_position()[1] << ", " << m_sun->get_position()[2] << "],\n";
+//     out << "    \"sun_box_edge_a\": " << sun_box_edge_a << ",\n";
+//     out << "    \"sun_box_edge_b\": " << sun_box_edge_b << "\n";
+//     out << "  },\n";
 
 
-    // print out rotation matrix basis
-	out << "    \"rotation_matrix\": {\n";
-    out << "      \"x_basis\": ["
-		<< receiver_x_basis[0] << ", " << receiver_x_basis[1] << ", " << receiver_x_basis[2] << "],\n";
-	out << "      \"y_basis\": ["
-		<< receiver_y_basis[0] << ", " << receiver_y_basis[1] << ", " << receiver_y_basis[2] << "],\n";
-	out << "      \"z_basis\": ["
-		<< receiver_z_basis[0] << ", " << receiver_z_basis[1] << ", " << receiver_z_basis[2] << "]}\n";
+// 	std::vector<int> receiver_indices = get_receiver_indices();
+
+//     if (receiver_indices.size() == 0) {
+//         std::cerr << "Error: No receiver found in the system. Cannot write simulation JSON." << std::endl;
+//         return;
+//     }
+//     if (receiver_indices.size() > 1) {
+// 		std::cerr << "Error: More than one receiver found in the system. Luning needs to implement this!" << std::endl;
+// 	}
+
+//     std::shared_ptr<CspElement> receiver = m_element_list[receiver_indices[0]];
+
+//     out << "  \"receiver\": {\n";
+
+// 	// use enum to get the type of the receiver
+// 	std::string receiver_type = "unknown";
+
+//     switch (receiver->get_surface_type()) {
+//         case SurfaceType::FLAT:
+//             receiver_type = "flat";
+//             out << "    \"type\": \"" << receiver_type << "\",\n";
+// 			out << "    \"dimensions\": [" << receiver->get_aperture()->get_width() << ", " << 
+//                                               receiver->get_aperture()->get_height() << "],\n";
+
+//             break;
+//         case SurfaceType::CYLINDER:
+//             receiver_type = "cylinder";
+//             out << "    \"type\": \"" << receiver_type << "\",\n";
+// 			out << "    \"radius\": " << receiver->get_aperture()->get_width() / 2.0f << ",\n";
+// 			out << "    \"height\": " << receiver->get_aperture()->get_height() << ",\n";
+
+//             break;
+//         case SurfaceType::PARABOLIC:
+//             //TODO
+//             // can we have parabolic receiver?
+//             receiver_type = "parabolic";
+//             break;
+//         default:
+//             receiver_type = "unknown";
+// 			break;
+//     }
+
+// 	Vec3d receiver_location = receiver->get_origin();
+// 	Matrix33d rotation_matrix = receiver->get_rotation_matrix(); // get the rotation matrix
+// 	Vec3d receiver_x_basis = rotation_matrix.get_x_basis();
+// 	Vec3d receiver_y_basis = rotation_matrix.get_y_basis();
+// 	Vec3d receiver_z_basis = rotation_matrix.get_z_basis();
+
+//     out << "    \"location\": ["
+//         << receiver_location[0] << ", " << receiver_location[1] << ", " << receiver_location[2] << "],\n";
+
+//     out << "    \"num_hits\": "
+//         << get_num_hits_receiver(*receiver) << ",\n";
 
 
-    out << "  }\n";
-    out << "}\n";
+//     // print out rotation matrix basis
+// 	out << "    \"rotation_matrix\": {\n";
+//     out << "      \"x_basis\": ["
+// 		<< receiver_x_basis[0] << ", " << receiver_x_basis[1] << ", " << receiver_x_basis[2] << "],\n";
+// 	out << "      \"y_basis\": ["
+// 		<< receiver_y_basis[0] << ", " << receiver_y_basis[1] << ", " << receiver_y_basis[2] << "],\n";
+// 	out << "      \"z_basis\": ["
+// 		<< receiver_z_basis[0] << ", " << receiver_z_basis[1] << ", " << receiver_z_basis[2] << "]}\n";
 
-    out.close();
 
-}
+//     out << "  }\n";
+//     out << "}\n";
+
+//     out.close();
+
+// }
 
 
 
@@ -603,42 +603,60 @@ void SolTraceSystem::create_shader_binding_table(){
 		// OpticalEntityType with the corresponding m_program_group
         for (unsigned int i = 0; i < count_records; i++) {
 
-			OptixCSP::OpticalEntityType my_type = static_cast<OptixCSP::OpticalEntityType>(i);
+	    OptixCSP::OpticalEntityType my_type = static_cast<OptixCSP::OpticalEntityType>(i);
             // initialize program handle and data
             OptixProgramGroup program_group_handle = nullptr;
             SurfaceApertureMap map = {};
 
-			switch (my_type) {
-            case OptixCSP::OpticalEntityType::RECTANGLE_FLAT_MIRROR: 
-				map = { SurfaceType::FLAT, ApertureType::RECTANGLE };
+	  switch (my_type) {
+            case OptixCSP::OpticalEntityType::RECTANGLE_FLAT: 
+	        map = { SurfaceType::FLAT, ApertureType::RECTANGLE };
                 program_group_handle = pipeline_manager->getMirrorProgram(map);
                 hitgroup_records_list[i].data.material_data = {0.875425, 0, 0, 0};
-                printf("RECTANGLE_FLAT_MIRROR, program group address: %p \n", program_group_handle);
-				break;
-            case OptixCSP::OpticalEntityType::RECTANGLE_PARABOLIC_MIRROR:
+                printf("RECTANGLE_FLAT, program group address: %p \n", program_group_handle);
+
+		break;
+
+	    case OptixCSP::OpticalEntityType::RECTANGLE_PARABOLIC:
                 map = { SurfaceType::PARABOLIC, ApertureType::RECTANGLE };
                 program_group_handle = pipeline_manager->getMirrorProgram(map);
                 hitgroup_records_list[i].data.material_data = { 0.875425, 0, 0, 0 };
-                printf("RECTANGLE_PARABOLIC_MIRROR, program group address: %p \n", program_group_handle);
+                printf("RECTANGLE_PARABOLIC, program group address: %p \n", program_group_handle);
 
                 break;
-            case OptixCSP::OpticalEntityType::RECTANGLE_FLAT_RECEIVER:
-                program_group_handle = pipeline_manager->getReceiverProgram(SurfaceType::FLAT, ApertureType::RECTANGLE);
-				hitgroup_records_list[i].data.material_data = { 0.95, 0, 0, 0 };
-                printf("RECTANGLE_FLAT_RECEIVER, program group address: %p \n", program_group_handle);
 
-                break;
-            case OptixCSP::OpticalEntityType::CYLINDRICAL_RECEIVER:
-                program_group_handle = pipeline_manager->getReceiverProgram(SurfaceType::CYLINDER, ApertureType::RECTANGLE);
-                hitgroup_records_list[i].data.material_data = { 0.95, 0, 0, 0 };
-                printf("CYLINDRICAL_RECEIVER, program group address: %p \n", program_group_handle);
+	     case OptixCSP::OpticalEntityType::CYLINDRICAL:
+	       map = { SurfaceType::CYLINDER, ApertureType::RECTANGLE };
+	       program_group_handle = pipeline_manager->getMirrorProgram(map);
+	       hitgroup_records_list[i].data.material_data = { 0.95, 0, 0, 0 };
+	       printf("CYLINDRICAL, program group address: %p \n", program_group_handle);
 
-                break;            
-            case OptixCSP::OpticalEntityType::TRIANGLE_FLAT_RECEIVER:
-                program_group_handle = pipeline_manager->getReceiverProgram(SurfaceType::FLAT, ApertureType::TRIANGLE);
-                hitgroup_records_list[i].data.material_data = { 0.95, 0, 0, 0 };
-                printf("TRIANGLE_FLAT_RECEIVER, program group address: %p \n", program_group_handle);
-				break;
+	       break;
+
+             case OptixCSP::OpticalEntityType::TRIANGLE_FLAT:
+	       map = { SurfaceType::FLAT, ApertureType::TRIANGLE };
+	       program_group_handle = pipeline_manager->getMirrorProgram(map);
+	       hitgroup_records_list[i].data.material_data = { 0.95, 0, 0, 0 };
+	       printf("FLAT_TRIANGLE, program group address: %p \n", program_group_handle);
+
+	       break;
+            // case OptixCSP::OpticalEntityType::RECTANGLE_FLAT_RECEIVER:
+            //     program_group_handle = pipeline_manager->getReceiverProgram(SurfaceType::FLAT, ApertureType::RECTANGLE);
+	    // 			hitgroup_records_list[i].data.material_data = { 0.95, 0, 0, 0 };
+            //     printf("RECTANGLE_FLAT_RECEIVER, program group address: %p \n", program_group_handle);
+
+            //     break;
+            // case OptixCSP::OpticalEntityType::CYLINDRICAL_RECEIVER:
+            //     program_group_handle = pipeline_manager->getReceiverProgram(SurfaceType::CYLINDER, ApertureType::RECTANGLE);
+            //     hitgroup_records_list[i].data.material_data = { 0.95, 0, 0, 0 };
+            //     printf("CYLINDRICAL_RECEIVER, program group address: %p \n", program_group_handle);
+
+            //     break;            
+            // case OptixCSP::OpticalEntityType::TRIANGLE_FLAT_RECEIVER:
+            //     program_group_handle = pipeline_manager->getReceiverProgram(SurfaceType::FLAT, ApertureType::TRIANGLE);
+            //     hitgroup_records_list[i].data.material_data = { 0.95, 0, 0, 0 };
+            //     printf("TRIANGLE_FLAT_RECEIVER, program group address: %p \n", program_group_handle);
+	    // 			break;
             default:
 				std::cerr << "Unknown OpticalEntityType: " << my_type << std::endl;
 			}
@@ -830,17 +848,17 @@ double SolTraceSystem::get_time_setup() {
 //	data_manager->launch_params_H.sun_vector = OptixCSP::toFloat3(sun_v);
 //}
 
-std::vector<int> SolTraceSystem::get_receiver_indices() {
+// std::vector<int> SolTraceSystem::get_receiver_indices() {
 
-	std::vector<int> receiver_indices;
-    for (int i = 0; i < m_element_list.size(); i++) {
-        if (m_element_list[i]->is_receiver()) {
-            receiver_indices.push_back(i);
-        }
-	}
+// 	std::vector<int> receiver_indices;
+//     for (int i = 0; i < m_element_list.size(); i++) {
+//         if (m_element_list[i]->is_receiver()) {
+//             receiver_indices.push_back(i);
+//         }
+// 	}
 
-	return receiver_indices;
-}
+// 	return receiver_indices;
+// }
 
 ////////////////////////////
 //  parsing st input file //

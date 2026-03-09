@@ -38,9 +38,9 @@ namespace OptixCSP {
         virtual MaterialData toDeviceMaterialDataFront() const = 0;
         virtual MaterialData toDeviceMaterialDataBack() const = 0;
 
-        void set_receiver(bool val) { m_receiver = val; }
-		bool is_receiver() const { return m_receiver; }
-        bool m_receiver; // true if receiver, false if not, you can think of receiver as the last element in the optical path
+        // void set_receiver(bool val) { m_receiver = val; }
+	// bool is_receiver() const { return m_receiver; }
+        // bool m_receiver; // true if receiver, false if not, you can think of receiver as the last element in the optical path
 
         virtual void set_id(const int32_t id) = 0;
 
