@@ -51,6 +51,7 @@ target_include_directories(optix_runner
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../simulation_results>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../../../app/deploy/samples>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/OptixCSP/src>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/OptixCSP/src/core>
         $<BUILD_INTERFACE:${OptiX_ROOT_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/simulation_runner/optix_runner>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/simulation_runner>
