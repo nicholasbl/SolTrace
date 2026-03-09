@@ -23,12 +23,16 @@ size_t LOG_SIZE = sizeof(LOG);
 
 const char* intersectionFuncs[] = {
     "__intersection__rectangle_parabolic",
-    "__intersection__rectangle_flat"
+    "__intersection__rectangle_flat",
+    "__intersection__triangle_flat",
+    "__intersection__cylinder_y_capped"
 };
 
 const char* closestHitFuncs[] = {
-    "__closesthit__mirror__parabolic",
-	"__closesthit__mirror"
+    "__closesthit__mirror",
+    "__closesthit__mirror",
+    "__closesthit__mirror",
+    "__closesthit__mirror"
 };
 
 pipelineManager::pipelineManager(SoltraceState& state) : m_state(state) {}
@@ -259,21 +263,24 @@ void pipelineManager::createReceiverProgram()
     OptixProgramGroup           group;
     createHitGroupProgram(group,
         m_state.geometry_module, "__intersection__rectangle_flat",
-        m_state.shading_module, "__closesthit__receiver");
+        m_state.shading_module, "__closesthit__mirror");
+        // m_state.shading_module, "__closesthit__receiver");
 
     m_program_groups.push_back(group);
 
     // cylinder receiver
     createHitGroupProgram(group,
         m_state.geometry_module, "__intersection__cylinder_y_capped",
-        m_state.shading_module, "__closesthit__receiver__cylinder__y");
+        m_state.shading_module, "__closesthit__mirror");
+	// m_state.shading_module, "__closesthit__receiver__cylinder__y");
    
     m_program_groups.push_back(group);
 
 	// quadrilateral receiver (triangles) 
     createHitGroupProgram(group,
         m_state.geometry_module, "__intersection__triangle_flat",
-        m_state.shading_module, "__closesthit__receiver");
+	m_state.shading_module, "__closesthit__mirror");
+	// m_state.shading_module, "__closesthit__receiver");
 
     m_program_groups.push_back(group);
 
