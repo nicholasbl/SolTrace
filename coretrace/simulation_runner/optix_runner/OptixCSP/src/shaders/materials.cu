@@ -194,7 +194,7 @@ extern "C" __global__ void __closesthit__element()
         }
     }
 
-    if (optical_errors)
+    if (optical_errors && !absorbed)
     {
         // Optical (micro-surface) errors
         if (error_type == OptixCSP::OpticalDistribution::OPT_GAUSSIAN)

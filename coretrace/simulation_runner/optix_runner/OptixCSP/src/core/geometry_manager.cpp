@@ -4,8 +4,12 @@
 #include "soltrace_state.h"
 #include "utils/util_check.hpp"
 #include "data_manager.h"
-#include <vector>
+
 #include <optix_stubs.h>
+
+#include <stdexcept>
+#include <sstream>
+#include <vector>
 
 
 using namespace OptixCSP;
@@ -64,8 +68,13 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
             else if (element->get_surface_type() == SurfaceType::CYLINDER){
                 sbt_offset = static_cast<uint32_t>(OpticalEntityType::CYLINDRICAL);
             }
-			else {
-                // TODO: It seems like this should throw an error?
+	    else {
+	      std::stringstream ss;
+	      ss << "Unimplemented surface type ("
+		 << static_cast<int>(element->get_surface_type())
+		 << ") for rectangle aperture ("
+		 << static_cast<int>(element->get_aperture_type());
+	      throw std::runtime_error(ss.str());
             }
         }
 
