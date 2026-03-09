@@ -37,9 +37,9 @@ target_include_directories(optix_runner
 )
 
 target_link_libraries(optix_runner
-    PUBLIC  OptixCSP::OptixCSP_core
+    PRIVATE OptixCSP::OptixCSP_core
             CUDA::cuda_driver
-            simdata
+    PUBLIC  simdata
 )
 
 install(TARGETS optix_runner
