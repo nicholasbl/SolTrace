@@ -117,7 +117,8 @@ void SolTraceSystem::initialize()
         OPTIX_CHECK(optixDeviceContextCreate(cuCtx, &options, &m_state.context));
     }
 
-    cudaMemGetInfo(&m_mem_free_before, nullptr);
+    size_t mem_total;
+    cudaMemGetInfo(&m_mem_free_before, &mem_total);
     m_timer_setup.start();
 
     // set up input related to sun
@@ -235,7 +236,8 @@ void SolTraceSystem::run()
         int height = data_manager->launch_params_H.height;
 
         size_t m_mem_free_after;
-        cudaMemGetInfo(&m_mem_free_after, nullptr);
+	size_t mem_total;
+        cudaMemGetInfo(&m_mem_free_after, &mem_total);
         std::cout << "Memory used by launch: " << (m_mem_free_before - m_mem_free_after) / (1024.0 * 1024.0) << " MB\n";
 
         m_timer_trace.start();
@@ -306,6 +308,7 @@ bool SolTraceSystem::read_st_input(const char *filename)
     if (!read_system(fp))
     {
         printf("error in system input file.\n");
+	fclose(fp);
         return false;
     }
 
