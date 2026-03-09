@@ -119,7 +119,7 @@ void pipelineManager::createPipeline()
     // Prepare modules and program groups
     loadModules();
     createSunProgram();
-    createMirrorPrograms();
+    createElementPrograms();
     createMissProgram();
 
     // Link program groups to pipeline
@@ -223,25 +223,23 @@ void pipelineManager::createSunProgram()
     m_state.raygen_prog_group = group;
 }
 
-// Create program group for handling rays interacting with mirrors.
-void pipelineManager::createMirrorPrograms()
+// Create program group for handling rays interacting with elements.
+void pipelineManager::createElementPrograms()
 {   
 
-    // number of mirror programs
-	size_t numMirrorPrograms = sizeof(intersectionFuncs) / sizeof(intersectionFuncs[0]);
+    // number of element programs
+	size_t numElementPrograms = sizeof(intersectionFuncs) / sizeof(intersectionFuncs[0]);
 
-	for (size_t i = 0; i < numMirrorPrograms; i++) {
+	for (size_t i = 0; i < numElementPrograms; i++) {
 		OptixProgramGroup group; 
 
 		createHitGroupProgram(group,
             			      m_state.geometry_module, 
-				      intersectionFuncs[i],
+				              intersectionFuncs[i],
             			      m_state.shading_module,
-				      "__closesthit__mirror");
-				      // closestHitFuncs[i]);
+				              "__closesthit__element");
 
 		m_program_groups.push_back(group);
-        //m_state.radiance_mirror_prog_group = group;
 	}   
 
 }
@@ -281,7 +279,7 @@ void pipelineManager::createMissProgram()
 }
 
 
-OptixProgramGroup pipelineManager::getMirrorProgram(SurfaceApertureMap map) const {
+OptixProgramGroup pipelineManager::getElementProgram(SurfaceApertureMap map) const {
     // TODO this part is still hard coded ... 
 	// squence are raygen, then heliostat, then receiver, then miss
     // need to figure out a better way to arrange the table
@@ -289,12 +287,12 @@ OptixProgramGroup pipelineManager::getMirrorProgram(SurfaceApertureMap map) cons
 
     if (map.apertureType == ApertureType::RECTANGLE) {
         if (map.surfaceType == SurfaceType::FLAT) {
-            //std::cout << "returning mirror program group 3, easy rectangle flat" << std::endl;
+            //std::cout << "returning element program group 3, easy rectangle flat" << std::endl;
             return m_program_groups[2];
         }
 
         else if (map.surfaceType == SurfaceType::PARABOLIC) {
-            //std::cout << "returning mirror program group 2, rectangle parabolic" << std::endl;
+            //std::cout << "returning element program group 2, rectangle parabolic" << std::endl;
             return m_program_groups[1];
 		}
 	else if (map.surfaceType == SurfaceType::CYLINDER) {
@@ -307,5 +305,5 @@ OptixProgramGroup pipelineManager::getMirrorProgram(SurfaceApertureMap map) cons
 	return m_program_groups[3];
       }
     }
-    throw std::runtime_error("Unsupported surface or aperture type in getMirrorProgram");
+    throw std::runtime_error("Unsupported surface or aperture type in getElementProgram");
 }

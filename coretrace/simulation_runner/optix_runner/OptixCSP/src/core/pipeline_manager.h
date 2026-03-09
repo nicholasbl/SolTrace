@@ -62,9 +62,9 @@ namespace OptixCSP {
         void createSunProgram();
 
         /**
-         * @brief Creates programs for mirror interactions.
+         * @brief Creates programs for element interactions.
          */
-        void createMirrorPrograms();
+        void createElementPrograms();
 
         /**
          * @brief Creates the miss program, handling rays that do not hit any geometry.
@@ -98,11 +98,11 @@ namespace OptixCSP {
         OptixProgramGroup getMissProgram() const;
 
         /**
-         * @brief Retrieves the appropriate mirror program group based on surface and aperture type.
+         * @brief Retrieves the appropriate element program group based on surface and aperture type.
          * @param map SurfaceApertureMap specifying the surface and aperture combination.
          * @return The corresponding OptixProgramGroup.
          */
-        OptixProgramGroup getMirrorProgram(SurfaceApertureMap map) const;
+        OptixProgramGroup getElementProgram(SurfaceApertureMap map) const;
 
     private:
         SoltraceState& m_state;  ///< Reference to the simulation's OptiX state.

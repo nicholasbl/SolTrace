@@ -98,7 +98,7 @@ extern "C" __device__ float3 apply_gaussian_errors(float sigma,
     return normalize(n + eta);
 }
 
-extern "C" __global__ void __closesthit__mirror()
+extern "C" __global__ void __closesthit__element()
 {
     // Determine if we are using optical errors
     const bool optical_errors = params.optical_errors;

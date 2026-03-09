@@ -620,7 +620,7 @@ void SolTraceSystem::create_shader_binding_table()
             {
             case OptixCSP::OpticalEntityType::RECTANGLE_FLAT:
                 map = {SurfaceType::FLAT, ApertureType::RECTANGLE};
-                program_group_handle = pipeline_manager->getMirrorProgram(map);
+                program_group_handle = pipeline_manager->getElementProgram(map);
                 hitgroup_records_list[i].data.material_data = {0.875425, 0, 0, 0};
                 printf("RECTANGLE_FLAT, program group address: %p \n", program_group_handle);
 
@@ -628,7 +628,7 @@ void SolTraceSystem::create_shader_binding_table()
 
             case OptixCSP::OpticalEntityType::RECTANGLE_PARABOLIC:
                 map = {SurfaceType::PARABOLIC, ApertureType::RECTANGLE};
-                program_group_handle = pipeline_manager->getMirrorProgram(map);
+                program_group_handle = pipeline_manager->getElementProgram(map);
                 hitgroup_records_list[i].data.material_data = {0.875425, 0, 0, 0};
                 printf("RECTANGLE_PARABOLIC, program group address: %p \n", program_group_handle);
 
@@ -636,7 +636,7 @@ void SolTraceSystem::create_shader_binding_table()
 
             case OptixCSP::OpticalEntityType::CYLINDRICAL:
                 map = {SurfaceType::CYLINDER, ApertureType::RECTANGLE};
-                program_group_handle = pipeline_manager->getMirrorProgram(map);
+                program_group_handle = pipeline_manager->getElementProgram(map);
                 hitgroup_records_list[i].data.material_data = {0.95, 0, 0, 0};
                 printf("CYLINDRICAL, program group address: %p \n", program_group_handle);
 
@@ -644,28 +644,12 @@ void SolTraceSystem::create_shader_binding_table()
 
             case OptixCSP::OpticalEntityType::TRIANGLE_FLAT:
                 map = {SurfaceType::FLAT, ApertureType::TRIANGLE};
-                program_group_handle = pipeline_manager->getMirrorProgram(map);
+                program_group_handle = pipeline_manager->getElementProgram(map);
                 hitgroup_records_list[i].data.material_data = {0.95, 0, 0, 0};
                 printf("FLAT_TRIANGLE, program group address: %p \n", program_group_handle);
 
                 break;
-                // case OptixCSP::OpticalEntityType::RECTANGLE_FLAT_RECEIVER:
-                //     program_group_handle = pipeline_manager->getReceiverProgram(SurfaceType::FLAT, ApertureType::RECTANGLE);
-                // 			hitgroup_records_list[i].data.material_data = { 0.95, 0, 0, 0 };
-                //     printf("RECTANGLE_FLAT_RECEIVER, program group address: %p \n", program_group_handle);
 
-                //     break;
-                // case OptixCSP::OpticalEntityType::CYLINDRICAL_RECEIVER:
-                //     program_group_handle = pipeline_manager->getReceiverProgram(SurfaceType::CYLINDER, ApertureType::RECTANGLE);
-                //     hitgroup_records_list[i].data.material_data = { 0.95, 0, 0, 0 };
-                //     printf("CYLINDRICAL_RECEIVER, program group address: %p \n", program_group_handle);
-
-                //     break;
-                // case OptixCSP::OpticalEntityType::TRIANGLE_FLAT_RECEIVER:
-                //     program_group_handle = pipeline_manager->getReceiverProgram(SurfaceType::FLAT, ApertureType::TRIANGLE);
-                //     hitgroup_records_list[i].data.material_data = { 0.95, 0, 0, 0 };
-                //     printf("TRIANGLE_FLAT_RECEIVER, program group address: %p \n", program_group_handle);
-                // 			break;
             default:
                 std::cerr << "Unknown OpticalEntityType: " << my_type << std::endl;
             }
