@@ -129,7 +129,13 @@ if(SOLTRACE_BUILD_CORETRACE)
 		DEBUG_POSTFIX "d"
 		PREFIX ""
 		)
-	target_include_directories(coretrace_api PRIVATE ${embree_INCLUDE_DIRS})
+	target_include_directories(coretrace_api
+		PUBLIC
+			$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+			$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/coretrace>
+		PRIVATE
+			${embree_INCLUDE_DIRS}
+	)
 	target_link_libraries(coretrace_api PRIVATE simdata native_runner optix_runner simresult embree_runner ${embree_LIBRARIES})
 
 	if(MSVC)
@@ -148,7 +154,13 @@ if(SOLTRACE_BUILD_CORETRACE)
 		DEBUG_POSTFIX "d"
 		PREFIX ""
 		)
-	target_include_directories(coretrace PRIVATE ${embree_INCLUDE_DIRS})
+	target_include_directories(coretrace
+		PUBLIC
+			$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+			$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/coretrace>
+		PRIVATE
+			${embree_INCLUDE_DIRS}
+	)
 	target_link_libraries(coretrace PRIVATE simdata native_runner optix_runner simresult embree_runner ${embree_LIBRARIES})
 
 #####################################################################################################################
@@ -162,6 +174,18 @@ if(SOLTRACE_BUILD_CORETRACE)
 	endif()
 
 	add_subdirectory(strace)
+
+	install(TARGETS coretrace coretrace_api
+		EXPORT SolTraceTargets
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+		INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+	)
+
+	install(FILES ${CORETRACE_HEADERS}
+		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/coretrace
+	)
 
 endif()
 

@@ -21,6 +21,33 @@ option(FULL_FIELD_VALIDATION_TEST "Include full field validation tests" OFF)
 
 enable_testing()
 
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+configure_package_config_file(
+	"${CMAKE_CURRENT_SOURCE_DIR}/cmake/SolTraceConfig.cmake.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/SolTraceConfig.cmake"
+	INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/SolTrace"
+)
+
+write_basic_package_version_file(
+	"${CMAKE_CURRENT_BINARY_DIR}/SolTraceConfigVersion.cmake"
+	VERSION ${PROJECT_VERSION}
+	COMPATIBILITY SameMajorVersion
+)
+
+install(FILES
+	"${CMAKE_CURRENT_BINARY_DIR}/SolTraceConfig.cmake"
+	"${CMAKE_CURRENT_BINARY_DIR}/SolTraceConfigVersion.cmake"
+	DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/SolTrace"
+)
+
+install(EXPORT SolTraceTargets
+	FILE SolTraceTargets.cmake
+	NAMESPACE SolTrace::
+	DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/SolTrace"
+)
+
 add_subdirectory(coretrace)
 add_subdirectory(google-tests)
 
