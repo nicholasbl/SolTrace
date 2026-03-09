@@ -30,7 +30,7 @@ namespace OptixCSP{
         RECTANGLE_PARABOLIC  = 1,
         CYLINDRICAL          = 2,
         TRIANGLE_FLAT        = 3,
-	NUM_OPTICAL_ENTITY_TYPES
+	    NUM_OPTICAL_ENTITY_TYPES
     };
 
     struct LaunchParams

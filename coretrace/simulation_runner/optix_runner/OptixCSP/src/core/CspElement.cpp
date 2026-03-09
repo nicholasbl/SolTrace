@@ -26,7 +26,6 @@ CspElement::CspElement()
     m_zrot = 0.0;
     m_surface = nullptr;
     m_aperture = nullptr;
-    // m_receiver = false;
     m_id = kElementIdUnassigned;
 
     set_optics_front(false, 1.f, 0.f, 0.f, 0.f, OpticalDistribution::OPT_NONE);
