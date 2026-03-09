@@ -31,6 +31,7 @@ target_link_libraries(
     simresult
     native_runner
     optix_runner
+    OptixCSP_core
     GTest::gtest_main
 )
 
