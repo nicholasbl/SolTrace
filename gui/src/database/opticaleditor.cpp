@@ -8,6 +8,7 @@ OpticalPropertiesObject::OpticalPropertiesObject(bool back, QObject* parent)
 OpticalPropertiesObject::~OpticalPropertiesObject() = default;
 
 void OpticalPropertiesObject::trigger_all_changed() {
+    qDebug() << Q_FUNC_INFO << m_back;
     emit interaction_type_changed();
     emit error_distribution_type_changed();
     emit transmitivity_changed();

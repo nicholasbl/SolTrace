@@ -289,6 +289,8 @@ void GroupEditor::set(Database* database, entt::entity group) {
     observe(database);
     m_current_group = group;
     m_surface_geometry->set(database, group);
+    m_front_editor->set(database, group);
+    m_back_editor->set(database, group);
     emit updated();
 }
 

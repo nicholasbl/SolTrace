@@ -12,6 +12,26 @@ PropertyPanel {
     property var material_editor : App.materials.group_edit
     property var side_editor
 
+    function syncComboToValue(combo, value) {
+        if (!combo || !combo.count || !value || value.length === 0) {
+            return
+        }
+
+        for (let i = 0; i < combo.count; i++) {
+            if (combo.textAt(i) === value) {
+                combo.currentIndex = i
+                return
+            }
+        }
+    }
+
+    onSide_editorChanged: {
+        syncComboToValue(interactionCombo,
+                         root.side_editor ? root.side_editor.interaction_type : "")
+        syncComboToValue(distributionCombo,
+                         root.side_editor ? root.side_editor.error_distribution_type : "")
+    }
+
     // =========================================================================
 
     PropertyLabel {
@@ -24,19 +44,31 @@ PropertyPanel {
         Button {
             Layout.fillWidth: true
             text: "Absorber"
-            onClicked: root.side_editor.set_ideal_absorption()
+            onClicked: {
+                if (root.side_editor) {
+                    root.side_editor.set_ideal_absorption()
+                }
+            }
         }
 
         Button {
             Layout.fillWidth: true
             text: "Reflector"
-            onClicked: root.side_editor.set_ideal_reflection()
+            onClicked: {
+                if (root.side_editor) {
+                    root.side_editor.set_ideal_reflection()
+                }
+            }
         }
 
         Button {
             Layout.fillWidth: true
             text: "Transmitter"
-            onClicked: root.side_editor.set_ideal_transmission()
+            onClicked: {
+                if (root.side_editor) {
+                    root.side_editor.set_ideal_transmission()
+                }
+            }
         }
     }
 
@@ -47,22 +79,27 @@ PropertyPanel {
     }
 
     GlassComboBox {
+        id: interactionCombo
         Layout.fillWidth: true
         model: App.materials.group_edit.interaction_type_model
+        textRole: "display"
+        enabled: count > 0
 
-        Component.onCompleted: {
-            console.log(model)
+        onActivated: {
+            if (root.side_editor && currentText.length > 0) {
+                root.side_editor.interaction_type = currentText
+            }
         }
 
-        ////borderColor: Theme.lineColor
-        enabled: count > 0
-        //currentText: root.editor.interaction_type
-        onActivated: {
-            if (root.editor && currentText.length > 0) {
-                root.editor.interaction_type = currentText
+        Connections {
+            target: root.side_editor
+            function onInteraction_type_changed() {
+                root.syncComboToValue(interactionCombo, root.side_editor.interaction_type)
             }
         }
     }
+
+
 
     // =========================================================================
 
@@ -71,17 +108,35 @@ PropertyPanel {
     }
 
     GlassComboBox {
-        id: front_distribution
+        id: distributionCombo
         Layout.fillWidth: true
         model: App.materials.group_edit.distribution_type_model
-        //borderColor: Theme.lineColor
+        textRole: "display"
         enabled: count > 0
+        onCountChanged: {
+            root.syncComboToValue(distributionCombo,
+                                  root.side_editor ? root.side_editor.error_distribution_type : "")
+        }
+        onModelChanged: {
+            root.syncComboToValue(distributionCombo,
+                                  root.side_editor ? root.side_editor.error_distribution_type : "")
+        }
         onActivated: {
-            if (root.editor && currentText.length > 0) {
-                root.editor.error_distribution_type = currentText
+            if (root.side_editor && currentText.length > 0) {
+                root.side_editor.error_distribution_type = currentText
+            }
+        }
+
+
+        Connections {
+            target: root.side_editor
+            function onError_distribution_type_changed() {
+                root.syncComboToValue(distributionCombo,
+                                      root.side_editor ? root.side_editor.error_distribution_type : "")
             }
         }
     }
+
 
     // =========================================================================
 
@@ -95,6 +150,12 @@ PropertyPanel {
         to: decimalToInt(1)
         decimals: 4
         stepSize: decimalToInt(0.01)
+        value: decimalToInt(root.side_editor ? root.side_editor.reflectivity : 0)
+        onRealValueModified: {
+            if (root.side_editor) {
+                root.side_editor.reflectivity = realValue
+            }
+        }
     }
 
     // =========================================================================
@@ -109,6 +170,12 @@ PropertyPanel {
         to: decimalToInt(1)
         decimals: 4
         stepSize: decimalToInt(0.01)
+        value: decimalToInt(root.side_editor ? root.side_editor.transmitivity : 0)
+        onRealValueModified: {
+            if (root.side_editor) {
+                root.side_editor.transmitivity = realValue
+            }
+        }
     }
 
     // =========================================================================
@@ -123,6 +190,12 @@ PropertyPanel {
         to: decimalToInt(5)
         decimals: 4
         stepSize: decimalToInt(0.01)
+        value: decimalToInt(root.side_editor ? root.side_editor.refraction_index_front : 1)
+        onRealValueModified: {
+            if (root.side_editor) {
+                root.side_editor.refraction_index_front = realValue
+            }
+        }
     }
 
     // =========================================================================
@@ -137,6 +210,12 @@ PropertyPanel {
         to: decimalToInt(5)
         decimals: 4
         stepSize: decimalToInt(0.01)
+        value: decimalToInt(root.side_editor ? root.side_editor.refraction_index_back : 1)
+        onRealValueModified: {
+            if (root.side_editor) {
+                root.side_editor.refraction_index_back = realValue
+            }
+        }
     }
 
     // =========================================================================
@@ -147,11 +226,17 @@ PropertyPanel {
 
     GlassSpinBox {
         Layout.fillWidth: true
-        from: decimalToInt(1)
+        from: decimalToInt(0)
         to: decimalToInt(1000)
         decimals: 3
         stepSize: decimalToInt(0.01)
         suffix: "mrad"
+        value: decimalToInt(root.side_editor ? root.side_editor.slope_error : 0)
+        onRealValueModified: {
+            if (root.side_editor) {
+                root.side_editor.slope_error = realValue
+            }
+        }
     }
 
     // =========================================================================
@@ -162,28 +247,35 @@ PropertyPanel {
 
     GlassSpinBox {
         Layout.fillWidth: true
-        from: decimalToInt(1)
+        from: decimalToInt(0)
         to: decimalToInt(1000)
         decimals: 3
         stepSize: decimalToInt(0.01)
         suffix: "mrad"
+        value: decimalToInt(root.side_editor ? root.side_editor.specularity_error : 0)
+        onRealValueModified: {
+            if (root.side_editor) {
+                root.side_editor.specularity_error = realValue
+            }
+        }
     }
 
     // =========================================================================
 
     PropertyLabel {
         text: "Error Type"
+        visible: false
     }
 
     GlassComboBox {
         Layout.fillWidth: true
-        //model: App.materials
-        ////borderColor: Theme.lineColor
+        model: App.materials.group_edit.distribution_type_model
+        textRole: "display"
         enabled: count > 0
-        //currentText: root.editor.interaction_type
+        visible: false
         onActivated: {
-            if (root.editor && currentText.length > 0) {
-                root.editor.interaction_type = currentText
+            if (root.side_editor && currentText.length > 0) {
+                root.side_editor.error_distribution_type = currentText
             }
         }
     }
