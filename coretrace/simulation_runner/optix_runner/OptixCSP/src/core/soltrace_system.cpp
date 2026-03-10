@@ -23,14 +23,15 @@
 using namespace OptixCSP;
 
 // TODO: optix related type should go into one header file
-// i don't know what we should put here in hit group record, material is handled through a global array 
-// we can leave this empty for now ... 
-// note that this is has to be per optical entity type. 
+// i don't know what we should put here in hit group record, material is handled through a global array
+// we can leave this empty for now ...
+// note that this is has to be per optical entity type.
 typedef Record<OptixCSP::HitGroupData> HitGroupRecord;
 
-void SolTraceSystem::print_launch_params() {
+void SolTraceSystem::print_launch_params()
+{
 
-	LaunchParams params = data_manager->launch_params_H;
+    LaunchParams params = data_manager->launch_params_H;
 
     float3 sun_box_a = params.sun_v0 - params.sun_v1;
     float3 sun_box_b = params.sun_v1 - params.sun_v2;
@@ -43,13 +44,13 @@ void SolTraceSystem::print_launch_params() {
     std::cout << "height             : " << params.height << std::endl;
     std::cout << "max_depth          : " << params.max_depth << std::endl;
     std::cout << "hit_point_buffer   : " << params.hit_point_buffer << std::endl;
-	std::cout << "sun_dir_buffer     : " << params.sun_dir_buffer << std::endl;
-    std::cout << "sun_vector         : " << params.sun_vector.x << " " <<params.sun_vector.y << " " <<params.sun_vector.z << std::endl;
-    //std::cout << "max_sun_angle      : " << params.max_sun_angle << std::endl;
-    std::cout << "sun_v0             : " << params.sun_v0.x << " " <<params.sun_v0.y << " " <<params.sun_v0.z << std::endl;
-    std::cout << "sun_v1             : " << params.sun_v1.x << " " <<params.sun_v1.y << " " <<params.sun_v1.z << std::endl;
-    std::cout << "sun_v2             : " << params.sun_v2.x << " " <<params.sun_v2.y << " " <<params.sun_v2.z << std::endl;
-    std::cout << "sun_v3             : " << params.sun_v3.x << " " <<params.sun_v3.y << " " <<params.sun_v3.z << std::endl;
+    std::cout << "sun_dir_buffer     : " << params.sun_dir_buffer << std::endl;
+    std::cout << "sun_vector         : " << params.sun_vector.x << " " << params.sun_vector.y << " " << params.sun_vector.z << std::endl;
+    // std::cout << "max_sun_angle      : " << params.max_sun_angle << std::endl;
+    std::cout << "sun_v0             : " << params.sun_v0.x << " " << params.sun_v0.y << " " << params.sun_v0.z << std::endl;
+    std::cout << "sun_v1             : " << params.sun_v1.x << " " << params.sun_v1.y << " " << params.sun_v1.z << std::endl;
+    std::cout << "sun_v2             : " << params.sun_v2.x << " " << params.sun_v2.y << " " << params.sun_v2.z << std::endl;
+    std::cout << "sun_v3             : " << params.sun_v3.x << " " << params.sun_v3.y << " " << params.sun_v3.z << std::endl;
     std::cout << "sun_box_edge_a     : " << sun_box_edge_a << std::endl;
     std::cout << "sun_box_edge_b     : " << sun_box_edge_b << std::endl;
 }
@@ -81,7 +82,8 @@ SolTraceSystem::SolTraceSystem()
     CUcontext cuCtx = 0;
     OPTIX_CHECK(optixInit());
     OptixDeviceContextOptions options = {};
-    options.logCallbackFunction = [](unsigned int level, const char* tag, const char* message, void*) {
+    options.logCallbackFunction = [](unsigned int level, const char *tag, const char *message, void *)
+    {
         std::cerr << "[" << std::setw(2) << level << "][" << std::setw(12) << tag << "]: " << message << "\n";
     };
     options.logCallbackLevel = 4;
@@ -92,11 +94,13 @@ SolTraceSystem::SolTraceSystem()
     m_state.d_gas_output_buffer = 0;
 }
 
-SolTraceSystem::~SolTraceSystem() {
-    //cleanup();
+SolTraceSystem::~SolTraceSystem()
+{
+    // cleanup();
 }
 
-void SolTraceSystem::initialize() {
+void SolTraceSystem::initialize()
+{
 
     // Create OptiX context on first initialize
     if (!m_state.context)
@@ -105,91 +109,92 @@ void SolTraceSystem::initialize() {
         CUcontext cuCtx = 0;
         OPTIX_CHECK(optixInit());
         OptixDeviceContextOptions options = {};
-        options.logCallbackFunction = [](unsigned int level, const char* tag, const char* message, void*) {
+        options.logCallbackFunction = [](unsigned int level, const char *tag, const char *message, void *)
+        {
             std::cerr << "[" << std::setw(2) << level << "][" << std::setw(12) << tag << "]: " << message << "\n";
-            };
+        };
         options.logCallbackLevel = 4;
         OPTIX_CHECK(optixDeviceContextCreate(cuCtx, &options, &m_state.context));
     }
 
-	cudaMemGetInfo(&m_mem_free_before, nullptr);
+    size_t mem_total;
+    cudaMemGetInfo(&m_mem_free_before, &mem_total);
     m_timer_setup.start();
 
     // set up input related to sun
     Vector3d sun_vec = m_sun->get_position();
     Vector3d sun_vec_norm = sun_vec;
     sun_vec_norm.make_unit();
-    
+
     data_manager->launch_params_H.sun_vector = make_float3(static_cast<float>(sun_vec_norm[0]),
-        static_cast<float>(sun_vec_norm[1]), static_cast<float>(sun_vec_norm[2]));
-    
+                                                           static_cast<float>(sun_vec_norm[1]), static_cast<float>(sun_vec_norm[2]));
+
     // Assign sun shape parameters (if necessary)
     data_manager->launch_params_H.include_sun_shape_errors = this->m_include_sun_shape_errors;
     if (this->m_include_sun_shape_errors)
     {
         // Map SolTrace::Data::SunShape to OptixCSP::SunShape for device code
-        switch (m_sun->get_shape()) {
-            case SolTrace::Data::SunShape::GAUSSIAN:
-                data_manager->launch_params_H.sun_shape = SunShape::GAUSSIAN;
-                data_manager->launch_params_H.sigma = static_cast<float>(m_sun->get_sigma());
-                break;
-            case SolTrace::Data::SunShape::PILLBOX:
-                data_manager->launch_params_H.sun_shape = SunShape::PILLBOX;
-                data_manager->launch_params_H.half_width = static_cast<float>(m_sun->get_half_width());
-                break;
-            case SolTrace::Data::SunShape::LIMBDARKENED:
-                data_manager->launch_params_H.sun_shape = SunShape::LIMBDARKENED;
-                break;
-            case SolTrace::Data::SunShape::BUIE_CSR:
-            {
-                data_manager->launch_params_H.sun_shape = SunShape::BUIE_CSR;
-                double kappa, gamma;
-                m_sun->calculate_buie_parameters(kappa, gamma);
-                data_manager->launch_params_H.buie_kappa = kappa;
-                data_manager->launch_params_H.buie_gamma = gamma;
-                break;
-            }
-            case SolTrace::Data::SunShape::USER_DEFINED:
-                data_manager->launch_params_H.sun_shape = SunShape::USER_DEFINED;
-                break;
-            case SolTrace::Data::SunShape::UNKNOWN:
-            default:
-                data_manager->launch_params_H.sun_shape = SunShape::UNKNOWN;
-                break;
+        switch (m_sun->get_shape())
+        {
+        case SolTrace::Data::SunShape::GAUSSIAN:
+            data_manager->launch_params_H.sun_shape = SunShape::GAUSSIAN;
+            data_manager->launch_params_H.sigma = static_cast<float>(m_sun->get_sigma());
+            break;
+        case SolTrace::Data::SunShape::PILLBOX:
+            data_manager->launch_params_H.sun_shape = SunShape::PILLBOX;
+            data_manager->launch_params_H.half_width = static_cast<float>(m_sun->get_half_width());
+            break;
+        case SolTrace::Data::SunShape::LIMBDARKENED:
+            data_manager->launch_params_H.sun_shape = SunShape::LIMBDARKENED;
+            break;
+        case SolTrace::Data::SunShape::BUIE_CSR:
+        {
+            data_manager->launch_params_H.sun_shape = SunShape::BUIE_CSR;
+            double kappa, gamma;
+            m_sun->calculate_buie_parameters(kappa, gamma);
+            data_manager->launch_params_H.buie_kappa = kappa;
+            data_manager->launch_params_H.buie_gamma = gamma;
+            break;
         }
-        
+        case SolTrace::Data::SunShape::USER_DEFINED:
+            data_manager->launch_params_H.sun_shape = SunShape::USER_DEFINED;
+            break;
+        case SolTrace::Data::SunShape::UNKNOWN:
+        default:
+            data_manager->launch_params_H.sun_shape = SunShape::UNKNOWN;
+            break;
+        }
+
         data_manager->launch_params_H.sun_max_angle = static_cast<float>(m_sun->get_max_sun_angle());
         data_manager->launch_params_H.sun_max_intensity = static_cast<float>(m_sun->get_max_intensity());
     }
-    
 
     Timer AABB_timer;
     AABB_timer.start();
-	geometry_manager->collect_geometry_info(m_element_list, data_manager->launch_params_H);
-	AABB_timer.stop();
-	std::cout << "Time to compute AABB: " << AABB_timer.get_time_sec() << " seconds" << std::endl;
+    geometry_manager->collect_geometry_info(m_element_list, data_manager->launch_params_H);
+    AABB_timer.stop();
+    std::cout << "Time to compute AABB: " << AABB_timer.get_time_sec() << " seconds" << std::endl;
 
-	Timer geometry_timer;
-	geometry_timer.start();
+    Timer geometry_timer;
+    geometry_timer.start();
     geometry_manager->create_geometries(data_manager->launch_params_H);
     geometry_timer.stop();
-	std::cout << "Time to create geometries: " << geometry_timer.get_time_sec() << " seconds" << std::endl;
+    std::cout << "Time to create geometries: " << geometry_timer.get_time_sec() << " seconds" << std::endl;
 
     // Pipeline setup.
-	Timer pipeline_timer;
-	pipeline_timer.start();
+    Timer pipeline_timer;
+    pipeline_timer.start();
     pipeline_manager->createPipeline();
     pipeline_timer.stop();
-	std::cout << "Time to create pipeline: " << pipeline_timer.get_time_sec() << " seconds" << std::endl;
-    
+    std::cout << "Time to create pipeline: " << pipeline_timer.get_time_sec() << " seconds" << std::endl;
 
-	Timer sbt_timer;
-	sbt_timer.start();
+    Timer sbt_timer;
+    sbt_timer.start();
     create_shader_binding_table();
     sbt_timer.stop();
-	std::cout << "Time to create SBT: " << sbt_timer.get_time_sec() << " seconds" << std::endl;
+    std::cout << "Time to create SBT: " << sbt_timer.get_time_sec() << " seconds" << std::endl;
 
-	// seed for randomization
+    // seed for randomization
     data_manager->launch_params_H.sun_dir_seed = m_seed;
     data_manager->launch_params_H.optical_errors = m_optical_errors;
 
@@ -200,15 +205,15 @@ void SolTraceSystem::initialize() {
     data_manager->launch_params_H.handle = m_state.gas_handle;
     data_manager->allocateGeometryDataArray(geometry_manager->get_geometry_data_array());
     data_manager->allocateMaterialDataArray(geometry_manager->get_material_data_array_front(),
-        geometry_manager->get_material_data_array_back());
+                                            geometry_manager->get_material_data_array_back());
     print_launch_params();
 
     data_manager->allocateLaunchParams();
     m_timer_setup.stop();
-
 }
 
-void SolTraceSystem::run() {
+void SolTraceSystem::run()
+{
 
     // Initialize results vectors
     m_hp_vec.clear();
@@ -231,25 +236,26 @@ void SolTraceSystem::run() {
         int height = data_manager->launch_params_H.height;
 
         size_t m_mem_free_after;
-        cudaMemGetInfo(&m_mem_free_after, nullptr);
+	size_t mem_total;
+        cudaMemGetInfo(&m_mem_free_after, &mem_total);
         std::cout << "Memory used by launch: " << (m_mem_free_before - m_mem_free_after) / (1024.0 * 1024.0) << " MB\n";
 
         m_timer_trace.start();
         // Launch the simulation.
         OPTIX_CHECK(optixLaunch(
             m_state.pipeline,
-            m_state.stream,  // Assume this stream is properly created.
+            m_state.stream, // Assume this stream is properly created.
             reinterpret_cast<CUdeviceptr>(data_manager->getDeviceLaunchParams()),
             sizeof(OptixCSP::LaunchParams),
-            &m_state.sbt,    // Shader Binding Table.
-            width,  // Launch dimensions
+            &m_state.sbt, // Shader Binding Table.
+            width,        // Launch dimensions
             height,
             1));
         CUDA_SYNC_CHECK();
 
         // Collect results
-        get_buffer_results(m_hp_vec, m_raynumber_vec, m_element_id_vec, m_hit_type_vec, 
-            m_sun_ray_dir_vec, m_sunraynumber_vec);
+        get_buffer_results(m_hp_vec, m_raynumber_vec, m_element_id_vec, m_hit_type_vec,
+                           m_sun_ray_dir_vec, m_sunraynumber_vec);
         N_ray_hit = m_raynumber_vec.empty() ? 0 : m_raynumber_vec.back();
         N_ray_gen += width;
     }
@@ -267,10 +273,11 @@ void SolTraceSystem::run() {
         }
     }
 
-	m_timer_trace.stop();
+    m_timer_trace.stop();
 }
 
-void SolTraceSystem::update() {
+void SolTraceSystem::update()
+{
 
     const int N_slots = data_manager->launch_params_H.width * data_manager->launch_params_H.height * data_manager->launch_params_H.max_depth;
     const size_t hit_point_buffer_size = N_slots * sizeof(float4);
@@ -278,94 +285,101 @@ void SolTraceSystem::update() {
     const size_t hit_type_buffer_size = N_slots * sizeof(uint8_t);
 
     // update aabb and sun plane accordingly
-	geometry_manager->update_geometry_info(m_element_list, data_manager->launch_params_H);
+    geometry_manager->update_geometry_info(m_element_list, data_manager->launch_params_H);
 
-    // update data on the device    
-	data_manager->updateGeometryDataArray(geometry_manager->get_geometry_data_array());
+    // update data on the device
+    data_manager->updateGeometryDataArray(geometry_manager->get_geometry_data_array());
     CUDA_CHECK(cudaMemset(data_manager->launch_params_H.hit_point_buffer, 0, hit_point_buffer_size));
     CUDA_CHECK(cudaMemset(data_manager->launch_params_H.element_id_buffer, kElementIdBuffer, element_id_size));
     CUDA_CHECK(cudaMemset(data_manager->launch_params_H.hit_type_buffer, HitType::HIT_UNASSIGNED, hit_type_buffer_size));
 
-	data_manager->updateLaunchParams();
+    data_manager->updateLaunchParams();
 }
 
-bool SolTraceSystem::read_st_input(const char* filename) {
-    FILE* fp = fopen(filename, "r");
-	if (!fp)
-	{
-    	printf("failed to open system input file\n");
+bool SolTraceSystem::read_st_input(const char *filename)
+{
+    FILE *fp = fopen(filename, "r");
+    if (!fp)
+    {
+        printf("failed to open system input file\n");
         return false;
-	}
+    }
 
-	if ( !read_system( fp ) )
-	{
-		printf("error in system input file.\n");
-		return false;
-	}
-	
+    if (!read_system(fp))
+    {
+        printf("error in system input file.\n");
 	fclose(fp);
+        return false;
+    }
+
+    fclose(fp);
 
     return true;
 }
 
-int SolTraceSystem::get_num_hits_receiver(CspElement receiver) {
+int SolTraceSystem::get_num_hits_receiver(CspElement receiver)
+{
 
     int output_size = m_hp_vec.size();
-	int num_hits_receiver = 0;
+    int num_hits_receiver = 0;
 
-	// go through all the hit points, if the point value is inside the receiver element, count it as a hit.
-    for (int i = 0; i < output_size; i++) {
+    // go through all the hit points, if the point value is inside the receiver element, count it as a hit.
+    for (int i = 0; i < output_size; i++)
+    {
         float4 hp = m_hp_vec[i];
 
         // sun ray source, skip it
-        if (hp.x == 0) continue;
+        if (hp.x == 0)
+            continue;
 
         Vec3d hit_point(hp.y, hp.z, hp.w);
-        if (receiver.in_plane(hit_point)) {
+        if (receiver.in_plane(hit_point))
+        {
             num_hits_receiver++;
         }
-
     }
     return num_hits_receiver;
 }
 
-void SolTraceSystem::write_hp_output(const std::string& filename) {
-    //int output_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * data_manager->launch_params_H.max_depth;
-    //std::vector<float4> hp_output_buffer(output_size);
-    //CUDA_CHECK(cudaMemcpy(hp_output_buffer.data(), data_manager->launch_params_H.hit_point_buffer, output_size * sizeof(float4), cudaMemcpyDeviceToHost));
+void SolTraceSystem::write_hp_output(const std::string &filename)
+{
+    // int output_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * data_manager->launch_params_H.max_depth;
+    // std::vector<float4> hp_output_buffer(output_size);
+    // CUDA_CHECK(cudaMemcpy(hp_output_buffer.data(), data_manager->launch_params_H.hit_point_buffer, output_size * sizeof(float4), cudaMemcpyDeviceToHost));
 
     int output_size = m_hp_vec.size();
 
     std::ofstream outFile(filename);
 
-    if (!outFile.is_open()) {
+    if (!outFile.is_open())
+    {
         std::cerr << "Error: Could not open the file " << filename << " for writing." << std::endl;
         return;
     }
 
     // Write header
-	// TODO, if statements to check if one needs to write dir_cos_buffer or not
+    // TODO, if statements to check if one needs to write dir_cos_buffer or not
     outFile << "number,stage,loc_x,loc_y,loc_z,cosx,cosy,cosz\n";
 
-    for (int i = 0; i < output_size; ++i) 
+    for (int i = 0; i < output_size; ++i)
     {
-        const float4& hit_record = m_hp_vec[i];
+        const float4 &hit_record = m_hp_vec[i];
         const int currentRay = m_raynumber_vec[i];
 
         // Write to file
         outFile << currentRay << ","
-            << hit_record.x << "," << hit_record.y << ","
-            << hit_record.z << "," << hit_record.w << "\n";
+                << hit_record.x << "," << hit_record.y << ","
+                << hit_record.z << "," << hit_record.w << "\n";
     }
 
     outFile.close();
     std::cout << "Data successfully written to " << filename << std::endl;
 }
 
-void SolTraceSystem::get_hp_output(std::vector<float4>& hp_vec, 
-    std::vector<int>& raynumber_vec,
-    std::vector<int>& element_id_vec,
-    std::vector<uint8_t>& hit_type_vec)
+void SolTraceSystem::get_hp_output(std::vector<float4> &hp_vec,
+                                   std::vector<int> &raynumber_vec,
+                                   std::vector<int> &element_id_vec,
+                                   std::vector<uint8_t> &hit_type_vec)
 {
     hp_vec = m_hp_vec;
     raynumber_vec = m_raynumber_vec;
@@ -375,109 +389,105 @@ void SolTraceSystem::get_hp_output(std::vector<float4>& hp_vec,
 
 // write json output file for post processing
 // need sun vector, number of rays, sun box, sun angle
-// receiver stats, dimension, type, location, rotation matrix. 
+// receiver stats, dimension, type, location, rotation matrix.
 // writing timing?
 
-void SolTraceSystem::write_simulation_json(const std::string& filename) {
-	std::ofstream out(filename);
-    
-    // process sun stats
-    float3 sun_box_a = data_manager->launch_params_H.sun_v0 - data_manager->launch_params_H.sun_v1;
-    float3 sun_box_b = data_manager->launch_params_H.sun_v1 - data_manager->launch_params_H.sun_v2;
+// void SolTraceSystem::write_simulation_json(const std::string& filename) {
+// 	std::ofstream out(filename);
 
-	float sun_box_edge_a = length(sun_box_a);
-	float sun_box_edge_b = length(sun_box_b);
+//     // process sun stats
+//     float3 sun_box_a = data_manager->launch_params_H.sun_v0 - data_manager->launch_params_H.sun_v1;
+//     float3 sun_box_b = data_manager->launch_params_H.sun_v1 - data_manager->launch_params_H.sun_v2;
 
-    out << "{\n";
-    out << "  \"sun\": {\n";
-    out << "    \"number_of_sunpoints\": " << m_number_of_rays << ",\n";
-    out << "    \"sun_vector\": ["
-        << m_sun->get_position()[0] << ", " << m_sun->get_position()[1] << ", " << m_sun->get_position()[2] << "],\n";
-    out << "    \"sun_box_edge_a\": " << sun_box_edge_a << ",\n";
-    out << "    \"sun_box_edge_b\": " << sun_box_edge_b << "\n";
-    out << "  },\n";
+// 	float sun_box_edge_a = length(sun_box_a);
+// 	float sun_box_edge_b = length(sun_box_b);
 
+//     out << "{\n";
+//     out << "  \"sun\": {\n";
+//     out << "    \"number_of_sunpoints\": " << m_number_of_rays << ",\n";
+//     out << "    \"sun_vector\": ["
+//         << m_sun->get_position()[0] << ", " << m_sun->get_position()[1] << ", " << m_sun->get_position()[2] << "],\n";
+//     out << "    \"sun_box_edge_a\": " << sun_box_edge_a << ",\n";
+//     out << "    \"sun_box_edge_b\": " << sun_box_edge_b << "\n";
+//     out << "  },\n";
 
-	std::vector<int> receiver_indices = get_receiver_indices();
+// 	std::vector<int> receiver_indices = get_receiver_indices();
 
-    if (receiver_indices.size() == 0) {
-        std::cerr << "Error: No receiver found in the system. Cannot write simulation JSON." << std::endl;
-        return;
-    }
-    if (receiver_indices.size() > 1) {
-		std::cerr << "Error: More than one receiver found in the system. Luning needs to implement this!" << std::endl;
-	}
+//     if (receiver_indices.size() == 0) {
+//         std::cerr << "Error: No receiver found in the system. Cannot write simulation JSON." << std::endl;
+//         return;
+//     }
+//     if (receiver_indices.size() > 1) {
+// 		std::cerr << "Error: More than one receiver found in the system. Luning needs to implement this!" << std::endl;
+// 	}
 
-    std::shared_ptr<CspElement> receiver = m_element_list[receiver_indices[0]];
+//     std::shared_ptr<CspElement> receiver = m_element_list[receiver_indices[0]];
 
-    out << "  \"receiver\": {\n";
+//     out << "  \"receiver\": {\n";
 
-	// use enum to get the type of the receiver
-	std::string receiver_type = "unknown";
+// 	// use enum to get the type of the receiver
+// 	std::string receiver_type = "unknown";
 
-    switch (receiver->get_surface_type()) {
-        case SurfaceType::FLAT:
-            receiver_type = "flat";
-            out << "    \"type\": \"" << receiver_type << "\",\n";
-			out << "    \"dimensions\": [" << receiver->get_aperture()->get_width() << ", " << 
-                                              receiver->get_aperture()->get_height() << "],\n";
+//     switch (receiver->get_surface_type()) {
+//         case SurfaceType::FLAT:
+//             receiver_type = "flat";
+//             out << "    \"type\": \"" << receiver_type << "\",\n";
+// 			out << "    \"dimensions\": [" << receiver->get_aperture()->get_width() << ", " <<
+//                                               receiver->get_aperture()->get_height() << "],\n";
 
-            break;
-        case SurfaceType::CYLINDER:
-            receiver_type = "cylinder";
-            out << "    \"type\": \"" << receiver_type << "\",\n";
-			out << "    \"radius\": " << receiver->get_aperture()->get_width() / 2.0f << ",\n";
-			out << "    \"height\": " << receiver->get_aperture()->get_height() << ",\n";
+//             break;
+//         case SurfaceType::CYLINDER:
+//             receiver_type = "cylinder";
+//             out << "    \"type\": \"" << receiver_type << "\",\n";
+// 			out << "    \"radius\": " << receiver->get_aperture()->get_width() / 2.0f << ",\n";
+// 			out << "    \"height\": " << receiver->get_aperture()->get_height() << ",\n";
 
-            break;
-        case SurfaceType::PARABOLIC:
-            //TODO
-            // can we have parabolic receiver?
-            receiver_type = "parabolic";
-            break;
-        default:
-            receiver_type = "unknown";
-			break;
-    }
+//             break;
+//         case SurfaceType::PARABOLIC:
+//             //TODO
+//             // can we have parabolic receiver?
+//             receiver_type = "parabolic";
+//             break;
+//         default:
+//             receiver_type = "unknown";
+// 			break;
+//     }
 
-	Vec3d receiver_location = receiver->get_origin();
-	Matrix33d rotation_matrix = receiver->get_rotation_matrix(); // get the rotation matrix
-	Vec3d receiver_x_basis = rotation_matrix.get_x_basis();
-	Vec3d receiver_y_basis = rotation_matrix.get_y_basis();
-	Vec3d receiver_z_basis = rotation_matrix.get_z_basis();
+// 	Vec3d receiver_location = receiver->get_origin();
+// 	Matrix33d rotation_matrix = receiver->get_rotation_matrix(); // get the rotation matrix
+// 	Vec3d receiver_x_basis = rotation_matrix.get_x_basis();
+// 	Vec3d receiver_y_basis = rotation_matrix.get_y_basis();
+// 	Vec3d receiver_z_basis = rotation_matrix.get_z_basis();
 
-    out << "    \"location\": ["
-        << receiver_location[0] << ", " << receiver_location[1] << ", " << receiver_location[2] << "],\n";
+//     out << "    \"location\": ["
+//         << receiver_location[0] << ", " << receiver_location[1] << ", " << receiver_location[2] << "],\n";
 
-    out << "    \"num_hits\": "
-        << get_num_hits_receiver(*receiver) << ",\n";
+//     out << "    \"num_hits\": "
+//         << get_num_hits_receiver(*receiver) << ",\n";
 
+//     // print out rotation matrix basis
+// 	out << "    \"rotation_matrix\": {\n";
+//     out << "      \"x_basis\": ["
+// 		<< receiver_x_basis[0] << ", " << receiver_x_basis[1] << ", " << receiver_x_basis[2] << "],\n";
+// 	out << "      \"y_basis\": ["
+// 		<< receiver_y_basis[0] << ", " << receiver_y_basis[1] << ", " << receiver_y_basis[2] << "],\n";
+// 	out << "      \"z_basis\": ["
+// 		<< receiver_z_basis[0] << ", " << receiver_z_basis[1] << ", " << receiver_z_basis[2] << "]}\n";
 
-    // print out rotation matrix basis
-	out << "    \"rotation_matrix\": {\n";
-    out << "      \"x_basis\": ["
-		<< receiver_x_basis[0] << ", " << receiver_x_basis[1] << ", " << receiver_x_basis[2] << "],\n";
-	out << "      \"y_basis\": ["
-		<< receiver_y_basis[0] << ", " << receiver_y_basis[1] << ", " << receiver_y_basis[2] << "],\n";
-	out << "      \"z_basis\": ["
-		<< receiver_z_basis[0] << ", " << receiver_z_basis[1] << ", " << receiver_z_basis[2] << "]}\n";
+//     out << "  }\n";
+//     out << "}\n";
 
+//     out.close();
 
-    out << "  }\n";
-    out << "}\n";
+// }
 
-    out.close();
-
-}
-
-
-
-
-void SolTraceSystem::write_sun_output(const std::string& filename) {
+void SolTraceSystem::write_sun_output(const std::string &filename)
+{
 
     std::ofstream outFile(filename);
 
-    if (!outFile.is_open()) {
+    if (!outFile.is_open())
+    {
         std::cerr << "Error: Could not open the file " << filename << " for writing." << std::endl;
         return;
     }
@@ -487,7 +497,8 @@ void SolTraceSystem::write_sun_output(const std::string& filename) {
     outFile << "number,cosx,cosy,cosz\n";
 
     int i = 1;
-    for (const auto& ray_dir : m_sun_ray_dir_vec) {
+    for (const auto &ray_dir : m_sun_ray_dir_vec)
+    {
         outFile << i << ","
                 << ray_dir.x << ","
                 << ray_dir.y << ","
@@ -499,7 +510,8 @@ void SolTraceSystem::write_sun_output(const std::string& filename) {
     std::cout << "Data successfully written to " << filename << std::endl;
 }
 
-void SolTraceSystem::clean_up() {
+void SolTraceSystem::clean_up()
+{
 
     // Nothing to clean if device not initialized
     if (!m_state.context)
@@ -509,59 +521,58 @@ void SolTraceSystem::clean_up() {
 
     CUDA_CHECK(cudaDeviceSynchronize());
     // destroy pipeline related resources
-	pipeline_manager->cleanup();
+    pipeline_manager->cleanup();
 
     // destory CUDA stream
-	if (m_state.stream) {
-		CUDA_CHECK(cudaStreamDestroy(m_state.stream));
-	}
+    if (m_state.stream)
+    {
+        CUDA_CHECK(cudaStreamDestroy(m_state.stream));
+    }
 
     OPTIX_CHECK(optixDeviceContextDestroy(m_state.context));
 
-
     // Free OptiX shader binding table (SBT) memory
-    CUDA_CHECK(cudaFree(reinterpret_cast<void*>(m_state.sbt.raygenRecord)));
-    CUDA_CHECK(cudaFree(reinterpret_cast<void*>(m_state.sbt.missRecordBase)));
-    CUDA_CHECK(cudaFree(reinterpret_cast<void*>(m_state.sbt.hitgroupRecordBase)));
+    CUDA_CHECK(cudaFree(reinterpret_cast<void *>(m_state.sbt.raygenRecord)));
+    CUDA_CHECK(cudaFree(reinterpret_cast<void *>(m_state.sbt.missRecordBase)));
+    CUDA_CHECK(cudaFree(reinterpret_cast<void *>(m_state.sbt.hitgroupRecordBase)));
 
     // Free OptiX GAS output buffer
-    CUDA_CHECK(cudaFree(reinterpret_cast<void*>(m_state.d_gas_output_buffer)));
+    CUDA_CHECK(cudaFree(reinterpret_cast<void *>(m_state.d_gas_output_buffer)));
 
     // Free device-side launch parameter memory
-    CUDA_CHECK(cudaFree(reinterpret_cast<void*>(data_manager->launch_params_H.hit_point_buffer)));
-    CUDA_CHECK(cudaFree(reinterpret_cast<void*>(data_manager->launch_params_H.element_id_buffer)));
-    CUDA_CHECK(cudaFree(reinterpret_cast<void*>(data_manager->launch_params_H.hit_type_buffer)));
-    CUDA_CHECK(cudaFree(reinterpret_cast<void*>(data_manager->launch_params_H.sun_dir_buffer)));
+    CUDA_CHECK(cudaFree(reinterpret_cast<void *>(data_manager->launch_params_H.hit_point_buffer)));
+    CUDA_CHECK(cudaFree(reinterpret_cast<void *>(data_manager->launch_params_H.element_id_buffer)));
+    CUDA_CHECK(cudaFree(reinterpret_cast<void *>(data_manager->launch_params_H.hit_type_buffer)));
+    CUDA_CHECK(cudaFree(reinterpret_cast<void *>(data_manager->launch_params_H.sun_dir_buffer)));
 
     data_manager->cleanup();
-
 }
 
 // Create and configure the Shader Binding Table (SBT).
 // The SBT is a crucial data structure in OptiX that links geometry and ray types
 // with their corresponding programs (ray generation, miss, and hit group).
-void SolTraceSystem::create_shader_binding_table(){
+void SolTraceSystem::create_shader_binding_table()
+{
 
     // Ray generation program record
     {
-        CUdeviceptr d_raygen_record;                   // Device pointer to hold the raygen SBT record.
-        size_t      sizeof_raygen_record = sizeof(EmptyRecord);
+        CUdeviceptr d_raygen_record; // Device pointer to hold the raygen SBT record.
+        size_t sizeof_raygen_record = sizeof(EmptyRecord);
 
         CUDA_CHECK(cudaMalloc(
-            reinterpret_cast<void**>(&d_raygen_record),
+            reinterpret_cast<void **>(&d_raygen_record),
             sizeof_raygen_record));
 
-        EmptyRecord rg_sbt;  // host
+        EmptyRecord rg_sbt; // host
 
         optixSbtRecordPackHeader(m_state.raygen_prog_group, &rg_sbt);
 
         // Copy the raygen SBT record from host to device.
         CUDA_CHECK(cudaMemcpy(
-            reinterpret_cast<void*>(d_raygen_record),
+            reinterpret_cast<void *>(d_raygen_record),
             &rg_sbt,
             sizeof_raygen_record,
-            cudaMemcpyHostToDevice
-        ));
+            cudaMemcpyHostToDevice));
 
         // Assign the device pointer to the raygenRecord field in the SBT.
         m_state.sbt.raygenRecord = d_raygen_record;
@@ -573,7 +584,7 @@ void SolTraceSystem::create_shader_binding_table(){
         size_t sizeof_miss_record = sizeof(EmptyRecord);
 
         CUDA_CHECK(cudaMalloc(
-            reinterpret_cast<void**>(&d_miss_record),
+            reinterpret_cast<void **>(&d_miss_record),
             sizeof_miss_record * OptixCSP::RAY_TYPE_COUNT));
 
         EmptyRecord ms_sbt[OptixCSP::RAY_TYPE_COUNT];
@@ -581,16 +592,15 @@ void SolTraceSystem::create_shader_binding_table(){
         optixSbtRecordPackHeader(m_state.radiance_miss_prog_group, &ms_sbt[0]);
 
         CUDA_CHECK(cudaMemcpy(
-            reinterpret_cast<void*>(d_miss_record),
+            reinterpret_cast<void *>(d_miss_record),
             ms_sbt,
             sizeof_miss_record * OptixCSP::RAY_TYPE_COUNT,
-            cudaMemcpyHostToDevice
-        ));
+            cudaMemcpyHostToDevice));
 
         // Configure the SBT miss program fields.
-        m_state.sbt.missRecordBase = d_miss_record;                   // Base address of the miss records.
-        m_state.sbt.missRecordCount = OptixCSP::RAY_TYPE_COUNT;        // Number of miss records.
-        m_state.sbt.missRecordStrideInBytes = static_cast<uint32_t>(sizeof_miss_record);    // Stride between miss records.
+        m_state.sbt.missRecordBase = d_miss_record;                                      // Base address of the miss records.
+        m_state.sbt.missRecordCount = OptixCSP::RAY_TYPE_COUNT;                          // Number of miss records.
+        m_state.sbt.missRecordStrideInBytes = static_cast<uint32_t>(sizeof_miss_record); // Stride between miss records.
     }
 
     // Hitgroup program record
@@ -599,74 +609,75 @@ void SolTraceSystem::create_shader_binding_table(){
         const unsigned int count_records = OptixCSP::NUM_OPTICAL_ENTITY_TYPES;
         std::vector<HitGroupRecord> hitgroup_records_list(count_records);
 
-        // now we need to populate hitgroup_records_list, basically match the 
-		// OpticalEntityType with the corresponding m_program_group
-        for (unsigned int i = 0; i < count_records; i++) {
+        // now we need to populate hitgroup_records_list, basically match the
+        // OpticalEntityType with the corresponding m_program_group
+        for (unsigned int i = 0; i < count_records; i++)
+        {
 
-			OptixCSP::OpticalEntityType my_type = static_cast<OptixCSP::OpticalEntityType>(i);
+            OptixCSP::OpticalEntityType my_type = static_cast<OptixCSP::OpticalEntityType>(i);
             // initialize program handle and data
             OptixProgramGroup program_group_handle = nullptr;
             SurfaceApertureMap map = {};
 
-			switch (my_type) {
-            case OptixCSP::OpticalEntityType::RECTANGLE_FLAT_MIRROR: 
-				map = { SurfaceType::FLAT, ApertureType::RECTANGLE };
-                program_group_handle = pipeline_manager->getMirrorProgram(map);
+            switch (my_type)
+            {
+            case OptixCSP::OpticalEntityType::RECTANGLE_FLAT:
+                map = {SurfaceType::FLAT, ApertureType::RECTANGLE};
+                program_group_handle = pipeline_manager->getElementProgram(map);
                 hitgroup_records_list[i].data.material_data = {0.875425, 0, 0, 0};
-                printf("RECTANGLE_FLAT_MIRROR, program group address: %p \n", program_group_handle);
-				break;
-            case OptixCSP::OpticalEntityType::RECTANGLE_PARABOLIC_MIRROR:
-                map = { SurfaceType::PARABOLIC, ApertureType::RECTANGLE };
-                program_group_handle = pipeline_manager->getMirrorProgram(map);
-                hitgroup_records_list[i].data.material_data = { 0.875425, 0, 0, 0 };
-                printf("RECTANGLE_PARABOLIC_MIRROR, program group address: %p \n", program_group_handle);
+                printf("RECTANGLE_FLAT, program group address: %p \n", program_group_handle);
 
                 break;
-            case OptixCSP::OpticalEntityType::RECTANGLE_FLAT_RECEIVER:
-                program_group_handle = pipeline_manager->getReceiverProgram(SurfaceType::FLAT, ApertureType::RECTANGLE);
-				hitgroup_records_list[i].data.material_data = { 0.95, 0, 0, 0 };
-                printf("RECTANGLE_FLAT_RECEIVER, program group address: %p \n", program_group_handle);
+
+            case OptixCSP::OpticalEntityType::RECTANGLE_PARABOLIC:
+                map = {SurfaceType::PARABOLIC, ApertureType::RECTANGLE};
+                program_group_handle = pipeline_manager->getElementProgram(map);
+                hitgroup_records_list[i].data.material_data = {0.875425, 0, 0, 0};
+                printf("RECTANGLE_PARABOLIC, program group address: %p \n", program_group_handle);
 
                 break;
-            case OptixCSP::OpticalEntityType::CYLINDRICAL_RECEIVER:
-                program_group_handle = pipeline_manager->getReceiverProgram(SurfaceType::CYLINDER, ApertureType::RECTANGLE);
-                hitgroup_records_list[i].data.material_data = { 0.95, 0, 0, 0 };
-                printf("CYLINDRICAL_RECEIVER, program group address: %p \n", program_group_handle);
 
-                break;            
-            case OptixCSP::OpticalEntityType::TRIANGLE_FLAT_RECEIVER:
-                program_group_handle = pipeline_manager->getReceiverProgram(SurfaceType::FLAT, ApertureType::TRIANGLE);
-                hitgroup_records_list[i].data.material_data = { 0.95, 0, 0, 0 };
-                printf("TRIANGLE_FLAT_RECEIVER, program group address: %p \n", program_group_handle);
-				break;
+            case OptixCSP::OpticalEntityType::CYLINDRICAL:
+                map = {SurfaceType::CYLINDER, ApertureType::RECTANGLE};
+                program_group_handle = pipeline_manager->getElementProgram(map);
+                hitgroup_records_list[i].data.material_data = {0.95, 0, 0, 0};
+                printf("CYLINDRICAL, program group address: %p \n", program_group_handle);
+
+                break;
+
+            case OptixCSP::OpticalEntityType::TRIANGLE_FLAT:
+                map = {SurfaceType::FLAT, ApertureType::TRIANGLE};
+                program_group_handle = pipeline_manager->getElementProgram(map);
+                hitgroup_records_list[i].data.material_data = {0.95, 0, 0, 0};
+                printf("FLAT_TRIANGLE, program group address: %p \n", program_group_handle);
+
+                break;
+
             default:
-				std::cerr << "Unknown OpticalEntityType: " << my_type << std::endl;
-			}
+                std::cerr << "Unknown OpticalEntityType: " << my_type << std::endl;
+            }
 
             OPTIX_CHECK(optixSbtRecordPackHeader(program_group_handle, &hitgroup_records_list[i].header));
-
         }
 
         // Allocate memory for hitgroup records on the device.
         CUdeviceptr hitgroup_records_D;
-        size_t      sizeof_hitgroup_record = sizeof(HitGroupRecord);
+        size_t sizeof_hitgroup_record = sizeof(HitGroupRecord);
         CUDA_CHECK(cudaMalloc(
-            reinterpret_cast<void**>(&hitgroup_records_D),
-            sizeof_hitgroup_record * count_records
-        ));
+            reinterpret_cast<void **>(&hitgroup_records_D),
+            sizeof_hitgroup_record * count_records));
 
         // Copy hitgroup records from host to device.
         CUDA_CHECK(cudaMemcpy(
-            reinterpret_cast<void*>(hitgroup_records_D),
+            reinterpret_cast<void *>(hitgroup_records_D),
             hitgroup_records_list.data(),
             sizeof_hitgroup_record * count_records,
-            cudaMemcpyHostToDevice
-        ));
+            cudaMemcpyHostToDevice));
 
         // Configure the SBT hitgroup fields.
-        m_state.sbt.hitgroupRecordBase = hitgroup_records_D;             // Base address of hitgroup records.
-        m_state.sbt.hitgroupRecordCount = count_records;                  // Total number of hitgroup records.
-        m_state.sbt.hitgroupRecordStrideInBytes = static_cast<uint32_t>(sizeof_hitgroup_record);  // Stride size.
+        m_state.sbt.hitgroupRecordBase = hitgroup_records_D;                                     // Base address of hitgroup records.
+        m_state.sbt.hitgroupRecordCount = count_records;                                         // Total number of hitgroup records.
+        m_state.sbt.hitgroupRecordStrideInBytes = static_cast<uint32_t>(sizeof_hitgroup_record); // Stride size.
     }
 }
 
@@ -681,31 +692,28 @@ void SolTraceSystem::setup_device_buffer()
     const size_t hit_point_buffer_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * sizeof(float4) * data_manager->launch_params_H.max_depth;
 
     CUDA_CHECK(cudaMalloc(
-        reinterpret_cast<void**>(&data_manager->launch_params_H.hit_point_buffer),
-        hit_point_buffer_size
-    ));
+        reinterpret_cast<void **>(&data_manager->launch_params_H.hit_point_buffer),
+        hit_point_buffer_size));
     CUDA_CHECK(cudaMemset(data_manager->launch_params_H.hit_point_buffer, 0, hit_point_buffer_size));
 
     // Allocate memory for element id buffer, size is number of rays launched * depth
     const size_t element_id_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * sizeof(int32_t) * data_manager->launch_params_H.max_depth;
     CUDA_CHECK(cudaMalloc(
-        reinterpret_cast<void**>(&data_manager->launch_params_H.element_id_buffer),
-        element_id_size
-    ));
+        reinterpret_cast<void **>(&data_manager->launch_params_H.element_id_buffer),
+        element_id_size));
     CUDA_CHECK(cudaMemset(data_manager->launch_params_H.element_id_buffer, kElementIdBuffer, element_id_size));
 
     // Allocate memory for hit type buffer, size is number of rays launched * depth
     const size_t hit_type_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * sizeof(uint8_t) * data_manager->launch_params_H.max_depth;
     CUDA_CHECK(cudaMalloc(
-        reinterpret_cast<void**>(&data_manager->launch_params_H.hit_type_buffer),
-        hit_type_size
-    ));
+        reinterpret_cast<void **>(&data_manager->launch_params_H.hit_type_buffer),
+        hit_type_size));
     CUDA_CHECK(cudaMemset(data_manager->launch_params_H.hit_type_buffer, kElementIdBuffer, hit_type_size));
 
     // Luning TODO: Allocate memory for the direction cosine buffer, size is number of rays launched * depth
     const size_t sun_dir_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * sizeof(float3);
 
-    CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&data_manager->launch_params_H.sun_dir_buffer), sun_dir_size));
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&data_manager->launch_params_H.sun_dir_buffer), sun_dir_size));
     CUDA_CHECK(cudaMemset(data_manager->launch_params_H.sun_dir_buffer, 0, sun_dir_size));
 
     const unsigned int num_rng_states = static_cast<unsigned int>(data_manager->launch_params_H.width * data_manager->launch_params_H.height);
@@ -720,9 +728,9 @@ void SolTraceSystem::setup_device_buffer()
 
 // Collects results from device buffer
 // only keeps rays that hit elements
-void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector<int>& raynumber_vec,
-    std::vector<int>& element_id_vec, std::vector<uint8_t>& hit_type_vec, std::vector<float3>& sun_ray_dir_vec,
-    std::vector<int>& sunraynumber_vec)
+void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector<int> &raynumber_vec,
+                                        std::vector<int> &element_id_vec, std::vector<uint8_t> &hit_type_vec, std::vector<float3> &sun_ray_dir_vec,
+                                        std::vector<int> &sunraynumber_vec)
 {
     const int max_depth = data_manager->launch_params_H.max_depth;
     const int num_rays = data_manager->launch_params_H.width * data_manager->launch_params_H.height;
@@ -731,7 +739,7 @@ void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector
     std::vector<float4> hp_output_buffer(output_size);
     std::vector<int32_t> element_id_buffer(output_size);
     std::vector<uint8_t> hit_type_buffer(output_size);
-    
+
     CUDA_CHECK(cudaMemcpy(hp_output_buffer.data(), data_manager->launch_params_H.hit_point_buffer, output_size * sizeof(float4), cudaMemcpyDeviceToHost));
     CUDA_CHECK(cudaMemcpy(element_id_buffer.data(), data_manager->launch_params_H.element_id_buffer, output_size * sizeof(int32_t), cudaMemcpyDeviceToHost));
     CUDA_CHECK(cudaMemcpy(hit_type_buffer.data(), data_manager->launch_params_H.hit_type_buffer, output_size * sizeof(uint8_t), cudaMemcpyDeviceToHost));
@@ -739,10 +747,11 @@ void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector
     // Loop through each buffer slot
     int ray_number = raynumber_vec.empty() ? 0 : raynumber_vec.back();
     int sunray_number = sunraynumber_vec.empty() ? 0 : sunraynumber_vec.back();
-    for (int i = 0; i < output_size; ++i) {
+    for (int i = 0; i < output_size; ++i)
+    {
 
         // Get hit type
-        const uint8_t& hit_type = hit_type_buffer[i];
+        const uint8_t &hit_type = hit_type_buffer[i];
 
         // Skip if empty
         if (hit_type < HitType::HIT_CREATE || hit_type > HitType::HIT_EXIT)
@@ -772,8 +781,8 @@ void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector
         }
 
         // Get hit record, element_id
-        const float4& hit_record = hp_output_buffer[i]; // [depth, pos x, pos y, pos z]
-        const int32_t& element_id = element_id_buffer[i];
+        const float4 &hit_record = hp_output_buffer[i]; // [depth, pos x, pos y, pos z]
+        const int32_t &element_id = element_id_buffer[i];
 
         // Collect results
         hp_vec.push_back(hit_record);
@@ -784,7 +793,8 @@ void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector
     }
 
     // Remove last ray if it is only CREATE
-    if (!hit_type_vec.empty() && hit_type_vec.back() == HitType::HIT_CREATE) {
+    if (!hit_type_vec.empty() && hit_type_vec.back() == HitType::HIT_CREATE)
+    {
         hp_vec.pop_back();
         raynumber_vec.pop_back();
         element_id_vec.pop_back();
@@ -802,8 +812,7 @@ void SolTraceSystem::get_buffer_results(std::vector<float4>& hp_vec, std::vector
     sun_ray_dir_vec.insert(
         sun_ray_dir_vec.end(),
         sun_ray_dir_buffer.begin(),
-        sun_ray_dir_buffer.end()
-    );
+        sun_ray_dir_buffer.end());
 
     return;
 }
@@ -816,86 +825,92 @@ void SolTraceSystem::add_element(std::shared_ptr<CspElement> e)
     m_element_list.push_back(e);
 }
 
-double SolTraceSystem::get_time_trace() {
+double SolTraceSystem::get_time_trace()
+{
     return m_timer_trace.get_time_sec();
-} 
-
-double SolTraceSystem::get_time_setup() {
-	return m_timer_setup.get_time_sec();
 }
 
-//void SolTraceSystem::set_sun_vector(Vec3d vect) {
-//    m_sun_vector = vect;
-//    Vec3d sun_v = m_sun_vector.normalized(); // Normalize the sun vector
+double SolTraceSystem::get_time_setup()
+{
+    return m_timer_setup.get_time_sec();
+}
+
+// void SolTraceSystem::set_sun_vector(Vec3d vect) {
+//     m_sun_vector = vect;
+//     Vec3d sun_v = m_sun_vector.normalized(); // Normalize the sun vector
 //	data_manager->launch_params_H.sun_vector = OptixCSP::toFloat3(sun_v);
-//}
+// }
 
-std::vector<int> SolTraceSystem::get_receiver_indices() {
+// std::vector<int> SolTraceSystem::get_receiver_indices() {
 
-	std::vector<int> receiver_indices;
-    for (int i = 0; i < m_element_list.size(); i++) {
-        if (m_element_list[i]->is_receiver()) {
-            receiver_indices.push_back(i);
-        }
-	}
+// 	std::vector<int> receiver_indices;
+//     for (int i = 0; i < m_element_list.size(); i++) {
+//         if (m_element_list[i]->is_receiver()) {
+//             receiver_indices.push_back(i);
+//         }
+// 	}
 
-	return receiver_indices;
-}
+// 	return receiver_indices;
+// }
 
 ////////////////////////////
 //  parsing st input file //
 ////////////////////////////
-std::vector<std::string> SolTraceSystem::split(const std::string& str, const std::string& delim, bool ret_empty, bool ret_delim) {
-	
+std::vector<std::string> SolTraceSystem::split(const std::string &str, const std::string &delim, bool ret_empty, bool ret_delim)
+{
+
     std::vector<std::string> list;
 
-	char cur_delim[2] = {0,0};
-	std::string::size_type m_pos = 0;
-	std::string token;
-	
-	while (m_pos < str.length())
-	{
-		std::string::size_type pos = str.find_first_of(delim, m_pos);
-		if (pos == std::string::npos)
-		{
-			cur_delim[0] = 0;
-			token.assign(str, m_pos, std::string::npos);
-			m_pos = str.length();
-		}
-		else
-		{
-			cur_delim[0] = str[pos];
-			std::string::size_type len = pos - m_pos;			
-			token.assign(str, m_pos, len);
-			m_pos = pos + 1;
-		}
-		
-		if (token.empty() && !ret_empty)
-			continue;
+    char cur_delim[2] = {0, 0};
+    std::string::size_type m_pos = 0;
+    std::string token;
 
-		list.push_back( token );
-		
-		if ( ret_delim && cur_delim[0] != 0 && m_pos < str.length() )
-			list.push_back( std::string( cur_delim ) );
-	}
-	
-	return list;
+    while (m_pos < str.length())
+    {
+        std::string::size_type pos = str.find_first_of(delim, m_pos);
+        if (pos == std::string::npos)
+        {
+            cur_delim[0] = 0;
+            token.assign(str, m_pos, std::string::npos);
+            m_pos = str.length();
+        }
+        else
+        {
+            cur_delim[0] = str[pos];
+            std::string::size_type len = pos - m_pos;
+            token.assign(str, m_pos, len);
+            m_pos = pos + 1;
+        }
+
+        if (token.empty() && !ret_empty)
+            continue;
+
+        list.push_back(token);
+
+        if (ret_delim && cur_delim[0] != 0 && m_pos < str.length())
+            list.push_back(std::string(cur_delim));
+    }
+
+    return list;
 }
 
-void SolTraceSystem::read_line(char* buf, int len, FILE* fp) {
-	fgets(buf, len, fp);
-	size_t nch = strlen(buf);
-	if (nch > 0 && buf[nch-1] == '\n')
-		buf[nch-1] = 0;
-	if (nch-1 > 0 && buf[nch-2] == '\r')
-		buf[nch-2] = 0;
+void SolTraceSystem::read_line(char *buf, int len, FILE *fp)
+{
+    fgets(buf, len, fp);
+    size_t nch = strlen(buf);
+    if (nch > 0 && buf[nch - 1] == '\n')
+        buf[nch - 1] = 0;
+    if (nch - 1 > 0 && buf[nch - 2] == '\r')
+        buf[nch - 2] = 0;
 }
 
-bool SolTraceSystem::read_sun(FILE* fp) {
-	
-    if (!fp) return false;
+bool SolTraceSystem::read_sun(FILE *fp)
+{
 
-	char buf[1024];
+    if (!fp)
+        return false;
+
+    char buf[1024];
 
     // Read Sun info
     int bi = 0, count = 0;
@@ -907,14 +922,14 @@ bool SolTraceSystem::read_sun(FILE* fp) {
 
     read_line(buf, 1023, fp);
     sscanf(buf, "SUN\tPTSRC\t%d\tSHAPE\t%c\tSIGMA\t%lg\tHALFWIDTH\t%lg",
-        &bi, &cshape, &Sigma, &HalfWidth);
+           &bi, &cshape, &Sigma, &HalfWidth);
     PointSource = (bi != 0);
     cshape = tolower(cshape);
 
     read_line(buf, 1023, fp);
 
     sscanf(buf, "XYZ\t%lg\t%lg\t%lg\tUSELDH\t%d\tLDH\t%lg\t%lg\t%lg",
-        &X, &Y, &Z, &bi, &Latitude, &Day, &Hour);
+           &X, &Y, &Z, &bi, &Latitude, &Day, &Hour);
     UseLDHSpec = (bi != 0);
 
     // Make sun
@@ -931,123 +946,133 @@ bool SolTraceSystem::read_sun(FILE* fp) {
 
     this->m_sun = sun.get();
 
-	return true;
+    return true;
 }
 
-bool SolTraceSystem::read_optic_surface(FILE* fp) {
-	
-    if (!fp) return false;
-	char buf[1024];
-	read_line(buf, 1023, fp);
-	std::vector<std::string> parts  = split( std::string(buf), "\t", true, false );
-	if (parts.size() < 15)
-	{
-        printf("too few tokens for optical surface: %zu\n", parts.size());
-		printf("\t>> %s\n", buf);
-		return false;
-	}
+bool SolTraceSystem::read_optic_surface(FILE *fp)
+{
 
-	char ErrorDistribution = 'g';
-	if (parts[1].length() > 0)
-		ErrorDistribution = parts[1][0];
+    if (!fp)
+        return false;
+    char buf[1024];
+    read_line(buf, 1023, fp);
+    std::vector<std::string> parts = split(std::string(buf), "\t", true, false);
+    if (parts.size() < 15)
+    {
+        printf("too few tokens for optical surface: %zu\n", parts.size());
+        printf("\t>> %s\n", buf);
+        return false;
+    }
+
+    char ErrorDistribution = 'g';
+    if (parts[1].length() > 0)
+        ErrorDistribution = parts[1][0];
 
     /*
-	int ApertureStopOrGratingType = atoi( parts[2].c_str() );
-	int OpticalSurfaceNumber = atoi( parts[3].c_str() );
-	int DiffractionOrder = atoi( parts[4].c_str() );
-	double Reflectivity = atof( parts[5].c_str() );
-	double Transmissivity = atof( parts[6].c_str() );
-	double RMSSlope = atof( parts[7].c_str() );
-	double RMSSpecularity = atof( parts[8].c_str() );
-	double RefractionIndexReal = atof( parts[9].c_str() );
-	double RefractionIndexImag = atof( parts[10].c_str() );
-	double GratingCoeffs[4];
-	GratingCoeffs[0] = atof( parts[11].c_str() );
-	GratingCoeffs[1] = atof( parts[12].c_str() );
-	GratingCoeffs[2] = atof( parts[13].c_str() );
-	GratingCoeffs[3] = atof( parts[14].c_str() );
+    int ApertureStopOrGratingType = atoi( parts[2].c_str() );
+    int OpticalSurfaceNumber = atoi( parts[3].c_str() );
+    int DiffractionOrder = atoi( parts[4].c_str() );
+    double Reflectivity = atof( parts[5].c_str() );
+    double Transmissivity = atof( parts[6].c_str() );
+    double RMSSlope = atof( parts[7].c_str() );
+    double RMSSpecularity = atof( parts[8].c_str() );
+    double RefractionIndexReal = atof( parts[9].c_str() );
+    double RefractionIndexImag = atof( parts[10].c_str() );
+    double GratingCoeffs[4];
+    GratingCoeffs[0] = atof( parts[11].c_str() );
+    GratingCoeffs[1] = atof( parts[12].c_str() );
+    GratingCoeffs[2] = atof( parts[13].c_str() );
+    GratingCoeffs[3] = atof( parts[14].c_str() );
     */
 
-	bool UseReflectivityTable = false;
-	int refl_npoints = 0;
-	double *refl_angles = 0;
-	double *refls = 0;
+    bool UseReflectivityTable = false;
+    int refl_npoints = 0;
+    double *refl_angles = 0;
+    double *refls = 0;
 
-	bool UseTransmissivityTable = false;
-	int trans_npoints = 0;
-	double* trans_angles = 0;
-	double* transs = 0;
+    bool UseTransmissivityTable = false;
+    int trans_npoints = 0;
+    double *trans_angles = 0;
+    double *transs = 0;
 
-	if (parts.size() >= 17)
-	{
-		UseReflectivityTable = (atoi( parts[15].c_str() ) > 0);
-		refl_npoints = atoi( parts[16].c_str() );
-		if (parts.size() >= 19)
-		{
-			UseTransmissivityTable = (atoi(parts[17].c_str()) > 0);
-			trans_npoints = atoi(parts[18].c_str());
-		}
-	}
+    if (parts.size() >= 17)
+    {
+        UseReflectivityTable = (atoi(parts[15].c_str()) > 0);
+        refl_npoints = atoi(parts[16].c_str());
+        if (parts.size() >= 19)
+        {
+            UseTransmissivityTable = (atoi(parts[17].c_str()) > 0);
+            trans_npoints = atoi(parts[18].c_str());
+        }
+    }
 
-	if (UseReflectivityTable)
-	{
-		refl_angles = new double[refl_npoints];
-		refls = new double[refl_npoints];
+    if (UseReflectivityTable)
+    {
+        refl_angles = new double[refl_npoints];
+        refls = new double[refl_npoints];
 
-		for (int i=0;i<refl_npoints;i++)
-		{
-			read_line(buf,1023,fp);
-			sscanf(buf, "%lg %lg", &refl_angles[i], &refls[i]);
-		}
-	}
-	if (UseTransmissivityTable)
-	{
-		trans_angles = new double[trans_npoints];
-		transs = new double[trans_npoints];
+        for (int i = 0; i < refl_npoints; i++)
+        {
+            read_line(buf, 1023, fp);
+            sscanf(buf, "%lg %lg", &refl_angles[i], &refls[i]);
+        }
+    }
+    if (UseTransmissivityTable)
+    {
+        trans_angles = new double[trans_npoints];
+        transs = new double[trans_npoints];
 
-		for (int i = 0; i < trans_npoints; i++)
-		{
-			read_line(buf, 1023, fp);
-			sscanf(buf, "%lg %lg", &trans_angles[i], &transs[i]);
-		}
-	}
+        for (int i = 0; i < trans_npoints; i++)
+        {
+            read_line(buf, 1023, fp);
+            sscanf(buf, "%lg %lg", &trans_angles[i], &transs[i]);
+        }
+    }
 
-	// TODO: Update once optical surface params are implemented
-	// st_optic( cxt, iopt, fb, ErrorDistribution,
-	// 	OpticalSurfaceNumber, ApertureStopOrGratingType, DiffractionOrder,
-	// 	RefractionIndexReal, RefractionIndexImag,
-	// 	Reflectivity, Transmissivity,
-	// 	GratingCoeffs, RMSSlope, RMSSpecularity,
-	// 	UseReflectivityTable ? 1 : 0, refl_npoints,
-	// 	refl_angles, refls,
-	// 	UseTransmissivityTable? 1 : 0, trans_npoints,
-	// 	trans_angles, transs
-	// 	);
+    // TODO: Update once optical surface params are implemented
+    // st_optic( cxt, iopt, fb, ErrorDistribution,
+    // 	OpticalSurfaceNumber, ApertureStopOrGratingType, DiffractionOrder,
+    // 	RefractionIndexReal, RefractionIndexImag,
+    // 	Reflectivity, Transmissivity,
+    // 	GratingCoeffs, RMSSlope, RMSSpecularity,
+    // 	UseReflectivityTable ? 1 : 0, refl_npoints,
+    // 	refl_angles, refls,
+    // 	UseTransmissivityTable? 1 : 0, trans_npoints,
+    // 	trans_angles, transs
+    // 	);
 
-	if (refl_angles != 0) delete [] refl_angles;
-	if (refls != 0) delete [] refls;
-	if (trans_angles != 0) delete[] trans_angles;
-	if (transs != 0) delete[] transs;
-	return true;
+    if (refl_angles != 0)
+        delete[] refl_angles;
+    if (refls != 0)
+        delete[] refls;
+    if (trans_angles != 0)
+        delete[] trans_angles;
+    if (transs != 0)
+        delete[] transs;
+    return true;
 }
 
-bool SolTraceSystem::read_optic(FILE* fp) {
-	if (!fp) return false;
-	char buf[1024];
-	read_line( buf, 1023, fp );
+bool SolTraceSystem::read_optic(FILE *fp)
+{
+    if (!fp)
+        return false;
+    char buf[1024];
+    read_line(buf, 1023, fp);
 
-	if (strncmp( buf, "OPTICAL PAIR", 12) == 0)
-	{
-		read_optic_surface( fp );
-		read_optic_surface( fp );
-		return true;
-	}
-	else return false;
+    if (strncmp(buf, "OPTICAL PAIR", 12) == 0)
+    {
+        read_optic_surface(fp);
+        read_optic_surface(fp);
+        return true;
+    }
+    else
+        return false;
 }
 
-bool SolTraceSystem::read_element(FILE* fp) {
-	
-    //int ielm = ::st_add_element( cxt, istage );
+bool SolTraceSystem::read_element(FILE *fp)
+{
+
+    // int ielm = ::st_add_element( cxt, istage );
 
     char buf[1024];
     read_line(buf, 1023, fp);
@@ -1062,24 +1087,24 @@ bool SolTraceSystem::read_element(FILE* fp) {
 
     if (tok[8][0] == 'c' && tok[17][0] == 'f')
     {
-        //printf("Assuming cylindrical element cap. Skipping element. \n");
+        // printf("Assuming cylindrical element cap. Skipping element. \n");
         return true;
     }
 
     // st_element_enabled( cxt, istage, ielm,  atoi( tok[0].c_str() ) ? 1 : 0 );
     auto elem = std::make_shared<CspElement>();
     Vec3d origin(atof(tok[1].c_str()),
-                    atof(tok[2].c_str()),
-                    atof(tok[3].c_str())); // origin of the element
+                 atof(tok[2].c_str()),
+                 atof(tok[3].c_str())); // origin of the element
     if (tok[8][0] == 'l' && tok[17][0] == 't')
     {
         // Cylindrical element, offset y coordinate by radius to center the cylinder
         origin[1] += 1 / atof(tok[18].c_str()); // tok[18] is 1 / radius
     }
     Vec3d aim_point(atof(tok[4].c_str()),
-                       atof(tok[5].c_str()),
-                       atof(tok[6].c_str())); // aim point of the element
-    double zrot = atof(tok[7].c_str());       // z rotation of the element
+                    atof(tok[5].c_str()),
+                    atof(tok[6].c_str())); // aim point of the element
+    double zrot = atof(tok[7].c_str());    // z rotation of the element
 
     elem->set_origin(origin);
     elem->set_aim_point(aim_point);
@@ -1150,82 +1175,94 @@ bool SolTraceSystem::read_element(FILE* fp) {
     return true;
 }
 
-bool SolTraceSystem::read_stage(FILE* fp) {
-	
-    if (!fp) return false;
+bool SolTraceSystem::read_stage(FILE *fp)
+{
 
-	char buf[1024];
-	read_line( buf, 1023, fp );
+    if (!fp)
+        return false;
 
-	int virt=0,multi=1,count=0,tr=0;
-	double X, Y, Z, AX, AY, AZ, ZRot;
+    char buf[1024];
+    read_line(buf, 1023, fp);
 
+    int virt = 0, multi = 1, count = 0, tr = 0;
+    double X, Y, Z, AX, AY, AZ, ZRot;
 
-	sscanf(buf, "STAGE\tXYZ\t%lg\t%lg\t%lg\tAIM\t%lg\t%lg\t%lg\tZROT\t%lg\tVIRTUAL\t%d\tMULTIHIT\t%d\tELEMENTS\t%d\tTRACETHROUGH\t%d",
-		&X, &Y, &Z,
-		&AX, &AY, &AZ,
-		&ZRot,
-		&virt,
-		&multi,
-		&count,
-		&tr );
+    sscanf(buf, "STAGE\tXYZ\t%lg\t%lg\t%lg\tAIM\t%lg\t%lg\t%lg\tZROT\t%lg\tVIRTUAL\t%d\tMULTIHIT\t%d\tELEMENTS\t%d\tTRACETHROUGH\t%d",
+           &X, &Y, &Z,
+           &AX, &AY, &AZ,
+           &ZRot,
+           &virt,
+           &multi,
+           &count,
+           &tr);
 
-	read_line( buf, 1023, fp ); // read name
+    read_line(buf, 1023, fp); // read name
 
-	//printf("stage '%s': [%d] %lg %lg %lg   %lg %lg %lg   %lg   %d %d %d\n",
-	//	buf, count, X, Y, Z, AX, AY, AZ, ZRot, virt, multi, tr );
-	
-	for (int i=0;i<count;i++)
-		if (!read_element( fp )) 
-		{ printf("error in element %d\n", i ); return false; }
+    // printf("stage '%s': [%d] %lg %lg %lg   %lg %lg %lg   %lg   %d %d %d\n",
+    //	buf, count, X, Y, Z, AX, AY, AZ, ZRot, virt, multi, tr );
 
-	return true;
+    for (int i = 0; i < count; i++)
+        if (!read_element(fp))
+        {
+            printf("error in element %d\n", i);
+            return false;
+        }
+
+    return true;
 }
 
-bool SolTraceSystem::read_system(FILE* fp) {
-	
-    if (!fp) return false;
+bool SolTraceSystem::read_system(FILE *fp)
+{
 
-	char buf[1024];
+    if (!fp)
+        return false;
 
-	char c = fgetc(fp);
-	if ( c == '#' )
-	{
-		int vmaj = 0, vmin = 0, vmic = 0;
-		read_line( buf, 1023, fp ); sscanf( buf, " SOLTRACE VERSION %d.%d.%d INPUT FILE", &vmaj, &vmin, &vmic);
+    char buf[1024];
 
-		//unsigned int file_version = vmaj*10000 + vmin*100 + vmic;
-		
-		printf( "loading input file version %d.%d.%d\n", vmaj, vmin, vmic );
-	}
-	else
-	{
-		ungetc( c, fp );
-		printf("input file must start with '#'\n");
-		return false;
-	}
+    char c = fgetc(fp);
+    if (c == '#')
+    {
+        int vmaj = 0, vmin = 0, vmic = 0;
+        read_line(buf, 1023, fp);
+        sscanf(buf, " SOLTRACE VERSION %d.%d.%d INPUT FILE", &vmaj, &vmin, &vmic);
 
-	if ( !read_sun( fp ) ) return false;
-	
-	int count = 0;
+        // unsigned int file_version = vmaj*10000 + vmin*100 + vmic;
 
-	count = 0;
-	read_line( buf, 1023, fp ); sscanf(buf, "OPTICS LIST COUNT\t%d", &count);
-	
-	for (int i=0;i<count;i++)
-		if (!read_optic( fp )) return false;
+        printf("loading input file version %d.%d.%d\n", vmaj, vmin, vmic);
+    }
+    else
+    {
+        ungetc(c, fp);
+        printf("input file must start with '#'\n");
+        return false;
+    }
 
-	count = 0;
-	read_line( buf, 1023, fp ); sscanf(buf, "STAGE LIST COUNT\t%d", &count);
-	for (int i=0;i<count;i++)
-		if (!read_stage( fp )) return false;
+    if (!read_sun(fp))
+        return false;
 
-	return true;
+    int count = 0;
+
+    count = 0;
+    read_line(buf, 1023, fp);
+    sscanf(buf, "OPTICS LIST COUNT\t%d", &count);
+
+    for (int i = 0; i < count; i++)
+        if (!read_optic(fp))
+            return false;
+
+    count = 0;
+    read_line(buf, 1023, fp);
+    sscanf(buf, "STAGE LIST COUNT\t%d", &count);
+    for (int i = 0; i < count; i++)
+        if (!read_stage(fp))
+            return false;
+
+    return true;
 }
 
 double SolTraceSystem::get_sun_plane_area() const
 {
-    const LaunchParams& lp = data_manager->launch_params_H;
+    const LaunchParams &lp = data_manager->launch_params_H;
     // Parallelogram area spanned by two adjacent edges of the sun box
     const float3 a = make_float3(lp.sun_v0.x - lp.sun_v1.x, lp.sun_v0.y - lp.sun_v1.y, lp.sun_v0.z - lp.sun_v1.z);
     const float3 b = make_float3(lp.sun_v1.x - lp.sun_v2.x, lp.sun_v1.y - lp.sun_v2.y, lp.sun_v1.z - lp.sun_v2.z);

@@ -134,9 +134,15 @@ configure_file(
 # ---------------------------------------------------------------------------
 set(OptixCSP_EXPORT_CONFIG_DIR "${CMAKE_BINARY_DIR}/cmake/")
 
-export(TARGETS OptixCSP_core
+# simdata is a PRIVATE dependency of OptixCSP_core; it must be included in the
+# build-tree export so consumers can resolve it. Export it without a namespace
+# prefix first, then append OptixCSP_core with its own namespace.
+export(TARGETS simdata
        FILE ${OptixCSP_EXPORT_CONFIG_DIR}/OptixCSPTargets.cmake
+)
+export(TARGETS OptixCSP_core
        NAMESPACE OptixCSP::
+       APPEND FILE ${OptixCSP_EXPORT_CONFIG_DIR}/OptixCSPTargets.cmake
 )
 
 # Generate Config file

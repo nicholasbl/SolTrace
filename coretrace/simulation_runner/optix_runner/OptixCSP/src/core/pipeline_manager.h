@@ -62,14 +62,9 @@ namespace OptixCSP {
         void createSunProgram();
 
         /**
-         * @brief Creates programs for mirror interactions.
+         * @brief Creates programs for element interactions.
          */
-        void createMirrorPrograms();
-
-        /**
-         * @brief Creates programs for receiver interactions.
-         */
-        void createReceiverProgram();
+        void createElementPrograms();
 
         /**
          * @brief Creates the miss program, handling rays that do not hit any geometry.
@@ -103,24 +98,11 @@ namespace OptixCSP {
         OptixProgramGroup getMissProgram() const;
 
         /**
-         * @brief Retrieves the receiver program group.
-         * @return The OptixProgramGroup for receivers.
-         */
-        OptixProgramGroup getReceiverProgram() const;
-
-        /**
-         * @brief Retrieves the appropriate mirror program group based on surface and aperture type.
+         * @brief Retrieves the appropriate element program group based on surface and aperture type.
          * @param map SurfaceApertureMap specifying the surface and aperture combination.
          * @return The corresponding OptixProgramGroup.
          */
-        OptixProgramGroup getMirrorProgram(SurfaceApertureMap map) const;
-
-        /**
-         * @brief Retrieves the appropriate receiver program group based on surface type.
-         * @param surfaceType The type of surface (FLAT or CYLINDER).
-         * @return The corresponding OptixProgramGroup.
-         */
-        OptixProgramGroup getReceiverProgram(SurfaceType surfaceType, ApertureType apertureType) const;
+        OptixProgramGroup getElementProgram(SurfaceApertureMap map) const;
 
     private:
         SoltraceState& m_state;  ///< Reference to the simulation's OptiX state.
@@ -128,8 +110,7 @@ namespace OptixCSP {
 
         // Number of program groups categorized by type.
         int num_raygen_programs = 1; ///< Number of ray generation programs.
-        int num_heliostat_programs = 2; ///< Number of heliostat-related programs.
-        int num_receiver_programs = 2; ///< Number of receiver-related programs.
+        int num_heliostat_programs = 4; ///< Number of heliostat-related programs.
         int num_miss_programs = 1; ///< Number of miss programs.
     };
 }

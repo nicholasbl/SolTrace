@@ -23,12 +23,9 @@ size_t LOG_SIZE = sizeof(LOG);
 
 const char* intersectionFuncs[] = {
     "__intersection__rectangle_parabolic",
-    "__intersection__rectangle_flat"
-};
-
-const char* closestHitFuncs[] = {
-    "__closesthit__mirror__parabolic",
-	"__closesthit__mirror"
+    "__intersection__rectangle_flat",
+    "__intersection__triangle_flat",
+    "__intersection__cylinder_y_capped"
 };
 
 pipelineManager::pipelineManager(SoltraceState& state) : m_state(state) {}
@@ -122,8 +119,7 @@ void pipelineManager::createPipeline()
     // Prepare modules and program groups
     loadModules();
     createSunProgram();
-    createMirrorPrograms();
-    createReceiverProgram();
+    createElementPrograms();
     createMissProgram();
 
     // Link program groups to pipeline
@@ -227,55 +223,24 @@ void pipelineManager::createSunProgram()
     m_state.raygen_prog_group = group;
 }
 
-// Create program group for handling rays interacting with mirrors.
-void pipelineManager::createMirrorPrograms()
+// Create program group for handling rays interacting with elements.
+void pipelineManager::createElementPrograms()
 {   
 
-    // number of mirror programs
-	size_t numMirrorPrograms = sizeof(intersectionFuncs) / sizeof(intersectionFuncs[0]);
+    // number of element programs
+	size_t numElementPrograms = sizeof(intersectionFuncs) / sizeof(intersectionFuncs[0]);
 
-	for (size_t i = 0; i < numMirrorPrograms; i++) {
+	for (size_t i = 0; i < numElementPrograms; i++) {
 		OptixProgramGroup group; 
 
 		createHitGroupProgram(group,
             			      m_state.geometry_module, 
-                              intersectionFuncs[i],
-            			      m_state.shading_module, 
-                              closestHitFuncs[i]);
+				              intersectionFuncs[i],
+            			      m_state.shading_module,
+				              "__closesthit__element");
 
 		m_program_groups.push_back(group);
-        //m_state.radiance_mirror_prog_group = group;
 	}   
-
-}
-
-
-// TODO: think about if we actually need the receiver program ... 
-// since the only difference is the closest hit program, which can be modified 
-// in reflectivity and absorption? 
-void pipelineManager::createReceiverProgram()
-{
-    // flat receiver
-    OptixProgramGroup           group;
-    createHitGroupProgram(group,
-        m_state.geometry_module, "__intersection__rectangle_flat",
-        m_state.shading_module, "__closesthit__receiver");
-
-    m_program_groups.push_back(group);
-
-    // cylinder receiver
-    createHitGroupProgram(group,
-        m_state.geometry_module, "__intersection__cylinder_y_capped",
-        m_state.shading_module, "__closesthit__receiver__cylinder__y");
-   
-    m_program_groups.push_back(group);
-
-	// quadrilateral receiver (triangles) 
-    createHitGroupProgram(group,
-        m_state.geometry_module, "__intersection__triangle_flat",
-        m_state.shading_module, "__closesthit__receiver");
-
-    m_program_groups.push_back(group);
 
 }
 
@@ -314,7 +279,7 @@ void pipelineManager::createMissProgram()
 }
 
 
-OptixProgramGroup pipelineManager::getMirrorProgram(SurfaceApertureMap map) const {
+OptixProgramGroup pipelineManager::getElementProgram(SurfaceApertureMap map) const {
     // TODO this part is still hard coded ... 
 	// squence are raygen, then heliostat, then receiver, then miss
     // need to figure out a better way to arrange the table
@@ -322,38 +287,23 @@ OptixProgramGroup pipelineManager::getMirrorProgram(SurfaceApertureMap map) cons
 
     if (map.apertureType == ApertureType::RECTANGLE) {
         if (map.surfaceType == SurfaceType::FLAT) {
-            //std::cout << "returning mirror program group 3, easy rectangle flat" << std::endl;
+            //std::cout << "returning element program group 3, easy rectangle flat" << std::endl;
             return m_program_groups[2];
         }
 
         else if (map.surfaceType == SurfaceType::PARABOLIC) {
-            //std::cout << "returning mirror program group 2, rectangle parabolic" << std::endl;
+            //std::cout << "returning element program group 2, rectangle parabolic" << std::endl;
             return m_program_groups[1];
 		}
+	else if (map.surfaceType == SurfaceType::CYLINDER) {
+	  return m_program_groups[4];
+	}
 
     }
-    throw std::runtime_error("Unsupported surface or aperture type in getMirrorProgram");
-}
-
-OptixProgramGroup pipelineManager::getReceiverProgram(SurfaceType surfaceType, ApertureType apertureType) const {
-    // The receiver programs are added after the mirror programs
-    // First receiver (flat) is at index num_raygen_programs + num_heliostat_programs
-    // Second receiver (cylinder) is at index num_raygen_programs + num_heliostat_programs + 1
-    if (surfaceType == SurfaceType::FLAT) {
-        if (apertureType == ApertureType::TRIANGLE) {
-            // flat triangle receiver is the last program group 
-            return m_program_groups[num_raygen_programs + num_heliostat_programs + 2];
-		}
-
-        else if (apertureType == ApertureType::RECTANGLE) {
-            //printf("returning receiver program group %d, flat\n", num_raygen_programs + num_heliostat_programs);
-            return m_program_groups[num_raygen_programs + num_heliostat_programs];
-        }
-
+    else if (map.apertureType == ApertureType::TRIANGLE) {
+      if (map.surfaceType == SurfaceType::FLAT) {
+	return m_program_groups[3];
+      }
     }
-    else if (surfaceType == SurfaceType::CYLINDER) {
-        //printf("returning receiver program group %d, flat\n", num_raygen_programs + num_heliostat_programs + 1);
-        return m_program_groups[num_raygen_programs + num_heliostat_programs + 1];
-    }
-    throw std::runtime_error("Unsupported receiver surface type");
+    throw std::runtime_error("Unsupported surface or aperture type in getElementProgram");
 }

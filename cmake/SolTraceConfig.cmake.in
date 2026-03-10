@@ -1,0 +1,17 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# nlohmann_json is a transitive dependency of simdata
+find_dependency(nlohmann_json QUIET)
+
+include("${CMAKE_CURRENT_LIST_DIR}/SolTraceTargets.cmake")
+
+# If OptiX targets were installed, pull in their required system dependencies
+if(TARGET SolTrace::optix_runner)
+    find_dependency(CUDAToolkit REQUIRED)
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
+    find_dependency(OptiX REQUIRED)
+endif()
+
+check_required_components(SolTrace)
