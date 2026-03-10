@@ -7,7 +7,7 @@ TextField {
 
     property string placeholder: ""
     property color borderColor: Theme.lineColor
-    property color activeFocusBorderColor: Theme.lineColor
+    property color activeFocusborderColor: Theme.lineColor
 
     color: Theme.textColor
     selectionColor: Theme.textColor

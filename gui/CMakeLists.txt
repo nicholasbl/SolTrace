@@ -152,7 +152,7 @@ qt_add_qml_module(SolTrace
         ui/primitives/spacing/Spacer.qml
         ui/primitives/spacing/EndSpacer.qml
 
-        ui/widgets/common/Label.qml
+        ui/widgets/common/STLabel.qml
 
         ui/widgets/fields/NumberField.qml
         ui/widgets/fields/TimeField.qml
@@ -218,8 +218,16 @@ qt_add_qml_module(SolTrace
         src/modules/flux_module.h src/modules/flux_module.cpp
         src/modules/geometry_module.h src/modules/geometry_module.cpp
         src/modules/workflow_module.h src/modules/workflow_module.cpp
+
         QML_FILES ui/core/ConfigureSidebarBody.qml
         QML_FILES ui/widgets/common/LabeledListItem.qml
+        QML_FILES ui/panels/materials/MaterialLeftSide.qml
+        QML_FILES ui/panels/materials/MaterialRightSide.qml
+        QML_FILES ui/panels/materials/MaterialOpticals.qml
+        QML_FILES ui/panels/materials/PropertyPanel.qml
+        QML_FILES ui/panels/materials/PropertyLabel.qml
+        QML_FILES ui/panels/materials/PropertyTest.qml
+        QML_FILES ui/panels/materials/PropertyLinearCombo.qml
 )
 
 CPMAddPackage(

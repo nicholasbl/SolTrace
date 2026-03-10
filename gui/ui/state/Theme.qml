@@ -20,5 +20,6 @@ QtObject {
     readonly property int textSizeSmall: 14
 
     readonly property real listItemRectRadius: 6
+    readonly property real comboPopupRectRadius: 6
 
 }

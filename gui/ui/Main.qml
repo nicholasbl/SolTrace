@@ -15,6 +15,11 @@ ApplicationWindow {
     visible: true
     property var workflow: ["Configure", "Simulate", "Analyze"]
 
+    Material.theme: Material.Dark
+
+    font.pointSize: 16
+    font.family: "CMU Serif"
+
     SimulationScene {
         id: sim
         z: 0

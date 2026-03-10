@@ -69,7 +69,7 @@ Column {
                     var index = intervals.indexOf(interval)
                     return index !== -1 ? index : 0
                 }
-                borderColor: Theme.lineColor
+                //borderColor: Theme.lineColor
                 onCurrentIndexChanged: {
                     var intervals = [1, 2, 5, 10, 15, 30, 60]
                     Session.core.sun.directionalSun.interval = intervals[currentIndex]

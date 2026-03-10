@@ -72,7 +72,7 @@ Item {
             color: root.labelColor
             font.pointSize: root.labelSize
             font.weight: root.labelWeight
-            font.family: root.labelFont || ""
+            //font.family: root.labelFont || ""
             anchors.verticalCenter: parent.verticalCenter
             visible: root.label !== ""
             font.underline: root.underline

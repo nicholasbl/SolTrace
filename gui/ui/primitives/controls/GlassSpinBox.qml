@@ -13,6 +13,14 @@ SpinBox {
     property real realValue: value / decimalFactor
     readonly property int decimalFactor: Math.pow(10, decimals)
 
+    property string suffix
+
+    property string internal_computed_suffix : suffix.length ? " " + suffix : ""
+
+    signal realValueModified(value: real)
+
+    onValueModified: realValueModified(realValue)
+
     function decimalToInt(decimal) {
         return decimal * decimalFactor
     }
@@ -25,10 +33,14 @@ SpinBox {
     }
 
     textFromValue: function(value, locale) {
-        return Number(value / decimalFactor).toLocaleString(locale, 'f', control.decimals)
+        return Number(value / decimalFactor).toLocaleString(locale, 'f', control.decimals) + internal_computed_suffix
     }
 
     valueFromText: function(text, locale) {
+        if (suffix.length) {
+            text = text.replace(suffix,"")
+        }
+
         return Math.round(Number.fromLocaleString(locale, text) * decimalFactor)
     }
 

@@ -17,6 +17,7 @@ Column {
     property bool enforceMax: false
     property alias text: textField.text
     property alias textField: textField
+
     Component.onCompleted: {
         textField.text = root.value.toFixed(root.decimals)
     }

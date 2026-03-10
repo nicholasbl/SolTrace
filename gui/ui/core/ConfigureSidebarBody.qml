@@ -85,9 +85,9 @@ Item {
             GlassComboBox {
                 model: ["Current Config (Unsaved)", "Other Config (Last Run)"]
                 width: parent.width
-                height: 30
-                labelFontSize: Theme.textSizeSmall
-                borderColor: Theme.lineColor
+                //height: 30
+                //labelFontSize: Theme.textSizeSmall
+                ////borderColor: Theme.lineColor
             }
         }
         

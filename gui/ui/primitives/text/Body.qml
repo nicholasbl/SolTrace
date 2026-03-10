@@ -7,6 +7,8 @@ Text {
     font.pointSize: 16
     wrapMode: Text.WordWrap
 
+    font.family: "CMU Serif"
+
     property string rawText: ""
 
     text: renderLatex(rawText)

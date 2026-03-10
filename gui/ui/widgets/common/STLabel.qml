@@ -1,8 +1,7 @@
 import QtQuick
+import QtQuick.Controls.Material
 
-Text {
-    color: "white"
+Label {
     font.pointSize: 18
     font.weight: Font.Bold
-    font.family: "CMU Serif"
 }

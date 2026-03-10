@@ -1,128 +1,118 @@
 // Glass ComboBox
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Controls.Material
 import SolTraceProto
 
-Item {
+ComboBox {
     id: root
 
-    property var model
-    property int currentIndex: 0
-    property string currentText: model[currentIndex] || ""
-    property color textColor: "white"
-    property string labelFontFamily: ""
-    property string optionFontFamily: ""
-    property var labelFontWeight: Font.Normal
+    //property var model
+    //property int currentIndex: 0
+    //property string currentText: model[currentIndex] || ""
+    //property string optionFontFamily: ""
+    //property var labelFontWeight: Font.Normal
     property int labelFontSize: 16
     property int optionFontSize: 14
-    property var source: null
-    property color borderColor: "transparent"
-    property color backgroundColor: "transparent"
+    //property var source: null
+    //property color borderColor: "transparent"
+    //property color backgroundColor: "transparent"
 
-    signal activated(int index)
+    //signal activated(int index)
 
     implicitWidth: 200
     implicitHeight: 40
 
-    // Main Button
-    Rectangle {
-        id: button
-        anchors.left: parent.left
-        anchors.right: parent.right
-        height: 40
-        color: parent.backgroundColor
-        radius: 8
-        border.color: root.borderColor
-        border.width: 1
-
-        Row {
-            anchors.fill: parent
-            anchors.leftMargin: 15
-            anchors.rightMargin: 15
-            spacing: 10
-
-            Text {
-                text: root.currentText
-                color: root.textColor
-                font.family: root.labelFontFamily
-                font.pixelSize: root.labelFontSize
-                font.weight: root.labelFontWeight
-                anchors.verticalCenter: parent.verticalCenter
-                width: parent.width - indicator.width - parent.spacing
-                elide: Text.ElideRight
-            }
-
-            Text {
-                id: indicator
-                text: popup.visible ? "▲" : "▼"
-                color: root.textColor
-                font.pixelSize: 10
-                opacity: 0.7
-                anchors.verticalCenter: parent.verticalCenter
-            }
+    function comboIndex(options, value) {
+        if (!options || options.length === 0) {
+            return -1
         }
 
-        MouseArea {
-            id: buttonMouse
+        return options.indexOf(value)
+    }
+
+
+    delegate: ItemDelegate {
+        id: delegate
+        width: ListView.view.width
+        height: 35
+
+        opacity: delegate.containsMouse ? 1 : 0.9
+
+        contentItem: STLabel {
+            text: modelData ? modelData : model.display
+            font.pointSize: root.optionFontSize
             anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: popup.visible = !popup.visible
+            verticalAlignment: Qt.AlignVCenter
+            anchors.leftMargin: 15
+            elide: Label.ElideRight
+        }
+
+        highlighted: root.highlightedIndex === index
+    }
+
+    contentItem: STLabel {
+        leftPadding: 5
+        rightPadding: root.indicator.width + root.spacing
+
+        text: root.displayText
+        opacity: root.pressed ? 1.0 : 0.9
+        font.pointSize: 14
+        verticalAlignment: Text.AlignVCenter
+        elide: Text.ElideRight
+    }
+
+    indicator: STLabel {
+        id: indicator
+        text: "▼"
+        font.pointSize: 14
+        opacity: 0.7
+        anchors.verticalCenter: parent.verticalCenter
+        x: root.width - width - root.rightPadding
+
+        transform: Rotation {
+            angle: popup.visible ? 180 : 0
+            origin.x: indicator.width /2
+            origin.y: indicator.height/2
+            Behavior on angle {
+                NumberAnimation {
+                    duration: 100
+                }
+            }
         }
     }
 
-    // Dropdown Popup
-    Popup {
-        id: popup
-        y: parent.height + 2
-        width: parent.width
-        padding: 0
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+    // Main Button
+    background: Rectangle {
+        id: button
+        anchors.left: parent.left
+        anchors.right: parent.right
+        color: "transparent"
+        radius: 8
+        border.color: Theme.lineColor
+        border.width: 1
 
-        background: GlassRectangle {
-            id: background
-            glassColor: Theme.shadedGlassColor
+
+        implicitWidth: 200
+        implicitHeight: 40
+    }
+
+    popup: Popup {
+        y: root.height - 1
+        width: root.width
+        height: Math.min(contentItem.implicitHeight, root.Window.height - topMargin - bottomMargin)
+        padding: 1
+
+        contentItem: ListView {
+            clip: true
+            implicitHeight: contentHeight
+            model: root.popup.visible ? root.delegateModel : null
+            currentIndex: root.highlightedIndex
+
+            ScrollIndicator.vertical: ScrollIndicator { }
         }
 
-        contentItem: ScrollView {
-            implicitHeight: Math.min(listView.contentHeight, 300)
-            clip: true
-
-            ListView {
-                id: listView
-                model: root.model
-                currentIndex: root.currentIndex
-
-                delegate: Rectangle {
-                    width: ListView.view.width
-                    height: 35
-                    color: itemMouse.containsMouse ? Qt.rgba(255, 255, 255, 0.1) : "transparent"
-                    opacity: itemMouse.containsMouse ? 1 : 0.9
-                    radius: background.radius
-
-                    Text {
-                        text: modelData ? modelData : model.display
-                        color: root.textColor
-                        font.family: root.optionFontFamily
-                        font.pixelSize: root.optionFontSize
-                        anchors.left: parent.left
-                        anchors.leftMargin: 15
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-
-                    MouseArea {
-                        id: itemMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            root.currentIndex = index
-                            root.activated(index)
-                            popup.close()
-                        }
-                    }
-                }
-            }
+        background: GlassRectangle {
+            radius: Theme.comboPopupRectRadius
         }
     }
 }

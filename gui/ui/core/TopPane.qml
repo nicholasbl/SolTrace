@@ -1,5 +1,6 @@
 import QtCore
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Dialogs
 import SolTraceProto
 
@@ -61,7 +62,7 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
-                        Text {
+                        Label {
                             id: logoText
                             text: "SolTrace"
                             font.family: "CMU Serif"
