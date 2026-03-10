@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 #include <string>
 #include <vector>
 #include "optix.h"
@@ -107,10 +108,11 @@ namespace OptixCSP {
     private:
         SoltraceState& m_state;  ///< Reference to the simulation's OptiX state.
         std::vector<OptixProgramGroup> m_program_groups; ///< Stores all created OptiX program groups.
+        std::map<SurfaceApertureMap, size_t> m_intersection_program_group_map; ///< Map surface-aperture combinations to index in m_program_groups
 
-        // Number of program groups categorized by type.
-        int num_raygen_programs = 1; ///< Number of ray generation programs.
-        int num_heliostat_programs = 4; ///< Number of heliostat-related programs.
-        int num_miss_programs = 1; ///< Number of miss programs.
+        // // Number of program groups categorized by type.
+        // int num_raygen_programs = 1; ///< Number of ray generation programs.
+        // int num_heliostat_programs = 4; ///< Number of heliostat-related programs.
+        // int num_miss_programs = 1; ///< Number of miss programs.
     };
 }

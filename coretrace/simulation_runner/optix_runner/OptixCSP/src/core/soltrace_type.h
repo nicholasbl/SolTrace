@@ -1,16 +1,18 @@
 #pragma once
 
-namespace OptixCSP {
+namespace OptixCSP
+{
 
-	enum class ApertureType {
+	enum class ApertureType
+	{
 		RECTANGLE,
 		CIRCLE,
 		TRIANGLE
 	};
 
-
 	// types for both scene building and pipeline assembly
-	enum class SurfaceType {
+	enum class SurfaceType
+	{
 		FLAT,
 		PARABOLIC,
 		MESH,
@@ -19,15 +21,21 @@ namespace OptixCSP {
 
 	// mapping of the surface type combined with the aperture type
 	// for lookup in the sbt mapping
-	struct SurfaceApertureMap {
+	struct SurfaceApertureMap
+	{
 		SurfaceType surfaceType;
 		ApertureType apertureType;
 
-		// TODO: might not need this, since i always compare 
-		// surface and aperture types separately .... 
-		bool operator==(SurfaceApertureMap& map) {
-			return (surfaceType == map.surfaceType) && (apertureType == map.apertureType);
+		SurfaceApertureMap(ApertureType ap, SurfaceType surf) : surfaceType(surf),
+																apertureType(ap)
+		{
 		}
 
+		// TODO: might not need this, since i always compare
+		// surface and aperture types separately ....
+		bool operator==(SurfaceApertureMap &map)
+		{
+			return (surfaceType == map.surfaceType) && (apertureType == map.apertureType);
+		}
 	};
 }

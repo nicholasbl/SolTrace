@@ -1,19 +1,21 @@
+#include "pipeline_manager.h"
+
+#include <fstream>
+#include <map>
 #include <string>
 #include <vector>
+
 #include <cuda_runtime.h>
 #include <optix.h>
 #include <sampleConfig.h>
 #include <optix_stack_size.h>
 #include <optix_stubs.h>
+
 #include "utils/util_check.hpp"
 #include "shaders/Soltrace.h"
 
 #include "data_manager.h"
 #include "soltrace_state.h"
-#include "pipeline_manager.h"
-#include <fstream>
-#include <optix_stubs.h>
-
 
 using namespace OptixCSP;
 
@@ -21,11 +23,20 @@ char LOG[2048] = {};   // A mutable log buffer.
 size_t LOG_SIZE = sizeof(LOG);
 
 
-const char* intersectionFuncs[] = {
-    "__intersection__rectangle_parabolic",
-    "__intersection__rectangle_flat",
-    "__intersection__triangle_flat",
-    "__intersection__cylinder_y_capped"
+// const char* intersectionFuncs[] = {
+//     "__intersection__rectangle_parabolic",
+//     "__intersection__rectangle_flat",
+//     "__intersection__triangle_flat",
+//     // "__intersection__cylinder_y_capped"
+//     "__intersection_cylinder_y",
+// };
+
+const std::map<SurfaceApertureMap,std::string> IntersectionKernelMap = 
+{
+    {SurfaceApertureMap(ApertureType::RECTANGLE, SurfaceType::PARABOLIC), "__intersection__rectangle_parabolic"},
+    {SurfaceApertureMap(ApertureType::RECTANGLE, SurfaceType::FLAT), "__intersection__rectangle_flat"},
+    {SurfaceApertureMap(ApertureType::TRIANGLE, SurfaceType::FLAT), "__intersection__triangle_flat"},
+    {SurfaceApertureMap(ApertureType::RECTANGLE, SurfaceType::CYLINDER), "__intersection_cylinder_y"}
 };
 
 pipelineManager::pipelineManager(SoltraceState& state) : m_state(state) {}
@@ -228,19 +239,42 @@ void pipelineManager::createElementPrograms()
 {   
 
     // number of element programs
-	size_t numElementPrograms = sizeof(intersectionFuncs) / sizeof(intersectionFuncs[0]);
+	// size_t numElementPrograms = sizeof(intersectionFuncs) / sizeof(intersectionFuncs[0]);
 
-	for (size_t i = 0; i < numElementPrograms; i++) {
-		OptixProgramGroup group; 
+	// for (size_t i = 0; i < numElementPrograms; i++) {
+	// 	OptixProgramGroup group; 
+
+	// 	createHitGroupProgram(group,
+    //         			      m_state.geometry_module, 
+	// 			              intersectionFuncs[i],
+    //         			      m_state.shading_module,
+	// 			              "__closesthit__element");
+
+	// 	m_program_groups.push_back(group);
+	// }
+
+    size_t idx;
+    for (const auto& [surf_ap_key, kernel_name] : IntersectionKernelMap)
+    {
+        OptixProgramGroup group; 
 
 		createHitGroupProgram(group,
             			      m_state.geometry_module, 
-				              intersectionFuncs[i],
+				              kernel_name,
             			      m_state.shading_module,
 				              "__closesthit__element");
 
-		m_program_groups.push_back(group);
-	}   
+        idx = m_program_groups.size();
+        
+        auto sts = m_intersection_program_group_map.insert_or_assign(surf_ap_key, idx);
+        if (!sts.second)
+        {
+            // This should be impossible since we are iterating over a map
+            throw std::runtime_error("Duplicate surface aperture combination!");
+        }
+		
+        m_program_groups.push_back(group);
+    }
 
 }
 
@@ -285,25 +319,31 @@ OptixProgramGroup pipelineManager::getElementProgram(SurfaceApertureMap map) con
     // need to figure out a better way to arrange the table
 	// should be depenedent on intersection func array .... 
 
-    if (map.apertureType == ApertureType::RECTANGLE) {
-        if (map.surfaceType == SurfaceType::FLAT) {
-            //std::cout << "returning element program group 3, easy rectangle flat" << std::endl;
-            return m_program_groups[2];
-        }
+    // if (map.apertureType == ApertureType::RECTANGLE) {
+    //     if (map.surfaceType == SurfaceType::FLAT) {
+    //         //std::cout << "returning element program group 3, easy rectangle flat" << std::endl;
+    //         return m_program_groups[2];
+    //     }
 
-        else if (map.surfaceType == SurfaceType::PARABOLIC) {
-            //std::cout << "returning element program group 2, rectangle parabolic" << std::endl;
-            return m_program_groups[1];
-		}
-	else if (map.surfaceType == SurfaceType::CYLINDER) {
-	  return m_program_groups[4];
-	}
+    //     else if (map.surfaceType == SurfaceType::PARABOLIC) {
+    //         //std::cout << "returning element program group 2, rectangle parabolic" << std::endl;
+    //         return m_program_groups[1];
+	// 	}
+	// else if (map.surfaceType == SurfaceType::CYLINDER) {
+	//   return m_program_groups[4];
+	// }
 
-    }
-    else if (map.apertureType == ApertureType::TRIANGLE) {
-      if (map.surfaceType == SurfaceType::FLAT) {
-	return m_program_groups[3];
-      }
+    // }
+    // else if (map.apertureType == ApertureType::TRIANGLE) {
+    //   if (map.surfaceType == SurfaceType::FLAT) {
+	// return m_program_groups[3];
+    //   }
+    // }
+
+    auto iter = m_intersection_program_group_map.find(map);
+    if (iter != m_intersection_program_group_map.cend())
+    {
+        return m_program_groups[iter->second];
     }
     throw std::runtime_error("Unsupported surface or aperture type in getElementProgram");
 }
