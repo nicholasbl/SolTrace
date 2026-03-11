@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ostream>
+
 namespace OptixCSP
 {
 
@@ -26,7 +28,12 @@ namespace OptixCSP
 		SurfaceType surfaceType;
 		ApertureType apertureType;
 
-		SurfaceApertureMap(ApertureType ap, SurfaceType surf) : surfaceType(surf),
+	  SurfaceApertureMap() : surfaceType(SurfaceType::FLAT),
+		                 apertureType(ApertureType::RECTANGLE)
+	  {
+	  }
+
+          SurfaceApertureMap(SurfaceType surf, ApertureType ap) : surfaceType(surf),
 																apertureType(ap)
 		{
 		}
@@ -37,5 +44,20 @@ namespace OptixCSP
 		{
 			return (surfaceType == map.surfaceType) && (apertureType == map.apertureType);
 		}
+
+	  bool operator<(const SurfaceApertureMap &b) const
+	  {
+	    return surfaceType < b.surfaceType ||
+	      (surfaceType == b.surfaceType && apertureType < b.apertureType);
+	  }
+
+	  friend std::ostream& operator<<(std::ostream &os, const SurfaceApertureMap &sam);
 	};
+
+	inline std::ostream& operator<<(std::ostream &os, const SurfaceApertureMap &sam)
+	{
+	  os << "SurfApMap -- Surface: " << static_cast<int>(sam.surfaceType)
+	     << " Aperture: " << static_cast<int>(sam.apertureType);
+	  return os;
+	}
 }

@@ -33,10 +33,10 @@ size_t LOG_SIZE = sizeof(LOG);
 
 const std::map<SurfaceApertureMap,std::string> IntersectionKernelMap = 
 {
-    {SurfaceApertureMap(ApertureType::RECTANGLE, SurfaceType::PARABOLIC), "__intersection__rectangle_parabolic"},
-    {SurfaceApertureMap(ApertureType::RECTANGLE, SurfaceType::FLAT), "__intersection__rectangle_flat"},
-    {SurfaceApertureMap(ApertureType::TRIANGLE, SurfaceType::FLAT), "__intersection__triangle_flat"},
-    {SurfaceApertureMap(ApertureType::RECTANGLE, SurfaceType::CYLINDER), "__intersection_cylinder_y"}
+  {SurfaceApertureMap(SurfaceType::PARABOLIC, ApertureType::RECTANGLE), "__intersection__rectangle_parabolic"},
+  {SurfaceApertureMap(SurfaceType::FLAT, ApertureType::RECTANGLE), "__intersection__rectangle_flat"},
+  {SurfaceApertureMap(SurfaceType::FLAT, ApertureType::TRIANGLE), "__intersection__triangle_flat"},
+  {SurfaceApertureMap(SurfaceType::CYLINDER, ApertureType::RECTANGLE), "__intersection__cylinder_y"}
 };
 
 pipelineManager::pipelineManager(SoltraceState& state) : m_state(state) {}
@@ -260,11 +260,16 @@ void pipelineManager::createElementPrograms()
 
 		createHitGroupProgram(group,
             			      m_state.geometry_module, 
-				              kernel_name,
+				      kernel_name.c_str(),
             			      m_state.shading_module,
 				              "__closesthit__element");
 
         idx = m_program_groups.size();
+
+	// std::cout << "Key: " << surf_ap_key
+	// 	  << " Kernel: " << kernel_name
+	// 	  << " Program Group Index: " << idx
+	// 	  << std::endl;
         
         auto sts = m_intersection_program_group_map.insert_or_assign(surf_ap_key, idx);
         if (!sts.second)
