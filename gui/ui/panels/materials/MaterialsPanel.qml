@@ -11,6 +11,8 @@ ColumnLayout {
 
     spacing: 10
 
+    property string current_material_name : App.materials.current_material_name
+
     function comboIndex(options, value) {
         if (!options || options.length === 0) {
             return 0
@@ -96,13 +98,23 @@ ColumnLayout {
     }
     Spacer { visible: UserSettings.showDocumentation}
 
-    Label {
-        property string name : App.materials.current_material_name
-        text: name.length === 0 ? "No Material Selected" : name
+    STLabel {
+        visible: root.current_material_name.length === 0
+        text: "No Material Selected"
         font.pointSize: 17
 
         Layout.fillWidth: true
         Layout.margins: 10
+    }
+
+    GlassTextField {
+        visible: root.current_material_name.length !== 0
+        text: root.current_material_name
+
+        onAccepted: function(text) {
+            root.current_material_name = text
+        }
+
     }
 
     Item {

@@ -7,59 +7,69 @@ import QtQuick3D as Q3D
 import QtQuick3D.Helpers as Q3DH
 
 Item {
-    id: left_side
+    id: material_edit_ui
+    readonly property bool hasSelection: App.materials.current_material_name.length > 0
+    readonly property var groupEditor: App.materials.group_edit
+    readonly property var frontEditor: groupEditor ? groupEditor.front_editor : null
+    readonly property var backEditor: groupEditor ? groupEditor.back_editor : null
 
-    ScrollView {
-        id: left_scroll
+    ColumnLayout {
         anchors.fill: parent
 
-        contentWidth: availableWidth
+        GlassTabBar {
+            id: bar
+            Layout.fillWidth: true
+            model: ["Front Optics", "Back Optics", "Geometry"]
 
-        ColumnLayout {
-            id: material_edit_ui
+            onIndexRequested: function(index){
+                edit_view.currentIndex = index
+                bar.index = index
+            }
+        }
 
-            width: left_scroll.availableWidth
+        ScrollView {
+            id: left_scroll
+            Layout.fillHeight: true
+            Layout.fillWidth: true
 
-            spacing: 16
+            contentWidth: availableWidth
 
-            readonly property bool hasSelection: App.materials.current_material_name.length > 0
-            readonly property var groupEditor: App.materials.group_edit
-            readonly property var frontEditor: groupEditor ? groupEditor.front_editor : null
-            readonly property var backEditor: groupEditor ? groupEditor.back_editor : null
+            SwipeView {
+                id: edit_view
+                anchors.fill: parent
 
-            Rectangle {
-                Layout.fillWidth: true
-                radius: 12
-                color: Qt.rgba(1, 1, 1, 0.04)
-                border.width: 1
-                border.color: Theme.lineColor
-                implicitHeight: summary_copy.implicitHeight + 28
+                interactive: false
 
-                Body {
-                    id: summary_copy
-                    anchors.fill: parent
-                    anchors.margins: 14
-                    text: material_edit_ui.hasSelection
-                          ? "Edit front and back optical properties for the selected render group. Changes here update the live material preview on the right."
-                          : "Pick a material from the left sidebar to begin editing its optical properties."
+                MaterialOpticals {
+                    collapsed: false
+                    //title: "Front Side"
+                    Layout.fillWidth: true
+                    enabled: material_edit_ui.hasSelection
+                    side_editor: material_edit_ui.frontEditor
                 }
-            }
 
-            MaterialOpticals {
-                collapsed: true
-                title: "Front Side"
-                Layout.fillWidth: true
-                enabled: material_edit_ui.hasSelection
-                side_editor: material_edit_ui.frontEditor
-            }
+                MaterialOpticals {
+                    collapsed: false
+                    //title: "Back Side"
+                    Layout.fillWidth: true
+                    enabled: material_edit_ui.hasSelection
+                    side_editor: material_edit_ui.backEditor
+                }
 
-            MaterialOpticals {
-                collapsed: true
-                title: "Back Side"
-                Layout.fillWidth: true
-                enabled: material_edit_ui.hasSelection
-                side_editor: material_edit_ui.backEditor
+                ColumnLayout {
+                    spacing: 12
+
+                    GeometryPropPanel {
+                        Layout.fillWidth: true
+                    }
+
+                    AperturePropPanel {
+                        Layout.fillWidth: true
+                    }
+                }
             }
         }
     }
 }
+
+

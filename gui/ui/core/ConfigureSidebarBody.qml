@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Layouts
 import QtQuick.Controls.Material
+import QtQml.Models
 import SolTraceProto
 
 Item {
@@ -103,20 +104,58 @@ Item {
         anchors.right: parent.right
         anchors.margins: 20
 
-        ListView {
-            anchors.fill: parent
-            clip: true
+        // TODO: can encapsulate all this
+        SortFilterProxyModel {
+            id: material_model_filter
             model: App.materials.materials_list
-            delegate: LabeledListItem {
-                required property string name
-                required property db_entity entity
-                text: name
 
-                onClicked: {
-                    App.materials.current_material = entity
+            sorters: [
+                RoleSorter {
+                    roleName: "name"
+                }
+            ]
+
+            filters: [
+                FunctionFilter {
+                    component CustomData: QtObject {
+                        property string name
+                    }
+                    property var regExp: new RegExp(material_search.search_text, "i")
+                    onRegExpChanged: invalidate()
+                    function filter(data: CustomData): bool {
+                        return regExp.test(data.name);
+                    }
+                }
+            ]
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            STSearchAndFilter {
+                id: material_search
+            }
+
+            ListView {
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+
+                clip: true
+                model: material_model_filter
+
+                delegate: STItemDelegate {
+                    width: ListView.view.width
+                    required property string name
+                    required property db_entity entity
+                    text: name
+
+                    onClicked: {
+                        App.materials.current_material = entity
+                    }
                 }
             }
         }
+
+
     }
 
 
@@ -126,24 +165,24 @@ Item {
     //     anchors.top: parent.top
     //     anchors.bottom: configurationPanel.top
     //     clip: true
-        
+
     //     ColumnLayout {
     //         anchors.fill: parent
     //         anchors.margins: 20
     //         width: parent.width
     //         spacing: 10
-            
+
     //         Row {
     //             visible: false
     //             IconButton {
     //                 label: "Collapse All"
     //             }
-                
+
     //             IconButton {
     //                 label: "Expand All"
     //             }
     //         }
-            
+
     //         // TreeNavigator {
     //         //     id: sidebar_tree
     //         //     model: {
@@ -197,7 +236,7 @@ Item {
     //         //         }
     //         //     }
     //         //}
-            
+
 
     //     }
     // }

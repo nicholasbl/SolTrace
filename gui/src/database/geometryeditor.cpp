@@ -1,6 +1,7 @@
 #include "geometryeditor.h"
 
 #include "database/components.h"
+#include <cmath>
 
 namespace db {
 
@@ -190,6 +191,241 @@ void build_options(QStringListModel&               dest,
     dest.setStringList(items);
 }
 
+
+/// Twice signed area of a triangle in XY; absolute value is proportional to area.
+double tri_area2(double x1,
+                 double y1,
+                 double x2,
+                 double y2,
+                 double x3,
+                 double y3) {
+    return (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
+}
+
+/// Segment intersection test used to reject self-crossing quadrilaterals.
+bool segments_intersect(double ax,
+                        double ay,
+                        double bx,
+                        double by,
+                        double cx,
+                        double cy,
+                        double dx,
+                        double dy) {
+    auto orient = [](double px,
+                     double py,
+                     double qx,
+                     double qy,
+                     double rx,
+                     double ry) {
+        return tri_area2(px, py, qx, qy, rx, ry);
+    };
+
+    auto on_seg = [](double px,
+                     double py,
+                     double qx,
+                     double qy,
+                     double rx,
+                     double ry) {
+        return std::min(px, qx) <= rx && rx <= std::max(px, qx) &&
+               std::min(py, qy) <= ry && ry <= std::max(py, qy);
+    };
+
+    double o1 = orient(ax, ay, bx, by, cx, cy);
+    double o2 = orient(ax, ay, bx, by, dx, dy);
+    double o3 = orient(cx, cy, dx, dy, ax, ay);
+    double o4 = orient(cx, cy, dx, dy, bx, by);
+
+    if ((o1 > 0 && o2 < 0 || o1 < 0 && o2 > 0) &&
+        (o3 > 0 && o4 < 0 || o3 < 0 && o4 > 0)) {
+        return true;
+    }
+
+    constexpr double eps = 1e-12;
+    if (std::abs(o1) < eps && on_seg(ax, ay, bx, by, cx, cy)) return true;
+    if (std::abs(o2) < eps && on_seg(ax, ay, bx, by, dx, dy)) return true;
+    if (std::abs(o3) < eps && on_seg(cx, cy, dx, dy, ax, ay)) return true;
+    if (std::abs(o4) < eps && on_seg(cx, cy, dx, dy, bx, by)) return true;
+
+    return false;
+}
+
+/// Aperture-only validity checks (shape parameters and basic geometric sanity).
+GroupEditor::GeometryValidationStatus validate_aperture(
+    SD::aperture_ptr const& aperture) {
+    using Status = GroupEditor::GeometryValidationStatus;
+
+    if (!aperture) return Status::Error;
+
+    switch (aperture->my_type) {
+    case SD::ANNULUS: {
+        auto* a = dynamic_cast<SD::Annulus const*>(aperture.get());
+        if (!a) return Status::Error;
+        if (!std::isfinite(a->inner_radius) ||
+            !std::isfinite(a->outer_radius) || !std::isfinite(a->arc_angle)) {
+            return Status::Error;
+        }
+        if (a->inner_radius < 0 || a->outer_radius <= 0 ||
+            a->inner_radius >= a->outer_radius || a->arc_angle <= 0 ||
+            a->arc_angle > 2 * M_PI) {
+            return Status::Error;
+        }
+        return Status::Ok;
+    }
+    case SD::CIRCLE: {
+        auto* a = dynamic_cast<SD::Circle const*>(aperture.get());
+        if (!a) return Status::Error;
+        return (std::isfinite(a->diameter) && a->diameter > 0) ? Status::Ok
+                                                               : Status::Error;
+    }
+    case SD::HEXAGON: {
+        auto* a = dynamic_cast<SD::Hexagon const*>(aperture.get());
+        if (!a) return Status::Error;
+        return (std::isfinite(a->circumscribe_diameter) &&
+                a->circumscribe_diameter > 0)
+                   ? Status::Ok
+                   : Status::Error;
+    }
+    case SD::RECTANGLE: {
+        auto* a = dynamic_cast<SD::Rectangle const*>(aperture.get());
+        if (!a) return Status::Error;
+        return (std::isfinite(a->x_coord()) && std::isfinite(a->y_coord()) &&
+                std::isfinite(a->x_length()) && std::isfinite(a->y_length()) &&
+                a->x_length() > 0 && a->y_length() > 0)
+                   ? Status::Ok
+                   : Status::Error;
+    }
+    case SD::EQUILATERAL_TRIANGLE: {
+        auto* a = dynamic_cast<SD::EqualateralTriangle const*>(aperture.get());
+        if (!a) return Status::Error;
+        return (std::isfinite(a->circumscribe_diameter) &&
+                a->circumscribe_diameter > 0)
+                   ? Status::Ok
+                   : Status::Error;
+    }
+    case SD::IRREGULAR_TRIANGLE: {
+        auto* a = dynamic_cast<SD::IrregularTriangle const*>(aperture.get());
+        if (!a) return Status::Error;
+        if (!std::isfinite(a->x1) || !std::isfinite(a->y1) ||
+            !std::isfinite(a->x2) || !std::isfinite(a->y2) ||
+            !std::isfinite(a->x3) || !std::isfinite(a->y3)) {
+            return Status::Error;
+        }
+        return std::abs(tri_area2(a->x1, a->y1, a->x2, a->y2, a->x3, a->y3)) >
+                       1e-10
+                   ? Status::Ok
+                   : Status::Error;
+    }
+    case SD::IRREGULAR_QUADRILATERAL: {
+        auto* a = dynamic_cast<SD::IrregularQuadrilateral const*>(aperture.get());
+        if (!a) return Status::Error;
+        if (!std::isfinite(a->x1) || !std::isfinite(a->y1) ||
+            !std::isfinite(a->x2) || !std::isfinite(a->y2) ||
+            !std::isfinite(a->x3) || !std::isfinite(a->y3) ||
+            !std::isfinite(a->x4) || !std::isfinite(a->y4)) {
+            return Status::Error;
+        }
+
+        // Treat bow-tie quadrilaterals as invalid.
+        if (segments_intersect(a->x1, a->y1, a->x2, a->y2, a->x3, a->y3, a->x4, a->y4) ||
+            segments_intersect(a->x2, a->y2, a->x3, a->y3, a->x4, a->y4, a->x1, a->y1)) {
+            return Status::Error;
+        }
+
+        double area2 = tri_area2(a->x1, a->y1, a->x2, a->y2, a->x3, a->y3) +
+                       tri_area2(a->x1, a->y1, a->x3, a->y3, a->x4, a->y4);
+        return std::abs(area2) > 1e-10 ? Status::Ok : Status::Error;
+    }
+    case SD::SINGLE_AXIS_CURVATURE_SECTION: return Status::Warning;
+    case SD::APERTURE_UNKNOWN: return Status::Error;
+    }
+
+    return Status::Error;
+}
+
+/// Surface-only validity checks (parameter ranges and support level).
+GroupEditor::GeometryValidationStatus validate_surface(
+    SD::surface_ptr const& surface) {
+    using Status = GroupEditor::GeometryValidationStatus;
+
+    if (!surface) return Status::Error;
+
+    switch (surface->my_type) {
+    case SD::FLAT: return Status::Ok;
+    case SD::PARABOLA: {
+        auto* s = dynamic_cast<SD::Parabola const*>(surface.get());
+        if (!s) return Status::Error;
+        if (!std::isfinite(s->focal_length_x) ||
+            !std::isfinite(s->focal_length_y)) {
+            return Status::Error;
+        }
+        if (s->focal_length_x == 0 || s->focal_length_y == 0) {
+            return Status::Error;
+        }
+        if (s->focal_length_x < 0 || s->focal_length_y < 0) {
+            return Status::Warning;
+        }
+        return Status::Ok;
+    }
+    case SD::CONE: {
+        auto* s = dynamic_cast<SD::Cone const*>(surface.get());
+        if (!s) return Status::Error;
+        if (!std::isfinite(s->half_angle)) return Status::Error;
+        if (s->half_angle <= 0 || s->half_angle >= (M_PI / 2.0)) {
+            return Status::Error;
+        }
+        return Status::Ok;
+    }
+    case SD::CYLINDER: {
+        auto* s = dynamic_cast<SD::Cylinder const*>(surface.get());
+        if (!s) return Status::Error;
+        if (!std::isfinite(s->radius)) return Status::Error;
+        if (s->radius <= 0) return Status::Error;
+        return Status::Ok;
+    }
+    case SD::SPHERE: {
+        auto* s = dynamic_cast<SD::Sphere const*>(surface.get());
+        if (!s) return Status::Error;
+        if (!std::isfinite(s->vertex_curv)) return Status::Error;
+        return s->vertex_curv == 0 ? Status::Warning : Status::Ok;
+    }
+    case SD::TORUS:
+    case SD::HYPER:
+    case SD::GENERAL_SPENCER_MURTY: return Status::Warning;
+    case SD::SURFACE_UNKNOWN: return Status::Error;
+    }
+
+    return Status::Error;
+}
+
+/// Pairwise compatibility check:
+/// confirms the selected surface can evaluate z(x,y) across aperture samples.
+GroupEditor::GeometryValidationStatus validate_surface_aperture_pair(
+    SD::surface_ptr const&  surface,
+    SD::aperture_ptr const& aperture) {
+    using Status = GroupEditor::GeometryValidationStatus;
+
+    if (!surface || !aperture) return Status::Error;
+
+    auto [points, indices] = aperture->triangulation();
+    Q_UNUSED(indices)
+
+    if (points.size() < 2) return Status::Error;
+
+    // Sample the full set for smaller apertures, stride for larger meshes.
+    int sample_points = points.size() / 2;
+    int stride        = std::max(1, sample_points / 64);
+
+    for (int i = 0; i < sample_points; i += stride) {
+        double x = points[2 * i];
+        double y = points[2 * i + 1];
+        double z = surface->z(x, y);
+        if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z))
+            return Status::Error;
+    }
+
+    return Status::Ok;
+}
+
 GroupEditor::GroupEditor(QObject* parent)
     : QObject { parent },
       m_surface_geometry(new SurfaceGeometry()),
@@ -216,6 +452,8 @@ GroupEditor::GroupEditor(QObject* parent)
     connect(this, &GroupEditor::surface_arguments_changed, this, [this]() {
         make_new_surface(string_to_surface(m_surf_kind));
     });
+
+    connect(this, &GroupEditor::updated, this, &GroupEditor::evaluate_geometry_validation);
 
     make_new_aperture(SolTrace::Data::APERTURE_UNKNOWN);
 }
@@ -314,6 +552,47 @@ void GroupEditor::set_surface_kind(QString newSurface_kind) {
     m_surf_kind = newSurface_kind;
     make_new_surface(string_to_surface(m_surf_kind));
     emit surface_kind_changed();
+}
+
+GroupEditor::GeometryValidationStatus GroupEditor::geometry_validation_status()
+    const {
+    return m_geometry_validation_status;
+}
+
+/// Collapses all geometry checks into a single severity for UI consumption.
+void GroupEditor::evaluate_geometry_validation() {
+    using Status = GroupEditor::GeometryValidationStatus;
+
+    auto merge = [](Status a, Status b) {
+        auto rank = [](Status s) {
+            switch (s) {
+            case Status::Ok: return 0;
+            case Status::Warning: return 1;
+            case Status::Error: return 2;
+            }
+            return 2;
+        };
+        return rank(b) > rank(a) ? b : a;
+    };
+
+    Status new_status = Status::Error;
+
+    if (database()) {
+        auto* params = database()->group_parameters.get(m_current_group);
+        if (params) {
+            new_status = Status::Ok;
+            new_status = merge(new_status, validate_aperture(params->aperture));
+            new_status = merge(new_status, validate_surface(params->surface));
+            new_status =
+                merge(new_status,
+                      validate_surface_aperture_pair(params->surface,
+                                                     params->aperture));
+        }
+    }
+
+    if (new_status == m_geometry_validation_status) return;
+    m_geometry_validation_status = new_status;
+    emit geometry_validation_status_changed();
 }
 
 } // namespace db

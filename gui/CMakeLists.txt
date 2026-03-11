@@ -220,7 +220,7 @@ qt_add_qml_module(SolTrace
         src/modules/workflow_module.h src/modules/workflow_module.cpp
 
         QML_FILES ui/core/ConfigureSidebarBody.qml
-        QML_FILES ui/widgets/common/LabeledListItem.qml
+        QML_FILES ui/widgets/common/STItemDelegate.qml
         QML_FILES ui/panels/materials/MaterialLeftSide.qml
         QML_FILES ui/panels/materials/MaterialRightSide.qml
         QML_FILES ui/panels/materials/MaterialOpticals.qml
@@ -228,6 +228,9 @@ qt_add_qml_module(SolTrace
         QML_FILES ui/panels/materials/PropertyLabel.qml
         QML_FILES ui/panels/materials/PropertyTest.qml
         QML_FILES ui/panels/materials/PropertyLinearCombo.qml
+        QML_FILES ui/panels/materials/GeometryPropPanel.qml
+        QML_FILES ui/panels/materials/AperturePropPanel.qml
+        QML_FILES ui/widgets/common/STSearchAndFilter.qml
 )
 
 CPMAddPackage(

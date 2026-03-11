@@ -81,6 +81,17 @@ class GroupEditor : public QObject, public DatabaseObserver {
     Q_PROPERTY(QString surface_kind READ surface_kind WRITE set_surface_kind
                    NOTIFY surface_kind_changed FINAL)
 
+public:
+    /// Coarse validation result for the currently selected surface/aperture.
+    /// Exposed to QML so the UI can style warnings/errors immediately.
+    enum class GeometryValidationStatus { Ok, Warning, Error };
+    Q_ENUM(GeometryValidationStatus)
+
+private:
+    Q_PROPERTY(GeometryValidationStatus geometry_validation_status READ
+                   geometry_validation_status NOTIFY
+                       geometry_validation_status_changed FINAL)
+
     // the surface information is usually packed into lists
 
     Q_WRITABLE_PROPERTY(QVector<double>, surface_arguments, {});
@@ -102,6 +113,8 @@ class GroupEditor : public QObject, public DatabaseObserver {
 
 private slots:
     void parameters_changed(entt::entity);
+    /// Recompute `geometry_validation_status` from current group parameters.
+    void evaluate_geometry_validation();
 
 public:
     explicit GroupEditor(QObject* parent = nullptr);
@@ -116,10 +129,18 @@ public slots:
     QString surface_kind() const;
     void    set_surface_kind(QString newSurface_kind);
 
+    /// Current geometry validation state for the selected group.
+    GeometryValidationStatus geometry_validation_status() const;
+
 signals:
     void updated();
     void kind_changed();
     void surface_kind_changed();
+    void geometry_validation_status_changed();
+
+private:
+    GeometryValidationStatus m_geometry_validation_status =
+        GeometryValidationStatus::Error;
 };
 
 
