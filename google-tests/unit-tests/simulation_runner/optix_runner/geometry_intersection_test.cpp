@@ -57,7 +57,7 @@ TEST(OptixRunner, FlatRectangle)
     OptixRunner runner;
     RunnerStatus sts = runner.initialize();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
-    sts = runner.setup_simulation(sd);
+    sts = runner.setup_simulation(&sd);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.run_simulation();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
@@ -80,7 +80,7 @@ TEST(OptixRunner, FlatEquilateralTriangle)
     OptixRunner runner;
     RunnerStatus sts = runner.initialize();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
-    sts = runner.setup_simulation(sd);
+    sts = runner.setup_simulation(&sd);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.run_simulation();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
@@ -104,7 +104,7 @@ TEST(OptixRunner, FlatTriangle)
     OptixRunner runner;
     RunnerStatus sts = runner.initialize();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
-    sts = runner.setup_simulation(sd);
+    sts = runner.setup_simulation(&sd);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.run_simulation();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
@@ -120,6 +120,7 @@ TEST(OptixRunner, ParabolaRectangle)
     constexpr double CY = 1.0;
     constexpr double FX = 0.5 / CX;
     constexpr double FY = 0.5 / CY;
+    const double XL = 10.0, YL = 5.0;
     auto surf = make_surface<Parabola>(FX, FY);
     auto aper = make_aperture<Rectangle>(XL, YL);
 
@@ -130,7 +131,7 @@ TEST(OptixRunner, ParabolaRectangle)
     OptixRunner runner;
     RunnerStatus sts = runner.initialize();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
-    sts = runner.setup_simulation(sd);
+    sts = runner.setup_simulation(&sd);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.run_simulation();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
@@ -154,7 +155,7 @@ TEST(OptixRunner, Cylinder)
     OptixRunner runner;
     RunnerStatus sts = runner.initialize();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
-    sts = runner.setup_simulation(sd);
+    sts = runner.setup_simulation(&sd);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
     sts = runner.run_simulation();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);

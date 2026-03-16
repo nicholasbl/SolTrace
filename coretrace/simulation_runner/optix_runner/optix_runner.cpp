@@ -163,7 +163,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 case SurfaceType::FLAT:
                 {
                     auto surface = std::make_shared<OptixCSP::SurfaceFlat>();
-                    assert(el_surface != nullptr);
+                    assert(surface != nullptr);
                     optix_el->set_surface(surface);
 
                     break;
@@ -243,6 +243,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                     OptixCSP::Vec3d p2 = ToVec3d(p_glob);
 
                     auto aperture = std::make_shared<OptixCSP::ApertureTriangle>(p0, p1, p2);
+		    optix_el->set_aperture(aperture);
 
                     break;
                 }
@@ -267,6 +268,8 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                     OptixCSP::Vec3d p2 = ToVec3d(p_glob);
 
                     auto aperture = std::make_shared<OptixCSP::ApertureTriangle>(p0, p1, p2);
+		    optix_el->set_aperture(aperture);
+
                     break;
                 }
 
