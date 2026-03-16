@@ -261,7 +261,7 @@ TEST(Aperture, Circle)
     std::cout << "Expected fraction of hits: " << frac << std::endl;
 }
 
-TEST(Aperture, EqualateralTriangle)
+TEST(Aperture, EquilateralTriangle)
 {
     const double TOL = 1e-12;
     constexpr double D = 2.0;
@@ -285,7 +285,7 @@ TEST(Aperture, EqualateralTriangle)
     const double X5 = 0.375 * S;
     const double Y5 = -0.375 * R;
 
-    auto et = make_aperture<EqualateralTriangle>(D);
+    auto et = make_aperture<EquilateralTriangle>(D);
 
     EXPECT_EQ(et->diameter_circumscribed_circle(), D);
     EXPECT_EQ(et->radius_circumscribed_circle(), 0.5 * D);

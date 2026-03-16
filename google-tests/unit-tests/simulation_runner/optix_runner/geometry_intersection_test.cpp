@@ -71,7 +71,7 @@ TEST(OptixRunner, FlatEquilateralTriangle)
 {
     const double d = 4.0;
     auto surf = make_surface<Flat>();
-    auto aper = make_aperture<EqualateralTriangle>(d);
+    auto aper = make_aperture<EquilateralTriangle>(d);
 
     SimulationData sd;
     set_default_sd(sd, surf, aper);

@@ -12,7 +12,7 @@ using SolTrace::Data::CompositeElement;
 using SolTrace::Data::Cone;
 using SolTrace::Data::Cylinder;
 using SolTrace::Data::DistributionType;
-using SolTrace::Data::EqualateralTriangle;
+using SolTrace::Data::EquilateralTriangle;
 using SolTrace::Data::Flat;
 using SolTrace::Data::Hexagon;
 using SolTrace::Data::InteractionType;

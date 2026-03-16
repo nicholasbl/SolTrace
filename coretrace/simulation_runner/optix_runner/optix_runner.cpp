@@ -225,7 +225,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 {
                     // Triangles in OptixRunner uses global coordinates of the 3 corner points
                     // so we convert everything to global coordinates here
-                    auto el_aperture = std::dynamic_pointer_cast<EqualateralTriangle>(el->get_aperture());
+                    auto el_aperture = std::dynamic_pointer_cast<EquilateralTriangle>(el->get_aperture());
                     assert(el_aperture != nullptr);
                     double r = 0.5 * el_aperture->circumscribe_diameter;
 

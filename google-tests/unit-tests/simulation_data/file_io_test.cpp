@@ -542,7 +542,7 @@ TEST(io_json, apertures_read)
     jtriangle_eq["circumscribe_diameter"] = 6;
     EXPECT_NO_THROW(Aperture::make_aperture_from_json(jtriangle_eq));
     auto eq_ptr = Aperture::make_aperture_from_json(jtriangle_eq);
-    auto eq_cast = dynamic_cast<EqualateralTriangle*>(eq_ptr.get());
+    auto eq_cast = dynamic_cast<EquilateralTriangle*>(eq_ptr.get());
     ASSERT_TRUE(eq_cast != nullptr);
     EXPECT_DOUBLE_EQ(6, eq_cast->circumscribe_diameter);
 
@@ -645,7 +645,7 @@ TEST(io_json, apertures_write)
     // EQUILATERAL_TRIANGLE
     json jtriangle_eq;
     double eqdiam = 6;
-    auto triangle_eq = make_aperture<EqualateralTriangle>(eqdiam);
+    auto triangle_eq = make_aperture<EquilateralTriangle>(eqdiam);
     ASSERT_NO_THROW(triangle_eq->write_json(jtriangle_eq));
     EXPECT_DOUBLE_EQ(eqdiam, jtriangle_eq["circumscribe_diameter"]);
     EXPECT_TRUE(jtriangle_eq["aperture_type"] == SolTrace::Data::ApertureTypeMap.at(ApertureType::EQUILATERAL_TRIANGLE));
