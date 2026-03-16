@@ -163,6 +163,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 case SurfaceType::FLAT:
                 {
                     auto surface = std::make_shared<OptixCSP::SurfaceFlat>();
+                    assert(el_surface != nullptr);
                     optix_el->set_surface(surface);
 
                     break;
@@ -170,6 +171,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 case SurfaceType::PARABOLA:
                 {
                     auto el_surface = std::dynamic_pointer_cast<Parabola>(el->get_surface());
+                    assert(el_surface != nullptr);
                     double fx = el_surface->focal_length_x;
                     double fy = el_surface->focal_length_y;
 
@@ -185,9 +187,13 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 case SurfaceType::CYLINDER:
                 {
                     auto el_surface = std::dynamic_pointer_cast<Cylinder>(el->get_surface());
+                    assert(el_surface != nullptr);
+                    auto el_aperture = std::dynamic_pointer_cast<Rectangle>(el->get_aperture());
+                    assert(el_aperture != nullptr);
 
                     auto surface = std::make_shared<OptixCSP::SurfaceCylinder>();
-                    surface->set_half_height(2.); // TODO this needs to come from the aperture
+                    // surface->set_half_height(2.); // TODO this needs to come from the aperture
+                    surface->set_half_height(0.5 * el_aperture->y_length);
                     surface->set_radius(el_surface->radius);
                     optix_el->set_surface(surface);
 
@@ -210,7 +216,57 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
                     // TODO: account for x and y coord?
                     auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length, el_aperture->y_length);
+                    assert(el_aperture != nullptr);
                     optix_el->set_aperture(aperture);
+                    break;
+                }
+
+                case ApertureType::EQUILATERAL_TRIANGLE:
+                {
+                    // Triangles in OptixRunner uses global coordinates of the 3 corner points
+                    // so we convert everything to global coordinates here
+                    auto el_aperture = std::dynamic_pointer_cast<EqualateralTriangle>(el->get_aperture());
+                    assert(el_aperture != nullptr);
+                    double r = 0.5 * el_aperture->circumscribe_diameter;
+
+                    Vector3d p_loc(-sqrt(0.75) * r, 0.5 * r, 0.0);
+                    Vector3d p_glob;
+                    el->convert_local_to_global(p_glob, p_loc);
+                    OptixCSP::Vec3d p0 = ToVec3d(p_glob);
+                    
+                    p_loc.set_values(sqrt(0.75) * r, 0.5 * r, 0.0);
+                    el->convert_local_to_global(p_glob, p_loc);
+                    OptixCSP::Vec3d p1 = ToVec3d(p_glob);
+
+                    p_loc.set_values(0.0, r, 0.0);
+                    el->convert_local_to_global(p_glob, p_loc);
+                    OptixCSP::Vec3d p2 = ToVec3d(p_glob);
+
+                    auto aperture = std::make_shared<OptixCSP::ApertureTriangle>(p0, p1, p2);
+
+                    break;
+                }
+                case ApertureType::IRREGULAR_TRIANGLE:
+                {
+                    // Triangles in OptixRunner uses global coordinates of the 3 corner points
+                    // so we convert everything to global coordinates here
+                    auto el_aperture = std::dynamic_pointer_cast<IrregularTriangle>(el->get_aperture());
+                    assert(el_aperture != nullptr);
+                    
+                    Vector3d p_loc(el_aperture->x1, el_aperture->y1, 0.0);
+                    Vector3d p_glob;
+                    el->convert_local_to_global(p_glob, p_loc);
+                    OptixCSP::Vec3d p0 = ToVec3d(p_glob);
+                    
+                    p_loc.set_values(el_aperture->x2, el_aperture->y2, 0.0);
+                    el->convert_local_to_global(p_glob, p_loc);
+                    OptixCSP::Vec3d p1 = ToVec3d(p_glob);
+
+                    p_loc.set_values(el_aperture->x3, el_aperture->y3, 0.0);
+                    el->convert_local_to_global(p_glob, p_loc);
+                    OptixCSP::Vec3d p2 = ToVec3d(p_glob);
+
+                    auto aperture = std::make_shared<OptixCSP::ApertureTriangle>(p0, p1, p2);
                     break;
                 }
 
