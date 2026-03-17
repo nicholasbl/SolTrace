@@ -284,12 +284,17 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 break;
             }
 
+	    optix_el->update_euler_angles();
+
             double xmin, xmax, ymin, ymax, zmin, zmax;
             el->get_aperture()->bounding_box(xmin, xmax, ymin, ymax);
             el->get_surface()->bounding_box(xmin, xmax, ymin, ymax, zmin, zmax);
             OptixCSP::Vec3d upper(xmax, ymax, zmax);
             OptixCSP::Vec3d lower(xmin, ymin, zmin);
             optix_el->set_bounding_box_local(lower, upper);
+
+	    std::cout << "Bounding Box Upper: " << optix_el->get_upper_bounding_box() << std::endl;
+	    std::cout << "Bounding Box Lower: " << optix_el->get_lower_bounding_box() << std::endl;
 
             m_sys.add_element(optix_el);
 

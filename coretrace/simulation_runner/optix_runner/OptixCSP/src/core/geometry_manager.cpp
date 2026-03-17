@@ -118,6 +118,8 @@ void GeometryManager::compute_sun_plane_H(LaunchParams &params)
                           sizeof(float),
                           cudaMemcpyDeviceToHost));
 
+    m_sun_plane_distance = fmaxf(m_sun_plane_distance * 2.0f, 10.0f);
+
     float3 sun_u, sun_v;
     float3 axis = (abs(sun_vector.x) < 0.9f) ? make_float3(1.0f, 0.0f, 0.0f) : make_float3(0.0f, 1.0f, 0.0f);
     sun_u = normalize(cross(axis, sun_vector));
