@@ -8,7 +8,7 @@
 using SolTrace::Runner::RunnerStatus;
 
 const double Z_ELEM = 50.0;
-const double TOL = 5e-6;
+const double TOL = 1e-6;
 const uint_fast64_t NRAYS = 10000;
 
 void set_default_sd(SimulationData &sd,
@@ -79,7 +79,7 @@ TEST(OptixRunner, FlatRectangle)
         rr->get_position(1, p1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        EXPECT_NEAR(p1[2], Z_ELEM, TOL) << "ray " << i;
+        EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
     }
 }
 
@@ -114,7 +114,7 @@ TEST(OptixRunner, FlatEquilateralTriangle)
         rr->get_position(1, p1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        EXPECT_NEAR(p1[2], Z_ELEM, TOL) << "ray " << i;
+        EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
     }
 }
 
@@ -150,7 +150,7 @@ TEST(OptixRunner, FlatTriangle)
         rr->get_position(1, p1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        EXPECT_NEAR(p1[2], Z_ELEM, TOL) << "ray " << i;
+        EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
     }
 }
 
@@ -188,7 +188,7 @@ TEST(OptixRunner, FlatQuadrilateral)
         rr->get_position(1, p1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        EXPECT_NEAR(p1[2], Z_ELEM, TOL) << "ray " << i;
+        EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
     }
 }
 
@@ -227,8 +227,8 @@ TEST(OptixRunner, ParabolaRectangle)
         rr->get_position(1, p1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double z1 = Z_ELEM + CX * p1[0] * p1[0] + CY * p1[1] * p1[1];
-        EXPECT_NEAR(p1[2], z1, TOL) << "ray " << i;
+        const double z1 = Z_ELEM + 0.5 * CX * p1[0] * p1[0] + 0.5 * CY * p1[1] * p1[1];
+        EXPECT_NEAR(p1[2], z1, TOL * Z_ELEM) << "ray " << i;
     }
 }
 
@@ -264,7 +264,7 @@ TEST(OptixRunner, Cylinder)
         rr->get_position(1, p1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double z1 = Z_ELEM + R + sqrt(R * R - p1[0] * p1[0]);
-        EXPECT_NEAR(p1[2], z1, TOL) << "ray " << i;
+        const double z1 = Z_ELEM + sqrt(R * R - p1[0] * p1[0]);
+        EXPECT_NEAR(p1[2], z1, TOL * Z_ELEM) << "ray " << i;
     }
 }
