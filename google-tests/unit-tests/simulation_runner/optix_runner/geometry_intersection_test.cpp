@@ -9,6 +9,7 @@ using SolTrace::Runner::RunnerStatus;
 
 const double Z_ELEM = 50.0;
 const double TOL = 5e-6;
+const uint_fast64_t NRAYS = 10000;
 
 void set_default_sd(SimulationData &sd,
                     surface_ptr surf,
@@ -39,7 +40,7 @@ void set_default_sd(SimulationData &sd,
 
     // Set parameters
     SimulationParameters &params = sd.get_simulation_parameters();
-    params.number_of_rays = 10000;
+    params.number_of_rays = NRAYS;
     params.max_number_of_rays = params.number_of_rays * 100;
     params.include_optical_errors = false;
     params.include_sun_shape_errors = false;
@@ -67,17 +68,19 @@ TEST(OptixRunner, FlatRectangle)
     sts = runner.report_simulation(&result, 0);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
 
-    // Check a single intersection happens where expected
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
-    auto rr = result[0];
-    ASSERT_GE(rr->get_number_of_interactions(), 2);
-    Vector3d p0, p1;
-    rr->get_position(0, p0);
-    rr->get_position(1, p1);
-    EXPECT_NEAR(p0[0], p1[0], TOL);
-    EXPECT_NEAR(p0[1], p1[1], TOL);
-    EXPECT_NEAR(p1[2], Z_ELEM, TOL);
+    for (int i = 0; i < (int)result.get_number_of_records(); ++i)
+    {
+        auto rr = result[i];
+        ASSERT_GE(rr->get_number_of_interactions(), 2);
+        Vector3d p0, p1;
+        rr->get_position(0, p0);
+        rr->get_position(1, p1);
+        EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
+        EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        EXPECT_NEAR(p1[2], Z_ELEM, TOL) << "ray " << i;
+    }
 }
 
 TEST(OptixRunner, FlatEquilateralTriangle)
@@ -100,17 +103,19 @@ TEST(OptixRunner, FlatEquilateralTriangle)
     sts = runner.report_simulation(&result, 0);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
 
-    // Check a single intersection happens where expected
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
-    auto rr = result[0];
-    ASSERT_GE(rr->get_number_of_interactions(), 2);
-    Vector3d p0, p1;
-    rr->get_position(0, p0);
-    rr->get_position(1, p1);
-    EXPECT_NEAR(p0[0], p1[0], TOL);
-    EXPECT_NEAR(p0[1], p1[1], TOL);
-    EXPECT_NEAR(p1[2], Z_ELEM, TOL);
+    for (int i = 0; i < (int)result.get_number_of_records(); ++i)
+    {
+        auto rr = result[i];
+        ASSERT_GE(rr->get_number_of_interactions(), 2);
+        Vector3d p0, p1;
+        rr->get_position(0, p0);
+        rr->get_position(1, p1);
+        EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
+        EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        EXPECT_NEAR(p1[2], Z_ELEM, TOL) << "ray " << i;
+    }
 }
 
 TEST(OptixRunner, FlatTriangle)
@@ -134,17 +139,19 @@ TEST(OptixRunner, FlatTriangle)
     sts = runner.report_simulation(&result, 0);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
 
-    // Check a single intersection happens where expected
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
-    auto rr = result[0];
-    ASSERT_GE(rr->get_number_of_interactions(), 2);
-    Vector3d p0, p1;
-    rr->get_position(0, p0);
-    rr->get_position(1, p1);
-    EXPECT_NEAR(p0[0], p1[0], TOL);
-    EXPECT_NEAR(p0[1], p1[1], TOL);
-    EXPECT_NEAR(p1[2], Z_ELEM, TOL);
+    for (int i = 0; i < (int)result.get_number_of_records(); ++i)
+    {
+        auto rr = result[i];
+        ASSERT_GE(rr->get_number_of_interactions(), 2);
+        Vector3d p0, p1;
+        rr->get_position(0, p0);
+        rr->get_position(1, p1);
+        EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
+        EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        EXPECT_NEAR(p1[2], Z_ELEM, TOL) << "ray " << i;
+    }
 }
 
 TEST(OptixRunner, FlatQuadrilateral)
@@ -170,17 +177,19 @@ TEST(OptixRunner, FlatQuadrilateral)
     sts = runner.report_simulation(&result, 0);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
 
-    // Check a single intersection happens where expected
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
-    auto rr = result[0];
-    ASSERT_GE(rr->get_number_of_interactions(), 2);
-    Vector3d p0, p1;
-    rr->get_position(0, p0);
-    rr->get_position(1, p1);
-    EXPECT_NEAR(p0[0], p1[0], TOL);
-    EXPECT_NEAR(p0[1], p1[1], TOL);
-    EXPECT_NEAR(p1[2], Z_ELEM, TOL);
+    for (int i = 0; i < (int)result.get_number_of_records(); ++i)
+    {
+        auto rr = result[i];
+        ASSERT_GE(rr->get_number_of_interactions(), 2);
+        Vector3d p0, p1;
+        rr->get_position(0, p0);
+        rr->get_position(1, p1);
+        EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
+        EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        EXPECT_NEAR(p1[2], Z_ELEM, TOL) << "ray " << i;
+    }
 }
 
 TEST(OptixRunner, ParabolaRectangle)
@@ -207,7 +216,20 @@ TEST(OptixRunner, ParabolaRectangle)
     sts = runner.report_simulation(&result, 0);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
 
-    // TODO: Add some tests for the results here
+    ASSERT_EQ(result.get_number_of_records(),
+              sd.get_simulation_parameters().number_of_rays);
+    for (int i = 0; i < (int)result.get_number_of_records(); ++i)
+    {
+        auto rr = result[i];
+        ASSERT_GE(rr->get_number_of_interactions(), 2);
+        Vector3d p0, p1;
+        rr->get_position(0, p0);
+        rr->get_position(1, p1);
+        EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
+        EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        const double z1 = Z_ELEM + CX * p1[0] * p1[0] + CY * p1[1] * p1[1];
+        EXPECT_NEAR(p1[2], z1, TOL) << "ray " << i;
+    }
 }
 
 TEST(OptixRunner, Cylinder)
@@ -231,5 +253,18 @@ TEST(OptixRunner, Cylinder)
     sts = runner.report_simulation(&result, 0);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
 
-    // TODO: Add some tests for the results here
+    ASSERT_EQ(result.get_number_of_records(),
+              sd.get_simulation_parameters().number_of_rays);
+    for (int i = 0; i < (int)result.get_number_of_records(); ++i)
+    {
+        auto rr = result[i];
+        ASSERT_GE(rr->get_number_of_interactions(), 2);
+        Vector3d p0, p1;
+        rr->get_position(0, p0);
+        rr->get_position(1, p1);
+        EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
+        EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        const double z1 = Z_ELEM + R + sqrt(R * R - p1[0] * p1[0]);
+        EXPECT_NEAR(p1[2], z1, TOL) << "ray " << i;
+    }
 }
