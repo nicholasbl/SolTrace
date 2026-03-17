@@ -459,10 +459,16 @@ extern "C" __device__ __inline__ float _triangle_intersect(
     const float3 pvec = cross(rd, edge2);
     const float  det = dot(edge1, pvec);
 
-    // Backface culling + parallel rejection
-    // (det must be strictly positive and not tiny)
+    // // Backface culling + parallel rejection
+    // // (det must be strictly positive and not tiny)
+    // const float eps = 1e-8f;
+    // if (det <= eps) return -1.0f;
+
+    // Parallel rejection
+    // (det must be not tiny)
     const float eps = 1e-8f;
-    if (det <= eps) return -1.0f;
+    if (fabs(det) <= eps) return -1.0f;
+
 
     const float inv_det = 1.0f / det;
 

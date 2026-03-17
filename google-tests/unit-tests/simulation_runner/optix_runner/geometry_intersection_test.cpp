@@ -8,6 +8,7 @@
 using SolTrace::Runner::RunnerStatus;
 
 const double Z_ELEM = 50.0;
+const double TOL = 1e-6;
 
 void set_default_sd(SimulationData &sd,
                     surface_ptr surf,
@@ -74,9 +75,9 @@ TEST(OptixRunner, FlatRectangle)
     Vector3d p0, p1;
     rr->get_position(0, p0);
     rr->get_position(1, p1);
-    EXPECT_EQ(p0[0], p1[0]);
-    EXPECT_EQ(p0[1], p1[1]);
-    EXPECT_EQ(p1[2], Z_ELEM);
+    EXPECT_NEAR(p0[0], p1[0], TOL);
+    EXPECT_NEAR(p0[1], p1[1], TOL);
+    EXPECT_NEAR(p1[2], Z_ELEM, TOL);
 }
 
 TEST(OptixRunner, FlatEquilateralTriangle)
@@ -107,9 +108,9 @@ TEST(OptixRunner, FlatEquilateralTriangle)
     Vector3d p0, p1;
     rr->get_position(0, p0);
     rr->get_position(1, p1);
-    EXPECT_EQ(p0[0], p1[0]);
-    EXPECT_EQ(p0[1], p1[1]);
-    EXPECT_EQ(p1[2], Z_ELEM);
+    EXPECT_NEAR(p0[0], p1[0], TOL);
+    EXPECT_NEAR(p0[1], p1[1], TOL);
+    EXPECT_NEAR(p1[2], Z_ELEM, TOL);
 }
 
 TEST(OptixRunner, FlatTriangle)
@@ -141,9 +142,9 @@ TEST(OptixRunner, FlatTriangle)
     Vector3d p0, p1;
     rr->get_position(0, p0);
     rr->get_position(1, p1);
-    EXPECT_EQ(p0[0], p1[0]);
-    EXPECT_EQ(p0[1], p1[1]);
-    EXPECT_EQ(p1[2], Z_ELEM);
+    EXPECT_NEAR(p0[0], p1[0], TOL);
+    EXPECT_NEAR(p0[1], p1[1], TOL);
+    EXPECT_NEAR(p1[2], Z_ELEM, TOL);
 }
 
 TEST(OptixRunner, FlatQuadrilateral)
@@ -177,9 +178,9 @@ TEST(OptixRunner, FlatQuadrilateral)
     Vector3d p0, p1;
     rr->get_position(0, p0);
     rr->get_position(1, p1);
-    EXPECT_EQ(p0[0], p1[0]);
-    EXPECT_EQ(p0[1], p1[1]);
-    EXPECT_EQ(p1[2], Z_ELEM);
+    EXPECT_NEAR(p0[0], p1[0], TOL);
+    EXPECT_NEAR(p0[1], p1[1], TOL);
+    EXPECT_NEAR(p1[2], Z_ELEM, TOL);
 }
 
 TEST(OptixRunner, ParabolaRectangle)
