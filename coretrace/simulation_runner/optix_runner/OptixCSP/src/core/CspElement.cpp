@@ -160,6 +160,68 @@ void CspElement::set_lower_bounding_box(const Vec3d &lower)
     return;
 }
 
+void CspElement::set_bounding_box_local(const Vec3d &lower_local,
+                                        const Vec3d &upper_local)
+{
+    // TODO: Functionality should be in simulation data. Perhaps with
+    // a tighter bounding box. This version simply finds the global
+    // bounding box for the local bounding box.
+
+    Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
+
+    Vec3d c0 = lower_local;
+    Vec3d c7 = upper_local;
+    Vec3d c1(c0[0], c0[1], c7[2]);
+    Vec3d c2(c0[0], c7[1], c0[2]);
+    Vec3d c3(c7[0], c0[1], c0[2]);
+    Vec3d c4(c0[0], c7[1], c7[2]);
+    Vec3d c5(c7[0], c0[1], c7[2]);
+    Vec3d c6(c7[0], c7[1], c0[2]);
+
+    Vec3d g0 = rotation_matrix * c0 + m_origin;
+    Vec3d g1 = rotation_matrix * c1 + m_origin;
+    Vec3d g2 = rotation_matrix * c2 + m_origin;
+    Vec3d g3 = rotation_matrix * c3 + m_origin;
+    Vec3d g4 = rotation_matrix * c4 + m_origin;
+    Vec3d g5 = rotation_matrix * c5 + m_origin;
+    Vec3d g6 = rotation_matrix * c6 + m_origin;
+    Vec3d g7 = rotation_matrix * c7 + m_origin;
+
+    // go through the corners and find the min and max x, y, z
+    std::vector<Vec3d> corners = {g0, g1, g2, g3,
+                                  g4, g5, g6, g7};
+
+    double min_x = std::numeric_limits<double>::max();
+    double min_y = std::numeric_limits<double>::max();
+    double min_z = std::numeric_limits<double>::max();
+
+    double max_x = std::numeric_limits<double>::lowest();
+    double max_y = std::numeric_limits<double>::lowest();
+    double max_z = std::numeric_limits<double>::lowest();
+
+    for (auto &corner : corners)
+    {
+        min_x = fmin(min_x, corner[0]);
+        min_y = fmin(min_y, corner[1]);
+        min_z = fmin(min_z, corner[2]);
+
+        max_x = fmax(max_x, corner[0]);
+        max_y = fmax(max_y, corner[1]);
+        max_z = fmax(max_z, corner[2]);
+    }
+
+    // set the lower and upper bounds
+    m_lower_box_bound[0] = min_x;
+    m_lower_box_bound[1] = min_y;
+    m_lower_box_bound[2] = min_z;
+
+    m_upper_box_bound[0] = max_x;
+    m_upper_box_bound[1] = max_y;
+    m_upper_box_bound[2] = max_z;
+
+    return;
+}
+
 GeometryDataST CspElement::toDeviceGeometryData() const
 {
 
