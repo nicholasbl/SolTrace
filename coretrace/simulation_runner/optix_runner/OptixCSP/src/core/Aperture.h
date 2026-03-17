@@ -89,5 +89,24 @@ namespace OptixCSP {
 		Vec3d m_v2;
     };
 
+    class ApertureQuadrilateral : public Aperture {
+    public:
+        ApertureQuadrilateral();
+        // input four vertices in 3D space
+		// sequence matters, front side is determined by right-hand rule
+        ApertureQuadrilateral(Vec3d p0, Vec3d p1, Vec3d p2, Vec3d p3);
+        virtual ~ApertureQuadrilateral() = default;
+        virtual ApertureType get_aperture_type() const override;
+        Vec3d get_p0() const;
+        Vec3d get_p1() const;
+        Vec3d get_p2() const;
+        Vec3d get_p3() const;
+
+    private:
+        Vec3d m_p0;
+        Vec3d m_p1;
+        Vec3d m_p2;
+        Vec3d m_p3;
+    };
 
 }

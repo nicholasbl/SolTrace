@@ -88,21 +88,23 @@ namespace OptixCSP {
 
         // return upper bounding box
         Vec3d get_upper_bounding_box() const;
+        void set_upper_bounding_box(const Vec3d &upper);
 
 	    // return lower bounding box
         Vec3d get_lower_bounding_box() const;
+        void set_lower_bounding_box(const Vec3d &lower);
 
         // convert to device data available to GPU
         GeometryDataST toDeviceGeometryData() const override; 
         MaterialData toDeviceMaterialDataFront() const override;
         MaterialData toDeviceMaterialDataBack() const override;
 
-        // we also need to implement the bounding box computation
-        // for a case like a rectangle aperture,
-        // once we have the origin, euler angles, rotatioin matrix
-        // and the aperture size, we can compute the bounding box
-        // this can be called when adding an element to the system
-        void compute_bounding_box();
+        // // we also need to implement the bounding box computation
+        // // for a case like a rectangle aperture,
+        // // once we have the origin, euler angles, rotatioin matrix
+        // // and the aperture size, we can compute the bounding box
+        // // this can be called when adding an element to the system
+        // void compute_bounding_box();
         
 		// check if a point is inside the surface aperture
 		bool in_plane(const Vec3d& point) const;

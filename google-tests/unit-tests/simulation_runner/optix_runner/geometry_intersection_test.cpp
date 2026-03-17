@@ -7,6 +7,8 @@
 
 using SolTrace::Runner::RunnerStatus;
 
+const double Z_ELEM = 50.0;
+
 void set_default_sd(SimulationData &sd,
                     surface_ptr surf,
                     aperture_ptr ap)
@@ -20,7 +22,7 @@ void set_default_sd(SimulationData &sd,
 
     // Make reflective flat el
     element_ptr el = make_element<SingleElement>();
-    el->set_origin(0, 0, 50);
+    el->set_origin(0, 0, Z_ELEM);
     el->set_aim_vector(0, 0, 100); // Face up towards sun
     el->set_surface(surf);
     el->set_aperture(ap);
@@ -64,7 +66,17 @@ TEST(OptixRunner, FlatRectangle)
     sts = runner.report_simulation(&result, 0);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
 
-    // TODO: Add some tests for the results here
+    // Check a single intersection happens where expected
+    ASSERT_EQ(result.get_number_of_records(),
+              sd.get_simulation_parameters().number_of_rays);
+    auto rr = result[0];
+    ASSERT_GE(rr->get_number_of_interactions(), 2);
+    Vector3d p0, p1;
+    rr->get_position(0, p0);
+    rr->get_position(1, p1);
+    EXPECT_EQ(p0[0], p1[0]);
+    EXPECT_EQ(p0[1], p1[1]);
+    EXPECT_EQ(p1[2], Z_ELEM);
 }
 
 TEST(OptixRunner, FlatEquilateralTriangle)
@@ -87,7 +99,17 @@ TEST(OptixRunner, FlatEquilateralTriangle)
     sts = runner.report_simulation(&result, 0);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
 
-    // TODO: Add some tests for the results here
+    // Check a single intersection happens where expected
+    ASSERT_EQ(result.get_number_of_records(),
+              sd.get_simulation_parameters().number_of_rays);
+    auto rr = result[0];
+    ASSERT_GE(rr->get_number_of_interactions(), 2);
+    Vector3d p0, p1;
+    rr->get_position(0, p0);
+    rr->get_position(1, p1);
+    EXPECT_EQ(p0[0], p1[0]);
+    EXPECT_EQ(p0[1], p1[1]);
+    EXPECT_EQ(p1[2], Z_ELEM);
 }
 
 TEST(OptixRunner, FlatTriangle)
@@ -111,7 +133,53 @@ TEST(OptixRunner, FlatTriangle)
     sts = runner.report_simulation(&result, 0);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
 
-    // TODO: Add some tests for the results here
+    // Check a single intersection happens where expected
+    ASSERT_EQ(result.get_number_of_records(),
+              sd.get_simulation_parameters().number_of_rays);
+    auto rr = result[0];
+    ASSERT_GE(rr->get_number_of_interactions(), 2);
+    Vector3d p0, p1;
+    rr->get_position(0, p0);
+    rr->get_position(1, p1);
+    EXPECT_EQ(p0[0], p1[0]);
+    EXPECT_EQ(p0[1], p1[1]);
+    EXPECT_EQ(p1[2], Z_ELEM);
+}
+
+TEST(OptixRunner, FlatQuadrilateral)
+{
+    // Parallelogram
+    const double x1 = 0.0, x2 = 3.0, x3 = (x2 - x1) + 1.0, x4 = x3 - x2 + x1;
+    const double y1 = 0.0, y2 = y1, y3 = 2.0, y4 = y3;
+    auto surf = make_surface<Flat>();
+    auto aper = make_aperture<IrregularQuadrilateral>(
+        x1, y1, x2, y2, x3, y3, x4, y4);
+
+    SimulationData sd;
+    set_default_sd(sd, surf, aper);
+    SimulationResult result;
+
+    OptixRunner runner;
+    RunnerStatus sts = runner.initialize();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.report_simulation(&result, 0);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+
+    // Check a single intersection happens where expected
+    ASSERT_EQ(result.get_number_of_records(),
+              sd.get_simulation_parameters().number_of_rays);
+    auto rr = result[0];
+    ASSERT_GE(rr->get_number_of_interactions(), 2);
+    Vector3d p0, p1;
+    rr->get_position(0, p0);
+    rr->get_position(1, p1);
+    EXPECT_EQ(p0[0], p1[0]);
+    EXPECT_EQ(p0[1], p1[1]);
+    EXPECT_EQ(p1[2], Z_ELEM);
 }
 
 TEST(OptixRunner, ParabolaRectangle)
@@ -146,7 +214,7 @@ TEST(OptixRunner, Cylinder)
     const double R = 5.0;
     const double YL = 3.0; // Total cylinder length
     auto surf = make_surface<Cylinder>(R);
-    auto aper = make_aperture<Rectangle>(2*R, YL);
+    auto aper = make_aperture<Rectangle>(2 * R, YL);
 
     SimulationData sd;
     set_default_sd(sd, surf, aper);

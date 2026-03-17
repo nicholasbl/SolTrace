@@ -39,27 +39,14 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
 
         // Create an OptixAabb from the geometry data
         OptixAabb aabb;
-        float3 m_min;
-        float3 m_max;
         uint32_t sbt_offset = 0;
 
-        if (element->get_aperture_type() == ApertureType::CIRCLE)
-        {
-            m_min = make_float3(0.0f, 0.0f, 0.0f); // Initialize min to a large value
-            m_max = make_float3(0.0f, 0.0f, 0.0f); // Initialize max to a small value
-        }
+        // if (element->get_aperture_type() == ApertureType::CIRCLE)
+        // {
+        // }
 
         if (element->get_aperture_type() == ApertureType::RECTANGLE)
         {
-            element->compute_bounding_box();
-            m_min.x = (float)(element->get_lower_bounding_box()[0]);
-            m_min.y = (float)(element->get_lower_bounding_box()[1]);
-            m_min.z = (float)(element->get_lower_bounding_box()[2]);
-
-            m_max.x = (float)(element->get_upper_bounding_box()[0]);
-            m_max.y = (float)(element->get_upper_bounding_box()[1]);
-            m_max.z = (float)(element->get_upper_bounding_box()[2]);
-
             if (element->get_surface_type() == SurfaceType::PARABOLIC)
             {
                 sbt_offset = static_cast<uint32_t>(OpticalEntityType::RECTANGLE_PARABOLIC);
@@ -85,24 +72,21 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
 
         if (element->get_aperture_type() == ApertureType::TRIANGLE)
         {
-            element->compute_bounding_box();
-            m_min.x = (float)(element->get_lower_bounding_box()[0]);
-            m_min.y = (float)(element->get_lower_bounding_box()[1]);
-            m_min.z = (float)(element->get_lower_bounding_box()[2]);
-            m_max.x = (float)(element->get_upper_bounding_box()[0]);
-            m_max.y = (float)(element->get_upper_bounding_box()[1]);
-            m_max.z = (float)(element->get_upper_bounding_box()[2]);
-
             sbt_offset = static_cast<uint32_t>(OpticalEntityType::TRIANGLE_FLAT);
         }
 
-        aabb.minX = m_min.x;
-        aabb.minY = m_min.y;
-        aabb.minZ = m_min.z;
+        if (element->get_aperture_type() == ApertureType::QUADRILATERAL)
+        {
+            sbt_offset = static_cast<uint32_t>(OpticalEntityType::QUADRILATERAL_FLAT);
+        }
 
-        aabb.maxX = m_max.x;
-        aabb.maxY = m_max.y;
-        aabb.maxZ = m_max.z;
+        aabb.minX = (float)(element->get_lower_bounding_box()[0]);
+        aabb.minY = (float)(element->get_lower_bounding_box()[1]);
+        aabb.minZ = (float)(element->get_lower_bounding_box()[2]);
+
+        aabb.maxX = (float)(element->get_upper_bounding_box()[0]);
+        aabb.maxY = (float)(element->get_upper_bounding_box()[1]);
+        aabb.maxZ = (float)(element->get_upper_bounding_box()[2]);
 
         m_aabb_list_H[i] = aabb;       // Store the AABB in the list
         m_sbt_index_H[i] = sbt_offset; // Store the SBT index

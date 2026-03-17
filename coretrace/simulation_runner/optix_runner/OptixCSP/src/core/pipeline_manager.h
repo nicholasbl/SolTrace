@@ -86,24 +86,24 @@ namespace OptixCSP {
             OptixModule closestHitModule,
             const char* closestHitFunc);
 
-        /**
-         * @brief Retrieves the ray generation program group.
-         * @return The OptixProgramGroup for ray generation.
-         */
-        OptixProgramGroup getRaygenProgram() const;
+        // /**
+        //  * @brief Retrieves the ray generation program group.
+        //  * @return The OptixProgramGroup for ray generation.
+        //  */
+        // OptixProgramGroup getRaygenProgram() const;
 
-        /**
-         * @brief Retrieves the miss program group.
-         * @return The OptixProgramGroup for the miss shader.
-         */
-        OptixProgramGroup getMissProgram() const;
+        // /**
+        //  * @brief Retrieves the miss program group.
+        //  * @return The OptixProgramGroup for the miss shader.
+        //  */
+        // OptixProgramGroup getMissProgram() const;
 
         /**
          * @brief Retrieves the appropriate element program group based on surface and aperture type.
          * @param map SurfaceApertureMap specifying the surface and aperture combination.
          * @return The corresponding OptixProgramGroup.
          */
-        OptixProgramGroup getElementProgram(SurfaceApertureMap map) const;
+        OptixProgramGroup getElementProgram(OpticalEntityType map) const;
 
     private:
         SoltraceState& m_state;  ///< Reference to the simulation's OptiX state.

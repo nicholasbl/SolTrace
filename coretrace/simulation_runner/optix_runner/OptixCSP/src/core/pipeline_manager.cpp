@@ -30,11 +30,19 @@ size_t LOG_SIZE = sizeof(LOG);
 //     "__intersection_cylinder_y",
 // };
 
-const std::map<SurfaceApertureMap, std::string> IntersectionKernelMap = {
-    {SurfaceApertureMap(SurfaceType::PARABOLIC, ApertureType::RECTANGLE), "__intersection__rectangle_parabolic"},
-    {SurfaceApertureMap(SurfaceType::FLAT, ApertureType::RECTANGLE), "__intersection__rectangle_flat"},
-    {SurfaceApertureMap(SurfaceType::FLAT, ApertureType::TRIANGLE), "__intersection__triangle_flat"},
-    {SurfaceApertureMap(SurfaceType::CYLINDER, ApertureType::RECTANGLE), "__intersection__cylinder_y"}};
+// const std::map<SurfaceApertureMap, std::string> IntersectionKernelMap = {
+//     {SurfaceApertureMap(SurfaceType::PARABOLIC, ApertureType::RECTANGLE), "__intersection__rectangle_parabolic"},
+//     {SurfaceApertureMap(SurfaceType::FLAT, ApertureType::RECTANGLE), "__intersection__rectangle_flat"},
+//     {SurfaceApertureMap(SurfaceType::FLAT, ApertureType::TRIANGLE), "__intersection__triangle_flat"},
+//     {SurfaceApertureMap(SurfaceType::CYLINDER, ApertureType::RECTANGLE), "__intersection__cylinder_y"},
+//     {SurfaceApertureMap(SurfaceType::FLAT, ApertureType::QUADRILATERAL), "__intersection__flat_quadrilateral"}};
+
+const std::map<OpticalEntityType, std::string> IntersectionKernelMap = {
+    {OpticalEntityType::RECTANGLE_PARABOLIC, "__intersection__rectangle_parabolic"},
+    {OpticalEntityType::RECTANGLE_FLAT, "__intersection__rectangle_flat"},
+    {OpticalEntityType::TRIANGLE_FLAT, "__intersection__triangle_flat"},
+    {OpticalEntityType::CYLINDRICAL, "__intersection__cylinder_y"},
+    {OpticalEntityType::QUADRILATERAL_FLAT, "__intersection__flat_quadrilateral"}};
 
 pipelineManager::pipelineManager(SoltraceState &state) : m_state(state) {}
 
@@ -318,7 +326,7 @@ void pipelineManager::createMissProgram()
     }
 }
 
-OptixProgramGroup pipelineManager::getElementProgram(SurfaceApertureMap map) const
+OptixProgramGroup pipelineManager::getElementProgram(OpticalEntityType map) const
 {
     auto iter = m_intersection_program_group_map.find(map);
     if (iter != m_intersection_program_group_map.cend())

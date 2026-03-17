@@ -20,7 +20,8 @@ namespace OptixCSP {
             RECTANGLE_PARABOLIC = 2,
             UNKNOWN_TYPE = 3,
             RECTANGLE_FLAT = 4,
-			TRIANGLE_FLAT = 5
+			TRIANGLE_FLAT = 5,
+            QUADRILATERAL_FLAT = 6
         };
 
         struct Parallelogram
@@ -122,6 +123,20 @@ namespace OptixCSP {
             float  d;      // plane distance
         };
 
+        struct Quadrilateral_Flat{
+            Quadrilateral_Flat() = default;
+            Quadrilateral_Flat(const float3 &a, const float3 &b,
+                               const float3 &c, const float3 &d)
+                : p0(a), p1(b), p2(c), p3(d)
+            {
+                float3 e1 = p1 - p0;
+                float3 e2 = p3 - p0;
+                normal = normalize(cross(e1, e2));
+            }
+            float3 p0, p1, p2, p3; // Vertices in counterclockwise order
+            float3 normal; // Positive direction follows right-hand rule
+        };
+
         GeometryDataST() = default;
 
         void setParallelogram(const Parallelogram& p)
@@ -189,6 +204,19 @@ namespace OptixCSP {
             return triangle_flat;
 		}
 
+        void setQuadrilateral_Flat(const Quadrilateral_Flat &q)
+        {
+            assert(type == UNKNOWN_TYPE);
+            type = QUADRILATERAL_FLAT;
+            quadrilateral_flat = q;
+        }
+
+        __host__ __device__ const Quadrilateral_Flat& getQuadrilaterl_Flat() const
+        {
+            assert(type == QUADRILATERAL_FLAT);
+            return quadrilateral_flat;
+        }
+
 
         Type type = UNKNOWN_TYPE;
 
@@ -202,6 +230,7 @@ namespace OptixCSP {
             Rectangle_Parabolic rectangle_parabolic;
             Rectangle_Flat rectangle_flat;
 			Triangle_Flat triangle_flat;
+            Quadrilateral_Flat quadrilateral_flat;
         };
     };
 }
