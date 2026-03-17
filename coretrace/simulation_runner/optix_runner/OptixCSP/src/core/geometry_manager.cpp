@@ -118,7 +118,10 @@ void GeometryManager::compute_sun_plane_H(LaunchParams &params)
                           sizeof(float),
                           cudaMemcpyDeviceToHost));
 
-    m_sun_plane_distance = fmaxf(m_sun_plane_distance * 2.0f, 10.0f);
+    // Place the sun plane just above the scene (1 world-unit margin) so that
+    // rays always travel at least tmin before reaching any element, without
+    // amplifying angular errors from sun shape perturbations.
+    m_sun_plane_distance = m_sun_plane_distance + 1.0f;
 
     float3 sun_u, sun_v;
     float3 axis = (abs(sun_vector.x) < 0.9f) ? make_float3(1.0f, 0.0f, 0.0f) : make_float3(0.0f, 1.0f, 0.0f);
