@@ -211,7 +211,7 @@ namespace OptixCSP {
             quadrilateral_flat = q;
         }
 
-        __host__ __device__ const Quadrilateral_Flat& getQuadrilaterl_Flat() const
+        __host__ __device__ const Quadrilateral_Flat& getQuadrilateral_Flat() const
         {
             assert(type == QUADRILATERAL_FLAT);
             return quadrilateral_flat;

@@ -234,11 +234,11 @@ GeometryDataST CspElement::toDeviceGeometryData() const
         geometry_data.setTriangle_Flat(heliostat);
     }
 
-    if (aperture_type == ApertureType::ApertureQuadrilateral)
+    if (aperture_type == ApertureType::QUADRILATERAL)
     {
         ApertureQuadrilateral quad = static_cast<ApertureQuadrilateral &>(*m_aperture);
 
-        Vec3d p0, p1, p2, p3;
+        Vec3d p1, p2, p3, p4;
 
         p1 = quad.get_p0();
         p2 = quad.get_p1();

@@ -121,7 +121,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 continue;
 
             auto optix_el = std::make_shared<OptixCSP::CspElement>();
-            optix_el->set_origin(ToVec3d(origin));
+            optix_el->set_origin(ToVec3d(el->get_origin_global()));
             optix_el->set_aim_point(ToVec3d(el->get_aim_vector_global()));
 
             // Safely narrow element id to int32_t
@@ -146,7 +146,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                                       opt_back->transmitivity, opt_back->slope_error, opt_back->specularity_error, od);
 
             std::cout << "adding elements " << el->get_name() << std::endl;
-            std::cout << "Origin: " << origin[0] << ", " << origin[1] << ", " << origin[2] << std::endl;
+            std::cout << "Origin: " << el->get_origin_global() << std::endl;
 
             if (el->get_surface() == nullptr)
             {
@@ -286,9 +286,9 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
             double xmin, xmax, ymin, ymax, zmin, zmax;
             el->get_aperture()->bounding_box(xmin, xmax, ymin, ymax);
-            el->get_surface()->bounding_box({xmin, xmax}, {ymin, ymax}, zmin, zmax);
-            Vec3d upper(xmax, ymax, zmax);
-            Vec3d lower(xmin, ymin, zmin);
+            el->get_surface()->bounding_box(xmin, xmax, ymin, ymax, zmin, zmax);
+	    OptixCSP::Vec3d upper(xmax, ymax, zmax);
+	    OptixCSP::Vec3d lower(xmin, ymin, zmin);
             optix_el->set_upper_bounding_box(upper);
             optix_el->set_lower_bounding_box(lower);
 

@@ -42,7 +42,7 @@ const std::map<OpticalEntityType, std::string> IntersectionKernelMap = {
     {OpticalEntityType::RECTANGLE_FLAT, "__intersection__rectangle_flat"},
     {OpticalEntityType::TRIANGLE_FLAT, "__intersection__triangle_flat"},
     {OpticalEntityType::CYLINDRICAL, "__intersection__cylinder_y"},
-    {OpticalEntityType::QUADRILATERAL_FLAT, "__intersection__flat_quadrilateral"}};
+    {OpticalEntityType::QUADRILATERAL_FLAT, "__intersection__quadrilateral_flat"}};
 
 pipelineManager::pipelineManager(SoltraceState &state) : m_state(state) {}
 
@@ -264,7 +264,7 @@ void pipelineManager::createElementPrograms()
 
     m_intersection_program_group_map.clear();
     size_t idx;
-    for (const auto &[surf_ap_key, kernel_name] : IntersectionKernelMap)
+    for (const auto &[optype, kernel_name] : IntersectionKernelMap)
     {
         OptixProgramGroup group;
 
@@ -276,17 +276,17 @@ void pipelineManager::createElementPrograms()
 
         idx = m_program_groups.size();
 
-        // std::cout << "Key: " << surf_ap_key
+        // std::cout << "Key: " << optype
         // 	  << " Kernel: " << kernel_name
         // 	  << " Program Group Index: " << idx
         // 	  << std::endl;
 
-        auto sts = m_intersection_program_group_map.insert_or_assign(surf_ap_key, idx);
+        auto sts = m_intersection_program_group_map.insert_or_assign(optype, idx);
         if (!sts.second)
         {
             // This should be impossible since we are iterating over a map with the same
             // key as we are inserting here.
-            throw std::runtime_error("Duplicate surface-aperture combination!");
+            throw std::runtime_error("Duplicate optical entity!");
         }
 
         m_program_groups.push_back(group);

@@ -462,7 +462,7 @@ extern "C" __device__ __inline__ float _triangle_intersect(
     // Backface culling + parallel rejection
     // (det must be strictly positive and not tiny)
     const float eps = 1e-8f;
-    if (det <= eps) return;
+    if (det <= eps) return -1.0f;
 
     const float inv_det = 1.0f / det;
 
@@ -550,7 +550,7 @@ extern "C" __global__ void __intersection__triangle_flat()
 
 extern "C" __global__ void __intersection__quadrilateral_flat()
 {
-    const OptixCSP::GeometryDataST::Quadrilateral_Flat& quad = params.geometry_data_array[optixGetPrimitiveIndex()].getQudrilateral_Flat();
+    const OptixCSP::GeometryDataST::Quadrilateral_Flat& quad = params.geometry_data_array[optixGetPrimitiveIndex()].getQuadrilateral_Flat();
 
     const float3 ro = optixGetObjectRayOrigin();
     const float3 rd = optixGetObjectRayDirection();

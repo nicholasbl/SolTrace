@@ -71,6 +71,14 @@ namespace SolTrace::Data
                                   const double y_minmax[2],
                                   double &z_min,
                                   double &z_max) const = 0;
+      inline void bounding_box(double x_min, double x_max,
+			       double y_min, double y_max,
+			       double &z_min, double &z_max)
+      {
+	double x_minmax[2] = {x_min, x_max};
+	double y_minmax[2] = {y_min, y_max};
+	return bounding_box(x_minmax, y_minmax, z_min, z_max);
+      }
 
         virtual surface_ptr make_copy() const = 0;
 
