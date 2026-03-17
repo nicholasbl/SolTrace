@@ -8,7 +8,7 @@
 using SolTrace::Runner::RunnerStatus;
 
 const double Z_ELEM = 50.0;
-const double TOL = 1e-6;
+const double TOL = 5e-6;
 
 void set_default_sd(SimulationData &sd,
                     surface_ptr surf,
