@@ -281,7 +281,8 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
             default:
                 // std::cerr << "Unsupported aperture type in OptixCSP" << std::endl;
-                throw std::runtime_error("Unsupported aperture type in OptixRunner") break;
+	      throw std::runtime_error("Unsupported aperture type in OptixRunner");
+	      break;
             }
 
             optix_el->update_euler_angles();
