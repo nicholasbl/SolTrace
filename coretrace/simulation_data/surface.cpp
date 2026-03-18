@@ -126,8 +126,8 @@ namespace SolTrace::Data
         // See, e.g., native_runner/cylinder_calculator.cpp.
         assert(is_approx(x_minmax[0], -r, 1e-6));
         assert(is_approx(x_minmax[1], r, 1e-6));
-        z_min = 0.0;
-        z_max = 2.0 * r;
+        z_min = -r;
+        z_max = r;
         return;
     }
 

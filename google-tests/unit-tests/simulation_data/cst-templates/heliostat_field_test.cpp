@@ -125,7 +125,8 @@ protected:
         receiver->get_back_optical_properties()->set_ideal_reflection();
         receiver->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_height));
         receiver->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(rec_radius));
-        Vector3d offset = { 0.0, rec_radius, 0.0 };    // Cylinder origin is on the edge
+        // Vector3d offset = { 0.0, rec_radius, 0.0 };    // Cylinder origin is on the edge
+        Vector3d offset = { 0.0, 0.0, 0.0 };
         Vector3d rec_origin_offset;
         vector_add(1.0, rec_origin, 1.0, offset, rec_origin_offset);
         Vector3d v1 = { 0.0, -1.0, 0.0 };
@@ -140,7 +141,8 @@ protected:
         top_heat_shield->get_back_optical_properties()->set_ideal_reflection();
         top_heat_shield->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_heat_shield_height));
         top_heat_shield->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(rec_radius));
-        offset = { 0.0, rec_radius, (rec_height + rec_heat_shield_height)/2.};    // Cylinder origin is on the edge
+        // offset = { 0.0, rec_radius, (rec_height + rec_heat_shield_height)/2.};    // Cylinder origin is on the edge
+        offset = { 0.0, 0.0, (rec_height + rec_heat_shield_height)/2.};
         vector_add(1.0, rec_origin, 1.0, offset, rec_origin_offset);
         vector_add(1.0, rec_origin_offset, 1.0, v1, aim_point);
         top_heat_shield->set_reference_frame_geometry(rec_origin_offset, aim_point, 0.0);
@@ -152,7 +154,8 @@ protected:
         bottom_heat_shield->get_back_optical_properties()->set_ideal_reflection();
         bottom_heat_shield->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_heat_shield_height));
         bottom_heat_shield->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(rec_radius));
-        offset = { 0.0, rec_radius, -(rec_height + rec_heat_shield_height) / 2. };    // Cylinder origin is on the edge
+        // offset = { 0.0, rec_radius, -(rec_height + rec_heat_shield_height) / 2. };    // Cylinder origin is on the edge
+        offset = { 0.0, 0.0, -(rec_height + rec_heat_shield_height) / 2. };
         vector_add(1.0, rec_origin, 1.0, offset, rec_origin_offset);
         vector_add(1.0, rec_origin_offset, 1.0, v1, aim_point);
         bottom_heat_shield->set_reference_frame_geometry(rec_origin_offset, aim_point, 0.0);
@@ -683,9 +686,9 @@ protected:
                         npoints++;
 
                         if (is_cylinder) {
-                            if (z <= rec_radius)
+                            if (z <= 0.0)
                                 x = rec_radius * asin(x / rec_radius);
-                            else if (z > rec_radius) {
+                            else if (z > 0.0) {
                                 if (x < 0) x = -(PI * rec_radius / 2.0 + rec_radius * acos(fabs(x) / rec_radius));
                                 if (x >= 0) x = PI * rec_radius / 2.0 + rec_radius * acos(x / rec_radius);
                             }

@@ -390,8 +390,9 @@ namespace SolTrace::Data
         // TODO: Single element at the moment. Break up into multiple tubes.
         auto abs = make_element<SingleElement>();
         abs->set_name("Absorber");
-        origin.set_values(0.0, 0.0,
-                          this->receiver_height - 0.5 * this->abs_diameter);
+        // origin.set_values(0.0, 0.0,
+        //                   this->receiver_height - 0.5 * this->abs_diameter);
+        origin.set_values(0.0, 0.0, this->receiver_height);
         aim.set_values(0.0, 0.0, 1.0);
         vector_add(1.0, origin, 1.0, aim);
         abs->set_reference_frame_geometry(origin, aim, 0.0);
@@ -413,8 +414,9 @@ namespace SolTrace::Data
         // Envelope -- Outer
         auto envout = make_element<SingleElement>();
         envout->set_name("EnvelopeOuter");
-        origin.set_values(0.0, 0.0,
-                          this->receiver_height - 0.5 * this->env_diameter);
+        // origin.set_values(0.0, 0.0,
+        //                   this->receiver_height - 0.5 * this->env_diameter);
+        origin.set_values(0.0, 0.0, this->receiver_height);
         aim.set_values(0.0, 0.0, 1.0);
         vector_add(1.0, origin, 1.0, aim);
         envout->set_reference_frame_geometry(origin, aim, 0.0);
@@ -435,9 +437,11 @@ namespace SolTrace::Data
         // Envelope -- Inner
         auto envin = make_element<SingleElement>();
         envin->set_name("EnvelopeInner");
+        // origin.set_values(0.0, 0.0,
+        //                   this->receiver_height -
+        //                       0.5 * this->env_diameter + this->env_thickness);
         origin.set_values(0.0, 0.0,
-                          this->receiver_height -
-                              0.5 * this->env_diameter + this->env_thickness);
+                          this->receiver_height + this->env_thickness);
         aim.set_values(0.0, 0.0, 1.0);
         vector_add(1.0, origin, 1.0, aim);
         envin->set_reference_frame_geometry(origin, aim, 0.0);

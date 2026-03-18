@@ -226,8 +226,8 @@ TEST(Cylinder, BoundingBox)
     auto copy = cylin->make_copy();
 
     cylin->bounding_box(xbox, ybox, z0, z1);
-    EXPECT_NEAR(z0, 0.0, TOL);
-    EXPECT_NEAR(z1, 2.0 * R, TOL);
+    EXPECT_NEAR(z0, -R, TOL);
+    EXPECT_NEAR(z1, R, TOL);
 }
 
 TEST(Flat, MakeCopy)
