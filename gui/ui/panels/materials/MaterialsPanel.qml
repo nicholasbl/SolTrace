@@ -114,23 +114,11 @@ ColumnLayout {
         onAccepted: function(text) {
             root.current_material_name = text
         }
-
     }
 
     Item {
         Layout.fillWidth: true
         Layout.fillHeight: true
-        //Layout.minimumHeight: width
-
-        //Component.onCompleted: console.log("RH CHANGED", height, width)
-
-        // Track weirdness
-        onHeightChanged: {
-            console.log("RH CHANGED", height, width)
-        }
-        onWidthChanged: {
-            console.log("RH CHANGED", height, width)
-        }
 
         RowLayout {
             anchors.fill: parent

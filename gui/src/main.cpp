@@ -1,10 +1,22 @@
 #include "job_control/job_run_process.h"
+
 #include <QFontDatabase>
 #include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QFile>
 #include <QQuickWindow>
 #include <QQmlContext>
+
+constexpr auto font_list = std::array {
+    ":/fonts/assets/fonts/computer-modern/cmunrm.ttf",
+    ":/fonts/assets/fonts/computer-modern/cmunbx.ttf",
+    ":/fonts/assets/fonts/computer-modern/cmunti.ttf",
+    ":/fonts/assets/fonts/computer-modern/cmunbi.ttf",
+    ":/fonts/assets/fonts/roboto/Roboto-Regular.ttf",
+    ":/fonts/assets/fonts/roboto/Roboto-Italic.ttf",
+    ":/fonts/assets/fonts/roboto/Roboto-BoldItalic.ttf",
+    ":/fonts/assets/fonts/roboto/Roboto-Bold.ttf",
+};
 
 int main(int argc, char* argv[]) {
     // Check if we are a worker. If so, this function will not return.
@@ -15,10 +27,11 @@ int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
 
     // Load fonts
-    QFontDatabase::addApplicationFont(":/fonts/assets/fonts/computer-modern/cmunrm.ttf");
-    QFontDatabase::addApplicationFont(":/fonts/assets/fonts/computer-modern/cmunbx.ttf");
-    QFontDatabase::addApplicationFont(":/fonts/assets/fonts/computer-modern/cmunti.ttf");
-    QFontDatabase::addApplicationFont(":/fonts/assets/fonts/computer-modern/cmunbi.ttf");
+    for (auto font : font_list) {
+        auto result = QFontDatabase::addApplicationFont(font);
+
+        if (result < 0) { qWarning() << "Unable to load font:" << font; }
+    }
 
     QQmlApplicationEngine engine;
 

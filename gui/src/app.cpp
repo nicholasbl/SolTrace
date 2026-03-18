@@ -11,7 +11,7 @@ App::App(QObject* parent, const QString& documentation_directory)
       m_sun(new SunModule(this)),
       m_tracing(new TracingModule(this)),
       m_materials(new MaterialsModule(this)),
-      m_geometry(new GeometryModule(this)),
+      m_layout(new LayoutModule(this)),
       m_simulation(new SimulationModule(this)),
       m_intersections(new IntersectionsModule(this)),
       m_flux(new FluxModule(this)) {

@@ -80,7 +80,19 @@ QVector<EntityNamePair> ChildModel::rebuild_lists() {
 
     if (!m_host) return {};
 
-    if (!m_host->valid(m_node)) return {};
+    if (!m_host->valid(m_node)) {
+
+        // get all nodes that have no parent
+
+        auto view = m_host->as_registry().view<ElementComponent>(
+            entt::exclude<ChildOfComponent>);
+
+        for (auto [e] : view.each()) {
+            new_recs << rec_for_node(*m_host, e);
+        }
+
+        return new_recs;
+    }
 
     auto children = m_host->children_of(m_node);
 

@@ -10,16 +10,16 @@
 
 #include <backend.h>
 
+#include <modules/documentation_module.h>
 #include <modules/file_source_module.h>
+#include <modules/flux_module.h>
+#include <modules/intersections_module.h>
+#include <modules/layout_module.h>
+#include <modules/materials_module.h>
 #include <modules/module_common.h>
+#include <modules/simulation_module.h>
 #include <modules/sun_module.h>
 #include <modules/tracing_module.h>
-#include <modules/materials_module.h>
-#include <modules/geometry_module.h>
-#include <modules/simulation_module.h>
-#include <modules/intersections_module.h>
-#include <modules/flux_module.h>
-#include <modules/documentation_module.h>
 #include <modules/workflow_module.h>
 
 /**
@@ -95,7 +95,7 @@ public:
     QOBJECT_READONLY_PROPERTY(MaterialsModule, materials)
 
     /// App.geometry.backend.world_geometry_model
-    QOBJECT_READONLY_PROPERTY(GeometryModule, geometry)
+    QOBJECT_READONLY_PROPERTY(LayoutModule, layout)
 
     /// App.simulation.start()
     QOBJECT_READONLY_PROPERTY(SimulationModule, simulation)

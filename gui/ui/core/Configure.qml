@@ -161,23 +161,35 @@ Item {
                 // This causes some issues with other panels that want to control
                 // scrolling
                 //ScrollView {
-                StackLayout {
+                SwipeView {
                     id: contentScrollView
                     anchors.fill: parent
-                    //clip: true
+                    interactive: false
+                    clip: true
+
+                    currentIndex: Session.core.sectionIndex
 
                     //contentWidth: availableWidth
                     //contentHeight: contentItem.height
+
+                    Item {
+
+                    }
 
                     MaterialsPanel {
                         //anchors.fill: parent
                         //anchors.margins: 20
                         //anchors.rightMargin: 50
 
-                        Layout.fillHeight: true
-                        Layout.fillWidth: true
+                        //Layout.fillHeight: true
+                        //Layout.fillWidth: true
 
                         z: 2
+                    }
+
+                    StagingPanel {
+                                    // Layout.fillHeight: true
+                                    // Layout.fillWidth: true
                     }
 
                     // Loader {

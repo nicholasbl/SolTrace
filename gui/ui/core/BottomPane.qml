@@ -1,4 +1,5 @@
-import QtQuick 2.15
+import QtQuick
+import QtQuick.Controls
 import QtQuick.Controls.Material
 import SolTraceProto
 
@@ -30,12 +31,12 @@ Item {
                     property string name: "Materials"
                     property string icon: "qrc:/icons/assets/icons/blocks.svg"
                 },
+                // QtObject {
+                //     property string name: "Tracing"
+                //     property string icon: "qrc:/icons/assets/icons/placeholder.svg"
+                // },
                 QtObject {
-                    property string name: "Tracing"
-                    property string icon: "qrc:/icons/assets/icons/placeholder.svg"
-                },
-                QtObject {
-                    property string name: "Geometry"
+                    property string name: "Layout"
                     property string icon: "qrc:/icons/assets/icons/placeholder.svg"
                 }
             ]
@@ -77,10 +78,8 @@ Item {
     ]
 
     // Phase title component
-    component PhaseTitle: Text {
-        required property string title
-        text: title
-        color: "white"
+    component PhaseTitle: Label {
+        font.family: "Roboto"
         font.capitalization: Font.AllUppercase
         anchors.verticalCenter: parent.verticalCenter
     }
@@ -113,7 +112,6 @@ Item {
             cache: true
             anchors.centerIn: parent
         }
-
     }
 
     ScrollView {
@@ -142,7 +140,7 @@ Item {
                     anchors.centerIn: parent
 
                     PhaseTitle {
-                        title: root.model[0].name
+                        text: root.model[0].name
                     }
 
                     VerticalDivider {}
@@ -182,7 +180,7 @@ Item {
                     anchors.centerIn: parent
 
                     PhaseTitle {
-                        title: root.model[1].name
+                        text: root.model[1].name
                     }
 
                     VerticalDivider {}
@@ -222,7 +220,7 @@ Item {
                     anchors.centerIn: parent
 
                     PhaseTitle {
-                        title: root.model[2].name
+                        text: root.model[2].name
                     }
 
                     VerticalDivider {}

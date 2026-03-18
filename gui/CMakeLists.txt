@@ -216,7 +216,7 @@ qt_add_qml_module(SolTrace
         src/modules/materials_module.h src/modules/materials_module.cpp
         src/modules/intersections_module.h src/modules/intersections_module.cpp
         src/modules/flux_module.h src/modules/flux_module.cpp
-        src/modules/geometry_module.h src/modules/geometry_module.cpp
+        src/modules/layout_module.h src/modules/layout_module.cpp
         src/modules/workflow_module.h src/modules/workflow_module.cpp
 
         QML_FILES ui/core/ConfigureSidebarBody.qml

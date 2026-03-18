@@ -17,17 +17,19 @@ namespace SolTrace::GUI::App {
  *
  * QML access pattern: App.geometry.backend.world_geometry_model
  */
-class GeometryModule : public QObject {
+class LayoutModule : public QObject {
     Q_OBJECT
 
 public:
-    explicit GeometryModule(QObject* parent = nullptr);
+    explicit LayoutModule(QObject* parent = nullptr);
+
+    QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
+
+    QOBJECT_WRITABLE_PROPERTY(db::ChildModel, child_model);
+    QOBJECT_WRITABLE_PROPERTY(db::BreadcrumbModel, breadcrumb_model);
+    QOBJECT_WRITABLE_PROPERTY(db::AnInstanceEditor, instance_edit);
 
     QOBJECT_READONLY_PROPERTY(StatusComponent, status);
-
-           /// Non-owning reference to the geometry backend slice.
-           /// Constrains QML access to geometry-specific backend functionality only.
-    QOBJECT_WRITABLE_PROPERTY(GeometryBackend, backend);
 };
 
 
