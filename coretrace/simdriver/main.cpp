@@ -23,6 +23,7 @@
 #include <exception>
 #include <iostream>
 #include <stdexcept>
+#include <chrono>
 #include <string>
 
 #include "native_runner.hpp"
@@ -147,8 +148,13 @@ int main(int argc, char *argv[])
     SimulationData simData;
     try
     {
-        std::cout << "Loading simulation data from: " << input_file << "\n";
+        std::cout << "Loading simulation data from: " << input_file << "...\n";
+        auto t_load_start = std::chrono::steady_clock::now();
         simData.import_json_file(input_file);
+        auto t_load_end = std::chrono::steady_clock::now();
+        std::cout << "  Loaded in "
+                  << std::chrono::duration<double>(t_load_end - t_load_start).count()
+                  << " s\n";
     }
     catch (const std::exception &e)
     {
@@ -186,27 +192,44 @@ int main(int argc, char *argv[])
         runner.set_number_of_threads(static_cast<uint_fast64_t>(num_threads));
         std::cout << "Using Embree runner with " << num_threads << " thread(s)\n";
 
+        std::cout << "Setting up simulation...\n";
+        auto t_setup_start = std::chrono::steady_clock::now();
         sts = runner.setup_simulation(&simData);
+        auto t_setup_end = std::chrono::steady_clock::now();
         if (sts != RunnerStatus::SUCCESS)
         {
             std::cerr << "Error: Embree runner setup failed\n";
             return EXIT_FAILURE;
         }
+        std::cout << "  Setup in "
+                  << std::chrono::duration<double>(t_setup_end - t_setup_start).count()
+                  << " s\n";
 
         std::cout << "Running simulation...\n";
+        auto t_run_start = std::chrono::steady_clock::now();
         sts = runner.run_simulation();
+        auto t_run_end = std::chrono::steady_clock::now();
         if (sts != RunnerStatus::SUCCESS)
         {
             std::cerr << "Error: simulation failed\n";
             return EXIT_FAILURE;
         }
+        std::cout << "  Completed in "
+                  << std::chrono::duration<double>(t_run_end - t_run_start).count()
+                  << " s\n";
 
+        std::cout << "Retrieving results...\n";
+        auto t_report_start = std::chrono::steady_clock::now();
         sts = runner.report_simulation(&result, 0);
+        auto t_report_end = std::chrono::steady_clock::now();
         if (sts != RunnerStatus::SUCCESS)
         {
             std::cerr << "Error: failed to collect simulation results\n";
             return EXIT_FAILURE;
         }
+        std::cout << "  Retrieved in "
+                  << std::chrono::duration<double>(t_report_end - t_report_start).count()
+                  << " s\n";
     }
     else
 #endif
@@ -224,27 +247,44 @@ int main(int argc, char *argv[])
 
         std::cout << "Using OptiX runner\n";
 
+        std::cout << "Setting up simulation...\n";
+        auto t_setup_start = std::chrono::steady_clock::now();
         sts = runner.setup_simulation(&simData);
+        auto t_setup_end = std::chrono::steady_clock::now();
         if (sts != RunnerStatus::SUCCESS)
         {
             std::cerr << "Error: OptiX runner setup failed\n";
             return EXIT_FAILURE;
         }
+        std::cout << "  Setup in "
+                  << std::chrono::duration<double>(t_setup_end - t_setup_start).count()
+                  << " s\n";
 
         std::cout << "Running simulation...\n";
+        auto t_run_start = std::chrono::steady_clock::now();
         sts = runner.run_simulation();
+        auto t_run_end = std::chrono::steady_clock::now();
         if (sts != RunnerStatus::SUCCESS)
         {
             std::cerr << "Error: simulation failed\n";
             return EXIT_FAILURE;
         }
+        std::cout << "  Completed in "
+                  << std::chrono::duration<double>(t_run_end - t_run_start).count()
+                  << " s\n";
 
+        std::cout << "Retrieving results...\n";
+        auto t_report_start = std::chrono::steady_clock::now();
         sts = runner.report_simulation(&result, 0);
+        auto t_report_end = std::chrono::steady_clock::now();
         if (sts != RunnerStatus::SUCCESS)
         {
             std::cerr << "Error: failed to collect simulation results\n";
             return EXIT_FAILURE;
         }
+        std::cout << "  Retrieved in "
+                  << std::chrono::duration<double>(t_report_end - t_report_start).count()
+                  << " s\n";
     }
     else
 #endif
@@ -276,37 +316,59 @@ int main(int argc, char *argv[])
         runner.set_number_of_threads(static_cast<uint_fast64_t>(num_threads));
         std::cout << "Using native runner with " << num_threads << " thread(s)\n";
 
+        std::cout << "Setting up simulation...\n";
+        auto t_setup_start = std::chrono::steady_clock::now();
         sts = runner.setup_simulation(&simData);
+        auto t_setup_end = std::chrono::steady_clock::now();
         if (sts != RunnerStatus::SUCCESS)
         {
             std::cerr << "Error: native runner setup failed\n";
             return EXIT_FAILURE;
         }
+        std::cout << "  Setup in "
+                  << std::chrono::duration<double>(t_setup_end - t_setup_start).count()
+                  << " s\n";
 
         std::cout << "Running simulation...\n";
+        auto t_run_start = std::chrono::steady_clock::now();
         sts = runner.run_simulation();
+        auto t_run_end = std::chrono::steady_clock::now();
         if (sts != RunnerStatus::SUCCESS)
         {
             std::cerr << "Error: simulation failed\n";
             return EXIT_FAILURE;
         }
+        std::cout << "  Completed in "
+                  << std::chrono::duration<double>(t_run_end - t_run_start).count()
+                  << " s\n";
 
+        std::cout << "Retrieving results...\n";
+        auto t_report_start = std::chrono::steady_clock::now();
         sts = runner.report_simulation(&result, 0);
+        auto t_report_end = std::chrono::steady_clock::now();
         if (sts != RunnerStatus::SUCCESS)
         {
             std::cerr << "Error: failed to collect simulation results\n";
             return EXIT_FAILURE;
         }
+        std::cout << "  Retrieved in "
+                  << std::chrono::duration<double>(t_report_end - t_report_start).count()
+                  << " s\n";
     }
 
     // -------------------------------------------------------------------------
     // Write results to CSV
     // -------------------------------------------------------------------------
     std::cout << "Writing " << result.get_number_of_records()
-              << " ray records to: " << output_file << "\n";
+              << " ray records to: " << output_file << "...\n";
     try
     {
+        auto t_write_start = std::chrono::steady_clock::now();
         result.write_csv_file(output_file);
+        auto t_write_end = std::chrono::steady_clock::now();
+        std::cout << "  Written in "
+                  << std::chrono::duration<double>(t_write_end - t_write_start).count()
+                  << " s\n";
     }
     catch (const std::exception &e)
     {
