@@ -41,7 +41,7 @@ namespace OptixCSP
 
 		// TODO: might not need this, since i always compare
 		// surface and aperture types separately ....
-		bool operator==(SurfaceApertureMap &map)
+		bool operator==(const SurfaceApertureMap &map) const
 		{
 			return (surfaceType == map.surfaceType) && (apertureType == map.apertureType);
 		}

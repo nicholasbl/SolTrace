@@ -72,12 +72,36 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
 
         if (element->get_aperture_type() == ApertureType::TRIANGLE)
         {
-            sbt_offset = static_cast<uint32_t>(OpticalEntityType::TRIANGLE_FLAT);
+            if (element->get_surface_type() == SurfaceType::FLAT)
+            {
+                sbt_offset = static_cast<uint32_t>(OpticalEntityType::TRIANGLE_FLAT);
+            }
+            else
+            {
+                std::stringstream ss;
+                ss << "Unimplemented surface type ("
+                   << static_cast<int>(element->get_surface_type())
+                   << ") for triangle aperture ("
+                   << static_cast<int>(element->get_aperture_type());
+                throw std::runtime_error(ss.str());
+            }
         }
 
         if (element->get_aperture_type() == ApertureType::QUADRILATERAL)
         {
-            sbt_offset = static_cast<uint32_t>(OpticalEntityType::QUADRILATERAL_FLAT);
+            if (element->get_surface_type() == SurfaceType::FLAT)
+            {
+                sbt_offset = static_cast<uint32_t>(OpticalEntityType::QUADRILATERAL_FLAT);
+            }
+            else
+            {
+                std::stringstream ss;
+                ss << "Unimplemented surface type ("
+                   << static_cast<int>(element->get_surface_type())
+                   << ") for quadrilateral aperture ("
+                   << static_cast<int>(element->get_aperture_type());
+                throw std::runtime_error(ss.str());
+            }
         }
 
         aabb.minX = (float)(element->get_lower_bounding_box()[0]);

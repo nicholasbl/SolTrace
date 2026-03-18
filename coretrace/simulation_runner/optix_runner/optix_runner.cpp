@@ -211,7 +211,8 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 break;
             }
             default:
-                std::cerr << "Unsupported surface type in OptixCSP" << std::endl;
+                // std::cerr << "Unsupported surface type in OptixCSP" << std::endl;
+                throw std::runtime_error("Unsupported surface type in OptixCSP");
                 break;
             }
 
@@ -224,10 +225,9 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             {
 
                 auto el_aperture = std::dynamic_pointer_cast<Rectangle>(el->get_aperture());
-
+                assert(el_aperture != nullptr);
                 // TODO: account for x and y coord?
                 auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length, el_aperture->y_length);
-                assert(el_aperture != nullptr);
                 optix_el->set_aperture(aperture);
                 break;
             }
@@ -280,11 +280,11 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             }
 
             default:
-                std::cerr << "Unsupported aperture type in OptixCSP" << std::endl;
-                break;
+                // std::cerr << "Unsupported aperture type in OptixCSP" << std::endl;
+                throw std::runtime_error("Unsupported aperture type in OptixRunner") break;
             }
 
-	    optix_el->update_euler_angles();
+            optix_el->update_euler_angles();
 
             double xmin, xmax, ymin, ymax, zmin, zmax;
             el->get_aperture()->bounding_box(xmin, xmax, ymin, ymax);
@@ -293,8 +293,8 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             OptixCSP::Vec3d lower(xmin, ymin, zmin);
             optix_el->set_bounding_box_local(lower, upper);
 
-	    std::cout << "Bounding Box Upper: " << optix_el->get_upper_bounding_box() << std::endl;
-	    std::cout << "Bounding Box Lower: " << optix_el->get_lower_bounding_box() << std::endl;
+            std::cout << "Bounding Box Upper: " << optix_el->get_upper_bounding_box() << std::endl;
+            std::cout << "Bounding Box Lower: " << optix_el->get_lower_bounding_box() << std::endl;
 
             m_sys.add_element(optix_el);
 
