@@ -11,6 +11,8 @@
 #ifndef SOLTRACE_SUN_H
 #define SOLTRACE_SUN_H
 
+#include <nlohmann/json.hpp>
+
 #include "ray_source.hpp"
 #include "datetime.hpp"
 #include "vector3d.hpp"
@@ -23,8 +25,12 @@ public:
     Sun() : my_shape(SunShape::UNKNOWN),
             my_position(Vector3d(std::numeric_limits<double>::quiet_NaN(), 
                 std::numeric_limits<double>::quiet_NaN(), 
-                std::numeric_limits<double>::quiet_NaN()))
+                std::numeric_limits<double>::quiet_NaN())),
+            my_gen_type(GenType::RANDOM)
     { this->my_position.zero(); }
+
+    Sun(const nlohmann::ordered_json& jnode);
+
     virtual ~Sun() {}
 
     virtual const Vector3d &get_position() const override
@@ -59,6 +65,10 @@ public:
     virtual void calculate_buie_parameters(double& kappa, double& gamma) override;
     virtual double get_max_sun_angle(double gaussian_coverage = 0.999) const override;  //  [mrad]
     virtual double get_max_intensity() const override;
+    virtual void set_gen_type(GenType type) { my_gen_type = type; }
+    virtual GenType get_gen_type() const { return my_gen_type; }
+
+    void write_json(nlohmann::ordered_json& jnode);
 
 private:
     void set_gaussian_distribution(double _sigma);
@@ -69,6 +79,7 @@ private:
 
     SunShape my_shape;
     Vector3d my_position;
+    GenType my_gen_type;
 };
 
 } // namespace SolTrace::Data

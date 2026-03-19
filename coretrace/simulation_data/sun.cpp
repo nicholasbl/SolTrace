@@ -5,7 +5,36 @@
 #include <limits>
 #include <stdexcept>
 
+#include "json_helpers.hpp"
+#include "simdata_io.hpp"
+
 namespace SolTrace::Data {
+
+Sun::Sun(const nlohmann::ordered_json& jnode)
+{
+    this->my_shape = get_enum_from_string(jnode.at("my_shape"), SunShapeMap, SunShape::UNKNOWN);
+    if (my_shape == SunShape::UNKNOWN)
+    {
+        throw std::runtime_error("Error reading sun shape");
+    }
+
+    this->sigma = json_get_double(jnode, "sigma");
+    this->half_width = json_get_double(jnode, "half_width");
+    this->circumsolar_ratio = json_get_double(jnode, "csr");
+    std::vector<double> user_a = jnode.at("user_angle");
+    this->user_angle = user_a;
+    std::vector<double> user_i = jnode.at("user_intensity");
+    this->user_intensity = user_i;
+    this->my_gen_type = get_enum_from_string(jnode.at("gen_type"), GenTypeMap, GenType::UNKNOWN);
+    if (my_gen_type == GenType::UNKNOWN)
+    {
+        throw std::runtime_error("Error reading gen type");
+    }
+
+    std::array<double, 3> pos = jnode.at("pos").get<std::array<double, 3>>();
+    Vector3d pos_vec(pos.data());
+    this->my_position = pos_vec;
+}
 
 void Sun::set_gaussian_distribution(double _sigma)
 {
@@ -217,6 +246,20 @@ double Sun::get_max_intensity() const
         default:
             return 1;
     }
+}
+
+void Sun::write_json(nlohmann::ordered_json& jnode)
+{
+    jnode["source_type"] = "Sun";
+    std::string shape_string = SolTrace::Data::SunShapeMap.at(this->my_shape);
+    jnode["my_shape"] = shape_string;
+    jnode["sigma"] = this->sigma;
+    jnode["half_width"] = this->half_width;
+    jnode["csr"] = this->circumsolar_ratio;
+    jnode["user_angle"] = this->user_angle;
+    jnode["user_intensity"] = this->user_intensity;
+    jnode["gen_type"] = SolTrace::Data::GenTypeMap.at(this->my_gen_type);
+    jnode["pos"] = this->my_position.data;
 }
 
 } // namespace SolTrace::Data
