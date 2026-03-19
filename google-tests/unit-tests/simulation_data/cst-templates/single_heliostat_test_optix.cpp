@@ -9,21 +9,32 @@ using NativeRunnerType = NativeRunner;
 using SingleHeliostatSimulationNative = SingleHeliostatSimulation<NativeRunnerType>;
 using SingleHeliostatSimulationOptix = SingleHeliostatSimulation<OptixRunnerType>;
 
-TEST_F(SingleHeliostatSimulationOptix, SingleFacetFlat_North)
+constexpr int N_rays = 800e3;
+constexpr int seed = 531;
+TEST_F(SingleHeliostatSimulationOptix, SingleFacetFlat_North2)
 {
     setup_simData();
+    update_simulation_geometry(solar_azimuth, solar_elevation);
+    SimulationResult result;
+    //this->runner.disable_stages();
+    simulate(&result);
+    calculate_sun_size(result);
+    calculate_ray_counts(result);
+    read_expected_all_results("1a", "N");
+    check_outputs(result, "N");
     //simulate_check_outputs("1a", "N");
     //EXPECT_NEAR(sun_width, 15.4557, 1.e-4);
     //EXPECT_NEAR(sun_height, 15.4557, 1.e-4);
 }
 
-void CompareRunners(SingleHeliostatSimulationHelper<NativeRunner>& sim_native,
+static void CompareRunners(SingleHeliostatSimulationHelper<NativeRunner>& sim_native,
     SingleHeliostatSimulationHelper<OptixRunner>& sim_optix, const int N_rays = 1e5)
 {
     double err_frac = 0.01;
     double err_abs = err_frac * (double)N_rays;
 
     // Run cases
+    sim_native.seed = seed;
     sim_native.initialize();
     sim_native.setup_simData();
     sim_native.update_simulation_geometry(sim_native.solar_azimuth, sim_native.solar_elevation);
@@ -31,7 +42,10 @@ void CompareRunners(SingleHeliostatSimulationHelper<NativeRunner>& sim_native,
     sim_native.simulate(&result_native, N_rays);
     sim_native.calculate_ray_counts(result_native);
     sim_native.calculate_sun_size(result_native);
+    sim_native.read_expected_all_results("1a", "N");
+    sim_native.calculate_receiver_flux_map(result_native, 30, 30, false);
 
+    sim_optix.seed = seed;
     sim_optix.initialize();
     sim_optix.setup_simData();
     sim_optix.update_simulation_geometry(sim_optix.solar_azimuth, sim_optix.solar_elevation);
@@ -39,7 +53,12 @@ void CompareRunners(SingleHeliostatSimulationHelper<NativeRunner>& sim_native,
     sim_optix.simulate(&result_optix, N_rays);
     sim_optix.calculate_ray_counts(result_optix);
     sim_optix.calculate_sun_size(result_optix);
+    sim_optix.read_expected_all_results("1a", "N");
+    sim_optix.calculate_receiver_flux_map(result_optix, 30, 30, false);
 
+    //sim_native.save_flux_map_to_file("native_flux.csv");
+    //sim_optix.save_flux_map_to_file("optix_flux.csv");
+    //return;
 
     // Compare
     ASSERT_EQ(result_native.get_number_of_records(), result_optix.get_number_of_records());
@@ -71,7 +90,7 @@ void CompareRunners(SingleHeliostatSimulationHelper<NativeRunner>& sim_native,
     // Fraction of hits after helio
     double frac_rec_via_helio_native = (double)sim_native.rec_via_helio_hit_count / (double)sim_native.reflect_count;
     double frac_rec_via_helio_optix = (double)sim_optix.rec_via_helio_hit_count / (double)sim_optix.reflect_count;
-    EXPECT_NEAR(frac_rec_via_helio_native, frac_rec_via_helio_optix, err_frac * 5);
+    EXPECT_NEAR(frac_rec_via_helio_native, frac_rec_via_helio_optix, err_frac);
 
     // Compare power per ray
     double power_tol = (5. / (double)N_rays) * 1e3;
@@ -79,13 +98,63 @@ void CompareRunners(SingleHeliostatSimulationHelper<NativeRunner>& sim_native,
 
     std::cerr << "Ray Count: " << sim_native.reflect_count << std::endl;
 
+    // Total power absorbed
+    double tol = 8.e-3;
+    double total_power_native = (double)sim_native.rec_absorb_count * sim_native.power_per_ray * 1.e-3; // [kW]
+    double total_power_optix = (double)sim_optix.rec_absorb_count * sim_optix.power_per_ray * 1.e-3; // [kW]
+    EXPECT_NEAR(total_power_native, total_power_optix, tol * sim_native.expected_power);
+    double total_power_diff = total_power_optix - total_power_native;
+    double total_power_diff_frac = total_power_diff / sim_native.expected_power;
+
+    // Peak flux
+    double peak_tol = 0.25;
+    double expected_peak_flux = sim_native.expected_peak_flux;
+    double peak_flux_native = sim_native.PeakFlux / 1.e3;
+    double peak_flux_optix = sim_optix.PeakFlux / 1.e3;
+    EXPECT_NEAR(peak_flux_native, peak_flux_optix, peak_tol * sim_native.expected_peak_flux);
+    double peak_flux_diff = peak_flux_optix - peak_flux_native;
+    double peak_flux_diff_frac = peak_flux_diff / sim_native.expected_peak_flux;
+
+    double centroid0_native = sim_native.Centroid[0];
+    double centroid0_optix = sim_optix.Centroid[0];
+    double centroid1_native = sim_native.Centroid[1];
+    double centroid1_optix = sim_optix.Centroid[1];
+
+    // RMS
+    sim_native.calculate_receiver_flux_map(result_native, 100, 150, false);  // Re-calculate for low-accuracy runs
+    sim_optix.calculate_receiver_flux_map(result_optix, 100, 150, false);
+    EXPECT_EQ(sim_native.fluxGrid.nrows(), sim_optix.fluxGrid.nrows());
+    EXPECT_EQ(sim_native.fluxGrid.ncols(), sim_optix.fluxGrid.ncols());
+    double rmse = 0.0;
+    double average_flux_native = 0.0;
+    double average_flux_optix = 0.0;
+    for (size_t r = 0; r < sim_native.fluxGrid.nrows(); r++) {
+        for (size_t c = 0; c < sim_native.fluxGrid.ncols(); c++) {
+            double flux_native = sim_native.fluxGrid.at(r, c) * sim_native.zScale / 1.e3;
+            double flux_optix = sim_optix.fluxGrid.at(r, c) * sim_optix.zScale / 1.e3;
+            rmse += pow(flux_native - flux_optix, 2);
+            average_flux_native += flux_native;
+            average_flux_optix += flux_optix;
+        }
+    }
+
+    // RMS
+    rmse = sqrt(rmse / (sim_native.fluxGrid.nrows() * sim_native.fluxGrid.ncols()));
+    double rmse_tol = 0.11;
+    EXPECT_LE(rmse / (peak_flux_native), rmse_tol);
+
+    // Average flux
+    average_flux_native /= (sim_native.fluxGrid.nrows() * sim_native.fluxGrid.ncols());
+    average_flux_optix /= (sim_optix.fluxGrid.nrows() * sim_optix.fluxGrid.ncols());
+    EXPECT_NEAR(average_flux_native, average_flux_optix, rmse_tol);
+    double average_flux_diff = average_flux_optix - average_flux_native;
+    double average_flux_diff_frac = average_flux_diff / average_flux_native;
+
     int x = 0;
 }
 
 TEST(SingleHelioOptixNative, NoErrors)
 {
-    int N_rays = 100000;
-
     bool use_optical = false;
     bool use_sunshape = false;
 
@@ -106,7 +175,6 @@ TEST(SingleHelioOptixNative, NoErrors)
 
 TEST(SingleHelioOptixNative, SunShapeOnly)
 {
-    int N_rays = 100000;
     bool use_optical = false;
     bool use_sunshape = true;
 
@@ -127,8 +195,6 @@ TEST(SingleHelioOptixNative, SunShapeOnly)
 
 TEST(SingleHelioOptixNative, SlopeGaussOnly)
 {
-    int N_rays = 1e5;
-
     bool use_optical = true;
     bool use_sunshape = false;
 
@@ -149,8 +215,6 @@ TEST(SingleHelioOptixNative, SlopeGaussOnly)
 
 TEST(SingleHelioOptixNative, SlopePillBoxOnly)
 {
-    int N_rays = 1e5;
-
     bool use_optical = true;
     bool use_sunshape = false;
 
@@ -173,8 +237,6 @@ TEST(SingleHelioOptixNative, SlopePillBoxOnly)
 
 TEST(SingleHelioOptixNative, SunShapeAndSlope)
 {
-    int N_rays = 1e5;
-
     bool use_optical = true;
     bool use_sunshape = true;
 
@@ -195,8 +257,6 @@ TEST(SingleHelioOptixNative, SunShapeAndSlope)
 
 TEST(SingleHelioOptixNative, SpecGaussOnly)
 {
-    int N_rays = 1e5;
-
     bool use_optical = true;
     bool use_sunshape = false;
 
@@ -221,8 +281,6 @@ TEST(SingleHelioOptixNative, SpecGaussOnly)
 
 TEST(SingleHelioOptixNative, SpecPillBoxOnly)
 {
-    int N_rays = 1e5;
-
     bool use_optical = true;
     bool use_sunshape = false;
 
@@ -249,8 +307,6 @@ TEST(SingleHelioOptixNative, SpecPillBoxOnly)
 
 TEST(SingleHelioOptixNative, SunShapeSlopeAndSpec)
 {
-    int N_rays = 1e5;
-
     bool use_optical = true;
     bool use_sunshape = true;
 
