@@ -172,6 +172,7 @@ namespace SolTrace::NativeRunner
         // ShapeIndex = ' ';
         ShapeIndex = SunShape::GAUSSIAN;
         Sigma = 0;
+        GenTypeIndex = SolTrace::Data::GenType::UNKNOWN;
 
         MaxAngle = 0;
         MaxIntensity = 0;

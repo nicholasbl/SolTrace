@@ -1,9 +1,21 @@
-
 #include "generate_ray.hpp"
 
 #include "simulation_data_export.hpp"
 
 namespace SolTrace::NativeRunner {
+
+double halton(int index, int base)
+{
+	double f = 1;
+	double result = 0;
+	while (index > 0)
+	{
+		f = f / base;
+		result = result + f * (index % base);
+		index = index / base;
+	}
+	return result;
+}
 
 void GenerateRay(
 	MTRand &myrng,
@@ -11,6 +23,7 @@ void GenerateRay(
 	double Origin[3],
 	double RLocToRef[3][3],
 	TSun *Sun,
+	uint_fast64_t sample_index,
 	double PosRayGlobal[3],
 	double CosRayGlobal[3],
 	double PosRaySun[3])
@@ -83,33 +96,62 @@ void GenerateRay(
 	}
 	else
 	{
-		// following changed on 09/26/05 to more efficiently generate rays relative to element center of mass in primary stage
-		/*{XRaySun := 2.0*MaxRad*ran3(Seed) - MaxRad;  //ran3 produces results independent of platform.
-		YRaySun := 2.0*MaxRad*ran3(Seed) - MaxRad;
-		if (XRaySun*XRaySun + YRaySun*YRaySun) > MaxRad*MaxRad then goto GENRAY;
-		XRaySun := Xcm + XRaySun;  //adjust location of generated rays about element center of mass
-		YRaySun := Ycm + YRaySun;}*/
+		switch (Sun->GenTypeIndex)
+		{
+			case(SolTrace::Data::GenType::RANDOM):
+			{
+				// following changed on 09/26/05 to more efficiently generate rays relative to element center of mass in primary stage
+				/*{XRaySun := 2.0*MaxRad*ran3(Seed) - MaxRad;  //ran3 produces results independent of platform.
+				YRaySun := 2.0*MaxRad*ran3(Seed) - MaxRad;
+				if (XRaySun*XRaySun + YRaySun*YRaySun) > MaxRad*MaxRad then goto GENRAY;
+				XRaySun := Xcm + XRaySun;  //adjust location of generated rays about element center of mass
+				YRaySun := Ycm + YRaySun;}*/
 
-		XRaySun = Sun->MinXSun + (Sun->MaxXSun - Sun->MinXSun) * myrng(); // uses a rectangular region of interest about the primary
-		YRaySun = Sun->MinYSun + (Sun->MaxYSun - Sun->MinYSun) * myrng(); // stage. Added 09/26/05
+				XRaySun = Sun->MinXSun + (Sun->MaxXSun - Sun->MinXSun) * myrng(); // uses a rectangular region of interest about the primary
+				YRaySun = Sun->MinYSun + (Sun->MaxYSun - Sun->MinYSun) * myrng(); // stage. Added 09/26/05
 
-		// std::cout << "MinXSun: " << Sun->MinXSun
-		// 		  << "\nMaxXSun: " << Sun->MaxXSun
-		// 		  << "\nMinYSun: " << Sun->MinYSun
-		// 		  << "\nMaxYSun: " << Sun->MaxYSun
-		// 		  << "\nXRaySun: " << XRaySun
-		// 		  << "\nYRaySun:" << YRaySun
-		// 		  << "\nR1: " << (XRaySun - Sun->MinXSun) / (Sun->MaxXSun - Sun->MinXSun)
-		// 		  << "\nR2: " << (YRaySun - Sun->MinYSun) / (Sun->MaxYSun - Sun->MinXSun)
-		// 		  << std::endl;
+				// std::cout << "MinXSun: " << Sun->MinXSun
+				// 		  << "\nMaxXSun: " << Sun->MaxXSun
+				// 		  << "\nMinYSun: " << Sun->MinYSun
+				// 		  << "\nMaxYSun: " << Sun->MaxYSun
+				// 		  << "\nXRaySun: " << XRaySun
+				// 		  << "\nYRaySun:" << YRaySun
+				// 		  << "\nR1: " << (XRaySun - Sun->MinXSun) / (Sun->MaxXSun - Sun->MinXSun)
+				// 		  << "\nR2: " << (YRaySun - Sun->MinYSun) / (Sun->MaxYSun - Sun->MinXSun)
+				// 		  << std::endl;
 
-		//{Offload ray location and direction cosines into sun array}
-		PosRaySun[0] = XRaySun;
-		PosRaySun[1] = YRaySun;
-		PosRaySun[2] = ZRaySun;
-		CosRaySun[0] = 0.0;
-		CosRaySun[1] = 0.0;
-		CosRaySun[2] = 1.0;
+				//{Offload ray location and direction cosines into sun array}
+				PosRaySun[0] = XRaySun;
+				PosRaySun[1] = YRaySun;
+				PosRaySun[2] = ZRaySun;
+				CosRaySun[0] = 0.0;
+				CosRaySun[1] = 0.0;
+				CosRaySun[2] = 1.0;
+				break;
+			}
+			case(SolTrace::Data::GenType::HALTON):
+			{
+				const double u = halton(static_cast<int>(sample_index), 2);
+				const double v = halton(static_cast<int>(sample_index), 3);
+
+				XRaySun = Sun->MinXSun + (Sun->MaxXSun - Sun->MinXSun) * u;
+				YRaySun = Sun->MinYSun + (Sun->MaxYSun - Sun->MinYSun) * v;
+
+				PosRaySun[0] = XRaySun;
+				PosRaySun[1] = YRaySun;
+				PosRaySun[2] = ZRaySun;
+				CosRaySun[0] = 0.0;
+				CosRaySun[1] = 0.0;
+				CosRaySun[2] = 1.0;
+				break;
+			}
+			default:
+			{
+				throw std::runtime_error("Sun generation type not supported");
+			}
+		}
+
+		
 
 		//{Transform ray locations and dir cosines into Stage system}
 		TransformToReference(PosRaySun, CosRaySun, PosSunStage, Sun->RLocToRef, PosRayStage, CosRayStage);

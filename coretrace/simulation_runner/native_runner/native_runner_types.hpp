@@ -219,6 +219,7 @@ namespace SolTrace::NativeRunner
 		SolTrace::Data::SunShape ShapeIndex;
 		double Sigma;
 		bool PointSource;
+		SolTrace::Data::GenType GenTypeIndex;
 
 		std::vector<double> SunShapeAngle;
 		std::vector<double> SunShapeIntensity;

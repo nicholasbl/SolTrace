@@ -150,6 +150,7 @@ namespace SolTrace::NativeRunner
 			my_info.NumberOfRays = (k < rem
 										? nrays_per_thread + 1
 										: nrays_per_thread);
+			my_info.ray_index_offset = k * nrays_per_thread + std::min(static_cast<uint_fast64_t>(k), rem);
 
 			ThreadManager::future my_future = std::async(
 				std::launch::async,
@@ -172,6 +173,7 @@ namespace SolTrace::NativeRunner
 		unsigned int seed,
 		uint_fast64_t NumberOfRays,
 		uint_fast64_t MaxNumberOfRays,
+		uint_fast64_t ray_index_offset,
 		bool IncludeSunShape,
 		bool IncludeErrors,
 		bool AsPowerTower,
@@ -258,10 +260,13 @@ namespace SolTrace::NativeRunner
 					// TODO: This function seems to ignore the MaxNumberOfRays
 					// argument. Should fix that.
 
+					const uint_fast64_t sample_index = ray_index_offset + sun_ray_count_local + 1;
+
 					// Make ray (if first stage)
 					double PosRaySun[3];
 					GenerateRay(myrng, PosSunStage.data, Stage->Origin,
 								Stage->RLocToRef, &System->Sun,
+								sample_index,
 								PosRayGlob, CosRayGlob, PosRaySun);
 					sun_ray_count_local++;
 

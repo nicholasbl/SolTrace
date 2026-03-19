@@ -117,6 +117,7 @@ namespace SolTrace::EmbreeRunner
         for (unsigned k = 0; k < nthreads; ++k)
         {
             nrays = k < rem ? nrays_per_thread + 1 : nrays_per_thread;
+            const uint_fast64_t ray_index_offset = k * nrays_per_thread + std::min(static_cast<uint_fast64_t>(k), rem);
             ThreadManager::future my_future = std::async(
                 std::launch::async,
                 trace_embree_single_thread,
@@ -127,6 +128,7 @@ namespace SolTrace::EmbreeRunner
                 seeds[k],
                 nrays,
                 MaxNumberOfRays / nthreads + 1,
+                ray_index_offset,
                 IncludeSunShape,
                 IncludeErrors,
                 PosSunStage,
@@ -145,6 +147,7 @@ namespace SolTrace::EmbreeRunner
         unsigned seed,
         uint_fast64_t NumberOfRays,
         uint_fast64_t MaxNumberOfRays,
+        uint_fast64_t ray_index_offset,
         bool IncludeSunShape,
         bool IncludeErrors,
         const SolTrace::Data::Vector3d &PosSunStage,
@@ -206,13 +209,16 @@ namespace SolTrace::EmbreeRunner
                 // Get Ray
                 if (i == 0)
                 {
+                    const uint_fast64_t sample_index = ray_index_offset + sun_ray_count_local + 1;
+
                     // Make ray (if first stage)
                     double PosRaySun[3];
                     SolTrace::NativeRunner::GenerateRay(
                         myrng, PosSunStage.data, Stage->Origin,
                         Stage->RLocToRef, &System->Sun,
+                        sample_index,
                         PosRayGlob, CosRayGlob, PosRaySun);
-                    System->SunRayCount++;
+                    sun_ray_count_local++;
                 }
                 else
                 {
