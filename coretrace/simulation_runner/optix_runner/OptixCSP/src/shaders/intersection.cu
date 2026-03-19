@@ -450,8 +450,88 @@ extern "C" __global__ void __intersection__rectangle_parabolic()
         __float_as_uint(world_normal.z));    
 }
 
+// intersection algorithm for a flat triangle based on "Fast, Minimum Storage Ray/Triangle Intersection" by Mï¿½ller and Trumbore (1997)
+// code from here: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm 
+extern "C" __device__ __inline__ float _triangle_intersect(
+    float3 p0, float3 edge1, float3 edge2,
+    float3 ro, float3 rd)
+{
+    const float3 pvec = cross(rd, edge2);
+    const float  det = dot(edge1, pvec);
 
-// intersection algorithm for a flat triangle based on "Fast, Minimum Storage Ray/Triangle Intersection" by Möller and Trumbore (1997)
+    // // Backface culling + parallel rejection
+    // // (det must be strictly positive and not tiny)
+    // const float eps = 1e-8f;
+    // if (det <= eps) return -1.0f;
+
+    // Parallel rejection
+    // (det must be not tiny)
+    const float eps = 1e-8f;
+    if (fabs(det) <= eps) return -1.0f;
+
+
+    const float inv_det = 1.0f / det;
+
+    const float3 tvec = ro - p0;
+    const float  u = dot(tvec, pvec) * inv_det;
+    if (u < 0.0f || u > 1.0f) return -1.0f;
+
+    const float3 qvec = cross(tvec, edge1);
+    const float  v = dot(rd, qvec) * inv_det;
+    if (v < 0.0f || (u + v) > 1.0f) return -1.0f;
+
+    const float  t = dot(edge2, qvec) * inv_det;
+
+    return t;
+}
+
+// // intersection algorithm for a flat triangle based on "Fast, Minimum Storage Ray/Triangle Intersection" by Mï¿½ller and Trumbore (1997)
+// // code from here: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm 
+// extern "C" __global__ void __intersection__triangle_flat()
+// {
+// 	const OptixCSP::GeometryDataST::Triangle_Flat& tri = params.geometry_data_array[optixGetPrimitiveIndex()].getTriangle_Flat();
+
+//     const float3 ro = optixGetObjectRayOrigin();
+//     const float3 rd = optixGetObjectRayDirection();
+
+// 	//printf("Ray origin: (%f,%f,%f), direction: (%f,%f,%f)\n", ro.x, ro.y, ro.z, rd.x, rd.y, rd.z);
+
+//     const float3 edge1 = tri.e1;
+//     const float3 edge2 = tri.e2;
+
+
+//     const float3 pvec = cross(rd, edge2);
+//     const float  det = dot(edge1, pvec);
+
+//     // Backface culling + parallel rejection
+//     // (det must be strictly positive and not tiny)
+//     const float eps = 1e-8f;
+//     if (det <= eps) return;
+
+//     const float inv_det = 1.0f / det;
+
+//     const float3 tvec = ro - tri.v0;
+//     const float  u = dot(tvec, pvec) * inv_det;
+//     if (u < 0.0f || u > 1.0f) return;
+
+//     const float3 qvec = cross(tvec, edge1);
+//     const float  v = dot(rd, qvec) * inv_det;
+//     if (v < 0.0f || (u + v) > 1.0f) 
+//         return;
+
+//     const float  t = dot(edge2, qvec) * inv_det;
+//     if (t < optixGetRayTmin() || t > optixGetRayTmax()) return;
+
+//     float3 world_normal = tri.normal;
+
+//     optixReportIntersection(t, 0,
+//         __float_as_uint(world_normal.x),
+//         __float_as_uint(world_normal.y),
+//         __float_as_uint(world_normal.z));
+
+// }
+
+// intersection algorithm for a flat triangle based on "Fast, Minimum Storage Ray/Triangle Intersection" by Mï¿½ller and Trumbore (1997)
 // code from here: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm 
 extern "C" __global__ void __intersection__triangle_flat()
 {
@@ -460,32 +540,8 @@ extern "C" __global__ void __intersection__triangle_flat()
     const float3 ro = optixGetObjectRayOrigin();
     const float3 rd = optixGetObjectRayDirection();
 
-	//printf("Ray origin: (%f,%f,%f), direction: (%f,%f,%f)\n", ro.x, ro.y, ro.z, rd.x, rd.y, rd.z);
+    const float t = _triangle_intersect(tri.v0, tri.e1, tri.e2, ro, rd);
 
-    const float3 edge1 = tri.e1;
-    const float3 edge2 = tri.e2;
-
-
-    const float3 pvec = cross(rd, edge2);
-    const float  det = dot(edge1, pvec);
-
-    // Backface culling + parallel rejection
-    // (det must be strictly positive and not tiny)
-    const float eps = 1e-8f;
-    if (det <= eps) return;
-
-    const float inv_det = 1.0f / det;
-
-    const float3 tvec = ro - tri.v0;
-    const float  u = dot(tvec, pvec) * inv_det;
-    if (u < 0.0f || u > 1.0f) return;
-
-    const float3 qvec = cross(tvec, edge1);
-    const float  v = dot(rd, qvec) * inv_det;
-    if (v < 0.0f || (u + v) > 1.0f) 
-        return;
-
-    const float  t = dot(edge2, qvec) * inv_det;
     if (t < optixGetRayTmin() || t > optixGetRayTmax()) return;
 
     float3 world_normal = tri.normal;
@@ -495,4 +551,36 @@ extern "C" __global__ void __intersection__triangle_flat()
         __float_as_uint(world_normal.y),
         __float_as_uint(world_normal.z));
 
+}
+
+
+extern "C" __global__ void __intersection__quadrilateral_flat()
+{
+    const OptixCSP::GeometryDataST::Quadrilateral_Flat& quad = params.geometry_data_array[optixGetPrimitiveIndex()].getQuadrilateral_Flat();
+
+    const float3 ro = optixGetObjectRayOrigin();
+    const float3 rd = optixGetObjectRayDirection();
+
+    const float3 p0 = quad.p0;
+    const float3 p2 = quad.p2;
+    float3 e1 = quad.p1 - p0;
+    float3 e2 = quad.p3 - p0;
+
+    float t = _triangle_intersect(p0, e1, e2, ro, rd);
+
+    if (t < optixGetRayTmin() || t > optixGetRayTmax())
+    {
+        e1 = quad.p1 - p2;
+        e2 = quad.p3 - p2;
+        t = _triangle_intersect(p2, e1, e2, ro, rd);
+    }
+
+    if (t < optixGetRayTmin() || t > optixGetRayTmax()) return;
+
+    float3 world_normal = quad.normal;
+
+    optixReportIntersection(t, 0,
+        __float_as_uint(world_normal.x),
+        __float_as_uint(world_normal.y),
+        __float_as_uint(world_normal.z));
 }

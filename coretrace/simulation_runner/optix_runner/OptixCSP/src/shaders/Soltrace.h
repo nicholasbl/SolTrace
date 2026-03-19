@@ -30,6 +30,7 @@ namespace OptixCSP{
         RECTANGLE_PARABOLIC  = 1,
         CYLINDRICAL          = 2,
         TRIANGLE_FLAT        = 3,
+        QUADRILATERAL_FLAT   = 4,
 	    NUM_OPTICAL_ENTITY_TYPES
     };
 

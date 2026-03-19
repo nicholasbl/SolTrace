@@ -15,6 +15,7 @@ include_directories(
 set(OPTIX_RUNNER_TEST_SRC
     ../../common/common.cpp
     vector_error_test.cpp
+    geometry_intersection_test.cpp
     gpu_tower_demo.cpp
     flat_optical_test.cpp
     two_plate_test.cpp

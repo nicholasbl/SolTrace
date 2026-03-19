@@ -63,3 +63,13 @@ Vec3d ApertureTriangle::get_v1() const { return m_v1; }
 Vec3d ApertureTriangle::get_v2() const { return m_v2; }
 
 
+ApertureQuadrilateral::ApertureQuadrilateral(Vec3d p0, Vec3d p1, Vec3d p2, Vec3d p3) : m_p0(p0), m_p1(p1), m_p2(p2), m_p3(p3) {}
+ApertureQuadrilateral::ApertureQuadrilateral() : m_p0(0,0,0), m_p1(1,0,0), m_p2(1,1,0), m_p3(0,1,0) {}
+ApertureType ApertureQuadrilateral::get_aperture_type() const {
+  return ApertureType::QUADRILATERAL;
+}
+
+Vec3d ApertureQuadrilateral::get_p0() const { return m_p0; }
+Vec3d ApertureQuadrilateral::get_p1() const { return m_p1; }
+Vec3d ApertureQuadrilateral::get_p2() const { return m_p2; }
+Vec3d ApertureQuadrilateral::get_p3() const { return m_p3; }

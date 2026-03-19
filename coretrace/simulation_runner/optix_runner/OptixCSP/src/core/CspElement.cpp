@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -142,10 +143,84 @@ Vec3d CspElement::get_upper_bounding_box() const
     return m_upper_box_bound;
 }
 
+void CspElement::set_upper_bounding_box(const Vec3d &upper)
+{
+    m_upper_box_bound = upper;
+    return;
+}
+
 // return lower bounding box
 Vec3d CspElement::get_lower_bounding_box() const
 {
     return m_lower_box_bound;
+}
+
+void CspElement::set_lower_bounding_box(const Vec3d &lower)
+{
+    m_lower_box_bound = lower;
+    return;
+}
+
+void CspElement::set_bounding_box_local(const Vec3d &lower_local,
+                                        const Vec3d &upper_local)
+{
+    // TODO: Functionality should be in simulation data. Perhaps with
+    // a tighter bounding box. This version simply finds the global
+    // bounding box for the local bounding box.
+
+    Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
+
+    Vec3d c0 = lower_local;
+    Vec3d c7 = upper_local;
+    Vec3d c1(c0[0], c0[1], c7[2]);
+    Vec3d c2(c0[0], c7[1], c0[2]);
+    Vec3d c3(c7[0], c0[1], c0[2]);
+    Vec3d c4(c0[0], c7[1], c7[2]);
+    Vec3d c5(c7[0], c0[1], c7[2]);
+    Vec3d c6(c7[0], c7[1], c0[2]);
+
+    Vec3d g0 = rotation_matrix * c0 + m_origin;
+    Vec3d g1 = rotation_matrix * c1 + m_origin;
+    Vec3d g2 = rotation_matrix * c2 + m_origin;
+    Vec3d g3 = rotation_matrix * c3 + m_origin;
+    Vec3d g4 = rotation_matrix * c4 + m_origin;
+    Vec3d g5 = rotation_matrix * c5 + m_origin;
+    Vec3d g6 = rotation_matrix * c6 + m_origin;
+    Vec3d g7 = rotation_matrix * c7 + m_origin;
+
+    // go through the corners and find the min and max x, y, z
+    std::vector<Vec3d> corners = {g0, g1, g2, g3,
+                                  g4, g5, g6, g7};
+
+    double min_x = std::numeric_limits<double>::max();
+    double min_y = std::numeric_limits<double>::max();
+    double min_z = std::numeric_limits<double>::max();
+
+    double max_x = std::numeric_limits<double>::lowest();
+    double max_y = std::numeric_limits<double>::lowest();
+    double max_z = std::numeric_limits<double>::lowest();
+
+    for (auto &corner : corners)
+    {
+        min_x = fmin(min_x, corner[0]);
+        min_y = fmin(min_y, corner[1]);
+        min_z = fmin(min_z, corner[2]);
+
+        max_x = fmax(max_x, corner[0]);
+        max_y = fmax(max_y, corner[1]);
+        max_z = fmax(max_z, corner[2]);
+    }
+
+    // set the lower and upper bounds
+    m_lower_box_bound[0] = min_x;
+    m_lower_box_bound[1] = min_y;
+    m_lower_box_bound[2] = min_z;
+
+    m_upper_box_bound[0] = max_x;
+    m_upper_box_bound[1] = max_y;
+    m_upper_box_bound[2] = max_z;
+
+    return;
 }
 
 GeometryDataST CspElement::toDeviceGeometryData() const
@@ -204,7 +279,6 @@ GeometryDataST CspElement::toDeviceGeometryData() const
 
     if (aperture_type == ApertureType::TRIANGLE)
     {
-
         Vec3d v1, v2, v3;
         // first cast to ApertureTriangle type
         ApertureTriangle tri = static_cast<ApertureTriangle &>(*m_aperture);
@@ -223,6 +297,31 @@ GeometryDataST CspElement::toDeviceGeometryData() const
         geometry_data.setTriangle_Flat(heliostat);
     }
 
+    if (aperture_type == ApertureType::QUADRILATERAL)
+    {
+        ApertureQuadrilateral quad = static_cast<ApertureQuadrilateral &>(*m_aperture);
+
+        Vec3d p1, p2, p3, p4;
+
+        p1 = quad.get_p0();
+        p2 = quad.get_p1();
+        p3 = quad.get_p2();
+        p4 = quad.get_p3();
+
+        // given the origin and rotation, compute global coordinates of the triangle vertices
+        Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
+        Vec3d p1_global = rotation_matrix * p1 + m_origin;
+        Vec3d p2_global = rotation_matrix * p2 + m_origin;
+        Vec3d p3_global = rotation_matrix * p3 + m_origin;
+        Vec3d p4_global = rotation_matrix * p4 + m_origin;
+
+        GeometryDataST::Quadrilateral_Flat heliostat(OptixCSP::toFloat3(p1_global),
+                                                     OptixCSP::toFloat3(p2_global),
+                                                     OptixCSP::toFloat3(p3_global),
+                                                     OptixCSP::toFloat3(p4_global));
+        geometry_data.setQuadrilateral_Flat(heliostat);
+    }
+
     geometry_data.id = this->m_id;
 
     return geometry_data;
@@ -238,138 +337,138 @@ MaterialData CspElement::toDeviceMaterialDataBack() const
     return this->m_optics_back;
 }
 
-// we also need to implement the bounding box computation
-// for a case like a rectangle aperture,
-// once we have the origin, euler angles, rotatioin matrix
-// and the aperture size, we can compute the bounding box
-// this can be called when adding an element to the system
-void CspElement::compute_bounding_box()
-{
-    // this can also be called while "initializing" the element
-    // get the rotation matrix first
-    Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
+// // we also need to implement the bounding box computation
+// // for a case like a rectangle aperture,
+// // once we have the origin, euler angles, rotation matrix
+// // and the aperture size, we can compute the bounding box
+// // this can be called when adding an element to the system
+// void CspElement::compute_bounding_box()
+// {
+//     // this can also be called while "initializing" the element
+//     // get the rotation matrix first
+//     Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
 
-    // now check the type of the aperture
-    ApertureType aperture_type = m_aperture->get_aperture_type();
-    SurfaceType surface_type = m_surface->get_surface_type();
+//     // now check the type of the aperture
+//     ApertureType aperture_type = m_aperture->get_aperture_type();
+//     SurfaceType surface_type = m_surface->get_surface_type();
 
-    if (aperture_type == ApertureType::RECTANGLE && surface_type != SurfaceType::CYLINDER)
-    {
-        // get the width and height of the aperture
-        double width = m_aperture->get_width();
-        double height = m_aperture->get_height();
+//     if (aperture_type == ApertureType::RECTANGLE && surface_type != SurfaceType::CYLINDER)
+//     {
+//         // get the width and height of the aperture
+//         double width = m_aperture->get_width();
+//         double height = m_aperture->get_height();
 
-        // compute the four corners of the rectangle locally
-        Vec3d corner1 = Vec3d(-width / 2, -height / 2, 0.0);
-        Vec3d corner2 = Vec3d(width / 2, -height / 2, 0.0);
-        Vec3d corner3 = Vec3d(width / 2, height / 2, 0.0);
-        Vec3d corner4 = Vec3d(-width / 2, height / 2, 0.0);
+//         // compute the four corners of the rectangle locally
+//         Vec3d corner1 = Vec3d(-width / 2, -height / 2, 0.0);
+//         Vec3d corner2 = Vec3d(width / 2, -height / 2, 0.0);
+//         Vec3d corner3 = Vec3d(width / 2, height / 2, 0.0);
+//         Vec3d corner4 = Vec3d(-width / 2, height / 2, 0.0);
 
-        // transform the corners to the global frame
-        Vec3d corner1_global = rotation_matrix * corner1 + m_origin;
-        Vec3d corner2_global = rotation_matrix * corner2 + m_origin;
-        Vec3d corner3_global = rotation_matrix * corner3 + m_origin;
-        Vec3d corner4_global = rotation_matrix * corner4 + m_origin;
+//         // transform the corners to the global frame
+//         Vec3d corner1_global = rotation_matrix * corner1 + m_origin;
+//         Vec3d corner2_global = rotation_matrix * corner2 + m_origin;
+//         Vec3d corner3_global = rotation_matrix * corner3 + m_origin;
+//         Vec3d corner4_global = rotation_matrix * corner4 + m_origin;
 
-        // Extended z axis box slightly
-        double epsilon = 1e-1;
+//         // Extended z axis box slightly
+//         double epsilon = 1e-1;
 
-        // now update the bounding box, need to find the min and max x, y, z
-        m_lower_box_bound[0] = fmin(fmin(corner1_global[0], corner2_global[0]), fmin(corner3_global[0], corner4_global[0]));
-        m_lower_box_bound[1] = fmin(fmin(corner1_global[1], corner2_global[1]), fmin(corner3_global[1], corner4_global[1]));
-        m_lower_box_bound[2] = fmin(fmin(corner1_global[2], corner2_global[2]), fmin(corner3_global[2], corner4_global[2])) - epsilon;
+//         // now update the bounding box, need to find the min and max x, y, z
+//         m_lower_box_bound[0] = fmin(fmin(corner1_global[0], corner2_global[0]), fmin(corner3_global[0], corner4_global[0]));
+//         m_lower_box_bound[1] = fmin(fmin(corner1_global[1], corner2_global[1]), fmin(corner3_global[1], corner4_global[1]));
+//         m_lower_box_bound[2] = fmin(fmin(corner1_global[2], corner2_global[2]), fmin(corner3_global[2], corner4_global[2])) - epsilon;
 
-        m_upper_box_bound[0] = fmax(fmax(corner1_global[0], corner2_global[0]), fmax(corner3_global[0], corner4_global[0]));
-        m_upper_box_bound[1] = fmax(fmax(corner1_global[1], corner2_global[1]), fmax(corner3_global[1], corner4_global[1]));
-        m_upper_box_bound[2] = fmax(fmax(corner1_global[2], corner2_global[2]), fmax(corner3_global[2], corner4_global[2])) + epsilon;
-    }
+//         m_upper_box_bound[0] = fmax(fmax(corner1_global[0], corner2_global[0]), fmax(corner3_global[0], corner4_global[0]));
+//         m_upper_box_bound[1] = fmax(fmax(corner1_global[1], corner2_global[1]), fmax(corner3_global[1], corner4_global[1]));
+//         m_upper_box_bound[2] = fmax(fmax(corner1_global[2], corner2_global[2]), fmax(corner3_global[2], corner4_global[2])) + epsilon;
+//     }
 
-    // slightly different for the cylinder, we want to know the radius and half height
-    if (surface_type == SurfaceType::CYLINDER)
-    {
-        // get the radius and full height of the cylinder
-        double width = m_aperture->get_width();
-        double height = m_aperture->get_height();
+//     // slightly different for the cylinder, we want to know the radius and half height
+//     if (surface_type == SurfaceType::CYLINDER)
+//     {
+//         // get the radius and full height of the cylinder
+//         double width = m_aperture->get_width();
+//         double height = m_aperture->get_height();
 
-        // compute 8 corners of the cyliinder box locally
-        Vec3d corner1 = Vec3d(-width / 2, -height / 2, -width / 2);
-        Vec3d corner2 = Vec3d(width / 2, -height / 2, -width / 2);
-        Vec3d corner3 = Vec3d(-width / 2, height / 2, -width / 2);
-        Vec3d corner4 = Vec3d(width / 2, height / 2, -width / 2);
-        Vec3d corner5 = Vec3d(-width / 2, -height / 2, width / 2);
-        Vec3d corner6 = Vec3d(width / 2, -height / 2, width / 2);
-        Vec3d corner7 = Vec3d(-width / 2, height / 2, width / 2);
-        Vec3d corner8 = Vec3d(width / 2, height / 2, width / 2);
+//         // compute 8 corners of the cyliinder box locally
+//         Vec3d corner1 = Vec3d(-width / 2, -height / 2, -width / 2);
+//         Vec3d corner2 = Vec3d(width / 2, -height / 2, -width / 2);
+//         Vec3d corner3 = Vec3d(-width / 2, height / 2, -width / 2);
+//         Vec3d corner4 = Vec3d(width / 2, height / 2, -width / 2);
+//         Vec3d corner5 = Vec3d(-width / 2, -height / 2, width / 2);
+//         Vec3d corner6 = Vec3d(width / 2, -height / 2, width / 2);
+//         Vec3d corner7 = Vec3d(-width / 2, height / 2, width / 2);
+//         Vec3d corner8 = Vec3d(width / 2, height / 2, width / 2);
 
-        // get the rotation matrix
-        Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
+//         // get the rotation matrix
+//         Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
 
-        // transform the corners to the global frame
-        Vec3d corner1_global = rotation_matrix * corner1 + m_origin;
-        Vec3d corner2_global = rotation_matrix * corner2 + m_origin;
-        Vec3d corner3_global = rotation_matrix * corner3 + m_origin;
-        Vec3d corner4_global = rotation_matrix * corner4 + m_origin;
-        Vec3d corner5_global = rotation_matrix * corner5 + m_origin;
-        Vec3d corner6_global = rotation_matrix * corner6 + m_origin;
-        Vec3d corner7_global = rotation_matrix * corner7 + m_origin;
-        Vec3d corner8_global = rotation_matrix * corner8 + m_origin;
+//         // transform the corners to the global frame
+//         Vec3d corner1_global = rotation_matrix * corner1 + m_origin;
+//         Vec3d corner2_global = rotation_matrix * corner2 + m_origin;
+//         Vec3d corner3_global = rotation_matrix * corner3 + m_origin;
+//         Vec3d corner4_global = rotation_matrix * corner4 + m_origin;
+//         Vec3d corner5_global = rotation_matrix * corner5 + m_origin;
+//         Vec3d corner6_global = rotation_matrix * corner6 + m_origin;
+//         Vec3d corner7_global = rotation_matrix * corner7 + m_origin;
+//         Vec3d corner8_global = rotation_matrix * corner8 + m_origin;
 
-        // go through the corners and find the min and max x, y, z
-        std::vector<Vec3d> corners = {corner1_global, corner2_global, corner3_global, corner4_global,
-                                      corner5_global, corner6_global, corner7_global, corner8_global};
+//         // go through the corners and find the min and max x, y, z
+//         std::vector<Vec3d> corners = {corner1_global, corner2_global, corner3_global, corner4_global,
+//                                       corner5_global, corner6_global, corner7_global, corner8_global};
 
-        double min_x = std::numeric_limits<double>::max();
-        double min_y = std::numeric_limits<double>::max();
-        double min_z = std::numeric_limits<double>::max();
+//         double min_x = std::numeric_limits<double>::max();
+//         double min_y = std::numeric_limits<double>::max();
+//         double min_z = std::numeric_limits<double>::max();
 
-        double max_x = std::numeric_limits<double>::lowest();
-        double max_y = std::numeric_limits<double>::lowest();
-        double max_z = std::numeric_limits<double>::lowest();
+//         double max_x = std::numeric_limits<double>::lowest();
+//         double max_y = std::numeric_limits<double>::lowest();
+//         double max_z = std::numeric_limits<double>::lowest();
 
-        for (auto &corner : corners)
-        {
-            min_x = fmin(min_x, corner[0]);
-            min_y = fmin(min_y, corner[1]);
-            min_z = fmin(min_z, corner[2]);
+//         for (auto &corner : corners)
+//         {
+//             min_x = fmin(min_x, corner[0]);
+//             min_y = fmin(min_y, corner[1]);
+//             min_z = fmin(min_z, corner[2]);
 
-            max_x = fmax(max_x, corner[0]);
-            max_y = fmax(max_y, corner[1]);
-            max_z = fmax(max_z, corner[2]);
-        }
+//             max_x = fmax(max_x, corner[0]);
+//             max_y = fmax(max_y, corner[1]);
+//             max_z = fmax(max_z, corner[2]);
+//         }
 
-        // set the lower and upper bounds
-        m_lower_box_bound[0] = min_x;
-        m_lower_box_bound[1] = min_y;
-        m_lower_box_bound[2] = min_z;
+//         // set the lower and upper bounds
+//         m_lower_box_bound[0] = min_x;
+//         m_lower_box_bound[1] = min_y;
+//         m_lower_box_bound[2] = min_z;
 
-        m_upper_box_bound[0] = max_x;
-        m_upper_box_bound[1] = max_y;
-        m_upper_box_bound[2] = max_z;
-    }
+//         m_upper_box_bound[0] = max_x;
+//         m_upper_box_bound[1] = max_y;
+//         m_upper_box_bound[2] = max_z;
+//     }
 
-    // bounding box for triangle aperture
-    if (aperture_type == ApertureType::TRIANGLE)
-    {
-        // get the three vertices of the triangle aperture in local coordinates
-        // first cast to ApertureTriangle type
-        ApertureTriangle tri = static_cast<ApertureTriangle &>(*m_aperture);
+//     // bounding box for triangle aperture
+//     if (aperture_type == ApertureType::TRIANGLE)
+//     {
+//         // get the three vertices of the triangle aperture in local coordinates
+//         // first cast to ApertureTriangle type
+//         ApertureTriangle tri = static_cast<ApertureTriangle &>(*m_aperture);
 
-        Vec3d v1 = tri.get_v0();
-        Vec3d v2 = tri.get_v1();
-        Vec3d v3 = tri.get_v2();
-        // transform the vertices to the global frame
-        Vec3d v1_global = rotation_matrix * v1 + m_origin;
-        Vec3d v2_global = rotation_matrix * v2 + m_origin;
-        Vec3d v3_global = rotation_matrix * v3 + m_origin;
-        // now update the bounding box, need to find the min and max x, y, z
-        m_lower_box_bound[0] = fmin(fmin(v1_global[0], v2_global[0]), v3_global[0]);
-        m_lower_box_bound[1] = fmin(fmin(v1_global[1], v2_global[1]), v3_global[1]);
-        m_lower_box_bound[2] = fmin(fmin(v1_global[2], v2_global[2]), v3_global[2]);
-        m_upper_box_bound[0] = fmax(fmax(v1_global[0], v2_global[0]), v3_global[0]);
-        m_upper_box_bound[1] = fmax(fmax(v1_global[1], v2_global[1]), v3_global[1]);
-        m_upper_box_bound[2] = fmax(fmax(v1_global[2], v2_global[2]), v3_global[2]);
-    }
-}
+//         Vec3d v1 = tri.get_v0();
+//         Vec3d v2 = tri.get_v1();
+//         Vec3d v3 = tri.get_v2();
+//         // transform the vertices to the global frame
+//         Vec3d v1_global = rotation_matrix * v1 + m_origin;
+//         Vec3d v2_global = rotation_matrix * v2 + m_origin;
+//         Vec3d v3_global = rotation_matrix * v3 + m_origin;
+//         // now update the bounding box, need to find the min and max x, y, z
+//         m_lower_box_bound[0] = fmin(fmin(v1_global[0], v2_global[0]), v3_global[0]);
+//         m_lower_box_bound[1] = fmin(fmin(v1_global[1], v2_global[1]), v3_global[1]);
+//         m_lower_box_bound[2] = fmin(fmin(v1_global[2], v2_global[2]), v3_global[2]);
+//         m_upper_box_bound[0] = fmax(fmax(v1_global[0], v2_global[0]), v3_global[0]);
+//         m_upper_box_bound[1] = fmax(fmax(v1_global[1], v2_global[1]), v3_global[1]);
+//         m_upper_box_bound[2] = fmax(fmax(v1_global[2], v2_global[2]), v3_global[2]);
+//     }
+// }
 
 bool CspElement::in_plane(const Vec3d &point) const
 {

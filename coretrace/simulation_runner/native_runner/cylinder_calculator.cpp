@@ -112,8 +112,12 @@ namespace SolTrace::NativeRunner
 
         Vector3d p1, p2;
 
-        c = x0 * x0 + z0 * z0 - 2.0 * z0 * r;
-        b = 2.0 * (x0 * mx + (z0 - r) * mz);
+        // c = x0 * x0 + z0 * z0 - 2.0 * z0 * r;
+        // b = 2.0 * (x0 * mx + (z0 - r) * mz);
+        // a = mx * mx + mz * mz;
+
+        c = x0 * x0 + z0 * z0 - r * r;
+        b = 2.0 * (x0 * mx + z0 * mz);
         a = mx * mx + mz * mz;
 
         ZeroVec3(PosXYZ);
@@ -198,13 +202,13 @@ namespace SolTrace::NativeRunner
         // (which is used currently) or the outside?
         DFXYZ[0] = 2.0 * PosXYZ[0];
         DFXYZ[1] = 0.0;
-        DFXYZ[2] = 2.0 * (PosXYZ[2] - this->radius);
+        DFXYZ[2] = 2.0 * PosXYZ[2];
         return;
     }
 
     double CylinderCalculator::compute_z_aperture(aperture_ptr ap)
     {
-        double zmax = 2.0 * this->radius;
+        double zmax = this->radius;
         return zmax;
     }
 

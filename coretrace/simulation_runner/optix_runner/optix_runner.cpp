@@ -64,13 +64,9 @@ RunnerStatus OptixRunner::setup_parameters(const SimulationData *data)
     m_sys.set_number_of_rays(sim_params.number_of_rays, sim_params.max_number_of_rays);
     m_sys.set_seed(static_cast<uint64_t>(sim_params.seed));
 
-    m_sys.set_optical_errors(sim_params.include_optical_errors);   
+    m_sys.set_optical_errors(sim_params.include_optical_errors);
     m_sys.set_sun_shape_errors(sim_params.include_sun_shape_errors);
 
-    //this->tsys.sim_errors_optical = sim_params.include_optical_errors;
-    //this->tsys.sim_raycount = sim_params.number_of_rays;
-    //this->tsys.sim_raymax = sim_params.max_number_of_rays;
-    //this->tsys.seed = sim_params.seed;
     return RunnerStatus::SUCCESS;
 }
 
@@ -125,9 +121,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 continue;
 
             auto optix_el = std::make_shared<OptixCSP::CspElement>();
-            Vector3d origin = el->get_origin_global();
-            OptixCSP::Vec3d origin_vec(origin[0], origin[1], origin[2]);
-            optix_el->set_origin(ToVec3d(origin));
+            optix_el->set_origin(ToVec3d(el->get_origin_global()));
             optix_el->set_aim_point(ToVec3d(el->get_aim_vector_global()));
 
             // Safely narrow element id to int32_t
@@ -152,75 +146,159 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                                       opt_back->transmitivity, opt_back->slope_error, opt_back->specularity_error, od);
 
             std::cout << "adding elements " << el->get_name() << std::endl;
-            std::cout << "Origin: " << origin[0] << ", " << origin[1] << ", " << origin[2] << std::endl;
+            std::cout << "Origin: " << el->get_origin_global() << std::endl;
 
-            if (el->get_surface() != nullptr)
+            if (el->get_surface() == nullptr)
             {
-                std::cout << "surface type: " << el->get_surface()->get_type() << std::endl;
-
-                switch (el->get_surface()->get_type())
-                {
-                case SurfaceType::FLAT:
-                {
-                    auto surface = std::make_shared<OptixCSP::SurfaceFlat>();
-                    optix_el->set_surface(surface);
-
-                    break;
-                }
-                case SurfaceType::PARABOLA:
-                {
-                    auto el_surface = std::dynamic_pointer_cast<Parabola>(el->get_surface());
-                    double fx = el_surface->focal_length_x;
-                    double fy = el_surface->focal_length_y;
-
-                    double cx = 1. / (2. * fx);
-                    double cy = 1. / (2. * fy);
-
-                    auto optix_surface = std::make_shared<OptixCSP::SurfaceParabolic>();
-                    optix_surface->set_curvature(cx, cy);
-                    optix_el->set_surface(optix_surface);
-
-                    break;
-                }
-                case SurfaceType::CYLINDER:
-                {
-                    auto el_surface = std::dynamic_pointer_cast<Cylinder>(el->get_surface());
-
-                    auto surface = std::make_shared<OptixCSP::SurfaceCylinder>();
-                    surface->set_half_height(2.); // TODO this needs to come from the aperture
-                    surface->set_radius(el_surface->radius);
-                    optix_el->set_surface(surface);
-
-                    break;
-                }
-                default:
-                    std::cerr << "Unsupported surface type in OptixCSP" << std::endl;
-                    break;
-                }
-
-                auto soltrace_aperture_type = el->get_aperture()->get_type();
-
-                switch (soltrace_aperture_type)
-                {
-
-                case ApertureType::RECTANGLE:
-                {
-
-                    auto el_aperture = std::dynamic_pointer_cast<Rectangle>(el->get_aperture());
-
-                    // TODO: account for x and y coord?
-                    auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length, el_aperture->y_length);
-                    optix_el->set_aperture(aperture);
-                    break;
-                }
-
-                default:
-                    std::cerr << "Unsupported aperture type in OptixCSP" << std::endl;
-                    break;
-                }
-
-                m_sys.add_element(optix_el);
+                throw std::runtime_error("Element must be assigned a surface.");
             }
+
+            if (el->get_aperture() == nullptr)
+            {
+                throw std::runtime_error("Element must be assigned an aperture.");
+            }
+
+            std::cout << "surface type: " << el->get_surface()->get_type() << std::endl;
+
+            switch (el->get_surface()->get_type())
+            {
+            case SurfaceType::FLAT:
+            {
+                auto surface = std::make_shared<OptixCSP::SurfaceFlat>();
+                assert(surface != nullptr);
+                optix_el->set_surface(surface);
+
+                break;
+            }
+            case SurfaceType::PARABOLA:
+            {
+                auto el_surface = std::dynamic_pointer_cast<Parabola>(el->get_surface());
+                assert(el_surface != nullptr);
+                double fx = el_surface->focal_length_x;
+                double fy = el_surface->focal_length_y;
+
+                double cx = 1. / (2. * fx);
+                double cy = 1. / (2. * fy);
+
+                auto optix_surface = std::make_shared<OptixCSP::SurfaceParabolic>();
+                optix_surface->set_curvature(cx, cy);
+                optix_el->set_surface(optix_surface);
+
+                break;
+            }
+            case SurfaceType::CYLINDER:
+            {
+                auto el_surface = std::dynamic_pointer_cast<Cylinder>(el->get_surface());
+                assert(el_surface != nullptr);
+                auto el_aperture = std::dynamic_pointer_cast<Rectangle>(el->get_aperture());
+                // assert(el_aperture != nullptr);
+                if (el_aperture == nullptr)
+                {
+                    throw std::runtime_error("Cylinder surface type must have rectangular aperture.");
+                }
+
+                if (fabs(0.5 * el_aperture->x_length - el_surface->radius) > 1e-6)
+                {
+                    throw std::runtime_error("Rectangle aperture has incorrect dimension for cylinder surface.");
+                }
+
+                auto surface = std::make_shared<OptixCSP::SurfaceCylinder>();
+                // surface->set_half_height(2.); // TODO this needs to come from the aperture
+                surface->set_half_height(0.5 * el_aperture->y_length);
+                surface->set_radius(el_surface->radius);
+                optix_el->set_surface(surface);
+
+                break;
+            }
+            default:
+                // std::cerr << "Unsupported surface type in OptixCSP" << std::endl;
+                throw std::runtime_error("Unsupported surface type in OptixCSP");
+                break;
+            }
+
+            auto soltrace_aperture_type = el->get_aperture()->get_type();
+
+            switch (soltrace_aperture_type)
+            {
+
+            case ApertureType::RECTANGLE:
+            {
+
+                auto el_aperture = std::dynamic_pointer_cast<Rectangle>(el->get_aperture());
+                assert(el_aperture != nullptr);
+                // TODO: account for x and y coord?
+                auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length, el_aperture->y_length);
+                optix_el->set_aperture(aperture);
+                break;
+            }
+
+            case ApertureType::EQUILATERAL_TRIANGLE:
+            {
+                auto el_aperture = std::dynamic_pointer_cast<EquilateralTriangle>(el->get_aperture());
+                assert(el_aperture != nullptr);
+                double r = 0.5 * el_aperture->circumscribe_diameter;
+
+                OptixCSP::Vec3d p0(-sqrt(0.75) * r, -0.5 * r, 0.0);
+                OptixCSP::Vec3d p1(sqrt(0.75) * r, -0.5 * r, 0.0);
+                OptixCSP::Vec3d p2(0.0, r, 0.0);
+
+                auto aperture = std::make_shared<OptixCSP::ApertureTriangle>(p0, p1, p2);
+                optix_el->set_aperture(aperture);
+
+                break;
+            }
+
+            case ApertureType::IRREGULAR_TRIANGLE:
+            {
+                auto el_aperture = std::dynamic_pointer_cast<IrregularTriangle>(el->get_aperture());
+                assert(el_aperture != nullptr);
+
+                OptixCSP::Vec3d p0(el_aperture->x1, el_aperture->y1, 0.0);
+                OptixCSP::Vec3d p1(el_aperture->x2, el_aperture->y2, 0.0);
+                OptixCSP::Vec3d p2(el_aperture->x3, el_aperture->y3, 0.0);
+
+                auto aperture = std::make_shared<OptixCSP::ApertureTriangle>(p0, p1, p2);
+                optix_el->set_aperture(aperture);
+
+                break;
+            }
+
+            case ApertureType::IRREGULAR_QUADRILATERAL:
+            {
+                auto el_aperture = std::dynamic_pointer_cast<IrregularQuadrilateral>(el->get_aperture());
+                assert(el_aperture != nullptr);
+
+                OptixCSP::Vec3d p0(el_aperture->x1, el_aperture->y1, 0.0);
+                OptixCSP::Vec3d p1(el_aperture->x2, el_aperture->y2, 0.0);
+                OptixCSP::Vec3d p2(el_aperture->x3, el_aperture->y3, 0.0);
+                OptixCSP::Vec3d p3(el_aperture->x4, el_aperture->y4, 0.0);
+
+                auto aperture = std::make_shared<OptixCSP::ApertureQuadrilateral>(p0, p1, p2, p3);
+                optix_el->set_aperture(aperture);
+
+                break;
+            }
+
+            default:
+                // std::cerr << "Unsupported aperture type in OptixCSP" << std::endl;
+	      throw std::runtime_error("Unsupported aperture type in OptixRunner");
+	      break;
+            }
+
+            optix_el->update_euler_angles();
+
+            double xmin, xmax, ymin, ymax, zmin, zmax;
+            el->get_aperture()->bounding_box(xmin, xmax, ymin, ymax);
+            el->get_surface()->bounding_box(xmin, xmax, ymin, ymax, zmin, zmax);
+            OptixCSP::Vec3d upper(xmax, ymax, zmax);
+            OptixCSP::Vec3d lower(xmin, ymin, zmin);
+            optix_el->set_bounding_box_local(lower, upper);
+
+            std::cout << "Bounding Box Upper: " << optix_el->get_upper_bounding_box() << std::endl;
+            std::cout << "Bounding Box Lower: " << optix_el->get_lower_bounding_box() << std::endl;
+
+            m_sys.add_element(optix_el);
+
             std::cout << "=====================================================" << std::endl;
         }
     }

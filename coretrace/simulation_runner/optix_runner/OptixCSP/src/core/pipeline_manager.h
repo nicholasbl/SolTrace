@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 #include <string>
 #include <vector>
 #include "optix.h"
@@ -6,20 +7,20 @@
 #include "soltrace_type.h"
 #include "soltrace_state.h"
 
-
-
-namespace OptixCSP {
+namespace OptixCSP
+{
     /**
      * @class pipelineManager
      * @brief Manages the OptiX pipeline, including loading modules, creating programs, and handling cleanup.
      */
-    class pipelineManager {
+    class pipelineManager
+    {
     public:
         /**
          * @brief Constructs a pipelineManager instance.
          * @param state Reference to SoltraceState for managing OptiX state.
          */
-        pipelineManager(SoltraceState& state);
+        pipelineManager(SoltraceState &state);
 
         /**
          * @brief Destroys the pipelineManager and cleans up resources.
@@ -36,7 +37,7 @@ namespace OptixCSP {
          * @param kernelName The name of the PTX kernel file to load.
          * @return The loaded PTX code as a string.
          */
-        std::string loadPtxFromFile(const std::string& kernelName);
+        std::string loadPtxFromFile(const std::string &kernelName);
 
         /**
          * @brief Loads all required OptiX modules.
@@ -79,38 +80,39 @@ namespace OptixCSP {
          * @param closestHitModule OptiX module containing the closest hit function.
          * @param closestHitFunc Name of the closest hit function.
          */
-        void createHitGroupProgram(OptixProgramGroup& group,
-            OptixModule intersectionModule,
-            const char* intersectionFunc,
-            OptixModule closestHitModule,
-            const char* closestHitFunc);
+        void createHitGroupProgram(OptixProgramGroup &group,
+                                   OptixModule intersectionModule,
+                                   const char *intersectionFunc,
+                                   OptixModule closestHitModule,
+                                   const char *closestHitFunc);
 
-        /**
-         * @brief Retrieves the ray generation program group.
-         * @return The OptixProgramGroup for ray generation.
-         */
-        OptixProgramGroup getRaygenProgram() const;
+        // /**
+        //  * @brief Retrieves the ray generation program group.
+        //  * @return The OptixProgramGroup for ray generation.
+        //  */
+        // OptixProgramGroup getRaygenProgram() const;
 
-        /**
-         * @brief Retrieves the miss program group.
-         * @return The OptixProgramGroup for the miss shader.
-         */
-        OptixProgramGroup getMissProgram() const;
+        // /**
+        //  * @brief Retrieves the miss program group.
+        //  * @return The OptixProgramGroup for the miss shader.
+        //  */
+        // OptixProgramGroup getMissProgram() const;
 
         /**
          * @brief Retrieves the appropriate element program group based on surface and aperture type.
-         * @param map SurfaceApertureMap specifying the surface and aperture combination.
+         * @param map OpticalEntityType specifying the surface and aperture combination.
          * @return The corresponding OptixProgramGroup.
          */
-        OptixProgramGroup getElementProgram(SurfaceApertureMap map) const;
+        OptixProgramGroup getElementProgram(OpticalEntityType map) const;
 
     private:
-        SoltraceState& m_state;  ///< Reference to the simulation's OptiX state.
-        std::vector<OptixProgramGroup> m_program_groups; ///< Stores all created OptiX program groups.
+        SoltraceState &m_state;                                               ///< Reference to the simulation's OptiX state.
+        std::vector<OptixProgramGroup> m_program_groups;                      ///< Stores all created OptiX program groups.
+        std::map<OpticalEntityType, size_t> m_intersection_program_group_map; ///< Map surface-aperture combinations to index in m_program_groups
 
-        // Number of program groups categorized by type.
-        int num_raygen_programs = 1; ///< Number of ray generation programs.
-        int num_heliostat_programs = 4; ///< Number of heliostat-related programs.
-        int num_miss_programs = 1; ///< Number of miss programs.
+        // // Number of program groups categorized by type.
+        // int num_raygen_programs = 1; ///< Number of ray generation programs.
+        // int num_heliostat_programs = 4; ///< Number of heliostat-related programs.
+        // int num_miss_programs = 1; ///< Number of miss programs.
     };
 }

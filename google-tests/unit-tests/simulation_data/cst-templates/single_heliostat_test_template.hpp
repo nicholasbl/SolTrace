@@ -509,9 +509,9 @@ public:
                         npoints++;
 
                         if (is_cylinder) {
-                            if (z <= rec_radius)
+                            if (z <= 0.0)
                                 x = rec_radius * asin(x / rec_radius);
-                            else if (z > rec_radius) {
+                            else if (z > 0.0) {
                                 if (x < 0) x = -(PI * rec_radius / 2.0 + rec_radius * acos(fabs(x) / rec_radius));
                                 if (x >= 0) x = PI * rec_radius / 2.0 + rec_radius * acos(x / rec_radius);
                             }

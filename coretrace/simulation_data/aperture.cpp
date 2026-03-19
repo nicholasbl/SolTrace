@@ -40,7 +40,7 @@ namespace SolTrace::Data
         case ApertureType::EQUILATERAL_TRIANGLE:
             if (args.size() < 1)
                 break;
-            return make_aperture<EqualateralTriangle>(args[0]);
+            return make_aperture<EquilateralTriangle>(args[0]);
         case ApertureType::SINGLE_AXIS_CURVATURE_SECTION:
             if (args.size() < 3)
                 break;
@@ -90,7 +90,7 @@ namespace SolTrace::Data
         case ApertureType::RECTANGLE:
             return make_aperture<Rectangle>(jnode);
         case ApertureType::EQUILATERAL_TRIANGLE:
-            return make_aperture<EqualateralTriangle>(jnode);
+            return make_aperture<EquilateralTriangle>(jnode);
         case ApertureType::IRREGULAR_TRIANGLE:
             return make_aperture<IrregularTriangle>(jnode);
         case ApertureType::IRREGULAR_QUADRILATERAL:
@@ -349,24 +349,24 @@ namespace SolTrace::Data
         return std::make_tuple(verts, indices);
     }
 
-    EqualateralTriangle::EqualateralTriangle(const nlohmann::ordered_json &jnode)
+    EquilateralTriangle::EquilateralTriangle(const nlohmann::ordered_json &jnode)
         : Aperture(ApertureType::EQUILATERAL_TRIANGLE)
     {
         this->circumscribe_diameter = jnode.at("circumscribe_diameter");
     }
 
-    double EqualateralTriangle::aperture_area() const
+    double EquilateralTriangle::aperture_area() const
     {
         double r = 0.5 * this->circumscribe_diameter;
         return 0.75 * sqrt(3) * r * r;
     }
 
-    double EqualateralTriangle::diameter_circumscribed_circle() const
+    double EquilateralTriangle::diameter_circumscribed_circle() const
     {
         return this->circumscribe_diameter;
     }
 
-    void EqualateralTriangle::bounding_box(double &xmin,
+    void EquilateralTriangle::bounding_box(double &xmin,
                                            double &xmax,
                                            double &ymin,
                                            double &ymax) const
@@ -381,7 +381,7 @@ namespace SolTrace::Data
         return;
     }
 
-    bool EqualateralTriangle::is_in(double x, double y) const
+    bool EquilateralTriangle::is_in(double x, double y) const
     {
         double r = sqrt(x * x + y * y);
         double ro = this->radius_circumscribed_circle();
@@ -411,7 +411,7 @@ namespace SolTrace::Data
     }
 
     std::tuple<std::vector<double>, std::vector<int>>
-    EqualateralTriangle::triangulation() const
+    EquilateralTriangle::triangulation() const
     {
         double r = circumscribe_diameter / 2.0;
         Triangle tri(Point(0, r),
@@ -420,13 +420,13 @@ namespace SolTrace::Data
         return indexed_triangles(subdivide(tri, 3));
     }
 
-    aperture_ptr EqualateralTriangle::make_copy() const
+    aperture_ptr EquilateralTriangle::make_copy() const
     {
         // Invokes the implicit copy constructor
-        return make_aperture<EqualateralTriangle>(*this);
+        return make_aperture<EquilateralTriangle>(*this);
     }
 
-    void EqualateralTriangle::write_json(nlohmann::ordered_json &jnode) const
+    void EquilateralTriangle::write_json(nlohmann::ordered_json &jnode) const
     {
         ApertureType type = ApertureType::EQUILATERAL_TRIANGLE;
         jnode["aperture_type"] = ApertureTypeMap.at(type);
