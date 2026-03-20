@@ -12,7 +12,8 @@ namespace SolTrace::Data {
 
 Sun::Sun(const nlohmann::ordered_json& jnode)
 {
-    this->my_shape = get_enum_from_string(jnode.at("my_shape"), SunShapeMap, SunShape::UNKNOWN);
+    std::string my_shape_string = jnode.at("my_shape");
+    this->my_shape = get_enum_from_string(my_shape_string, SunShapeMap, SunShape::UNKNOWN);
     if (my_shape == SunShape::UNKNOWN)
     {
         throw std::runtime_error("Error reading sun shape");
@@ -25,7 +26,8 @@ Sun::Sun(const nlohmann::ordered_json& jnode)
     this->user_angle = user_a;
     std::vector<double> user_i = jnode.at("user_intensity");
     this->user_intensity = user_i;
-    this->my_gen_type = get_enum_from_string(jnode.at("gen_type"), GenTypeMap, GenType::UNKNOWN);
+    std::string gen_type_string = jnode.at("gen_type");
+    this->my_gen_type = get_enum_from_string(gen_type_string, GenTypeMap, GenType::UNKNOWN);
     if (my_gen_type == GenType::UNKNOWN)
     {
         throw std::runtime_error("Error reading gen type");
