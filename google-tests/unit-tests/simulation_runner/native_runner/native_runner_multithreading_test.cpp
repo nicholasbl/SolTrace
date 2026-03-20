@@ -128,9 +128,14 @@ TEST(GenerateRay, HaltonUniqueMultiThread)
     double RLocToRef[3][3];
     make_identity(RLocToRef);
 
+    struct ThreadResult
+    {
+        uint_fast64_t expected_count;
+        std::set<std::tuple<double, double, double>> points;
+    };
+
     std::set<std::tuple<double, double, double>> all_points;
-    std::mutex points_mutex;
-    std::vector<std::future<void>> futures;
+    std::vector<std::future<ThreadResult>> futures;
 
     for (unsigned thread_id = 0; thread_id < NTHREADS; ++thread_id)
     {
@@ -139,7 +144,8 @@ TEST(GenerateRay, HaltonUniqueMultiThread)
             const uint_fast64_t local_count = thread_id < rem ? nrays_per_thread + 1 : nrays_per_thread;
             const uint_fast64_t ray_index_offset = thread_id * nrays_per_thread + std::min(static_cast<uint_fast64_t>(thread_id), rem);
 
-            std::set<std::tuple<double, double, double>> local_points;
+            ThreadResult result;
+            result.expected_count = local_count;
             for (uint_fast64_t k = 0; k < local_count; ++k)
             {
                 const uint_fast64_t sample_index = ray_index_offset + k + 1;
@@ -150,19 +156,18 @@ TEST(GenerateRay, HaltonUniqueMultiThread)
                 GenerateRay(myrng, PosSunStage, Origin, RLocToRef, &sun,
                             sample_index, PosRayGlobal, CosRayGlobal, PosRaySun);
 
-                local_points.emplace(PosRaySun[0], PosRaySun[1], PosRaySun[2]);
+                result.points.emplace(PosRaySun[0], PosRaySun[1], PosRaySun[2]);
             }
 
-            ASSERT_EQ(local_points.size(), local_count);
-
-            std::lock_guard<std::mutex> lock(points_mutex);
-            all_points.insert(local_points.begin(), local_points.end());
+            return result;
         }));
     }
 
     for (auto &f : futures)
     {
-        f.get();
+        const ThreadResult result = f.get();
+        EXPECT_EQ(result.points.size(), result.expected_count);
+        all_points.insert(result.points.begin(), result.points.end());
     }
 
     EXPECT_EQ(all_points.size(), NRAYS);
