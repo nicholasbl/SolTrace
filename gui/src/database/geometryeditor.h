@@ -57,6 +57,9 @@ public:
     Q_READONLY_PROPERTY(BoundingBox, bounding_box)
 
     void set(Database*, entt::entity group);
+
+public:
+    void debug();
 };
 
 

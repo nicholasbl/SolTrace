@@ -33,6 +33,11 @@ App::App(QObject* parent, const QString& documentation_directory)
             m_materials,
             &MaterialsModule::set_current_database);
 
+    connect(this,
+            &App::new_database,
+            m_layout,
+            &LayoutModule::set_current_database);
+
     connect(
         m_simulation, &SimulationModule::new_results, this, &App::new_results);
 }

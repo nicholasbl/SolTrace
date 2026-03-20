@@ -17,7 +17,7 @@ qt_add_executable(SolTrace
 )
 
 qt_add_resources(SolTrace "fonts"
-    PREFIX "/fonts"
+    PREFIX "/"
     FILES
         assets/fonts/computer-modern/cmunrm.ttf
         assets/fonts/computer-modern/cmunbx.ttf
@@ -27,10 +27,15 @@ qt_add_resources(SolTrace "fonts"
         assets/fonts/computer-modern/cmunsx.ttf
         assets/fonts/computer-modern/cmunsi.ttf
         assets/fonts/computer-modern/cmunso.ttf
+        assets/fonts/roboto/Roboto-Bold.ttf
+        assets/fonts/roboto/Roboto-BoldItalic.ttf
+        assets/fonts/roboto/Roboto-Italic.ttf
+        assets/fonts/roboto/Roboto-Regular.ttf
+        assets/fonts/font-awesome/fa_solid_7.otf
 )
 
 qt_add_resources(SolTrace "images"
-    PREFIX "/images"
+    PREFIX "/"
     FILES
         assets/images/mark.png
         assets/images/logo.png
@@ -43,7 +48,7 @@ qt_add_resources(SolTrace "images"
 )
 
 qt_add_resources(SolTrace "icons"
-    PREFIX "/icons"
+    PREFIX "/"
     FILES
         assets/icons/chart.svg
         assets/icons/play.svg
@@ -87,93 +92,36 @@ qt_add_resources(SolTrace "icons"
         assets/icons/eye.svg
 )
 
-set_source_files_properties(
-    ui/state/Theme.qml
-    ui/state/UserSettings.qml
-    ui/state/Session.qml
-    ui/state/Documentation.qml
-    ui/state/Enums.qml
-    PROPERTIES QT_QML_SINGLETON_TYPE TRUE
-)
+
+set_source_files_properties(ui/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(SolTrace
-    URI SolTraceProto
+    URI SolTrace
     VERSION 1.0
     QML_FILES
         ui/Main.qml
+        ui/Theme.qml
 
-        ui/state/Theme.qml
-        ui/state/UserSettings.qml
-        ui/state/Session.qml
-        ui/state/Documentation.qml
-        ui/state/Enums.qml
-
-        ui/core/Configure.qml
-        ui/core/Simulate.qml
-        ui/core/Analyze.qml
-        ui/core/TopPane.qml
-        ui/core/MiddlePane.qml
-        ui/core/BottomPane.qml
-
-        ui/viewports/SimulationScene.qml
-        ui/viewports/SceneNavigator.qml
-        ui/viewports/CameraGizmo.qml
-
-        ui/panels/light/SunPanel.qml
-        ui/panels/light/DirectionalSunPanel.qml
-        ui/panels/light/PointSourceSunPanel.qml
-        ui/panels/light/SunShapePanel.qml
-        ui/panels/light/calculators/LegacyCalculatorPanel.qml
-        ui/panels/light/calculators/SOLPOSCalculatorPanel.qml
-        ui/panels/light/calculators/SPACalculatorPanel.qml
-        ui/panels/light/calculators/DuffieCalculatorPanel.qml
-
-        ui/panels/materials/MaterialsPanel.qml
-        ui/panels/staging/StagingPanel.qml
-        ui/panels/tracing/TracingPanel.qml
+        ui/3d/SimulationScene.qml
 
         ui/primitives/containers/GlassRectangle.qml
-        ui/primitives/containers/Callout.qml
-        ui/primitives/containers/SectionCallout.qml
-        ui/primitives/containers/Table.qml
+        ui/primitives/containers/ShadowedGlassRectangle.qml
 
-        ui/primitives/text/Header.qml
-        ui/primitives/text/Body.qml
-        ui/primitives/text/Caption.qml
-        ui/primitives/text/DocSection.qml
-        ui/primitives/text/DocHeaderSection.qml
+        ui/primitives/widgets/STComboBar.qml
+        ui/primitives/widgets/STIconButton.qml
+        ui/primitives/widgets/STClickableLabel.qml
+        ui/primitives/widgets/STTextField.qml
+        ui/primitives/widgets/STPropertyLabel.qml
+        ui/primitives/widgets/STPropertyPanel.qml
 
-        ui/primitives/controls/GlassComboBox.qml
-        ui/primitives/controls/GlassSpinBox.qml
-        ui/primitives/controls/CheckBox.qml
-        ui/primitives/controls/GlassButton.qml
-        ui/primitives/controls/IconButton.qml
+        ui/core/CorePanel.qml
+        ui/core/ConfigureModule.qml
+        ui/core/SimulateModule.qml
+        ui/core/AnalysisModule.qml
+        ui/core/TopBar.qml
+        ui/core/ConfigureMaterials.qml
+        ui/core/material/MaterialOpticals.qml
 
-        ui/primitives/spacing/Spacer.qml
-        ui/primitives/spacing/EndSpacer.qml
-
-        ui/widgets/common/STLabel.qml
-
-        ui/widgets/fields/NumberField.qml
-        ui/widgets/fields/TimeField.qml
-        ui/widgets/fields/DateField.qml
-        ui/widgets/fields/LocationField.qml
-        ui/widgets/fields/SpinBoxField.qml
-        ui/widgets/fields/ScientificNotationField.qml
-        ui/widgets/fields/GlassTextField.qml
-        ui/widgets/fields/CheckBoxField.qml
-
-        ui/widgets/navigators/ComboButtonGroup.qml
-        ui/widgets/navigators/GeometryNavigatorNode.qml
-        ui/widgets/navigators/TreeNavigator.qml
-        ui/widgets/navigators/GlassTabBar.qml
-        ui/widgets/navigators/TreeNavigatorNode.qml
-
-        ui/widgets/tables/CustomEmissionProfileTable.qml
-        ui/widgets/tables/CustomEmissionProfileTableRow.qml
-        ui/widgets/tables/OpticalMaterialsTable.qml
-        ui/widgets/tables/OpticalMaterialsTableRow.qml
-        ui/widgets/tables/MaterialParameterField.qml
 
     DEPENDENCIES
         QtQuick
@@ -218,19 +166,18 @@ qt_add_qml_module(SolTrace
         src/modules/flux_module.h src/modules/flux_module.cpp
         src/modules/layout_module.h src/modules/layout_module.cpp
         src/modules/workflow_module.h src/modules/workflow_module.cpp
+        QML_FILES ui/primitives/widgets/STSpinBox.qml
+        QML_FILES ui/primitives/widgets/WellRectangle.qml
+        QML_FILES ui/primitives/widgets/STComboBox.qml
+        QML_FILES ui/core/material/SurfacePropertyGraphic.qml
+        QML_FILES ui/core/ConfigureGeometry.qml
+        QML_FILES ui/core/material/SurfacePreviewScene.qml
+        QML_FILES ui/core/material/GeometryProperties.qml
+        QML_FILES ui/3d/CustomOrbitController.qml
+        QML_FILES ui/core/material/SurfaceGrid.qml
 
-        QML_FILES ui/core/ConfigureSidebarBody.qml
-        QML_FILES ui/widgets/common/STItemDelegate.qml
-        QML_FILES ui/panels/materials/MaterialLeftSide.qml
-        QML_FILES ui/panels/materials/MaterialRightSide.qml
-        QML_FILES ui/panels/materials/MaterialOpticals.qml
-        QML_FILES ui/panels/materials/PropertyPanel.qml
-        QML_FILES ui/panels/materials/PropertyLabel.qml
-        QML_FILES ui/panels/materials/PropertyTest.qml
-        QML_FILES ui/panels/materials/PropertyLinearCombo.qml
-        QML_FILES ui/panels/materials/GeometryPropPanel.qml
-        QML_FILES ui/panels/materials/AperturePropPanel.qml
-        QML_FILES ui/widgets/common/STSearchAndFilter.qml
+
+
 )
 
 CPMAddPackage(

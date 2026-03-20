@@ -28,6 +28,7 @@ public:
     QOBJECT_WRITABLE_PROPERTY(db::ChildModel, child_model);
     QOBJECT_WRITABLE_PROPERTY(db::BreadcrumbModel, breadcrumb_model);
     QOBJECT_WRITABLE_PROPERTY(db::AnInstanceEditor, instance_edit);
+    QOBJECT_READONLY_PROPERTY(db::WorldGeometryModel, world_geometry_model);
 
     QOBJECT_READONLY_PROPERTY(StatusComponent, status);
 };

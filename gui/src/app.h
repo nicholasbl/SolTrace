@@ -72,7 +72,8 @@ class App : public QObject {
     QML_SINGLETON
 
 public:
-    explicit App(QObject* parent = nullptr, const QString& documentation_directory = "");
+    explicit App(QObject*       parent                  = nullptr,
+                 QString const& documentation_directory = "");
 
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
 

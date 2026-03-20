@@ -155,6 +155,10 @@ void SurfaceGeometry::rebuild_geometry() {
     update();
 }
 
+void SurfaceGeometry::debug() {
+    qDebug() << this->bounding_box().min << this->bounding_box().max;
+}
+
 // -------------------- GroupEditor --------------------
 
 using SurfaceEditor = GroupEditor;

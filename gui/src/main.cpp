@@ -8,14 +8,15 @@
 #include <QQmlContext>
 
 constexpr auto font_list = std::array {
-    ":/fonts/assets/fonts/computer-modern/cmunrm.ttf",
-    ":/fonts/assets/fonts/computer-modern/cmunbx.ttf",
-    ":/fonts/assets/fonts/computer-modern/cmunti.ttf",
-    ":/fonts/assets/fonts/computer-modern/cmunbi.ttf",
-    ":/fonts/assets/fonts/roboto/Roboto-Regular.ttf",
-    ":/fonts/assets/fonts/roboto/Roboto-Italic.ttf",
-    ":/fonts/assets/fonts/roboto/Roboto-BoldItalic.ttf",
-    ":/fonts/assets/fonts/roboto/Roboto-Bold.ttf",
+    ":/assets/fonts/computer-modern/cmunrm.ttf",
+    ":/assets/fonts/computer-modern/cmunbx.ttf",
+    ":/assets/fonts/computer-modern/cmunti.ttf",
+    ":/assets/fonts/computer-modern/cmunbi.ttf",
+    ":/assets/fonts/roboto/Roboto-Regular.ttf",
+    ":/assets/fonts/roboto/Roboto-Italic.ttf",
+    ":/assets/fonts/roboto/Roboto-BoldItalic.ttf",
+    ":/assets/fonts/roboto/Roboto-Bold.ttf",
+    ":/assets/fonts/font-awesome/fa_solid_7.otf",
 };
 
 int main(int argc, char* argv[]) {
@@ -35,10 +36,6 @@ int main(int argc, char* argv[]) {
 
     QQmlApplicationEngine engine;
 
-    // Initialize context properties as null/undefined before loading QML
-    engine.rootContext()->setContextProperty("globalWindow", QVariant());
-    engine.rootContext()->setContextProperty("globalScene", QVariant());
-
     QObject::connect(
         &engine,
         &QQmlApplicationEngine::objectCreationFailed,
@@ -46,20 +43,7 @@ int main(int argc, char* argv[]) {
         []() { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
 
-    engine.loadFromModule("SolTraceProto", "Main");
-
-    if (!engine.rootObjects().isEmpty()) {
-        QObject* rootObject = engine.rootObjects().first();
-        QQuickWindow* window = qobject_cast<QQuickWindow*>(rootObject);
-        if (window) {
-            engine.rootContext()->setContextProperty("globalWindow", QVariant::fromValue(window));
-
-            QObject* scene = window->findChild<QObject*>("simulationScene");
-            if (scene) {
-                engine.rootContext()->setContextProperty("globalScene", QVariant::fromValue(scene));
-            }
-        }
-    }
+    engine.loadFromModule("SolTrace", "Main");
 
     return app.exec();
 }
