@@ -63,10 +63,6 @@ Item {
                 STIconButton {
                     text: "\uf055"
                 }
-
-                STIconButton {
-                    text: "\uf2ed"
-                }
             }
         }
     }
@@ -157,6 +153,13 @@ Item {
                     //         Layout.fillWidth: true
                     //     }
                     // }
+                }
+            }
+
+            RowLayout {
+
+                STIconButton {
+                    text: "\uf2ed"
                 }
             }
         }

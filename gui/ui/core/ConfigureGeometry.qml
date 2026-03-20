@@ -62,10 +62,6 @@ Item {
                 STIconButton {
                     text: "\uf055"
                 }
-
-                STIconButton {
-                    text: "\uf2ed"
-                }
             }
         }
     }
@@ -104,6 +100,12 @@ Item {
                     //width: parent.availableWidth
                 }
 
+            }
+
+            RowLayout {
+                STIconButton {
+                    text: "\uf2ed"
+                }
             }
         }
     }

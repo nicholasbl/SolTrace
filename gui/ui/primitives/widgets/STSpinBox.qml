@@ -1,6 +1,6 @@
 import QtQuick 2.15
-import QtQuick.Controls.Basic
-import SolTraceProto
+import QtQuick.Controls.Material
+import SolTrace
 
 SpinBox {
     id: control
@@ -46,11 +46,9 @@ SpinBox {
 
     contentItem: TextInput {
         z: 2
+        color: Material.foreground
         text: control.textFromValue(control.value, control.locale)
         font: control.font
-        color: Theme.textColor
-        selectionColor: Theme.textColor
-        selectedTextColor: Theme.textColor
         horizontalAlignment: Qt.AlignHCenter
         verticalAlignment: Qt.AlignVCenter
         readOnly: !control.editable
@@ -58,28 +56,25 @@ SpinBox {
         inputMethodHints: control.inputMethodHints
     }
 
-    background: Rectangle {
+    background: WellRectangle {
         implicitWidth: 80
-        implicitHeight: 40
-        color: "transparent"
-        border.color: Theme.lineColor
-        border.width: 1
-        radius: 8
+        implicitHeight: 32
+        radius: height / 2
     }
 
     up.indicator: Rectangle {
         x: control.mirrored ? 0 : parent.width - width
         height: parent.height
-        implicitWidth: 40
-        implicitHeight: 40
+        implicitWidth: 32
+        implicitHeight: 32
         color: control.up.pressed ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
-        radius: 8
+        radius: height / 2
         opacity: (control.hovered || control.activeFocus) ? 1 : 0
 
-        Text {
-            text: "+"
-            font.pixelSize: control.font.pixelSize * 1.5
-            color: Theme.textColor
+        Label {
+            text: "\u002b"
+            font.family: "Font Awesome 7 Free"
+            font.pixelSize: control.font.pixelSize
             anchors.centerIn: parent
         }
     }
@@ -87,16 +82,16 @@ SpinBox {
     down.indicator: Rectangle {
         x: control.mirrored ? parent.width - width : 0
         height: parent.height
-        implicitWidth: 40
-        implicitHeight: 40
+        implicitWidth: 32
+        implicitHeight: 32
         color: control.down.pressed ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
-        radius: 8
+        radius: height / 2
         opacity: (control.hovered || control.activeFocus) ? 1 : 0
 
-        Text {
-            text: "-"
-            font.pixelSize: control.font.pixelSize * 1.5
-            color: Theme.textColor
+        Label {
+            text: "\uf068"
+            font.family: "Font Awesome 7 Free"
+            font.pixelSize: control.font.pixelSize
             anchors.centerIn: parent
         }
     }

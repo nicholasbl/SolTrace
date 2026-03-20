@@ -11,7 +11,7 @@ Rectangle {
 
     property int currentIndex: 0
 
-    property bool model_is_icon: false
+    property string fontFamily
 
     property var model: []
 
@@ -178,8 +178,8 @@ Rectangle {
 
                     anchors.fill: parent
 
-                    font.family: bar.model_is_icon ?
-                                "Font Awesome 7 Free"
+                    font.family: bar.fontFamily.length ?
+                                bar.fontFamily
                                    :
                                 default_label.font.family
 

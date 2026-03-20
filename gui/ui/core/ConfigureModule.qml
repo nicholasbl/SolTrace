@@ -15,7 +15,7 @@ ColumnLayout {
         
         Layout.fillWidth: true
 
-        model_is_icon: size_class < 1
+        fontFamily: size_class < 1 ? "Font Awesome 7 Free" : ""
         
         model : size_class < 1 ?
                     ["\uf0eb", "\uf53f", "\uf1b2", "\ue4e6"]
