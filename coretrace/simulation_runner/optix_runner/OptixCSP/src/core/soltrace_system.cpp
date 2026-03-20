@@ -129,6 +129,19 @@ void SolTraceSystem::initialize()
     data_manager->launch_params_H.sun_vector = make_float3(static_cast<float>(sun_vec_norm[0]),
                                                            static_cast<float>(sun_vec_norm[1]), static_cast<float>(sun_vec_norm[2]));
 
+    // Set generation type
+    switch (m_sun->get_gen_type())
+    {
+        case(SolTrace::Data::GenType::RANDOM):
+            data_manager->launch_params_H.sun_gen_type = OptixCSP::GenType::RANDOM;
+            break;
+        case(SolTrace::Data::GenType::HALTON):
+            data_manager->launch_params_H.sun_gen_type = OptixCSP::GenType::HALTON;
+            break;
+        default:
+            data_manager->launch_params_H.sun_gen_type = OptixCSP::GenType::UNKNOWN;
+    }
+
     // Assign sun shape parameters (if necessary)
     data_manager->launch_params_H.include_sun_shape_errors = this->m_include_sun_shape_errors;
     if (this->m_include_sun_shape_errors)
