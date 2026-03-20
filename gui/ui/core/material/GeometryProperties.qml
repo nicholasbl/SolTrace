@@ -8,7 +8,7 @@ STPropertyPanel {
     //title: "Geometry"
     //collapsed: false
 
-    property var group_edit: App.materials.group_edit
+    property var group_edit: App.materials.geometry_edit
 
     STPropertyLabel {
         text: "Surface Type"

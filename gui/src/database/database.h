@@ -72,11 +72,18 @@ public:
     ComponentAPIUpdate<InvisibleComponent>            invisible;
     ComponentAPI<ChildOfComponent>                    parent;
     ComponentAPI<TagComponent>                        tag_root;
-    ComponentAPI<RenderGroupComponent>                group_root;
-    ComponentAPIUpdate<RenderGroupParameterComponent> group_parameters;
-    ComponentAPI<ChildrenComponent>                   children;
-    ComponentAPI<RenderGroupMemberComponent>          group_membership;
-    ComponentAPI<TagMembershipComponent>              tag_membership;
+
+    ComponentAPI<MaterialGroupComponent>       material_root;
+    ComponentAPIUpdate<MaterialComponent>      material_parameters;
+    ComponentAPI<MaterialGroupMemberComponent> material_group_membership;
+
+    ComponentAPI<GeometryGroupComponent>       geometry_root;
+    ComponentAPIUpdate<GeometryComponent>      geometry_parameters;
+    ComponentAPI<GeometryGroupMemberComponent> geometry_group_membership;
+
+    ComponentAPI<ChildrenComponent> children;
+
+    ComponentAPI<TagMembershipComponent> tag_membership;
 
 public:
     /// Helper function: patch a component, creating it if it does not exist.
@@ -103,11 +110,17 @@ public:
     /// Get the parent of this entity. Returns entt::null if there is none.
     entt::entity parent_of(entt::entity child) const;
 
+    /// Assign an entity to a material group
+    void assign_material(entt::entity child, entt::entity group);
+
+    /// Remove an entity from a material group
+    void remove_material(entt::entity child);
+
     /// Assign an entity to a geometry group
-    void assign_group(entt::entity child, entt::entity group);
+    void assign_geometry(entt::entity child, entt::entity group);
 
     /// Remove an entity from a geometry group
-    void unset_group(entt::entity child);
+    void remove_geometry(entt::entity child);
 
     /// Create a new tag. Note that tag names should be unique.
     entt::entity create_tag(QString name);
@@ -141,12 +154,19 @@ public:
 
 
 public slots:
-    entt::entity add_render_group(QString               new_name,
-                                  QVector<entt::entity> members,
-                                  entt::entity clone_from = entt::null);
+    entt::entity add_material_group(QString               new_name,
+                                    QVector<entt::entity> members,
+                                    entt::entity clone_from = entt::null);
 
-    void delete_render_group(entt::entity to_delete,
-                             entt::entity move_to = entt::null);
+    void delete_material_group(entt::entity to_delete,
+                               entt::entity move_to = entt::null);
+
+    entt::entity add_geometry_group(QString               new_name,
+                                    QVector<entt::entity> members,
+                                    entt::entity clone_from = entt::null);
+
+    void delete_geometry_group(entt::entity to_delete,
+                               entt::entity move_to = entt::null);
 };
 
 

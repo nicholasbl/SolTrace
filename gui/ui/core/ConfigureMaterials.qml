@@ -87,7 +87,10 @@ Item {
 
                 Layout.preferredHeight: 148
 
-                property var face : materials_module.group_edit.front_editor
+                property var face : bar.currentIndex == 0 ?
+                                        materials_module.material_edit.front_editor
+                                      :
+                                        materials_module.material_edit.back_editor
 
 
                 reflectance: face.reflectivity
@@ -132,14 +135,14 @@ Item {
                         collapsed: false
                         //title: "Front Side"
                         Layout.fillWidth: true
-                        side_editor: materials_module.group_edit.front_editor
+                        side_editor: materials_module.material_edit.front_editor
                     }
 
                     MaterialOpticals {
                         collapsed: false
                         //title: "Back Side"
                         Layout.fillWidth: true
-                        side_editor: materials_module.group_edit.back_editor
+                        side_editor: materials_module.material_edit.back_editor
                     }
 
                     // ColumnLayout {

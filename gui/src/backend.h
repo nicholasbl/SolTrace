@@ -68,7 +68,7 @@ public:
 
     QOBJECT_READONLY_PROPERTY(db::BreadcrumbModel, breadcrumb_model);
     QOBJECT_READONLY_PROPERTY(db::ChildModel, child_model);
-    QOBJECT_READONLY_PROPERTY(db::RenderGroupsModel, render_groups_model);
+    QOBJECT_READONLY_PROPERTY(db::MaterialGroupsModel, render_groups_model);
     QOBJECT_READONLY_PROPERTY(db::TagsModel, tags_model);
 };
 

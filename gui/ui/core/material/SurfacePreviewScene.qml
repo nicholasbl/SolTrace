@@ -73,7 +73,7 @@ View3D {
         rotation: Quaternion.fromEulerAngles(-90,0,0)
 
         Model {
-            geometry: App.materials.group_edit.surface_geometry
+            geometry: App.materials.geometry_edit.surface_geometry
 
             materials : [
                 PrincipledMaterial {

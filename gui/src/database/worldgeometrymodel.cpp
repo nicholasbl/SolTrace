@@ -3,7 +3,7 @@
 
 namespace db {
 
-void InstancedElements::on_group_change(entt::entity group) {
+void InstancedElements::on_geometry_group_change(entt::entity group) {
     m_instance_data.clear();
     m_member_cache.clear();
     m_rev_cache.clear();
@@ -13,7 +13,7 @@ void InstancedElements::on_group_change(entt::entity group) {
     if (group != m_target_group) return;
     if (!m_database) return;
 
-    auto* ptr = m_database->group_root.get(group);
+    auto* ptr = m_database->geometry_root.get(group);
 
 
     for (auto member : std::as_const(ptr->members)) {
@@ -42,17 +42,17 @@ InstancedElements::InstancedElements(Database*       db,
     : QQuick3DInstancing(parent), m_database(db), m_target_group(group) {
     if (!db) return;
 
-    connect(db->group_membership.self(),
+    connect(db->geometry_group_membership.self(),
             &ComponentAPIBase::changed,
             this,
-            &InstancedElements::on_group_change);
+            &InstancedElements::on_geometry_group_change);
 
-    connect(db->group_membership.self(),
+    connect(db->geometry_group_membership.self(),
             &ComponentAPIBase::removed,
             this,
-            &InstancedElements::on_group_change);
+            &InstancedElements::on_geometry_group_change);
 
-    on_group_change(group);
+    on_geometry_group_change(group);
 }
 
 QByteArray InstancedElements::getInstanceBuffer(int* instanceCount) {
@@ -66,12 +66,12 @@ QByteArray InstancedElements::getInstanceBuffer(int* instanceCount) {
 
 static VisibleGroup vis_assets_for_entity(Database& db, entt::entity e) {
     auto vg = VisibleGroup {
-        .group_entity    = e,
-        .group_instances = std::make_shared<InstancedElements>(&db, e),
-        .group_geometry  = std::make_shared<SurfaceGeometry>(),
+        .geometry_group_entity = e,
+        .group_instances       = std::make_shared<InstancedElements>(&db, e),
+        .group_geometry        = std::make_shared<SurfaceGeometry>(),
     };
 
-    auto grp = db.group_parameters.get(e);
+    auto grp = db.geometry_parameters.get(e);
 
     if (!grp) {
         qWarning() << "Unable to get group parameters";
@@ -90,14 +90,14 @@ QVector<VisibleGroup> WorldGeometryModel::rebuild_lists() {
 
     if (!m_host) return {};
 
-    auto view = m_host->as_registry().view<RenderGroupComponent>();
+    auto view = m_host->as_registry().view<GeometryGroupComponent>();
 
     for (auto const& [e, group] : view.each()) {
         new_recs.push_back(vis_assets_for_entity(*m_host, e));
     }
 
     for (size_t i = 0; i < new_recs.size(); i++) {
-        m_reverse[new_recs[i].group_entity] = i;
+        m_reverse[new_recs[i].geometry_group_entity] = i;
     }
 
     qDebug() << Q_FUNC_INFO << "Done" << new_recs.size();
@@ -133,12 +133,12 @@ void WorldGeometryModel::reset(Database* database) {
 
     if (!database) { return; }
 
-    connect(database->group_root.self(),
+    connect(database->geometry_root.self(),
             &ComponentAPIBase::changed,
             this,
             &WorldGeometryModel::group_changed);
 
-    connect(database->group_root.self(),
+    connect(database->geometry_root.self(),
             &ComponentAPIBase::removed,
             this,
             &WorldGeometryModel::group_removed);

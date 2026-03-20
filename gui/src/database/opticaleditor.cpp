@@ -21,13 +21,19 @@ void OpticalPropertiesObject::trigger_all_changed() {
 
 void OpticalPropertiesObject::set(Database* db, entt::entity group) {
     observe(db);
+
+    if (!db->material_parameters.get(group)) {
+        m_current_group = entt::null;
+        return;
+    }
+
     m_current_group = group;
 
     trigger_all_changed();
 }
 
 void OpticalPropertiesObject::set_new_database_connections(Database* ptr) {
-    add_connection(connect(ptr->group_parameters.self(),
+    add_connection(connect(ptr->material_parameters.self(),
                            &ComponentAPIBase::changed,
                            this,
                            &OpticalPropertiesObject::parameters_changed));
@@ -42,7 +48,7 @@ void OpticalPropertiesObject::parameters_changed(entt::entity e) {
 SolTrace::Data::OpticalProperties* OpticalPropertiesObject::get_properties() {
     if (!database()) return nullptr;
 
-    auto* ptr = database()->group_parameters.get(m_current_group);
+    auto* ptr = database()->material_parameters.get(m_current_group);
 
     if (!ptr) return nullptr;
 
@@ -57,7 +63,7 @@ SolTrace::Data::OpticalProperties const*
 OpticalPropertiesObject::get_properties() const {
     if (!database()) return nullptr;
 
-    auto* ptr = database()->group_parameters.get(m_current_group);
+    auto* ptr = database()->material_parameters.get(m_current_group);
 
     if (!ptr) return nullptr;
 

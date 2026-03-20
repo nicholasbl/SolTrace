@@ -33,7 +33,7 @@ Item {
                 clip: true
 
 
-                model: materials_module.materials_list
+                model: materials_module.geometry_list
 
                 ScrollIndicator.vertical: ScrollIndicator { }
 
@@ -45,7 +45,7 @@ Item {
                     text: name
 
                     onClicked: {
-                        materials_module.current_material = entity
+                        materials_module.current_geometry = entity
                         stack.push(material_edit_view)
                     }
 
@@ -77,7 +77,7 @@ Item {
                 }
 
                 Label {
-                    text: materials_module.current_material_name
+                    text: materials_module.current_geometry_name
                 }
             }
 

@@ -158,9 +158,12 @@ static bool is_equal(SD::surface_ptr const& a, SD::surface_ptr const& b) {
     return is_equal(*a, *b);
 }
 
-bool RenderGroupParameterComponent::operator==(db::RenderGroupParameterComponent const& b) const {
-    return is_equal(aperture, b.aperture) and is_equal(surface, b.surface) and
-           optics_front == b.optics_front and optics_back == b.optics_back;
+bool MaterialComponent::operator==(db::MaterialComponent const& b) const {
+    return optics_front == b.optics_front and optics_back == b.optics_back;
+}
+
+bool GeometryComponent::operator==(db::GeometryComponent const& b) const {
+    return is_equal(aperture, b.aperture) and is_equal(surface, b.surface);
 }
 
 

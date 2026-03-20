@@ -78,7 +78,7 @@ STPropertyPanel {
     STComboBox {
         id: interactionCombo
         Layout.fillWidth: true
-        model: App.materials.group_edit.interaction_type_model
+        model: App.materials.material_edit.interaction_type_model
         textRole: "display"
 
         onActivated: {
@@ -106,7 +106,7 @@ STPropertyPanel {
     STComboBox {
         id: distributionCombo
         Layout.fillWidth: true
-        model: App.materials.group_edit.distribution_type_model
+        model: App.materials.material_edit.distribution_type_model
         textRole: "display"
         enabled: count > 0
         onCountChanged: {
@@ -269,7 +269,7 @@ STPropertyPanel {
 
     STComboBox {
         Layout.fillWidth: true
-        model: App.materials.group_edit.distribution_type_model
+        model: App.materials.material_edit.distribution_type_model
         textRole: "display"
         enabled: count > 0
         visible: false

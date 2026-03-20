@@ -175,6 +175,7 @@ qt_add_qml_module(SolTrace
         QML_FILES ui/core/material/GeometryProperties.qml
         QML_FILES ui/3d/CustomOrbitController.qml
         QML_FILES ui/core/material/SurfaceGrid.qml
+        SOURCES src/database/materialeditor.h src/database/materialeditor.cpp
 
 
 

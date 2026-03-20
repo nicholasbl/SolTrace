@@ -10,7 +10,7 @@ SurfaceGeometry::SurfaceGeometry() {
 }
 
 void SurfaceGeometry::set_new_database_connections(Database* ptr) {
-    connect(ptr->group_parameters.self(),
+    connect(ptr->geometry_parameters.self(),
             &ComponentAPIBase::changed,
             this,
             &SurfaceGeometry::parameters_changed);
@@ -32,7 +32,7 @@ void SurfaceGeometry::rebuild_geometry() {
 
     if (!database()) return;
 
-    auto ptr = database()->group_parameters.get(m_current_group);
+    auto ptr = database()->geometry_parameters.get(m_current_group);
 
     if (!ptr) return;
 
@@ -161,7 +161,7 @@ void SurfaceGeometry::debug() {
 
 // -------------------- GroupEditor --------------------
 
-using SurfaceEditor = GroupEditor;
+using SurfaceEditor = GeometryEditor;
 
 inline SD::SurfaceType string_to_surface(QString str) {
     auto string = str.toStdString();
@@ -181,6 +181,7 @@ inline SD::ApertureType string_to_aperture(QString str) {
     return SD::ApertureType::APERTURE_UNKNOWN;
 }
 
+// todo: Improve
 template <class K>
 void build_options(QStringListModel&               dest,
                    std::map<K, std::string> const& opts) {
@@ -254,9 +255,9 @@ bool segments_intersect(double ax,
 }
 
 /// Aperture-only validity checks (shape parameters and basic geometric sanity).
-GroupEditor::GeometryValidationStatus validate_aperture(
-    SD::aperture_ptr const& aperture) {
-    using Status = GroupEditor::GeometryValidationStatus;
+GeometryEditor::GeometryValidationStatus
+validate_aperture(SD::aperture_ptr const& aperture) {
+    using Status = GeometryEditor::GeometryValidationStatus;
 
     if (!aperture) return Status::Error;
 
@@ -347,9 +348,9 @@ GroupEditor::GeometryValidationStatus validate_aperture(
 }
 
 /// Surface-only validity checks (parameter ranges and support level).
-GroupEditor::GeometryValidationStatus validate_surface(
-    SD::surface_ptr const& surface) {
-    using Status = GroupEditor::GeometryValidationStatus;
+GeometryEditor::GeometryValidationStatus
+validate_surface(SD::surface_ptr const& surface) {
+    using Status = GeometryEditor::GeometryValidationStatus;
 
     if (!surface) return Status::Error;
 
@@ -403,10 +404,10 @@ GroupEditor::GeometryValidationStatus validate_surface(
 
 /// Pairwise compatibility check:
 /// confirms the selected surface can evaluate z(x,y) across aperture samples.
-GroupEditor::GeometryValidationStatus validate_surface_aperture_pair(
-    SD::surface_ptr const&  surface,
-    SD::aperture_ptr const& aperture) {
-    using Status = GroupEditor::GeometryValidationStatus;
+GeometryEditor::GeometryValidationStatus
+validate_surface_aperture_pair(SD::surface_ptr const&  surface,
+                               SD::aperture_ptr const& aperture) {
+    using Status = GeometryEditor::GeometryValidationStatus;
 
     if (!surface || !aperture) return Status::Error;
 
@@ -430,56 +431,58 @@ GroupEditor::GeometryValidationStatus validate_surface_aperture_pair(
     return Status::Ok;
 }
 
-GroupEditor::GroupEditor(QObject* parent)
+GeometryEditor::GeometryEditor(QObject* parent)
     : QObject { parent },
       m_surface_geometry(new SurfaceGeometry()),
-      m_back_editor(new OpticalPropertiesObject(true, this)),
-      m_front_editor(new OpticalPropertiesObject(false, this)),
-      m_interaction_type_model(new QStringListModel(this)),
-      m_distribution_type_model(new QStringListModel(this)),
+
+
       m_surface_type_model(new QStringListModel(this)),
       m_aperture_type_model(new QStringListModel(this))
 
 {
 
-    build_options(*m_interaction_type_model, SD::InteractionTypeMap);
-    build_options(*m_distribution_type_model, SD::DistributionTypeMap);
     build_options(*m_surface_type_model, SD::SurfaceTypeMap);
     build_options(*m_aperture_type_model, SD::ApertureTypeMap);
 
-    connect(
-        this, &GroupEditor::surface_kind_changed, this, &GroupEditor::updated);
+    connect(this,
+            &GeometryEditor::surface_kind_changed,
+            this,
+            &GeometryEditor::updated);
 
-    connect(this, &GroupEditor::kind_changed, this, &GroupEditor::updated);
+    connect(
+        this, &GeometryEditor::kind_changed, this, &GeometryEditor::updated);
 
     // TODO spurious rebuilds
-    connect(this, &GroupEditor::surface_arguments_changed, this, [this]() {
+    connect(this, &GeometryEditor::surface_arguments_changed, this, [this]() {
         make_new_surface(string_to_surface(m_surf_kind));
     });
 
-    connect(this, &GroupEditor::updated, this, &GroupEditor::evaluate_geometry_validation);
+    connect(this,
+            &GeometryEditor::updated,
+            this,
+            &GeometryEditor::evaluate_geometry_validation);
 
     make_new_aperture(SolTrace::Data::APERTURE_UNKNOWN);
 }
 
-GroupEditor::~GroupEditor() {
+GeometryEditor::~GeometryEditor() {
     delete m_surface_geometry;
 }
 
-void GroupEditor::parameters_changed(entt::entity e) {
+void GeometryEditor::parameters_changed(entt::entity e) {
     if (this->m_current_group != e) return;
     emit surface_kind_changed();
     emit kind_changed();
 }
 
-void GroupEditor::set_new_database_connections(Database* ptr) {
-    add_connection(connect(ptr->group_parameters.self(),
+void GeometryEditor::set_new_database_connections(Database* ptr) {
+    add_connection(connect(ptr->geometry_parameters.self(),
                            &ComponentAPIBase::changed,
                            this,
-                           &GroupEditor::parameters_changed));
+                           &GeometryEditor::parameters_changed));
 }
 
-void GroupEditor::make_new_aperture(SD::ApertureType type) {
+void GeometryEditor::make_new_aperture(SD::ApertureType type) {
     if (!database()) return;
 
     if (m_aperture_editor) {
@@ -494,12 +497,13 @@ void GroupEditor::make_new_aperture(SD::ApertureType type) {
         params.aperture = ptr;                                                 \
         auto editor     = new TYPE##Wrapper(ptr.get(), this);                  \
         set_aperture_editor(editor);                                           \
-        connect(editor, &TYPE##Wrapper::changed, this, &GroupEditor::updated); \
+        connect(                                                               \
+            editor, &TYPE##Wrapper::changed, this, &GeometryEditor::updated);  \
     }                                                                          \
     break;
 
-    database()->as_registry().patch<RenderGroupParameterComponent>(
-        m_current_group, [this, type](RenderGroupParameterComponent& params) {
+    database()->as_registry().patch<GeometryComponent>(
+        m_current_group, [this, type](GeometryComponent& params) {
             switch (type) {
             case SolTrace::Data::ANNULUS:
                 EDIT_CASE(Annulus, 0.0, 1.0, 2 * M_PI);
@@ -517,55 +521,53 @@ void GroupEditor::make_new_aperture(SD::ApertureType type) {
         });
 }
 
-void GroupEditor::make_new_surface(SD::SurfaceType type) {
+void GeometryEditor::make_new_surface(SD::SurfaceType type) {
     // weeeee
     auto const& l      = surface_arguments();
     auto        sdvec  = std::vector<double> { l.begin(), l.end() };
-    database()->as_registry().patch<RenderGroupParameterComponent>(
-        m_current_group, [sdvec, type](RenderGroupParameterComponent& params) {
+    database()->as_registry().patch<GeometryComponent>(
+        m_current_group, [sdvec, type](GeometryComponent& params) {
             params.surface = SD::make_surface_from_type(type, sdvec);
         });
 }
 
-void GroupEditor::set(Database* database, entt::entity group) {
+void GeometryEditor::set(Database* database, entt::entity group) {
     observe(database);
     m_current_group = group;
     m_surface_geometry->set(database, group);
-    m_front_editor->set(database, group);
-    m_back_editor->set(database, group);
     emit updated();
 }
 
-QString GroupEditor::kind() const {
+QString GeometryEditor::kind() const {
     return m_kind;
 }
 
-void GroupEditor::set_kind(QString newKind) {
+void GeometryEditor::set_kind(QString newKind) {
     if (m_kind == newKind) return;
     m_kind = newKind;
     make_new_aperture(string_to_aperture(m_kind));
     emit kind_changed();
 }
 
-QString GroupEditor::surface_kind() const {
+QString GeometryEditor::surface_kind() const {
     return m_surf_kind;
 }
 
-void GroupEditor::set_surface_kind(QString newSurface_kind) {
+void GeometryEditor::set_surface_kind(QString newSurface_kind) {
     if (m_surf_kind == newSurface_kind) return;
     m_surf_kind = newSurface_kind;
     make_new_surface(string_to_surface(m_surf_kind));
     emit surface_kind_changed();
 }
 
-GroupEditor::GeometryValidationStatus GroupEditor::geometry_validation_status()
-    const {
+GeometryEditor::GeometryValidationStatus
+GeometryEditor::geometry_validation_status() const {
     return m_geometry_validation_status;
 }
 
 /// Collapses all geometry checks into a single severity for UI consumption.
-void GroupEditor::evaluate_geometry_validation() {
-    using Status = GroupEditor::GeometryValidationStatus;
+void GeometryEditor::evaluate_geometry_validation() {
+    using Status = GeometryEditor::GeometryValidationStatus;
 
     auto merge = [](Status a, Status b) {
         auto rank = [](Status s) {
@@ -582,7 +584,7 @@ void GroupEditor::evaluate_geometry_validation() {
     Status new_status = Status::Error;
 
     if (database()) {
-        auto* params = database()->group_parameters.get(m_current_group);
+        auto* params = database()->geometry_parameters.get(m_current_group);
         if (params) {
             new_status = Status::Ok;
             new_status = merge(new_status, validate_aperture(params->aperture));

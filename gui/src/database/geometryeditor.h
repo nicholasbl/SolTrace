@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QStringListModel>
 #include <QtGui/qvectornd.h>
 #include <QtQuick3D/qquick3dgeometry.h>
 
@@ -9,7 +10,6 @@
 #include "utilities/qt_helpers.h"
 
 #include "aperture.hpp"
-#include "opticaleditor.h"
 #include "surface.hpp"
 
 namespace SD = SolTrace::Data;
@@ -17,7 +17,7 @@ namespace SD = SolTrace::Data;
 
 namespace db {
 
-struct RenderGroupParameterComponent;
+struct MaterialComponent;
 
 class BoundingBox {
     Q_GADGET
@@ -64,7 +64,7 @@ public:
 
 
 /// Model providing an interface to edit a group
-class GroupEditor : public QObject, public DatabaseObserver {
+class GeometryEditor : public QObject, public DatabaseObserver {
     Q_OBJECT
 
     entt::entity m_current_group = entt::null;
@@ -99,14 +99,7 @@ private:
 
     Q_WRITABLE_PROPERTY(QVector<double>, surface_arguments, {});
 
-    QOBJECT_WRITABLE_PROPERTY(OpticalPropertiesObject, back_editor);
-    QOBJECT_WRITABLE_PROPERTY(OpticalPropertiesObject, front_editor);
-
     // UX Helpers
-
-
-    QOBJECT_READONLY_PROPERTY(QStringListModel, interaction_type_model);
-    QOBJECT_READONLY_PROPERTY(QStringListModel, distribution_type_model);
     QOBJECT_READONLY_PROPERTY(QStringListModel, surface_type_model);
     QOBJECT_READONLY_PROPERTY(QStringListModel, aperture_type_model);
 
@@ -116,12 +109,13 @@ private:
 
 private slots:
     void parameters_changed(entt::entity);
+
     /// Recompute `geometry_validation_status` from current group parameters.
     void evaluate_geometry_validation();
 
 public:
-    explicit GroupEditor(QObject* parent = nullptr);
-    ~GroupEditor() override;
+    explicit GeometryEditor(QObject* parent = nullptr);
+    ~GeometryEditor() override;
 
     void set(Database*, entt::entity group);
 
