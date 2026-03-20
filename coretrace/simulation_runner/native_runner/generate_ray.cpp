@@ -4,9 +4,9 @@
 
 namespace SolTrace::NativeRunner {
 
-double halton(int index, int base)
+double halton(uint_fast64_t index, uint_fast64_t base)
 {
-	double f = 1;
+	double f = 1.0;
 	double result = 0;
 	while (index > 0)
 	{
@@ -131,8 +131,8 @@ void GenerateRay(
 			}
 			case(SolTrace::Data::GenType::HALTON):
 			{
-				const double u = halton(static_cast<int>(sample_index), 2);
-				const double v = halton(static_cast<int>(sample_index), 3);
+				const double u = halton(sample_index, 2);
+				const double v = halton(sample_index, 3);
 
 				XRaySun = Sun->MinXSun + (Sun->MaxXSun - Sun->MinXSun) * u;
 				YRaySun = Sun->MinYSun + (Sun->MaxYSun - Sun->MinYSun) * v;
