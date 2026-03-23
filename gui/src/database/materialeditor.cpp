@@ -34,7 +34,7 @@ void MaterialEditor::parameters_changed(entt::entity e) {
 }
 
 void MaterialEditor::set_new_database_connections(Database* ptr) {
-    add_connection(connect(ptr->geometry_parameters.self(),
+    add_connection(connect(ptr->material_parameters.self(),
                            &ComponentAPIBase::changed,
                            this,
                            &MaterialEditor::parameters_changed));

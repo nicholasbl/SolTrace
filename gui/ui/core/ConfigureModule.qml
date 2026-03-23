@@ -55,10 +55,11 @@ ColumnLayout {
         }
         
         ConfigureGeometry {
+            size_class: root.size_class
         }
 
-        Item {
-
+        ConfigureLayout {
+            size_class: root.size_class
         }
     }
     

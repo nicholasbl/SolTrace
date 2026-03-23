@@ -13,6 +13,29 @@
 
 namespace db {
 
+/// Observe an entity's name
+class NameModel : public QObject {
+    Q_OBJECT
+
+    QPointer<Database> m_host;
+
+    entt::entity m_target;
+
+    Q_WRITABLE_PROPERTY(entt::entity, node, entt::null);
+    Q_WRITABLE_PROPERTY(QString, name, {});
+
+private slots:
+    void recompute(entt::entity);
+
+public:
+    explicit NameModel(QObject* parent = nullptr);
+    virtual ~NameModel() = default;
+
+    void reset(Database* database);
+};
+
+// =============================================================================
+
 /// Get the hierarchy of an entity, walks the parent chain and provides a string
 /// list, starting from the root on down.
 class BreadcrumbModel : public QStringListModel {
@@ -65,6 +88,30 @@ public:
 
     void reset(Database* database);
 };
+
+// =============================================================================
+
+/// A model providing all children of a given entity
+// class AllInstanceModel : public StructModelAdapter<EntityNamePair> {
+//     Q_OBJECT
+//     QPointer<Database> m_host;
+
+//     Q_WRITABLE_PROPERTY(entt::entity, node, entt::null);
+
+//     std::unordered_map<entt::entity, int> m_reverse;
+
+//     QVector<EntityNamePair> rebuild_lists();
+
+// private slots:
+//     void recompute();
+//     void ident_changed(entt::entity);
+
+// public:
+//     explicit AllEntityModel(QObject* parent = nullptr);
+//     virtual ~AllEntityModel() = default;
+
+//     void reset(Database* database);
+// };
 
 // =============================================================================
 

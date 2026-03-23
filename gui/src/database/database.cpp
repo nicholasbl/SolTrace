@@ -795,6 +795,7 @@ entt::entity Database::parent_of(entt::entity child) const {
 
 void Database::remove_material(entt::entity child) {
     // is this a member of a group?
+
     auto child_comp = m_registry.try_get<MaterialGroupMemberComponent>(child);
 
     if (!child_comp) return;
@@ -809,7 +810,10 @@ void Database::remove_material(entt::entity child) {
     if (!parent_comp) { return; }
 
     // remove us from the parent
-    erase(parent_comp->members, child);
+
+    m_registry.patch<MaterialGroupComponent>(
+        child_comp->group,
+        [child](MaterialGroupComponent& comp) { erase(comp.members, child); });
 }
 
 void Database::assign_material(entt::entity child, entt::entity group) {
@@ -844,7 +848,9 @@ void Database::remove_geometry(entt::entity child) {
     if (!parent_comp) { return; }
 
     // remove us from the parent
-    erase(parent_comp->members, child);
+    m_registry.patch<GeometryGroupComponent>(
+        child_comp->group,
+        [child](GeometryGroupComponent& comp) { erase(comp.members, child); });
 }
 
 void Database::assign_geometry(entt::entity child, entt::entity group) {
@@ -852,7 +858,7 @@ void Database::assign_geometry(entt::entity child, entt::entity group) {
 
     if (!m_registry.all_of<GeometryGroupComponent>(group)) return;
 
-    remove_material(child);
+    remove_geometry(child);
 
     m_registry.emplace_or_replace<GeometryGroupMemberComponent>(
         child, GeometryGroupMemberComponent { .group = group });
@@ -961,7 +967,9 @@ void Database::delete_tag(entt::entity tag) {
         m_registry.storage<ATagMemberComponent>(entt::to_integral(tag));
 
     for (auto x : storage) {
-        erase(m_registry.get<TagMembershipComponent>(x).tags, tag);
+
+        m_registry.patch<TagMembershipComponent>(
+            x, [tag](TagMembershipComponent& comp) { erase(comp.tags, tag); });
     }
 
     m_registry.reset(entt::to_integral(tag));
@@ -1102,7 +1110,7 @@ entt::entity Database::add_geometry_group(QString               new_name,
 
 
     for (auto mem : members) {
-        this->remove_material(mem);
+        this->remove_geometry(mem);
     }
 
     auto ent = m_registry.create();

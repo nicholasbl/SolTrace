@@ -1,5 +1,6 @@
 #include "geometryeditor.h"
 
+#include "database/apertureeditor.h"
 #include "database/components.h"
 #include <cmath>
 
@@ -434,10 +435,9 @@ validate_surface_aperture_pair(SD::surface_ptr const&  surface,
 GeometryEditor::GeometryEditor(QObject* parent)
     : QObject { parent },
       m_surface_geometry(new SurfaceGeometry()),
-
-
       m_surface_type_model(new QStringListModel(this)),
-      m_aperture_type_model(new QStringListModel(this))
+      m_aperture_type_model(new QStringListModel(this)),
+      m_surface_parameter_model(new SurfaceParameterModel(this))
 
 {
 
@@ -452,10 +452,35 @@ GeometryEditor::GeometryEditor(QObject* parent)
     connect(
         this, &GeometryEditor::kind_changed, this, &GeometryEditor::updated);
 
-    // TODO spurious rebuilds
-    connect(this, &GeometryEditor::surface_arguments_changed, this, [this]() {
-        make_new_surface(string_to_surface(m_surf_kind));
-    });
+    connect(m_surface_parameter_model,
+            &SurfaceParameterModel::updated,
+            this,
+            [this]() {
+                if (!database()) return;
+                database()->as_registry().patch<GeometryComponent>(
+                    m_current_group,
+                    [this](GeometryComponent& params) {
+                        if (params.surface) {
+                            m_surface_parameter_model->write_back(*params.surface);
+                        }
+                    });
+                emit updated();
+            });
+
+    connect(m_aperture_parameter_model,
+            &ApertureParameterModel::updated,
+            this,
+            [this]() {
+                if (!database()) return;
+                database()->as_registry().patch<GeometryComponent>(
+                    m_current_group, [this](GeometryComponent& params) {
+                        if (params.aperture) {
+                            m_aperture_parameter_model->write_back(
+                                *params.aperture);
+                        }
+                    });
+                emit updated();
+            });
 
     connect(this,
             &GeometryEditor::updated,
@@ -471,6 +496,15 @@ GeometryEditor::~GeometryEditor() {
 
 void GeometryEditor::parameters_changed(entt::entity e) {
     if (this->m_current_group != e) return;
+    if (auto* params = database()->geometry_parameters.get(m_current_group)) {
+        if (params->surface && params->aperture) {
+            m_surface_parameter_model->set_from(*params->surface);
+            m_aperture_parameter_model->set_from(*params->aperture);
+        } else {
+            m_surface_parameter_model->set_for(SD::FLAT);
+            m_aperture_parameter_model->set_for(SD::ApertureType::RECTANGLE);
+        }
+    }
     emit surface_kind_changed();
     emit kind_changed();
 }
@@ -485,56 +519,31 @@ void GeometryEditor::set_new_database_connections(Database* ptr) {
 void GeometryEditor::make_new_aperture(SD::ApertureType type) {
     if (!database()) return;
 
-    if (m_aperture_editor) {
-        QObject* p = m_aperture_editor;
-        set_aperture_editor(nullptr);
-        delete p;
-    }
-
-#define EDIT_CASE(TYPE, ...)                                                   \
-    {                                                                          \
-        auto ptr        = SD::make_aperture<SD::TYPE>(__VA_ARGS__);            \
-        params.aperture = ptr;                                                 \
-        auto editor     = new TYPE##Wrapper(ptr.get(), this);                  \
-        set_aperture_editor(editor);                                           \
-        connect(                                                               \
-            editor, &TYPE##Wrapper::changed, this, &GeometryEditor::updated);  \
-    }                                                                          \
-    break;
-
-    database()->as_registry().patch<GeometryComponent>(
-        m_current_group, [this, type](GeometryComponent& params) {
-            switch (type) {
-            case SolTrace::Data::ANNULUS:
-                EDIT_CASE(Annulus, 0.0, 1.0, 2 * M_PI);
-            case SolTrace::Data::CIRCLE: EDIT_CASE(Circle, 1.0);
-            case SolTrace::Data::HEXAGON: EDIT_CASE(Hexagon, 1.0);
-            case SolTrace::Data::RECTANGLE: EDIT_CASE(Rectangle, 1.0, 1.0);
-            case SolTrace::Data::EQUILATERAL_TRIANGLE:
-                EDIT_CASE(EqualateralTriangle, 1.0);
-            case SolTrace::Data::IRREGULAR_TRIANGLE:
-                EDIT_CASE(IrregularTriangle, 0, 1, 0, 0, 1, 0);
-            case SolTrace::Data::IRREGULAR_QUADRILATERAL:
-                EDIT_CASE(IrregularQuadrilateral, -1, -1, -1, 1, 1, 1, 1, -1);
-            default: return make_new_aperture(SolTrace::Data::APERTURE_UNKNOWN);
-            }
-        });
+    m_aperture_parameter_model->set_for(type);
 }
 
 void GeometryEditor::make_new_surface(SD::SurfaceType type) {
-    // weeeee
-    auto const& l      = surface_arguments();
-    auto        sdvec  = std::vector<double> { l.begin(), l.end() };
-    database()->as_registry().patch<GeometryComponent>(
-        m_current_group, [sdvec, type](GeometryComponent& params) {
-            params.surface = SD::make_surface_from_type(type, sdvec);
-        });
+    if (!database()) return;
+
+    m_surface_parameter_model->set_for(type);
 }
 
 void GeometryEditor::set(Database* database, entt::entity group) {
     observe(database);
     m_current_group = group;
     m_surface_geometry->set(database, group);
+    if (database) {
+        if (auto* params = database->geometry_parameters.get(group)) {
+            if (params->surface && params->aperture) {
+                m_aperture_parameter_model->set_from(*params->aperture);
+                m_surface_parameter_model->set_from(*params->surface);
+            } else {
+                m_surface_parameter_model->set_for(SD::FLAT);
+                m_aperture_parameter_model->set_for(
+                    SD::ApertureType::RECTANGLE);
+            }
+        }
+    }
     emit updated();
 }
 
@@ -556,6 +565,7 @@ QString GeometryEditor::surface_kind() const {
 void GeometryEditor::set_surface_kind(QString newSurface_kind) {
     if (m_surf_kind == newSurface_kind) return;
     m_surf_kind = newSurface_kind;
+    m_surface_parameter_model->set_for(string_to_surface(m_surf_kind));
     make_new_surface(string_to_surface(m_surf_kind));
     emit surface_kind_changed();
 }

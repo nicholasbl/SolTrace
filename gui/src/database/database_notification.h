@@ -54,11 +54,36 @@ public:
 
     /// Get the content of this component on an entity. Returns null if the
     /// content is not available
-    Component* get(entt::entity entity) const {
+    Component const* get(entt::entity entity) const {
         if (m_host.valid(entity)) {
             return m_host.template try_get<Component>(entity);
         }
         return nullptr;
+    }
+
+    template <class F>
+    bool try_patch(entt::entity entity, F&& f) {
+        if (!m_host.valid(entity)) return false;
+
+        if (m_host.all_of<Component>(entity)) {
+            m_host.patch<Component>(entity, f);
+            return true;
+        }
+
+        return false;
+    }
+
+    template <class F>
+    void emplace_patch(entt::entity entity, F&& f) {
+        if (!m_host.all_of<Component>(entity)) {
+            if constexpr (std::is_empty_v<Component>) {
+                m_host.emplace<Component>(entity);
+            } else {
+                m_host.emplace<Component>(entity, Component {});
+            }
+        }
+
+        m_host.patch<Component>(entity, f);
     }
 
     auto view() const { return m_host.view<Component const>(); }

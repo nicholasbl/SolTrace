@@ -45,20 +45,6 @@ void OpticalPropertiesObject::parameters_changed(entt::entity e) {
     trigger_all_changed();
 }
 
-SolTrace::Data::OpticalProperties* OpticalPropertiesObject::get_properties() {
-    if (!database()) return nullptr;
-
-    auto* ptr = database()->material_parameters.get(m_current_group);
-
-    if (!ptr) return nullptr;
-
-    if (m_back) {
-        return &ptr->optics_back;
-    } else {
-        return &ptr->optics_front;
-    }
-}
-
 SolTrace::Data::OpticalProperties const*
 OpticalPropertiesObject::get_properties() const {
     if (!database()) return nullptr;
@@ -142,40 +128,29 @@ double OpticalPropertiesObject::refraction_index_back() const {
 
 
 void OpticalPropertiesObject::set_interaction_type(QString v) {
-    auto* ptr = get_properties();
-
-    if (!ptr) return;
-
-    auto string = v.toStdString();
-
-    auto iter = reverse_lookup(SolTrace::Data::InteractionTypeMap, string);
-
-    if (iter) {
-        ptr->my_type = *iter;
+    patch_properties([this, &v](SD::OpticalProperties& prop) {
+        auto string = v.toStdString();
+        auto iter = reverse_lookup(SolTrace::Data::InteractionTypeMap, string);
+        prop.my_type = *iter;
         emit interaction_type_changed();
-    }
+    });
 }
 
 void OpticalPropertiesObject::set_error_distribution_type(QString v) {
-    auto* ptr = get_properties();
+    patch_properties([this, &v](SD::OpticalProperties& prop) {
+        auto string = v.toStdString();
 
-    if (!ptr) return;
-
-    auto string = v.toStdString();
-
-    auto iter = reverse_lookup(SolTrace::Data::DistributionTypeMap, string);
-
-    if (iter) {
-        ptr->error_distribution_type = *iter;
+        auto iter = reverse_lookup(SolTrace::Data::DistributionTypeMap, string);
+        prop.error_distribution_type = *iter;
         emit error_distribution_type_changed();
-    }
+    });
 }
 
 #define SETTER(MEMBER)                                                         \
-    auto* ptr = get_properties();                                              \
-    if (!ptr) return;                                                          \
-    ptr->MEMBER = v;                                                           \
-    emit MEMBER##_changed();
+    patch_properties([this, &v](SD::OpticalProperties& prop) {                 \
+        prop.MEMBER = v;                                                       \
+        emit MEMBER##_changed();                                               \
+    });
 
 void OpticalPropertiesObject::set_transmitivity(double v) {
     SETTER(transmitivity);
@@ -202,45 +177,34 @@ void OpticalPropertiesObject::set_refraction_index_back(double v) {
 }
 
 void OpticalPropertiesObject::set_ideal_absorption() {
-    auto* ptr = get_properties();
-
-    if (!ptr) return;
-
-    ptr->set_ideal_absorption();
-
-    trigger_all_changed();
+    patch_properties([this](SD::OpticalProperties& prop) {
+        prop.set_ideal_absorption();
+        trigger_all_changed();
+    });
 }
 
 void OpticalPropertiesObject::set_ideal_reflection() {
-    auto* ptr = get_properties();
-
-    if (!ptr) return;
-
-    ptr->set_ideal_reflection();
-
-    trigger_all_changed();
+    patch_properties([this](SD::OpticalProperties& prop) {
+        prop.set_ideal_reflection();
+        trigger_all_changed();
+    });
 }
 
 void OpticalPropertiesObject::set_ideal_transmission() {
-    auto* ptr = get_properties();
-
-    if (!ptr) return;
-
-    ptr->set_ideal_transmission();
-
-    trigger_all_changed();
+    patch_properties([this](SD::OpticalProperties& prop) {
+        prop.set_ideal_transmission();
+        trigger_all_changed();
+    });
 }
 
 void OpticalPropertiesObject::set_ideal_transmission_with_indices(
     double n_front,
     double n_back) {
-    auto* ptr = get_properties();
 
-    if (!ptr) return;
-
-    ptr->set_ideal_transmission(n_front, n_back);
-
-    trigger_all_changed();
+    patch_properties([n_front, n_back, this](SD::OpticalProperties& prop) {
+        prop.set_ideal_transmission(n_front, n_back);
+        trigger_all_changed();
+    });
 }
 
 } // namespace db

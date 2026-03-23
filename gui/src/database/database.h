@@ -14,6 +14,19 @@
 
 namespace db {
 
+/// Helper function: patch a component, skipping it if it does not exist.
+/// Returns true if the patch occurred.
+template <class Component, class Function>
+bool try_patch(entt::registry& reg, entt::entity entity, Function&& f) {
+    if (!reg.valid(entity)) return false;
+
+    if (reg.all_of<Component>(entity)) {
+        reg.patch<Component>(entity, f);
+        return true;
+    }
+
+    return false;
+}
 
 /// Helper function: patch a component, creating it if it does not exist.
 template <class Component, class Function>

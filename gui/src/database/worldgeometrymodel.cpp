@@ -36,6 +36,29 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
              << m_member_cache.size();
 }
 
+void InstancedElements::on_geometry_group_membership_change(
+    entt::entity entity) {
+    auto* ptr = m_database->geometry_group_membership.get(entity);
+
+    if (!ptr) return;
+
+    if (m_target_group == entt::null) return;
+
+    if (ptr->group != m_target_group) return;
+
+    on_geometry_group_change(m_target_group);
+}
+
+void InstancedElements::on_instance_changed(entt::entity e) {
+    auto iter = m_rev_cache.find(e);
+
+    if (iter == m_rev_cache.end()) { return; }
+
+    // TODO update only a single instance on change
+
+    on_geometry_group_change(m_target_group);
+}
+
 InstancedElements::InstancedElements(Database*       db,
                                      entt::entity    group,
                                      QQuick3DObject* parent)
@@ -45,9 +68,30 @@ InstancedElements::InstancedElements(Database*       db,
     connect(db->geometry_group_membership.self(),
             &ComponentAPIBase::changed,
             this,
-            &InstancedElements::on_geometry_group_change);
+            &InstancedElements::on_geometry_group_membership_change);
 
     connect(db->geometry_group_membership.self(),
+            &ComponentAPIBase::removed,
+            this,
+            &InstancedElements::on_geometry_group_membership_change);
+
+
+    connect(db->transform.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &InstancedElements::on_instance_changed);
+
+    connect(db->parent.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &InstancedElements::on_instance_changed);
+
+    connect(db->geometry_root.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &InstancedElements::on_geometry_group_change);
+
+    connect(db->geometry_root.self(),
             &ComponentAPIBase::removed,
             this,
             &InstancedElements::on_geometry_group_change);

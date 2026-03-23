@@ -7,6 +7,38 @@
 
 namespace db {
 
+void NameModel::recompute(entt::entity e) {
+    if (!m_host or e == entt::null or !m_host->valid(e)) return;
+
+    auto ptr = m_host->identity.get(e);
+
+    set_name(m_host->name_of(e));
+}
+
+NameModel::NameModel(QObject* parent) : QObject(parent) { }
+
+void NameModel::reset(Database* database) {
+    m_host = database;
+
+    if (!m_host) return;
+
+    connect(m_host->identity.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &NameModel::recompute);
+
+    connect(this, &NameModel::name_changed, this, [this]() {
+        if (!m_host or m_node == entt::null or !m_host->valid(m_node)) return;
+
+        if (m_host->name_of(m_node) != m_name) {
+            m_host->identity.patch(
+                m_node, [&](IdentityComponent& ident) { ident.name = m_name; });
+        }
+    });
+}
+
+// =============================================================================
+
 void BreadcrumbModel::recompute() {
     m_path.clear();
 
@@ -59,6 +91,13 @@ void BreadcrumbModel::reset(Database* database) {
 
     if (database) {
         connect(database->identity.self(),
+                &ComponentAPIBase::changed,
+                this,
+                [this](entt::entity e) {
+                    if (m_path.contains(e)) { this->recompute(); }
+                });
+
+        connect(database->parent.self(),
                 &ComponentAPIBase::changed,
                 this,
                 [this](entt::entity e) {
@@ -145,6 +184,13 @@ void ChildModel::reset(Database* database) {
                 &ComponentAPIBase::changed,
                 this,
                 &ChildModel::ident_changed);
+
+        connect(database->parent.self(),
+                &ComponentAPIBase::changed,
+                this,
+                [this](entt::entity e) {
+                    if (node() == e) { recompute(); }
+                });
     }
 }
 

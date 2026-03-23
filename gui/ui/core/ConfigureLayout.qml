@@ -8,16 +8,17 @@ import SolTrace
 
 Item {
     property int size_class
-    property var materials_module : App.materials
+
+    property var module : App.layout
 
     StackView {
         id: stack
-        initialItem: material_list_view
+        initialItem: entity_list_view
         anchors.fill: parent
     }
 
     Component {
-        id: material_list_view
+        id: entity_list_view
 
         ColumnLayout {
             STTextField {
@@ -25,8 +26,20 @@ Item {
 
                 leftIcon: "\uf002"
 
-                placeholderText: "Search..."
+                placeholderText: "Filter..."
             }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                Button {
+                    text: "With Material..."
+                }
+                Button {
+                    text: "With Geometry..."
+                }
+            }
+
             ListView {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
@@ -68,7 +81,7 @@ Item {
     }
 
     Component {
-        id: material_edit_view
+        id: entity_edit_view
 
         ColumnLayout {
             RowLayout {

@@ -23,7 +23,14 @@ class InstancedElements : public QQuick3DInstancing {
     entt::entity       m_target_group = entt::null;
 
 private slots:
+    // When the geometry information for this group has changed
     void on_geometry_group_change(entt::entity);
+
+    // When the membership for this group has changed
+    void on_geometry_group_membership_change(entt::entity);
+
+    // When other things about an instance (parent, tf) change
+    void on_instance_changed(entt::entity);
 
 public:
     explicit InstancedElements(Database*       db,
