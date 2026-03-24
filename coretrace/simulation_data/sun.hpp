@@ -65,8 +65,8 @@ public:
     virtual void calculate_buie_parameters(double& kappa, double& gamma) override;
     virtual double get_max_sun_angle(double gaussian_coverage = 0.999) const override;  //  [mrad]
     virtual double get_max_intensity() const override;
-    virtual void set_gen_type(GenType type) { my_gen_type = type; }
-    virtual GenType get_gen_type() const { return my_gen_type; }
+    virtual void set_gen_type(GenType type) override { my_gen_type = type; }
+    virtual GenType get_gen_type() const override { return my_gen_type; }
 
     void write_json(nlohmann::ordered_json& jnode);
 
