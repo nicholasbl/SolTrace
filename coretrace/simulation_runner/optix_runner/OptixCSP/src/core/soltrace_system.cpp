@@ -249,7 +249,7 @@ void SolTraceSystem::run()
         int height = data_manager->launch_params_H.height;
 
         size_t m_mem_free_after;
-	size_t mem_total;
+	    size_t mem_total;
         cudaMemGetInfo(&m_mem_free_after, &mem_total);
         std::cout << "Memory used by launch: " << (m_mem_free_before - m_mem_free_after) / (1024.0 * 1024.0) << " MB\n";
 

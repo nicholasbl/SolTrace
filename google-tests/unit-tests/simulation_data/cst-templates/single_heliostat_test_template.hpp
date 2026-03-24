@@ -5,6 +5,7 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <sstream>
 
 #include <native_runner.hpp>
@@ -64,6 +65,10 @@ public:
     double spec_error = 0.0;
     double slope_error = 2.0;
     int seed = 123;
+    SolTrace::Data::GenType sun_gen_type = SolTrace::Data::GenType::RANDOM;
+    SunShape sun_shape = SolTrace::Data::SunShape::PILLBOX;
+    double half_width = 4.65;
+    double gauss_sigma = 0;
 
     SimulationData simData;
     RunnerT runner;
@@ -159,7 +164,8 @@ public:
         Vector3d sun_pos = { 0.0, 0.0, 1000.0 };
         sun = SolTrace::Data::make_ray_source<Sun>();
         sun->set_position(sun_pos);
-        sun->set_shape(SolTrace::Data::SunShape::PILLBOX, 0.0, 4.65, 0.0);
+        sun->set_shape(sun_shape, gauss_sigma, half_width, 0.0);
+        sun->set_gen_type(sun_gen_type);
         simData.add_ray_source(sun);
 
         // Set up stages
@@ -250,6 +256,7 @@ public:
         {
             SimulationParameters& params = simData.get_simulation_parameters();
             params.number_of_rays = N_rays;
+            params.max_number_of_rays = N_rays * 100;
         }
         
         RunnerStatus sts = runner.setup_simulation(&simData);
@@ -692,6 +699,7 @@ public:
             }
             outputFile << std::endl;
         }
+        outputFile.close();
     }
 
     void save_flux_comparison_to_file(std::string filename) {
@@ -707,6 +715,24 @@ public:
                 outputFile << sim_flux << "," << exp_flux << "," << (sim_flux - exp_flux) << "," << (sim_flux - exp_flux) / exp_flux << std::endl;
             }
         }
+        outputFile.close();
+    }
+
+    void save_outputs(std::string filename, const std::map<std::string, double>& results)
+    {
+        std::ofstream outputFile(filename, std::ios::out | std::ios::trunc);
+        if (!outputFile.is_open())
+        {
+            std::cerr << "Error: Could not open the file " << filename << std::endl;
+            return;
+        }
+
+        for (const auto& kv : results)
+        {
+            outputFile << kv.first << "," << kv.second << std::endl;
+        }
+
+        outputFile.close();
     }
 
     void simulate_check_outputs(std::string task_number, std::string position) {
