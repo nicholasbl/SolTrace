@@ -152,8 +152,8 @@ namespace OptixCSP {
             for (int i = 0; i < 8; ++i) {
                 float3 pt = corners[i];
 
-                float dist_along_sun_axis = abs(dot(pt, sun_vec_norm));
-                float buffer = dist_along_sun_axis * tan_sun_angle;
+                float dist_to_plane = fabsf(dot(plane_center - pt, sun_vec_norm));
+                float buffer = dist_to_plane * tan_sun_angle;
 
                 float3 projected = pt - dot(pt - plane_center, sun_vec_norm) * sun_vec_norm;
 

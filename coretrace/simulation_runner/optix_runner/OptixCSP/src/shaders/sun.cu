@@ -63,25 +63,32 @@ namespace OptixCSP {
     __device__ float3 sampleRayDirectionInCone_Pillbox(float3 dir, float half_angle, unsigned int ray_number) {
         curandState rng_state = params.rng_states[ray_number];
 
-        float half_angle_rad = half_angle * 0.001f; // Convert to rad
+        const float half_angle_mrad = half_angle;
 
         // Build an orthonormal basis
         float3 w = normalize(dir);
         float3 u = normalize(cross(fabs(w.x) > 0.99f ? make_float3(0, 1, 0) : make_float3(1, 0, 0), w));
         float3 v = cross(w, u);
 
-        // Random angles
-        float cosTheta = cosf(half_angle_rad);
-        float rand1 = curand_uniform(&rng_state);
-        float rand2 = curand_uniform(&rng_state);
-        float phi = 2.0f * M_PIf * rand1;
-        float z = cosTheta + (1.0f - cosTheta) * rand2;
-        float r = sqrtf(1.0f - z * z);
+        float thetax = 0.0f;
+        float thetay = 0.0f;
+        float theta2 = 0.0f;
+        do
+        {
+            thetax = 2.0f * half_angle_mrad * curand_uniform(&rng_state) - half_angle_mrad;
+            thetay = 2.0f * half_angle_mrad * curand_uniform(&rng_state) - half_angle_mrad;
+            theta2 = thetax * thetax + thetay * thetay;
+        } while (theta2 > (half_angle_mrad * half_angle_mrad));
+
+        const float theta_rad = 0.001f * sqrtf(theta2); // mrad -> rad
+        const float phi = 2.0f * M_PIf * curand_uniform(&rng_state);
+        const float sin_t = sinf(theta_rad);
+        const float cos_t = cosf(theta_rad);
 
         params.rng_states[ray_number] = rng_state;
 
         // Transform to world space
-        return normalize(r * (cosf(phi) * u + sinf(phi) * v) + z * w);
+        return normalize(sin_t * (cosf(phi) * u + sinf(phi) * v) + cos_t * w);
     }
 
     __device__ float3 sampleRayDirectionInCone_Gaussian(float3 dir, float sigma, unsigned int ray_number) {
