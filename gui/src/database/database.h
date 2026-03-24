@@ -53,6 +53,22 @@ std::optional<K> reverse_lookup(std::map<K, V> const& map, V const& value) {
     return std::nullopt;
 }
 
+/// Wrapper type for Qt/QML interface
+struct Entity {
+    Q_GADGET
+    QML_VALUE_TYPE(db_entity);
+    // Q_PROPERTY(qint64 value MEMBER value);
+
+public:
+    Entity() = default;
+    Entity(entt::entity e) : value(e) { }
+
+    entt::entity value = entt::null;
+
+    bool operator<=>(Entity const& other) const = default;
+
+    operator entt::entity() const { return value; }
+};
 
 class Database : public QObject {
     Q_OBJECT
@@ -80,11 +96,12 @@ public:
     entt::registry const& as_registry() const { return m_registry; }
 
 public:
-    ComponentAPIUpdate<IdentityComponent>             identity;
-    ComponentAPIUpdate<TransformComponent>            transform;
-    ComponentAPIUpdate<InvisibleComponent>            invisible;
-    ComponentAPI<ChildOfComponent>                    parent;
-    ComponentAPI<TagComponent>                        tag_root;
+    ComponentAPIUpdate<IdentityComponent>  identity;
+    ComponentAPIUpdate<TransformComponent> transform;
+    ComponentAPI<GlobalTransformComponent> global_transform;
+    ComponentAPIUpdate<InvisibleComponent> invisible;
+    ComponentAPI<ChildOfComponent>         parent;
+    ComponentAPI<TagComponent>             tag_root;
 
     ComponentAPI<MaterialGroupComponent>       material_root;
     ComponentAPIUpdate<MaterialComponent>      material_parameters;
@@ -153,9 +170,6 @@ public:
     /// Get all the tags for an entity
     std::span<entt::entity const> tags_for(entt::entity item) const;
 
-    /// Get the name of an entity, either using the Identity component, or by
-    /// using the entity ID.
-    QString name_of(entt::entity item) const;
 
     /// Get the global ray source of the database
     SD::ray_source_ptr get_ray_source() const;
@@ -163,10 +177,12 @@ public:
     /// Get the global simulation parameters
     SD::SimulationParameters const& get_sim_params() const;
 
-    TransformComponent global_transform(entt::entity item) const;
-
 
 public slots:
+    /// Get the name of an entity, either using the Identity component, or by
+    /// using the entity ID.
+    QString name_of(Entity item) const;
+
     entt::entity add_material_group(QString               new_name,
                                     QVector<entt::entity> members,
                                     entt::entity clone_from = entt::null);
@@ -225,22 +241,6 @@ public:
     DatabaseObserver& operator=(DatabaseObserver&&)      = delete;
 };
 
-/// Wrapper type for Qt/QML interface
-struct Entity {
-    Q_GADGET
-    QML_VALUE_TYPE(db_entity);
-    // Q_PROPERTY(qint64 value MEMBER value);
-
-public:
-    Entity() = default;
-    Entity(entt::entity e) : value(e) { }
-
-    entt::entity value = entt::null;
-
-    bool operator<=>(Entity const& other) const = default;
-
-    operator entt::entity() const { return value; }
-};
 
 } // namespace db
 

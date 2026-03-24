@@ -28,6 +28,8 @@ Rectangle {
     implicitHeight: form_core.implicitHeight + 24
     implicitWidth: form_core.implicitWidth + 24
 
+    clip: true
+
     // onHeightChanged: console.log(height)
     // onImplicitHeightChanged: console.log(implicitHeight)
 

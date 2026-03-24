@@ -52,6 +52,18 @@ struct TransformComponent {
     glm::dmat4 as_matrix() const;
 };
 
+/// Describe the global attitude of this entity.
+struct GlobalTransformComponent {
+    glm::dvec3 position;
+    glm::dquat rotation;
+
+    glm::dmat4 as_matrix() const;
+
+    static GlobalTransformComponent compute_for(entt::registry& reg,
+                                                entt::entity    entity);
+};
+
+
 /// A Global describing the ray source.
 struct RaySourceResource {
     SD::ray_source_ptr source;

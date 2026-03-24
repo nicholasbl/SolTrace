@@ -39,6 +39,49 @@ glm::dmat4 TransformComponent::as_matrix() const {
     return m;
 }
 
+glm::dmat4 GlobalTransformComponent::as_matrix() const {
+    glm::dmat4 m { 1.0 };
+
+    m = glm::translate(m, position);
+    m = m * glm::mat4_cast(rotation);
+
+    return m;
+}
+
+GlobalTransformComponent
+GlobalTransformComponent::compute_for(entt::registry& reg,
+                                      entt::entity    entity) {
+
+    GlobalTransformComponent out;
+    out.position = glm::dvec3 { 0.0 };
+    out.rotation = glm::dquat { 1.0, 0.0, 0.0, 0.0 };
+
+    entt::entity current = entity;
+
+    while (current != entt::null) {
+        if (auto* t = reg.try_get<TransformComponent>(current)) {
+            // apply current local, then whatever accumulated so
+            // far.
+            out.position = t->position + t->rotation * out.position;
+            out.rotation = t->rotation * out.rotation;
+        }
+
+        if (auto* child_of = reg.try_get<ChildOfComponent>(current)) {
+            current = child_of->parent;
+
+            if (auto* global = reg.try_get<GlobalTransformComponent>(current)) {
+                out.position = global->position + global->rotation * out.position;
+                out.rotation = global->rotation * out.rotation;
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    return out;
+}
+
 // --- Aperture value equality -----------------------------------------------
 
 static bool operator==(SD::Annulus const& a, SD::Annulus const& b) {

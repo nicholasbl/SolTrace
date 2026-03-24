@@ -102,6 +102,7 @@ View3D {
                         metalness: 1
                         roughness: 0
                         baseColor: "white"
+                        cullMode: Material.NoCulling
                     }
                 ]
             }

@@ -13,6 +13,8 @@ Item {
     property alias text: tf.text
     property alias placeholderText: tf.placeholderText
 
+    property alias validator: tf.validator
+
     signal accepted()
 
     property string leftIcon

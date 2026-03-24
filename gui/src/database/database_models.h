@@ -22,7 +22,7 @@ class NameModel : public QObject {
     entt::entity m_target;
 
     Q_WRITABLE_PROPERTY(entt::entity, node, entt::null);
-    Q_WRITABLE_PROPERTY(QString, name, {});
+    Q_READONLY_PROPERTY(QString, name);
 
 private slots:
     void recompute(entt::entity);
@@ -32,6 +32,9 @@ public:
     virtual ~NameModel() = default;
 
     void reset(Database* database);
+
+public slots:
+    void update_name(QString);
 };
 
 // =============================================================================
@@ -64,6 +67,8 @@ struct EntityNamePair {
     Entity       entity;
 
     RECORD_META(db::EntityNamePair, SM_EXPOSE_RW(name), SM_EXPOSE_RO(entity), );
+
+    static EntityNamePair record_for_entity(Database& db, entt::entity entity);
 };
 
 /// A model providing all children of a given entity

@@ -4,8 +4,8 @@
 #include "database/database_notification.h"
 #include "utilities/math_utility.h"
 
-#include "simulation_data_api.hpp"
 #include "simdata_io.hpp"
+#include "simulation_data_api.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -133,8 +133,7 @@ static size_t hash_aperture(SD::Aperture const& a) {
         hash_combine(seed, aa->circumscribe_diameter);
         break;
     }
-    case SolTrace::Data::SINGLE_AXIS_CURVATURE_SECTION:
-        break;
+    case SolTrace::Data::SINGLE_AXIS_CURVATURE_SECTION: break;
     case SolTrace::Data::IRREGULAR_TRIANGLE: {
         auto* aa = dynamic_cast<SD::IrregularTriangle const*>(&a);
         if (!aa) break;
@@ -159,8 +158,7 @@ static size_t hash_aperture(SD::Aperture const& a) {
         hash_combine(seed, aa->y4);
         break;
     }
-    case SolTrace::Data::APERTURE_UNKNOWN:
-        break;
+    case SolTrace::Data::APERTURE_UNKNOWN: break;
     }
 
     return seed;
@@ -183,8 +181,7 @@ static size_t hash_surface(SD::Surface const& a) {
         hash_combine(seed, aa->radius);
         break;
     }
-    case SolTrace::Data::FLAT:
-        break;
+    case SolTrace::Data::FLAT: break;
     case SolTrace::Data::PARABOLA: {
         auto* aa = dynamic_cast<SD::Parabola const*>(&a);
         if (!aa) break;
@@ -201,8 +198,7 @@ static size_t hash_surface(SD::Surface const& a) {
     case SolTrace::Data::HYPER:
     case SolTrace::Data::GENERAL_SPENCER_MURTY:
     case SolTrace::Data::TORUS:
-    case SolTrace::Data::SURFACE_UNKNOWN:
-        break;
+    case SolTrace::Data::SURFACE_UNKNOWN: break;
     }
 
     return seed;
@@ -221,7 +217,8 @@ TransformComponent extract_tf(SD::Element const& e) {
 
     auto quat = dir_roll_to_quat(aim, e.get_zrot_radians());
 
-    // TODO FIX
+    // TODO: FIX
+    // I dont understand why the above is incorrect and the below is right
     auto quat2 = glm::quat_cast(e.get_local_to_reference());
 
     // qDebug() << quat << quat2;
@@ -249,11 +246,54 @@ TransformComponent extract_tf_stage(SD::Element const& e) {
 
 // =============================================================================
 
+static GlobalTransformComponent
+compute_global_without_local_transform(entt::registry& reg,
+                                       entt::entity    entity) {
+    if (auto* child_of = reg.try_get<ChildOfComponent>(entity)) {
+        return GlobalTransformComponent::compute_for(reg, child_of->parent);
+    }
+
+    return GlobalTransformComponent {
+        .position = glm::dvec3 { 0.0 },
+        .rotation = glm::dquat { 1.0, 0.0, 0.0, 0.0 },
+    };
+}
+
+static void update_global_transform_subtree(
+    entt::registry&                         reg,
+    entt::entity                            entity,
+    std::optional<GlobalTransformComponent> root_transform = std::nullopt) {
+    auto global = root_transform.value_or(
+        GlobalTransformComponent::compute_for(reg, entity));
+
+    reg.emplace_or_replace<GlobalTransformComponent>(entity, global);
+
+    auto* ptr = reg.try_get<ChildrenComponent>(entity);
+    if (!ptr) return;
+
+    // Copy before recursion in case a callback mutates the child list.
+    auto cpy = ptr->children;
+
+    for (auto e : std::as_const(cpy)) {
+        update_global_transform_subtree(reg, e);
+    }
+}
+
+static void tf_change_callback(entt::registry& reg, entt::entity entity) {
+    update_global_transform_subtree(reg, entity);
+}
+
+static void tf_destroy_callback(entt::registry& reg, entt::entity entity) {
+    update_global_transform_subtree(
+        reg, entity, compute_global_without_local_transform(reg, entity));
+}
+
 Database::Database(QObject* p)
     : QObject(p),
       m_registry(),
       identity(m_registry),
       transform(m_registry),
+      global_transform(m_registry),
       invisible(m_registry),
       parent(m_registry),
       tag_root(m_registry),
@@ -264,7 +304,15 @@ Database::Database(QObject* p)
       geometry_parameters(m_registry),
       geometry_group_membership(m_registry),
       children(m_registry),
-      tag_membership(m_registry) { }
+      tag_membership(m_registry) {
+
+    m_registry.on_construct<TransformComponent>()
+        .template connect<&tf_change_callback>();
+    m_registry.on_update<TransformComponent>()
+        .template connect<&tf_change_callback>();
+    m_registry.on_destroy<TransformComponent>()
+        .template connect<&tf_destroy_callback>();
+}
 
 // =============================================================================
 
@@ -326,8 +374,7 @@ static void import_optics(
         auto group_entity = reg.create();
 
         registry.emplace<MaterialGroupComponent>(group_entity, new_group);
-        registry.emplace<MaterialComponent>(group_entity,
-                                                        new_group_params);
+        registry.emplace<MaterialComponent>(group_entity, new_group_params);
         registry.emplace<IdentityComponent>(
             group_entity,
             IdentityComponent {
@@ -392,7 +439,7 @@ void Database::import(SD::SimulationData& data) {
             eiter != element_to_entity.end()) {
             return eiter->second;
         } else {
-            auto ent  = m_registry.create();
+            auto ent               = m_registry.create();
             element_to_entity[ptr] = ent;
 
             m_registry.emplace<ElementComponent>(ent);
@@ -418,18 +465,10 @@ void Database::import(SD::SimulationData& data) {
 
             TransformComponent stage_tf = extract_tf(element);
 
-            qDebug() << stage_tf.position << stage_tf.rotation;
-
             for (auto iter = c->get_const_iterator(); !c->is_at_end(iter);
                  ++iter) {
 
                 auto child_ent = get_or_create_entity(iter->second.get());
-
-                auto child_tf = extract_tf(*iter->second);
-
-                qDebug() << (child_tf.position -
-                             extract_tf_stage(*iter->second).position)
-                                .length();
 
                 m_registry.emplace_or_replace<StageComponent>(
                     child_ent,
@@ -678,8 +717,8 @@ std::shared_ptr<SD::SimulationData> Database::export_to_simdata() {
                 }
 
                 if (iter->second->is_composite()) {
-                    qCritical()
-                        << "Composite child under non-stage composite is not supported";
+                    qCritical() << "Composite child under non-stage composite "
+                                   "is not supported";
                     continue;
                 }
 
@@ -733,19 +772,22 @@ void Database::unset_parent(entt::entity child) {
 
     if (!child_comp) return;
 
-    auto has_parent_comp =
-        m_registry.all_of<ChildrenComponent>(child_comp->parent);
+    auto const parent = child_comp->parent;
+
+    auto has_parent_comp = m_registry.all_of<ChildrenComponent>(parent);
 
     if (!has_parent_comp) {
         m_registry.erase<ChildOfComponent>(child);
+        update_global_transform_subtree(m_registry, child);
         return;
     }
 
     m_registry.erase<ChildOfComponent>(child);
 
     m_registry.patch<ChildrenComponent>(
-        child_comp->parent,
-        [child](ChildrenComponent& c) { erase(c.children, child); });
+        parent, [child](ChildrenComponent& c) { erase(c.children, child); });
+
+    update_global_transform_subtree(m_registry, child);
 }
 
 void Database::set_parent(entt::entity child, entt::entity parent) {
@@ -774,6 +816,8 @@ void Database::set_parent(entt::entity child, entt::entity parent) {
     // set the child's parent
     m_registry.emplace<ChildOfComponent>(child,
                                          ChildOfComponent { .parent = parent });
+
+    update_global_transform_subtree(m_registry, child);
 }
 
 std::span<entt::entity const> Database::children_of(entt::entity parent) const {
@@ -886,31 +930,6 @@ SD::SimulationParameters const& Database::get_sim_params() const {
     throw std::runtime_error("missing simulation parameters");
 }
 
-TransformComponent Database::global_transform(entt::entity item) const {
-    TransformComponent out;
-    out.position = glm::dvec3 { 0.0 };
-    out.rotation = glm::dquat { 1.0, 0.0, 0.0, 0.0 };
-
-    entt::entity current = item;
-
-    while (current != entt::null) {
-        if (auto* t = m_registry.try_get<TransformComponent>(current)) {
-            // apply current local, then whatever accumulated so
-            // far.
-            out.position = t->position + t->rotation * out.position;
-            out.rotation = t->rotation * out.rotation;
-        }
-
-        if (auto* child_of = m_registry.try_get<ChildOfComponent>(current)) {
-            current = child_of->parent;
-        } else {
-            break;
-        }
-    }
-
-    return out;
-}
-
 entt::entity Database::create_tag(QString name) {
     auto ret = m_registry.create();
 
@@ -985,14 +1004,14 @@ std::span<entt::entity const> Database::tags_for(entt::entity item) const {
     return {};
 }
 
-QString Database::name_of(entt::entity item) const {
+QString Database::name_of(Entity item) const {
     if (!m_registry.valid(item)) return {};
 
     if (auto ptr = m_registry.try_get<IdentityComponent>(item); ptr) {
         return ptr->name;
     }
 
-    return QString("Entity %1").arg(entt::to_integral(item));
+    return QString("Entity %1").arg(entt::to_integral(item.value));
 }
 
 

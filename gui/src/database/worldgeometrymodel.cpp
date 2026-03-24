@@ -4,25 +4,29 @@
 namespace db {
 
 void InstancedElements::on_geometry_group_change(entt::entity group) {
+    if (group != entt::null && group != m_target_group) return;
+
     m_instance_data.clear();
     m_member_cache.clear();
     m_rev_cache.clear();
 
     markDirty();
 
-    if (group != m_target_group) return;
     if (!m_database) return;
 
     auto* ptr = m_database->geometry_root.get(group);
 
+    if (!ptr) return;
+
 
     for (auto member : std::as_const(ptr->members)) {
 
-        auto global = m_database->global_transform(member);
+        auto global = m_database->global_transform.get(member);
+        if (!global) continue;
 
-        auto entry = calculateTableEntryFromQuaternion(convert(global.position),
+        auto entry = calculateTableEntryFromQuaternion(convert(global->position),
                                                        QVector3D(1, 1, 1),
-                                                       convert(global.rotation),
+                                                       convert(global->rotation),
                                                        Qt::white);
 
         m_instance_data.append(reinterpret_cast<const char*>(&entry),
@@ -76,12 +80,7 @@ InstancedElements::InstancedElements(Database*       db,
             &InstancedElements::on_geometry_group_membership_change);
 
 
-    connect(db->transform.self(),
-            &ComponentAPIBase::changed,
-            this,
-            &InstancedElements::on_instance_changed);
-
-    connect(db->parent.self(),
+    connect(db->global_transform.self(),
             &ComponentAPIBase::changed,
             this,
             &InstancedElements::on_instance_changed);

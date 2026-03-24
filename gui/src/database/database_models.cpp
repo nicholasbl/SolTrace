@@ -10,8 +10,6 @@ namespace db {
 void NameModel::recompute(entt::entity e) {
     if (!m_host or e == entt::null or !m_host->valid(e)) return;
 
-    auto ptr = m_host->identity.get(e);
-
     set_name(m_host->name_of(e));
 }
 
@@ -26,15 +24,15 @@ void NameModel::reset(Database* database) {
             &ComponentAPIBase::changed,
             this,
             &NameModel::recompute);
+}
 
-    connect(this, &NameModel::name_changed, this, [this]() {
-        if (!m_host or m_node == entt::null or !m_host->valid(m_node)) return;
+void NameModel::update_name(QString name) {
+    if (!m_host or m_node == entt::null or !m_host->valid(m_node)) return;
 
-        if (m_host->name_of(m_node) != m_name) {
-            m_host->identity.patch(
-                m_node, [&](IdentityComponent& ident) { ident.name = m_name; });
-        }
-    });
+    if (m_host->name_of(m_node) != m_name) {
+        m_host->identity.patch(
+            m_node, [&](IdentityComponent& ident) { ident.name = m_name; });
+    }
 }
 
 // =============================================================================
@@ -109,8 +107,9 @@ void BreadcrumbModel::reset(Database* database) {
 
 // =============================================================================
 
-static EntityNamePair rec_for_node(Database& reg, entt::entity item) {
-    return EntityNamePair { .name = reg.name_of(item), .entity = item };
+EntityNamePair EntityNamePair::record_for_entity(Database&    db,
+                                                 entt::entity entity) {
+    return EntityNamePair { .name = db.name_of(entity), .entity = entity };
 }
 
 QVector<EntityNamePair> ChildModel::rebuild_lists() {
@@ -119,19 +118,7 @@ QVector<EntityNamePair> ChildModel::rebuild_lists() {
 
     if (!m_host) return {};
 
-    if (!m_host->valid(m_node)) {
-
-        // get all nodes that have no parent
-
-        auto view = m_host->as_registry().view<ElementComponent>(
-            entt::exclude<ChildOfComponent>);
-
-        for (auto [e] : view.each()) {
-            new_recs << rec_for_node(*m_host, e);
-        }
-
-        return new_recs;
-    }
+    if (!m_host->valid(m_node)) return {};
 
     auto children = m_host->children_of(m_node);
 
@@ -139,7 +126,7 @@ QVector<EntityNamePair> ChildModel::rebuild_lists() {
     new_recs.reserve(children.size());
 
     for (auto x : children) {
-        new_recs << rec_for_node(*m_host, x);
+        new_recs << EntityNamePair::record_for_entity(*m_host, x);
     }
 
     for (size_t i = 0; i < new_recs.size(); i++) {
@@ -159,7 +146,8 @@ void ChildModel::ident_changed(entt::entity e) {
     if (!m_host) return;
 
     if (auto iter = m_reverse.find(e); iter != m_reverse.end()) {
-        this->store_push_update(iter->second, rec_for_node(*m_host, e));
+        this->store_push_update(iter->second,
+                                EntityNamePair::record_for_entity(*m_host, e));
     }
 }
 
@@ -180,17 +168,17 @@ void ChildModel::reset(Database* database) {
                     if (node() == e) { recompute(); }
                 });
 
-        connect(database->identity.self(),
-                &ComponentAPIBase::changed,
-                this,
-                &ChildModel::ident_changed);
-
-        connect(database->parent.self(),
-                &ComponentAPIBase::changed,
+        connect(database->children.self(),
+                &ComponentAPIBase::removed,
                 this,
                 [this](entt::entity e) {
                     if (node() == e) { recompute(); }
                 });
+
+        connect(database->identity.self(),
+                &ComponentAPIBase::changed,
+                this,
+                &ChildModel::ident_changed);
     }
 }
 
@@ -205,7 +193,7 @@ QVector<EntityNamePair> MaterialGroupsModel::rebuild_lists() {
     auto view = m_host->as_registry().view<MaterialGroupComponent>();
 
     for (auto const& [e, group] : view.each()) {
-        new_recs.push_back(rec_for_node(*m_host, e));
+        new_recs.push_back(EntityNamePair::record_for_entity(*m_host, e));
     }
 
     for (size_t i = 0; i < new_recs.size(); i++) {
@@ -228,7 +216,8 @@ void MaterialGroupsModel::group_changed(entt::entity e) {
 
     if (iter == m_reverse.end()) { return recompute(); }
 
-    this->store_push_update(iter->second, rec_for_node(*m_host, e));
+    this->store_push_update(iter->second,
+                            EntityNamePair::record_for_entity(*m_host, e));
 }
 void MaterialGroupsModel::group_removed(entt::entity e) {
     recompute();
@@ -271,7 +260,7 @@ QVector<EntityNamePair> GeometryGroupsModel::rebuild_lists() {
     auto view = m_host->as_registry().view<GeometryGroupComponent>();
 
     for (auto const& [e, group] : view.each()) {
-        new_recs.push_back(rec_for_node(*m_host, e));
+        new_recs.push_back(EntityNamePair::record_for_entity(*m_host, e));
     }
 
     for (size_t i = 0; i < new_recs.size(); i++) {
@@ -294,7 +283,8 @@ void GeometryGroupsModel::group_changed(entt::entity e) {
 
     if (iter == m_reverse.end()) { return recompute(); }
 
-    this->store_push_update(iter->second, rec_for_node(*m_host, e));
+    this->store_push_update(iter->second,
+                            EntityNamePair::record_for_entity(*m_host, e));
 }
 void GeometryGroupsModel::group_removed(entt::entity e) {
     recompute();
@@ -337,7 +327,8 @@ QVector<EntityNamePair> TagsModel::rebuild_lists() {
     auto view = m_host->as_registry().view<TagComponent>();
 
     for (auto const& e : view.each()) {
-        new_recs.push_back(rec_for_node(*m_host, std::get<0>(e)));
+        new_recs.push_back(
+            EntityNamePair::record_for_entity(*m_host, std::get<0>(e)));
     }
 
     for (size_t i = 0; i < new_recs.size(); i++) {
@@ -360,7 +351,8 @@ void TagsModel::tag_changed(entt::entity e) {
 
     if (iter == m_reverse.end()) { return recompute(); }
 
-    this->store_push_update(iter->second, rec_for_node(*m_host, e));
+    this->store_push_update(iter->second,
+                            EntityNamePair::record_for_entity(*m_host, e));
 }
 void TagsModel::tag_removed(entt::entity e) {
     recompute();

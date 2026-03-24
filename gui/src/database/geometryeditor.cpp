@@ -437,6 +437,7 @@ GeometryEditor::GeometryEditor(QObject* parent)
       m_surface_geometry(new SurfaceGeometry()),
       m_surface_type_model(new QStringListModel(this)),
       m_aperture_type_model(new QStringListModel(this)),
+      m_aperture_parameter_model(new ApertureParameterModel(this)),
       m_surface_parameter_model(new SurfaceParameterModel(this))
 
 {

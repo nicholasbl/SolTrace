@@ -62,6 +62,9 @@ View3D {
         eulerRotation.y: 45
     }
 
+    // TODO we need a proper camera controller with orbit
+    // for perspective and ortho
+    // AND zoom to control
     CustomOrbitController {
         anchors.fill: parent
         origin: origin

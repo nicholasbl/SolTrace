@@ -144,6 +144,7 @@ qt_add_qml_module(SolTrace
         src/utilities/notification.h
         src/database/database.h src/database/database.cpp
         src/database/database_models.h src/database/database_models.cpp
+        src/database/rootelementsmodel.h src/database/rootelementsmodel.cpp
         src/database/components.h src/database/components.cpp
         src/database/geometryeditor.h src/database/geometryeditor.cpp
         src/database/database_notification.h src/database/database_notification.cpp
@@ -179,6 +180,7 @@ qt_add_qml_module(SolTrace
         QML_FILES ui/core/ConfigureLayout.qml
         SOURCES src/database/apertureeditor.h src/database/apertureeditor.cpp
         SOURCES src/database/surfaceeditor.h src/database/surfaceeditor.cpp
+        QML_FILES ui/core/element/InstanceEdit.qml
 
 
 

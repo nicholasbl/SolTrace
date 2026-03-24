@@ -7,6 +7,7 @@ import QtQuick.Layouts
 import SolTrace
 
 Item {
+    id: root
     property int size_class
 
     property var module : App.layout
@@ -33,10 +34,14 @@ Item {
                 Layout.fillWidth: true
 
                 Button {
+                    Layout.fillWidth: true
                     text: "With Material..."
+                    flat: true
                 }
                 Button {
+                    Layout.fillWidth: true
                     text: "With Geometry..."
+                    flat: true
                 }
             }
 
@@ -47,7 +52,7 @@ Item {
                 clip: true
 
 
-                model: materials_module.geometry_list
+                model: root.module.root_elements_model
 
                 ScrollIndicator.vertical: ScrollIndicator { }
 
@@ -59,8 +64,8 @@ Item {
                     text: name
 
                     onClicked: {
-                        materials_module.current_geometry = entity
-                        stack.push(material_edit_view)
+                        root.module.current_element = entity
+                        stack.push(entity_edit_view)
                     }
 
                     background: Rectangle {
@@ -89,16 +94,14 @@ Item {
                     text: "\uf053"
                     onClicked: stack.pop()
                 }
-
                 Label {
-                    text: materials_module.current_geometry_name
+                    text: "Element:"
                 }
-            }
-
-            SurfacePreviewScene {
-                Layout.fillWidth: true
-
-                Layout.preferredHeight: 148
+                Label {
+                    text: module.database ?
+                              module.database.name_of(module.current_element) :
+                              "None"
+                }
             }
 
 
@@ -109,7 +112,7 @@ Item {
 
                 contentWidth: availableWidth
 
-                GeometryProperties {
+                InstanceEdit {
                     anchors.fill: parent
                     //width: parent.availableWidth
                 }
