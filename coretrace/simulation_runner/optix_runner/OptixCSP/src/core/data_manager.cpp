@@ -40,6 +40,7 @@ dataManager::dataManager()
 	launch_params_H.buie_gamma = 0.0f;
 	launch_params_H.sun_max_angle = 0.0f;
 	launch_params_H.sun_max_intensity = 0.0f;
+	launch_params_H.sun_gen_type = OptixCSP::GenType::UNKNOWN;
 
 	launch_params_H.sun_v0 = make_float3(0.0f, 0.0f, 0.0f);
 	launch_params_H.sun_v1 = make_float3(0.0f, 0.0f, 0.0f);

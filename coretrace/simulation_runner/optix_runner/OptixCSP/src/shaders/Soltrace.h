@@ -60,7 +60,8 @@ namespace OptixCSP{
         float                       sun_max_angle;  // Calculated based on sunshape within SimulationData
         float                       sun_max_intensity;  // ^
 		unsigned long long          sun_dir_seed;   // seed for the sun direction randomization
-        
+        GenType                     sun_gen_type;
+
         float3                      sun_v0;
         float3                      sun_v1;
         float3                      sun_v2;

@@ -88,6 +88,7 @@ namespace SolTrace::NativeRunner
         ray_source_ptr sun = data->get_ray_source();
         vector_copy(this->tsys.Sun.Origin, sun->get_position());
         this->tsys.Sun.ShapeIndex = sun->get_shape();
+        this->tsys.Sun.GenTypeIndex = sun->get_gen_type();
 
         // Set sunshape data
         switch (sun->get_shape())

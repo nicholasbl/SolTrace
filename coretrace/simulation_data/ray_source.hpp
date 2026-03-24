@@ -43,6 +43,20 @@ inline const std::map<SunShape, std::string> SunShapeMap =
     {SunShape::UNKNOWN, "UNKNOWN"}
 };
 
+enum class GenType
+{
+    RANDOM,
+    HALTON,
+    UNKNOWN
+};
+
+inline const std::map<GenType, std::string> GenTypeMap =
+{
+    {GenType::RANDOM, "RANDOM"},
+    {GenType::HALTON, "HALTON"},
+    {GenType::UNKNOWN, "UNKNOWN"}
+};
+
 class RaySource
 {
 public:
@@ -79,6 +93,8 @@ public:
     virtual void calculate_buie_parameters(double& kappa, double& gamma) = 0;
     virtual double get_max_sun_angle(double gaussian_coverage) const = 0;
     virtual double get_max_intensity() const = 0;
+    virtual void set_gen_type(GenType) = 0;
+    virtual GenType get_gen_type() const = 0;
 
 protected:
     double sigma = std::numeric_limits<double>::quiet_NaN();            // [mrad]

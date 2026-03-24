@@ -35,6 +35,12 @@ namespace OptixCSP {
         OPT_UNKNOWN = 255
     };
 
+    enum class GenType : uint8_t {
+        RANDOM,
+        HALTON,
+        UNKNOWN
+    };
+
     // Element ID consts
     constexpr int32_t kElementIdBuffer = 0;
     constexpr int32_t kElementIdRayGen = -1;

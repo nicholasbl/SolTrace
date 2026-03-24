@@ -9,6 +9,8 @@
 #include "Soltrace.h"
 #include "soltrace_constants.h"
 
+#include <cstdio>
+
 // Launch parameters for soltrace
 extern "C" {
     __constant__ OptixCSP::LaunchParams params;
@@ -38,6 +40,21 @@ namespace OptixCSP {
         // Compute the two edge vectors of the parallelogram
         float3 edge1 = params.sun_v1 - params.sun_v0; // First edge vector
         float3 edge2 = params.sun_v3 - params.sun_v0; // Second edge vector
+
+        return params.sun_v0 + u * edge1 + v * edge2;
+    }
+
+    __device__ float3 randomSampleInParallelogram(unsigned int ray_number)
+    {
+        curandState rng_state = params.rng_states[ray_number];
+
+        const float u = curand_uniform(&rng_state);
+        const float v = curand_uniform(&rng_state);
+
+        params.rng_states[ray_number] = rng_state;
+
+        const float3 edge1 = params.sun_v1 - params.sun_v0;
+        const float3 edge2 = params.sun_v3 - params.sun_v0;
 
         return params.sun_v0 + u * edge1 + v * edge2;
     }
@@ -162,7 +179,18 @@ extern "C" __global__ void __raygen__sun_source()
     const unsigned int ray_number = launch_idx.y * launch_dims.x + launch_idx.x;  // Unique ray ID
     const unsigned int ray_number_global = ray_number + params.ray_offset;  // Global unique ray ID
 
-    float3 sun_sample_pos = OptixCSP::haltonSampleInParallelogram(ray_number_global);
+    float3 sun_sample_pos;
+    switch (params.sun_gen_type)
+    {
+        case(OptixCSP::GenType::RANDOM):
+            sun_sample_pos = OptixCSP::randomSampleInParallelogram(ray_number);
+            break;
+        case(OptixCSP::GenType::HALTON):
+            sun_sample_pos = OptixCSP::haltonSampleInParallelogram(ray_number_global);
+            break;
+        default:          
+            return;
+    }
 
     // Sample emission angle here - capturing sun distribution
     const float3 ray_gen_pos = sun_sample_pos;

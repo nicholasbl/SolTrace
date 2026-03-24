@@ -63,6 +63,7 @@ public:
     DistributionType error_dist = DistributionType::GAUSSIAN;
     double spec_error = 0.0;
     double slope_error = 2.0;
+    int seed = 123;
 
     SimulationData simData;
     RunnerT runner;
@@ -190,7 +191,7 @@ public:
         params.max_number_of_rays = params.number_of_rays * 100;
         params.include_optical_errors = this->use_optical_errors;
         params.include_sun_shape_errors = this->use_sunshape_errors;
-        params.seed = 123;
+        params.seed = this->seed;
     }
 
     void set_heliostat_to_southeast() {

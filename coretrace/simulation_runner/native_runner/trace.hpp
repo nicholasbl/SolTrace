@@ -35,6 +35,7 @@ namespace SolTrace::NativeRunner
         unsigned seed,
         uint_fast64_t NumberOfRays,
         uint_fast64_t MaxNumberOfRays,
+        uint_fast64_t ray_index_offset,
         bool IncludeSunShape,
         bool IncludeErrors,
         bool AsPowerTower,
@@ -48,9 +49,9 @@ namespace SolTrace::NativeRunner
         thread_manager_ptr manager;
         trace_logger_ptr logger;
         TSystem *System;
-        // unsigned int seed;
         uint_fast64_t NumberOfRays;
         uint_fast64_t MaxNumberOfRays;
+        uint_fast64_t ray_index_offset;
         bool IncludeSunShape;
         bool IncludeErrors;
         bool AsPowerTower;
@@ -74,6 +75,7 @@ namespace SolTrace::NativeRunner
             seed,
             info.NumberOfRays,
             info.MaxNumberOfRays,
+            info.ray_index_offset,
             info.IncludeSunShape,
             info.IncludeErrors,
             info.AsPowerTower,
