@@ -6,12 +6,27 @@
 #include "database/database_notification.h"
 
 #include <QPointer>
+#include <QtTypes>
+#include <qqmlintegration.h>
 
 
 // TODO BETTER COMPOSITE SUPPORT
 
 namespace db {
 
+/// Helper function: patch a component, skipping it if it does not exist.
+/// Returns true if the patch occurred.
+template <class Component, class Function>
+bool try_patch(entt::registry& reg, entt::entity entity, Function&& f) {
+    if (!reg.valid(entity)) return false;
+
+    if (reg.all_of<Component>(entity)) {
+        reg.patch<Component>(entity, f);
+        return true;
+    }
+
+    return false;
+}
 
 /// Helper function: patch a component, creating it if it does not exist.
 template <class Component, class Function>
@@ -38,8 +53,25 @@ std::optional<K> reverse_lookup(std::map<K, V> const& map, V const& value) {
     return std::nullopt;
 }
 
+/// Wrapper type for Qt/QML interface
+struct Entity {
+    Q_GADGET
+    QML_VALUE_TYPE(db_entity);
+    // Q_PROPERTY(qint64 value MEMBER value);
+
+public:
+    Entity() = default;
+    Entity(entt::entity e) : value(e) { }
+
+    entt::entity value = entt::null;
+
+    bool operator<=>(Entity const& other) const = default;
+
+    operator entt::entity() const { return value; }
+};
 
 class Database : public QObject {
+    Q_OBJECT
     entt::registry m_registry;
 
 public:
@@ -64,16 +96,24 @@ public:
     entt::registry const& as_registry() const { return m_registry; }
 
 public:
-    ComponentAPIUpdate<IdentityComponent>             identity;
-    ComponentAPIUpdate<TransformComponent>            transform;
-    ComponentAPIUpdate<InvisibleComponent>            invisible;
-    ComponentAPI<ChildOfComponent>                    parent;
-    ComponentAPI<TagComponent>                        tag_root;
-    ComponentAPI<RenderGroupComponent>                group_root;
-    ComponentAPIUpdate<RenderGroupParameterComponent> group_parameters;
-    ComponentAPI<ChildrenComponent>                   children;
-    ComponentAPI<RenderGroupMemberComponent>          group_membership;
-    ComponentAPI<TagMembershipComponent>              tag_membership;
+    ComponentAPIUpdate<IdentityComponent>  identity;
+    ComponentAPIUpdate<TransformComponent> transform;
+    ComponentAPI<GlobalTransformComponent> global_transform;
+    ComponentAPIUpdate<InvisibleComponent> invisible;
+    ComponentAPI<ChildOfComponent>         parent;
+    ComponentAPI<TagComponent>             tag_root;
+
+    ComponentAPI<MaterialGroupComponent>       material_root;
+    ComponentAPIUpdate<MaterialComponent>      material_parameters;
+    ComponentAPI<MaterialGroupMemberComponent> material_group_membership;
+
+    ComponentAPI<GeometryGroupComponent>       geometry_root;
+    ComponentAPIUpdate<GeometryComponent>      geometry_parameters;
+    ComponentAPI<GeometryGroupMemberComponent> geometry_group_membership;
+
+    ComponentAPI<ChildrenComponent> children;
+
+    ComponentAPI<TagMembershipComponent> tag_membership;
 
 public:
     /// Helper function: patch a component, creating it if it does not exist.
@@ -100,11 +140,17 @@ public:
     /// Get the parent of this entity. Returns entt::null if there is none.
     entt::entity parent_of(entt::entity child) const;
 
+    /// Assign an entity to a material group
+    void assign_material(entt::entity child, entt::entity group);
+
+    /// Remove an entity from a material group
+    void remove_material(entt::entity child);
+
     /// Assign an entity to a geometry group
-    void assign_group(entt::entity child, entt::entity group);
+    void assign_geometry(entt::entity child, entt::entity group);
 
     /// Remove an entity from a geometry group
-    void unset_group(entt::entity child);
+    void remove_geometry(entt::entity child);
 
     /// Create a new tag. Note that tag names should be unique.
     entt::entity create_tag(QString name);
@@ -124,9 +170,6 @@ public:
     /// Get all the tags for an entity
     std::span<entt::entity const> tags_for(entt::entity item) const;
 
-    /// Get the name of an entity, either using the Identity component, or by
-    /// using the entity ID.
-    QString name_of(entt::entity item) const;
 
     /// Get the global ray source of the database
     SD::ray_source_ptr get_ray_source() const;
@@ -134,16 +177,25 @@ public:
     /// Get the global simulation parameters
     SD::SimulationParameters const& get_sim_params() const;
 
-    TransformComponent global_transform(entt::entity item) const;
-
 
 public slots:
-    entt::entity add_render_group(QString               new_name,
-                                  QVector<entt::entity> members,
-                                  entt::entity clone_from = entt::null);
+    /// Get the name of an entity, either using the Identity component, or by
+    /// using the entity ID.
+    QString name_of(Entity item) const;
 
-    void delete_render_group(entt::entity to_delete,
-                             entt::entity move_to = entt::null);
+    entt::entity add_material_group(QString               new_name,
+                                    QVector<entt::entity> members,
+                                    entt::entity clone_from = entt::null);
+
+    void delete_material_group(entt::entity to_delete,
+                               entt::entity move_to = entt::null);
+
+    entt::entity add_geometry_group(QString               new_name,
+                                    QVector<entt::entity> members,
+                                    entt::entity clone_from = entt::null);
+
+    void delete_geometry_group(entt::entity to_delete,
+                               entt::entity move_to = entt::null);
 };
 
 
@@ -189,4 +241,7 @@ public:
     DatabaseObserver& operator=(DatabaseObserver&&)      = delete;
 };
 
+
 } // namespace db
+
+Q_DECLARE_METATYPE(db::Entity);

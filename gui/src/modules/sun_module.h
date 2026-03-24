@@ -134,8 +134,9 @@ class SunModule : public QObject {
 public:
     explicit SunModule(QObject* parent = nullptr);
 
-    QPOINTER_WRITABLE_PROPERTY(SunBackend, backend)
+    QOBJECT_WRITABLE_PROPERTY(SunBackend, backend)
     QOBJECT_READONLY_PROPERTY(StatusComponent, status)
+    QOBJECT_READONLY_PROPERTY(CustomSunShapeModel, custom_sun_shape)
     QOBJECT_READONLY_PROPERTY(PresetComponent<SunDefinition>, definition)
     QOBJECT_READONLY_PROPERTY(PresetComponent<DirectionalSunPosition>,
                               ds_positions)

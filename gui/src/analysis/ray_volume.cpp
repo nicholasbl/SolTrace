@@ -20,7 +20,7 @@ void RayVolume::clean() {
 
                 auto data = m_grid(x, y, z);
 
-                if (data > 0.5) { qDebug() << x << y << z << data << delta; }
+                // if (data > 0.5) { qDebug() << x << y << z << data << delta; }
 
                 float scale = delta * data;
 

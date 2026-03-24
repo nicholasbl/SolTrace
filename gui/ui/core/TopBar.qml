@@ -1,0 +1,222 @@
+import QtCore
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtQuick.Effects
+import QtQuick.Layouts
+import QtQuick.Dialogs
+
+import SolTrace
+
+
+RowLayout {
+    id: root
+    property var blur_source
+
+    RowLayout {
+        Layout.fillHeight: true
+        Layout.preferredWidth: root.width * .25
+        Layout.maximumWidth: root.width * .25
+
+        ShadowedGlassRectangle {
+            blur_source: root.blur_source
+
+            radius: height / 2
+
+            implicitWidth: row.implicitWidth
+
+            Layout.fillHeight: true
+
+            RowLayout {
+                id: row
+                anchors.fill: parent
+
+                Image {
+                    source: "qrc:/assets/images/logo.svg"
+                    Layout.fillHeight: true
+                    Layout.preferredWidth: height
+                    Layout.leftMargin: 10
+
+                    mipmap: true
+
+                    fillMode: Image.PreserveAspectFit
+                }
+
+                Label {
+                    font.pointSize: 18
+                    font.family: "CMU Serif"
+                    text: "SolTrace"
+                    Layout.topMargin: 2
+                    Layout.bottomMargin: 2
+
+                    Layout.rightMargin: 10
+                }
+
+                Rectangle {
+                    Layout.preferredWidth: 1
+                    Layout.fillHeight: true
+
+                    color: Material.dividerColor
+                }
+
+                STClickableLabel {
+                    Layout.leftMargin: 10
+                    Layout.rightMargin: 20
+
+                    text: "File"
+                    font.pointSize: 16
+
+                    onClicked: file_menu.open()
+
+                    Menu {
+                        id: file_menu
+                        MenuItem {
+                            text: "New"
+                            onClicked: App.file_source.source = ""
+                        }
+                        MenuItem {
+                            text: "Open"
+                            onClicked: openFileDialog.open()
+                        }
+                        MenuItem { text: "Save" }
+                    }
+
+                    FileDialog {
+                        id: openFileDialog
+                        currentFolder: StandardPaths.standardLocations(
+                                           StandardPaths.DocumentsLocation
+                                           )[0]
+                        onAccepted: App.file_source.source = selectedFile
+                    }
+
+                    // Popup {
+                    //     id: file_menu
+                    //     ColumnLayout {
+                    //         anchors.fill: parent
+                    //         Label  {
+                    //             text: "New"
+                    //             font.pointSize: 16
+                    //         }
+                    //         Rectangle {
+                    //             Layout.fillWidth: true
+                    //             Layout.preferredHeight: 1
+                    //         }
+
+                    //         Label  {
+                    //             text: "Open"
+                    //             font.pointSize: 16
+                    //         }
+                    //         Label  {
+                    //             text: "Save"
+                    //             font.pointSize: 16
+                    //         }
+                    //     }
+
+                    //     background: Rectangle {
+                    //         border.width: 1
+                    //         border.color: Material.dividerColor
+                    //         radius: 10
+                    //         color: Qt.alpha(Material.backgroundColor, .90)
+                    //     }
+                    // }
+                }
+
+
+            }
+
+
+        }
+
+        Item {
+            Layout.fillWidth: true
+        }
+    }
+
+    ShadowedGlassRectangle {
+        blur_source: root.blur_source
+
+        radius: height / 2
+
+        Layout.fillHeight: true
+        Layout.fillWidth: true
+
+        RowLayout {
+            anchors.fill: parent
+
+            spacing: 10
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+            STClickableLabel {
+                text: "Configure"
+                font.pointSize: 16
+
+                onClicked: module_stack.currentIndex = 0
+            }
+
+            Label {
+                font.family: "Font Awesome 7 Free"
+                text: "\uf101"
+            }
+
+            STClickableLabel {
+                text: "Simulate"
+                font.pointSize: 16
+
+                onClicked: module_stack.currentIndex = 1
+            }
+
+            Label {
+                font.family: "Font Awesome 7 Free"
+                text: "\uf101"
+            }
+
+            STClickableLabel {
+                text: "Analyze"
+                font.pointSize: 16
+
+                onClicked: module_stack.currentIndex = 2
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
+        }
+    }
+
+    RowLayout {
+        Layout.fillHeight: true
+        Layout.preferredWidth: root.width * .25
+        Layout.maximumWidth: root.width * .25
+
+        Item {
+            Layout.fillWidth: true
+        }
+
+        ShadowedGlassRectangle {
+            blur_source: root.blur_source
+
+            radius: height / 2
+
+            Layout.fillHeight: true
+            Layout.preferredWidth: settings_row.implicitWidth
+
+            RowLayout {
+                id: settings_row
+                anchors.fill: parent
+
+                STIconButton {
+                    text: "\uf059"
+                }
+
+                STIconButton {
+                    text: "\uf013"
+                }
+            }
+        }
+    }
+}
+
+

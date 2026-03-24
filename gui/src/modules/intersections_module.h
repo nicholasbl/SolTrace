@@ -23,8 +23,8 @@ class IntersectionsModule : public QObject {
 public:
     explicit IntersectionsModule(QObject* parent = nullptr);
 
-    QPOINTER_WRITABLE_PROPERTY(ResultsBackend, results)
-    QPOINTER_WRITABLE_PROPERTY(IntersectionsBackend, backend)
+    QOBJECT_WRITABLE_PROPERTY(ResultsBackend, results)
+    QOBJECT_WRITABLE_PROPERTY(IntersectionsBackend, backend)
 };
 
 

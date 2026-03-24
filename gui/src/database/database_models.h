@@ -13,6 +13,32 @@
 
 namespace db {
 
+/// Observe an entity's name
+class NameModel : public QObject {
+    Q_OBJECT
+
+    QPointer<Database> m_host;
+
+    entt::entity m_target;
+
+    Q_WRITABLE_PROPERTY(entt::entity, node, entt::null);
+    Q_READONLY_PROPERTY(QString, name);
+
+private slots:
+    void recompute(entt::entity);
+
+public:
+    explicit NameModel(QObject* parent = nullptr);
+    virtual ~NameModel() = default;
+
+    void reset(Database* database);
+
+public slots:
+    void update_name(QString);
+};
+
+// =============================================================================
+
 /// Get the hierarchy of an entity, walks the parent chain and provides a string
 /// list, starting from the root on down.
 class BreadcrumbModel : public QStringListModel {
@@ -38,9 +64,11 @@ public:
 
 struct EntityNamePair {
     QString      name;
-    entt::entity entity;
+    Entity       entity;
 
     RECORD_META(db::EntityNamePair, SM_EXPOSE_RW(name), SM_EXPOSE_RO(entity), );
+
+    static EntityNamePair record_for_entity(Database& db, entt::entity entity);
 };
 
 /// A model providing all children of a given entity
@@ -68,8 +96,32 @@ public:
 
 // =============================================================================
 
-/// A model providing the active groups in a database
-class RenderGroupsModel : public StructModelAdapter<EntityNamePair> {
+/// A model providing all children of a given entity
+// class AllInstanceModel : public StructModelAdapter<EntityNamePair> {
+//     Q_OBJECT
+//     QPointer<Database> m_host;
+
+//     Q_WRITABLE_PROPERTY(entt::entity, node, entt::null);
+
+//     std::unordered_map<entt::entity, int> m_reverse;
+
+//     QVector<EntityNamePair> rebuild_lists();
+
+// private slots:
+//     void recompute();
+//     void ident_changed(entt::entity);
+
+// public:
+//     explicit AllEntityModel(QObject* parent = nullptr);
+//     virtual ~AllEntityModel() = default;
+
+//     void reset(Database* database);
+// };
+
+// =============================================================================
+
+/// A model providing the active material groups in a database
+class MaterialGroupsModel : public StructModelAdapter<EntityNamePair> {
     Q_OBJECT
 
     QPointer<Database> m_host;
@@ -85,8 +137,31 @@ private slots:
     void group_removed(entt::entity);
 
 public:
-    explicit RenderGroupsModel(QObject* parent = nullptr);
-    virtual ~RenderGroupsModel() = default;
+    explicit MaterialGroupsModel(QObject* parent = nullptr);
+    virtual ~MaterialGroupsModel() = default;
+
+    void reset(Database* database);
+};
+
+/// A model providing the active geometry groups in a database
+class GeometryGroupsModel : public StructModelAdapter<EntityNamePair> {
+    Q_OBJECT
+
+    QPointer<Database> m_host;
+
+    std::unordered_map<entt::entity, int> m_reverse;
+
+    QVector<EntityNamePair> rebuild_lists();
+
+private slots:
+    void recompute();
+
+    void group_changed(entt::entity);
+    void group_removed(entt::entity);
+
+public:
+    explicit GeometryGroupsModel(QObject* parent = nullptr);
+    virtual ~GeometryGroupsModel() = default;
 
     void reset(Database* database);
 };
@@ -135,8 +210,11 @@ class AnInstanceEditor : public QObject {
     Q_PROPERTY(
         bool hidden READ hidden WRITE set_hidden NOTIFY hidden_changed FINAL)
 
-    Q_PROPERTY(entt::entity group READ group WRITE set_group NOTIFY
-                   group_changed FINAL)
+    Q_PROPERTY(entt::entity material_group READ material_group WRITE
+                   set_material_group NOTIFY material_group_changed FINAL)
+
+    Q_PROPERTY(entt::entity geometry_group READ geometry_group WRITE
+                   set_geometry_group NOTIFY geometry_group_changed FINAL)
 
     Q_PROPERTY(entt::entity parent READ parent WRITE set_parent NOTIFY
                    parent_changed FINAL)
@@ -169,8 +247,10 @@ public:
     bool hidden() const;
     void set_hidden(bool newHidden);
 
-    entt::entity group() const;
-    void         set_group(entt::entity newGroup);
+    entt::entity material_group() const;
+    void         set_material_group(entt::entity newGroup);
+    entt::entity geometry_group() const;
+    void         set_geometry_group(entt::entity newGroup);
 
     entt::entity parent() const;
     void         set_parent(entt::entity newParent);
@@ -182,7 +262,8 @@ signals:
     void position_changed();
     void orientation_changed();
     void hidden_changed();
-    void group_changed();
+    void material_group_changed();
+    void geometry_group_changed();
     void parent_changed();
     void tags_changed();
     void entity_name_changed();

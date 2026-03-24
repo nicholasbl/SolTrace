@@ -52,33 +52,65 @@ struct TransformComponent {
     glm::dmat4 as_matrix() const;
 };
 
+/// Describe the global attitude of this entity.
+struct GlobalTransformComponent {
+    glm::dvec3 position;
+    glm::dquat rotation;
+
+    glm::dmat4 as_matrix() const;
+
+    static GlobalTransformComponent compute_for(entt::registry& reg,
+                                                entt::entity    entity);
+};
+
+
 /// A Global describing the ray source.
 struct RaySourceResource {
     SD::ray_source_ptr source;
 };
 
-/// A group's collective properties.
-struct RenderGroupParameterComponent {
-    SD::aperture_ptr aperture;
-    SD::surface_ptr  surface;
-
+/// A set of material properties.
+struct MaterialComponent {
     SD::OpticalProperties optics_front;
     SD::OpticalProperties optics_back;
 
-    bool operator==(RenderGroupParameterComponent const&) const;
+    bool operator==(MaterialComponent const&) const;
 };
 
-/// A group of common 'elements'. DO NOT modify the member information directly.
-/// Other aspects can be modified at will.
-struct RenderGroupComponent {
+
+/// A group using the same material. DO NOT modify the member information
+/// directly.
+struct MaterialGroupComponent {
     QVector<entt::entity> members;
 };
 
-/// Describes the group this entity belongs to. UDO NOT modify this component
-/// directly!
-struct RenderGroupMemberComponent {
+/// Describes the material group this entity belongs to. DO NOT modify this
+/// component directly!
+struct MaterialGroupMemberComponent {
     entt::entity group;
 };
+
+
+/// A set of geometry properties.
+struct GeometryComponent {
+    SD::aperture_ptr aperture;
+    SD::surface_ptr  surface;
+
+    bool operator==(GeometryComponent const&) const;
+};
+
+/// A group using the same geometry. DO NOT modify the member information
+/// directly.
+struct GeometryGroupComponent {
+    QVector<entt::entity> members;
+};
+
+/// Describes the geometry group this entity belongs to. DO NOT modify this
+/// component directly!
+struct GeometryGroupMemberComponent {
+    entt::entity group;
+};
+
 
 /// A component indicating this entity is a Tag description
 struct TagComponent { };

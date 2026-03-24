@@ -1,9 +1,13 @@
 #pragma once
 
-#include <QObject>
-#include "utilities/qt_helpers.h"
-#include "backend.h"
+#include "database/database.h"
+#include "database/database_models.h"
+#include "database/geometryeditor.h"
+#include "database/materialeditor.h"
 #include "module_common.h"
+#include "utilities/qt_helpers.h"
+
+#include <QObject>
 
 namespace SolTrace::GUI::App {
 
@@ -21,14 +25,28 @@ namespace SolTrace::GUI::App {
 class MaterialsModule : public QObject {
     Q_OBJECT
 
+    // TODO: A name module that always watches the name of an entity
+
+private slots:
+    void new_material_selected();
+    void new_geometry_selected();
+
 public:
     explicit MaterialsModule(QObject* parent = nullptr);
 
     QOBJECT_READONLY_PROPERTY(StatusComponent, status);
+    QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
+    QOBJECT_WRITABLE_PROPERTY(db::MaterialGroupsModel, materials_list)
+    QOBJECT_WRITABLE_PROPERTY(db::GeometryGroupsModel, geometry_list)
 
-    /// Non-owning reference to the materials backend slice.
-    /// Constrains QML access to materials-specific backend functionality only.
-    QPOINTER_WRITABLE_PROPERTY(MaterialsBackend, backend)
+    QOBJECT_WRITABLE_PROPERTY(db::MaterialEditor, material_edit);
+    QOBJECT_WRITABLE_PROPERTY(db::GeometryEditor, geometry_edit);
+
+    Q_WRITABLE_PROPERTY(db::Entity, current_material, {})
+    Q_READONLY_PROPERTY(QString, current_material_name)
+
+    Q_WRITABLE_PROPERTY(db::Entity, current_geometry, {})
+    Q_READONLY_PROPERTY(QString, current_geometry_name)
 };
 
 } // namespace SolTrace::GUI::App

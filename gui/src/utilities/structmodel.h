@@ -253,7 +253,7 @@ public:
     Qt::ItemFlags flags(QModelIndex const& index) const override {
         if (!index.isValid()) return Qt::NoItemFlags;
 
-        auto const& meta = sm_meta_getter<Record>();
+        auto const& meta = Record::sm_meta_getter();
 
         bool can_edit = !!meta.at(index.column()).setter;
 

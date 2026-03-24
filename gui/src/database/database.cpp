@@ -4,8 +4,8 @@
 #include "database/database_notification.h"
 #include "utilities/math_utility.h"
 
-#include "simulation_data_api.hpp"
 #include "simdata_io.hpp"
+#include "simulation_data_api.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -47,14 +47,24 @@ struct std::hash<SD::OpticalProperties> {
 
 
 template <>
-struct std::hash<db::RenderGroupParameterComponent> {
-    std::size_t operator()(db::RenderGroupParameterComponent const& a) const {
+struct std::hash<db::MaterialComponent> {
+    std::size_t operator()(db::MaterialComponent const& a) const {
+        size_t seed = 0;
+
+        hash_combine(seed, a.optics_front);
+        hash_combine(seed, a.optics_back);
+
+        return seed;
+    }
+};
+
+template <>
+struct std::hash<db::GeometryComponent> {
+    std::size_t operator()(db::GeometryComponent const& a) const {
         size_t seed = 0;
 
         if (a.aperture) hash_combine(seed, *a.aperture);
         if (a.surface) hash_combine(seed, *a.surface);
-        hash_combine(seed, a.optics_front);
-        hash_combine(seed, a.optics_back);
 
         return seed;
     }
@@ -123,8 +133,7 @@ static size_t hash_aperture(SD::Aperture const& a) {
         hash_combine(seed, aa->circumscribe_diameter);
         break;
     }
-    case SolTrace::Data::SINGLE_AXIS_CURVATURE_SECTION:
-        break;
+    case SolTrace::Data::SINGLE_AXIS_CURVATURE_SECTION: break;
     case SolTrace::Data::IRREGULAR_TRIANGLE: {
         auto* aa = dynamic_cast<SD::IrregularTriangle const*>(&a);
         if (!aa) break;
@@ -149,8 +158,7 @@ static size_t hash_aperture(SD::Aperture const& a) {
         hash_combine(seed, aa->y4);
         break;
     }
-    case SolTrace::Data::APERTURE_UNKNOWN:
-        break;
+    case SolTrace::Data::APERTURE_UNKNOWN: break;
     }
 
     return seed;
@@ -173,8 +181,7 @@ static size_t hash_surface(SD::Surface const& a) {
         hash_combine(seed, aa->radius);
         break;
     }
-    case SolTrace::Data::FLAT:
-        break;
+    case SolTrace::Data::FLAT: break;
     case SolTrace::Data::PARABOLA: {
         auto* aa = dynamic_cast<SD::Parabola const*>(&a);
         if (!aa) break;
@@ -191,8 +198,7 @@ static size_t hash_surface(SD::Surface const& a) {
     case SolTrace::Data::HYPER:
     case SolTrace::Data::GENERAL_SPENCER_MURTY:
     case SolTrace::Data::TORUS:
-    case SolTrace::Data::SURFACE_UNKNOWN:
-        break;
+    case SolTrace::Data::SURFACE_UNKNOWN: break;
     }
 
     return seed;
@@ -211,7 +217,8 @@ TransformComponent extract_tf(SD::Element const& e) {
 
     auto quat = dir_roll_to_quat(aim, e.get_zrot_radians());
 
-    // TODO FIX
+    // TODO: FIX
+    // I dont understand why the above is incorrect and the below is right
     auto quat2 = glm::quat_cast(e.get_local_to_reference());
 
     // qDebug() << quat << quat2;
@@ -239,31 +246,87 @@ TransformComponent extract_tf_stage(SD::Element const& e) {
 
 // =============================================================================
 
+static GlobalTransformComponent
+compute_global_without_local_transform(entt::registry& reg,
+                                       entt::entity    entity) {
+    if (auto* child_of = reg.try_get<ChildOfComponent>(entity)) {
+        return GlobalTransformComponent::compute_for(reg, child_of->parent);
+    }
+
+    return GlobalTransformComponent {
+        .position = glm::dvec3 { 0.0 },
+        .rotation = glm::dquat { 1.0, 0.0, 0.0, 0.0 },
+    };
+}
+
+static void update_global_transform_subtree(
+    entt::registry&                         reg,
+    entt::entity                            entity,
+    std::optional<GlobalTransformComponent> root_transform = std::nullopt) {
+    auto global = root_transform.value_or(
+        GlobalTransformComponent::compute_for(reg, entity));
+
+    reg.emplace_or_replace<GlobalTransformComponent>(entity, global);
+
+    auto* ptr = reg.try_get<ChildrenComponent>(entity);
+    if (!ptr) return;
+
+    // Copy before recursion in case a callback mutates the child list.
+    auto cpy = ptr->children;
+
+    for (auto e : std::as_const(cpy)) {
+        update_global_transform_subtree(reg, e);
+    }
+}
+
+static void tf_change_callback(entt::registry& reg, entt::entity entity) {
+    update_global_transform_subtree(reg, entity);
+}
+
+static void tf_destroy_callback(entt::registry& reg, entt::entity entity) {
+    update_global_transform_subtree(
+        reg, entity, compute_global_without_local_transform(reg, entity));
+}
+
 Database::Database(QObject* p)
     : QObject(p),
       m_registry(),
       identity(m_registry),
       transform(m_registry),
+      global_transform(m_registry),
       invisible(m_registry),
       parent(m_registry),
       tag_root(m_registry),
-      group_root(m_registry),
-      group_parameters(m_registry),
+      material_root(m_registry),
+      material_parameters(m_registry),
+      material_group_membership(m_registry),
+      geometry_root(m_registry),
+      geometry_parameters(m_registry),
+      geometry_group_membership(m_registry),
       children(m_registry),
-      group_membership(m_registry),
-      tag_membership(m_registry) { }
+      tag_membership(m_registry) {
+
+    m_registry.on_construct<TransformComponent>()
+        .template connect<&tf_change_callback>();
+    m_registry.on_update<TransformComponent>()
+        .template connect<&tf_change_callback>();
+    m_registry.on_destroy<TransformComponent>()
+        .template connect<&tf_destroy_callback>();
+}
 
 // =============================================================================
 
 static void import_optics(
-    Database&                                                        reg,
-    entt::entity                                                     entity,
-    SD::Element const&                                               item,
-    std::unordered_map<RenderGroupParameterComponent, entt::entity>& groups,
-    size_t& group_counter) {
+    Database&                                            reg,
+    entt::entity                                         entity,
+    SD::Element const&                                   item,
+    std::unordered_map<MaterialComponent, entt::entity>& material_groups,
+    std::unordered_map<GeometryComponent, entt::entity>& geometry_groups,
+    size_t&                                              group_counter) {
 
     auto& registry = reg.as_registry();
 
+    // If it has nothing, dont import
     if (!item.get_front_optical_properties() and
         !item.get_back_optical_properties() and !item.get_aperture() and
         !item.get_surface()) {
@@ -272,6 +335,7 @@ static void import_optics(
         return;
     }
 
+    // It should have all or nothing
     if (!item.get_front_optical_properties() or
         !item.get_back_optical_properties() or !item.get_aperture() or
         !item.get_surface()) {
@@ -284,41 +348,74 @@ static void import_optics(
         return;
     }
 
-    auto local = RenderGroupParameterComponent {
-        .aperture     = item.get_aperture(),
-        .surface      = item.get_surface(),
+    auto local_mat = MaterialComponent {
         .optics_front = *item.get_front_optical_properties(),
         .optics_back  = *item.get_back_optical_properties(),
     };
 
-    if (auto group = groups.find(local); group != groups.end()) {
+    auto local_geom = GeometryComponent {
+        .aperture = item.get_aperture(),
+        .surface  = item.get_surface(),
+    };
+
+    if (auto group = material_groups.find(local_mat);
+        group != material_groups.end()) {
         // we have such a group
 
-        reg.assign_group(entity, group->second);
+        reg.assign_material(entity, group->second);
 
     } else {
         // no such group
 
-        auto new_group_params = local;
+        auto new_group_params = local_mat;
 
-        auto new_group = RenderGroupComponent {};
+        auto new_group = MaterialGroupComponent {};
 
         auto group_entity = reg.create();
 
-        registry.emplace<RenderGroupComponent>(group_entity, new_group);
-        registry.emplace<RenderGroupParameterComponent>(group_entity,
-                                                        new_group_params);
+        registry.emplace<MaterialGroupComponent>(group_entity, new_group);
+        registry.emplace<MaterialComponent>(group_entity, new_group_params);
         registry.emplace<IdentityComponent>(
             group_entity,
             IdentityComponent {
-                .name = QString("Material Group %1").arg(group_counter),
+                .name = QString("Material %1").arg(group_counter),
             });
 
         group_counter++;
 
-        groups.try_emplace(local, group_entity);
+        material_groups.try_emplace(local_mat, group_entity);
 
-        reg.assign_group(entity, group_entity);
+        reg.assign_material(entity, group_entity);
+    }
+
+    if (auto group = geometry_groups.find(local_geom);
+        group != geometry_groups.end()) {
+        // we have such a group
+
+        reg.assign_geometry(entity, group->second);
+
+    } else {
+        // no such group
+
+        auto new_group_params = local_geom;
+
+        auto new_group = GeometryGroupComponent {};
+
+        auto group_entity = reg.create();
+
+        registry.emplace<GeometryGroupComponent>(group_entity, new_group);
+        registry.emplace<GeometryComponent>(group_entity, new_group_params);
+        registry.emplace<IdentityComponent>(
+            group_entity,
+            IdentityComponent {
+                .name = QString("Geometry %1").arg(group_counter),
+            });
+
+        group_counter++;
+
+        geometry_groups.try_emplace(local_geom, group_entity);
+
+        reg.assign_material(entity, group_entity);
     }
 }
 
@@ -342,7 +439,7 @@ void Database::import(SD::SimulationData& data) {
             eiter != element_to_entity.end()) {
             return eiter->second;
         } else {
-            auto ent  = m_registry.create();
+            auto ent               = m_registry.create();
             element_to_entity[ptr] = ent;
 
             m_registry.emplace<ElementComponent>(ent);
@@ -354,7 +451,8 @@ void Database::import(SD::SimulationData& data) {
     };
 
     // MAP MAY NOT BE RE-USED!
-    std::unordered_map<RenderGroupParameterComponent, entt::entity> groups;
+    std::unordered_map<MaterialComponent, entt::entity> material_groups;
+    std::unordered_map<GeometryComponent, entt::entity> geometry_groups;
 
     size_t group_counter = 0;
 
@@ -367,18 +465,10 @@ void Database::import(SD::SimulationData& data) {
 
             TransformComponent stage_tf = extract_tf(element);
 
-            qDebug() << stage_tf.position << stage_tf.rotation;
-
             for (auto iter = c->get_const_iterator(); !c->is_at_end(iter);
                  ++iter) {
 
                 auto child_ent = get_or_create_entity(iter->second.get());
-
-                auto child_tf = extract_tf(*iter->second);
-
-                qDebug() << (child_tf.position -
-                             extract_tf_stage(*iter->second).position)
-                                .length();
 
                 m_registry.emplace_or_replace<StageComponent>(
                     child_ent,
@@ -430,7 +520,12 @@ void Database::import(SD::SimulationData& data) {
             }
         }
 
-        import_optics(*this, ent, element, groups, group_counter);
+        import_optics(*this,
+                      ent,
+                      element,
+                      material_groups,
+                      geometry_groups,
+                      group_counter);
     }
 
     {
@@ -474,8 +569,11 @@ void Database::import(SD::SimulationData& data) {
             << "elements";
 
     qInfo() << "Imported"
-            << this->m_registry.view<RenderGroupComponent>()->size()
-            << "groups";
+            << this->m_registry.view<MaterialGroupComponent>()->size()
+            << "materials";
+    qInfo() << "Imported"
+            << this->m_registry.view<GeometryGroupComponent>()->size()
+            << "geometries";
 }
 
 // TODO: remove once we have sorted the vector aim thing
@@ -496,10 +594,11 @@ static void install_transform(SD::element_ptr           ptr,
     ptr->set_zrot_radians(roll);
 }
 
-static void install_group(SD::element_ptr                      ptr,
-                          RenderGroupParameterComponent const& param) {
-    ptr->set_aperture(param.aperture);
-    ptr->set_surface(param.surface);
+static void install_group(SD::element_ptr          ptr,
+                          MaterialComponent const& param,
+                          GeometryComponent const& geom_param) {
+    ptr->set_aperture(geom_param.aperture);
+    ptr->set_surface(geom_param.surface);
 
     ptr->set_front_optical_properties(param.optics_front);
     ptr->set_back_optical_properties(param.optics_back);
@@ -539,8 +638,8 @@ std::shared_ptr<SD::SimulationData> Database::export_to_simdata() {
         }
     }
 
-    qDebug() << Q_FUNC_INFO << entity_element_map.size();
-    qDebug() << Q_FUNC_INFO << ret.get_number_of_elements();
+    // qDebug() << Q_FUNC_INFO << entity_element_map.size();
+    // qDebug() << Q_FUNC_INFO << ret.get_number_of_elements();
 
     {
         auto view = m_registry.view<const TransformComponent>();
@@ -565,12 +664,15 @@ std::shared_ptr<SD::SimulationData> Database::export_to_simdata() {
     }
 
     {
-        auto view = m_registry.view<const RenderGroupMemberComponent>();
-        for (auto const& [e, gm] : view.each()) {
+        auto view = m_registry.view<const MaterialGroupMemberComponent,
+                                    const GeometryGroupMemberComponent>();
+        for (auto const& [e, mat, geom] : view.each()) {
 
             // get group, we assume this is valid
-            auto const& group =
-                m_registry.get<RenderGroupParameterComponent>(gm.group);
+            auto const& mat_group =
+                m_registry.get<MaterialComponent>(mat.group);
+            auto const& geom_group =
+                m_registry.get<GeometryComponent>(geom.group);
 
             auto element = entity_element_map.at(e);
 
@@ -585,7 +687,7 @@ std::shared_ptr<SD::SimulationData> Database::export_to_simdata() {
 
                     auto n = std::make_shared<SD::SingleElement>();
                     composite->add_element(n);
-                    install_group(n, group);
+                    install_group(n, mat_group, geom_group);
 
                     continue;
                 }
@@ -593,7 +695,7 @@ std::shared_ptr<SD::SimulationData> Database::export_to_simdata() {
 
             // has no children
 
-            install_group(element, group);
+            install_group(element, mat_group, geom_group);
         }
     }
 
@@ -615,8 +717,8 @@ std::shared_ptr<SD::SimulationData> Database::export_to_simdata() {
                 }
 
                 if (iter->second->is_composite()) {
-                    qCritical()
-                        << "Composite child under non-stage composite is not supported";
+                    qCritical() << "Composite child under non-stage composite "
+                                   "is not supported";
                     continue;
                 }
 
@@ -670,19 +772,22 @@ void Database::unset_parent(entt::entity child) {
 
     if (!child_comp) return;
 
-    auto has_parent_comp =
-        m_registry.all_of<ChildrenComponent>(child_comp->parent);
+    auto const parent = child_comp->parent;
+
+    auto has_parent_comp = m_registry.all_of<ChildrenComponent>(parent);
 
     if (!has_parent_comp) {
         m_registry.erase<ChildOfComponent>(child);
+        update_global_transform_subtree(m_registry, child);
         return;
     }
 
     m_registry.erase<ChildOfComponent>(child);
 
     m_registry.patch<ChildrenComponent>(
-        child_comp->parent,
-        [child](ChildrenComponent& c) { erase(c.children, child); });
+        parent, [child](ChildrenComponent& c) { erase(c.children, child); });
+
+    update_global_transform_subtree(m_registry, child);
 }
 
 void Database::set_parent(entt::entity child, entt::entity parent) {
@@ -711,6 +816,8 @@ void Database::set_parent(entt::entity child, entt::entity parent) {
     // set the child's parent
     m_registry.emplace<ChildOfComponent>(child,
                                          ChildOfComponent { .parent = parent });
+
+    update_global_transform_subtree(m_registry, child);
 }
 
 std::span<entt::entity const> Database::children_of(entt::entity parent) const {
@@ -730,40 +837,82 @@ entt::entity Database::parent_of(entt::entity child) const {
     return ptr->parent;
 }
 
-void Database::unset_group(entt::entity child) {
+void Database::remove_material(entt::entity child) {
     // is this a member of a group?
-    auto child_comp = m_registry.try_get<RenderGroupMemberComponent>(child);
+
+    auto child_comp = m_registry.try_get<MaterialGroupMemberComponent>(child);
 
     if (!child_comp) return;
 
     // Check if the group parent exists
     auto parent_comp =
-        m_registry.try_get<RenderGroupComponent>(child_comp->group);
+        m_registry.try_get<MaterialGroupComponent>(child_comp->group);
 
     // remove us from a member of the group
-    m_registry.erase<RenderGroupMemberComponent>(child);
+    m_registry.erase<MaterialGroupMemberComponent>(child);
 
     if (!parent_comp) { return; }
 
     // remove us from the parent
-    erase(parent_comp->members, child);
+
+    m_registry.patch<MaterialGroupComponent>(
+        child_comp->group,
+        [child](MaterialGroupComponent& comp) { erase(comp.members, child); });
 }
 
-void Database::assign_group(entt::entity child, entt::entity group) {
+void Database::assign_material(entt::entity child, entt::entity group) {
     if (!valid(child) or !valid(group)) return;
 
-    if (!m_registry.all_of<RenderGroupComponent>(group)) return;
+    if (!m_registry.all_of<MaterialGroupComponent>(group)) return;
 
-    unset_group(child);
+    remove_material(child);
 
-    m_registry.emplace_or_replace<RenderGroupMemberComponent>(
-        child, RenderGroupMemberComponent { .group = group });
+    m_registry.emplace_or_replace<MaterialGroupMemberComponent>(
+        child, MaterialGroupMemberComponent { .group = group });
 
-    ::db::emplace_patch<RenderGroupComponent>(
-        m_registry, group, [child](RenderGroupComponent& c) {
+    ::db::emplace_patch<MaterialGroupComponent>(
+        m_registry, group, [child](MaterialGroupComponent& c) {
             c.members.push_back(child);
         });
 }
+
+void Database::remove_geometry(entt::entity child) {
+    // is this a member of a group?
+    auto child_comp = m_registry.try_get<GeometryGroupMemberComponent>(child);
+
+    if (!child_comp) return;
+
+    // Check if the group parent exists
+    auto parent_comp =
+        m_registry.try_get<GeometryGroupComponent>(child_comp->group);
+
+    // remove us from a member of the group
+    m_registry.erase<GeometryGroupMemberComponent>(child);
+
+    if (!parent_comp) { return; }
+
+    // remove us from the parent
+    m_registry.patch<GeometryGroupComponent>(
+        child_comp->group,
+        [child](GeometryGroupComponent& comp) { erase(comp.members, child); });
+}
+
+void Database::assign_geometry(entt::entity child, entt::entity group) {
+    if (!valid(child) or !valid(group)) return;
+
+    if (!m_registry.all_of<GeometryGroupComponent>(group)) return;
+
+    remove_geometry(child);
+
+    m_registry.emplace_or_replace<GeometryGroupMemberComponent>(
+        child, GeometryGroupMemberComponent { .group = group });
+
+    ::db::emplace_patch<GeometryGroupComponent>(
+        m_registry, group, [child](GeometryGroupComponent& c) {
+            c.members.push_back(child);
+        });
+}
+
 
 SD::ray_source_ptr Database::get_ray_source() const {
     if (auto ptr = m_registry.ctx().find<RaySourceResource>(); ptr) {
@@ -779,31 +928,6 @@ SD::SimulationParameters const& Database::get_sim_params() const {
     }
 
     throw std::runtime_error("missing simulation parameters");
-}
-
-TransformComponent Database::global_transform(entt::entity item) const {
-    TransformComponent out;
-    out.position = glm::dvec3 { 0.0 };
-    out.rotation = glm::dquat { 1.0, 0.0, 0.0, 0.0 };
-
-    entt::entity current = item;
-
-    while (current != entt::null) {
-        if (auto* t = m_registry.try_get<TransformComponent>(current)) {
-            // apply current local, then whatever accumulated so
-            // far.
-            out.position = t->position + t->rotation * out.position;
-            out.rotation = t->rotation * out.rotation;
-        }
-
-        if (auto* child_of = m_registry.try_get<ChildOfComponent>(current)) {
-            current = child_of->parent;
-        } else {
-            break;
-        }
-    }
-
-    return out;
 }
 
 entt::entity Database::create_tag(QString name) {
@@ -862,7 +986,9 @@ void Database::delete_tag(entt::entity tag) {
         m_registry.storage<ATagMemberComponent>(entt::to_integral(tag));
 
     for (auto x : storage) {
-        erase(m_registry.get<TagMembershipComponent>(x).tags, tag);
+
+        m_registry.patch<TagMembershipComponent>(
+            x, [tag](TagMembershipComponent& comp) { erase(comp.tags, tag); });
     }
 
     m_registry.reset(entt::to_integral(tag));
@@ -878,30 +1004,115 @@ std::span<entt::entity const> Database::tags_for(entt::entity item) const {
     return {};
 }
 
-QString Database::name_of(entt::entity item) const {
+QString Database::name_of(Entity item) const {
     if (!m_registry.valid(item)) return {};
 
     if (auto ptr = m_registry.try_get<IdentityComponent>(item); ptr) {
         return ptr->name;
     }
 
-    return QString("Entity %1").arg(entt::to_integral(item));
+    return QString("Entity %1").arg(entt::to_integral(item.value));
 }
 
 
-entt::entity Database::add_render_group(QString               new_name,
-                                        QVector<entt::entity> members,
-                                        entt::entity          clone_from) {
+entt::entity Database::add_material_group(QString               new_name,
+                                          QVector<entt::entity> members,
+                                          entt::entity          clone_from) {
     auto set = std::unordered_set(members.begin(), members.end());
 
 
-    RenderGroupParameterComponent params;
+    MaterialComponent params;
 
     if (m_registry.valid(clone_from) and
-        m_registry.all_of<RenderGroupParameterComponent>(clone_from)) {
+        m_registry.all_of<MaterialComponent>(clone_from)) {
 
-        auto& other_p =
-            m_registry.get<RenderGroupParameterComponent>(clone_from);
+        auto& other_p = m_registry.get<MaterialComponent>(clone_from);
+
+        params = other_p;
+    } else {
+        params.optics_back.set_ideal_absorption();
+        params.optics_front.set_ideal_reflection();
+    }
+
+
+    for (auto mem : members) {
+        this->remove_material(mem);
+    }
+
+    auto ent = m_registry.create();
+    m_registry.emplace<MaterialGroupComponent>(
+        ent,
+        MaterialGroupComponent {
+            .members = QVector<entt::entity>(set.begin(), set.end()),
+        });
+    m_registry.emplace<MaterialComponent>(ent, params);
+
+
+    m_registry.emplace<IdentityComponent>(
+        ent, IdentityComponent { .name = new_name });
+
+    for (auto child : set) {
+        m_registry.emplace_or_replace<MaterialGroupMemberComponent>(
+            child, MaterialGroupMemberComponent { .group = ent });
+    }
+
+    return ent;
+}
+
+void Database::delete_material_group(entt::entity to_delete,
+                                     entt::entity move_to) {
+    if (to_delete == move_to) {
+        qWarning()
+            << "Trying to delete a group and move members to the same group!";
+        return;
+    }
+
+    // if not a group, bail
+    if (!m_registry.all_of<MaterialGroupComponent>(to_delete)) { return; }
+
+    // steal current member list
+    auto members =
+        std::move(m_registry.get<MaterialGroupComponent>(to_delete).members);
+
+    // destroy current group entity
+    m_registry.destroy(to_delete);
+
+
+    if (m_registry.valid(move_to) and
+        m_registry.all_of<MaterialGroupComponent>(move_to)) {
+        // moving to valid target
+
+        // reset member list membership
+        for (auto child : members) {
+            m_registry.emplace_or_replace<MaterialGroupMemberComponent>(
+                child, MaterialGroupMemberComponent { .group = move_to });
+        }
+
+        m_registry.patch<MaterialGroupComponent>(
+            move_to, [&](MaterialGroupComponent& a) {
+                a.members.append(members.begin(), members.end());
+            });
+    } else {
+        // invalid target. clear
+
+        m_registry.remove<MaterialGroupMemberComponent>(members.begin(),
+                                                        members.end());
+    }
+}
+
+
+entt::entity Database::add_geometry_group(QString               new_name,
+                                          QVector<entt::entity> members,
+                                          entt::entity          clone_from) {
+    auto set = std::unordered_set(members.begin(), members.end());
+
+
+    GeometryComponent params;
+
+    if (m_registry.valid(clone_from) and
+        m_registry.all_of<GeometryComponent>(clone_from)) {
+
+        auto& other_p = m_registry.get<GeometryComponent>(clone_from);
 
         // horrible, but it works. library classes don't all have clone()
         nlohmann::ordered_json node;
@@ -918,31 +1129,31 @@ entt::entity Database::add_render_group(QString               new_name,
 
 
     for (auto mem : members) {
-        this->unset_group(mem);
+        this->remove_geometry(mem);
     }
 
     auto ent = m_registry.create();
-    m_registry.emplace<RenderGroupComponent>(
+    m_registry.emplace<GeometryGroupComponent>(
         ent,
-        RenderGroupComponent {
+        GeometryGroupComponent {
             .members = QVector<entt::entity>(set.begin(), set.end()),
         });
-    m_registry.emplace<RenderGroupParameterComponent>(ent, params);
+    m_registry.emplace<GeometryComponent>(ent, params);
 
 
     m_registry.emplace<IdentityComponent>(
         ent, IdentityComponent { .name = new_name });
 
     for (auto child : set) {
-        m_registry.emplace_or_replace<RenderGroupMemberComponent>(
-            child, RenderGroupMemberComponent { .group = ent });
+        m_registry.emplace_or_replace<GeometryGroupMemberComponent>(
+            child, GeometryGroupMemberComponent { .group = ent });
     }
 
     return ent;
 }
 
-void Database::delete_render_group(entt::entity to_delete,
-                                   entt::entity move_to) {
+void Database::delete_geometry_group(entt::entity to_delete,
+                                     entt::entity move_to) {
     if (to_delete == move_to) {
         qWarning()
             << "Trying to delete a group and move members to the same group!";
@@ -950,35 +1161,35 @@ void Database::delete_render_group(entt::entity to_delete,
     }
 
     // if not a group, bail
-    if (!m_registry.all_of<RenderGroupComponent>(to_delete)) { return; }
+    if (!m_registry.all_of<GeometryGroupComponent>(to_delete)) { return; }
 
     // steal current member list
     auto members =
-        std::move(m_registry.get<RenderGroupComponent>(to_delete).members);
+        std::move(m_registry.get<GeometryGroupComponent>(to_delete).members);
 
     // destroy current group entity
     m_registry.destroy(to_delete);
 
 
     if (m_registry.valid(move_to) and
-        m_registry.all_of<RenderGroupComponent>(move_to)) {
+        m_registry.all_of<GeometryGroupComponent>(move_to)) {
         // moving to valid target
 
         // reset member list membership
         for (auto child : members) {
-            m_registry.emplace_or_replace<RenderGroupMemberComponent>(
-                child, RenderGroupMemberComponent { .group = move_to });
+            m_registry.emplace_or_replace<GeometryGroupMemberComponent>(
+                child, GeometryGroupMemberComponent { .group = move_to });
         }
 
-        m_registry.patch<RenderGroupComponent>(
-            move_to, [&](RenderGroupComponent& a) {
+        m_registry.patch<GeometryGroupComponent>(
+            move_to, [&](GeometryGroupComponent& a) {
                 a.members.append(members.begin(), members.end());
             });
     } else {
         // invalid target. clear
 
-        m_registry.remove<RenderGroupMemberComponent>(members.begin(),
-                                                      members.end());
+        m_registry.remove<GeometryGroupMemberComponent>(members.begin(),
+                                                        members.end());
     }
 }
 

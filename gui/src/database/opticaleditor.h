@@ -15,8 +15,21 @@ class OpticalPropertiesObject : public QObject, public DatabaseObserver {
     entt::entity m_current_group = entt::null;
     bool         m_back          = false;
 
-    SolTrace::Data::OpticalProperties*       get_properties();
     SolTrace::Data::OpticalProperties const* get_properties() const;
+
+    template <class F>
+    void patch_properties(F&& f) {
+        if (!database()) return;
+
+        database()->material_parameters.try_patch(
+            m_current_group, [this, &f](MaterialComponent& c) {
+                if (m_back) {
+                    f(c.optics_back);
+                } else {
+                    f(c.optics_front);
+                }
+            });
+    }
 
 private:
     Q_PROPERTY(QString interaction_type READ interaction_type WRITE

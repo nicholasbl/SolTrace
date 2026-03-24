@@ -1,10 +1,23 @@
 #include "job_control/job_run_process.h"
+
 #include <QFontDatabase>
 #include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QFile>
 #include <QQuickWindow>
 #include <QQmlContext>
+
+constexpr auto font_list = std::array {
+    ":/assets/fonts/computer-modern/cmunrm.ttf",
+    ":/assets/fonts/computer-modern/cmunbx.ttf",
+    ":/assets/fonts/computer-modern/cmunti.ttf",
+    ":/assets/fonts/computer-modern/cmunbi.ttf",
+    ":/assets/fonts/roboto/Roboto-Regular.ttf",
+    ":/assets/fonts/roboto/Roboto-Italic.ttf",
+    ":/assets/fonts/roboto/Roboto-BoldItalic.ttf",
+    ":/assets/fonts/roboto/Roboto-Bold.ttf",
+    ":/assets/fonts/font-awesome/fa_solid_7.otf",
+};
 
 int main(int argc, char* argv[]) {
     // Check if we are a worker. If so, this function will not return.
@@ -15,16 +28,13 @@ int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
 
     // Load fonts
-    QFontDatabase::addApplicationFont(":/fonts/assets/fonts/computer-modern/cmunrm.ttf");
-    QFontDatabase::addApplicationFont(":/fonts/assets/fonts/computer-modern/cmunbx.ttf");
-    QFontDatabase::addApplicationFont(":/fonts/assets/fonts/computer-modern/cmunti.ttf");
-    QFontDatabase::addApplicationFont(":/fonts/assets/fonts/computer-modern/cmunbi.ttf");
+    for (auto font : font_list) {
+        auto result = QFontDatabase::addApplicationFont(font);
+
+        if (result < 0) { qWarning() << "Unable to load font:" << font; }
+    }
 
     QQmlApplicationEngine engine;
-
-    // Initialize context properties as null/undefined before loading QML
-    engine.rootContext()->setContextProperty("globalWindow", QVariant());
-    engine.rootContext()->setContextProperty("globalScene", QVariant());
 
     QObject::connect(
         &engine,
@@ -33,20 +43,7 @@ int main(int argc, char* argv[]) {
         []() { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
 
-    engine.loadFromModule("SolTraceProto", "Main");
-
-    if (!engine.rootObjects().isEmpty()) {
-        QObject* rootObject = engine.rootObjects().first();
-        QQuickWindow* window = qobject_cast<QQuickWindow*>(rootObject);
-        if (window) {
-            engine.rootContext()->setContextProperty("globalWindow", QVariant::fromValue(window));
-
-            QObject* scene = window->findChild<QObject*>("simulationScene");
-            if (scene) {
-                engine.rootContext()->setContextProperty("globalScene", QVariant::fromValue(scene));
-            }
-        }
-    }
+    engine.loadFromModule("SolTrace", "Main");
 
     return app.exec();
 }

@@ -5,50 +5,31 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import QtQuick.Dialogs
 
-import QtGraphs
-import SolTraceProto
+import SolTrace
 
 ApplicationWindow {
-    id: root
+    id: main_window
     width: 1280
     height: 720
     visible: true
-    property var workflow: ["Configure", "Simulate", "Analyze"]
+
+    minimumWidth: 600
+    minimumHeight: 600
+
+    Material.theme: Material.Dark
+    Material.accent: Material.Blue
+
+    font.pointSize: 12
+    font.family: "Roboto"
 
     SimulationScene {
-        id: sim
-        z: 0
-        objectName: "simulationScene"
+        id: simulation_scene
+
+        anchors.fill: parent
     }
 
-
-    Item {
+    CorePanel {
+        blur_source: simulation_scene
         anchors.fill: parent
-        anchors.margins: 15
-        z: 1
-
-        TopPane {
-            id: topbar
-            source: sim
-        }
-
-        Loader {
-            id: content_loader
-            anchors.top: topbar.bottom
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.bottom: bottombar.top
-            anchors.topMargin: 15
-            anchors.bottomMargin: 15
-            onLoaded: item.source = sim
-            source: "core/" + root.workflow[Session.core.workflowIndex] + ".qml"
-        }
-
-        BottomPane {
-            id: bottombar
-            anchors.bottom: parent.bottom
-            anchors.left: parent.left
-            anchors.right: parent.right
-        }
     }
 }
