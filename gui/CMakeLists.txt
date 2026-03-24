@@ -92,6 +92,64 @@ qt_add_resources(SolTrace "icons"
         assets/icons/eye.svg
 )
 
+qt_add_resources(SolTrace "docs"
+    PREFIX "/"
+    FILES
+
+    # Docs
+    docs/en/geometry.md
+    docs/en/tracing/optimization_errors/optical_errors.md
+    docs/en/tracing/optimization_errors/manifest.txt
+    docs/en/tracing/optimization_errors/point_focus_system.md
+    docs/en/tracing/manifest.txt
+    docs/en/tracing/engine_parameters/intersections.md
+    docs/en/tracing/engine_parameters/manifest.txt
+    docs/en/tracing/engine_parameters/sun_shape.md
+    docs/en/tracing/engine_parameters/max_rays.md
+    docs/en/tracing/optimization_errors.md
+    docs/en/tracing/execution_parameters/manifest.txt
+    docs/en/tracing/execution_parameters/seed.md
+    docs/en/tracing/execution_parameters/cpu_cores.md
+    docs/en/tracing/execution_parameters.md
+    docs/en/tracing/tracers/manifest.txt
+    docs/en/tracing/tracers/gpu.md
+    docs/en/tracing/tracers/legacy.md
+    docs/en/tracing/tracers/embree.md
+    docs/en/tracing/engine_parameters.md
+    docs/en/tracing/tracers.md
+    docs/en/sun/manifest.txt
+    docs/en/sun/shape.md
+    docs/en/sun/type_direction/manifest.txt
+    docs/en/sun/type_direction/point_source.md
+    docs/en/sun/type_direction/directional/manifest.txt
+    docs/en/sun/type_direction/directional/calculators.md
+    docs/en/sun/type_direction/directional/calculators/solpos.md
+    docs/en/sun/type_direction/directional/calculators/duffie.md
+    docs/en/sun/type_direction/directional/calculators/manifest.txt
+    docs/en/sun/type_direction/directional/calculators/legacy.md
+    docs/en/sun/type_direction/directional/calculators/spa.md
+    docs/en/sun/type_direction/directional.md
+    docs/en/sun/type_direction.md
+    docs/en/sun/shape/csr.md
+    docs/en/sun/shape/manifest.txt
+    docs/en/sun/shape/gaussian.md
+    docs/en/sun/shape/pillbox.md
+    docs/en/sun/shape/custom.md
+    docs/en/materials/angular_transmittance.md
+    docs/en/materials/slope_error.md
+    docs/en/materials/error_type.md
+    docs/en/materials/angular_reflectance.md
+    docs/en/materials/specularity_error.md
+    docs/en/materials/refractive_index.md
+    docs/en/materials/transmittance.md
+    docs/en/materials/reflectance.md
+    docs/en/intersections.md
+    docs/en/flux.md
+    docs/en/sun.md
+    docs/en/simulation.md
+    docs/en/tracing.md
+    docs/en/materials.md
+)
 
 set_source_files_properties(ui/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
