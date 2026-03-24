@@ -36,7 +36,7 @@ View3D {
                 skyTopColor: Qt.rgba(0.2, 0.35, 0.6, 1.0)
                 skyHorizonColor: Qt.rgba(0.55, 0.65, 0.75, 1.0)
                 groundHorizonColor: Qt.rgba(0.55, 0.65, 0.75, 1.0)
-                groundBottomColor: Qt.rgba(0.45, 0.55, 0.65, 1.0)
+                groundBottomColor: Qt.rgba(0.275, 0.325, 0.375, 1.0)
 
             }
             mappingMode: Texture.LightProbe

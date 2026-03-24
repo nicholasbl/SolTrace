@@ -181,6 +181,8 @@ qt_add_qml_module(SolTrace
         SOURCES src/database/apertureeditor.h src/database/apertureeditor.cpp
         SOURCES src/database/surfaceeditor.h src/database/surfaceeditor.cpp
         QML_FILES ui/core/element/InstanceEdit.qml
+        QML_FILES ui/core/RightStack.qml
+        QML_FILES ui/primitives/widgets/STButton.qml
 
 
 

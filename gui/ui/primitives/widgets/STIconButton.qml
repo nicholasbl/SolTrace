@@ -21,6 +21,10 @@ Rectangle {
     border.color: Material.dividerColor
     border.width: mouse_area.containsPress ? 1 : 0
 
+    implicitHeight: Math.max(label.implicitHeight, label.implicitWidth)
+    implicitWidth: implicitHeight
+
+
     Label {
         id: label
         font.family: "Font Awesome 7 Free"

@@ -13,6 +13,10 @@ RowLayout {
     id: root
     property var blur_source
 
+    property int current_module_index: 0
+
+    signal show_script_area()
+
     RowLayout {
         Layout.fillHeight: true
         Layout.preferredWidth: root.width * .25
@@ -153,7 +157,7 @@ RowLayout {
                 text: "Configure"
                 font.pointSize: 16
 
-                onClicked: module_stack.currentIndex = 0
+                onClicked: current_module_index = 0
             }
 
             Label {
@@ -165,7 +169,7 @@ RowLayout {
                 text: "Simulate"
                 font.pointSize: 16
 
-                onClicked: module_stack.currentIndex = 1
+                onClicked: current_module_index = 1
             }
 
             Label {
@@ -177,7 +181,8 @@ RowLayout {
                 text: "Analyze"
                 font.pointSize: 16
 
-                onClicked: module_stack.currentIndex = 2
+                onClicked: current_module_index = 2
+                //onClicked: module_stack.currentIndex = 2
             }
 
             Item {
@@ -206,6 +211,10 @@ RowLayout {
             RowLayout {
                 id: settings_row
                 anchors.fill: parent
+                STIconButton {
+                    text: "\uf1c9"
+                    onClicked: root.show_script_area()
+                }
 
                 STIconButton {
                     text: "\uf059"

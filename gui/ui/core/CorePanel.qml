@@ -10,6 +10,12 @@ Item {
     id: root
     property var blur_source
 
+    enum SizeClass {
+            Small = 0,
+            Normal = 1,
+            Wide = 2
+    }
+
     TopBar {
         id: top_bar
         anchors.left: parent.left
@@ -18,6 +24,10 @@ Item {
         anchors.top: parent.top
         blur_source: root.blur_source
         height: 48
+
+        onShow_script_area: {
+            right_stack.enabled = !right_stack.enabled
+        }
     }
 
     onWidthChanged: {
@@ -68,53 +78,129 @@ Item {
             onWheel: (wheel) => wheel.accepted = true
         }
 
-        StackLayout {
+        RowLayout {
+            id: module_info_row
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 10
+            height: 34
 
+            uniformCellSizes: true
+
+            Item {
+                Layout.fillWidth: true
+                visible: background.requested_width_index > 0
+                Layout.fillHeight: true
+            }
+
+            Label {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                text: ["Configure", "Simulate", "Analyze"][top_bar.current_module_index]
+                font.pointSize: 18
+                font.bold: true
+
+                elide: Label.ElideRight
+
+                horizontalAlignment: Label.AlignHCenter
+                verticalAlignment: Label.AlignVCenter
+
+            }
+
+            Item {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                RowLayout {
+                    anchors.fill: parent
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                    }
+
+                    STIconButton {
+                            Layout.preferredWidth: implicitHeight
+                            Layout.fillHeight: true
+                        id: smaller_button
+                        text: "\uf422"
+
+                        visible: background.requested_width_index !== CorePanel.Small
+
+                        onClicked: {
+                            background.requested_width_index = Math.max(
+                                        background.requested_width_index - 1,
+                                        0,
+                                        )
+                        }
+                    }
+
+                    STIconButton {
+                            Layout.preferredWidth: implicitHeight
+                            Layout.fillHeight: true
+                        id: larger_button
+                        text: "\uf065"
+
+                        visible: background.requested_width_index !== CorePanel.Wide
+
+                        onClicked: {
+                            background.requested_width_index = Math.min(
+                                        background.requested_width_index + 1,
+                                        background.available_widths.length - 1,
+                                        )
+                        }
+                    }
+
+                }
+            }
+
+
+        }
+
+        StackLayout {
             id: module_stack
 
-            anchors.fill: parent
+            currentIndex: top_bar.current_module_index
+
+            anchors.top: module_info_row.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
             anchors.margins: 10
 
             ConfigureModule {
                 size_class: background.requested_width_index
             }
 
-        }
+            SimulateModule {
+                size_class: background.requested_width_index
+            }
 
-    }
-
-    // TODO: Fix
-    STIconButton {
-        id: smaller_button
-        text: "\uf060"
-
-        anchors.bottom: background.bottom
-        anchors.right: background.right
-
-        anchors.rightMargin: - width / 2
-
-        onClicked: {
-            background.requested_width_index = Math.max(
-                        background.requested_width_index - 1,
-                        0,
-                        )
         }
     }
 
-    STIconButton {
-        id: larger_button
-        text: "\uf061"
+    RightStack {
+        id: right_stack
 
-        anchors.bottom: smaller_button.top
-        anchors.right: background.right
+        opacity: enabled
 
-        anchors.rightMargin: - width / 2
+        enabled: false
 
-        onClicked: {
-            background.requested_width_index = Math.min(
-                        background.requested_width_index + 1,
-                        background.available_widths.length - 1,
-                        )
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 100
+            }
         }
+
+        blur_source: root.blur_source
+
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.top: top_bar.bottom
+
+        anchors.margins: 10
+
+        width: Math.min(250, root.width - background.width - 50);
     }
 }

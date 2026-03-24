@@ -63,7 +63,8 @@ Rectangle {
 
         radius: height / 2
 
-        color: Material.backgroundColor
+        //color: Material.backgroundColor
+        color: Theme.glassColor
 
         border.color: Material.dividerColor
 

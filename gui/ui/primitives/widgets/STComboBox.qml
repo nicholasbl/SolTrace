@@ -35,7 +35,7 @@ ComboBox {
         //onOpened: console.log("popup opened")
         //onClosed: console.log("popup closed")
 
-        closePolicy: Popup.CloseOnEscape
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
         contentItem: ListView {
             clip: true
