@@ -26,7 +26,8 @@ void GenerateRay(
 	uint_fast64_t sample_index,
 	double PosRayGlobal[3],
 	double CosRayGlobal[3],
-	double PosRaySun[3])
+	double PosRaySun[3],
+	int& ErrorFlag)
 {
 	/*{This procedure generates a randomly located ray in the x-y plane of the sun coordinate system in
 	 the z direction of the sun coord. system, checks to see that the ray is within the region of interest
@@ -51,6 +52,7 @@ void GenerateRay(
 	PosRaySun[0] = 0.;
 	PosRaySun[1] = 0.;
 	PosRaySun[2] = 0.;
+	ErrorFlag = 0;
 
 	// ZRaySun := 0.0;  //Origin of rays in xy plane of sun coord system.
 	ZRaySun = -10000.0; // changed 5/1/00.  rays originate from well bebind the sun coordinate system xy
@@ -147,7 +149,7 @@ void GenerateRay(
 			}
 			default:
 			{
-				throw std::runtime_error("Sun generation type not supported");
+				ErrorFlag = -1;	// TODO: Assign specific int to errorflag?
 			}
 		}
 

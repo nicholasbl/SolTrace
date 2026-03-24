@@ -14,7 +14,8 @@ void GenerateRay(MTRand &myrng,
                  uint_fast64_t sample_index,
                  double PosRayGlobal[3],
                  double CosRayGlobal[3],
-                 double PosRaySun[3]);
+                 double PosRaySun[3],
+                 int& ErrorFlag);
 
 } // namespace SolTrace::NativeRunner
 

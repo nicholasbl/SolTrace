@@ -253,6 +253,7 @@ namespace SolTrace::NativeRunner
 				// Initialize PT Optimization variables
 				bool has_elements = true;
 				std::vector<void *> sunint_elements;
+				int ErrorFlag = 0;
 
 				// Get Ray
 				if (i == 0)
@@ -267,7 +268,14 @@ namespace SolTrace::NativeRunner
 					GenerateRay(myrng, PosSunStage.data, Stage->Origin,
 								Stage->RLocToRef, &System->Sun,
 								sample_index,
-								PosRayGlob, CosRayGlob, PosRaySun);
+								PosRayGlob, CosRayGlob, PosRaySun,
+								ErrorFlag);
+
+					if (ErrorFlag != 0)
+					{
+						return RunnerStatus::ERROR;
+					}
+
 					sun_ray_count_local++;
 
 					// If using PT optimizations, check if stage has elements
@@ -304,7 +312,6 @@ namespace SolTrace::NativeRunner
 				double LastDFXYZ[3] = {0.0, 0.0, 0.0};
 				uint_fast64_t LastElementNumber = 0;
 				uint_fast64_t LastRayNumber = 0;
-				int ErrorFlag = 0;
 				int LastHitBackSide = 0;
 				bool StageHit = false;
 				int MultipleHitCount = 0;

@@ -152,9 +152,11 @@ TEST(GenerateRay, HaltonUniqueMultiThread)
                 double PosRayGlobal[3] = {0.0, 0.0, 0.0};
                 double CosRayGlobal[3] = {0.0, 0.0, 0.0};
                 double PosRaySun[3] = {0.0, 0.0, 0.0};
+                int ErrorFlag = 0;
 
                 GenerateRay(myrng, PosSunStage, Origin, RLocToRef, &sun,
-                            sample_index, PosRayGlobal, CosRayGlobal, PosRaySun);
+                            sample_index, PosRayGlobal, CosRayGlobal, PosRaySun,
+                            ErrorFlag);
 
                 result.points.emplace(PosRaySun[0], PosRaySun[1], PosRaySun[2]);
             }

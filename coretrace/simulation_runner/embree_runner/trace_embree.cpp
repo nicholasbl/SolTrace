@@ -194,6 +194,7 @@ namespace SolTrace::EmbreeRunner
             // Initialize stage variables
             StageDataArrayIndex = 0;
             PreviousStageDataArrayIndex = 0;
+            int ErrorFlag = 0;
 
             // Loop through rays
             while (StageHasRays)
@@ -217,7 +218,14 @@ namespace SolTrace::EmbreeRunner
                         myrng, PosSunStage.data, Stage->Origin,
                         Stage->RLocToRef, &System->Sun,
                         sample_index,
-                        PosRayGlob, CosRayGlob, PosRaySun);
+                        PosRayGlob, CosRayGlob, PosRaySun,
+                        ErrorFlag);
+
+                    if (ErrorFlag != 0)
+                    {
+                        return RunnerStatus::ERROR;
+                    }
+
                     sun_ray_count_local++;
                 }
                 else
@@ -244,7 +252,6 @@ namespace SolTrace::EmbreeRunner
                 double LastDFXYZ[3] = {0.0, 0.0, 0.0};
                 uint_fast64_t LastElementNumber = 0;
                 uint_fast64_t LastRayNumber = 0;
-                int ErrorFlag;
                 int LastHitBackSide;
                 bool StageHit;
                 int MultipleHitCount = 0;
