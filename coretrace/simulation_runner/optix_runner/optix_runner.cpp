@@ -1,4 +1,3 @@
-
 #include "simulation_runner/optix_runner/optix_runner.hpp"
 #include "simulation_data/simulation_parameters.hpp"
 #include "simulation_data/simulation_data.hpp"
@@ -6,6 +5,17 @@
 
 #include <sstream>
 #include <stdexcept>
+
+namespace
+{
+    OptixCSP::Matrix33d ToMatrix33d(const SolTrace::Data::Matrix3d& mat)
+    {
+        return OptixCSP::Matrix33d(
+            mat.data[0][0], mat.data[0][1], mat.data[0][2],
+            mat.data[1][0], mat.data[1][1], mat.data[1][2],
+            mat.data[2][0], mat.data[2][1], mat.data[2][2]);
+    }
+}
 
 using SolTrace::Runner::RunnerStatus;
 using SolTrace::Runner::SimulationRunner;
@@ -122,7 +132,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
             auto optix_el = std::make_shared<OptixCSP::CspElement>();
             optix_el->set_origin(ToVec3d(el->get_origin_global()));
-            optix_el->set_aim_point(ToVec3d(el->get_aim_vector_global()));
+            optix_el->set_rotation_matrix(ToMatrix33d(el->get_local_to_global()));
 
             // Safely narrow element id to int32_t
             const auto id = el->get_id(); // int
@@ -217,7 +227,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             }
 
             auto soltrace_aperture_type = el->get_aperture()->get_type();
-
+            
             switch (soltrace_aperture_type)
             {
 
@@ -284,8 +294,6 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 	      throw std::runtime_error("Unsupported aperture type in OptixRunner");
 	      break;
             }
-
-            optix_el->update_euler_angles();
 
             double xmin, xmax, ymin, ymax, zmin, zmax;
             el->get_aperture()->bounding_box(xmin, xmax, ymin, ymax);

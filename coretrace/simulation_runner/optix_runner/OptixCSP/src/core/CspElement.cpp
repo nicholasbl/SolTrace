@@ -22,9 +22,7 @@ CspElementBase::CspElementBase()
 CspElement::CspElement()
 {
     m_origin = Vec3d(0.0, 0.0, 0.0);
-    m_aim_point = Vec3d(0.0, 0.0, 1.0);    // Default aim direction
-    m_euler_angles = Vec3d(0.0, 0.0, 0.0); // Default orientation
-    m_zrot = 0.0;
+    m_rotation_matrix = Matrix33d();
     m_surface = nullptr;
     m_aperture = nullptr;
     m_id = kElementIdUnassigned;
@@ -42,26 +40,6 @@ const Vec3d &CspElement::get_origin() const
 void CspElement::set_origin(const Vec3d &o)
 {
     m_origin = o;
-}
-
-void CspElement::set_aim_point(const Vec3d &a)
-{
-    m_aim_point = a;
-}
-
-const Vec3d &CspElement::get_aim_point() const
-{
-    return m_aim_point;
-}
-
-void CspElement::set_zrot(double zrot)
-{
-    m_zrot = zrot;
-}
-
-double CspElement::get_zrot() const
-{
-    return m_zrot;
 }
 
 std::shared_ptr<Aperture> CspElement::get_aperture() const
@@ -107,34 +85,15 @@ void CspElement::set_optics_back(const bool use_refraction, const float reflecti
     this->set_optics(false, use_refraction, reflectivity, transmissivity, slope_error, specularity_error, od);
 }
 
-// set orientation based on aimpoint and zrot
-void CspElement::update_euler_angles(const Vec3d &aim_point, const double zrot)
-{
-    Vec3d normal = aim_point - m_origin;
-    normal.normalized();
-    m_euler_angles = OptixCSP::normal_to_euler(normal, zrot);
-}
-
-void CspElement::update_euler_angles()
-{
-    Vec3d normal = m_aim_point - m_origin;
-    normal.normalized();
-    m_euler_angles = OptixCSP::normal_to_euler(normal, m_zrot);
-}
-
-void CspElement::update_element(const Vec3d &aim_point, const double zrot)
-{
-    m_aim_point = aim_point;
-    m_zrot = zrot;
-    update_euler_angles();
-}
 // return L2G rotation matrix
 Matrix33d CspElement::get_rotation_matrix() const
 {
-    // get G2L rotation matrix from euler angles
-    // TODO: need to think about if we store this or not
-    Matrix33d mat_G2L = OptixCSP::get_rotation_matrix_G2L(m_euler_angles);
-    return mat_G2L.transpose();
+    return m_rotation_matrix;
+}
+
+void CspElement::set_rotation_matrix(const Matrix33d& rotation_matrix)
+{
+    m_rotation_matrix = rotation_matrix;
 }
 
 // return upper bounding box

@@ -26,8 +26,6 @@ namespace OptixCSP
         // Positioning and orientation.
         virtual const Vec3d &get_origin() const = 0;
         virtual void set_origin(const OptixCSP::Vec3d &) = 0;
-        virtual const Vec3d &get_aim_point() const = 0;
-        virtual void set_aim_point(const Vec3d &) = 0;
         // virtual const Vec3d& get_euler_angles() const = 0;
         // virtual void set_euler_angles(const Vec3d&) = 0;
 
@@ -56,12 +54,7 @@ namespace OptixCSP
         // set and get origin
         const Vec3d &get_origin() const override;
         void set_origin(const Vec3d &o) override;
-        void set_aim_point(const Vec3d &a) override;
-        const Vec3d &get_aim_point() const override;
 
-        // set zrot (in degrees)
-        void set_zrot(double zrot);
-        double get_zrot() const;
         std::shared_ptr<Aperture> get_aperture() const;
         std::shared_ptr<Surface> get_surface() const;
         ApertureType get_aperture_type() const;
@@ -77,15 +70,9 @@ namespace OptixCSP
                              const float transmissivity, const float slope_error, const float specularity_error,
                              const OpticalDistribution od);
 
-        // set orientation based on aimpoint and zrot
-        void update_euler_angles(const Vec3d &aim_point, const double zrot);
-        // set orientation based on the CspElement's aim point and zrot
-        void update_euler_angles();
-
-        void update_element(const Vec3d &aim_point, const double zrot);
-
         // return L2G rotation matrix
         Matrix33d get_rotation_matrix() const;
+        void set_rotation_matrix(const Matrix33d& rotation_matrix);
 
         // return upper bounding box
         Vec3d get_upper_bounding_box() const;
@@ -122,9 +109,7 @@ namespace OptixCSP
                         const OpticalDistribution od);
 
         Vec3d m_origin;
-        Vec3d m_aim_point;
-        Vec3d m_euler_angles; // euler angles, need to be computed from aim point and zrot
-        double m_zrot;        // zrot from the stinput file, user provided value, in degrees
+        Matrix33d m_rotation_matrix;
 
         Vec3d m_upper_box_bound; // Global coordinates
         Vec3d m_lower_box_bound; // Global coordinates

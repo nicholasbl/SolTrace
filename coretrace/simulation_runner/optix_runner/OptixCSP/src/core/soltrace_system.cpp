@@ -717,9 +717,6 @@ void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector
 
 void SolTraceSystem::add_element(std::shared_ptr<CspElement> e)
 {
-
-    // update the euler angles for the element
-    e->update_euler_angles();
     m_element_list.push_back(e);
 }
 
