@@ -791,10 +791,6 @@ STCORE_API int st_sim_run_SolTrace20(st_context_t pcxt, unsigned int seed, const
 		case(ST_RUNNER_OPTIX):
 			run_optix_runner(sd, sys);
 			break;
-		// Optix direct file load runner
-		case(ST_RUNNER_OPTIX_FILE):
-			run_optix_file_runner(sys, file_name);
-			break;
 		// Embree
 		case(ST_RUNNER_EMBREE):
 			run_embree_runner(sd, sys, nthreads);

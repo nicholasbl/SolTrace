@@ -78,7 +78,6 @@ typedef enum st_runner_type_t {
 	ST_RUNNER_NATIVE,           /* 1 */
 	ST_RUNNER_NATIVE_FILE,		/* 2 */
 	ST_RUNNER_OPTIX,            /* 3 */
-	ST_RUNNER_OPTIX_FILE,       /* 4 */
 	ST_RUNNER_EMBREE,			/* 5 */
 	ST_RUNNER_COUNT             /* sentinel (not a valid runner) */
 } st_runner_type_t;

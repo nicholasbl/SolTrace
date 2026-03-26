@@ -120,7 +120,7 @@ TraceForm::TraceForm( wxWindow *parent, Project &prj )
 	flxsizer->AddStretchSpacer();
 
 	// Add a radio box for runner selection
-	wxString runnerChoices[] = { "Legacy", "Native runner (cpu)", "Native runner direct file (cpu)", "OptiX runner (gpu)", "OptiX direct file (gpu)", "Embree (cpu)"};
+	wxString runnerChoices[] = { "Legacy", "Native runner (cpu)", "Native runner direct file (cpu)", "OptiX runner (gpu)", "Embree (cpu)"};
 	m_runner_choice = new wxRadioBox(
 		sizer1->GetStaticBox(),
 		ID_RUNNER_RADIO,
@@ -925,13 +925,13 @@ int RunSolTrace20(Project* System, int nrays, int nmaxrays,
 	::st_sim_errors(spcxt, sunshape ? 1 : 0, opterrs ? 1 : 0);
 	::st_sim_params(spcxt, nrays, nmaxrays, aspowertower);
 
-	// 0: legacy (shouldn't have called this), 1: native, 2: optix, 3: optix file
+	// 0: legacy (shouldn't have called this), 1: native, 2: optix
 	if (runner_enum == ST_RUNNER_LEGACY)
 		return -1;
 
 	// Save temp stinput file if runner_type 3
 	wxString file_name = "";
-	if (runner_enum == ST_RUNNER_OPTIX_FILE || runner_enum == ST_RUNNER_NATIVE_FILE)
+	if (runner_enum == ST_RUNNER_NATIVE_FILE)
 	{
 		// Create a unique temp file (wx creates an empty file immediately)
 		wxString basePath = wxFileName::CreateTempFileName("soltrace_case");
@@ -966,7 +966,7 @@ int RunSolTrace20(Project* System, int nrays, int nmaxrays,
 		
 
 	// Delete temporary stinput
-	if (runner_enum == ST_RUNNER_OPTIX_FILE || runner_enum == ST_RUNNER_NATIVE_FILE)
+	if (runner_enum == ST_RUNNER_NATIVE_FILE)
 		wxRemoveFile(file_name);
 
 	System->RecomputeTransforms();

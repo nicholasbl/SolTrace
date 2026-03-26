@@ -47,9 +47,6 @@ namespace OptixCSP {
         /// Update launch params
         void update();
 
-        // Read a stinput file for the simulation setup.
-        bool read_st_input(const char* filename);
-
         // Write sun point to a file
         void write_sun_output(const std::string& filename);
         // write all the hit points to a file
@@ -185,16 +182,6 @@ namespace OptixCSP {
         void get_buffer_results(std::vector<float4>& hp_vec, std::vector<int>& raynumber_vec, 
             std::vector<int>& element_id_vec, std::vector<uint8_t>& hit_type_vec, 
             std::vector<int>& sunraynumber_vec);
-
-        // Helper functions to read a stinput file
-        bool read_system(FILE* fp);
-        bool read_stage(FILE* fp);
-        bool read_element(FILE* fp);
-        bool read_optic(FILE* fp);
-        bool read_optic_surface(FILE* fp);
-        bool read_sun(FILE* fp);
-        void read_line(char* buf, int len, FILE* fp);
-        std::vector<std::string> split(const std::string& str, const std::string& delim, bool ret_empty, bool ret_delim);
 
         Timer m_timer_setup;
         Timer m_timer_trace;

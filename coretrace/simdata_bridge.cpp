@@ -419,26 +419,6 @@ int run_optix_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
     return 0;
 }
 
-int run_optix_file_runner(TSystem* sys, const char* file_name)
-{
-    // Directly run OptixCSP using stinput file (debug use ONLY)
-    OptixCSP::SolTraceSystem sys_optix;
-    sys_optix.set_number_of_rays(sys->sim_raycount, sys->sim_raymax);
-    bool ok = sys_optix.read_st_input(file_name);
-    sys_optix.initialize();
-    sys_optix.run();
-
-    std::vector<float4> hp_vec;
-    std::vector<int> raynumber_vec;
-    std::vector<int> element_id_vec;
-    std::vector<uint8_t> hit_type_vec;
-    sys_optix.get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);
-
-    assign_raydata_from_hitpoints(hp_vec, raynumber_vec, sys);
-
-    return 0;
-}
-
 int run_embree_runner(SolTrace::Data::SimulationData& sd, TSystem* sys, const int nthreads)
 {
     // Make embree runner
