@@ -39,6 +39,41 @@ static bool is_valid_dir(const float3& v)
     return (n2 > 0.5 && n2 < 2.0);
 }
 
+static std::vector<float3> estimate_dirs_from_result(const SimulationResult& result)
+{
+    std::vector<float3> dirs;
+    dirs.reserve(result.get_number_of_records());
+
+    for (int i = 0; i < result.get_number_of_records(); ++i)
+    {
+        ray_record_ptr rec = result[i];
+        if (!rec)
+            continue;
+
+        const int n_interactions = rec->get_number_of_interactions();
+        if (n_interactions < 2)
+            continue;
+
+        Vector3d p0, p1;
+        rec->get_position(0, p0);
+        rec->get_position(1, p1);
+
+        const double dx = p1[0] - p0[0];
+        const double dy = p1[1] - p0[1];
+        const double dz = p1[2] - p0[2];
+        const double n = std::sqrt(dx * dx + dy * dy + dz * dz);
+        if (n <= 0.0)
+            continue;
+
+        dirs.push_back(make_float3(
+            static_cast<float>(dx / n),
+            static_cast<float>(dy / n),
+            static_cast<float>(dz / n)));
+    }
+
+    return dirs;
+}
+
 // Build a simple scene with a single flat plate receiver
 void make_default_sd_sun(SimulationData& sd, element_ptr& plate)
 {
@@ -125,7 +160,7 @@ TEST(Sun, SmokeTest)
     sun->set_shape(SolTrace::Data::SunShape::PILLBOX, 0.0, 4.65, 0.0);
     sd.add_ray_source(sun);
 
-	// Run simulation
+    // Run simulation
     OptixRunner runner;
     RunnerStatus sts = runner.initialize();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
@@ -134,7 +169,7 @@ TEST(Sun, SmokeTest)
     sts = runner.run_simulation();
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
 
-	// Collect results
+    // Collect results
     SimulationResult result;
     sts = runner.report_simulation(&result, 0);
     ASSERT_EQ(sts, RunnerStatus::SUCCESS);
@@ -183,10 +218,9 @@ TEST(Sun, SunShapeSupportMatrix)
     SimulationParameters& params = sd.get_simulation_parameters();
     params.include_sun_shape_errors = true;
 
-    for (int i = 0; i < static_cast<int>(SunShape::UNKNOWN); ++i) 
+    for (int i = 0; i < static_cast<int>(SunShape::UNKNOWN); ++i)
     {
         SunShape shape = static_cast<SunShape>(i);
-        // Check if expected to pass/fail
         bool is_supported = false;
         for (auto supported_shape : OptixCSP::kSupportedSunshapes)
         {
@@ -197,7 +231,6 @@ TEST(Sun, SunShapeSupportMatrix)
             }
         }
 
-        // Reuse same SimulationData; just change the sun shape
         try
         {
             sun->set_shape(shape, 1, 1, 0.5, { 0 }, { 0 });
@@ -207,13 +240,11 @@ TEST(Sun, SunShapeSupportMatrix)
             EXPECT_EQ(is_supported, false);
             continue;
         }
-        
 
         OptixRunner runner;
         ASSERT_EQ(runner.initialize(), RunnerStatus::SUCCESS);
         RunnerStatus sts = runner.setup_simulation(&sd);
 
-        // Check pass/fail
         if (is_supported)
             EXPECT_EQ(sts, RunnerStatus::SUCCESS);
         else
@@ -221,13 +252,10 @@ TEST(Sun, SunShapeSupportMatrix)
     }
 }
 
-// Check that Gaussian sun angle distribution is reasonable:
-// - most rays within ~3*sigma
-// - some rays beyond sigma (non-trivial tail)
 TEST(Sun, GaussianSunAngleDistribution)
 {
     const int N_RAYS = 200e3;
-    const double SIGMA_MRAD = 4.65; // chosen test value
+    const double SIGMA_MRAD = 4.65;
 
     SimulationData sd_gaussian;
     auto sun_pos = Vector3d(0.0, 0.0, 100.0);
@@ -243,10 +271,10 @@ TEST(Sun, GaussianSunAngleDistribution)
     ASSERT_EQ(runner_gaussian.setup_simulation(&sd_gaussian), RunnerStatus::SUCCESS);
     ASSERT_EQ(runner_gaussian.run_simulation(), RunnerStatus::SUCCESS);
 
-    OptixCSP::SolTraceSystem* sys_gaussian = runner_gaussian.get_optix_system();
-    ASSERT_NE(sys_gaussian, nullptr);
+    SimulationResult result;
+    ASSERT_EQ(runner_gaussian.report_simulation(&result, 0), RunnerStatus::SUCCESS);
 
-    const std::vector<float3>& dirs = sys_gaussian->get_sunraydir_vec();
+    const std::vector<float3> dirs = estimate_dirs_from_result(result);
     EXPECT_FALSE(dirs.empty());
 
     float3 sun_dir_nominal = make_float3(
@@ -263,7 +291,6 @@ TEST(Sun, GaussianSunAngleDistribution)
         sun_dir_nominal.y = static_cast<float>(ny / n);
         sun_dir_nominal.z = static_cast<float>(nz / n);
     }
-    // Rays travel toward the scene, opposite the sun_pos direction
     sun_dir_nominal.x = -sun_dir_nominal.x;
     sun_dir_nominal.y = -sun_dir_nominal.y;
     sun_dir_nominal.z = -sun_dir_nominal.z;
@@ -292,13 +319,10 @@ TEST(Sun, GaussianSunAngleDistribution)
     const double frac_beyond_sigma = static_cast<double>(count_beyond_sigma) /
                                      static_cast<double>(count_valid);
 
-    // For a Gaussian, most rays should be within 3 sigma
-    EXPECT_GT(frac_within_3sigma, 0.98);    // Less than ideal gaussian because max angle limits tail
-    // And there should be a noticeable tail beyond 1 sigma
+    EXPECT_GT(frac_within_3sigma, 0.98);
     EXPECT_GT(frac_beyond_sigma, 0.1);
 }
 
-// Check that Pillbox sun angle distribution is bounded by half-width
 TEST(Sun, PillboxSunAngleDistribution)
 {
     const int N_RAYS = 200e3;
@@ -318,10 +342,10 @@ TEST(Sun, PillboxSunAngleDistribution)
     ASSERT_EQ(runner_pillbox.setup_simulation(&sd_pillbox), RunnerStatus::SUCCESS);
     ASSERT_EQ(runner_pillbox.run_simulation(), RunnerStatus::SUCCESS);
 
-    OptixCSP::SolTraceSystem* sys_pillbox = runner_pillbox.get_optix_system();
-    ASSERT_NE(sys_pillbox, nullptr);
+    SimulationResult result;
+    ASSERT_EQ(runner_pillbox.report_simulation(&result, 0), RunnerStatus::SUCCESS);
 
-    const std::vector<float3>& dirs = sys_pillbox->get_sunraydir_vec();
+    const std::vector<float3> dirs = estimate_dirs_from_result(result);
     EXPECT_FALSE(dirs.empty());
 
     float3 sun_dir_nominal = make_float3(
@@ -357,16 +381,13 @@ TEST(Sun, PillboxSunAngleDistribution)
     }
 
     EXPECT_GT(count_valid, 0);
-
-    // Pillbox should not exceed its configured half-width by more than a small tolerance
     EXPECT_LE(max_theta, HALF_WIDTH_MRAD + 0.1);
 }
 
-// Check that Buie CSR sun angle distribution is bounded by MaxAngle and has a tail
 TEST(Sun, BuieCSRSunAngleDistribution)
 {
     const int N_RAYS = 200e3;
-    const double MAX_ANGLE_MRAD = 43.6; // Matches NativeRunner::setup_sun for BUIE_CSR
+    const double MAX_ANGLE_MRAD = 43.6;
 
     SimulationData sd_buie;
     auto sun_pos = Vector3d(0.0, 0.0, 100.0);
@@ -382,10 +403,10 @@ TEST(Sun, BuieCSRSunAngleDistribution)
     ASSERT_EQ(runner_buie.setup_simulation(&sd_buie), RunnerStatus::SUCCESS);
     ASSERT_EQ(runner_buie.run_simulation(), RunnerStatus::SUCCESS);
 
-    OptixCSP::SolTraceSystem* sys_buie = runner_buie.get_optix_system();
-    ASSERT_NE(sys_buie, nullptr);
+    SimulationResult result;
+    ASSERT_EQ(runner_buie.report_simulation(&result, 0), RunnerStatus::SUCCESS);
 
-    const std::vector<float3>& dirs = sys_buie->get_sunraydir_vec();
+    const std::vector<float3> dirs = estimate_dirs_from_result(result);
     EXPECT_FALSE(dirs.empty());
 
     float3 sun_dir_nominal = make_float3(
@@ -408,7 +429,7 @@ TEST(Sun, BuieCSRSunAngleDistribution)
 
     double max_theta = 0.0;
     int count_valid = 0;
-    int count_beyond_disc = 0; // beyond nominal 4.65 mrad solar disc
+    int count_beyond_disc = 0;
 
     for (const auto& d : dirs)
     {
@@ -424,11 +445,8 @@ TEST(Sun, BuieCSRSunAngleDistribution)
     }
 
     EXPECT_GT(count_valid, 0);
-
-    // Buie CSR should not exceed its configured MaxAngle by more than a small tolerance
     EXPECT_LE(max_theta, MAX_ANGLE_MRAD + 0.5);
 
-    // There should be a noticeable circumsolar tail beyond the nominal solar disc (~4.65 mrad)
     const double frac_beyond_disc = static_cast<double>(count_beyond_disc) /
                                      static_cast<double>(count_valid);
     EXPECT_GT(frac_beyond_disc, 0.05);

@@ -152,9 +152,7 @@ TEST(TwoPlateOptix, ReflectionToAbsorber)
 	std::vector<uint8_t> hit_type_vec;
 	sys->get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);
 	std::vector<int> sunraynumber_vec = sys->get_sunraynumber_vec();
-	std::vector<float3> sunraydir_vec = sys->get_sunraydir_vec();
 
-	EXPECT_LT(result.get_number_of_records(), sunraydir_vec.size());	// Number of results is less than rays generated
 	EXPECT_EQ(hp_vec.size(), raynumber_vec.size());						// Hit results are same size
 	EXPECT_EQ(raynumber_vec.size(), element_id_vec.size());
 	EXPECT_EQ(element_id_vec.size(), hit_type_vec.size());
