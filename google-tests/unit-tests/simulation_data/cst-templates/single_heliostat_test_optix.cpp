@@ -6,9 +6,6 @@ using SolTrace::NativeRunner::NativeRunner;
 using OptixRunnerType = OptixRunner;
 using NativeRunnerType = NativeRunner;
 
-using SingleHeliostatSimulationNative = SingleHeliostatSimulation<NativeRunnerType>;
-using SingleHeliostatSimulationOptix = SingleHeliostatSimulation<OptixRunnerType>;
-
 constexpr int N_rays_glob = 2e6;
 constexpr int seed = 123;
 constexpr bool save = false;

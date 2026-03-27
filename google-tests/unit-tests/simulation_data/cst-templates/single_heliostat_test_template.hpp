@@ -31,14 +31,6 @@ using SolTrace::Runner::RunnerStatus;
 template <typename RunnerT>
 class SingleHeliostatSimulationHelper {
 public:
-    enum class RunnerBackend
-    {
-        Native,
-        Embree,
-        Optix
-    };
-
-    RunnerBackend backend = RunnerBackend::Native;
 
     bool high_accuracy = false;
     bool print_info = false;
