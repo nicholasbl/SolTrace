@@ -4,4 +4,4 @@ namespace SolTrace::GUI::App {
 
 ViewModule::ViewModule(QObject* parent) : QObject { parent } { }
 
-}
+} // namespace SolTrace::GUI::App

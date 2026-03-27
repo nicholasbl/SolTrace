@@ -17,9 +17,9 @@ Item {
     }
 
     enum SizeClass {
-            Small = 0,
-            Normal = 1,
-            Wide = 2
+        Small = 0,
+        Normal = 1,
+        Wide = 2
     }
 
     TopBar {

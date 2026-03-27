@@ -68,44 +68,44 @@ namespace SolTrace::GUI::App {
  *
  */
 class App : public QObject {
-  Q_OBJECT
-  QML_ELEMENT
-  QML_SINGLETON
+    Q_OBJECT
+    QML_ELEMENT
+    QML_SINGLETON
 
 public:
-  explicit App(QObject *parent = nullptr,
-               QString const &documentation_directory = "");
+    explicit App(QObject*       parent                  = nullptr,
+                 QString const& documentation_directory = "");
 
-  QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
+    QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
 
-  QOBJECT_READONLY_PROPERTY(FileSourceModule, file_source)
+    QOBJECT_READONLY_PROPERTY(FileSourceModule, file_source)
 
-  QOBJECT_READONLY_PROPERTY(WorkflowModule, workflow)
+    QOBJECT_READONLY_PROPERTY(WorkflowModule, workflow)
 
-  QOBJECT_READONLY_PROPERTY(DocumentationModule, docs)
+    QOBJECT_READONLY_PROPERTY(DocumentationModule, docs)
 
-  QOBJECT_READONLY_PROPERTY(SunModule, sun)
+    QOBJECT_READONLY_PROPERTY(SunModule, sun)
 
-  QOBJECT_READONLY_PROPERTY(TracingModule, tracing)
+    QOBJECT_READONLY_PROPERTY(TracingModule, tracing)
 
-  QOBJECT_READONLY_PROPERTY(MaterialsModule, materials)
+    QOBJECT_READONLY_PROPERTY(MaterialsModule, materials)
 
-  QOBJECT_READONLY_PROPERTY(LayoutModule, layout)
+    QOBJECT_READONLY_PROPERTY(LayoutModule, layout)
 
-  QOBJECT_READONLY_PROPERTY(ViewModule, view)
+    QOBJECT_READONLY_PROPERTY(ViewModule, view)
 
-  QOBJECT_READONLY_PROPERTY(SimulationModule, simulation)
+    QOBJECT_READONLY_PROPERTY(SimulationModule, simulation)
 
-  QOBJECT_READONLY_PROPERTY(IntersectionsModule, intersections)
+    QOBJECT_READONLY_PROPERTY(IntersectionsModule, intersections)
 
-  QOBJECT_READONLY_PROPERTY(FluxModule, flux)
+    QOBJECT_READONLY_PROPERTY(FluxModule, flux)
 
-  void install(QPointer<Backend> backend);
+    void install(QPointer<Backend> backend);
 
 signals:
-  void notification(ANotification);
-  void new_results(std::shared_ptr<ResultDB>);
-  void new_database(db::Database *);
+    void notification(ANotification);
+    void new_results(std::shared_ptr<ResultDB>);
+    void new_database(db::Database*);
 };
 
 } // namespace SolTrace::GUI::App

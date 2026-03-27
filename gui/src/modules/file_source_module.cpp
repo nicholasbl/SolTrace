@@ -8,123 +8,125 @@
 namespace SolTrace::GUI::App {
 
 struct LoadedFile {
-  QString name;
-  QString provenance;
-  db::Database *ptr;
+    QString       name;
+    QString       provenance;
+    db::Database* ptr;
 };
 
 struct LoadFileFailed {
-  ANotification notification;
-  db::Database *ptr;
+    ANotification notification;
+    db::Database* ptr;
 
-  LoadFileFailed(QString message, db::Database *db)
-      : notification(ANotification::error(message)), ptr(db) {}
+    LoadFileFailed(QString message, db::Database* db)
+        : notification(ANotification::error(message)), ptr(db) { }
 };
 
 using LoadResult = std::variant<LoadedFile, LoadFileFailed>;
 
 using ResultFuture = QFutureWatcher<LoadResult>;
 
-static void load_file(QPromise<LoadResult> &result, QString fname,
-                      db::Database *destination) {
-  result.setProgressRange(0, 100);
-  qDebug() << Q_FUNC_INFO << fname;
+static void load_file(QPromise<LoadResult>& result,
+                      QString               fname,
+                      db::Database*         destination) {
+    result.setProgressRange(0, 100);
+    qDebug() << Q_FUNC_INFO << fname;
 
-  result.setProgressValueAndText(0, "Reading file...");
+    result.setProgressValueAndText(0, "Reading file...");
 
-  auto file = QFileInfo(fname);
+    auto file = QFileInfo(fname);
 
-  if (!(file.isFile() && file.isReadable())) {
-    result.emplaceResult(
-        LoadFileFailed("Unable to open file for reading", destination));
-    return;
-  }
+    if (!(file.isFile() && file.isReadable())) {
+        result.emplaceResult(
+            LoadFileFailed("Unable to open file for reading", destination));
+        return;
+    }
 
-  auto new_data = std::make_shared<SD::SimulationData>();
+    auto new_data = std::make_shared<SD::SimulationData>();
 
-  auto str = fname.toStdString();
+    auto str = fname.toStdString();
 
-  if (!new_data->import_from_file(str)) {
-    result.emplaceResult(LoadFileFailed("Unable to import file", destination));
-    return;
-  }
+    if (!new_data->import_from_file(str)) {
+        result.emplaceResult(
+            LoadFileFailed("Unable to import file", destination));
+        return;
+    }
 
-  result.setProgressValueAndText(50, "Importing content...");
+    result.setProgressValueAndText(50, "Importing content...");
 
-  destination->import(*new_data);
+    destination->import(*new_data);
 
-  result.setProgressValueAndText(100, "Done");
+    result.setProgressValueAndText(100, "Done");
 
-  result.emplaceResult(LoadedFile{
-      .name = file.completeBaseName(),
-      .provenance = fname,
-      .ptr = destination,
-  });
+    result.emplaceResult(LoadedFile {
+        .name       = file.completeBaseName(),
+        .provenance = fname,
+        .ptr        = destination,
+    });
 }
 
 void FileSourceModule::file_ready() {
-  qDebug() << Q_FUNC_INFO;
-  auto from = dynamic_cast<ResultFuture *>(sender());
+    qDebug() << Q_FUNC_INFO;
+    auto from = dynamic_cast<ResultFuture*>(sender());
 
-  if (!from) {
-    qFatal("this shouldn't happen");
-  }
+    if (!from) { qFatal("this shouldn't happen"); }
 
-  if (from->isCanceled()) {
-    emit notify(ANotification::info("File load cancelled"));
-    qInfo() << "File load cancelled";
-    return;
-  }
+    if (from->isCanceled()) {
+        emit notify(ANotification::info("File load cancelled"));
+        qInfo() << "File load cancelled";
+        return;
+    }
 
-  auto result = from->result();
+    auto result = from->result();
 
-  std::visit(
-      overloaded{
-          [this](LoadedFile arg) { this->set_current_database(arg.ptr); },
-          [this](LoadFileFailed failure) {
-            emit this->notify(failure.notification);
-            delete failure.ptr;
-          },
-      },
-      result);
+    std::visit(
+        overloaded {
+            [this](LoadedFile arg) { this->set_current_database(arg.ptr); },
+            [this](LoadFileFailed failure) {
+                emit this->notify(failure.notification);
+                delete failure.ptr;
+            },
+        },
+        result);
 }
 
 void FileSourceModule::handle_source_update() {
-  if (is_loading()) {
-    emit cancel_current_load(QPrivateSignal{});
-  }
-  set_is_loading(false);
+    if (is_loading()) { emit cancel_current_load(QPrivateSignal {}); }
+    set_is_loading(false);
 
-  auto new_source = source();
+    auto new_source = source();
 
-  if (new_source.isEmpty()) {
-    qDebug() << Q_FUNC_INFO;
-    set_current_database(new db::Database(this));
-    return;
-  }
+    if (new_source.isEmpty()) {
+        qDebug() << Q_FUNC_INFO;
+        set_current_database(new db::Database(this));
+        return;
+    }
 
-  qDebug() << Q_FUNC_INFO << new_source;
+    qDebug() << Q_FUNC_INFO << new_source;
 
-  auto watcher = new ResultFuture(this);
+    auto watcher = new ResultFuture(this);
 
-  connect(this, &FileSourceModule::cancel_current_load, watcher,
-          &ResultFuture::cancel);
+    connect(this,
+            &FileSourceModule::cancel_current_load,
+            watcher,
+            &ResultFuture::cancel);
 
-  connect(watcher, &ResultFuture::finished, this,
-          &FileSourceModule::file_ready);
+    connect(
+        watcher, &ResultFuture::finished, this, &FileSourceModule::file_ready);
 
-  connect(watcher, &ResultFuture::finished, watcher, &QObject::deleteLater);
+    connect(watcher, &ResultFuture::finished, watcher, &QObject::deleteLater);
 
-  auto ptr = new db::Database(this);
+    auto ptr = new db::Database(this);
 
-  auto future = QtConcurrent::run(load_file, new_source.toLocalFile(), ptr);
+    auto future = QtConcurrent::run(load_file, new_source.toLocalFile(), ptr);
 
-  watcher->setFuture(future);
+    watcher->setFuture(future);
 }
 
-FileSourceModule::FileSourceModule(QObject *parent) : QObject{parent} {
-  connect(this, &FileSourceModule::source_changed, this,
-          &FileSourceModule::handle_source_update);
+FileSourceModule::FileSourceModule(QObject* parent) : QObject { parent } {
+    connect(this,
+            &FileSourceModule::source_changed,
+            this,
+            &FileSourceModule::handle_source_update);
 }
 
 } // namespace SolTrace::GUI::App

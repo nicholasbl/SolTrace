@@ -23,30 +23,30 @@ namespace SolTrace::GUI::App {
  * QML access pattern: App.materials.backend.child_model
  */
 class MaterialsModule : public QObject {
-  Q_OBJECT
+    Q_OBJECT
 
-  // TODO: A name module that always watches the name of an entity
+    // TODO: A name module that always watches the name of an entity
 
 private slots:
-  void new_material_selected();
-  void new_geometry_selected();
+    void new_material_selected();
+    void new_geometry_selected();
 
 public:
-  explicit MaterialsModule(QObject *parent = nullptr);
+    explicit MaterialsModule(QObject* parent = nullptr);
 
-  QOBJECT_READONLY_PROPERTY(StatusComponent, status);
-  QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
-  QOBJECT_WRITABLE_PROPERTY(db::MaterialGroupsModel, materials_list)
-  QOBJECT_WRITABLE_PROPERTY(db::GeometryGroupsModel, geometry_list)
+    QOBJECT_READONLY_PROPERTY(StatusComponent, status);
+    QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
+    QOBJECT_WRITABLE_PROPERTY(db::MaterialGroupsModel, materials_list)
+    QOBJECT_WRITABLE_PROPERTY(db::GeometryGroupsModel, geometry_list)
 
-  QOBJECT_WRITABLE_PROPERTY(db::MaterialEditor, material_edit);
-  QOBJECT_WRITABLE_PROPERTY(db::GeometryEditor, geometry_edit);
+    QOBJECT_WRITABLE_PROPERTY(db::MaterialEditor, material_edit);
+    QOBJECT_WRITABLE_PROPERTY(db::GeometryEditor, geometry_edit);
 
-  Q_WRITABLE_PROPERTY(db::Entity, current_material, {})
-  Q_READONLY_PROPERTY(QString, current_material_name)
+    Q_WRITABLE_PROPERTY(db::Entity, current_material, {})
+    Q_READONLY_PROPERTY(QString, current_material_name)
 
-  Q_WRITABLE_PROPERTY(db::Entity, current_geometry, {})
-  Q_READONLY_PROPERTY(QString, current_geometry_name)
+    Q_WRITABLE_PROPERTY(db::Entity, current_geometry, {})
+    Q_READONLY_PROPERTY(QString, current_geometry_name)
 };
 
 } // namespace SolTrace::GUI::App

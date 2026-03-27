@@ -169,42 +169,42 @@ Item {
         acceptedButtons: Qt.LeftButton | Qt.RightButton
 
         onClicked: (mouse) => {
-            const result = view.pick(mouse.x, mouse.y)
-            var object = result.objectHit
-            if (!object) return
+                       const result = view.pick(mouse.x, mouse.y)
+                       var object = result.objectHit
+                       if (!object) return
 
-            // Left-button picking with non-instanced geometry
-            if (!object.instancing && mouse.button === Qt.LeftButton) {
-                // stub
-            }
-            // Right-button picking with non-instanced geometry
-            else if (!object.instancing && mouse.button === Qt.RightButton) {
-                // stub
-            }
-            // Left-button picking with instanced geometry
-            else if (object.instancing && mouse.button === Qt.LeftButton) {
-                const index = result.instanceIndex
-                if (index < 0) return
-                object.instancing.toggle_selection(index)
-            }
-            // Right-button picking with instanced geometry
-            else if (object.instancing && mouse.button === Qt.RightButton) {
-                const index = result.instanceIndex
-                if (index < 0) return
+                       // Left-button picking with non-instanced geometry
+                       if (!object.instancing && mouse.button === Qt.LeftButton) {
+                           // stub
+                       }
+                       // Right-button picking with non-instanced geometry
+                       else if (!object.instancing && mouse.button === Qt.RightButton) {
+                           // stub
+                       }
+                       // Left-button picking with instanced geometry
+                       else if (object.instancing && mouse.button === Qt.LeftButton) {
+                           const index = result.instanceIndex
+                           if (index < 0) return
+                           object.instancing.toggle_selection(index)
+                       }
+                       // Right-button picking with instanced geometry
+                       else if (object.instancing && mouse.button === Qt.RightButton) {
+                           const index = result.instanceIndex
+                           if (index < 0) return
 
-                if (geometryInstanceContextMenu.focused_group) {
-                   // stub - release focus on previous state
-                }
+                           if (geometryInstanceContextMenu.focused_group) {
+                               // stub - release focus on previous state
+                           }
 
-                if (geometryInstanceContextMenu.visible) {
-                    geometryInstanceContextMenu.reopening = true
-                }
+                           if (geometryInstanceContextMenu.visible) {
+                               geometryInstanceContextMenu.reopening = true
+                           }
 
-                geometryInstanceContextMenu.focused_group = object
-                geometryInstanceContextMenu.index = index
-                geometryInstanceContextMenu.popup()
-            }
-        }
+                           geometryInstanceContextMenu.focused_group = object
+                           geometryInstanceContextMenu.index = index
+                           geometryInstanceContextMenu.popup()
+                       }
+                   }
     }
 
     Button {
