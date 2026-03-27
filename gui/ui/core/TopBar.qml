@@ -12,9 +12,6 @@ import SolTrace
 RowLayout {
     id: root
     property var blur_source
-
-    property int current_module_index: 0
-
     signal show_script_area()
 
     RowLayout {
@@ -157,7 +154,7 @@ RowLayout {
                 text: "Configure"
                 font.pointSize: 16
 
-                onClicked: current_module_index = 0
+                onClicked: App.view.workflow_phase = 0
             }
 
             Label {
@@ -169,7 +166,7 @@ RowLayout {
                 text: "Simulate"
                 font.pointSize: 16
 
-                onClicked: current_module_index = 1
+                onClicked: App.view.workflow_phase = 1
             }
 
             Label {
@@ -181,7 +178,7 @@ RowLayout {
                 text: "Analyze"
                 font.pointSize: 16
 
-                onClicked: current_module_index = 2
+                onClicked: App.view.workflow_phase = 2
                 //onClicked: module_stack.currentIndex = 2
             }
 

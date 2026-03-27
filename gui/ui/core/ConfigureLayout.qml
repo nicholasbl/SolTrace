@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Effects
 import QtQuick.Layouts
-
+import QtQuick.Dialogs
 import SolTrace
 
 Item {
@@ -11,6 +11,18 @@ Item {
     property int size_class
 
     property var module : App.layout
+
+    // Layout editor opens when App.view.editing_layout is true
+    Connections {
+        target: App.view
+        function onEditing_layout_changed() {
+            if (App.view.editing_layout && stack.depth === 1) {
+                stack.push(entity_edit_view)
+            } else if (!App.view.editing_layout && stack.depth > 1) {
+                stack.pop()
+            }
+        }
+    }
 
     StackView {
         id: stack
@@ -65,7 +77,7 @@ Item {
 
                     onClicked: {
                         root.module.current_element = entity
-                        stack.push(entity_edit_view)
+                        App.view.editing_layout = true
                     }
 
                     background: Rectangle {
@@ -92,14 +104,14 @@ Item {
             RowLayout {
                 STIconButton {
                     text: "\uf053"
-                    onClicked: stack.pop()
+                    onClicked: App.view.editing_layout = false
                 }
                 Label {
                     text: "Element:"
                 }
                 Label {
-                    text: module.database ?
-                              module.database.name_of(module.current_element) :
+                    text: module.current_database ?
+                              module.current_database.name_of(module.current_element) :
                               "None"
                 }
             }

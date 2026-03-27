@@ -3,7 +3,7 @@
 namespace SolTrace::GUI::App {
 
 App::App(QObject *parent, const QString &documentation_directory)
-    : m_file_source(new FileSourceModule(this)),
+    : m_file_source(new FileSourceModule(this)), m_view(new ViewModule(this)),
       m_workflow(new WorkflowModule(this)),
       m_docs(new DocumentationModule(this)), m_sun(new SunModule(this)),
       m_tracing(new TracingModule(this)),

@@ -32,6 +32,7 @@ qt_add_resources(SolTrace "fonts"
         assets/fonts/roboto/Roboto-Italic.ttf
         assets/fonts/roboto/Roboto-Regular.ttf
         assets/fonts/font-awesome/fa_solid_7.otf
+        assets/examples/Power-tower-surround.stinput
 )
 
 qt_add_resources(SolTrace "images"
@@ -241,8 +242,7 @@ qt_add_qml_module(SolTrace
         QML_FILES ui/core/element/InstanceEdit.qml
         QML_FILES ui/core/RightStack.qml
         QML_FILES ui/primitives/widgets/STButton.qml
-
-
+        SOURCES src/modules/view_module.h src/modules/view_module.cpp
 
 )
 

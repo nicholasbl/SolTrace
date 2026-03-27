@@ -10,9 +10,16 @@ ColumnLayout {
     id: root
     property int size_class
 
+    Binding {
+        target: bar
+        property: "currentIndex"
+        value: App.view.configure_section
+    }
+
     STComboBar {
         id: bar
-        
+        onCurrentIndexChanged: App.view.configure_section = currentIndex
+
         Layout.fillWidth: true
 
         fontFamily: size_class < 1 ? "Font Awesome 7 Free" : ""
@@ -31,8 +38,8 @@ ColumnLayout {
     }
     
     StackLayout {
-        currentIndex: bar.currentIndex
-        
+        currentIndex: App.view.configure_section
+
         ColumnLayout {
             STSpinBox {
                 Layout.fillWidth: true

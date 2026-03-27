@@ -20,6 +20,7 @@
 #include <modules/simulation_module.h>
 #include <modules/sun_module.h>
 #include <modules/tracing_module.h>
+#include <modules/view_module.h>
 #include <modules/workflow_module.h>
 
 /**
@@ -67,52 +68,44 @@ namespace SolTrace::GUI::App {
  *
  */
 class App : public QObject {
-    Q_OBJECT
-    QML_ELEMENT
-    QML_SINGLETON
+  Q_OBJECT
+  QML_ELEMENT
+  QML_SINGLETON
 
 public:
-    explicit App(QObject*       parent                  = nullptr,
-                 QString const& documentation_directory = "");
+  explicit App(QObject *parent = nullptr,
+               QString const &documentation_directory = "");
 
-    QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
+  QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
 
-    /// App.file_source.source
-    QOBJECT_READONLY_PROPERTY(FileSourceModule, file_source)
+  QOBJECT_READONLY_PROPERTY(FileSourceModule, file_source)
 
-    /// App.WorkflowModule.phases()
-    QOBJECT_READONLY_PROPERTY(WorkflowModule, workflow)
+  QOBJECT_READONLY_PROPERTY(WorkflowModule, workflow)
 
-    /// App.docs.get("configuration.sun.directional_sun")
-    QOBJECT_READONLY_PROPERTY(DocumentationModule, docs)
+  QOBJECT_READONLY_PROPERTY(DocumentationModule, docs)
 
-    /// App.sun.definition.sun_type
-    QOBJECT_READONLY_PROPERTY(SunModule, sun)
+  QOBJECT_READONLY_PROPERTY(SunModule, sun)
 
-    /// App.tracing.max_intersections
-    QOBJECT_READONLY_PROPERTY(TracingModule, tracing)
+  QOBJECT_READONLY_PROPERTY(TracingModule, tracing)
 
-    /// App.materials.backend.child_model
-    QOBJECT_READONLY_PROPERTY(MaterialsModule, materials)
+  QOBJECT_READONLY_PROPERTY(MaterialsModule, materials)
 
-    /// App.geometry.backend.world_geometry_model
-    QOBJECT_READONLY_PROPERTY(LayoutModule, layout)
+  QOBJECT_READONLY_PROPERTY(LayoutModule, layout)
 
-    /// App.simulation.start()
-    QOBJECT_READONLY_PROPERTY(SimulationModule, simulation)
+  QOBJECT_READONLY_PROPERTY(ViewModule, view)
 
-    /// App.intersections.results
-    QOBJECT_READONLY_PROPERTY(IntersectionsModule, intersections)
+  QOBJECT_READONLY_PROPERTY(SimulationModule, simulation)
 
-    /// App.flux.results
-    QOBJECT_READONLY_PROPERTY(FluxModule, flux)
+  QOBJECT_READONLY_PROPERTY(IntersectionsModule, intersections)
 
-    void install(QPointer<Backend> backend);
+  QOBJECT_READONLY_PROPERTY(FluxModule, flux)
+
+  void install(QPointer<Backend> backend);
 
 signals:
-    void notification(ANotification);
-    void new_results(std::shared_ptr<ResultDB>);
-    void new_database(db::Database*);
+  void notification(ANotification);
+  void new_results(std::shared_ptr<ResultDB>);
+  void new_database(db::Database *);
 };
 
 } // namespace SolTrace::GUI::App

@@ -10,6 +10,18 @@ Item {
     property int size_class
     property var materials_module : App.materials
 
+    // Material editor opens when App.view.editing_material is true
+    Connections {
+        target: App.view
+        function onEditing_material_changed() {
+            if (App.view.editing_material && stack.depth === 1) {
+                stack.push(material_edit_view)
+            } else if (!App.view.editing_material && stack.depth > 1) {
+                stack.pop()
+            }
+        }
+    }
+
     StackView {
         id: stack
         initialItem: material_list_view
@@ -27,6 +39,7 @@ Item {
 
                 placeholderText: "Search..."
             }
+
             ListView {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
@@ -47,7 +60,7 @@ Item {
 
                     onClicked: {
                         materials_module.current_material = entity
-                        stack.push(material_edit_view)
+                        App.view.editing_material = true
                     }
 
                     background: Rectangle {
@@ -74,7 +87,9 @@ Item {
             RowLayout {
                 STIconButton {
                     text: "\uf053"
-                    onClicked: stack.pop()
+                    onClicked: {
+                        App.view.editing_material = false
+                    }
                 }
 
                 Label {

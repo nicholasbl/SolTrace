@@ -10,6 +10,18 @@ Item {
     property int size_class
     property var materials_module : App.materials
 
+    // Geometry editor opens when App.view.editing_geometry is true
+    Connections {
+        target: App.view
+        function onEditing_geometry_changed() {
+            if (App.view.editing_geometry && stack.depth === 1) {
+                stack.push(geometry_edit_view)
+            } else if (!App.view.editing_geometry && stack.depth > 1) {
+                stack.pop()
+            }
+        }
+    }
+
     StackView {
         id: stack
         initialItem: material_list_view
@@ -47,7 +59,7 @@ Item {
 
                     onClicked: {
                         materials_module.current_geometry = entity
-                        stack.push(material_edit_view)
+                        App.view.editing_geometry = true
                     }
 
                     background: Rectangle {
@@ -68,13 +80,13 @@ Item {
     }
 
     Component {
-        id: material_edit_view
+        id: geometry_edit_view
 
         ColumnLayout {
             RowLayout {
                 STIconButton {
                     text: "\uf053"
-                    onClicked: stack.pop()
+                    onClicked: App.view.editing_geometry = false
                 }
 
                 Label {
