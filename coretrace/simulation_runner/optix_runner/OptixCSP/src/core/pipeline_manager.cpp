@@ -42,7 +42,8 @@ const std::map<OpticalEntityType, std::string> IntersectionKernelMap = {
     {OpticalEntityType::RECTANGLE_FLAT, "__intersection__rectangle_flat"},
     {OpticalEntityType::TRIANGLE_FLAT, "__intersection__triangle_flat"},
     {OpticalEntityType::CYLINDRICAL, "__intersection__cylinder_y"},
-    {OpticalEntityType::QUADRILATERAL_FLAT, "__intersection__quadrilateral_flat"}};
+    {OpticalEntityType::QUADRILATERAL_FLAT, "__intersection__quadrilateral_flat"},
+    {OpticalEntityType::CIRCLE_FLAT, "__intersection__circle_flat"}};
 
 pipelineManager::pipelineManager(SoltraceState &state) : m_state(state) {}
 
