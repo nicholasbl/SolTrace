@@ -10,6 +10,12 @@ Item {
     id: root
     property var blur_source
 
+    Binding {
+        target: module_stack
+        property: "currentIndex"
+        value: App.view.workflow_phase
+    }
+
     enum SizeClass {
             Small = 0,
             Normal = 1,
@@ -97,7 +103,7 @@ Item {
             Label {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                text: ["Configure", "Simulate", "Analyze"][top_bar.current_module_index]
+                text: ["Configure", "Simulate", "Analyze"][App.view.workflow_phase]
                 font.pointSize: 18
                 font.bold: true
 
@@ -121,8 +127,8 @@ Item {
                     }
 
                     STIconButton {
-                            Layout.preferredWidth: implicitHeight
-                            Layout.fillHeight: true
+                        Layout.preferredWidth: implicitHeight
+                        Layout.fillHeight: true
                         id: smaller_button
                         text: "\uf422"
 
@@ -137,8 +143,8 @@ Item {
                     }
 
                     STIconButton {
-                            Layout.preferredWidth: implicitHeight
-                            Layout.fillHeight: true
+                        Layout.preferredWidth: implicitHeight
+                        Layout.fillHeight: true
                         id: larger_button
                         text: "\uf065"
 
@@ -161,7 +167,7 @@ Item {
         StackLayout {
             id: module_stack
 
-            currentIndex: top_bar.current_module_index
+            onCurrentIndexChanged: App.view.workflow_phase
 
             anchors.top: module_info_row.bottom
             anchors.left: parent.left
