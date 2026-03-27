@@ -11,23 +11,9 @@ using SingleHeliostatSimulationOptix = SingleHeliostatSimulation<OptixRunnerType
 
 constexpr int N_rays_glob = 2e6;
 constexpr int seed = 123;
-constexpr bool save = false;
+constexpr bool save = true;
 
-TEST_F(SingleHeliostatSimulationOptix, SingleFacetFlat_North2)
-{
-    setup_simData();
-    update_simulation_geometry(solar_azimuth, solar_elevation);
-    SimulationResult result;
-    //this->runner.disable_stages();
-    simulate(&result);
-    calculate_sun_size(result);
-    calculate_ray_counts(result);
-    read_expected_all_results("1a", "N");
-    check_outputs(result, "N");
-    //simulate_check_outputs("1a", "N");
-    //EXPECT_NEAR(sun_width, 15.4557, 1.e-4);
-    //EXPECT_NEAR(sun_height, 15.4557, 1.e-4);
-}
+
 
 static void write_to_dict(std::string key_name, double val_native,
     double val_optix, std::map<std::string, double>& dict_native,
@@ -46,7 +32,6 @@ static void CompareRunners(SingleHeliostatSimulationHelper<NativeRunner>& sim_na
     // Run cases
     sim_native.seed = seed;
     sim_native.sun_gen_type = SolTrace::Data::GenType::HALTON;
-    sim_native.initialize();
     sim_native.setup_simData();
     sim_native.update_simulation_geometry(sim_native.solar_azimuth, sim_native.solar_elevation);
     SimulationResult result_native;
@@ -58,7 +43,6 @@ static void CompareRunners(SingleHeliostatSimulationHelper<NativeRunner>& sim_na
 
     sim_optix.seed = seed;
     sim_optix.sun_gen_type = SolTrace::Data::GenType::HALTON;
-    sim_optix.initialize();
     sim_optix.setup_simData();
     sim_optix.update_simulation_geometry(sim_optix.solar_azimuth, sim_optix.solar_elevation);
     SimulationResult result_optix;
@@ -186,7 +170,7 @@ static void CompareRunners(SingleHeliostatSimulationHelper<NativeRunner>& sim_na
 
     // RMS
     rmse = sqrt(rmse / (sim_native.fluxGrid.nrows() * sim_native.fluxGrid.ncols()));
-    double rmse_tol = 0.11;
+    double rmse_tol = 0.11; // Should be 0.11
     EXPECT_LE(rmse / (peak_flux_native), rmse_tol);
 
     // Average flux
@@ -213,7 +197,192 @@ static void CompareRunners(SingleHeliostatSimulationHelper<NativeRunner>& sim_na
     int x = 0;
 }
 
-TEST(SingleHelioOptixNative, NoErrors)
+
+TEST(SingleHeliostatOptixNative, SingleFacetFlat_North)
+{
+    // Make native
+    SingleHeliostatSimulationHelper<NativeRunner> sim_native;
+    sim_native.runner.disable_stages();
+    sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
+
+    // Make optix
+    SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
+    sim_optix.initialize();
+
+    CompareRunners(sim_native, sim_optix, N_rays_glob);
+}
+
+TEST(SingleHeliostatOptixNative, SingleFacetFlat_Southeast)
+{
+    // Make native
+    SingleHeliostatSimulationHelper<NativeRunner> sim_native;
+    sim_native.runner.disable_stages();
+    sim_native.runner.set_number_of_threads(10);
+    //sim_native.use_optical_errors = false;
+    //sim_native.use_sunshape_errors = false;
+    sim_native.initialize();
+    sim_native.set_heliostat_to_southeast();
+
+    // Make optix
+    SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
+    //sim_optix.use_optical_errors = false;
+    //sim_optix.use_sunshape_errors = false;
+    sim_optix.initialize();
+    sim_optix.set_heliostat_to_southeast();
+
+    CompareRunners(sim_native, sim_optix, N_rays_glob);
+}
+
+TEST(SingleHeliostatOptixNative, SingleFacetFocused_North)
+{
+    // Make native
+    SingleHeliostatSimulationHelper<NativeRunner> sim_native;
+    sim_native.runner.disable_stages();
+    sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
+    sim_native.set_slant_focal_length();
+
+    // Make optix
+    SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
+    sim_optix.initialize();
+    sim_optix.set_slant_focal_length();
+
+    CompareRunners(sim_native, sim_optix, N_rays_glob);
+}
+
+TEST(SingleHeliostatOptixNative, SingleFacetFocused_Southeast)
+{
+    // Make native
+    SingleHeliostatSimulationHelper<NativeRunner> sim_native;
+    sim_native.runner.disable_stages();
+    sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
+    sim_native.set_heliostat_to_southeast();
+    sim_native.set_slant_focal_length();
+
+    // Make optix
+    SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
+    sim_optix.initialize();
+    sim_optix.set_heliostat_to_southeast();
+    sim_optix.set_slant_focal_length();
+
+    CompareRunners(sim_native, sim_optix, N_rays_glob);
+}
+
+TEST(SingleHeliostatOptixNative, MultiFacetFlat_NoCanting_North)
+{
+    // Make native
+    SingleHeliostatSimulationHelper<NativeRunner> sim_native;
+    sim_native.runner.disable_stages();
+    sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
+    sim_native.set_flat_multi_facet();
+
+    // Make optix
+    SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
+    sim_optix.initialize();
+    sim_optix.set_flat_multi_facet();
+
+    CompareRunners(sim_native, sim_optix, N_rays_glob);
+}
+
+TEST(SingleHeliostatOptixNative, MultiFacetFlat_NoCanting_Southeast)
+{
+    // Make native
+    SingleHeliostatSimulationHelper<NativeRunner> sim_native;
+    sim_native.runner.disable_stages();
+    sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
+    sim_native.set_flat_multi_facet();
+    sim_native.set_heliostat_to_southeast();
+
+    // Make optix
+    SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
+    sim_optix.initialize();
+    sim_optix.set_flat_multi_facet();
+    sim_optix.set_heliostat_to_southeast();
+
+    CompareRunners(sim_native, sim_optix, N_rays_glob);
+}
+
+TEST(SingleHeliostatOptixNative, MultiFacetFlat_SlantCanting_North)
+{
+    // Make native
+    SingleHeliostatSimulationHelper<NativeRunner> sim_native;
+    sim_native.runner.disable_stages();
+    sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
+    sim_native.set_onaxis_slant_canting();
+
+    // Make optix
+    SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
+    sim_optix.initialize();
+    sim_optix.set_onaxis_slant_canting();
+
+    CompareRunners(sim_native, sim_optix, N_rays_glob);
+}
+
+TEST(SingleHeliostatOptixNative, MultiFacetFlat_SlantCanting_Southeast)
+{
+    // Make native
+    SingleHeliostatSimulationHelper<NativeRunner> sim_native;
+    sim_native.runner.disable_stages();
+    sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
+    sim_native.set_heliostat_to_southeast();
+    sim_native.set_onaxis_slant_canting();
+
+    // Make optix
+    SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
+    sim_optix.initialize();
+    sim_optix.set_heliostat_to_southeast();
+    sim_optix.set_onaxis_slant_canting();
+
+    CompareRunners(sim_native, sim_optix, N_rays_glob);
+}
+
+TEST(SingleHeliostatOptixNative, MultiFacetFocused_SlantCanting_North)
+{
+    // Make native
+    SingleHeliostatSimulationHelper<NativeRunner> sim_native;
+    sim_native.runner.disable_stages();
+    sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
+    sim_native.set_slant_focal_length();
+    sim_native.set_onaxis_slant_canting();
+
+    // Make optix
+    SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
+    sim_optix.initialize();
+    sim_optix.set_slant_focal_length();
+    sim_optix.set_onaxis_slant_canting();
+
+    CompareRunners(sim_native, sim_optix, N_rays_glob);
+}
+
+TEST(SingleHeliostatOptixNative, MultiFacetFocused_SlantCanting_Southeast)
+{
+    // Make native
+    SingleHeliostatSimulationHelper<NativeRunner> sim_native;
+    sim_native.runner.disable_stages();
+    sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
+    sim_native.set_heliostat_to_southeast();
+    sim_native.set_slant_focal_length();
+    sim_native.set_onaxis_slant_canting();
+
+    // Make optix
+    SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
+    sim_optix.initialize();
+    sim_optix.set_heliostat_to_southeast();
+    sim_optix.set_slant_focal_length();
+    sim_optix.set_onaxis_slant_canting();
+
+    CompareRunners(sim_native, sim_optix, N_rays_glob);
+}
+
+TEST(SingleHeliostatOptixNative, NoErrors)
 {
     bool use_optical = false;
     bool use_sunshape = false;
@@ -224,16 +393,18 @@ TEST(SingleHelioOptixNative, NoErrors)
     sim_native.use_optical_errors = use_optical;
     sim_native.use_sunshape_errors = use_sunshape;
     sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
     
     // Make optix
     SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
     sim_optix.use_optical_errors = use_optical;
     sim_optix.use_sunshape_errors = use_sunshape;
+    sim_optix.initialize();
 
     CompareRunners(sim_native, sim_optix, N_rays_glob);
 }
 
-TEST(SingleHelioOptixNative, SunShapePillBoxOnly)
+TEST(SingleHeliostatOptixNative, SunShapePillBoxOnly)
 {
     bool use_optical = false;
     bool use_sunshape = true;
@@ -244,16 +415,18 @@ TEST(SingleHelioOptixNative, SunShapePillBoxOnly)
     sim_native.use_optical_errors = use_optical;
     sim_native.use_sunshape_errors = use_sunshape;
     sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
 
     // Make optix
     SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
     sim_optix.use_optical_errors = use_optical;
     sim_optix.use_sunshape_errors = use_sunshape;
+    sim_optix.initialize();
 
     CompareRunners(sim_native, sim_optix, N_rays_glob);
 }
 
-TEST(SingleHelioOptixNative, SunShapeGaussOnly)
+TEST(SingleHeliostatOptixNative, SunShapeGaussOnly)
 {
     bool use_optical = false;
     bool use_sunshape = true;
@@ -266,6 +439,7 @@ TEST(SingleHelioOptixNative, SunShapeGaussOnly)
     sim_native.sun_shape = SunShape::GAUSSIAN;
     sim_native.gauss_sigma = 2;
     sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
 
     // Make optix
     SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
@@ -273,12 +447,12 @@ TEST(SingleHelioOptixNative, SunShapeGaussOnly)
     sim_optix.use_sunshape_errors = use_sunshape;
     sim_optix.sun_shape = SunShape::GAUSSIAN;
     sim_optix.gauss_sigma = 2;
+    sim_optix.initialize();
 
     CompareRunners(sim_native, sim_optix, N_rays_glob);
 }
 
-
-TEST(SingleHelioOptixNative, SlopeGaussOnly)
+TEST(SingleHeliostatOptixNative, SlopeGaussOnly)
 {
     bool use_optical = true;
     bool use_sunshape = false;
@@ -289,16 +463,18 @@ TEST(SingleHelioOptixNative, SlopeGaussOnly)
     sim_native.use_optical_errors = use_optical;
     sim_native.use_sunshape_errors = use_sunshape;
     sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
 
     // Make optix
     SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
     sim_optix.use_optical_errors = use_optical;
     sim_optix.use_sunshape_errors = use_sunshape;
+    sim_optix.initialize();
 
     CompareRunners(sim_native, sim_optix, N_rays_glob);
 }
 
-TEST(SingleHelioOptixNative, SlopePillBoxOnly)
+TEST(SingleHeliostatOptixNative, SlopePillBoxOnly)
 {
     bool use_optical = true;
     bool use_sunshape = false;
@@ -310,17 +486,19 @@ TEST(SingleHelioOptixNative, SlopePillBoxOnly)
     sim_native.use_sunshape_errors = use_sunshape;
     sim_native.error_dist = DistributionType::PILLBOX;
     sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
 
     // Make optix
     SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
     sim_optix.use_optical_errors = use_optical;
     sim_optix.use_sunshape_errors = use_sunshape;
     sim_optix.error_dist = DistributionType::PILLBOX;
+    sim_optix.initialize();
 
     CompareRunners(sim_native, sim_optix, N_rays_glob);
 }
 
-TEST(SingleHelioOptixNative, SunShapeAndSlope)
+TEST(SingleHeliostatOptixNative, SunShapeAndSlope)
 {
     bool use_optical = true;
     bool use_sunshape = true;
@@ -331,16 +509,18 @@ TEST(SingleHelioOptixNative, SunShapeAndSlope)
     sim_native.use_optical_errors = use_optical;
     sim_native.use_sunshape_errors = use_sunshape;
     sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
 
     // Make optix
     SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
     sim_optix.use_optical_errors = use_optical;
     sim_optix.use_sunshape_errors = use_sunshape;
+    sim_optix.initialize();
 
     CompareRunners(sim_native, sim_optix, N_rays_glob);
 }
 
-TEST(SingleHelioOptixNative, SpecGaussOnly)
+TEST(SingleHeliostatOptixNative, SpecGaussOnly)
 {
     bool use_optical = true;
     bool use_sunshape = false;
@@ -353,6 +533,7 @@ TEST(SingleHelioOptixNative, SpecGaussOnly)
     sim_native.slope_error = 0;     // Turn off slope error
     sim_native.spec_error = 2;    // Set specularity error
     sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
 
     // Make optix
     SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
@@ -360,11 +541,12 @@ TEST(SingleHelioOptixNative, SpecGaussOnly)
     sim_optix.use_sunshape_errors = use_sunshape;
     sim_optix.slope_error = 0;     // Turn off slope error
     sim_optix.spec_error = 2;    // Set specularity error
+    sim_optix.initialize();
 
     CompareRunners(sim_native, sim_optix, N_rays_glob);
 }
 
-TEST(SingleHelioOptixNative, SpecPillBoxOnly)
+TEST(SingleHeliostatOptixNative, SpecPillBoxOnly)
 {
     bool use_optical = true;
     bool use_sunshape = false;
@@ -378,6 +560,7 @@ TEST(SingleHelioOptixNative, SpecPillBoxOnly)
     sim_native.spec_error = 2;      // Set specularity error
     sim_native.error_dist = DistributionType::PILLBOX;
     sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
 
     // Make optix
     SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
@@ -386,11 +569,12 @@ TEST(SingleHelioOptixNative, SpecPillBoxOnly)
     sim_optix.slope_error = 0;      // Turn off slope error
     sim_optix.spec_error = 2;       // Set specularity error
     sim_optix.error_dist = DistributionType::PILLBOX;
+    sim_optix.initialize();
 
     CompareRunners(sim_native, sim_optix, N_rays_glob);
 }
 
-TEST(SingleHelioOptixNative, SunShapeSlopeAndSpec)
+TEST(SingleHeliostatOptixNative, SunShapeSlopeAndSpec)
 {
     bool use_optical = true;
     bool use_sunshape = true;
@@ -403,6 +587,7 @@ TEST(SingleHelioOptixNative, SunShapeSlopeAndSpec)
     sim_native.slope_error = 2;     // Turn off slope error
     sim_native.spec_error = 2;    // Set specularity error
     sim_native.runner.set_number_of_threads(10);
+    sim_native.initialize();
 
     // Make optix
     SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
@@ -410,6 +595,7 @@ TEST(SingleHelioOptixNative, SunShapeSlopeAndSpec)
     sim_optix.use_sunshape_errors = use_sunshape;
     sim_optix.slope_error = 2;     // Turn off slope error
     sim_optix.spec_error = 2;    // Set specularity error
+    sim_optix.initialize();
 
     CompareRunners(sim_native, sim_optix, N_rays_glob);
 }
