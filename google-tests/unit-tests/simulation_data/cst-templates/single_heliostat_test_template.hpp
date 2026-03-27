@@ -256,7 +256,7 @@ public:
         {
             SimulationParameters& params = simData.get_simulation_parameters();
             params.number_of_rays = N_rays;
-            params.max_number_of_rays = N_rays * 100;
+            params.max_number_of_rays = N_rays * 1000;
         }
         
         RunnerStatus sts = runner.setup_simulation(&simData);
