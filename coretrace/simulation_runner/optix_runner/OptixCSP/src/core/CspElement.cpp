@@ -322,6 +322,16 @@ GeometryDataST CspElement::toDeviceGeometryData() const
         geometry_data.setQuadrilateral_Flat(heliostat);
     }
 
+    if (aperture_type == ApertureType::CIRCLE)
+    {
+        float r = circ->get_radius();
+        float3 o = OptixCSP::toFloat3(m_origin);
+        float3 n = normalize(OptixCSP::toFloat3(m_aim_point - m_origin));
+        ApertureCircle circ = static_cast<ApertureCircle &>(*m_aperture);
+        GeometryDataST::Circle_Flat heliostat(o, n, r);
+        geometry_data.setCircle_Flat(heliostat);
+    }
+
     geometry_data.id = this->m_id;
 
     return geometry_data;

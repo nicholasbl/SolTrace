@@ -232,6 +232,15 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 break;
             }
 
+            case ApertureType::CIRCLE:
+            {
+                auto el_aperture = std::dynamic_pointer_cast<Circle>(el->get_aperture());
+                assert(el_aperture != nullptr);
+                auto aperture = std::make_shared<OptixCSP::ApertureCircle>(0.5 * el_aperture->diameter);
+                optix_el->set_aperture(aperture);
+                break;
+            }
+
             case ApertureType::EQUILATERAL_TRIANGLE:
             {
                 auto el_aperture = std::dynamic_pointer_cast<EquilateralTriangle>(el->get_aperture());

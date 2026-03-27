@@ -21,7 +21,8 @@ namespace OptixCSP {
             UNKNOWN_TYPE = 3,
             RECTANGLE_FLAT = 4,
 			TRIANGLE_FLAT = 5,
-            QUADRILATERAL_FLAT = 6
+            QUADRILATERAL_FLAT = 6,
+            CIRCLE_FLAT = 7
         };
 
         struct Parallelogram
@@ -137,6 +138,19 @@ namespace OptixCSP {
             float3 normal; // Positive direction follows right-hand rule
         };
 
+        struct Circle_Flat{
+            Circle_Flat() = default;
+            // Circle_Flat(const float radius) : r(radius) {}
+            Circle_Flat(const float3 &origin, const float3 &normal, const float &radius)
+            : r(radius), center(origin)
+            {
+                plane = make_float4(normalize(normal), dot(center, normal));
+            }
+            float4 plane;
+            float3 center;
+            float r;
+        };
+
         GeometryDataST() = default;
 
         void setParallelogram(const Parallelogram& p)
@@ -217,6 +231,18 @@ namespace OptixCSP {
             return quadrilateral_flat;
         }
 
+        void setCircle_Flat(const Circle_Flat &c)
+        {
+            assert(type == UNKNOWN_TYPE);
+            type = CIRCLE_FLAT;
+            circle_flat = c;
+        }
+
+        __host__ __device__ const Circle_Flat& getCircle_Flat() const
+        {
+            assert(type == CIRCLE_FLAT);
+            return circle_flat;
+        }
 
         Type type = UNKNOWN_TYPE;
 
@@ -231,6 +257,7 @@ namespace OptixCSP {
             Rectangle_Flat rectangle_flat;
 			Triangle_Flat triangle_flat;
             Quadrilateral_Flat quadrilateral_flat;
+            Circle_Flat circle_flat;
         };
     };
 }

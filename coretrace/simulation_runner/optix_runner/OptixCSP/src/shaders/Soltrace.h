@@ -31,6 +31,7 @@ namespace OptixCSP{
         CYLINDRICAL          = 2,
         TRIANGLE_FLAT        = 3,
         QUADRILATERAL_FLAT   = 4,
+        CIRCLE_FLAT          = 5,
 	    NUM_OPTICAL_ENTITY_TYPES
     };
 
