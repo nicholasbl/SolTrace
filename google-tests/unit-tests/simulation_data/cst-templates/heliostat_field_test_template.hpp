@@ -1,15 +1,13 @@
-#include <iomanip>
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <vector> 
-#include <numeric> 
+#pragma once
 
 #include <gtest/gtest.h>
 
-#include <native_runner.hpp>
-#include <embree_runner.hpp>
-#include <native_runner_types.hpp>
+#include <cmath>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <sstream>
+
 #include <simulation_data.hpp>
 #include <simulation_result_export.hpp>
 #include <stage_element.hpp>
@@ -24,17 +22,10 @@
 #include "count_absorbed_native.h"
 
 using Heliostat = SolTrace::Data::Heliostat;
-
 using SolTrace::Runner::RunnerStatus;
-using SolTrace::NativeRunner::NativeRunner;
-using SolTrace::EmbreeRunner::EmbreeRunner;
 
-using SolTrace::NativeRunner::TRayData;
-using SolTrace::NativeRunner::TSystem;
-using SolTrace::NativeRunner::TSun;
-
-
-class HeliostatFieldSimulation : public ::testing::Test {
+template <typename RunnerT>
+class HeliostatFieldSimulationHelper {
 public:
     bool high_accuracy = false;     // Runs 20 Million rays and tighter tolerance on checks
     bool print_info = false;        // Prints information on from simulation results (sun calculations, ray counts, flux calculations)
@@ -59,13 +50,8 @@ public:
     std::shared_ptr<SolTrace::Data::SingleElement> receiver;
     std::shared_ptr<SolTrace::Data::SingleElement> bottom_heat_shield;
 
-    // Tolerances
-    // TODO: we could bring these into the class provide defaults and modify per test (if needed)
-
-protected:
     SimulationData simData;
-    //NativeRunner runner;
-    EmbreeRunner runner;
+    RunnerT runner;
 
     // Sun outputs
     double sun_width;
@@ -107,7 +93,8 @@ protected:
 
     HPM2D expected_fluxGrid;
 
-    void SetUp() override {
+    // Helper initialization (what used to be in SetUp)
+    void initialize() {
         // Set parameters
         set_default_params();
 
@@ -142,7 +129,7 @@ protected:
         top_heat_shield->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_heat_shield_height));
         top_heat_shield->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(rec_radius));
         // offset = { 0.0, rec_radius, (rec_height + rec_heat_shield_height)/2.};    // Cylinder origin is on the edge
-        offset = { 0.0, 0.0, (rec_height + rec_heat_shield_height)/2.};
+        offset = { 0.0, 0.0, (rec_height + rec_heat_shield_height) / 2. };
         vector_add(1.0, rec_origin, 1.0, offset, rec_origin_offset);
         vector_add(1.0, rec_origin_offset, 1.0, v1, aim_point);
         top_heat_shield->set_reference_frame_geometry(rec_origin_offset, aim_point, 0.0);
@@ -236,7 +223,7 @@ protected:
             double distance = sqrt(pow(x_coords[i], 2) + pow(y_coords[i], 2));
             Vector3d aim_point = { rec_radius * (x_coords[i] / distance),
                                    rec_radius * (y_coords[i] / distance),
-                                   rec_origin[2]};
+                                   rec_origin[2] };
             heliostat->set_target_position(aim_point);
             // At-slant focal length - to center of receiver
             Vector3d slant;
@@ -400,14 +387,12 @@ protected:
         EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     }
 
-    void calculate_sun_size() {
+    void calculate_sun_size(SimulationResult& result) {
         double dni = 1000.0; // W/m2 (constant for all tests)
-        const TSystem* sys = runner.get_system();
-        const TSun* sun = &(sys->Sun);
-        sun_width = (sun->MaxXSun - sun->MinXSun);
-        sun_height = (sun->MaxYSun - sun->MinYSun);
-        A_sun_box = sun_width * sun_height;
-        nsun_rays = sys->SunRayCount;
+
+        result.get_sun_dimensions(this->sun_width, this->sun_height);
+        nsun_rays = result.get_sun_ray_count();
+        A_sun_box = result.get_sun_A_box();
         power_per_ray = A_sun_box / nsun_rays * dni;
 
         if (print_info) {
@@ -417,7 +402,7 @@ protected:
         }
     }
 
-    void calculate_ray_counts(const SimulationResult &result) {
+    void calculate_ray_counts(const SimulationResult& result) {
         tot_helio_hits = 0;
         tot_reflect_count = 0;
         tot_helio_absorb_count = 0;
@@ -591,13 +576,13 @@ protected:
         NumberOfRays = 0;
     }
 
-    bool calculate_receiver_flux_map(const SimulationResult &result, int nbinsx, int nbinsy, bool is_cylinder) {
+    bool calculate_receiver_flux_map(const SimulationResult& result, int nbinsx, int nbinsy, bool is_cylinder) {
         reset_flux_map();
 
         double minx, maxx, miny, maxy;
         minx = maxx = miny = maxy = 0.0;
         Vector3d rec_origin = receiver->get_origin_global();
-        
+
         minx = -rec_width / 2.0;
         maxx = rec_width / 2.0;
 
@@ -768,7 +753,7 @@ protected:
         SigmaFlux = sqrt((nbinsx * nbinsy * SumFlux2 - SumFlux * SumFlux) / (nbinsx * nbinsy * nbinsx * nbinsy));
         Uniformity = SigmaFlux / AveFlux;
         PeakFluxUncertainty = 100 / sqrt((double)NRaysInPeakFluxBin);
-        AveFluxUncertainty = 100 / sqrt((double)result.get_number_of_records());     
+        AveFluxUncertainty = 100 / sqrt((double)result.get_number_of_records());
         // TODO: Should the be number of rays hitting the surface, not total rays traced?
 
         if (print_info) {
@@ -790,7 +775,7 @@ protected:
 
     }
 
-    void check_outputs(const SimulationResult &result) {
+    void check_outputs(const SimulationResult& result) {
         SimulationParameters& params = simData.get_simulation_parameters();
         EXPECT_EQ(tot_helio_hits, params.number_of_rays);
         EXPECT_EQ(tot_helio_absorb_count + tot_reflect_count, tot_helio_hits);
@@ -801,8 +786,8 @@ protected:
         double absorption_efficiency = (double)tot_reflect_count / (double)tot_helio_hits;
         EXPECT_NEAR(absorption_efficiency, expected_absorption_efficiency, tol);
         double blocking_efficiency = 1.0 - (double)tot_helio_block_count / (double)tot_reflect_count;
-        EXPECT_NEAR(blocking_efficiency, expected_blocking_efficiency, tol * 2.0);  
-        double spillage_efficiency = (double) rec_absorb_count / (double)(tot_reflect_count - tot_helio_block_count);
+        EXPECT_NEAR(blocking_efficiency, expected_blocking_efficiency, tol * 2.0);
+        double spillage_efficiency = (double)rec_absorb_count / (double)(tot_reflect_count - tot_helio_block_count);
         EXPECT_NEAR(spillage_efficiency, expected_spillage_efficiency, tol);
 
         double field_area = 0.0;
@@ -879,22 +864,22 @@ protected:
     }
 
     void simulate_check_outputs(std::string task_number, std::string aim_strategy, std::string hour) {
-        
+
         if (print_info) {
             std::cout << "\n\nTask: " << task_number << ", Aim: " << aim_strategy << ", Hour: " << hour << std::endl;
         }
 
         // Update simulation geometry based on hour
-        if (hour == "8") 
+        if (hour == "8")
             update_simulation_geometry(74.95, 26.26);  // Solar position at 8 AM
-        else if (hour == "12") 
+        else if (hour == "12")
             update_simulation_geometry(0.0, 61.97); // Solar Noon
         else
-            throw std::invalid_argument("Hour not supported for simulate_check_outputs.");        
-        
+            throw std::invalid_argument("Hour not supported for simulate_check_outputs.");
+
         SimulationResult result;
         simulate(&result);
-        calculate_sun_size();
+        calculate_sun_size(result);
         calculate_ray_counts(result);
         read_expected_all_results(task_number, aim_strategy, hour);
         check_outputs(result);
@@ -912,104 +897,17 @@ protected:
         result.write_csv_file(full_field_filename);
     }
 
-    void TearDown() override {
-        // Code here will be called immediately after each test (right
-        // before the destructor).
-    }
-
 };
 
+// GTest fixture that reuses the helper logic
+// This keeps existing TEST_F-based tests working
 
-TEST_F(HeliostatFieldSimulation, singleFacet_SlantFocused)
-{
-    // Centerline aimpoints
-    create_heliostat_field();
-    setup_simData();
-    simulate_check_outputs("1a", "1", "8");
-    simulate_check_outputs("1a", "1", "12");
+template <typename RunnerT>
+class HeliostatFieldSimulation : public ::testing::Test, public HeliostatFieldSimulationHelper<RunnerT> {
+protected:
+    void SetUp() override {
+        this->initialize();
+    }
 
-    // Scatter aimpoints
-    set_scatter_aimpoints();
-    simulate_check_outputs("1a", "2", "8");
-    simulate_check_outputs("1a", "2", "12");
-}
-
-TEST_F(HeliostatFieldSimulation, singleFacet_BandFocused)
-{
-    // Centerline aimpoints
-    create_heliostat_field();
-    assign_focal_lengths_canting_banded();
-    setup_simData();
-    simulate_check_outputs("1b", "1", "8");
-    simulate_check_outputs("1b", "1", "12");
-
-    // Scatter aimpoints
-    set_scatter_aimpoints();
-    simulate_check_outputs("1b", "2", "8");
-    simulate_check_outputs("1b", "2", "12");
-}
-
-TEST_F(HeliostatFieldSimulation, multiFacet_SlantCanted)
-{
-    // Centerline aimpoints
-    create_heliostat_field();
-    assign_canted_slant(true);      // Flat facets
-
-    setup_simData();
-    simulate_check_outputs("2a", "1", "8");
-    simulate_check_outputs("2a", "1", "12");
-
-    // Scatter aimpoints
-    set_scatter_aimpoints();
-    simulate_check_outputs("2a", "2", "8");
-    simulate_check_outputs("2a", "2", "12");
-}
-
-TEST_F(HeliostatFieldSimulation, multiFacet_BandCanted)
-{
-    // Centerline aimpoints
-    create_heliostat_field();
-    assign_canted_banded(true);     // Flat facets
-
-    setup_simData();
-    simulate_check_outputs("2b", "1", "8");
-    simulate_check_outputs("2b", "1", "12");
-
-    // Scatter aimpoints
-    set_scatter_aimpoints();
-    simulate_check_outputs("2b", "2", "8");
-    simulate_check_outputs("2b", "2", "12");
-}
-
-TEST_F(HeliostatFieldSimulation, multiFacet_SlantFocused_SlantCanted)
-{
-    // Center aimpoints;
-    create_heliostat_field();
-    assign_canted_slant(false);     // Slant focused (default)
-
-    setup_simData();
-    simulate_check_outputs("3a", "1", "8");
-    simulate_check_outputs("3a", "1", "12");
-
-    // Scatter aimpoints
-    set_scatter_aimpoints();
-    simulate_check_outputs("3a", "2", "8");
-    simulate_check_outputs("3a", "2", "12");
-}
-
-TEST_F(HeliostatFieldSimulation, multiFacet_BandFocused_BandCanted)
-{
-    // Center aimpoints
-    create_heliostat_field();
-    assign_canted_banded(false);    // Canted by band
-    assign_focal_lengths_banded();  // Focused by band
-
-    setup_simData();
-    simulate_check_outputs("3b", "1", "8");
-    simulate_check_outputs("3b", "1", "12");
-
-    // Scatter aimpoints
-    set_scatter_aimpoints();
-    simulate_check_outputs("3b", "2", "8");
-    simulate_check_outputs("3b", "2", "12");
-}
+    void TearDown() override { }
+};

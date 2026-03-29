@@ -21,6 +21,7 @@ set(CST_TEST_SRC
 	parabolic_trough_test.cpp
 	parabolic_dish_test.cpp
 	heliostat_test.cpp
+	heliostat_field_test_native.cpp
 	single_heliostat_test_native.cpp
 )
 
@@ -35,12 +36,13 @@ endif()
 if(SOLTRACE_BUILD_EMBREE_SUPPORT)
 	list(APPEND CST_TEST_SRC
 		single_heliostat_test_embree.cpp
-		heliostat_field_test.cpp
+		heliostat_field_test_embree.cpp
 	)
 endif()
 
 # Add headers for Visual Studio solution
 set(CST_TEST_HEADERS
+	heliostat_field_test_template.hpp
 	single_heliostat_test_template.hpp
 )
 
@@ -55,7 +57,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" OR FULL_FIELD_VALIDATION_TEST)
 		list(APPEND CST_TEST_SRC
 			single_heliostat_test_native.cpp
 			single_heliostat_test_embree.cpp
-			heliostat_field_test.cpp
+			heliostat_field_test_native.cpp
+			heliostat_field_test_embree.cpp
 		)
 	endif()
 endif()
