@@ -648,7 +648,8 @@ extern "C" __global__ void __intersection__hexagon_flat()
         bool is_in = false;
         float3 p = ray_orig + ray_dir * t - hex.center;
         // float d = length(p - circ.center);
-        float s = hex.s float xl = 0.5 * s;
+        float s = hex.s;
+	float xl = 0.5f * s;
         float yl = 0.5f * sqrtf(3.0f) * s;
         if (-xl <= p.x && p.x <= xl && -yl <= p.y && p.y <= yl)
         {
@@ -658,7 +659,7 @@ extern "C" __global__ void __intersection__hexagon_flat()
         else if (-s <= p.x && p.x < xl)
         {
             // Left side
-            float y1 = 2.0f * yl * (p.x - s);
+	  float y1 = sqrtf(3.0f) * (p.x + s);
             float y2 = -y1;
             if (y1 <= p.y && p.y <= y2)
             {
@@ -668,9 +669,7 @@ extern "C" __global__ void __intersection__hexagon_flat()
         else if (xl < p.x && p.x <= s)
         {
             // Right side
-            y1 = sqrt(3.0) * (x + ro);
-            y2 = -y1;
-            float y1 = 2.0f * yl * (p.x + s);
+	  float y1 = sqrtf(3.0f) * (p.x - s);
             float y2 = -y1;
             if (y2 <= p.y && p.y <= y1)
             {

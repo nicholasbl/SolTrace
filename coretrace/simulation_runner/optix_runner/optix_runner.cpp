@@ -286,9 +286,9 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             {
                 auto el_aperture = std::dynamic_pointer_cast<Hexagon>(el->get_aperture());
                 assert(el_aperture != nullptr);
-
                 auto aperture = std::make_shared<OptixCSP::ApertureHexagon>(el_aperture->radius_circumscribed_circle());
                 optix_el->set_aperture(aperture);
+		break;
             }
             default:
                 // std::cerr << "Unsupported aperture type in OptixCSP" << std::endl;

@@ -22,7 +22,8 @@ namespace OptixCSP {
             RECTANGLE_FLAT = 4,
 			TRIANGLE_FLAT = 5,
             QUADRILATERAL_FLAT = 6,
-            CIRCLE_FLAT = 7
+            CIRCLE_FLAT = 7,
+	    HEXAGON_FLAT = 8
         };
 
         struct Parallelogram
