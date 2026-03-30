@@ -10,7 +10,8 @@ namespace OptixCSP
 		RECTANGLE,
 		CIRCLE,
 		TRIANGLE,
-		QUADRILATERAL
+		QUADRILATERAL,
+		HEXAGON
 	};
 
 	// types for both scene building and pipeline assembly

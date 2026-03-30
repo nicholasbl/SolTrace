@@ -41,11 +41,25 @@ namespace OptixCSP {
         virtual ApertureType get_aperture_type() const override;
         void set_size(double r);
         virtual double get_radius() const override;
-        virtual double get_width() const override;
-        virtual double get_height() const override;
+        // virtual double get_width() const override;
+        // virtual double get_height() const override;
 
     private:
         double radius;
+    };
+
+    // Concrete class for a circular aperture.
+    class ApertureHexagon : public Aperture {
+    public:
+        ApertureHexagon();
+        ApertureHexagon(double s);
+        virtual ~ApertureHexagon() = default;
+
+        virtual ApertureType get_aperture_type() const override;
+        virtual double get_side_length() const;
+
+    private:
+        double side_length;
     };
 
     // Concrete class for an easy rectangular aperture.

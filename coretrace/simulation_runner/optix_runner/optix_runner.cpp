@@ -220,7 +220,6 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
             switch (soltrace_aperture_type)
             {
-
             case ApertureType::RECTANGLE:
             {
 
@@ -231,7 +230,6 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 optix_el->set_aperture(aperture);
                 break;
             }
-
             case ApertureType::CIRCLE:
             {
                 auto el_aperture = std::dynamic_pointer_cast<Circle>(el->get_aperture());
@@ -240,7 +238,6 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 optix_el->set_aperture(aperture);
                 break;
             }
-
             case ApertureType::EQUILATERAL_TRIANGLE:
             {
                 auto el_aperture = std::dynamic_pointer_cast<EquilateralTriangle>(el->get_aperture());
@@ -256,7 +253,6 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
                 break;
             }
-
             case ApertureType::IRREGULAR_TRIANGLE:
             {
                 auto el_aperture = std::dynamic_pointer_cast<IrregularTriangle>(el->get_aperture());
@@ -271,7 +267,6 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
                 break;
             }
-
             case ApertureType::IRREGULAR_QUADRILATERAL:
             {
                 auto el_aperture = std::dynamic_pointer_cast<IrregularQuadrilateral>(el->get_aperture());
@@ -287,11 +282,18 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
                 break;
             }
+            case ApertureType::HEXAGON:
+            {
+                auto el_aperture = std::dynamic_pointer_cast<Hexagon>(el->get_aperture());
+                assert(el_aperture != nullptr);
 
+                auto aperture = std::make_shared<OptixCSP::ApertureHexagon>(el_aperture->radius_circumscribed_circle());
+                optix_el->set_aperture(aperture);
+            }
             default:
                 // std::cerr << "Unsupported aperture type in OptixCSP" << std::endl;
-	      throw std::runtime_error("Unsupported aperture type in OptixRunner");
-	      break;
+                throw std::runtime_error("Unsupported aperture type in OptixRunner");
+                break;
             }
 
             optix_el->update_euler_angles();

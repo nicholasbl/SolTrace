@@ -266,13 +266,10 @@ GeometryDataST CspElement::toDeviceGeometryData() const
 
             float3 center = OptixCSP::toFloat3(m_origin);
             Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
-
             float3 base_x = OptixCSP::toFloat3(rotation_matrix.get_x_basis());
-
             float3 base_z = OptixCSP::toFloat3(rotation_matrix.get_z_basis());
 
             GeometryDataST::Cylinder_Y heliostat(center, radius, half_height, base_x, base_z);
-
             geometry_data.setCylinder_Y(heliostat);
         }
     }
@@ -293,7 +290,9 @@ GeometryDataST CspElement::toDeviceGeometryData() const
         Vec3d v2_global = rotation_matrix * v2 + m_origin;
         Vec3d v3_global = rotation_matrix * v3 + m_origin;
 
-        GeometryDataST::Triangle_Flat heliostat(OptixCSP::toFloat3(v1_global), OptixCSP::toFloat3(v2_global), OptixCSP::toFloat3(v3_global));
+        GeometryDataST::Triangle_Flat heliostat(OptixCSP::toFloat3(v1_global),
+                                                OptixCSP::toFloat3(v2_global),
+                                                OptixCSP::toFloat3(v3_global));
         geometry_data.setTriangle_Flat(heliostat);
     }
 
@@ -328,8 +327,24 @@ GeometryDataST CspElement::toDeviceGeometryData() const
         float r = circ.get_radius();
         float3 o = OptixCSP::toFloat3(m_origin);
         float3 n = normalize(OptixCSP::toFloat3(m_aim_point - m_origin));
-        GeometryDataST::Circle_Flat heliostat(o, n, r);
-        geometry_data.setCircle_Flat(heliostat);
+        if (surface_type == SurfaceType::FLAT)
+        {
+            GeometryDataST::Circle_Flat heliostat(o, n, r);
+            geometry_data.setCircle_Flat(heliostat);
+        }
+    }
+
+    if (aperture_type == ApertureType::HEXAGON)
+    {
+        ApertureHexagon hex = static_cast<ApertureHexagon &>(*m_aperture);
+        float s = hex.get_side_length();
+        float3 o = OptixCSP::toFloat3(m_origin);
+        float3 n = normalize(OptixCSP::toFloat3(m_aim_point - m_origin));
+        if (surface_type == SurfaceType::FLAT)
+        {
+            GeometryDataST::Hexagon_Flat hex(o, n, s);
+            geometry_data.setHexagon_Flat(hex);
+        }
     }
 
     geometry_data.id = this->m_id;

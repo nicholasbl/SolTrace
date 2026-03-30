@@ -11,8 +11,8 @@ extern "C"
 
 extern "C" __device__ __inline__ float ray_distance_to_plane(float3 ro, float3 rd, float4 plane)
 {
-  const float3 n = make_float3(plane);
-  return (plane.w - dot(n, ro)) / dot(rd, n);
+    const float3 n = make_float3(plane);
+    return (plane.w - dot(n, ro)) / dot(rd, n);
 }
 
 extern "C" __global__ void __intersection__parallelogram()
@@ -620,6 +620,65 @@ extern "C" __global__ void __intersection__circle_flat()
         float3 p = ray_orig + ray_dir * t;
         float d = length(p - circ.center);
         if (d <= circ.r)
+        {
+            optixReportIntersection(t,
+                                    0,
+                                    __float_as_uint(n.x),
+                                    __float_as_uint(n.y),
+                                    __float_as_uint(n.z));
+        }
+    }
+}
+
+extern "C" __global__ void __intersection__hexagon_flat()
+{
+    const OptixCSP::GeometryDataST::Hexagon_Flat &hex = params.geometry_data_array[optixGetPrimitiveIndex()].getHexagon_Flat();
+
+    // Get ray information: origin, direction, and min/max distances over which ray should be tested
+    const float3 ray_orig = optixGetWorldRayOrigin();
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float ray_tmin = optixGetRayTmin(), ray_tmax = optixGetRayTmax();
+
+    float t = ray_distance_to_plane(ray_orig, ray_dir, hex.plane);
+    const float4 n = hex.plane;
+
+    // Verify intersection distance and Report ray intersection point
+    if (t > ray_tmin && t < ray_tmax)
+    {
+        bool is_in = false;
+        float3 p = ray_orig + ray_dir * t - hex.center;
+        // float d = length(p - circ.center);
+        float s = hex.s float xl = 0.5 * s;
+        float yl = 0.5f * sqrtf(3.0f) * s;
+        if (-xl <= p.x && p.x <= xl && -yl <= p.y && p.y <= yl)
+        {
+            // Center
+            is_in = true;
+        }
+        else if (-s <= p.x && p.x < xl)
+        {
+            // Left side
+            float y1 = 2.0f * yl * (p.x - s);
+            float y2 = -y1;
+            if (y1 <= p.y && p.y <= y2)
+            {
+                is_in = true;
+            }
+        }
+        else if (xl < p.x && p.x <= s)
+        {
+            // Right side
+            y1 = sqrt(3.0) * (x + ro);
+            y2 = -y1;
+            float y1 = 2.0f * yl * (p.x + s);
+            float y2 = -y1;
+            if (y2 <= p.y && p.y <= y1)
+            {
+                is_in = true;
+            }
+        }
+        
+        if (is_in)
         {
             optixReportIntersection(t,
                                     0,

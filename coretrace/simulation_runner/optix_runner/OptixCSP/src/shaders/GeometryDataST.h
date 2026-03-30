@@ -151,6 +151,18 @@ namespace OptixCSP {
             float r;
         };
 
+        struct Hexagon_Flat{
+            Hexagon_Flat() = default;
+            Hexagon_Flat(const float3 &origin, const float3 &normal, const float &side_length)
+            : s(side_length), center(origin)
+            {
+                plane = make_float4(normalize(normal), dot(center, normal));
+            }
+            float4 plane;
+            float3 center;
+            float s;
+        };
+
         GeometryDataST() = default;
 
         void setParallelogram(const Parallelogram& p)
@@ -244,6 +256,19 @@ namespace OptixCSP {
             return circle_flat;
         }
 
+        void setHexagon_Flat(const Hexagon_Flat &h)
+        {
+            assert(type == UNKNOWN_TYPE);
+            type = HEXAGON_FLAT;
+            hexagon_flat = h;
+        }
+
+        __host__ __device__ const Hexagon_Flat& getHexagon_Flat() const
+        {
+            assert(type == HEXAGON_FLAT);
+            return hexagon_flat;
+        }
+
         Type type = UNKNOWN_TYPE;
 
         int32_t id = OptixCSP::kElementIdUnassigned;
@@ -258,6 +283,7 @@ namespace OptixCSP {
 			Triangle_Flat triangle_flat;
             Quadrilateral_Flat quadrilateral_flat;
             Circle_Flat circle_flat;
+            Hexagon_Flat hexagon_flat;
         };
     };
 }

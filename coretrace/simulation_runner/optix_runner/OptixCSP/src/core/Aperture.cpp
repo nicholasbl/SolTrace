@@ -28,12 +28,24 @@ double ApertureCircle::get_radius() const {
     return radius; 
 }
 
-double ApertureCircle::get_width() const { 
-    return 2.0 * radius; 
+// double ApertureCircle::get_width() const { 
+//     return 2.0 * radius; 
+// }
+
+// double ApertureCircle::get_height() const { 
+//     return 2.0 * radius; 
+// }
+
+// ApertureHexagon implementations
+ApertureHexagon::ApertureHexagon() : side_length(1.0) {}
+ApertureHexagon::ApertureHexagon(double s) : side_length(s) {}
+
+ApertureType ApertureHexagon::get_aperture_type() const {
+    return ApertureType::HEXAGON;
 }
 
-double ApertureCircle::get_height() const { 
-    return 2.0 * radius; 
+double ApertureHexagon::get_side_length() const {
+    return side_length;
 }
 
 // ApertureRectangleEasy implementations
