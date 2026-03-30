@@ -40,8 +40,18 @@ void SimulationModule::run() {
     }
 
     qDebug() << Q_FUNC_INFO << "Launch";
-    m_running = new RunningJob(
-        m_current_database->export_to_simdata(), RunType::Thread, this);
+    auto sim_data = m_current_database->export_to_simdata();
+
+    if (!sim_data) {
+        emit notify(
+            ANotification::error("Unable to pack simulation database."));
+        return;
+    }
+
+    sim_data->set_number_of_rays(m_ray_count);
+    sim_data->set_max_rays_traced(m_max_ray_count);
+
+    m_running = new RunningJob(sim_data, RunType::Thread, this);
 
     connect(m_running,
             &RunningJob::progress_update,

@@ -37,11 +37,17 @@ public:
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
     QOBJECT_READONLY_PROPERTY(StatusComponent, status);
 
-    Q_READONLY_PROPERTY(bool, is_running) /// Is a simulation being run?
-    Q_READONLY_PROPERTY(double, progress) /// Ray tracing progress, 0.0 to 1.0
-    Q_READONLY_PROPERTY(
-        QString,
-        current_stage) /// e.g. "Initializing", "Ray tracing", "Complete"
+    Q_WRITABLE_PROPERTY(uint32_t, ray_count, 10000);
+    Q_WRITABLE_PROPERTY(uint32_t, max_ray_count, 100000);
+
+    /// Is a simulation being run?
+    Q_READONLY_PROPERTY(bool, is_running)
+
+    /// Ray tracing progress, 0 to 100
+    Q_READONLY_PROPERTY(int, progress)
+
+    /// e.g. "Initializing", "Ray tracing", "Complete"
+    Q_READONLY_PROPERTY(QString, current_stage)
     Q_READONLY_PROPERTY(QDateTime, last_run_time)
     Q_READONLY_PROPERTY(double, elapsed_seconds)
 

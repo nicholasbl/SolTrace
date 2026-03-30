@@ -53,8 +53,8 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
         if (thread_count == 0) { thread_count = 1; }
 
         current_runner->set_number_of_threads(thread_count);
-        data->set_number_of_rays(100000);
-        data->set_max_rays_traced(1000000);
+        data->set_number_of_rays(10000);
+        data->set_max_rays_traced(100000);
         qDebug() << data->get_number_of_rays()
                  << data->get_max_number_rays_traced();
 

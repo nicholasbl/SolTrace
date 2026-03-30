@@ -6,11 +6,11 @@ include(cmake/CPM.cmake)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Quick Quick3D Widgets Graphs)
+find_package(Qt6 6.11 REQUIRED COMPONENTS Core Gui Quick Quick3D Widgets Graphs)
 
 set(QT_QML_GENERATE_QMLLS_INI ON)
 
-qt_standard_project_setup(REQUIRES 6.9)
+qt_standard_project_setup(REQUIRES 6.11)
 
 qt_add_executable(SolTrace
     src/main.cpp
@@ -243,6 +243,7 @@ qt_add_qml_module(SolTrace
         QML_FILES ui/core/RightStack.qml
         QML_FILES ui/primitives/widgets/STButton.qml
         SOURCES src/modules/view_module.h src/modules/view_module.cpp
+        QML_FILES ui/primitives/widgets/STDoubleSpinBox.qml
 
 )
 

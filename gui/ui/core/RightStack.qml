@@ -56,7 +56,6 @@ ShadowedGlassRectangle {
 
                     STSpinBox {
                         Layout.fillWidth: true
-                        decimals: 2
                     }
                 }
             }
