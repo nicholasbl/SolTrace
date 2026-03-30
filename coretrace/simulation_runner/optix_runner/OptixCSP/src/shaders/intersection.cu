@@ -11,7 +11,8 @@ extern "C"
 
 extern "C" __device__ __inline__ float ray_distance_to_plane(float3 ro, float3 rd, float4 plane)
 {
-    const float3 n = make_float3(plane) return (plane.w - dot(n, ro)) / dot(rd, n);
+  const float3 n = make_float3(plane);
+  return (plane.w - dot(n, ro)) / dot(rd, n);
 }
 
 extern "C" __global__ void __intersection__parallelogram()
@@ -29,7 +30,8 @@ extern "C" __global__ void __intersection__parallelogram()
     // float  dt = dot( ray_dir, n );
     // // Compute distance t (point of intersection) along ray direction from ray origin
     // float  t  = ( parallelogram.plane.w - dot( n, ray_orig ) ) / dt;
-    float t = ray_distance_to_plane(ray_orig, ray_dir, paralllelogram.plane);
+    float t = ray_distance_to_plane(ray_orig, ray_dir, parallelogram.plane);
+    const float4 n = parallelogram.plane;
 
     // Verify intersection distance and Report ray intersection point
     if (t > ray_tmin && t < ray_tmax)
@@ -69,6 +71,7 @@ extern "C" __global__ void __intersection__rectangle_flat()
     // // Compute distance t (point of intersection) along ray direction from ray origin
     // float t = (rectangle.plane.w - dot(n, ray_orig)) / dt;
     float t = ray_distance_to_plane(ray_orig, ray_dir, rectangle.plane);
+    const float4 n = rectangle.plane;
 
     // Verify intersection distance
     if (t > ray_tmin && t < ray_tmax)
@@ -609,6 +612,7 @@ extern "C" __global__ void __intersection__circle_flat()
     // // Compute distance t (point of intersection) along ray direction from ray origin
     // float  t  = ( circ.plane.w - dot( n, ray_orig ) ) / dt;
     float t = ray_distance_to_plane(ray_orig, ray_dir, circ.plane);
+    const float4 n = circ.plane;
 
     // Verify intersection distance and Report ray intersection point
     if (t > ray_tmin && t < ray_tmax)
