@@ -60,7 +60,9 @@ static void spin_off_messages(QPromise<SimResult>& promise, QByteArray array) {
     }
 }
 
-void execute_process_runner(QPromise<SimResult>& promise, SimDataPtr data) {
+void execute_process_runner(QPromise<SimResult>&      promise,
+                            SimDataPtr                data,
+                            ThreadRunnerConfig const& config) {
     try {
         promise.setProgressRange(0, 100);
 
@@ -212,7 +214,7 @@ void check_if_process_worker(int argc, char* argv[]) {
     auto sim_data = worker_start_flow(work_dir);
 
     // This will delete itself on done
-    auto ptr = new RunningJob(sim_data, RunType::Thread);
+    auto ptr = new RunningJob(sim_data, RunType::Thread, 0);
 
     auto timer = new QTimer(ptr);
 

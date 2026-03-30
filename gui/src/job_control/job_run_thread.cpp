@@ -38,7 +38,9 @@ execute_solve_with(SolTrace::Runner::SimulationRunner* ptr) {
     return ptr->run_simulation();
 }
 
-void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
+void execute_thread_runner(QPromise<SimResult>&      promise,
+                           SimDataPtr                data,
+                           ThreadRunnerConfig const& config) {
     try {
         auto start_instant = std::chrono::high_resolution_clock::now();
 
@@ -49,13 +51,14 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
 
         SolTrace::Runner::RunnerStatus result;
 
-        size_t thread_count = std::thread::hardware_concurrency();
-        if (thread_count == 0) { thread_count = 1; }
+        size_t thread_count = config.thread_count;
+        if (thread_count == 0) {
+            thread_count = std::thread::hardware_concurrency();
+        }
 
         current_runner->set_number_of_threads(thread_count);
-        data->set_number_of_rays(10000);
-        data->set_max_rays_traced(100000);
-        qDebug() << data->get_number_of_rays()
+
+        qDebug() << "Starting simulation with" << data->get_number_of_rays()
                  << data->get_max_number_rays_traced();
 
         SOLTRACE_SECTION(initialize(), 0, "Starting simulation");
@@ -103,9 +106,8 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
 
             qDebug() << "raw" << progress;
 
-            // assuming progress is 0-1, TODO: Check
-            // It is, but there is a bug in the lib. HACK
-            progress = std::clamp(progress / 10., 0.0, 1.0);
+            // assuming progress is 0-1
+            progress = std::clamp(progress, 0.0, 1.0);
 
 
             if (last_progress != progress) {
@@ -114,7 +116,7 @@ void execute_thread_runner(QPromise<SimResult>& promise, SimDataPtr data) {
                 promise.setProgressValueAndText(std::lerp(10, 90, progress),
                                                 "Running...");
                 last_progress = progress;
-                qDebug() << "sim progress " << progress;
+                qDebug() << "sim progress " << std::lerp(10, 90, progress);
             }
         }
 

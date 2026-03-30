@@ -1,5 +1,7 @@
 #include "simulation_module.h"
 
+#include <thread>
+
 namespace SolTrace::GUI::App {
 
 
@@ -27,7 +29,11 @@ void SimulationModule::job_done() {
 }
 
 SimulationModule::SimulationModule(QObject* parent)
-    : QObject { parent }, m_status(new StatusComponent(this)) { }
+    : QObject { parent }, m_status(new StatusComponent(this)) {
+
+    auto thread_count = std::thread::hardware_concurrency();
+    set_max_threads(thread_count <= 0 ? 1 : thread_count);
+}
 
 void SimulationModule::run() {
     qDebug() << Q_FUNC_INFO;
@@ -51,7 +57,7 @@ void SimulationModule::run() {
     sim_data->set_number_of_rays(m_ray_count);
     sim_data->set_max_rays_traced(m_max_ray_count);
 
-    m_running = new RunningJob(sim_data, RunType::Thread, this);
+    m_running = new RunningJob(sim_data, RunType::Thread, m_max_threads, this);
 
     connect(m_running,
             &RunningJob::progress_update,

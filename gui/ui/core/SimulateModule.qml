@@ -71,7 +71,7 @@ ColumnLayout {
             Layout.fillWidth: true
             from: 0
             to: 100
-            value: App.simulation.progress * 100
+            value: App.simulation.progress
         }
 
         STPropertyLabel {
