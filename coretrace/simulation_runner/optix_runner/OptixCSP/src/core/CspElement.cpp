@@ -347,6 +347,20 @@ GeometryDataST CspElement::toDeviceGeometryData() const
         }
     }
 
+    if (aperture_type == ApertureType::ANNULUS)
+    {
+        ApertureAnnulus anf = static_cast<ApertureAnnulus &>(*m_aperture);
+        float radius_in = anf.get_radius_inner();
+        float radius_out = anf.get_radius_outer();
+        float3 o = OptixCSP::toFloat3(m_origin);
+        float3 n = normalize(OptixCSP::toFloat3(m_aim_point - m_origin));
+        if (surface_type == SurfaceFlat::FLAT)
+        {
+            GeometryDataST::Annulus_Flat anf(o, n, radius_in, radius_out);
+            geometry_data.setAnnulus_Flat(anf);
+        }
+    }
+
     geometry_data.id = this->m_id;
 
     return geometry_data;

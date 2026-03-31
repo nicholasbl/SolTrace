@@ -649,7 +649,7 @@ extern "C" __global__ void __intersection__hexagon_flat()
         float3 p = ray_orig + ray_dir * t - hex.center;
         // float d = length(p - circ.center);
         float s = hex.s;
-	float xl = 0.5f * s;
+        float xl = 0.5f * s;
         float yl = 0.5f * sqrtf(3.0f) * s;
         if (-xl <= p.x && p.x <= xl && -yl <= p.y && p.y <= yl)
         {
@@ -659,7 +659,7 @@ extern "C" __global__ void __intersection__hexagon_flat()
         else if (-s <= p.x && p.x < xl)
         {
             // Left side
-	  float y1 = sqrtf(3.0f) * (p.x + s);
+            float y1 = sqrtf(3.0f) * (p.x + s);
             float y2 = -y1;
             if (y1 <= p.y && p.y <= y2)
             {
@@ -669,15 +669,43 @@ extern "C" __global__ void __intersection__hexagon_flat()
         else if (xl < p.x && p.x <= s)
         {
             // Right side
-	  float y1 = sqrtf(3.0f) * (p.x - s);
+            float y1 = sqrtf(3.0f) * (p.x - s);
             float y2 = -y1;
             if (y2 <= p.y && p.y <= y1)
             {
                 is_in = true;
             }
         }
-        
+
         if (is_in)
+        {
+            optixReportIntersection(t,
+                                    0,
+                                    __float_as_uint(n.x),
+                                    __float_as_uint(n.y),
+                                    __float_as_uint(n.z));
+        }
+    }
+}
+
+extern "C" __global__ void __intersection__annulus_flat()
+{
+    const OptixCSP::GeometryDataST::Hexagon_Flat &anf = params.geometry_data_array[optixGetPrimitiveIndex()].getAnnulus_Flat();
+
+    // Get ray information: origin, direction, and min/max distances over which ray should be tested
+    const float3 ray_orig = optixGetWorldRayOrigin();
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float ray_tmin = optixGetRayTmin(), ray_tmax = optixGetRayTmax();
+
+    float t = ray_distance_to_plane(ray_orig, ray_dir, anf.plane);
+    const float4 n = anf.plane;
+
+    // Verify intersection distance and Report ray intersection point
+    if (t > ray_tmin && t < ray_tmax)
+    {
+        float3 p = ray_orig + ray_dir * t;
+        float d = length(p - circ.center);
+        if (anf.ri <= d && d <= anf.ro)
         {
             optixReportIntersection(t,
                                     0,

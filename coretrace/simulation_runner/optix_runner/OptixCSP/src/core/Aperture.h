@@ -123,4 +123,17 @@ namespace OptixCSP {
         Vec3d m_p3;
     };
 
+    class ApertureAnnulus : public Aperture {
+    public:
+        ApertureAnnulus();
+        ApertureAnnulus(double ri, double ro);
+        virtual ~ApertureAnnulus() = default;
+        virtual ApertureType get_aperture_type() const override;
+        double get_radius_inner() const;
+        double get_radius_outer() const;
+    private:
+        double ri;
+        double ro;
+    };
+
 }

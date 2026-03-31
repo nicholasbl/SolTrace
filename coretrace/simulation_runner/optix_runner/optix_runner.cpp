@@ -222,11 +222,20 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             {
             case ApertureType::RECTANGLE:
             {
-
                 auto el_aperture = std::dynamic_pointer_cast<Rectangle>(el->get_aperture());
                 assert(el_aperture != nullptr);
                 // TODO: account for x and y coord?
-                auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length, el_aperture->y_length);
+                auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(
+                    el_aperture->x_length, el_aperture->y_length);
+                optix_el->set_aperture(aperture);
+                break;
+            }
+            case ApertureType::ANNULUS:
+            {
+                auto el_aperture = std::dynamic_pointer_cast<Annulus>(el->get_aperture());
+                assert(el_aperture != nullptr);
+                auto aperture = std::make_shared<OptixCSP::ApertureAnnulus>(
+                    el_aperture->inner_radius, el_aperture->outer_radius);
                 optix_el->set_aperture(aperture);
                 break;
             }
@@ -288,7 +297,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 assert(el_aperture != nullptr);
                 auto aperture = std::make_shared<OptixCSP::ApertureHexagon>(el_aperture->radius_circumscribed_circle());
                 optix_el->set_aperture(aperture);
-		break;
+                break;
             }
             default:
                 // std::cerr << "Unsupported aperture type in OptixCSP" << std::endl;
