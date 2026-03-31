@@ -244,6 +244,7 @@ qt_add_qml_module(SolTrace
         QML_FILES ui/primitives/widgets/STButton.qml
         SOURCES src/modules/view_module.h src/modules/view_module.cpp
         QML_FILES ui/primitives/widgets/STDoubleSpinBox.qml
+        SOURCES src/database/surface.h src/database/surface.cpp
 
 )
 
