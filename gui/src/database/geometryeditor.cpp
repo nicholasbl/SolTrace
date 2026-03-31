@@ -2,6 +2,7 @@
 
 #include "database/apertureeditor.h"
 #include "database/components.h"
+#include "database/surface.h"
 #include <cmath>
 
 namespace db {
@@ -45,81 +46,29 @@ void SurfaceGeometry::rebuild_geometry() {
     auto surface  = ptr->surface;
     auto aperture = ptr->aperture;
 
-    auto [points, indices] = aperture->triangulation();
-
-    QVector<Vertex> verts(points.size() / 2);
-
-    for (auto& v : verts) {
-        v.normal = QVector3D(0, 0, 0);
-        v.uv     = QVector2D(0, 0);
+    auto mesh = generate_surface(surface, aperture);
+    if (!mesh || mesh->vertex.empty() || mesh->index.empty()) {
+        qWarning() << "Geometry is empty, or unable to be generated";
+        update();
+        return;
     }
-
 
     constexpr float max_float = std::numeric_limits<float>::max();
 
-    QVector3D boundsMin(max_float, max_float, max_float);
-    QVector3D boundsMax(-max_float, -max_float, -max_float);
+    glm::vec3 bounds_min(max_float);
+    glm::vec3 bounds_max(-max_float);
 
-    // Compute the positions
-    for (int i = 0; i < verts.size(); ++i) {
-        auto x        = points[2 * i];
-        auto y        = points[2 * i + 1];
-        auto position = QVector3D(x, y, surface->z(x, y));
-
-        verts[i].position = position;
-
-        // qDebug() << position;
-
-        boundsMin.setX(std::min(boundsMin.x(), position.x()));
-        boundsMin.setY(std::min(boundsMin.y(), position.y()));
-        boundsMin.setZ(std::min(boundsMin.z(), position.z()));
-
-        boundsMax.setX(std::max(boundsMax.x(), position.x()));
-        boundsMax.setY(std::max(boundsMax.y(), position.y()));
-        boundsMax.setZ(std::max(boundsMax.z(), position.z()));
+    for (auto const& p : mesh->vertex) {
+        bounds_min = glm::min(bounds_min, p.position);
+        bounds_max = glm::max(bounds_max, p.position);
     }
 
-    // Compute the normals
-    for (int i = 0; i < indices.size(); i += 3) {
-        int a = indices[i];
-        int b = indices[i + 1];
-        int c = indices[i + 2];
-
-        Q_ASSERT(a < verts.size() && b < verts.size() && c < verts.size());
-
-        QVector3D normal =
-            QVector3D::crossProduct(verts[b].position - verts[a].position,
-                                    verts[c].position - verts[a].position);
-
-        verts[a].normal += normal;
-        verts[b].normal += normal;
-        verts[c].normal += normal;
-    }
-
-    float dx = boundsMax.x() - boundsMin.x();
-    float dy = boundsMax.y() - boundsMin.y();
-    if (dx == 0) dx = 1;
-    if (dy == 0) dy = 1;
-
-    // Compute uv and normalize
-    for (int i = 0; i < verts.size(); ++i) {
-
-        auto& n = verts[i].normal;
-        if (!qFuzzyIsNull(n.lengthSquared())) {
-            n.normalize();
-        } else {
-            n = QVector3D(0, 0, 1);
-        }
-
-
-        verts[i].uv.setX((verts[i].position.x() - boundsMin.x()) / dx);
-        verts[i].uv.setY((verts[i].position.y() - boundsMin.y()) / dy);
-    }
-
-    auto indexBuffer = QByteArray(reinterpret_cast<const char*>(indices.data()),
-                                  indices.size() * sizeof(int));
-    auto vertexBuffer = QByteArray(reinterpret_cast<const char*>(verts.data()),
-                                   verts.size() * sizeof(Vertex));
+    auto indexBuffer =
+        QByteArray(reinterpret_cast<const char*>(mesh->index.data()),
+                   mesh->index.size() * sizeof(uint32_t));
+    auto vertexBuffer =
+        QByteArray(reinterpret_cast<const char*>(mesh->vertex.data()),
+                   mesh->vertex.size() * sizeof(Vertex));
 
     addAttribute(QQuick3DGeometry::Attribute::PositionSemantic,
                  offsetof(Vertex, position),
@@ -137,21 +86,23 @@ void SurfaceGeometry::rebuild_geometry() {
                  0,
                  QQuick3DGeometry::Attribute::ComponentType::U32Type);
 
+    auto bb = BoundingBox {
+        .min = QVector3D(bounds_min.x, bounds_min.y, bounds_min.z),
+        .max = QVector3D(bounds_max.x, bounds_max.y, bounds_max.z),
+    };
+
     setStride(sizeof(Vertex));
     setVertexData(vertexBuffer);
     setIndexData(indexBuffer);
-    setBounds(boundsMin, boundsMax);
+    setBounds(bb.min, bb.max);
     setPrimitiveType(QQuick3DGeometry::PrimitiveType::Triangles);
 
-    set_bounding_box(BoundingBox {
-        .min = boundsMin,
-        .max = boundsMax,
-    });
+    set_bounding_box(bb);
 
-    qDebug() << Q_FUNC_INFO << entt::to_integral(m_current_group)
-             << verts.size() << indices.size();
-    qDebug() << Q_FUNC_INFO << boundsMin << boundsMax;
-    // qDebug() << verts;
+    // qDebug() << Q_FUNC_INFO << entt::to_integral(m_current_group)
+    //          << verts.size() << indices.size();
+    // qDebug() << Q_FUNC_INFO << boundsMin << boundsMax;
+    //  qDebug() << verts;
 
     update();
 }

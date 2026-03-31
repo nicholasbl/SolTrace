@@ -41,12 +41,6 @@ class SurfaceGeometry : public QQuick3DGeometry, public DatabaseObserver {
 
     entt::entity m_current_group = entt::null;
 
-    struct Vertex {
-        QVector3D position;
-        QVector3D normal;
-        QVector2D uv;
-    };
-
     void set_new_database_connections(Database* ptr) override;
 
 private slots:

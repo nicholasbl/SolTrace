@@ -20,10 +20,15 @@
 
 // =============================================================================
 
-RunningJob::RunningJob(SimDataPtr data, RunType type, QObject* parent)
+RunningJob::RunningJob(SimDataPtr data,
+                       RunType    type,
+                       uint32_t   thread_count,
+                       QObject*   parent)
     : QObject(parent) {
 
-    void (*f_ptr)(QPromise<SimResult>& promise, SimDataPtr data);
+    void (*f_ptr)(QPromise<SimResult>&      promise,
+                  SimDataPtr                data,
+                  ThreadRunnerConfig const& config);
 
     switch (type) {
     case RunType::Thread: f_ptr = execute_thread_runner; break;
@@ -37,7 +42,9 @@ RunningJob::RunningJob(SimDataPtr data, RunType type, QObject* parent)
     // TEMPORARY HACK WHILE WE FIX PROCESS STUFF
     f_ptr = execute_thread_runner;
 
-    auto future = QtConcurrent::run(f_ptr, data);
+    auto config = ThreadRunnerConfig { .thread_count = thread_count };
+
+    auto future = QtConcurrent::run(f_ptr, data, config);
 
     auto watcher = new QFutureWatcher<SimResult>();
 

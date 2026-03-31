@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls.Material
 import SolTrace
 
-SpinBox {
+DoubleSpinBox {
     id: control
     editable: true
 
@@ -11,7 +11,7 @@ SpinBox {
     property string internal_computed_suffix : suffix.length ? " " + suffix : ""
 
     textFromValue: function(value, locale) {
-        return Number(value).toLocaleString(locale, 'f', 0) + internal_computed_suffix
+        return Number(value).toLocaleString(locale, 'f', control.decimals) + internal_computed_suffix
     }
 
     valueFromText: function(text, locale) {
@@ -19,7 +19,7 @@ SpinBox {
             text = text.replace(suffix,"")
         }
 
-        return Math.round(Number.fromLocaleString(locale, text))
+        return Number.fromLocaleString(locale, text)
     }
 
     contentItem: TextInput {

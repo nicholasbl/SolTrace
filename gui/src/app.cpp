@@ -37,13 +37,11 @@ App::App(QObject* parent, const QString& documentation_directory)
 
     connect(
         m_simulation, &SimulationModule::new_results, this, &App::new_results);
-}
 
-void App::install(QPointer<Backend> backend) {
-    m_sun->set_backend(QPointer(backend->sun()));
-    m_tracing->set_backend(QPointer(backend->tracing()));
-    m_intersections->set_backend(QPointer(backend->intersections()));
-    m_flux->set_backend(QPointer(backend->flux()));
+    connect(this,
+            &App::new_results,
+            m_intersections,
+            &IntersectionsModule::set_results);
 }
 
 } // namespace SolTrace::GUI::App

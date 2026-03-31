@@ -41,12 +41,12 @@ ColumnLayout {
         currentIndex: App.view.configure_section
 
         ColumnLayout {
-            STSpinBox {
+            STDoubleSpinBox {
                 Layout.fillWidth: true
-                from: decimalToInt(0)
-                to: decimalToInt(1000)
+                from: 0
+                to: 1000
                 decimals: 3
-                stepSize: decimalToInt(0.01)
+                stepSize: 0.01
                 suffix: "mrad"
             }
 

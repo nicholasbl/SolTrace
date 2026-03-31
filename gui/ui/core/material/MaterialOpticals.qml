@@ -140,14 +140,14 @@ STPropertyPanel {
         text: "Reflectance (ρ)"
     }
 
-    STSpinBox {
+    STDoubleSpinBox {
         Layout.fillWidth: true
-        from: 0
-        to: decimalToInt(1)
+        from: 0.0
+        to: 1.0
         decimals: 4
-        stepSize: decimalToInt(0.01)
-        value: decimalToInt(root.side_editor ? root.side_editor.reflectivity : 0)
-        onRealValueModified: {
+        stepSize: 0.01
+        value: root.side_editor ? root.side_editor.reflectivity : 0
+        onValueModified: {
             if (root.side_editor) {
                 root.side_editor.reflectivity = realValue
             }
@@ -160,14 +160,14 @@ STPropertyPanel {
         text: "Transmittance (τ)"
     }
 
-    STSpinBox {
+    STDoubleSpinBox {
         Layout.fillWidth: true
         from: 0
-        to: decimalToInt(1)
+        to: 1.0
         decimals: 4
-        stepSize: decimalToInt(0.01)
-        value: decimalToInt(root.side_editor ? root.side_editor.transmitivity : 0)
-        onRealValueModified: {
+        stepSize: 0.01
+        value: root.side_editor ? root.side_editor.transmitivity : 0
+        onValueModified: {
             if (root.side_editor) {
                 root.side_editor.transmitivity = realValue
             }
@@ -181,14 +181,14 @@ STPropertyPanel {
         textFormat: Label.RichText
     }
 
-    STSpinBox {
+    STDoubleSpinBox {
         Layout.fillWidth: true
-        from: decimalToInt(1)
-        to: decimalToInt(5)
+        from: 1.0
+        to: 5.0
         decimals: 4
-        stepSize: decimalToInt(0.01)
-        value: decimalToInt(root.side_editor ? root.side_editor.refraction_index_front : 1)
-        onRealValueModified: {
+        stepSize: 0.01
+        value: root.side_editor ? root.side_editor.refraction_index_front : 1
+        onValueModified: {
             if (root.side_editor) {
                 root.side_editor.refraction_index_front = realValue
             }
@@ -202,14 +202,14 @@ STPropertyPanel {
         textFormat: Label.RichText
     }
 
-    STSpinBox {
+    STDoubleSpinBox {
         Layout.fillWidth: true
-        from: decimalToInt(1)
-        to: decimalToInt(5)
+        from: 1
+        to: 5
         decimals: 4
-        stepSize: decimalToInt(0.01)
-        value: decimalToInt(root.side_editor ? root.side_editor.refraction_index_back : 1)
-        onRealValueModified: {
+        stepSize: 0.01
+        value: root.side_editor ? root.side_editor.refraction_index_back : 1
+        onValueModified: {
             if (root.side_editor) {
                 root.side_editor.refraction_index_back = realValue
             }
@@ -223,15 +223,15 @@ STPropertyPanel {
         textFormat: Label.RichText
     }
 
-    STSpinBox {
+    STDoubleSpinBox {
         Layout.fillWidth: true
-        from: decimalToInt(0)
-        to: decimalToInt(1000)
+        from: 0
+        to: 1000
         decimals: 3
-        stepSize: decimalToInt(0.01)
+        stepSize: 0.01
         suffix: "mrad"
-        value: decimalToInt(root.side_editor ? root.side_editor.slope_error : 0)
-        onRealValueModified: {
+        value: root.side_editor ? root.side_editor.slope_error : 0
+        onValueModified: {
             if (root.side_editor) {
                 root.side_editor.slope_error = realValue
             }
@@ -245,15 +245,15 @@ STPropertyPanel {
         textFormat: Label.RichText
     }
 
-    STSpinBox {
+    STDoubleSpinBox {
         Layout.fillWidth: true
-        from: decimalToInt(0)
-        to: decimalToInt(1000)
+        from: 0
+        to: 1000
         decimals: 3
-        stepSize: decimalToInt(0.01)
+        stepSize: 0.01
         suffix: "mrad"
-        value: decimalToInt(root.side_editor ? root.side_editor.specularity_error : 0)
-        onRealValueModified: {
+        value: root.side_editor ? root.side_editor.specularity_error : 0
+        onValueModified: {
             if (root.side_editor) {
                 root.side_editor.specularity_error = realValue
             }

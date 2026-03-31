@@ -4,7 +4,11 @@
 
 #include "job_run_common.h"
 
-void execute_process_runner(QPromise<SimResult>& promise, SimDataPtr data);
+#include "job_run_thread.h"
+
+void execute_process_runner(QPromise<SimResult>&      promise,
+                            SimDataPtr                data,
+                            ThreadRunnerConfig const& config);
 
 
 /// Checks if this process is configured to be a worker only process.

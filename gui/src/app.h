@@ -100,8 +100,6 @@ public:
 
     QOBJECT_READONLY_PROPERTY(FluxModule, flux)
 
-    void install(QPointer<Backend> backend);
-
 signals:
     void notification(ANotification);
     void new_results(std::shared_ptr<ResultDB>);

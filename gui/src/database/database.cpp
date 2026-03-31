@@ -411,7 +411,7 @@ static void import_optics(
 
         geometry_groups.try_emplace(local_geom, group_entity);
 
-        reg.assign_material(entity, group_entity);
+        reg.assign_geometry(entity, group_entity);
     }
 }
 
@@ -454,6 +454,12 @@ void Database::import(SD::SimulationData& data) {
 
     for (auto iter = data.get_iterator(); !data.is_at_end(iter); ++iter) {
         auto const& element = *(iter->second);
+
+        // if (element.get_name() == "0") {
+        //     qDebug() << "CHECK 0" << element.is_composite()
+        //              << element.is_single() << element.get_surface().get()
+        //              << element.get_aperture().get();
+        // }
 
         if (element.is_stage()) {
             // we want to avoid materializing stage elements
@@ -645,6 +651,8 @@ std::shared_ptr<SD::SimulationData> Database::export_to_simdata() {
                 ptr    = n;
             }
 
+            ptr->set_name(name_of(e).toStdString());
+
             entity_element_map[e] = ptr;
         }
     }
@@ -706,6 +714,14 @@ std::shared_ptr<SD::SimulationData> Database::export_to_simdata() {
 
             // has no children
 
+            // if (element->get_name() == "0") {
+            //     qDebug() << "Install" << entt::to_integral(e)
+            //              << element->get_name() <<
+            //              entt::to_integral(mat.group)
+            //              << entt::to_integral(geom.group);
+            // }
+
+
             install_group(element, mat_group, geom_group);
         }
     }
@@ -753,7 +769,8 @@ std::shared_ptr<SD::SimulationData> Database::export_to_simdata() {
             ret.add_element(iter.second);
         } catch (std::exception const& e) {
             qCritical() << "Unable to export entity"
-                        << entt::to_integral(iter.first);
+                        << entt::to_integral(iter.first)
+                        << iter.second->get_name() << e.what();
 
             return nullptr;
         }

@@ -39,7 +39,8 @@ class RunningJob : public QObject {
 
 public:
     explicit RunningJob(SimDataPtr data,
-                        RunType    type   = RunType::Process,
+                        RunType    type,
+                        uint32_t   thread_count,
                         QObject*   parent = nullptr);
     virtual ~RunningJob();
 
