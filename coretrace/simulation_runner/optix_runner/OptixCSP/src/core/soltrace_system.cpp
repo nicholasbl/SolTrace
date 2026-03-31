@@ -612,7 +612,7 @@ void SolTraceSystem::setup_device_buffer()
         CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&data_manager->launch_params_H.hit_type_buffer), hit_type_size));
         m_hit_type_buffer_size_allocated = hit_type_size;
     }
-    CUDA_CHECK(cudaMemset(data_manager->launch_params_H.hit_type_buffer, kElementIdBuffer, hit_type_size));
+    CUDA_CHECK(cudaMemset(data_manager->launch_params_H.hit_type_buffer, HitType::HIT_UNASSIGNED, hit_type_size));
 
     if (data_manager->launch_params_H.sun_dir_buffer == nullptr || m_sun_dir_buffer_size_allocated != sun_dir_size)
     {
