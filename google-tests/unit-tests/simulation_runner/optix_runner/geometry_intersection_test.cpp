@@ -345,8 +345,9 @@ TEST(OptixRunner, FlatAnnulus)
 {
     const double R0 = 5.0;
     const double R1 = 10.0;
+    const double ARC = 2 * PI;
     auto surf = make_surface<Flat>();
-    auto aper = make_aperture<Annulus>(R0, R1);
+    auto aper = make_aperture<Annulus>(R0, R1, ARC);
 
     SimulationData sd;
     set_default_sd(sd, surf, aper);

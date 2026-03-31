@@ -1,4 +1,5 @@
 #include "Aperture.h"
+#include "constants.hpp"
 
 using namespace OptixCSP;
 
@@ -86,10 +87,12 @@ Vec3d ApertureQuadrilateral::get_p1() const { return m_p1; }
 Vec3d ApertureQuadrilateral::get_p2() const { return m_p2; }
 Vec3d ApertureQuadrilateral::get_p3() const { return m_p3; }
 
-ApertureAnnulus::ApertureAnnulus() : ri(0.5), ro(1.0) {}
-ApertureAnnulus::ApertureAnnulus(double r_inner, double r_outer) {}
+ApertureAnnulus::ApertureAnnulus() : ri(0.5), ro(1.0), arc(2.0 * SolTrace::Data::PI) {}
+ApertureAnnulus::ApertureAnnulus(double r_inner, double r_outer, double arc)
+  : ri(r_inner), ro(r_outer), arc(arc) {}
 ApertureType ApertureAnnulus::get_aperture_type() const {
     return ApertureType::ANNULUS;
 }
 double ApertureAnnulus::get_radius_inner() const { return ri; }
 double ApertureAnnulus::get_radius_outer() const { return ro; }
+double ApertureAnnulus::get_arc() const { return arc; }

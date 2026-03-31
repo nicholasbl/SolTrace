@@ -24,7 +24,8 @@ namespace OptixCSP
             TRIANGLE_FLAT = 5,
             QUADRILATERAL_FLAT = 6,
             CIRCLE_FLAT = 7,
-            HEXAGON_FLAT = 8
+            HEXAGON_FLAT = 8,
+	    ANNULUS_FLAT = 9
         };
 
         struct Parallelogram
@@ -165,7 +166,8 @@ namespace OptixCSP
         {
             Annulus_Flat() = default;
             Annulus_Flat(const float3 &origin, const float3 &normal,
-                         const float &r_inner, const float &r_outer)
+                         const float &r_inner, const float &r_outer, const float &arc)
+	      : center(origin), ri(r_inner), ro(r_outer), arc(arc)
             {
                 plane = make_float4(normalize(normal), dot(center, normal));
             }
@@ -173,6 +175,7 @@ namespace OptixCSP
             float3 center;
             float ri;
             float ro;
+	  float arc; // Arc angle in radians with x-axis in the middle
         };
 
         GeometryDataST() = default;
@@ -283,7 +286,7 @@ namespace OptixCSP
 
         void setAnnulus_Flat(const Annulus_Flat &anf)
         {
-            assert(type == ANNULUS_FLAT);
+            assert(type == UNKNOWN_TYPE);
             type = ANNULUS_FLAT;
             annulus_flat = anf;
         }

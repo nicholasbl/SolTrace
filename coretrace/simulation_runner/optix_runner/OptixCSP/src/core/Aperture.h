@@ -126,14 +126,16 @@ namespace OptixCSP {
     class ApertureAnnulus : public Aperture {
     public:
         ApertureAnnulus();
-        ApertureAnnulus(double ri, double ro);
+      ApertureAnnulus(double ri, double ro, double arc);
         virtual ~ApertureAnnulus() = default;
         virtual ApertureType get_aperture_type() const override;
         double get_radius_inner() const;
         double get_radius_outer() const;
+      double get_arc() const;
     private:
         double ri;
         double ro;
+      double arc; // Measured in radians
     };
 
 }

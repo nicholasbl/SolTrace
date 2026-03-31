@@ -234,8 +234,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             {
                 auto el_aperture = std::dynamic_pointer_cast<Annulus>(el->get_aperture());
                 assert(el_aperture != nullptr);
-                auto aperture = std::make_shared<OptixCSP::ApertureAnnulus>(
-                    el_aperture->inner_radius, el_aperture->outer_radius);
+                auto aperture = std::make_shared<OptixCSP::ApertureAnnulus>(el_aperture->inner_radius, el_aperture->outer_radius, el_aperture->arc_angle * D2R);
                 optix_el->set_aperture(aperture);
                 break;
             }
