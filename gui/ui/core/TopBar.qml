@@ -154,7 +154,10 @@ RowLayout {
                 text: "Configure"
                 font.pointSize: 16
 
-                onClicked: App.view.workflow_phase = 0
+                onClicked: {
+                    App.view.show_left_panel = App.view.workflow_phase != 0 || !App.view.show_left_panel
+                    App.view.workflow_phase = 0
+                }
             }
 
             Label {
@@ -166,7 +169,10 @@ RowLayout {
                 text: "Simulate"
                 font.pointSize: 16
 
-                onClicked: App.view.workflow_phase = 1
+                onClicked: {
+                    App.view.show_left_panel = App.view.workflow_phase != 1 || !App.view.show_left_panel
+                    App.view.workflow_phase = 1
+                }
             }
 
             Label {
@@ -178,8 +184,10 @@ RowLayout {
                 text: "Analyze"
                 font.pointSize: 16
 
-                onClicked: App.view.workflow_phase = 2
-                //onClicked: module_stack.currentIndex = 2
+                onClicked: {
+                    App.view.show_left_panel = App.view.workflow_phase != 2 || !App.view.show_left_panel
+                    App.view.workflow_phase = 2
+                }
             }
 
             Item {

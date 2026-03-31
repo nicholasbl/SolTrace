@@ -15,9 +15,18 @@ public:
     Q_WRITABLE_PROPERTY(size_t, simulate_section, 0)
     Q_WRITABLE_PROPERTY(size_t, analyze_section, 0)
 
+<<<<<<< Updated upstream
     Q_WRITABLE_PROPERTY(bool, editing_material, false)
     Q_WRITABLE_PROPERTY(bool, editing_geometry, false)
     Q_WRITABLE_PROPERTY(bool, editing_layout, false)
+=======
+  Q_WRITABLE_PROPERTY(bool, editing_material, false)
+  Q_WRITABLE_PROPERTY(bool, editing_geometry, false)
+  Q_WRITABLE_PROPERTY(bool, editing_layout, false)
+
+  Q_WRITABLE_PROPERTY(bool, show_left_panel, false)
+  Q_WRITABLE_PROPERTY(bool, show_right_panel, false)
+>>>>>>> Stashed changes
 };
 
 } // namespace SolTrace::GUI::App

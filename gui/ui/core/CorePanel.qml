@@ -62,6 +62,8 @@ Item {
 
         radius: 10
 
+        visible: App.view.show_left_panel
+
         Behavior on requested_width {
             NumberAnimation {
                 duration: 100
