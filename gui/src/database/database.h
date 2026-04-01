@@ -34,11 +34,7 @@ void emplace_patch(entt::registry& reg, entt::entity entity, Function&& f) {
         if constexpr (std::is_empty_v<Component>) {
             reg.emplace<Component>(entity);
         } else {
-<<<<<<< Updated upstream
-            reg.emplace<Component>(entity, Component {});
-=======
             reg.emplace<Component>(entity, Component { });
->>>>>>> Stashed changes
         }
     }
 

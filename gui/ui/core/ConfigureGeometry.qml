@@ -7,7 +7,8 @@ import QtQuick.Layouts
 import SolTrace
 
 Item {
-    property int size_class
+    id: root
+    property var left_panel_size: App.view.left_panel_size
     property var materials_module : App.materials
 
     // Geometry editor opens when App.view.editing_geometry is true

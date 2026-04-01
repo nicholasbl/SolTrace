@@ -7,7 +7,7 @@ import QtQuick.Layouts
 import SolTrace
 
 Item {
-    property int size_class
+    id: root
     property var materials_module : App.materials
 
     // Material editor opens when App.view.editing_material is true

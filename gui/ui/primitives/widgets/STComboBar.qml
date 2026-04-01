@@ -12,6 +12,7 @@ Rectangle {
     property int currentIndex: 0
 
     property string fontFamily
+    property var fontWeight: Font.Normal
 
     property var model: []
 
@@ -187,6 +188,8 @@ Rectangle {
 
 
                     text: modelData
+
+                    font.weight: bar.fontWeight
 
                     horizontalAlignment: Label.AlignHCenter
                     verticalAlignment: Label.AlignVCenter

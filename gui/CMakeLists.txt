@@ -243,6 +243,12 @@ qt_add_qml_module(SolTrace
         QML_FILES ui/core/RightStack.qml
         QML_FILES ui/primitives/widgets/STButton.qml
         SOURCES src/modules/view_module.h src/modules/view_module.cpp
+        QML_FILES ui/core/ConfigureAppearance.qml
+        QML_FILES ui/panels/EditorPanel.qml
+        QML_FILES ui/core/ConfigureSun.qml
+        QML_FILES ui/primitives/fields/LocationField.qml
+        QML_FILES ui/primitives/fields/DateTimeField.qml
+        QML_FILES ui/primitives/widgets/STSpinBoxField.qml
 
 )
 

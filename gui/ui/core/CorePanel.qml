@@ -16,12 +16,6 @@ Item {
         value: App.view.workflow_phase
     }
 
-    enum SizeClass {
-        Small = 0,
-        Normal = 1,
-        Wide = 2
-    }
-
     TopBar {
         id: top_bar
         anchors.left: parent.left
@@ -30,15 +24,11 @@ Item {
         anchors.top: parent.top
         blur_source: root.blur_source
         height: 48
-
-        onShow_script_area: {
-            right_stack.enabled = !right_stack.enabled
-        }
     }
 
     onWidthChanged: {
-        while (width < background.requested_width && background.requested_width_index > 0) {
-            background.requested_width_index -= 1
+        while (width < background.requested_width && App.view.left_panel_size > 0) {
+            App.view.left_panel_size -= 1
         }
     }
 
@@ -46,11 +36,9 @@ Item {
         id: background
         blur_source: root.blur_source
 
-        property int requested_width_index : 1
-
         property var available_widths : [250, 500, 750]
 
-        property var requested_width : available_widths[requested_width_index]
+        property var requested_width : available_widths[App.view.left_panel_size]
 
         anchors.left: parent.left
         anchors.bottom: parent.bottom
@@ -94,76 +82,120 @@ Item {
             anchors.margins: 10
             height: 34
 
-            uniformCellSizes: true
-
             Item {
                 Layout.fillWidth: true
-                visible: background.requested_width_index > 0
-                Layout.fillHeight: true
+                visible: App.view.left_panel_size !== ViewModule.Small
             }
 
-            Label {
+            RowLayout {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
-                text: ["Configure", "Simulate", "Analyze"][App.view.workflow_phase]
-                font.pointSize: 18
-                font.bold: true
+                spacing: 10
 
-                elide: Label.ElideRight
+                Item {
+                    Layout.preferredWidth: 5 // Spacing for Small mode
+                    visible: App.view.left_panel_size == ViewModule.Small
+                }
 
-                horizontalAlignment: Label.AlignHCenter
-                verticalAlignment: Label.AlignVCenter
+                Item {
+                    Layout.fillWidth: true  // Center when not in Small mode
+                    visible: App.view.left_panel_size !== ViewModule.Small
+                }
 
-            }
+                Repeater {
+                    model: ["Configure", "Simulate", "Analyze"]
 
-            Item {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+                    RowLayout {
+                        required property int index
+                        required property string modelData
+                        property var icons: ["\uf0ad", "\uf185", "\ue473"]
 
-                RowLayout {
-                    anchors.fill: parent
+                        spacing: 10
 
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                    }
+                        // FA icon (always visible)
+                        STClickableLabel {
+                            text: parent.icons[parent.index]
+                            font.family: "Font Awesome 7 Free"
+                            opacity: App.view.workflow_phase === parent.index ? 1 : 0.5
+                            font.pointSize: App.view.left_panel_size === ViewModule.Small ? 16 : 12
 
-                    STIconButton {
-                        Layout.preferredWidth: implicitHeight
-                        Layout.fillHeight: true
-                        id: smaller_button
-                        text: "\uf422"
+                            onClicked: App.view.workflow_phase = parent.index
+                        }
 
-                        visible: background.requested_width_index !== CorePanel.Small
+                        // Section name (hidden in Small mode)
+                        STClickableLabel {
+                            font.pointSize: 16
+                            font.bold: true
 
-                        onClicked: {
-                            background.requested_width_index = Math.max(
-                                        background.requested_width_index - 1,
-                                        0,
-                                        )
+                            text: parent.modelData
+
+                            font.family: "CMU Serif"
+                            font.underline: App.view.workflow_phase === parent.index && App.view.left_panel_size !== ViewModule.Small
+
+                            opacity: App.view.workflow_phase === parent.index ? 1 : 0.5
+                            visible: App.view.left_panel_size !== ViewModule.Small
+
+                            onClicked: App.view.workflow_phase = parent.index
+                        }
+
+                        // creates the ">>" icons
+                        Label {
+                            font.family: "Font Awesome 7 Free"
+                            text: "\uf101"
+                            visible: parent.index < 2
                         }
                     }
+                }
 
-                    STIconButton {
-                        Layout.preferredWidth: implicitHeight
-                        Layout.fillHeight: true
-                        id: larger_button
-                        text: "\uf065"
-
-                        visible: background.requested_width_index !== CorePanel.Wide
-
-                        onClicked: {
-                            background.requested_width_index = Math.min(
-                                        background.requested_width_index + 1,
-                                        background.available_widths.length - 1,
-                                        )
-                        }
-                    }
-
+                Item {
+                    Layout.fillWidth: true
+                    visible: App.view.left_panel_size !== ViewModule.Small
                 }
             }
 
+            RowLayout {
+                Layout.minimumWidth: implicitWidth
+                spacing: 5
 
+                STIconButton {
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitWidth
+                    id: smaller_button
+                    text: "\uf422"
+
+                    visible: App.view.left_panel_size !== ViewModule.Small
+
+                    onClicked: {
+                        App.view.left_panel_size = Math.max(
+                                    App.view.left_panel_size - 1,
+                                    0,
+                                    )
+                    }
+                }
+
+                STIconButton {
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitWidth
+                    id: larger_button
+                    text: "\uf065"
+
+                    visible: App.view.left_panel_size !== ViewModule.Wide
+
+                    onClicked: {
+                        App.view.left_panel_size = Math.min(
+                                    App.view.left_panel_size + 1,
+                                    background.available_widths.length - 1,
+                                    )
+                    }
+                }
+
+                STIconButton {
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitWidth
+                    id: close_button
+                    text: "\uf00d"
+                    onClicked: App.view.show_left_panel = false
+                }
+            }
         }
 
         StackLayout {
@@ -178,11 +210,12 @@ Item {
             anchors.margins: 10
 
             ConfigureModule {
-                size_class: background.requested_width_index
             }
 
             SimulateModule {
-                size_class: background.requested_width_index
+            }
+
+            AnalysisModule {
             }
 
         }
@@ -193,7 +226,7 @@ Item {
 
         opacity: enabled
 
-        enabled: false
+        enabled: App.view.show_right_panel
 
         Behavior on opacity {
             NumberAnimation {

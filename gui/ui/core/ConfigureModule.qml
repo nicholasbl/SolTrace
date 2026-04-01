@@ -8,7 +8,6 @@ import SolTrace
 
 ColumnLayout {
     id: root
-    property int size_class
 
     Binding {
         target: bar
@@ -18,16 +17,17 @@ ColumnLayout {
 
     STComboBar {
         id: bar
+        currentIndex: App.view.configure_section
         onCurrentIndexChanged: App.view.configure_section = currentIndex
 
         Layout.fillWidth: true
 
-        fontFamily: size_class < 1 ? "Font Awesome 7 Free" : ""
-        
-        model : size_class < 1 ?
-                    ["\uf0eb", "\uf53f", "\uf1b2", "\ue4e6"]
-                  :
-                    ["Light", "Material", "Geometry", "Layout"]
+        fontFamily: App.view.left_panel_size === ViewModule.Small ? "Font Awesome 7 Free" : ""
+
+        model: App.view.left_panel_size === ViewModule.Small ?
+            ["\uf185", "\uf53f", "\uf1b2", "\ue4e6", "\uf5c3"]
+          :
+            ["Sun", "Material", "Geometry", "Layout", "Appearance"]
         
     }
 
@@ -40,6 +40,7 @@ ColumnLayout {
     StackLayout {
         currentIndex: App.view.configure_section
 
+        /*
         ColumnLayout {
             STSpinBox {
                 Layout.fillWidth: true
@@ -55,18 +56,18 @@ ColumnLayout {
 
                 model: ["This is Option A", "Option B", "Option C"]
             }
+        }*/
+
+        ConfigureSun {
         }
-        
+
         ConfigureMaterials {
-            size_class: root.size_class
         }
         
         ConfigureGeometry {
-            size_class: root.size_class
         }
 
         ConfigureLayout {
-            size_class: root.size_class
         }
     }
     

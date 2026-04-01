@@ -8,10 +8,11 @@ Rectangle {
     signal clicked
 
     property alias text: label.text
+    property alias label: label
     property real padding: 10
 
-    width : 42
-    height : width
+    width: label.width + padding
+    height: width
 
     radius: width / 2
 
@@ -21,7 +22,7 @@ Rectangle {
     border.color: Material.dividerColor
     border.width: mouse_area.containsPress ? 1 : 0
 
-    implicitHeight: Math.max(label.implicitHeight, label.implicitWidth)
+    implicitHeight: Math.max(label.implicitHeight, label.implicitWidth) + padding
     implicitWidth: implicitHeight
 
 
@@ -29,15 +30,9 @@ Rectangle {
         id: label
         font.family: "Font Awesome 7 Free"
 
-        font.pointSize: 48
+        font.pointSize: 16
 
-        fontSizeMode: Label.Fit
-
-        horizontalAlignment: Qt.AlignHCenter
-        verticalAlignment: Qt.AlignVCenter
-
-        anchors.fill: parent
-        anchors.margins: control.padding
+        anchors.centerIn: parent
     }
 
     // Rectangle {

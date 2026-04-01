@@ -9,68 +9,85 @@ import SolTrace
 ShadowedGlassRectangle {
     id: right_stack
 
-    Label {
-        id: info_row
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.margins: 10
-        height: 34
-
-        text: "Scripting"
-        font.pointSize: 18
-        font.bold: true
-
-        elide: Label.ElideRight
-
-        horizontalAlignment: Label.AlignHCenter
-        verticalAlignment: Label.AlignVCenter
-    }
-
-    // need this?
-    StackLayout {
-        id: script_stack
-
-        anchors.top: info_row.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
+    ColumnLayout {
+        anchors.fill: parent
         anchors.margins: 10
 
-        ColumnLayout {
-            ScrollView {
-                id: left_scroll
-                Layout.fillHeight: true
-                Layout.fillWidth: true
+        Label {
+            id: info_row
+            Layout.fillWidth: true
 
-                contentWidth: availableWidth
-                STPropertyPanel {
-                    anchors.fill: parent
+            text: ["Scripting", "Help", "Export"][App.view.right_panel_section]
+            font.pointSize: 16
+            font.family: "CMU Serif"
+            font.bold: true
 
-                    title: "Script Properties"
-                    collapsible: true
+            elide: Label.ElideRight
 
-                    STPropertyLabel {
-                        text: "Property A"
+            horizontalAlignment: Label.AlignHCenter
+            verticalAlignment: Label.AlignVCenter
+        }
+
+        STComboBar {
+            id: section
+            Layout.fillWidth: true
+
+            currentIndex: App.view.right_panel_section
+            onCurrentIndexChanged: App.view.right_panel_section = currentIndex
+
+            fontFamily: App.view.right_panel_size < 1 ? "Font Awesome 7 Free" : ""
+
+            model: App.view.right_panel_size < 1 ?
+                        ["\uf06a", "\uf06a", "\uf06a"]
+                      :
+                        ["Scripting", "Help", "Export"]
+        }
+
+        // need this?
+        StackLayout {
+            id: script_stack
+            currentIndex: App.view.right_panel_section
+
+            Layout.fillWidth: true
+
+            ColumnLayout {
+                ScrollView {
+                    id: left_scroll
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+
+                    contentWidth: availableWidth
+                    STPropertyPanel {
+                        anchors.fill: parent
+
+                        title: "Script Properties"
+                        collapsible: true
+
+                        STPropertyLabel {
+                            text: "Property A"
+                        }
+
+                        STSpinBox {
+                            Layout.fillWidth: true
+                            decimals: 2
+                        }
                     }
+                }
 
-                    STSpinBox {
-                        Layout.fillWidth: true
-                        decimals: 2
-                    }
+                STButton {
+                    text: "Run"
+                    Layout.fillWidth: true
+                }
+
+                TextArea {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: right_stack.height / 2
+                    text: "Script goes here"
                 }
             }
 
-            STButton {
-                text: "Run"
-                Layout.fillWidth: true
-            }
-
-            TextArea {
-                Layout.fillWidth: true
-                Layout.preferredHeight: right_stack.height / 2
-                text: "Script goes here"
-            }
+            Item {}
+            Item {}
         }
     }
 }

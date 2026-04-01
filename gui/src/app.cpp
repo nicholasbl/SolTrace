@@ -1,6 +1,49 @@
 #include "app.h"
+#include <QSettings>
 
 namespace SolTrace::GUI::App {
+
+void App::load_session() {
+    QSettings s;
+    s.beginGroup("View");
+    m_view->set_show_left_panel(s.value("show_left_panel", true).toBool());
+    m_view->set_show_right_panel(s.value("show_right_panel", true).toBool());
+
+    m_view->set_workflow_phase(s.value("workflow_phase", 0).toUInt());
+
+    m_view->set_configure_section(s.value("configure_section", 0).toUInt());
+    m_view->set_simulate_section(s.value("simulate_section", 0).toUInt());
+    m_view->set_analyze_section(s.value("analyze_section", 0).toUInt());
+
+    m_view->set_sun_section(s.value("sun_section", 0).toUInt());
+
+    s.endGroup();
+
+    s.beginGroup("File");
+    m_file_source->set_source(s.value("source", "").toUrl());
+    s.endGroup();
+}
+
+void App::save_session() {
+    QSettings s;
+    s.beginGroup("View");
+    s.setValue("show_left_panel", m_view->show_left_panel());
+    s.setValue("show_right_panel", m_view->show_right_panel());
+
+    s.setValue("workflow_phase", m_view->workflow_phase());
+
+    s.setValue("configure_section", m_view->configure_section());
+    s.setValue("simulate_section", m_view->simulate_section());
+    s.setValue("analyze_section", m_view->analyze_section());
+
+    s.setValue("sun_section", m_view->sun_section());
+
+    s.endGroup();
+
+    s.beginGroup("File");
+    s.setValue("source", m_file_source->source());
+    s.endGroup();
+}
 
 App::App(QObject* parent, const QString& documentation_directory)
     : m_file_source(new FileSourceModule(this)),
@@ -37,6 +80,12 @@ App::App(QObject* parent, const QString& documentation_directory)
 
     connect(
         m_simulation, &SimulationModule::new_results, this, &App::new_results);
+
+    load_session();
+}
+
+App::~App() {
+    save_session();
 }
 
 void App::install(QPointer<Backend> backend) {

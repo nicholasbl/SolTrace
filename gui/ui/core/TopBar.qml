@@ -19,6 +19,8 @@ RowLayout {
         Layout.preferredWidth: root.width * .25
         Layout.maximumWidth: root.width * .25
 
+        // Left Panel Button
+
         ShadowedGlassRectangle {
             blur_source: root.blur_source
 
@@ -32,25 +34,53 @@ RowLayout {
                 id: row
                 anchors.fill: parent
 
-                Image {
-                    source: "qrc:/assets/images/logo.svg"
-                    Layout.fillHeight: true
-                    Layout.preferredWidth: height
-                    Layout.leftMargin: 10
+                STIconButton {
+                    id: leftpanel_open
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitHeight
+                    Layout.leftMargin: 20
+                    Layout.rightMargin: 10
 
-                    mipmap: true
-
-                    fillMode: Image.PreserveAspectFit
+                    text: "\uf0c9"
+                    label.font.pointSize: 20
+                    onClicked: App.view.show_left_panel = !App.view.show_left_panel
                 }
 
-                Label {
-                    font.pointSize: 18
-                    font.family: "CMU Serif"
-                    text: "SolTrace"
-                    Layout.topMargin: 2
-                    Layout.bottomMargin: 2
+                Column {
+                    spacing: 0
+                    Layout.fillWidth: true
+                    Layout.rightMargin: 20
+                    Layout.alignment: Qt.AlignVCenter
 
-                    Layout.rightMargin: 10
+                    RowLayout {
+                        id: logoRow
+                        spacing: 8
+
+                        Image {
+                            source: "qrc:/assets/images/logo.svg"
+                            Layout.preferredHeight: 27
+                            Layout.preferredWidth: Layout.preferredHeight
+                            Layout.alignment: Qt.AlignBottom
+                            mipmap: true
+                            fillMode: Image.PreserveAspectFit
+                        }
+
+                        Label {
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignBottom
+                            font.pointSize: 18
+                            font.family: "CMU Serif"
+                            text: "SolTrace"
+                            font.bold: true
+                            font.capitalization: Font.SmallCaps
+                        }
+                    }
+
+                    Rectangle {
+                        color: "white"
+                        width: logoRow.width
+                        height: 1
+                    }
                 }
 
                 Rectangle {
@@ -141,6 +171,17 @@ RowLayout {
         Layout.fillHeight: true
         Layout.fillWidth: true
 
+        Label {
+            anchors.centerIn: parent
+            anchors.verticalCenterOffset: 2
+            text: App.file_source.name
+            font.family: "CMU Serif"
+            font.bold: true
+            font.pointSize: 18
+        }
+
+        /* Free up prime real estate
+
         RowLayout {
             anchors.fill: parent
 
@@ -194,6 +235,7 @@ RowLayout {
                 Layout.fillWidth: true
             }
         }
+        */
     }
 
     RowLayout {
@@ -216,17 +258,34 @@ RowLayout {
             RowLayout {
                 id: settings_row
                 anchors.fill: parent
-                STIconButton {
-                    text: "\uf1c9"
-                    onClicked: root.show_script_area()
-                }
 
                 STIconButton {
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitHeight
+                    label.font.pointSize: 20
+                    Layout.leftMargin: 20
+
                     text: "\uf059"
                 }
 
                 STIconButton {
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitHeight
+                    label.font.pointSize: 20
+
                     text: "\uf013"
+
+                }
+
+                STIconButton {
+                    id: rightpanel_open
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitHeight
+                    Layout.rightMargin: 20
+
+                    text: "\uf0c9"
+                    label.font.pointSize: 20
+                    onClicked: App.view.show_right_panel = !App.view.show_right_panel
                 }
             }
         }

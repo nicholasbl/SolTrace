@@ -8,8 +8,7 @@ import SolTrace
 
 Item {
     id: root
-    property int size_class
-
+    property var left_panel_size: App.view.left_panel_size
     property var module : App.layout
 
     // Layout editor opens when App.view.editing_layout is true

@@ -72,9 +72,14 @@ class App : public QObject {
     QML_ELEMENT
     QML_SINGLETON
 
+    void load_session();
+    void save_session();
+
 public:
     explicit App(QObject*       parent                  = nullptr,
                  QString const& documentation_directory = "");
+
+    ~App();
 
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
 
