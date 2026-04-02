@@ -24,7 +24,7 @@ ColumnLayout {
         model: App.view.left_panel_size < 1 ?
                     ["\uf0eb", "\uf53f"]
                   :
-                    ["Shape", "Position"]
+                    ["Sun Type & Shape", " Sun Position"]
 
     }
 
@@ -53,6 +53,7 @@ ColumnLayout {
 
             }
 
+
             STComboBar {
                 Layout.fillWidth: true
 
@@ -72,7 +73,6 @@ ColumnLayout {
                 currentIndex: App.sun.definition.shape
 
                 Layout.fillWidth: true
-                Layout.fillHeight: true
 
                 STSpinBoxField {
                     Layout.fillWidth: App.view.left_panel_size < 1
@@ -106,6 +106,19 @@ ColumnLayout {
                     from: 0
                 }
 
+            }
+
+            SunShapeGraph {
+                Layout.preferredWidth: 300
+                Layout.preferredHeight: 250
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                title: "Emission Profile"
+                xAxisTitle: "Angle (mrad)"
+                yAxisTitle: "Intensity"
+                xMin: 0; xMax: 10
+                yMin: 0; yMax: 1
             }
         }
 

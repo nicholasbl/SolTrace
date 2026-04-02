@@ -152,7 +152,7 @@ qt_add_resources(SolTrace "docs"
     docs/en/materials.md
 )
 
-set_source_files_properties(ui/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(ui/App.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(SolTrace
     URI SolTrace
@@ -214,7 +214,7 @@ qt_add_qml_module(SolTrace
         src/database/worldgeometrymodel.h src/database/worldgeometrymodel.cpp
         src/database/conversion.h src/database/conversion.cpp
         src/database/opticaleditor.h src/database/opticaleditor.cpp
-        src/app.h src/app.cpp
+        src/app_data.h src/app_data.cpp
         src/modules/simulation_module.h src/modules/simulation_module.cpp
         src/modules/module_common.h src/modules/module_common.cpp
         src/modules/file_source_module.h src/modules/file_source_module.cpp
@@ -244,11 +244,13 @@ qt_add_qml_module(SolTrace
         QML_FILES ui/primitives/widgets/STButton.qml
         SOURCES src/modules/view_module.h src/modules/view_module.cpp
         QML_FILES ui/core/ConfigureAppearance.qml
-        QML_FILES ui/panels/EditorPanel.qml
+        QML_FILES
         QML_FILES ui/core/ConfigureSun.qml
         QML_FILES ui/primitives/fields/LocationField.qml
         QML_FILES ui/primitives/fields/DateTimeField.qml
         QML_FILES ui/primitives/widgets/STSpinBoxField.qml
+        QML_FILES ui/primitives/graphs/SunShapeGraph.qml
+        QML_FILES ui/App.qml
 
 )
 

@@ -68,7 +68,7 @@ Item {
         id: view
         anchors.fill: parent
 
-        camera: App.simulation.perspective == SimulationModule.Orthographic ? ortho_camera : camera
+        camera: App.view.perspective == ViewModule.Orthographic ? ortho_camera : camera
 
         environment: SceneEnvironment {
             antialiasingMode: SceneEnvironment.MSAA
@@ -157,17 +157,17 @@ Item {
 
     // I hate this stupid thing
     WasdController {
-        mouseEnabled: App.simulation.camera == SimulationModule.WASD
-        keysEnabled: App.simulation.camera == SimulationModule.WASD
+        mouseEnabled: App.view.camera == ViewModule.WASD
+        keysEnabled: App.view.camera == ViewModule.WASD
         controlledObject: camera
     }
 
     CustomOrbitController {
         anchors.fill: parent
         origin: origin
-        mouseEnabled: App.simulation.camera == SimulationModule.Orbital
-        panEnabled: App.simulation.camera == SimulationModule.Orbital
-        camera: App.simulation.perspective == SimulationModule.Orthographic ? ortho_camera : camera
+        mouseEnabled: App.view.camera == ViewModule.Orbital
+        panEnabled: App.view.camera == ViewModule.Orbital
+        camera: App.view.perspective == ViewModule.Orthographic ? ortho_camera : camera
         automaticClipping: false
     }
 

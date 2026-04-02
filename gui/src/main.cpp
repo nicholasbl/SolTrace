@@ -1,5 +1,7 @@
 #include "job_control/job_run_process.h"
 
+#include "app_data.h"
+#include "backend.h"
 #include <QApplication>
 #include <QFile>
 #include <QFontDatabase>
@@ -31,15 +33,14 @@ int main(int argc, char* argv[]) {
     // Load fonts
     for (auto font : font_list) {
         auto result = QFontDatabase::addApplicationFont(font);
-        /* if (result < 0) {
-            qWarning() << "Unable to load font:" << font;
-        } else {
-            auto families = QFontDatabase::applicationFontFamilies(result);
-            qDebug() << font << "registered as:" << families;
-        } */
+        if (result < 0) { qWarning() << "Unable to load font:" << font; }
     }
 
     QQmlApplicationEngine engine;
+
+    auto* app_data = new SolTrace::GUI::App::AppData();
+
+    engine.rootContext()->setContextProperty("_appData", app_data);
 
     QObject::connect(
         &engine,

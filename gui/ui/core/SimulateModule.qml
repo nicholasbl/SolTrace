@@ -51,12 +51,14 @@ ColumnLayout {
         ColumnLayout {
             Label {
                 text: "Camera"
-                font.pointSize: 14
+                font.pointSize: 16
+                font.family: "CMU Serif"
+                font.bold: true
             }
 
             STComboBar {
-                currentIndex: App.simulation.camera
-                onCurrentIndexChanged: App.simulation.camera  = currentIndex
+                currentIndex: App.view.camera
+                onCurrentIndexChanged: App.view.camera  = currentIndex
 
                 Layout.fillWidth: true
 
@@ -70,12 +72,14 @@ ColumnLayout {
 
             Label {
                 text: "Perspective"
-                font.pointSize: 14
+                font.pointSize: 16
+                font.family: "CMU Serif"
+                font.bold: true
             }
 
             STComboBar {
-                currentIndex: App.simulation.perspective
-                onCurrentIndexChanged: App.simulation.perspective  = currentIndex
+                currentIndex: App.view.perspective
+                onCurrentIndexChanged: App.view.perspective  = currentIndex
 
                 Layout.fillWidth: true
 

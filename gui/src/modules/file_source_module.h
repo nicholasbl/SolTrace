@@ -11,6 +11,7 @@ namespace SolTrace::GUI::App {
 
 class FileSourceModule : public QObject {
     Q_OBJECT
+    QML_ELEMENT
 
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
 

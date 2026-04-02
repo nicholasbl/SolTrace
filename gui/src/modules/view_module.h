@@ -12,6 +12,8 @@ class ViewModule : public QObject {
 public:
     explicit ViewModule(QObject* parent = nullptr);
 
+    // ─── Panel View State ────────────────────────────────────────────
+
     enum PanelSize { Small = 0, Normal = 1, Wide = 2 };
 
     Q_ENUM(PanelSize)
@@ -30,12 +32,25 @@ public:
 
     Q_WRITABLE_PROPERTY(bool, show_left_panel, true)
     Q_WRITABLE_PROPERTY(bool, show_right_panel, false)
+
     Q_WRITABLE_PROPERTY(PanelSize, left_panel_size, PanelSize::Wide)
-    // Unused (potential feature)
     Q_WRITABLE_PROPERTY(PanelSize, right_panel_size, PanelSize::Normal)
 
     Q_WRITABLE_PROPERTY(int, right_panel_section, 0)
     Q_WRITABLE_PROPERTY(bool, show_settings_panel, false)
+
+    // Simulation View State
+    enum class Camera { WASD, Orbital };
+
+    enum class Perspective { NormalPerspective, Orthographic };
+
+    Q_ENUM(Camera)
+    Q_ENUM(Perspective)
+
+    Q_WRITABLE_PROPERTY(Camera, camera, Camera::Orbital)
+    Q_WRITABLE_PROPERTY(Perspective,
+                        perspective,
+                        Perspective::NormalPerspective)
 };
 
 } // namespace SolTrace::GUI::App

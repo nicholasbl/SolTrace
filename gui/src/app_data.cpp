@@ -1,9 +1,9 @@
-#include "app.h"
+#include "app_data.h"
 #include <QSettings>
 
 namespace SolTrace::GUI::App {
 
-void App::load_session() {
+void AppData::load_session() {
     QSettings s;
     s.beginGroup("View");
     m_view->set_show_left_panel(s.value("show_left_panel", true).toBool());
@@ -24,7 +24,7 @@ void App::load_session() {
     s.endGroup();
 }
 
-void App::save_session() {
+void AppData::save_session() {
     QSettings s;
     s.beginGroup("View");
     s.setValue("show_left_panel", m_view->show_left_panel());
@@ -45,7 +45,7 @@ void App::save_session() {
     s.endGroup();
 }
 
-App::App(QObject* parent, const QString& documentation_directory)
+AppData::AppData(QObject* parent, const QString& documentation_directory)
     : m_file_source(new FileSourceModule(this)),
       m_view(new ViewModule(this)),
       m_workflow(new WorkflowModule(this)),
@@ -64,31 +64,33 @@ App::App(QObject* parent, const QString& documentation_directory)
             [this](auto* ptr) { emit this->new_database(ptr); });
 
     connect(this,
-            &App::new_database,
+            &AppData::new_database,
             m_simulation,
             &SimulationModule::set_current_database);
 
     connect(this,
-            &App::new_database,
+            &AppData::new_database,
             m_materials,
             &MaterialsModule::set_current_database);
 
     connect(this,
-            &App::new_database,
+            &AppData::new_database,
             m_layout,
             &LayoutModule::set_current_database);
 
-    connect(
-        m_simulation, &SimulationModule::new_results, this, &App::new_results);
+    connect(m_simulation,
+            &SimulationModule::new_results,
+            this,
+            &AppData::new_results);
 
     load_session();
 }
 
-App::~App() {
+AppData::~AppData() {
     save_session();
 }
 
-void App::install(QPointer<Backend> backend) {
+void AppData::install(QPointer<Backend> backend) {
     m_sun->set_backend(QPointer(backend->sun()));
     m_tracing->set_backend(QPointer(backend->tracing()));
     m_intersections->set_backend(QPointer(backend->intersections()));

@@ -23,7 +23,7 @@ Item {
         anchors.right: parent.right
         anchors.top: parent.top
         blur_source: root.blur_source
-        height: 48
+        height: 42
     }
 
     onWidthChanged: {
@@ -97,8 +97,8 @@ Item {
                 }
 
                 Item {
-                    Layout.fillWidth: true  // Center when not in Small mode
-                    visible: App.view.left_panel_size !== ViewModule.Small
+                    Layout.fillWidth: true  // Center when in Wide mode
+                    visible: App.view.left_panel_size === ViewModule.Wide
                 }
 
                 Repeater {
@@ -109,7 +109,7 @@ Item {
                         required property string modelData
                         property var icons: ["\uf0ad", "\uf185", "\ue473"]
 
-                        spacing: 10
+                        spacing: 6
 
                         // FA icon (always visible)
                         STClickableLabel {
@@ -139,6 +139,9 @@ Item {
 
                         // creates the ">>" icons
                         Label {
+                            Layout.leftMargin: 4
+                            Layout.rightMargin: 4
+
                             font.family: "Font Awesome 7 Free"
                             text: "\uf101"
                             visible: parent.index < 2

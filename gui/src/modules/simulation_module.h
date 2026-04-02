@@ -26,7 +26,6 @@ namespace SolTrace::GUI::App {
  */
 class SimulationModule : public QObject {
     Q_OBJECT
-    QML_ELEMENT
 
     QPointer<RunningJob> m_running;
 
@@ -35,13 +34,6 @@ private slots:
 
 public:
     explicit SimulationModule(QObject* parent = nullptr);
-
-    enum class Camera { WASD, Orbital };
-
-    enum class Perspective { Normal, Orthographic };
-
-    Q_ENUM(Camera)
-    Q_ENUM(Perspective)
 
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
     QOBJECT_READONLY_PROPERTY(StatusComponent, status);
@@ -53,10 +45,6 @@ public:
         current_stage) /// e.g. "Initializing", "Ray tracing", "Complete"
     Q_READONLY_PROPERTY(QDateTime, last_run_time)
     Q_READONLY_PROPERTY(double, elapsed_seconds)
-
-    Q_WRITABLE_PROPERTY(Camera, camera, Camera::Orbital)
-    Q_WRITABLE_PROPERTY(Perspective, perspective, Perspective::Normal)
-
 
 public slots:
     void run();

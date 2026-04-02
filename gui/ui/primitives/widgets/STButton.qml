@@ -78,7 +78,7 @@ Button {
             color: control.down ?
                        Material.rippleColor
                      :
-                       Theme.glassColor
+                       App.theme.glassColor
 
             border.color:  Material.dividerColor
 

@@ -24,11 +24,12 @@
 #include <modules/workflow_module.h>
 
 /**
- * @namespace SolTrace::GUI::App
- * @brief Application layer between QML and the simulation backend.
+ * @namespace SolTrace::GUI::AppData
+ * @brief AppDatalication layer between QML and the simulation backend.
  *
- * This namespace defines the GUI application layer for SolTrace. It mediates
- * between the QML presentation layer and the simulation backend, providing:
+ * This namespace defines the GUI AppDatalication layer for SolTrace. It
+ * mediates between the QML presentation layer and the simulation backend,
+ * providing:
  *
  * - Domain-driven module decomposition (Sun, Tracing, Materials, Geometry,
  * etc.)
@@ -39,7 +40,7 @@
  *
  * Architecture:
  * @code
- *   QML  →  App (singleton)  →  Domain Modules  →  Backend (singleton)
+ *   QML  →  AppData (singleton)  →  Domain Modules  →  Backend (singleton)
  * @endcode
  *
  * Each domain module holds a QPointer to its corresponding backend slice,
@@ -48,38 +49,39 @@
 
 namespace SolTrace::GUI::App {
 /**
- * @class App
- * @brief QML singleton — top-level entrypoint for the application layer.
+ * @class AppData
+ * @brief QML singleton — top-level entrypoint for the AppDatalication layer.
  *
- * Provides a single, stable access point for all application modules.
+ * Provides a single, stable access point for all AppDatalication modules.
  * Registered as a QML singleton so all components share one instance.
  *
  * ## Initialization
- * After construction, wire backend references by calling the appropriate
+ * After construction, wire backend references by calling the AppDataropriate
  * install methods on each module before the QML engine loads.
  *
  * @code
  *   // main.cpp
- *   auto* app = App::instance();
- *   app->docs().load();
- *   app->sun().backend() = QPointer(backend->sun_backend());
+ *   auto* AppData = AppData::instance();
+ *   AppData->docs().load();
+ *   AppData->sun().backend() = QPointer(backend->sun_backend());
  *   // etc.
  * @endcode
  *
  */
-class App : public QObject {
+class AppData : public QObject {
     Q_OBJECT
     QML_ELEMENT
-    QML_SINGLETON
+    // QML_SINGLETON (We are demoting this. App.qml declares the App
+    // singleton)
 
     void load_session();
     void save_session();
 
 public:
-    explicit App(QObject*       parent                  = nullptr,
-                 QString const& documentation_directory = "");
+    explicit AppData(QObject*       parent                  = nullptr,
+                     QString const& documentation_directory = "");
 
-    ~App();
+    ~AppData();
 
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
 

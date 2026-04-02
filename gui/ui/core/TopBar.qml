@@ -47,9 +47,8 @@ RowLayout {
                 }
 
                 Column {
-                    spacing: 0
+                    spacing: -2
                     Layout.fillWidth: true
-                    Layout.rightMargin: 20
                     Layout.alignment: Qt.AlignVCenter
 
                     RowLayout {
@@ -81,6 +80,18 @@ RowLayout {
                         width: logoRow.width
                         height: 1
                     }
+                }
+
+                Label {
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.topMargin: 10
+                    Layout.rightMargin: 20
+
+                    text: "BETA"
+                    font.pointSize: 10
+                    font.family: "CMU Serif"
+                    font.bold: true
+                    font.italic: true
                 }
 
                 Rectangle {

@@ -2,33 +2,27 @@
 #include "backend.h"
 #include "module_common.h"
 #include "utilities/qt_helpers.h"
+#include "utilities/structmodel.h"
 #include <QObject>
 
 namespace SolTrace::GUI::App {
 
-class CustomSunShapeModel : public QAbstractListModel {
+struct SunShapePoint {
+    double angle     = 0.0;
+    double intensity = 0.0;
+
+    RECORD_META(SunShapePoint, SM_EXPOSE_RW(angle), SM_EXPOSE_RW(intensity))
+};
+
+class CustomSunShapeModel : public StructTableModel<SunShapePoint> {
     Q_OBJECT
 public:
     explicit CustomSunShapeModel(QObject* parent = nullptr);
 
-    enum Roles { AngleRole = Qt::UserRole + 1, IntensityRole };
+    Q_INVOKABLE void append(double angle = 0.0, double intensity = 0.0);
+    Q_INVOKABLE void remove(int index);
+    Q_INVOKABLE void clear();
 
-    struct Point {
-        double angle     = 0.0;
-        double intensity = 0.0;
-    };
-
-    int      rowCount(const QModelIndex& parent = QModelIndex()) const override;
-    QVariant data(const QModelIndex& index,
-                  int                role = Qt::DisplayRole) const override;
-    bool
-    setData(const QModelIndex& index, const QVariant& value, int role) override;
-    QHash<int, QByteArray> roleNames() const override;
-    Qt::ItemFlags          flags(const QModelIndex& index) const override;
-
-    Q_INVOKABLE void         append(double angle = 0.0, double intensity = 0.0);
-    Q_INVOKABLE void         remove(int index);
-    Q_INVOKABLE void         clear();
     Q_INVOKABLE QVariantList getData() const;
     Q_INVOKABLE void         setData(const QVariantList& data);
 
@@ -39,9 +33,6 @@ public:
 
 signals:
     void countChanged();
-
-private:
-    QVector<Point> m_points;
 };
 
 class SunDefinition : public QObject {
@@ -51,7 +42,6 @@ public:
 
     enum class SunType { Directional, PointSource };
     enum class SunShape { Gaussian, Pillbox, CSR, Custom };
-
     Q_ENUM(SunType)
     Q_ENUM(SunShape)
 
@@ -60,13 +50,10 @@ public:
 
     // Gaussian
     Q_WRITABLE_PROPERTY(double, std, 5.18)
-
     // Pillbox
     Q_WRITABLE_PROPERTY(double, half_width, 4.65)
-
     // Buie
     Q_WRITABLE_PROPERTY(double, csr, 2.0)
-
     // Custom Sun Shape
     Q_WRITABLE_PROPERTY(int, num_points, 1)
 
@@ -75,12 +62,10 @@ public:
 
 class DirectionalSunPosition : public QObject {
     Q_OBJECT
-
 public:
     explicit DirectionalSunPosition(QObject* parent = nullptr);
 
     enum class PositionCalculator { Legacy, Duffie, SOLPOS, SPA };
-
     Q_ENUM(PositionCalculator)
 
     Q_WRITABLE_PROPERTY(PositionCalculator,
@@ -113,10 +98,8 @@ public:
     Q_WRITABLE_PROPERTY(double, temperature, 20.0)
 };
 
-
 class PointSourcePosition : public QObject {
     Q_OBJECT
-
 public:
     explicit PointSourcePosition(QObject* parent = nullptr);
 
@@ -125,10 +108,8 @@ public:
     Q_WRITABLE_PROPERTY(double, z, 1000)
 };
 
-
 class SunModule : public QObject {
     Q_OBJECT
-
 public:
     explicit SunModule(QObject* parent = nullptr);
 
@@ -141,4 +122,5 @@ public:
     // QOBJECT_READONLY_PROPERTY(PresetComponent<PointSourcePosition>,
     // ps_positions)
 };
+
 } // namespace SolTrace::GUI::App

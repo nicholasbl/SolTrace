@@ -20,7 +20,7 @@ Rectangle {
     property Item selectedItem: null
 
     radius: height / 2
-    color: Theme.glassColor
+    color: App.theme.glassColor
 
     height: 42
 
@@ -65,7 +65,7 @@ Rectangle {
         radius: height / 2
 
         //color: Material.backgroundColor
-        color: Theme.glassColor
+        color: App.theme.glassColor
 
         border.color: Material.dividerColor
 
