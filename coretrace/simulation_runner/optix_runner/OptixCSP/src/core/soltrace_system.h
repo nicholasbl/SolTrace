@@ -70,7 +70,7 @@ namespace OptixCSP {
         /// set the number of rays launched
         /// </summary>
         /// <param name="numSunPoints"></param>
-        void set_number_of_rays(int nrays, int maxrays) 
+        void set_number_of_rays(uint_fast64_t nrays, uint_fast64_t maxrays)
         { 
             m_number_of_rays = nrays;
             m_max_number_of_rays = maxrays;
@@ -139,8 +139,8 @@ namespace OptixCSP {
         std::shared_ptr<pipelineManager> pipeline_manager;
         std::shared_ptr<dataManager>     data_manager;
 
-        int m_number_of_rays;
-        int m_max_number_of_rays;
+        uint_fast64_t m_number_of_rays;
+        uint_fast64_t m_max_number_of_rays;
 
         bool m_verbose;
 
