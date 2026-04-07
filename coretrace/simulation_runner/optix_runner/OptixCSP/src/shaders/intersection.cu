@@ -372,52 +372,64 @@ extern "C" __global__ void __intersection__rectangle_parabolic()
     float C = (curv_x * 0.5f) * (ox * ox) + (curv_y * 0.5f) * (oy * oy) - oz;
 
     float t = 0.0f;
+    float t1 = 0.0f;
+    float t2 = 0.0f;
+    float x_hit = 0.0f;
+    float y_hit = 0.0f;
     const float eps = 1e-12f;
     bool valid = false;
 
     if (fabsf(A) < eps) {
-        // Degenerate (linear) case.
-        t = -C / B;
-        valid = (t > 0.0f);
+        if (fabsf(B) > eps) {
+            t1 = -C / B;
+            const float p1x = ox + t1 * dx;
+            const float p1y = oy + t1 * dy;
+            const float a1 = p1x / (L1 / 2.0f);
+            const float a2 = p1y / (L2 / 2.0f);
+
+            if (t1 > 0.0f && t1 >= ray_tmin && t1 <= ray_tmax
+                && !(a1 < -1.0f || a1 > 1.0f || a2 < -1.0f || a2 > 1.0f)) {
+                t = t1;
+                x_hit = p1x;
+                y_hit = p1y;
+                valid = true;
+            }
+        }
     }
     else {
         float discr = B * B - 4.0f * A * C;
         if (discr >= 0.0f) {
             float sqrt_discr = sqrtf(discr);
-            float t1 = (-B - sqrt_discr) / (2.0f * A);
-            float t2 = (-B + sqrt_discr) / (2.0f * A);
-            // Choose the smallest positive t.
-            if (t1 > 0.0f && t1 < t2) {
+            t1 = -0.5f * (B + sqrt_discr) / A;
+            t2 = -0.5f * (B - sqrt_discr) / A;
+
+            const float p1x = ox + t1 * dx;
+            const float p1y = oy + t1 * dy;
+            const float p2x = ox + t2 * dx;
+            const float p2y = oy + t2 * dy;
+            const float a1_1 = p1x / (L1 / 2.0f);
+            const float a2_1 = p1y / (L2 / 2.0f);
+            const float a1_2 = p2x / (L1 / 2.0f);
+            const float a2_2 = p2y / (L2 / 2.0f);
+
+            if (t1 > 0.0f && t1 >= ray_tmin && t1 <= ray_tmax
+                && !(a1_1 < -1.0f || a1_1 > 1.0f || a2_1 < -1.0f || a2_1 > 1.0f)) {
                 t = t1;
+                x_hit = p1x;
+                y_hit = p1y;
                 valid = true;
             }
-            else if (t2 > 0.0f) {
+            else if (t2 > 0.0f && t2 >= ray_tmin && t2 <= ray_tmax
+                && !(a1_2 < -1.0f || a1_2 > 1.0f || a2_2 < -1.0f || a2_2 > 1.0f)) {
                 t = t2;
+                x_hit = p2x;
+                y_hit = p2y;
                 valid = true;
             }
         }
     }
 
-    // Discard if no valid t or if t is not within the ray's bounds.
-    if (!valid || t < ray_tmin || t > ray_tmax) {
-        return;
-    }
-
-    //
-    // Compute the local intersection coordinates.
-    //
-    float x_hit = ox + t * dx;
-    float y_hit = oy + t * dy;
-    // (Optionally, you could compute z_hit = oz + t*dz and verify it is near f(x,y).)
-
-    //
-    // Check if the hit is within the rectangle's flat bounds.
-    // The parametric coordinates are:
-    //    a1 = x_hit / (L1/2)   and   a2 = y_hit / (L2/2)
-    //
-    float a1 = x_hit / (L1/2.);
-    float a2 = y_hit / (L2/2.);
-    if (a1 < -1.0f || a1 > 1.0f || a2 < -1.0f || a2 > 1.0f) {
+    if (!valid) {
         return;
     }
 
