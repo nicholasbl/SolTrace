@@ -17,9 +17,9 @@ ColumnLayout {
 
         Layout.fillWidth: true
 
-        fontFamily: App.view.left_panel_size == ViewModule.Small ? "Font Awesome 7 Free" : ""
+        fontFamily: App.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
 
-        model : App.view.left_panel_size == ViewModule.Small ?
+        model : App.view.left_panel.size == PanelData.Small ?
                     ["\uf828", "\uf03d", "\uf188", "\uf15c"]
                   :
                     ["Execution", "Navigation", "Diagnostics", "Logs"]
@@ -37,10 +37,16 @@ ColumnLayout {
 
         Layout.fillWidth: true
         Layout.fillHeight: true
-        Layout.margins: 10
+        Layout.margins: 8
 
         // Execution
         ColumnLayout {
+            InlineDocumentation {
+                key: "placeholder_small"
+                target: App.view.left_panel
+                title: "Simulation Runner"
+            }
+
             STButton {
                 text: "Enqueue Job"
                 text_icon: "\uf0da"
@@ -49,11 +55,10 @@ ColumnLayout {
 
         // Navigation
         ColumnLayout {
-            Label {
-                text: "Camera"
-                font.pointSize: 16
-                font.family: "CMU Serif"
-                font.bold: true
+            InlineDocumentation {
+                key: "placeholder_small"
+                title: "Cameras"
+                target: App.view.left_panel
             }
 
             STComboBar {
@@ -62,19 +67,18 @@ ColumnLayout {
 
                 Layout.fillWidth: true
 
-                fontFamily: App.view.left_panel_size == ViewModule.Small ? "Font Awesome 7 Free" : ""
+                fontFamily: App.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
 
-                model : App.view.left_panel_size == ViewModule.Small ?
+                model : App.view.left_panel.size == PanelData.Small ?
                             ["\uf828", "\uf03d"]
                           :
-                            ["WASD", "Orbital"]
+                            ["WASD Camera", "Orbital Camera"]
             }
 
-            Label {
-                text: "Perspective"
-                font.pointSize: 16
-                font.family: "CMU Serif"
-                font.bold: true
+            InlineDocumentation {
+                key: "placeholder_small"
+                title: "Camera Perspectives"
+                target: App.view.left_panel
             }
 
             STComboBar {
@@ -83,20 +87,32 @@ ColumnLayout {
 
                 Layout.fillWidth: true
 
-                fontFamily: App.view.left_panel_size == ViewModule.Small ? "Font Awesome 7 Free" : ""
+                fontFamily: App.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
 
-                model : App.view.left_panel_size == ViewModule.Small ?
+                model : App.view.left_panel.size == PanelData.Small ?
                             ["\uf06a", "\uf06a"]
                           :
-                            ["Normal", "Orthographic"]
+                            ["Normal Perspective", "Orthographic Perspective"]
             }
         }
 
         // Diagnostics
         ColumnLayout {
+            InlineDocumentation {
+                key: "placeholder_small"
+                title: "Bounding Boxes"
+                target: App.view.left_panel
+            }
+
             STButton {
                 text: "View Bounding Boxes"
                 text_icon: ""
+            }
+
+            InlineDocumentation {
+                key: "placeholder_small"
+                title: "Element Volumes"
+                target: App.view.left_panel
             }
 
             STButton {
@@ -107,6 +123,12 @@ ColumnLayout {
 
         // Logs
         ColumnLayout {
+            InlineDocumentation {
+                key: "placeholder_small"
+                title: "Logs"
+                target: App.view.left_panel
+            }
+
             STButton {
                 text: "View Logs"
                 text_icon: ""

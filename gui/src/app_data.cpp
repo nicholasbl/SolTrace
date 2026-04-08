@@ -1,4 +1,5 @@
 #include "app_data.h"
+#include <QApplication>
 #include <QSettings>
 
 namespace SolTrace::GUI::App {
@@ -6,8 +7,10 @@ namespace SolTrace::GUI::App {
 void AppData::load_session() {
     QSettings s;
     s.beginGroup("View");
-    m_view->set_show_left_panel(s.value("show_left_panel", true).toBool());
-    m_view->set_show_right_panel(s.value("show_right_panel", true).toBool());
+    m_view->left_panel()->set_visible(
+        s.value("show_left_panel", true).toBool());
+    m_view->right_panel()->set_visible(
+        s.value("show_right_panel", true).toBool());
 
     m_view->set_workflow_phase(s.value("workflow_phase", 0).toUInt());
 
@@ -27,8 +30,8 @@ void AppData::load_session() {
 void AppData::save_session() {
     QSettings s;
     s.beginGroup("View");
-    s.setValue("show_left_panel", m_view->show_left_panel());
-    s.setValue("show_right_panel", m_view->show_right_panel());
+    s.setValue("show_left_panel", m_view->left_panel()->visible());
+    s.setValue("show_right_panel", m_view->right_panel()->visible());
 
     s.setValue("workflow_phase", m_view->workflow_phase());
 
@@ -82,6 +85,8 @@ AppData::AppData(QObject* parent, const QString& documentation_directory)
             &SimulationModule::new_results,
             this,
             &AppData::new_results);
+
+    connect(qApp, &QCoreApplication::aboutToQuit, this, &AppData::save_session);
 
     load_session();
 }

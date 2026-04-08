@@ -6,19 +6,10 @@
 #include <QFileInfoList>
 #include <QStringList>
 
-#define DOCS_LOAD_INFO true
-#define DOCS_DEBUG_INFO true
+#define DOCS_LOAD_INFO false
+#define DOCS_DEBUG_INFO false
 
 namespace SolTrace::GUI::App {
-
-DocumentationContent::DocumentationContent(QObject* parent,
-                                           QString  section_number,
-                                           QString  title,
-                                           QString  body)
-    : QObject(parent),
-      m_section_number(section_number),
-      m_title(title),
-      m_body(body) { }
 
 DocumentationModule::DocumentationModule(QObject* parent)
     : QObject(parent),
@@ -33,6 +24,10 @@ DocumentationModule::DocumentationModule(QObject* parent)
 }
 
 void DocumentationModule::load() {
+    qDebug() << "load() called";
+    qDebug() << "eng map size: " << m_docs[Locale::EN].size();
+    qDebug() << "esp map size: " << m_docs[Locale::ES].size();
+
     if (m_locale == Locale::EN && m_docs.contains(Locale::EN) &&
         !m_docs[Locale::EN].empty())
         return;
@@ -46,23 +41,23 @@ void DocumentationModule::load() {
 
     if (DOCS_LOAD_INFO) {
         for (auto locale = m_docs.begin(); locale != m_docs.end(); locale++) {
-            qDebug() << "==========[" + locale_name_string() +
-                            " DOCS]==========";
+            QString name = (locale.key() == Locale::EN) ? "English" : "Spanish";
+            qDebug() << "==========[" + name + " DOCS]==========";
             for (auto doc = locale.value().begin(); doc != locale.value().end();
                  doc++) {
-                qDebug() << doc.key() << " "
-                         << doc.value()->metadata("section_number") << " "
-                         << doc.value()->metadata("title") << " ";
+                qDebug() << doc.key() << " " << doc.value()->metadata("title")
+                         << " ";
             }
         }
 
         qDebug() << "Finished loading docs...";
     }
+
+    set_version(version() + 1);
 }
 
 void DocumentationModule::doc_walker(const QString& dir_path,
                                      const QString& key_prefix,
-                                     const QString& section_number_prefix,
                                      int            depth) {
     QDir dir(dir_path);
 
@@ -72,88 +67,49 @@ void DocumentationModule::doc_walker(const QString& dir_path,
         return;
     }
 
-    QFile         manifest = load_file(dir, "manifest.txt");
-    QFileInfoList file_infos;
+    QString dir_name = dir.dirName();
 
-    if (manifest.exists()) {
-        QString raw_manifest = read_file(manifest);
-
-        if (raw_manifest.isEmpty() && DOCS_DEBUG_INFO) {
-            qDebug() << "Empty manifest.txt: " +
-                            QFileInfo(manifest).canonicalFilePath();
-        }
-
-        for (const QString& line : raw_manifest.trimmed().split("\n")) {
-            QFileInfo file_info(dir, line.trimmed());
-
-            if (!file_info.isFile()) {
-                if (DOCS_DEBUG_INFO)
-                    qDebug() << "File does not exist: "
-                             << file_info.canonicalFilePath();
-                continue;
-            }
-
-            file_infos.append(file_info);
-        }
-
-    } else {
-        file_infos = dir.entryInfoList({ "*.md" }, QDir::Files);
-    }
-
-    int i = 1;
+    // Process files in this directory
+    QFileInfoList file_infos = dir.entryInfoList({ "*.md" }, QDir::Files);
 
     for (const QFileInfo& file_info : file_infos) {
-        QFile             file(file_info.canonicalFilePath());
-        MarkdownDocument* doc = parse_markdown_file(file);
+        QFile file(file_info.canonicalFilePath());
 
-        QString name   = file_info.fileName().replace(".md", "");
-        QDir    subdir = QDir(dir_path + "/" + name);
+        QString name = file_info.fileName().replace(".md", "");
 
-        QString new_key, new_section_number;
+        QString new_key;
 
         if (depth == 0) {
             new_key = name;
+        } else if (name == dir_name) {
+            new_key = key_prefix;
         } else {
             new_key = key_prefix.isEmpty() ? name : key_prefix + "." + name;
-            new_section_number =
-                manifest.exists()
-                    ? section_number_prefix.isEmpty()
-                          ? QString::number(i) + "."
-                          : section_number_prefix + QString::number(i) + "."
-                    : "";
-            doc->set_metadata("section_number", new_section_number);
         }
 
-        m_docs[m_locale].insert(new_key, doc);
+        m_docs[m_locale].insert(new_key, parse_markdown_file(file));
+    }
 
-        i++;
+    QFileInfoList subdirs =
+        dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
 
-        if (!subdir.exists()) { continue; }
+    for (const QFileInfo& subdir_info : subdirs) {
+        QString name = subdir_info.fileName();
+        QString new_prefix =
+            key_prefix.isEmpty() ? name : key_prefix + "." + name;
 
-        doc_walker(
-            subdir.absolutePath(), new_key, new_section_number, depth + 1);
+        doc_walker(subdir_info.absoluteFilePath(), new_prefix, depth + 1);
     }
 }
 
-QString DocumentationModule::get(QString key) {
-    QString           doc_key, metadata_key;
-    MarkdownDocument* doc;
+QString DocumentationModule::get(QString key, QString metadata_key) {
+    auto* result = m_docs[m_locale].value(key, nullptr);
 
-    int separator_index = key.indexOf("#");
-    if (separator_index == -1) {
-        doc_key = key;
-    } else {
-        doc_key      = key.left(separator_index);
-        metadata_key = key.mid(separator_index + 1);
-    }
+    if (result == nullptr) return "Error: invalid doc key " + key;
 
-    doc = m_docs[m_locale].value(doc_key, nullptr);
+    if (metadata_key.isEmpty()) return result->body();
 
-    if (doc == nullptr) return "ERROR: Invalid key (" + key + ")";
-
-    if (metadata_key.isEmpty()) { return doc->body(); }
-
-    return doc->metadata(metadata_key);
+    return result->metadata(metadata_key);
 }
 
 QString DocumentationModule::locale_string() {

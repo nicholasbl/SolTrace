@@ -28,8 +28,8 @@ ColumnLayout {
         }
 
         STSpinBoxField {
-            Layout.row: App.view.left_panel_size == ViewModule.Small ? 1 : 0
-            Layout.column: App.view.left_panel_size == ViewModule.Small ? 0 : 1
+            Layout.row: App.view.left_panel.size == PanelData.Small ? 1 : 0
+            Layout.column: App.view.left_panel.size == PanelData.Small ? 0 : 1
             Layout.preferredWidth: 200
 
             label: "Day"
@@ -61,8 +61,8 @@ ColumnLayout {
         }
 
         STSpinBoxField {
-            Layout.row: App.view.left_panel_size == ViewModule.Small ? 1 : 0
-            Layout.column: App.view.left_panel_size == ViewModule.Small ? 0 : 1
+            Layout.row: App.view.left_panel.size == PanelData.Small ? 1 : 0
+            Layout.column: App.view.left_panel.size == PanelData.Small ? 0 : 1
             Layout.preferredWidth: 200
 
             label: "Minute"
