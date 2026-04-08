@@ -12,6 +12,9 @@ void AppData::load_session() {
     m_view->right_panel()->set_visible(
         s.value("show_right_panel", true).toBool());
 
+    m_view->left_panel()->set_width(s.value("left_panel_width", 550).toUInt());
+    m_view->right_panel()->set_width(s.value("right_panel_width", 0).toUInt());
+
     m_view->set_workflow_phase(s.value("workflow_phase", 0).toUInt());
 
     m_view->set_configure_section(s.value("configure_section", 0).toUInt());
@@ -32,6 +35,9 @@ void AppData::save_session() {
     s.beginGroup("View");
     s.setValue("show_left_panel", m_view->left_panel()->visible());
     s.setValue("show_right_panel", m_view->right_panel()->visible());
+
+    s.setValue("left_panel_width", m_view->left_panel()->width());
+    s.setValue("right_panel_width", m_view->right_panel()->width());
 
     s.setValue("workflow_phase", m_view->workflow_phase());
 

@@ -24,9 +24,10 @@ DocumentationModule::DocumentationModule(QObject* parent)
 }
 
 void DocumentationModule::load() {
-    qDebug() << "load() called";
-    qDebug() << "eng map size: " << m_docs[Locale::EN].size();
-    qDebug() << "esp map size: " << m_docs[Locale::ES].size();
+    if (DOCS_LOAD_INFO) {
+        qDebug() << "eng map size: " << m_docs[Locale::EN].size();
+        qDebug() << "esp map size: " << m_docs[Locale::ES].size();
+    }
 
     if (m_locale == Locale::EN && m_docs.contains(Locale::EN) &&
         !m_docs[Locale::EN].empty())
