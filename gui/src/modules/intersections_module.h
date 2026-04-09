@@ -20,7 +20,7 @@ namespace SolTrace::GUI::App {
 class IntersectionsModule : public QObject {
     Q_OBJECT
 
-    std::shared_ptr<ResultDB> m_results;
+    std::shared_ptr<db::SimulationResult> m_results;
 
     std::unique_ptr<analysis::RayGeometry> m_ray_geometry;
 
@@ -34,7 +34,7 @@ public:
     analysis::RayGeometry* ray_geometry() const;
 
 public slots:
-    void set_results(std::shared_ptr<ResultDB>);
+    void set_results(std::shared_ptr<db::SimulationResult>);
 
 signals:
     void ray_geometry_changed();

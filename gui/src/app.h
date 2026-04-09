@@ -102,7 +102,7 @@ public:
 
 signals:
     void notification(ANotification);
-    void new_results(std::shared_ptr<ResultDB>);
+    void new_results(std::shared_ptr<db::SimulationResult>);
     void new_database(db::Database*);
 };
 

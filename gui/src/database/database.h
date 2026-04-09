@@ -68,6 +68,18 @@ public:
     operator entt::entity() const { return value; }
 };
 
+struct DatabaseExport {
+    std::shared_ptr<SolTrace::Data::SimulationData>              data;
+    std::unordered_map<SolTrace::Data::element_id, entt::entity> element_map;
+
+    DatabaseExport() = default;
+
+    DatabaseExport(DatabaseExport const&)            = delete;
+    DatabaseExport& operator=(DatabaseExport const&) = delete;
+    DatabaseExport(DatabaseExport&&)                 = default;
+    DatabaseExport& operator=(DatabaseExport&&)      = default;
+};
+
 class Database : public QObject {
     Q_OBJECT
     entt::registry m_registry;
@@ -78,13 +90,15 @@ public:
 
     virtual ~Database() = default;
 
+    Database* clone(QObject* p = nullptr) const;
+
     /// Merge in simulation data. Note, this should be called closely after
     /// the database constructor. We have this split here so that we can
     /// allocate a database on one thread and fill it in another.
     void import(SD::SimulationData&);
 
     /// Convert a database back into a Soltrace dataset
-    std::shared_ptr<SolTrace::Data::SimulationData> export_to_simdata();
+    std::shared_ptr<DatabaseExport> export_to_simdata();
 
 public:
     operator entt::registry&();

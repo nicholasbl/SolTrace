@@ -312,6 +312,169 @@ Database::Database(QObject* p)
 
 // =============================================================================
 
+struct EntityMapper {
+    entt::registry&                                new_registry;
+    std::unordered_map<entt::entity, entt::entity> old_to_new_map;
+
+    entt::entity operator()(entt::entity e) {
+        auto item = old_to_new_map.find(e);
+
+        if (item == old_to_new_map.end()) {
+            auto new_e        = new_registry.create();
+            old_to_new_map[e] = new_e;
+            return e;
+        }
+
+        return item->second;
+    }
+};
+
+template <class T>
+void copy_marker_component(entt::registry const& from,
+                           EntityMapper&         mapper,
+                           entt::registry&       to) {
+    for (auto [e] : from.view<T>().each()) {
+        to.emplace<T>(mapper(e));
+    }
+}
+
+template <class T>
+void copy_plain_component(entt::registry const& from,
+                          EntityMapper&         mapper,
+                          entt::registry&       to) {
+    for (auto [e, c] : from.view<T>().each()) {
+        to.emplace<T>(mapper(e), c);
+    }
+}
+
+template <class T>
+void copy_nested_component(entt::registry const& from,
+                           EntityMapper&         mapper,
+                           entt::registry&       to) {
+    for (auto [e, c] : from.view<T>().each()) {
+        T component_copy = c;
+        component_copy.remap_entities(mapper);
+        to.emplace<T>(mapper(e), component_copy);
+    }
+}
+
+template <class T>
+void copy_resource(entt::registry const& from, entt::registry& to) {
+
+    to.ctx().emplace<T>(from.ctx().get<T>().clone());
+}
+
+Database* Database::clone(QObject* p) const {
+    auto ret = new Database(p);
+
+    EntityMapper mapper {
+        .new_registry   = ret->m_registry,
+        .old_to_new_map = {},
+    };
+
+    copy_marker_component<InvisibleComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+    copy_marker_component<DisabledComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+    copy_plain_component<IdentityComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+
+    copy_marker_component<ElementComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+
+    copy_nested_component<ChildOfComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+    copy_nested_component<ChildrenComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+
+    copy_plain_component<TransformComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+    copy_plain_component<GlobalTransformComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+
+    copy_resource<RaySourceResource>(this->m_registry, ret->m_registry);
+
+
+    copy_plain_component<MaterialComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+    copy_nested_component<MaterialGroupComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+    copy_nested_component<MaterialGroupMemberComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+    // GeometryComponent
+    {
+        for (auto [e, c] : m_registry.view<GeometryComponent>().each()) {
+            auto local = c.clone();
+            ret->m_registry.emplace<GeometryComponent>(mapper(e), local);
+        }
+    }
+
+    copy_nested_component<GeometryGroupComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+    copy_nested_component<GeometryGroupMemberComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+    copy_marker_component<TagComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+    // ATagMemberComponent
+    {
+        // we need to know what all tags are out there
+
+        auto all_tags = QSet<entt::entity>();
+
+        for (auto [e, c] :
+             this->m_registry.view<TagMembershipComponent>().each()) {
+            for (auto const& t : c.tags) {
+                all_tags.insert(t);
+            }
+        }
+
+        for (auto tag_ent : std::as_const(all_tags)) {
+            auto from_storage = m_registry.storage<ATagMemberComponent>(
+                entt::to_integral(tag_ent));
+
+            auto& to_storage = ret->m_registry.storage<ATagMemberComponent>(
+                entt::to_integral(mapper(tag_ent)));
+
+            for (auto element : *from_storage) {
+                to_storage.emplace(mapper(element));
+            }
+        }
+    }
+
+    copy_nested_component<TagMembershipComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+    copy_plain_component<ImportErrorComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+    copy_marker_component<SelectedComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+    copy_plain_component<ColorComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+    copy_plain_component<HasFluxMapComponent>(
+        this->m_registry, mapper, ret->m_registry);
+
+    return ret;
+}
+
+// =============================================================================
+
 static void import_optics(
     Database&                                            reg,
     entt::entity                                         entity,
@@ -621,7 +784,7 @@ static void install_group(SD::element_ptr          ptr,
     ptr->set_back_optical_properties(param.optics_back);
 }
 
-std::shared_ptr<SD::SimulationData> Database::export_to_simdata() {
+std::shared_ptr<DatabaseExport> Database::export_to_simdata() {
     SD::SimulationData ret;
 
     auto param_ptr = m_registry.ctx().find<SD::SimulationParameters>();
@@ -782,7 +945,19 @@ std::shared_ptr<SD::SimulationData> Database::export_to_simdata() {
     //     qWarning() << "Failed to write export JSON dump:" << e.what();
     // }
 
-    return std::make_shared<SD::SimulationData>(std::move(ret));
+    std::unordered_map<SD::element_id, entt::entity> entity_rev_map;
+
+    for (auto iter = entity_element_map.begin();
+         iter != entity_element_map.end();
+         ++iter) {
+        entity_rev_map[iter->second->get_id()] = iter->first;
+    }
+
+    DatabaseExport export_ret;
+    export_ret.data = std::make_shared<SD::SimulationData>(std::move(ret));
+    export_ret.element_map = std::move(entity_rev_map);
+
+    return std::make_shared<DatabaseExport>(std::move(export_ret));
 }
 
 entt::entity Database::create() {

@@ -54,8 +54,8 @@ void SimulationModule::run() {
         return;
     }
 
-    sim_data->set_number_of_rays(m_ray_count);
-    sim_data->set_max_rays_traced(m_max_ray_count);
+    sim_data->data->set_number_of_rays(m_ray_count);
+    sim_data->data->set_max_rays_traced(m_max_ray_count);
 
     m_running = new RunningJob(sim_data, RunType::Thread, m_max_threads, this);
 

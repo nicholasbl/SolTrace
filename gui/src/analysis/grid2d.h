@@ -10,44 +10,43 @@ namespace analysis {
  */
 
 template <typename T>
-class Grid3D {
+class Grid2D {
     std::vector<T> m_data;
 
-    using DimType = std::array<size_t, 3>;
+    using DimType = std::array<size_t, 2>;
     DimType m_dimensions;
 
     inline void init_size() {
-        m_data.resize(m_dimensions[0] * m_dimensions[1] * m_dimensions[2]);
+        m_data.resize(m_dimensions[0] * m_dimensions[1]);
     }
 
 public:
     /*!
-     * \brief Construct an empty #D grid (x and y dimensions are 0).
+     * \brief Construct an empty 2D grid (x and y dimensions are 0).
      */
-    explicit Grid3D() : Grid3D(0, 0, 0) { }
+    explicit Grid2D() : Grid2D(0, 0) { }
 
     /*!
-     * \brief Construct a 3d grid with the specified dimensions.
+     * \brief Construct a 2d grid with the specified dimensions.
      */
-    explicit Grid3D(DimType const& dims) : m_dimensions(dims) { init_size(); }
+    explicit Grid2D(DimType const& dims) : m_dimensions(dims) { init_size(); }
 
     /*!
-     * \brief Construct a 3d grid with the specified dimensions.
+     * \brief Construct a 2d grid with the specified dimensions.
      */
-    explicit Grid3D(size_t xd, size_t yd, size_t zd)
-        : m_dimensions({ { xd, yd, zd } }) {
+    explicit Grid2D(size_t xd, size_t yd) : m_dimensions({ { xd, yd } }) {
         init_size();
     }
 
-    ~Grid3D() = default;
+    ~Grid2D() = default;
 
     // disable copy
-    Grid3D(Grid3D const&)            = delete;
-    Grid3D& operator=(Grid3D const&) = delete;
+    Grid2D(Grid2D const&)            = delete;
+    Grid2D& operator=(Grid2D const&) = delete;
 
     // enable move
-    Grid3D(Grid3D&&)            = default;
-    Grid3D& operator=(Grid3D&&) = default;
+    Grid2D(Grid2D&&)            = default;
+    Grid2D& operator=(Grid2D&&) = default;
 
     /*!
      * \brief Set all grid points to the given value.
@@ -67,8 +66,8 @@ public:
      *
      * This can be used to index into an array
      */
-    inline unsigned index(size_t x, size_t y, size_t z) const {
-        return x + m_dimensions[0] * (y + m_dimensions[1] * z);
+    inline unsigned index(size_t x, size_t y) const {
+        return x + m_dimensions[0] * y;
     }
 
     /*!
@@ -81,24 +80,17 @@ public:
      */
     inline size_t size_y() const { return m_dimensions[1]; }
 
-    /*!
-     * \brief The z dimension.
-     */
-    inline size_t size_z() const { return m_dimensions[2]; }
-
 
     /*!
      * \brief Access a grid point.
      */
-    T& operator()(size_t x, size_t y, size_t z) {
-        return m_data[index(x, y, z)];
-    }
+    T& operator()(size_t x, size_t y) { return m_data[index(x, y)]; }
 
     /*!
      * \brief Access a grid point.
      */
-    T const& operator()(size_t x, size_t y, size_t z) const {
-        return m_data[index(x, y, z)];
+    T const& operator()(size_t x, size_t y) const {
+        return m_data[index(x, y)];
     }
 
     /*!
@@ -120,8 +112,8 @@ public:
      *
      * This will throw if out of bounds.
      */
-    T& at(size_t x, size_t y, size_t z) {
-        auto i = index(x, y, z);
+    T& at(size_t x, size_t y) {
+        auto i = index(x, y);
         if (i >= size()) throw std::out_of_range("Grid index out of range");
         return m_data[i];
     }
@@ -131,8 +123,8 @@ public:
      *
      * This will throw if out of bounds.
      */
-    T const& at(size_t x, size_t y, size_t z) const {
-        auto i = index(x, y, z);
+    T const& at(size_t x, size_t y) const {
+        auto i = index(x, y);
         if (i >= size()) throw std::out_of_range("Grid index out of range");
         return m_data[i];
     }
@@ -143,10 +135,9 @@ public:
      *
      * Useful to make sure accesses are not out of bound.
      */
-    void clamp_bounds(size_t& x, size_t& y, size_t& z) const {
+    void clamp_bounds(size_t& x, size_t& y) const {
         x = clamp(x, 0u, size_x() - 1);
         y = clamp(y, 0u, size_y() - 1);
-        z = clamp(z, 0u, size_z() - 1);
     }
 
 public:

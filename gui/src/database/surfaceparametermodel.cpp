@@ -1,4 +1,4 @@
-#include "surfaceeditor.h"
+#include "surfaceparametermodel.h"
 
 #include <cmath>
 

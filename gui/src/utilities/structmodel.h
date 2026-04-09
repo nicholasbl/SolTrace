@@ -418,6 +418,14 @@ protected:
         this->m_records.insert(at, list);
         this->endInsertRows();
     }
+
+    void store_push_append(Record r) {
+        auto at = rowCount();
+        this->beginInsertRows({}, at, at);
+        this->m_records.insert(at, r);
+        this->endInsertRows();
+    }
+
     void store_push_remove(int at, int count) {
         this->beginRemoveRows({}, at, at + count - 1);
         this->m_records.remove(at, count);
@@ -445,6 +453,22 @@ protected:
         beginRemoveRows({}, 0, this->rowCount() - 1);
         this->m_records.clear();
         this->endRemoveRows();
+    }
+
+    template <class Function>
+    void store_remove_by_predicate(Function&& f) {
+        QVector<int> to_remove;
+
+        for (int i = 0; i < m_records.size(); i++) {
+            if (f(m_records[i])) to_remove << i;
+        }
+
+        // sort to high -> low, so indices are preserved
+        std::reverse(to_remove.begin(), to_remove.end());
+
+        for (auto i : std::as_const(to_remove)) {
+            store_push_remove(i, 1);
+        }
     }
 
 public:
@@ -610,4 +634,10 @@ public:
 
     auto cbegin() const { return this->m_records.begin(); }
     auto cend() const { return this->m_records.end(); }
+
+    Record const* get_at(int i) const {
+        if (i < 0) return nullptr;
+        if (i >= m_records.size()) return nullptr;
+        return &m_records[i];
+    }
 };

@@ -238,13 +238,19 @@ qt_add_qml_module(SolTrace
         SOURCES src/database/materialeditor.h src/database/materialeditor.cpp
         QML_FILES ui/core/ConfigureLayout.qml
         SOURCES src/database/apertureeditor.h src/database/apertureeditor.cpp
-        SOURCES src/database/surfaceeditor.h src/database/surfaceeditor.cpp
+        SOURCES src/database/surfaceparametermodel.h src/database/surfaceparametermodel.cpp
         QML_FILES ui/core/element/InstanceEdit.qml
         QML_FILES ui/core/RightStack.qml
         QML_FILES ui/primitives/widgets/STButton.qml
         SOURCES src/modules/view_module.h src/modules/view_module.cpp
         QML_FILES ui/primitives/widgets/STDoubleSpinBox.qml
         SOURCES src/database/surface.h src/database/surface.cpp
+        SOURCES src/analysis/flux_map.h src/analysis/flux_map.cpp
+        SOURCES src/database/mesh.h src/database/mesh.cpp
+        SOURCES src/database/simulationresult.h src/database/simulationresult.cpp
+        SOURCES src/analysis/grid2d.h
+        SOURCES src/analysis/volume_to_mesh.h src/analysis/volume_to_mesh.cpp
+        SOURCES src/database/fluxmapworldmodel.h src/database/fluxmapworldmodel.cpp
 
 )
 

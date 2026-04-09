@@ -50,7 +50,7 @@ RunningJob::RunningJob(SimDataPtr data,
 
     m_watcher = watcher;
 
-    connect(watcher, &QFutureWatcher<Result>::finished, this, [this]() {
+    connect(watcher, &QFutureWatcher<SimResult>::finished, this, [this]() {
         auto watcher = ((QFutureWatcher<SimResult>*)(this->m_watcher));
 
         auto res = watcher->result();
@@ -68,21 +68,21 @@ RunningJob::RunningJob(SimDataPtr data,
     });
 
     connect(watcher,
-            &QFutureWatcher<Result>::finished,
+            &QFutureWatcher<SimResult>::finished,
             this,
             &QObject::deleteLater);
 
     connect(watcher,
-            &QFutureWatcher<Result>::canceled,
+            &QFutureWatcher<SimResult>::canceled,
             this,
             &QObject::deleteLater);
 
     connect(watcher,
-            &QFutureWatcher<Result>::progressValueChanged,
+            &QFutureWatcher<SimResult>::progressValueChanged,
             this,
             &RunningJob::progress_update);
     connect(watcher,
-            &QFutureWatcher<Result>::progressTextChanged,
+            &QFutureWatcher<SimResult>::progressTextChanged,
             this,
             &RunningJob::progress_text_update);
 
@@ -95,7 +95,7 @@ RunningJob::RunningJob(SimDataPtr data,
 
 RunningJob::~RunningJob() = default;
 
-std::shared_ptr<ResultDB> RunningJob::take() {
+std::shared_ptr<db::SimulationResult> RunningJob::take() {
     return std::move(m_result);
 }
 

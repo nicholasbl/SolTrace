@@ -1,5 +1,6 @@
 #include "components.h"
 #include <QtGui/qmatrix4x4.h>
+#include <stdexcept>
 
 // TODO: Consolidate
 
@@ -203,6 +204,47 @@ static bool is_equal(SD::surface_ptr const& a, SD::surface_ptr const& b) {
 
 bool MaterialComponent::operator==(db::MaterialComponent const& b) const {
     return optics_front == b.optics_front and optics_back == b.optics_back;
+}
+
+RaySourceResource RaySourceResource::clone() const {
+    if (!source) {
+        return {};
+    }
+
+    if (auto sun = std::dynamic_pointer_cast<SD::Sun>(source)) {
+        std::vector<double> user_angle;
+        std::vector<double> user_intensity;
+        sun->get_user_data(user_angle, user_intensity);
+
+        auto copy = SD::make_ray_source<SD::Sun>();
+        copy->set_position(sun->get_position());
+        copy->set_shape(sun->get_shape(),
+                        sun->get_sigma(),
+                        sun->get_half_width(),
+                        sun->get_circumsolar_ratio(),
+                        user_angle,
+                        user_intensity);
+
+        return { .source = copy };
+    }
+
+    throw std::runtime_error("Unsupported ray source type in clone()");
+}
+
+GeometryComponent GeometryComponent::clone() const {
+    GeometryComponent copy;
+
+    if (aperture) {
+        copy.aperture = aperture->make_copy();
+    }
+
+    if (surface) {
+        nlohmann::ordered_json node;
+        surface->write_json(node);
+        copy.surface = SD::make_surface_from_json(node);
+    }
+
+    return copy;
 }
 
 bool GeometryComponent::operator==(db::GeometryComponent const& b) const {

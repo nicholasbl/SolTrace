@@ -38,6 +38,19 @@ struct Mesh2D {
 
         return ret;
     }
+
+    std::tuple<glm::dvec2, glm::dvec2> bb_2d() const {
+        if (vertex.empty()) { return { glm::dvec2 { 0 }, glm::dvec2 { 0 } }; }
+        glm::dvec2 mins = vertex[0];
+        glm::dvec2 maxs = vertex[0];
+
+        for (auto const& p : vertex) {
+            mins = glm::min(p, mins);
+            maxs = glm::max(p, maxs);
+        }
+
+        return { mins, maxs };
+    }
 };
 
 double saturate(double value) {
@@ -61,12 +74,18 @@ Vertex make_vertex(double    x,
     };
 }
 
+// TODO: check all UVs and see if we can do better
+
 std::optional<Mesh> make_flat(SD::Flat& flat, Mesh2D const& m2d) {
+    auto [bb_min, bb_max] = m2d.bb_2d();
+
+    // simple UV
+
     return m2d.map([&](glm::dvec2 p) {
         return Vertex {
             .position = glm::vec3(p, 0.0),
             .normal   = { 0.0f, 0.0f, 1.0f },
-            .uv       = {},
+            .uv       = (p - bb_min) / (bb_max - bb_min),
         };
     });
 }
@@ -76,6 +95,8 @@ std::optional<Mesh> make_cone(SD::Cone& item, Mesh2D const& m2d) {
         qDebug() << Q_FUNC_INFO << "Half angle is <= 0";
         return {};
     }
+
+    auto [bb_min, bb_max] = m2d.bb_2d();
 
     auto tan_angle = std::tan(item.half_angle);
 
@@ -94,7 +115,7 @@ std::optional<Mesh> make_cone(SD::Cone& item, Mesh2D const& m2d) {
         return Vertex {
             .position = glm::vec3(p, z),
             .normal   = normal,
-            .uv       = {},
+            .uv       = (p - bb_min) / (bb_max - bb_min),
         };
     });
 }
@@ -104,6 +125,8 @@ std::optional<Mesh> make_para(SD::Parabola& item, Mesh2D const& m2d) {
         qDebug() << Q_FUNC_INFO << "Focal lengths are zero";
         return {};
     }
+
+    auto [bb_min, bb_max] = m2d.bb_2d();
 
     auto flen = glm::dvec2(item.focal_length_x, item.focal_length_y);
 
@@ -115,12 +138,14 @@ std::optional<Mesh> make_para(SD::Parabola& item, Mesh2D const& m2d) {
         return Vertex {
             .position = glm::vec3(p, z),
             .normal   = normal,
-            .uv       = {},
+            .uv       = (p - bb_min) / (bb_max - bb_min),
         };
     });
 }
 
 std::optional<Mesh> make_sphere(SD::Sphere& item, Mesh2D const& m2d) {
+
+    auto [bb_min, bb_max] = m2d.bb_2d();
 
     return m2d.map([&](glm::dvec2 p) {
         auto p_dot_p = glm::dot(p, p);
@@ -142,10 +167,13 @@ std::optional<Mesh> make_sphere(SD::Sphere& item, Mesh2D const& m2d) {
         return Vertex {
             .position = glm::vec3(p, z),
             .normal   = normal,
-            .uv       = {},
+            .uv       = (p - bb_min) / (bb_max - bb_min),
         };
     });
 }
+
+// Don't do UV's in the base mesh generation as that does not
+// consider final distortion
 
 Mesh2D generate_rectangle_aperture(SD::Rectangle const&            rect,
                                    SurfaceGenerationOptions const& options) {
@@ -492,11 +520,6 @@ generate_height_field_surface(SD::surface_ptr const&          surface,
         max_x = std::max(max_x, point.x);
         max_y = std::max(max_y, point.y);
     }
-
-    double dx = max_x - min_x;
-    double dy = max_y - min_y;
-    if (dx == 0.0) dx = 1.0;
-    if (dy == 0.0) dy = 1.0;
 
     std::optional<Mesh> ret;
 
