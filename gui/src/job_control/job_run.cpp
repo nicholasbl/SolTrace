@@ -58,7 +58,7 @@ RunningJob::RunningJob(SimDataPtr data,
         std::visit(
             overloaded {
                 [this](ResultPtr& ptr) {
-                    this->m_result = std::move(ptr);
+                    this->m_result.reset(ptr);
 
                     emit this->finished();
                 },
@@ -95,7 +95,7 @@ RunningJob::RunningJob(SimDataPtr data,
 
 RunningJob::~RunningJob() = default;
 
-std::shared_ptr<db::SimulationResult> RunningJob::take() {
+std::unique_ptr<db::SimulationResult> RunningJob::take() {
     return std::move(m_result);
 }
 

@@ -73,7 +73,8 @@ class App : public QObject {
     QML_SINGLETON
 
 public:
-    explicit App(QObject*       parent                  = nullptr,
+    explicit App(QObject*       parent,
+                 QQmlEngine*    engine,
                  QString const& documentation_directory = "");
 
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
@@ -102,7 +103,7 @@ public:
 
 signals:
     void notification(ANotification);
-    void new_results(std::shared_ptr<db::SimulationResult>);
+    void new_results(db::SimulationResult*);
     void new_database(db::Database*);
 };
 

@@ -2,7 +2,9 @@
 
 namespace SolTrace::GUI::App {
 
-App::App(QObject* parent, const QString& documentation_directory)
+App::App(QObject*       parent,
+         QQmlEngine*    engine,
+         const QString& documentation_directory)
     : m_file_source(new FileSourceModule(this)),
       m_view(new ViewModule(this)),
       m_workflow(new WorkflowModule(this)),
@@ -13,7 +15,7 @@ App::App(QObject* parent, const QString& documentation_directory)
       m_layout(new LayoutModule(this)),
       m_simulation(new SimulationModule(this)),
       m_intersections(new IntersectionsModule(this)),
-      m_flux(new FluxModule(this)) {
+      m_flux(new FluxModule(engine, this)) {
 
     connect(m_file_source,
             &FileSourceModule::current_database_value_changed,

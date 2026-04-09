@@ -46,24 +46,23 @@ void construct_result(QPromise<SimResult>&                promise,
                       SimDataPtr                          exported_source,
                       SolTrace::Result::SimulationResult& result) {
 
-    ResultPtr destination;
+    SECTION(90, "Building lookup tables");
 
-    // now compute lookup tables
-    {
-        SECTION(90, "Building lookup tables");
+    db::SimulationResultConversion opts {
+        .result = result,
+        .data   = *(exported_source->data),
+        .map    = exported_source->element_map,
+    };
 
-        db::SimulationResultConversion opts {
-            .result = result,
-            .data   = *(exported_source->data),
-            .map    = exported_source->element_map,
-        };
+    auto destination = db::SimulationResult::convert(opts);
 
-        destination = db::SimulationResult::convert(opts);
-    }
+    destination->database = exported_source->source_database.release();
+
+    destination->database->setParent(destination.get());
 
     SECTION(100, "Done");
 
-    promise.emplaceResult(std::move(destination));
+    promise.emplaceResult(std::move(destination.release()));
 }
 
 
@@ -181,7 +180,6 @@ void execute_thread_runner(QPromise<SimResult>&      promise,
 
         qDebug() << Q_FUNC_INFO << "Build result database";
 
-        auto ret = std::make_shared<db::SimulationResult>();
 
         SolTrace::Result::SimulationResult soltrace_result;
 

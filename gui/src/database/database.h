@@ -68,9 +68,12 @@ public:
     operator entt::entity() const { return value; }
 };
 
+class Database;
+
 struct DatabaseExport {
     std::shared_ptr<SolTrace::Data::SimulationData>              data;
     std::unordered_map<SolTrace::Data::element_id, entt::entity> element_map;
+    std::unique_ptr<Database> source_database;
 
     DatabaseExport() = default;
 

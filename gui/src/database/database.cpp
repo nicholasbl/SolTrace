@@ -956,6 +956,7 @@ std::shared_ptr<DatabaseExport> Database::export_to_simdata() {
     DatabaseExport export_ret;
     export_ret.data = std::make_shared<SD::SimulationData>(std::move(ret));
     export_ret.element_map = std::move(entity_rev_map);
+    export_ret.source_database.reset(this->clone());
 
     return std::make_shared<DatabaseExport>(std::move(export_ret));
 }

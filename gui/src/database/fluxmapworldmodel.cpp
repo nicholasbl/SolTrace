@@ -26,18 +26,17 @@ PendingFluxMapModel::PendingFluxMapModel(QObject* parent)
 }
 
 
-void PendingFluxMapModel::reset(std::shared_ptr<const db::SimulationResult> res,
-                                Database* database) {
+void PendingFluxMapModel::reset(db::SimulationResult* res) {
     emit cleared();
 
-    m_host = database;
+    m_host = res->database;
     m_compute->set_results(res);
     on_changed();
 
-    if (database) {
+    if (res->database) {
         for (auto const& [e, c] :
-             database->as_registry().view<HasFluxMapComponent>().each()) {
-            emit ready(e, c.image, database);
+             res->database->as_registry().view<HasFluxMapComponent>().each()) {
+            emit ready(e, c.map_info, res->database);
         }
     }
 }
@@ -46,11 +45,11 @@ void PendingFluxMapModel::on_changed() {
     store_remove_all();
 }
 
-void PendingFluxMapModel::on_ready(Entity e, QImage image) {
+void PendingFluxMapModel::on_ready(Entity e, analysis::BakedFluxMapPtr image) {
     if (!m_host) return;
 
     m_host->as_registry().emplace_or_replace<HasFluxMapComponent>(
-        e, HasFluxMapComponent { .image = image });
+        e, HasFluxMapComponent { .map_info = image });
 
     store_remove_by_predicate([e](auto& record) { return record.entity == e; });
 
@@ -77,7 +76,10 @@ void PendingFluxMapModel::on_progress(Entity e, int progress) {
     }
 }
 
-static std::optional<Mesh> find_mesh_for(Database* database, Entity entity) {
+static std::optional<Mesh>
+find_mesh_for(db::SurfaceGenerationOptions surface_options,
+              Database*                    database,
+              Entity                       entity) {
     auto* surface_membership = database->geometry_group_membership.get(entity);
 
     if (!surface_membership) { return {}; }
@@ -93,7 +95,16 @@ static std::optional<Mesh> find_mesh_for(Database* database, Entity entity) {
 bool PendingFluxMapModel::start_generate_for(Entity entity) {
     if (!m_host) return false;
 
-    auto mesh = find_mesh_for(m_host, entity);
+    auto mesh_res = std::max(1, mesh_resolution_multiply());
+
+    db::SurfaceGenerationOptions surface_options;
+    surface_options.height_field_resolution *= mesh_res;
+    surface_options.radial_subdivisions *= mesh_res;
+    surface_options.perimeter_subdivisions *= mesh_res;
+    surface_options.cylinder_angular_subdivisions *= mesh_res;
+    surface_options.cylinder_length_subdivisions *= mesh_res;
+
+    auto mesh = find_mesh_for(surface_options, m_host, entity);
 
     if (!mesh) return false;
 
@@ -103,8 +114,6 @@ bool PendingFluxMapModel::start_generate_for(Entity entity) {
     });
 
     auto opts = analysis::FluxMapBakeOptions {
-        .bin_counts       = { this->bin_counts().width(),
-                              this->bin_counts().height(), },
         .image_resolution = { this->image_resolution().width(),
                               this->image_resolution().height(), },
         .grid_line_color =
@@ -147,7 +156,9 @@ FluxMapWorldModel::FluxMapWorldModel(QObject* parent)
     : StructModelAdapter(parent) { }
 
 
-void FluxMapWorldModel::on_ready(Entity e, QImage img, Database* db) {
+void FluxMapWorldModel::on_ready(Entity                    e,
+                                 analysis::BakedFluxMapPtr img,
+                                 Database*                 db) {
     // make sure we dont have this already. Not the cleanest, but we shouldn't
     // have that many maps here
 
@@ -180,7 +191,7 @@ QImage FluxMapProvider::requestImage(QString const& id,
     {
         m_lock.lock();
         auto iter = m_store.find(id);
-        if (iter != m_store.end()) { ret = *iter; }
+        if (iter != m_store.end()) { ret = iter.value()->image; }
         m_lock.unlock();
     }
 
@@ -189,7 +200,9 @@ QImage FluxMapProvider::requestImage(QString const& id,
     return ret;
 }
 
-void FluxMapProvider::on_ready(Entity k, QImage v, Database*) {
+void FluxMapProvider::on_ready(Entity                    k,
+                               analysis::BakedFluxMapPtr v,
+                               Database*) {
     m_lock.lock();
     m_store[image_name(k)] = v;
     m_lock.unlock();

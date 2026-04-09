@@ -24,8 +24,9 @@ void SimulationModule::job_done() {
     m_running = nullptr;
 
     auto results = from->take();
+    results->setParent(this);
 
-    emit new_results(results);
+    emit new_results(results.release());
 }
 
 SimulationModule::SimulationModule(QObject* parent)

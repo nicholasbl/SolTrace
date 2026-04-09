@@ -10,7 +10,12 @@
 
 #include <vector>
 
+#include <QObject>
+#include <QPointer>
+
 namespace db {
+
+class Database;
 
 struct SimulationResultConversion {
     SolTrace::Result::SimulationResult&                                 result;
@@ -43,7 +48,12 @@ struct RayRecord {
     std::vector<RayEvent> events;
 };
 
-struct SimulationResult {
+class SimulationResult : public QObject {
+    Q_OBJECT
+
+public:
+    SimulationResult(QObject* parent = nullptr);
+
     std::vector<RayRecord> records;
 
     glm::dvec3 bounds_min;
@@ -53,8 +63,10 @@ struct SimulationResult {
 
     std::unordered_map<entt::entity, std::vector<uint64_t>> entity_to_ray_ids;
 
+    QPointer<Database> database;
+
     // TODO: Why is this fallible?
-    static std::shared_ptr<SimulationResult>
+    static std::unique_ptr<SimulationResult>
     convert(SimulationResultConversion const&);
 };
 

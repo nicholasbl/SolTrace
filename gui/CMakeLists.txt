@@ -251,6 +251,7 @@ qt_add_qml_module(SolTrace
         SOURCES src/analysis/grid2d.h
         SOURCES src/analysis/volume_to_mesh.h src/analysis/volume_to_mesh.cpp
         SOURCES src/database/fluxmapworldmodel.h src/database/fluxmapworldmodel.cpp
+        SOURCES src/analysis/baked_flux_map.h
 
 )
 

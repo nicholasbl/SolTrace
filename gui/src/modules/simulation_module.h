@@ -59,7 +59,7 @@ public slots:
     void cancel();
 
 signals:
-    void new_results(std::shared_ptr<db::SimulationResult>);
+    void new_results(db::SimulationResult*);
     void notify(ANotification);
 };
 

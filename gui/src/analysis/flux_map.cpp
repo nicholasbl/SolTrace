@@ -1,16 +1,39 @@
 #include "flux_map.h"
 
 #include "analysis/grid2d.h"
+#include "vector_utility.hpp"
+
 #include <QFutureWatcher>
+#include <QImage>
+#include <QPainter>
 #include <QtConcurrent/qtconcurrentrun.h>
+
+#include <algorithm>
+#include <cmath>
+#include <optional>
 
 #define GLM_ENABLE_EXPERIMENTAL 1
 #include <glm/gtx/intersect.hpp>
 
-#include <QImage>
-#include <QPainter>
-
 namespace analysis {
+
+struct TriangleProjection {
+    size_t    triangle_index = 0;
+    glm::vec3 barycentric    = glm::vec3(0.0);
+    glm::vec2 uv             = glm::vec2(0.0);
+};
+
+struct TriangleFluxBin {
+    float  world_area         = 0.0;
+    float  accumulated_energy = 0.0;
+    size_t hit_count          = 0;
+    float  flux               = 0.0f; // W/m^2 or normalized equivalent
+};
+
+template <class T>
+static T interpolate(T const& a, T const& b, T const& c, glm::vec3 bary) {
+    return a * bary.x + b * bary.y + c * bary.z;
+}
 
 static QPointF uv_to_pixel(glm::vec2 uv, QSize const& size) {
     auto width  = std::max(0, size.width() - 1);
@@ -19,92 +42,312 @@ static QPointF uv_to_pixel(glm::vec2 uv, QSize const& size) {
     return QPointF(uv.x * width, uv.y * height);
 }
 
-inline std::optional<glm::vec3> uv_projection(db::Vertex const& v1,
-                                              db::Vertex const& v2,
-                                              db::Vertex const& v3,
-                                              glm::vec3         p,
-                                              glm::vec3         n) {
-    float     distance;
-    glm::vec2 barycenter;
-
-    bool ok =
-        glm::intersectRayTriangle(p,
-                                  n, // we want to point TOWARD the surface
-                                  v1.position,
-                                  v2.position,
-                                  v3.position,
-                                  barycenter,
-                                  distance);
-
-    if (ok) {
-        float u = barycenter.x;
-        float v = barycenter.y;
-        float w = 1.0f - u - v;
-
-        auto uv = v1.uv * w + v2.uv * u + v3.uv * v;
-
-        return glm::vec3(uv, distance);
-    }
-
-    return {};
+static float
+triangle_area(glm::vec3 const& a, glm::vec3 const& b, glm::vec3 const& c) {
+    return 0.5f * glm::length(glm::cross(b - a, c - a));
 }
 
-std::optional<glm::vec2> project_point_to_uv(db::Mesh const& m, glm::vec3 p) {
+static float
+triangle_area(QPointF const& a, QPointF const& b, QPointF const& c) {
+    auto ab = b - a;
+    auto ac = c - a;
+    return 0.5f * std::abs(ab.x() * ac.y() - ab.y() * ac.x());
+}
 
-    // this is probably stupid, but for now we can do this
+static std::optional<glm::vec3> barycentric_for_point(QPointF const& p,
+                                                      QPointF const& a,
+                                                      QPointF const& b,
+                                                      QPointF const& c) {
+    auto v0 = b - a;
+    auto v1 = c - a;
+    auto v2 = p - a;
 
-    constexpr float INIT = 100000000;
+    auto denom = v0.x() * v1.y() - v1.x() * v0.y();
 
-    glm::vec3 closest(0, 0, INIT);
+    if (std::abs(denom) < 1e-8f) { return {}; }
 
-    for (size_t i = 0; i < m.index.size(); i += 3) {
-        auto const& v1 = m.vertex[m.index[i + 0]];
-        auto const& v2 = m.vertex[m.index[i + 1]];
-        auto const& v3 = m.vertex[m.index[i + 2]];
+    float u = (v2.x() * v1.y() - v1.x() * v2.y()) / denom;
+    float v = (v0.x() * v2.y() - v2.x() * v0.y()) / denom;
+    float w = 1.0f - u - v;
 
-        // generate a normal here. dont use what is given, as we want the
-        // triangle surface normal
+    return glm::vec3(w, u, v);
+}
 
-        auto normal = glm::normalize(
-            glm::cross(v1.position - v2.position, v1.position - v3.position));
 
-        auto test_a = uv_projection(v1, v2, v3, p, normal);
+struct ClosestPointResult {
+    glm::vec3 point;
+    glm::vec3 bary;
+    float     sq_dist;
+};
 
-        // check rear. does distance go negative? can we remove this check?
-        if (!test_a.has_value()) {
-            test_a = uv_projection(v1, v2, v3, p, -normal);
+ClosestPointResult
+closest_point_on_triangle(glm::vec3 p, glm::vec3 a, glm::vec3 b, glm::vec3 c) {
+    const glm::vec3 ab = b - a;
+    const glm::vec3 ac = c - a;
+    const glm::vec3 ap = p - a;
+
+    const float d1 = glm::dot(ab, ap);
+    const float d2 = glm::dot(ac, ap);
+    if (d1 <= 0.f && d2 <= 0.f) {
+        return {
+            .point   = a,
+            .bary    = { 1, 0, 0 },
+            .sq_dist = glm::distance2(p, a),
+        };
+    }
+
+    const glm::vec3 bp = p - b;
+    const float     d3 = glm::dot(ab, bp);
+    const float     d4 = glm::dot(ac, bp);
+    if (d3 >= 0.f && d4 <= d3) {
+        return {
+            .point   = b,
+            .bary    = { 0, 1, 0 },
+            .sq_dist = glm::distance2(p, b),
+        };
+    }
+
+    const glm::vec3 cp = p - c;
+    const float     d5 = glm::dot(ab, cp);
+    const float     d6 = glm::dot(ac, cp);
+    if (d6 >= 0.f && d5 <= d6) {
+        return {
+            .point   = c,
+            .bary    = { 0, 0, 1 },
+            .sq_dist = glm::distance2(p, c),
+        };
+    }
+
+    const float vc = d1 * d4 - d3 * d2;
+    if (vc <= 0.f && d1 >= 0.f && d3 <= 0.f) {
+        const float v = d1 / (d1 - d3);
+
+        auto closest = a + v * ab;
+        return {
+            .point   = closest,
+            .bary    = { 1.0f - v, v, 0.0f },
+            .sq_dist = glm::distance2(closest, p),
+        };
+    }
+
+    const float vb = d5 * d2 - d1 * d6;
+    if (vb <= 0.f && d2 >= 0.f && d6 <= 0.f) {
+        const float w = d2 / (d2 - d6);
+
+        auto closest = a + w * ac;
+        return {
+            .point   = closest,
+            .bary    = { 1.0f - w, 0.0f, w },
+            .sq_dist = glm::distance2(closest, p),
+        };
+    }
+
+    const float va = d3 * d6 - d5 * d4;
+    if (va <= 0.f && (d4 - d3) >= 0.f && (d5 - d6) >= 0.f) {
+        const float v = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+
+        auto closest = b + v * (c - b);
+        return {
+            .point   = closest,
+            .bary    = { 0.0f, 1.0f - v, v },
+            .sq_dist = glm::distance2(closest, p),
+        };
+    }
+
+    const float denom = 1.f / (va + vb + vc);
+    const float v     = vb * denom;
+    const float w     = vc * denom;
+
+    auto closest = a + v * ab + w * ac;
+    return {
+        .point   = closest,
+        .bary    = { 1 - v - w, v, w },
+        .sq_dist = glm::distance2(closest, p),
+    };
+}
+
+
+/// For a given point, find the closest point on a triangle mesh.
+/// TODO: Add accelleration structure for mesh.
+static std::optional<TriangleProjection>
+project_point_to_triangle(db::Mesh const& mesh, glm::vec3 p) {
+
+
+    constexpr float INIT = 100000000.0f;
+
+    ssize_t closest_triangle = -1;
+
+    ClosestPointResult best;
+
+    best.sq_dist = INIT;
+
+    for (size_t i = 0; i < mesh.triangles.size(); i++) {
+        auto const& v1 = mesh.vertex[mesh.triangles[i].x];
+        auto const& v2 = mesh.vertex[mesh.triangles[i].y];
+        auto const& v3 = mesh.vertex[mesh.triangles[i].z];
+
+        auto next =
+            closest_point_on_triangle(p, v1.position, v2.position, v3.position);
+
+        if (next.sq_dist < best.sq_dist) {
+            best             = next;
+            closest_triangle = i;
+        }
+    }
+
+    if (closest_triangle < 0) { return {}; }
+
+    auto const& v1 = mesh.vertex[mesh.triangles[closest_triangle].x];
+    auto const& v2 = mesh.vertex[mesh.triangles[closest_triangle].y];
+    auto const& v3 = mesh.vertex[mesh.triangles[closest_triangle].z];
+
+    return TriangleProjection {
+        .triangle_index = size_t(closest_triangle),
+        .barycentric    = best.bary,
+        .uv             = interpolate(v1.uv, v2.uv, v3.uv, best.bary),
+    };
+}
+
+/// Make triangle bins, that is, a count of intersections per triangle face of a
+/// mesh.
+static std::vector<TriangleFluxBin> make_triangle_bins(db::Mesh const& mesh) {
+    std::vector<TriangleFluxBin> triangles;
+    triangles.reserve(mesh.triangles.size());
+
+    for (size_t i = 0; i < mesh.triangles.size(); i++) {
+        auto const& v1 = mesh.vertex[mesh.triangles[i].x];
+        auto const& v2 = mesh.vertex[mesh.triangles[i].y];
+        auto const& v3 = mesh.vertex[mesh.triangles[i].z];
+
+        auto world = triangle_area(v1.position, v2.position, v3.position);
+
+        triangles.emplace_back(TriangleFluxBin {
+            .world_area = world,
+        });
+    }
+
+    return triangles;
+}
+
+static float
+compute_triangle_flux_and_max(std::vector<TriangleFluxBin>& triangles,
+                              float                         total_energy) {
+    if (total_energy <= 0.0f) { return 0.0f; }
+
+    float max_density = 0.0f;
+
+    for (auto& triangle : triangles) {
+        if (triangle.world_area <= 0.0f) { continue; }
+
+        triangle.flux = triangle.accumulated_energy / triangle.world_area;
+
+        max_density = std::max(max_density, triangle.flux);
+    }
+
+    return max_density;
+}
+
+static Grid2D<float>
+raster_triangle_flux(std::vector<TriangleFluxBin> const& triangles,
+                     db::Mesh const&                     mesh,
+                     QSize const&                        image_size,
+                     QPromise<BakedFluxMapPtr>&          promise,
+                     int                                 progress_low,
+                     int                                 progress_high) {
+    Grid2D<float> raster(image_size.width(), image_size.height());
+    raster.fill(0.0f);
+
+    auto report_progress = [&](int item, int max_item) {
+        auto a = max_item > 0 ? float(item) / float(max_item) : 1.0f;
+        int  p = glm::mix(float(progress_low), float(progress_high), a);
+        promise.setProgressValue(p);
+    };
+
+    size_t tri_index = 0;
+    for (size_t tri_index = 0; tri_index < mesh.triangles.size(); ++tri_index) {
+        auto const& tri = triangles[tri_index];
+
+        if (tri.flux <= 0.0f) {
+            report_progress(int(tri_index + 1), int(triangles.size()));
+            continue;
         }
 
-        if (!test_a.has_value()) continue;
+        auto const& v1 = mesh.vertex[mesh.triangles[tri_index].x];
+        auto const& v2 = mesh.vertex[mesh.triangles[tri_index].y];
+        auto const& v3 = mesh.vertex[mesh.triangles[tri_index].z];
 
-        // ok, we have a uv coord. see if its closest
+        QPointF a = uv_to_pixel(v1.uv, image_size);
+        QPointF b = uv_to_pixel(v2.uv, image_size);
+        QPointF c = uv_to_pixel(v3.uv, image_size);
 
-        if (test_a->z < closest.z) { closest = *test_a; }
+        int min_x =
+            std::max(0, int(std::floor(std::min({ a.x(), b.x(), c.x() }))));
+        int max_x = std::min(image_size.width() - 1,
+                             int(std::ceil(std::max({ a.x(), b.x(), c.x() }))));
+        int min_y =
+            std::max(0, int(std::floor(std::min({ a.y(), b.y(), c.y() }))));
+        int max_y = std::min(image_size.height() - 1,
+                             int(std::ceil(std::max({ a.y(), b.y(), c.y() }))));
+
+        for (int y = min_y; y <= max_y; ++y) {
+            for (int x = min_x; x <= max_x; ++x) {
+                QPointF p(x + 0.5, y + 0.5);
+
+                auto bary = barycentric_for_point(p, a, b, c);
+                if (!bary.has_value()) continue;
+
+                constexpr float eps = -1e-5f;
+                if (bary->x < eps || bary->y < eps || bary->z < eps) continue;
+
+                // Assuming non-overlapping UVs, but still...
+                raster(x, y) += tri.flux;
+            }
+        }
+
+        if (promise.isCanceled()) return raster;
+        report_progress(int(tri_index + 1), int(triangles.size()));
     }
 
-    if (closest.z < INIT) {
-        return glm::clamp(glm::vec2(closest), glm::vec2(0), glm::vec2(1));
-    }
-
-    return {};
+    return raster;
 }
 
-static void raster_mesh_overlay(QPainter&        painter,
-                                db::Mesh const&  mesh,
-                                QSize const&     image_size,
-                                QColor const&    line_color) {
+static void colorize_raster(QImage&              image,
+                            Grid2D<float> const& raster,
+                            QImage const&        color_map,
+                            float                max_density) {
+    for (int x = 0; x < image.width(); ++x) {
+        for (int y = 0; y < image.height(); ++y) {
+            float normalized = 0.0f;
+
+            if (max_density > 0.0f) {
+                normalized = std::clamp(raster(x, y) / max_density, 0.0f, 1.0f);
+            }
+
+            auto sample = QPoint(normalized * (color_map.width() - 1),
+                                 color_map.height() / 2);
+
+            image.setPixelColor(x, y, color_map.pixelColor(sample));
+        }
+    }
+}
+
+static void raster_mesh_overlay(QPainter&       painter,
+                                db::Mesh const& mesh,
+                                QSize const&    image_size,
+                                QColor const&   line_color) {
     if (!line_color.isValid()) { return; }
 
     painter.save();
     painter.setPen(QPen(line_color, 1.0));
 
-    for (size_t i = 0; i + 2 < mesh.index.size(); i += 3) {
-        auto const& v1 = mesh.vertex[mesh.index[i + 0]];
-        auto const& v2 = mesh.vertex[mesh.index[i + 1]];
-        auto const& v3 = mesh.vertex[mesh.index[i + 2]];
+    for (size_t i = 0; i < mesh.triangles.size(); i++) {
+        auto const& v1 = mesh.vertex[mesh.triangles[i].x];
+        auto const& v2 = mesh.vertex[mesh.triangles[i].y];
+        auto const& v3 = mesh.vertex[mesh.triangles[i].z];
 
         QPolygonF triangle;
-        triangle << uv_to_pixel(v1.uv, image_size) << uv_to_pixel(v2.uv, image_size)
+        triangle << uv_to_pixel(v1.uv, image_size)
+                 << uv_to_pixel(v2.uv, image_size)
                  << uv_to_pixel(v3.uv, image_size);
 
         painter.drawPolygon(triangle);
@@ -113,47 +356,42 @@ static void raster_mesh_overlay(QPainter&        painter,
     painter.restore();
 }
 
-
-void execute_map_generation_for(
-    QPromise<QImage>&                           promise,
-    FluxMapBakeOptions                          opts,
-    entt::entity                                entity,
-    std::shared_ptr<db::SimulationResult const> results,
-    db::Mesh                                    mesh) {
+/// Main fluxmap compute function
+void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
+                                FluxMapBakeOptions         opts,
+                                entt::entity               entity,
+                                db::SimulationResult*      results,
+                                db::Mesh                   mesh) {
 
     promise.setProgressRange(0, 100);
 
-    // CAUTION. we are NOT thread safe here if someone wants to change the
-    // database. The results MUST also be const.
+    // Image size makes no sense, bail
+    if (!glm::all(glm::lessThan(glm::uvec2(1), opts.image_resolution))) {
+        return;
+    }
 
-
-    if (!glm::all(glm::lessThan(glm::uvec2(0), opts.bin_counts))) { return; }
-
+    // We need to know what rays have hit this entity
     auto iter = results->entity_to_ray_ids.find(entity);
 
     if (iter == results->entity_to_ray_ids.end()) { return; }
 
-    // ok. now get all points that 'intersect' with this thing.
+    constexpr int PROGRESS_SETUP      = 10;
+    constexpr int PROGRESS_ACCUMULATE = 50;
+    constexpr int PROGRESS_RASTER     = 90;
+    constexpr int PROGRESS_COMPLETE   = 100;
 
-    // create a bin system.
-
-    auto bins = Grid2D<float>(opts.bin_counts.x, opts.bin_counts.y);
-
-    auto bin_bounds = glm::vec2(opts.bin_counts) - glm::vec2(1);
-
-    auto bin_index = [=](glm::vec2 uv) -> glm::ivec2 {
-        return glm::floor(uv * bin_bounds);
-    };
-
-    float total = 0.0;
-
-    constexpr int PROGRESS_SETUP     = 10;
-    constexpr int PROGRESS_RAY_CHECK = 50;
-    constexpr int PROGRESS_RASTER    = 100;
-
+    // Starting setup
     promise.setProgressValue(PROGRESS_SETUP);
 
-    // something like this should be in a toolbox somewhere
+    // Creating image
+    auto img = QImage(
+        opts.image_resolution.x, opts.image_resolution.y, QImage::Format_RGB32);
+
+    // Fill triangle bins
+    auto triangles = make_triangle_bins(mesh);
+
+    float total_ray_impact = 0.0f;
+
     auto report_progress =
         [&](int item, int max_item, int prog_low, int prog_high) {
             auto a = (float)item / (float)max_item;
@@ -161,117 +399,88 @@ void execute_map_generation_for(
             promise.setProgressValue(p);
         };
 
-    // for every ray that has hit this
-
     size_t ray_count = 0;
+    size_t ray_count_chunk =
+        std::clamp<size_t>(iter->second.size() / 10, 1, 500);
 
+    // Burn rays to triangle bins
     for (auto ray_index : iter->second) {
-
         ray_count++;
 
-        if (ray_count % 500 == 0) {
+        if (ray_count % ray_count_chunk == 0) {
             report_progress(ray_count,
                             iter->second.size(),
                             PROGRESS_SETUP,
-                            PROGRESS_RAY_CHECK);
+                            PROGRESS_ACCUMULATE);
         }
 
         if (promise.isCanceled()) { return; }
 
-        // scan all events and get intersection points
         for (auto const& interaction : results->records.at(ray_index).events) {
-
-            // whatever it was, is it us?
+            // TODO: we need to double check that this is ok
             if (interaction.entity != entity) { continue; }
 
-            // we have a viable point.
+            auto projection =
+                project_point_to_triangle(mesh, interaction.location);
 
-            auto p = interaction.location;
+            if (!projection.has_value()) { continue; }
 
-            // we now need to project this point to the surface
+            auto& triangle = triangles[projection->triangle_index];
 
-            auto uv = project_point_to_uv(mesh, p);
-
-            // no uv?
-            if (!uv) { continue; }
-
-            auto bin_xy = bin_index(*uv);
-
-            bins(bin_xy.x, bin_xy.y) += 1.0;
-            total += 1.0;
+            float hit_energy = 1.0f; // replace with actual interaction/ray
+                                     // power when available
+            triangle.hit_count += 1;
+            triangle.accumulated_energy += hit_energy;
+            total_ray_impact += hit_energy;
         }
     }
 
-    // normalize all bins?
-
-    if (total > 0.0) {
-        for (auto& f : bins) {
-            f /= total;
-        }
-    }
-
-    // bins ready
     if (promise.isCanceled()) { return; }
 
-    promise.setProgressValue(PROGRESS_RAY_CHECK);
+    promise.setProgressValue(PROGRESS_ACCUMULATE);
 
-    // now raster it
 
-    // This format is supposedly the most optimized.
-    auto img = QImage(
-        opts.image_resolution.x, opts.image_resolution.y, QImage::Format_RGB32);
+    // Burn triangle bins to raster
 
-    // we need to see if this is the right coordinate system so we dont flip or
-    // something.
+    auto max_density =
+        compute_triangle_flux_and_max(triangles, total_ray_impact);
+
+    auto raster = raster_triangle_flux(triangles,
+                                       mesh,
+                                       img.size(),
+                                       promise,
+                                       PROGRESS_ACCUMULATE,
+                                       PROGRESS_RASTER);
+
+    if (promise.isCanceled()) { return; }
+
+    colorize_raster(img, raster, opts.color_map, max_density);
+
+    promise.setProgressValue(PROGRESS_RASTER);
+
     auto painter = QPainter(&img);
-
-    // raster bins
-
-    glm::uvec2 bin_size       = opts.image_resolution / opts.bin_counts;
-    auto       color_map_size = opts.color_map.size();
-
-    for (int x = 0; x < opts.bin_counts.x; x++) {
-
-        report_progress(
-            x + 1, opts.bin_counts.x, PROGRESS_RAY_CHECK, PROGRESS_RASTER);
-
-        for (int y = 0; y < opts.bin_counts.y; y++) {
-            auto bin_value = bins(x, y);
-
-            auto sample = QPoint(bin_value * (color_map_size.width() - 1),
-                                 color_map_size.height() / 2);
-
-            auto color = opts.color_map.pixelColor(sample);
-
-            auto corner = bin_size * glm::uvec2(x, y);
-
-            auto rect = QRect(QPoint(corner.x, corner.y),
-                              QSize(bin_size.x, bin_size.y));
-
-            painter.fillRect(rect, color);
-        }
-
-        if (promise.isCanceled()) { return; }
-    }
-
     raster_mesh_overlay(painter, mesh, img.size(), opts.grid_line_color);
 
-    promise.emplaceResult(img);
-
-    return;
+    promise.setProgressValue(PROGRESS_COMPLETE);
+    promise.emplaceResult(std::make_shared<BakedFluxMap>(BakedFluxMap {
+        .counts = std::move(raster),
+        .image  = img,
+    }));
 }
 
 FluxMapComputer::FluxMapComputer(QObject* parent) : QObject(parent) { }
 
 FluxMapComputer::~FluxMapComputer() = default;
 
-void FluxMapComputer::set_results(
-    std::shared_ptr<db::SimulationResult const> p) {
+void FluxMapComputer::set_results(db::SimulationResult* p) {
     m_database = p;
 
     cancel_all();
 }
 
+
+/// Precondition:
+/// Mesh must NOT have overlapping UVs
 bool FluxMapComputer::start_generate_for(db::Entity         e,
                                          db::Mesh           mesh,
                                          FluxMapBakeOptions options) {
@@ -287,13 +496,10 @@ bool FluxMapComputer::start_generate_for(db::Entity         e,
         }
     }
 
-
     auto future = QtConcurrent::run(
         execute_map_generation_for, options, e, m_database, mesh);
 
-    // TODO: future; recompute bins once
-
-    using FW = QFutureWatcher<QImage>;
+    using FW = QFutureWatcher<BakedFluxMapPtr>;
 
     auto watcher = new FW(this);
 
@@ -311,7 +517,6 @@ bool FluxMapComputer::start_generate_for(db::Entity         e,
         emit image_progress(e, value);
     });
 
-    // TODO: make sure this also deletes the watcher?
     connect(this, &FluxMapComputer::cancel_all, watcher, &FW::cancel);
 
     connect(this,

@@ -12,8 +12,8 @@ struct Vertex {
 };
 
 struct Mesh {
-    std::vector<Vertex>   vertex;
-    std::vector<uint32_t> index;
+    std::vector<Vertex>     vertex;
+    std::vector<glm::uvec3> triangles;
 };
 
 

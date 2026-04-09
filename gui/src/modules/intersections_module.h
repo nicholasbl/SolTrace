@@ -34,7 +34,7 @@ public:
     analysis::RayGeometry* ray_geometry() const;
 
 public slots:
-    void set_results(std::shared_ptr<db::SimulationResult>);
+    void set_results(db::SimulationResult*);
 
 signals:
     void ray_geometry_changed();

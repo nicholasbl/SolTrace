@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QQuickImageProvider>
 
+#include "analysis/flux_map.h"
 #include "database.h"
 #include "database/geometryeditor.h"
 #include "database/simulationresult.h"
@@ -36,15 +37,15 @@ class PendingFluxMapModel : public StructModelAdapter<FluxMappedPendingItem> {
 private slots:
     void on_changed();
 
-    void on_ready(Entity, QImage);
-    void on_progress(Entity, int);
+    void on_ready(db::Entity, analysis::BakedFluxMapPtr);
+    void on_progress(db::Entity, int);
 
 public:
     // TODO: Make sure we have bins counts and bin areas to export
     // TODO: just bin per triangle option
     // power per ray
 
-    Q_WRITABLE_PROPERTY(QSize, bin_counts, (QSize { 128, 128 }));
+    Q_WRITABLE_PROPERTY(int, mesh_resolution_multiply, 1);
     Q_WRITABLE_PROPERTY(QSize, image_resolution, (QSize { 1024, 1024 }));
     Q_WRITABLE_PROPERTY(QColor, mesh_line_color, "black");
     Q_WRITABLE_PROPERTY(bool, show_mesh_grid, false);
@@ -53,7 +54,7 @@ public:
     explicit PendingFluxMapModel(QObject* parent = nullptr);
     virtual ~PendingFluxMapModel() = default;
 
-    void reset(std::shared_ptr<db::SimulationResult const>, Database* database);
+    void reset(db::SimulationResult*);
 
     Database* database() { return m_host; }
 
@@ -62,11 +63,11 @@ public:
     FluxMapProvider* make_new_provider();
 
 public slots:
-    bool start_generate_for(Entity);
-    void cancel_for(Entity);
+    bool start_generate_for(db::Entity);
+    void cancel_for(db::Entity);
 
 signals:
-    void ready(Entity, QImage, Database*);
+    void ready(db::Entity, analysis::BakedFluxMapPtr, Database*);
     void cleared();
 };
 
@@ -95,7 +96,7 @@ public:
 
 public slots:
     void on_reset();
-    void on_ready(Entity, QImage, Database*);
+    void on_ready(Entity, analysis::BakedFluxMapPtr, Database*);
 };
 
 // ============================================================================
@@ -103,8 +104,8 @@ public slots:
 class FluxMapProvider : public QQuickImageProvider {
     Q_OBJECT
 
-    QHash<QString, QImage> m_store;
-    QMutex                 m_lock;
+    QHash<QString, analysis::BakedFluxMapPtr> m_store;
+    QMutex                                    m_lock;
 
 public:
     FluxMapProvider();
@@ -114,7 +115,7 @@ public:
                         QSize const&   requestedSize) override;
 
 public slots:
-    void on_ready(Entity, QImage, Database*);
+    void on_ready(Entity, analysis::BakedFluxMapPtr, Database*);
     void clear();
 };
 

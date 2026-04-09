@@ -46,12 +46,14 @@ static RayRecord extract(uint64_t                          id,
     };
 }
 
-std::shared_ptr<SimulationResult>
+SimulationResult::SimulationResult(QObject* parent) : QObject(parent) { }
+
+std::unique_ptr<SimulationResult>
 SimulationResult::convert(SimulationResultConversion const& opts) {
 
-    SimulationResult ret;
+    std::unique_ptr<SimulationResult> ret;
 
-    ret.records.reserve(opts.result.get_number_of_records());
+    ret->records.reserve(opts.result.get_number_of_records());
 
     uint64_t id = 0;
 
@@ -59,7 +61,7 @@ SimulationResult::convert(SimulationResultConversion const& opts) {
          opts.result.is_at_end(iter);
          ++iter) {
 
-        ret.records.emplace_back(extract(id, opts, **iter));
+        ret->records.emplace_back(extract(id, opts, **iter));
 
         id++;
     }
@@ -71,7 +73,7 @@ SimulationResult::convert(SimulationResultConversion const& opts) {
         glm::dvec3 bounds_max(-maxFloat);
 
 
-        for (auto const& r : ret.records) {
+        for (auto const& r : ret->records) {
             for (auto const& inter : r.events) {
                 bounds_min = glm::min(inter.location, bounds_min);
                 bounds_max = glm::max(inter.location, bounds_max);
@@ -79,15 +81,15 @@ SimulationResult::convert(SimulationResultConversion const& opts) {
         }
 
         if (glm::all(glm::lessThan(bounds_min, bounds_max))) {
-            ret.bounds_max = bounds_max;
-            ret.bounds_min = bounds_min;
+            ret->bounds_max = bounds_max;
+            ret->bounds_min = bounds_min;
         }
     }
 
     {
         // Compute volume
         auto grid_size =
-            ceil(glm::normalize(ret.bounds_max - ret.bounds_min) * 128.0);
+            ceil(glm::normalize(ret->bounds_max - ret->bounds_min) * 128.0);
 
         // qDebug() << grid_size[0] << grid_size[1] << grid_size[2];
 
@@ -96,7 +98,7 @@ SimulationResult::convert(SimulationResultConversion const& opts) {
 
         analysis::Grid3D<float> grid(grid_size[0], grid_size[1], grid_size[2]);
 
-        for (auto const& ray : ret.records) {
+        for (auto const& ray : ret->records) {
 
             if (ray.events.empty()) continue;
 
@@ -124,10 +126,10 @@ SimulationResult::convert(SimulationResultConversion const& opts) {
             x /= largest;
         }
 
-        ret.ray_volume = std::move(grid);
+        ret->ray_volume = std::move(grid);
     }
 
-    return std::make_shared<SimulationResult>(std::move(ret));
+    return ret;
 }
 
 } // namespace db

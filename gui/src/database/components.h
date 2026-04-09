@@ -9,6 +9,8 @@
 
 #include <glm/gtc/quaternion.hpp>
 
+#include "analysis/baked_flux_map.h"
+
 #include "simulation_data_api.hpp"
 
 namespace SD = SolTrace::Data;
@@ -187,7 +189,7 @@ struct ColorComponent {
 /// Marks if this entity has a flux map
 /// Should be hidden during instance rendering
 struct HasFluxMapComponent {
-    QImage image;
+    analysis::BakedFluxMapPtr map_info;
 };
 
 } // namespace db

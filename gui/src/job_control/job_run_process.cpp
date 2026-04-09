@@ -153,7 +153,7 @@ inline QJsonArray to_json(glm::vec3 v) {
     return QJsonArray() << v.x << v.y << v.z;
 }
 
-static QJsonArray build_results(std::shared_ptr<db::SimulationResult> results) {
+static QJsonArray build_results(db::SimulationResult* results) {
     // if (!results) { return {}; }
 
     // auto& result = results->result;
@@ -190,8 +190,7 @@ static QJsonArray build_results(std::shared_ptr<db::SimulationResult> results) {
     abort();
 }
 
-static bool dump_results(std::shared_ptr<db::SimulationResult> results,
-                         QByteArray                            work_dir) {
+static bool dump_results(db::SimulationResult* results, QByteArray work_dir) {
     auto obj = build_results(results);
 
     auto content = QJsonDocument(obj).toJson();
@@ -246,7 +245,8 @@ void check_if_process_worker(int argc, char* argv[]) {
         std::cout << "done" << std::endl;
 
         // write to disk
-        bool ok = dump_results(ptr->take(), work_dir);
+        auto p  = ptr->take();
+        bool ok = dump_results(p.get(), work_dir);
 
         qApp->exit(ok ? EXIT_SUCCESS : EXIT_FAILURE);
     });

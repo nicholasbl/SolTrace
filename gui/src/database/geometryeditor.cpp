@@ -47,7 +47,7 @@ void SurfaceGeometry::rebuild_geometry() {
     auto aperture = ptr->aperture;
 
     auto mesh = generate_surface(surface, aperture);
-    if (!mesh || mesh->vertex.empty() || mesh->index.empty()) {
+    if (!mesh || mesh->vertex.empty() || mesh->triangles.empty()) {
         qWarning() << "Geometry is empty, or unable to be generated";
         update();
         return;
@@ -64,8 +64,8 @@ void SurfaceGeometry::rebuild_geometry() {
     }
 
     auto indexBuffer =
-        QByteArray(reinterpret_cast<const char*>(mesh->index.data()),
-                   mesh->index.size() * sizeof(uint32_t));
+        QByteArray(reinterpret_cast<const char*>(mesh->triangles.data()),
+                   mesh->triangles.size() * sizeof(glm::uvec3));
     auto vertexBuffer =
         QByteArray(reinterpret_cast<const char*>(mesh->vertex.data()),
                    mesh->vertex.size() * sizeof(Vertex));

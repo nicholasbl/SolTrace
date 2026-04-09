@@ -135,13 +135,10 @@ void append_polygon(db::Mesh&                              mesh,
             glm::cross(mesh.vertex[i1].position - mesh.vertex[base].position,
                        mesh.vertex[i2].position - mesh.vertex[base].position);
         if (glm::dot(tri_normal, plane_normal) < 0.0f) {
-            mesh.index.push_back(base);
-            mesh.index.push_back(i2);
-            mesh.index.push_back(i1);
+            mesh.triangles.push_back({ base, i2, i1 });
+
         } else {
-            mesh.index.push_back(base);
-            mesh.index.push_back(i1);
-            mesh.index.push_back(i2);
+            mesh.triangles.push_back({ base, i1, i2 });
         }
     }
 }
@@ -286,7 +283,7 @@ void volume_to_mesh(QPromise<db::Mesh>& output,
         }
     }
 
-    if (mesh.index.empty()) { return; }
+    if (mesh.triangles.empty()) { return; }
 
     output.emplaceResult(std::move(mesh));
 }
