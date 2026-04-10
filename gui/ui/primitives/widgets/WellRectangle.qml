@@ -7,7 +7,7 @@ import SolTrace
 
 Rectangle {
     radius: height / 2
-    color: Theme.glassColor
+    color: App.theme.glassColor
     
     Rectangle {
         anchors.fill: parent

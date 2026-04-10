@@ -1,4 +1,0 @@
-gaussian.md
-pillbox.md
-csr.md
-custom.md
