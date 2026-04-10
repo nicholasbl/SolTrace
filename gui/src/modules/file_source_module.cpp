@@ -78,19 +78,22 @@ void FileSourceModule::file_ready() {
 
     auto result = from->result();
 
-    std::visit(
-        overloaded {
-            [this](LoadedFile arg) { this->set_current_database(arg.ptr); },
-            [this](LoadFileFailed failure) {
-                emit this->notify(failure.notification);
-                delete failure.ptr;
-            },
-        },
-        result);
+
+    std::visit(overloaded {
+                   [this](LoadedFile arg) {
+                       this->set_current_database(arg.ptr);
+                       this->set_name(arg.name);
+                   },
+                   [this](LoadFileFailed failure) {
+                       emit this->notify(failure.notification);
+                       delete failure.ptr;
+                   },
+               },
+               result);
 }
 
 void FileSourceModule::handle_source_update() {
-    if (is_loading()) { emit cancel_current_load(QPrivateSignal {}); }
+    if (is_loading()) { emit cancel_current_load(QPrivateSignal { }); }
     set_is_loading(false);
 
     auto new_source = source();
@@ -98,6 +101,7 @@ void FileSourceModule::handle_source_update() {
     if (new_source.isEmpty()) {
         qDebug() << Q_FUNC_INFO;
         set_current_database(new db::Database(this));
+        set_name("");
         return;
     }
 

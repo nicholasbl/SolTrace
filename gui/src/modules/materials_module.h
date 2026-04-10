@@ -42,10 +42,10 @@ public:
     QOBJECT_WRITABLE_PROPERTY(db::MaterialEditor, material_edit);
     QOBJECT_WRITABLE_PROPERTY(db::GeometryEditor, geometry_edit);
 
-    Q_WRITABLE_PROPERTY(db::Entity, current_material, {})
+    Q_WRITABLE_PROPERTY(db::Entity, current_material, { })
     Q_READONLY_PROPERTY(QString, current_material_name)
 
-    Q_WRITABLE_PROPERTY(db::Entity, current_geometry, {})
+    Q_WRITABLE_PROPERTY(db::Entity, current_geometry, { })
     Q_READONLY_PROPERTY(QString, current_geometry_name)
 };
 

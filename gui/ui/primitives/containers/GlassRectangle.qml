@@ -35,10 +35,25 @@ Rectangle {
         id: effect_source
         anchors.fill: root
         sourceItem: root.blur_source
-        sourceRect: getPositionRelativeToWindow()
         visible: false
         hideSource: false
         live: !root.isDestroying
+
+        sourceRect: {
+            // We track changes to the size of the root window
+            root.width; root.height; root.x; root.y
+
+            if (root.blur_source) {
+                root.blur_source.width; root.blur_source.height
+            }
+
+            let p = root.parent
+            while (p) { p.x; p.y; p.width; p.height; p = p.parent }
+
+            if (!root.blur_source) return Qt.rect(0, 0, 0, 0)
+            const pos = root.mapToItem(root.blur_source, 0, 0)
+            return Qt.rect(pos.x, pos.y, root.width, root.height)
+        }
     }
 
 

@@ -9,8 +9,6 @@ import SolTrace
 Item {
     id: root
 
-    property bool use_orthographic: false
-
     Menu {
         id: geometryInstanceContextMenu
         property var focused_group: null
@@ -70,7 +68,7 @@ Item {
         id: view
         anchors.fill: parent
 
-        camera: root.use_orthographic ? ortho_camera : camera
+        camera: App.view.perspective == ViewModule.Orthographic ? ortho_camera : camera
 
         environment: SceneEnvironment {
             antialiasingMode: SceneEnvironment.MSAA
@@ -174,10 +172,19 @@ Item {
         }
     }
 
+    // I hate this stupid thing
+    WasdController {
+        mouseEnabled: App.view.camera == ViewModule.WASD
+        keysEnabled: App.view.camera == ViewModule.WASD
+        controlledObject: camera
+    }
+
     CustomOrbitController {
         anchors.fill: parent
         origin: origin
-        camera: root.use_orthographic ? ortho_camera : camera
+        mouseEnabled: App.view.camera == ViewModule.Orbital
+        panEnabled: App.view.camera == ViewModule.Orbital
+        camera: App.view.perspective == ViewModule.Orthographic ? ortho_camera : camera
         automaticClipping: false
     }
 
@@ -222,14 +229,5 @@ Item {
                            geometryInstanceContextMenu.popup()
                        }
                    }
-    }
-
-    Button {
-        anchors.bottom: parent.bottom
-        anchors.right: parent.right
-        text: "Ortho"
-        checked: root.use_orthographic
-        checkable: true
-        onClicked: root.use_orthographic = !root.use_orthographic
     }
 }

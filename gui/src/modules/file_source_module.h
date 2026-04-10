@@ -11,11 +11,12 @@ namespace SolTrace::GUI::App {
 
 class FileSourceModule : public QObject {
     Q_OBJECT
+    QML_ELEMENT
 
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
 
     Q_WRITABLE_PROPERTY(bool, is_loading, false)
-    Q_WRITABLE_PROPERTY(QUrl, source, {})
+    Q_WRITABLE_PROPERTY(QUrl, source, { })
 
 private slots:
     void file_ready();
@@ -26,6 +27,7 @@ signals:
 
 public:
     FileSourceModule(QObject* parent = nullptr);
+    Q_WRITABLE_PROPERTY(QString, name, "Untitled")
 
 signals:
     void notify(ANotification);

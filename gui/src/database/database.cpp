@@ -528,7 +528,7 @@ static void import_optics(
 
         auto new_group_params = local_mat;
 
-        auto new_group = MaterialGroupComponent {};
+        auto new_group = MaterialGroupComponent { };
 
         auto group_entity = reg.create();
 
@@ -558,7 +558,7 @@ static void import_optics(
 
         auto new_group_params = local_geom;
 
-        auto new_group = GeometryGroupComponent {};
+        auto new_group = GeometryGroupComponent { };
 
         auto group_entity = reg.create();
 
@@ -760,8 +760,8 @@ const entt::registry& Database::as_registry() const {
 static void install_transform(SD::element_ptr           ptr,
                               TransformComponent const& tf_comp) {
 
-    glm::dvec3 aim  = {};
-    double     roll = {};
+    glm::dvec3 aim  = { };
+    double     roll = { };
     quat_to_dir_roll(tf_comp.rotation, aim, roll);
 
     auto origin = tf_comp.position;
@@ -1026,7 +1026,7 @@ void Database::set_parent(entt::entity child, entt::entity parent) {
 std::span<entt::entity const> Database::children_of(entt::entity parent) const {
     auto parent_comp = m_registry.try_get<ChildrenComponent>(parent);
 
-    if (!parent_comp) { return {}; }
+    if (!parent_comp) { return { }; }
 
     return parent_comp->children;
 }
@@ -1121,7 +1121,7 @@ SD::ray_source_ptr Database::get_ray_source() const {
         return ptr->source;
     }
 
-    return {};
+    return { };
 }
 
 SD::SimulationParameters const& Database::get_sim_params() const {
@@ -1203,11 +1203,11 @@ std::span<entt::entity const> Database::tags_for(entt::entity item) const {
         return ptr->tags;
     }
 
-    return {};
+    return { };
 }
 
 QString Database::name_of(Entity item) const {
-    if (!m_registry.valid(item)) return {};
+    if (!m_registry.valid(item)) return { };
 
     if (auto ptr = m_registry.try_get<IdentityComponent>(item); ptr) {
         return ptr->name;
@@ -1401,7 +1401,7 @@ entt::entity Database::geometry_of(entt::entity element) const {
 
 void Database::select(entt::entity to_select) {
     clear_selection();
-    selected.set(to_select, SelectedComponent {});
+    selected.set(to_select, SelectedComponent { });
 }
 
 void Database::deselect(entt::entity to_deselect) {
@@ -1412,7 +1412,7 @@ void Database::toggle_selection(entt::entity to_toggle_selection) {
     if (m_registry.all_of<SelectedComponent>(to_toggle_selection)) {
         selected.remove(to_toggle_selection);
     } else {
-        selected.set(to_toggle_selection, SelectedComponent {});
+        selected.set(to_toggle_selection, SelectedComponent { });
     }
 }
 

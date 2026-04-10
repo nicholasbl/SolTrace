@@ -8,6 +8,7 @@
 #include "module_common.h"
 
 #include <QObject>
+#include <QQmlEngine>
 
 namespace SolTrace::GUI::App {
 

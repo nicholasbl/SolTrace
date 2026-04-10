@@ -1,0 +1,104 @@
+#include "app_data.h"
+#include <QApplication>
+#include <QSettings>
+
+namespace SolTrace::GUI::App {
+
+void AppData::load_session() {
+    QSettings s;
+    s.beginGroup("View");
+    m_view->left_panel()->set_visible(
+        s.value("show_left_panel", true).toBool());
+    m_view->right_panel()->set_visible(
+        s.value("show_right_panel", true).toBool());
+
+    m_view->left_panel()->set_width(s.value("left_panel_width", 550).toUInt());
+    m_view->right_panel()->set_width(s.value("right_panel_width", 0).toUInt());
+
+    m_view->set_workflow_phase(s.value("workflow_phase", 0).toUInt());
+
+    m_view->set_configure_section(s.value("configure_section", 0).toUInt());
+    m_view->set_simulate_section(s.value("simulate_section", 0).toUInt());
+    m_view->set_analyze_section(s.value("analyze_section", 0).toUInt());
+
+    m_view->set_sun_section(s.value("sun_section", 0).toUInt());
+
+    s.endGroup();
+
+    s.beginGroup("File");
+    m_file_source->set_source(s.value("source", "").toUrl());
+    s.endGroup();
+}
+
+void AppData::save_session() {
+    QSettings s;
+    s.beginGroup("View");
+    s.setValue("show_left_panel", m_view->left_panel()->visible());
+    s.setValue("show_right_panel", m_view->right_panel()->visible());
+
+    s.setValue("left_panel_width", m_view->left_panel()->width());
+    s.setValue("right_panel_width", m_view->right_panel()->width());
+
+    s.setValue("workflow_phase", m_view->workflow_phase());
+
+    s.setValue("configure_section", m_view->configure_section());
+    s.setValue("simulate_section", m_view->simulate_section());
+    s.setValue("analyze_section", m_view->analyze_section());
+
+    s.setValue("sun_section", m_view->sun_section());
+
+    s.endGroup();
+
+    s.beginGroup("File");
+    s.setValue("source", m_file_source->source());
+    s.endGroup();
+}
+
+AppData::AppData(QObject* parent, const QString& documentation_directory)
+    : m_file_source(new FileSourceModule(this)),
+      m_view(new ViewModule(this)),
+      m_workflow(new WorkflowModule(this)),
+      m_docs(new DocumentationModule(this)),
+      m_sun(new SunModule(this)),
+      m_tracing(new TracingModule(this)),
+      m_materials(new MaterialsModule(this)),
+      m_layout(new LayoutModule(this)),
+      m_simulation(new SimulationModule(this)),
+      m_intersections(new IntersectionsModule(this)),
+      m_flux(new FluxModule(this)) {
+
+    connect(m_file_source,
+            &FileSourceModule::current_database_value_changed,
+            this,
+            [this](auto* ptr) { emit this->new_database(ptr); });
+
+    connect(this,
+            &AppData::new_database,
+            m_simulation,
+            &SimulationModule::set_current_database);
+
+    connect(this,
+            &AppData::new_database,
+            m_materials,
+            &MaterialsModule::set_current_database);
+
+    connect(this,
+            &AppData::new_database,
+            m_layout,
+            &LayoutModule::set_current_database);
+
+    connect(m_simulation,
+            &SimulationModule::new_results,
+            this,
+            &AppData::new_results);
+
+    connect(qApp, &QCoreApplication::aboutToQuit, this, &AppData::save_session);
+
+    load_session();
+}
+
+AppData::~AppData() {
+    save_session();
+}
+
+} // namespace SolTrace::GUI::App
