@@ -38,7 +38,7 @@ Flickable {
             fontFamily: App.view.left_panel.size < 1 ? "Font Awesome 7 Free" : ""
 
             model: App.view.left_panel.size < 1 ?
-                        ["\uf0eb", "\uf53f"]
+                        ["\uf0eb", "\uf53f", "\uf06a"]
                       :
                         ["Shape", "Type", " Position"]
 

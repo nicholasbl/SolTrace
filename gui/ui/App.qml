@@ -7,7 +7,7 @@ import SolTrace
 QtObject {
     id: root
 
-    readonly property AppData data: _appData
+    readonly property AppData data: AppData {}
 
     readonly property Theme theme: Theme {}
     // readonly property Settings settings: Settings {}

@@ -38,10 +38,6 @@ int main(int argc, char* argv[]) {
 
     QQmlApplicationEngine engine;
 
-    auto* app_data = new SolTrace::GUI::App::AppData();
-
-    engine.rootContext()->setContextProperty("_appData", app_data);
-
     QObject::connect(
         &engine,
         &QQmlApplicationEngine::objectCreationFailed,

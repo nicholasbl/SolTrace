@@ -251,6 +251,7 @@ qt_add_qml_module(SolTrace
 
         ui/primitives/containers/GlassRectangle.qml
         ui/primitives/containers/ShadowedGlassRectangle.qml
+        ui/primitives/containers/WellRectangle.qml
 
         ui/primitives/docs/InlineDocumentation.qml
 
@@ -261,7 +262,6 @@ qt_add_qml_module(SolTrace
 
         ui/primitives/widgets/AdaptiveEditor.qml
         ui/primitives/widgets/PanelButtons.qml
-        ui/primitives/widgets/WellRectangle.qml
 
     SOURCES
         src/app_data.h src/app_data.cpp
