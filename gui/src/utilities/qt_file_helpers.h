@@ -41,7 +41,7 @@ public:
   QString metadata(QString key) {
     int index = m_metadata.indexOf(key.toLower());
     if (index == -1 || m_metadata.count() <= index + 1) {
-      return "Error: key " + key + " not found";
+      return "Error: metadata " + key + " not found";
     }
     return m_metadata.at(index + 1);
   }
@@ -58,7 +58,7 @@ private:
   const QString m_body;
 };
 
-MarkdownDocument inline *parse_markdown_file(QFile &file) {
+inline MarkdownDocument  *parse_markdown_file(QFile &file) {
   QFileInfo info(file);
   QString raw = read_file(file);
 

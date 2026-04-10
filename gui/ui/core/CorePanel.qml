@@ -10,16 +10,40 @@ Item {
     id: root
     property var blur_source
 
+    onWidthChanged: App.view.fit_panels(width, false, true)
+
+    // C++ -> QML (consume width from ViewModule)
     Binding {
-        target: module_stack
-        property: "currentIndex"
-        value: App.view.workflow_phase
+        target: left_panel
+        property: "SplitView.preferredWidth"
+        value: App.view.left_panel.width
+        when: left_panel.visible
     }
 
-    enum SizeClass {
-        Small = 0,
-        Normal = 1,
-        Wide = 2
+    Binding {
+        target: right_panel
+        property: "SplitView.preferredWidth"
+        value: App.view.right_panel.width
+        when: right_panel.visible
+    }
+
+    // QML -> C++ (write back drag-resized widths, then let fit_panels snap)
+    Connections {
+        target: left_panel
+        function onWidthChanged() {
+            if (!split.resizing) return
+            if (left_panel.width === App.view.left_panel.width) return
+            App.view.left_panel.width = left_panel.width
+        }
+    }
+
+    Connections {
+        target: right_panel
+        function onWidthChanged() {
+            if (!split.resizing) return
+            if (right_panel.width === App.view.right_panel.width) return
+            App.view.right_panel.width = right_panel.width
+        }
     }
 
     TopBar {
@@ -29,184 +53,73 @@ Item {
         anchors.right: parent.right
         anchors.top: parent.top
         blur_source: root.blur_source
-        height: 48
-
-        onShow_script_area: {
-            right_stack.enabled = !right_stack.enabled
-        }
+        height: 42
+        available_width: root.width
     }
 
-    onWidthChanged: {
-        while (width < background.requested_width && background.requested_width_index > 0) {
-            background.requested_width_index -= 1
-        }
-    }
-
-    ShadowedGlassRectangle {
-        id: background
-        blur_source: root.blur_source
-
-        property int requested_width_index : 1
-
-        property var available_widths : [250, 500, 750]
-
-        property var requested_width : available_widths[requested_width_index]
-
-        anchors.left: parent.left
-        anchors.bottom: parent.bottom
+    SettingsPanel {
         anchors.top: top_bar.bottom
-
-        anchors.margins: 10
-
-        width: requested_width
-
-        radius: 10
-
-        Behavior on requested_width {
-            NumberAnimation {
-                duration: 100
-            }
-        }
-
-        // ADD HANDLERS TO STOP INPUT PROPAGATION
-        // Catch clicks / presses / hover movement
-        MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.AllButtons
-            hoverEnabled: true
-            preventStealing: true
-
-            onPressed: (mouse) => mouse.accepted = true
-            onReleased: (mouse) => mouse.accepted = true
-            onClicked: (mouse) => mouse.accepted = true
-            onDoubleClicked: (mouse) => mouse.accepted = true
-            onPositionChanged: (mouse) => mouse.accepted = true
-            onWheel: (wheel) => wheel.accepted = true
-        }
-
-        RowLayout {
-            id: module_info_row
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.margins: 10
-            height: 34
-
-            uniformCellSizes: true
-
-            Item {
-                Layout.fillWidth: true
-                visible: background.requested_width_index > 0
-                Layout.fillHeight: true
-            }
-
-            Label {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                text: ["Configure", "Simulate", "Analyze"][App.view.workflow_phase]
-                font.pointSize: 18
-                font.bold: true
-
-                elide: Label.ElideRight
-
-                horizontalAlignment: Label.AlignHCenter
-                verticalAlignment: Label.AlignVCenter
-
-            }
-
-            Item {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-
-                RowLayout {
-                    anchors.fill: parent
-
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                    }
-
-                    STIconButton {
-                        Layout.preferredWidth: implicitHeight
-                        Layout.fillHeight: true
-                        id: smaller_button
-                        text: "\uf422"
-
-                        visible: background.requested_width_index !== CorePanel.Small
-
-                        onClicked: {
-                            background.requested_width_index = Math.max(
-                                        background.requested_width_index - 1,
-                                        0,
-                                        )
-                        }
-                    }
-
-                    STIconButton {
-                        Layout.preferredWidth: implicitHeight
-                        Layout.fillHeight: true
-                        id: larger_button
-                        text: "\uf065"
-
-                        visible: background.requested_width_index !== CorePanel.Wide
-
-                        onClicked: {
-                            background.requested_width_index = Math.min(
-                                        background.requested_width_index + 1,
-                                        background.available_widths.length - 1,
-                                        )
-                        }
-                    }
-
-                }
-            }
-
-
-        }
-
-        StackLayout {
-            id: module_stack
-
-            onCurrentIndexChanged: App.view.workflow_phase
-
-            anchors.top: module_info_row.bottom
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            anchors.margins: 10
-
-            ConfigureModule {
-                size_class: background.requested_width_index
-            }
-
-            SimulateModule {
-                size_class: background.requested_width_index
-            }
-
-        }
-    }
-
-    RightStack {
-        id: right_stack
-
-        opacity: enabled
-
-        enabled: false
-
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 100
-            }
-        }
-
-        blur_source: root.blur_source
-
+        anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.top: top_bar.bottom
-
         anchors.margins: 10
+        blur_source: root.blur_source
+        enabled: App.view.settings_panel.visible
+        opacity: enabled
+        available_width: root.width
+    }
 
-        width: Math.min(250, root.width - background.width - 50);
+    SplitView {
+        id: split
+        anchors.top: top_bar.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.margins: 10
+        orientation: Qt.Horizontal
+
+        handle: Rectangle {
+            implicitWidth: 6
+            color: SplitHandle.pressed ? "#80ffffff"
+                 : SplitHandle.hovered ? "#40ffffff"
+                                       : "transparent"
+        }
+
+        LeftPanel {
+            id: left_panel
+
+            blur_source: root.blur_source
+            available_width: root.width
+
+            SplitView.minimumWidth: 250
+            SplitView.maximumWidth: split.width
+            SplitView.fillHeight: true
+
+            visible: App.view.left_panel.visible
+            enabled: visible
+            opacity: enabled
+        }
+
+        Item {
+            id: center_space
+            SplitView.fillWidth: true
+            SplitView.fillHeight: true
+            SplitView.minimumWidth: App.view.left_panel.visible && App.view.right_panel.visible ? 40 : 0
+        }
+
+        RightPanel {
+            id: right_panel
+
+            blur_source: root.blur_source
+            available_width: root.width
+
+            SplitView.minimumWidth: 250
+            SplitView.maximumWidth: split.width
+            SplitView.fillHeight: true
+
+            visible: App.view.right_panel.visible
+            enabled: visible
+            opacity: enabled
+        }
     }
 }

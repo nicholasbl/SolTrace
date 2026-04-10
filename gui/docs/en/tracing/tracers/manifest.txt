@@ -1,3 +1,0 @@
-legacy.md
-embree.md
-gpu.md

@@ -7,7 +7,7 @@ include(cmake/CPM.cmake)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-option(SOLTRACE_BUILD_GUI "Build the GUI parts of Soltrace" OFF)
+option(SOLTRACE_BUILD_GUI "Build the GUI parts of Soltrace" ON)
 option(
 	SOLTRACE_BUILD_CORETRACE 
 	"Legacy ray tracing backend including the strace executable"

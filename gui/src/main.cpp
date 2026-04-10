@@ -1,11 +1,13 @@
 #include "job_control/job_run_process.h"
 
-#include <QFontDatabase>
+#include "app_data.h"
+#include "backend.h"
 #include <QApplication>
-#include <QQmlApplicationEngine>
 #include <QFile>
-#include <QQuickWindow>
+#include <QFontDatabase>
+#include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QQuickWindow>
 
 constexpr auto font_list = std::array {
     ":/assets/fonts/computer-modern/cmunrm.ttf",
@@ -17,6 +19,7 @@ constexpr auto font_list = std::array {
     ":/assets/fonts/roboto/Roboto-BoldItalic.ttf",
     ":/assets/fonts/roboto/Roboto-Bold.ttf",
     ":/assets/fonts/font-awesome/fa_solid_7.otf",
+    // ":/assets/fonts/font-awesome/fa_regular_7.otf"
 };
 
 int main(int argc, char* argv[]) {
@@ -30,7 +33,6 @@ int main(int argc, char* argv[]) {
     // Load fonts
     for (auto font : font_list) {
         auto result = QFontDatabase::addApplicationFont(font);
-
         if (result < 0) { qWarning() << "Unable to load font:" << font; }
     }
 
