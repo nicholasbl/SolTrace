@@ -5,7 +5,7 @@ namespace SolTrace::GUI::App {
 IntersectionsModule::IntersectionsModule(QObject* parent)
     : QObject(parent), m_ray_geometry(new analysis::RayGeometry) { }
 
-void IntersectionsModule::set_results(db::SimulationResult* ptr) {
+void IntersectionsModule::set_results(db::SimulationResultPtr ptr) {
     m_ray_geometry->set_results(ptr);
 }
 

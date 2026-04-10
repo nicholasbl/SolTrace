@@ -154,7 +154,7 @@ Item {
             }
 
             Model {
-                geometry: App.intersections.ray_geometry
+                geometry: AppData.intersections.ray_geometry
 
                 materials : [
                     PrincipledMaterial {

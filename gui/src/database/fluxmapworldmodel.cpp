@@ -26,7 +26,7 @@ PendingFluxMapModel::PendingFluxMapModel(QObject* parent)
 }
 
 
-void PendingFluxMapModel::reset(db::SimulationResult* res) {
+void PendingFluxMapModel::reset(db::SimulationResultPtr res) {
     emit cleared();
 
     m_compute->set_results(res);
@@ -34,10 +34,10 @@ void PendingFluxMapModel::reset(db::SimulationResult* res) {
     on_changed();
 
     if (res->database) {
-        m_host = res->database;
+        m_host = res->database.get();
         for (auto const& [e, c] :
              res->database->as_registry().view<HasFluxMapComponent>().each()) {
-            emit ready(e, c.map_info, res->database);
+            emit ready(e, c.map_info, res->database.get());
         }
     } else {
         m_host = nullptr;
@@ -95,8 +95,24 @@ find_mesh_for(db::SurfaceGenerationOptions surface_options,
     return db::generate_surface(surface->surface, surface->aperture);
 }
 
+// void PendingFluxMapModel::start_debug() {
+//     // find something with name zero
+//     if (!m_host) return;
+//     for (auto const& [e, c, g] :
+//          m_host->as_registry()
+//              .view<IdentityComponent, GeometryGroupMemberComponent>()
+//              .each()) {
+//         if (c.name == "0") {
+//             start_generate_for(e);
+//             return;
+//         }
+//     }
+// }
+
 bool PendingFluxMapModel::start_generate_for(Entity entity) {
     if (!m_host) return false;
+
+    qDebug() << Q_FUNC_INFO << entity;
 
     auto mesh_res = std::max(1, mesh_resolution_multiply());
 
@@ -109,7 +125,12 @@ bool PendingFluxMapModel::start_generate_for(Entity entity) {
 
     auto mesh = find_mesh_for(surface_options, m_host, entity);
 
-    if (!mesh) return false;
+    if (!mesh) {
+        qDebug() << Q_FUNC_INFO << "entity has no mesh, bailing";
+        return false;
+    }
+
+    qDebug() << Q_FUNC_INFO << mesh->vertex.size() << mesh->triangles.size();
 
     store_remove_by_predicate([this, entity](auto const& item) {
         if (item.entity == entity) { this->cancel_for(entity); }
@@ -124,7 +145,12 @@ bool PendingFluxMapModel::start_generate_for(Entity entity) {
         .color_map = QImage(color_map()),
     };
 
-    if (!m_compute->start_generate_for(entity, *mesh, opts)) { return false; }
+    if (!m_compute->start_generate_for(entity, *mesh, opts)) {
+        qDebug() << Q_FUNC_INFO << "generation kickoff failed";
+        return false;
+    }
+
+    qDebug() << Q_FUNC_INFO << "generation kickoff success";
 
     store_push_append(FluxMappedPendingItem {
         .entity   = entity,

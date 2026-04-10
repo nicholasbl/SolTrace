@@ -24,9 +24,11 @@ void SimulationModule::job_done() {
     m_running = nullptr;
 
     auto results = from->take();
-    results->setParent(this);
 
-    emit new_results(results.release());
+    m_completed_sims.push_back(results);
+
+    qDebug() << Q_FUNC_INFO << "publish";
+    emit new_results(results);
 }
 
 SimulationModule::SimulationModule(QObject* parent)

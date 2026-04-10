@@ -53,12 +53,14 @@ RunningJob::RunningJob(SimDataPtr data,
     connect(watcher, &QFutureWatcher<SimResult>::finished, this, [this]() {
         auto watcher = ((QFutureWatcher<SimResult>*)(this->m_watcher));
 
-        auto res = watcher->result();
+        auto res = std::move(watcher->result());
 
         std::visit(
             overloaded {
                 [this](ResultPtr& ptr) {
-                    this->m_result.reset(ptr);
+                    // there should only be one, we are the only consumer
+
+                    this->m_result = std::move(ptr);
 
                     emit this->finished();
                 },
@@ -95,7 +97,7 @@ RunningJob::RunningJob(SimDataPtr data,
 
 RunningJob::~RunningJob() = default;
 
-std::unique_ptr<db::SimulationResult> RunningJob::take() {
+std::shared_ptr<db::SimulationResult> RunningJob::take() {
     return std::move(m_result);
 }
 

@@ -1,7 +1,11 @@
 #include "simulationresult.h"
 #include "analysis/ray_volume_raster.h"
 
+#include "database.h"
+
 #include <entt/entity/entity.hpp>
+
+#include <QDebug>
 
 namespace db {
 
@@ -46,10 +50,13 @@ static RayRecord extract(uint64_t                          id,
     };
 }
 
-SimulationResult::SimulationResult(QObject* parent) : QObject(parent) { }
+SimulationResult::SimulationResult() = default;
+
+SimulationResult::~SimulationResult() = default;
 
 std::unique_ptr<SimulationResult>
 SimulationResult::convert(SimulationResultConversion const& opts) {
+    qDebug() << Q_FUNC_INFO << "Converting results...";
 
     auto ret = std::make_unique<SimulationResult>();
 
@@ -58,13 +65,30 @@ SimulationResult::convert(SimulationResultConversion const& opts) {
     uint64_t id = 0;
 
     for (auto iter = opts.result.get_ray_record_iteratior();
-         opts.result.is_at_end(iter);
+         !opts.result.is_at_end(iter);
          ++iter) {
 
         ret->records.emplace_back(extract(id, opts, **iter));
 
         id++;
     }
+
+    for (size_t ray_i = 0; ray_i < ret->records.size(); ray_i++) {
+        auto const& events = ret->records[ray_i].events;
+        for (auto const& event : events) {
+            if (event.entity != entt::null) {
+                ret->entity_to_ray_ids[event.entity].push_back(ray_i);
+            }
+        }
+    }
+
+    for (auto& [k, v] : ret->entity_to_ray_ids) {
+        std::sort(v.begin(), v.end());
+        auto last = std::unique(v.begin(), v.end());
+        v.erase(last, v.end());
+    }
+
+    qDebug() << Q_FUNC_INFO << "Converted" << ret->records.size() << "rays";
 
     {
         constexpr float maxFloat = std::numeric_limits<float>::max();

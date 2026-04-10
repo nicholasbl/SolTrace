@@ -12,14 +12,14 @@ ColumnLayout {
     STComboBar {
         id: bar
 
-        currentIndex: App.view.simulate_section
-        onCurrentIndexChanged: App.view.simulate_section  = currentIndex
+        currentIndex: AppData.view.simulate_section
+        onCurrentIndexChanged: AppData.view.simulate_section  = currentIndex
 
         Layout.fillWidth: true
 
-        fontFamily: App.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
+        fontFamily: AppData.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
 
-        model : App.view.left_panel.size == PanelData.Small ?
+        model : AppData.view.left_panel.size == PanelData.Small ?
                     ["\uf828", "\uf03d", "\uf188", "\uf15c"]
                   :
                     ["Execution", "Navigation", "Diagnostics", "Logs"]
@@ -33,7 +33,7 @@ ColumnLayout {
     }
 
     StackLayout {
-        currentIndex: App.view.simulate_section
+        currentIndex: AppData.view.simulate_section
 
         Layout.fillWidth: true
         Layout.fillHeight: true
@@ -43,7 +43,7 @@ ColumnLayout {
         ColumnLayout {
             InlineDocumentation {
                 key: "placeholder_small"
-                target: App.view.left_panel
+                target: AppData.view.left_panel
                 title: "Simulation Runner"
             }
 
@@ -60,10 +60,10 @@ ColumnLayout {
                 STSpinBox {
                     Layout.fillWidth: true
                     from: 0
-                    value: App.simulation.ray_count
+                    value: AppData.simulation.ray_count
                     to: 1000000000
 
-                    onValueModified: App.simulation.ray_count = value
+                    onValueModified: AppData.simulation.ray_count = value
                 }
 
                 STPropertyLabel {
@@ -73,10 +73,10 @@ ColumnLayout {
                 STSpinBox {
                     Layout.fillWidth: true
                     from: 0
-                    value: App.simulation.max_ray_count
+                    value: AppData.simulation.max_ray_count
                     to: 1000000000
 
-                    onValueModified: App.simulation.ray_count = value
+                    onValueModified: AppData.simulation.ray_count = value
                 }
 
                 STButton {
@@ -87,7 +87,7 @@ ColumnLayout {
                     text_icon: "\uf0da"
 
                     onClicked: {
-                        App.simulation.run()
+                        AppData.simulation.run()
                     }
                 }
             }
@@ -98,18 +98,18 @@ ColumnLayout {
             InlineDocumentation {
                 key: "placeholder_small"
                 title: "Cameras"
-                target: App.view.left_panel
+                target: AppData.view.left_panel
             }
 
             STComboBar {
-                currentIndex: App.view.camera
-                onCurrentIndexChanged: App.view.camera  = currentIndex
+                currentIndex: AppData.view.camera
+                onCurrentIndexChanged: AppData.view.camera  = currentIndex
 
                 Layout.fillWidth: true
 
-                fontFamily: App.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
+                fontFamily: AppData.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
 
-                model : App.view.left_panel.size == PanelData.Small ?
+                model : AppData.view.left_panel.size == PanelData.Small ?
                             ["\uf828", "\uf03d"]
                           :
                             ["WASD Camera", "Orbital Camera"]
@@ -118,18 +118,18 @@ ColumnLayout {
             InlineDocumentation {
                 key: "placeholder_small"
                 title: "Camera Perspectives"
-                target: App.view.left_panel
+                target: AppData.view.left_panel
             }
 
             STComboBar {
-                currentIndex: App.view.perspective
-                onCurrentIndexChanged: App.view.perspective  = currentIndex
+                currentIndex: AppData.view.perspective
+                onCurrentIndexChanged: AppData.view.perspective  = currentIndex
 
                 Layout.fillWidth: true
 
-                fontFamily: App.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
+                fontFamily: AppData.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
 
-                model : App.view.left_panel.size == PanelData.Small ?
+                model : AppData.view.left_panel.size == PanelData.Small ?
                             ["\uf06a", "\uf06a"]
                           :
                             ["Normal Perspective", "Orthographic Perspective"]
@@ -141,7 +141,7 @@ ColumnLayout {
             InlineDocumentation {
                 key: "placeholder_small"
                 title: "Bounding Boxes"
-                target: App.view.left_panel
+                target: AppData.view.left_panel
             }
 
             STButton {
@@ -152,7 +152,7 @@ ColumnLayout {
             InlineDocumentation {
                 key: "placeholder_small"
                 title: "Element Volumes"
-                target: App.view.left_panel
+                target: AppData.view.left_panel
             }
 
             STButton {
@@ -166,7 +166,7 @@ ColumnLayout {
             InlineDocumentation {
                 key: "placeholder_small"
                 title: "Logs"
-                target: App.view.left_panel
+                target: AppData.view.left_panel
             }
 
             STButton {
@@ -182,7 +182,7 @@ ColumnLayout {
         collapsible: false
         title: "Status"
 
-        enabled: App.simulation.is_running
+        enabled: AppData.simulation.is_running
 
         STPropertyLabel {
             text: "Progress"
@@ -192,7 +192,7 @@ ColumnLayout {
             Layout.fillWidth: true
             from: 0
             to: 100
-            value: App.simulation.progress
+            value: AppData.simulation.progress
         }
 
         STPropertyLabel {
@@ -201,7 +201,7 @@ ColumnLayout {
 
         Label {
             Layout.fillWidth: true
-            text: App.simulation.current_stage
+            text: AppData.simulation.current_stage
         }
     }
 

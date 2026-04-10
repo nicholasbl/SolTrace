@@ -54,7 +54,7 @@ public:
     explicit PendingFluxMapModel(QObject* parent = nullptr);
     virtual ~PendingFluxMapModel() = default;
 
-    void reset(db::SimulationResult*);
+    void reset(db::SimulationResultPtr);
 
     Database* database() { return m_host; }
 
@@ -67,7 +67,7 @@ public slots:
     void cancel_for(db::Entity);
 
 signals:
-    void ready(db::Entity, analysis::BakedFluxMapPtr, Database*);
+    void ready(db::Entity, analysis::BakedFluxMapPtr, db::Database*);
     void cleared();
 };
 

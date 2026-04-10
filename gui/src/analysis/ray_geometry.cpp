@@ -11,7 +11,11 @@ struct LineVertex {
 };
 
 void RayGeometry::rebuild_geometry() {
-    if (!m_database) { return; }
+    qDebug() << Q_FUNC_INFO << "Start";
+    if (!m_database) {
+        qDebug() << Q_FUNC_INFO << "No database";
+        return;
+    }
 
     clear();
 
@@ -115,6 +119,7 @@ void RayGeometry::rebuild_geometry() {
         }
     }
 
+    qDebug() << Q_FUNC_INFO << "New buffers ready";
 
     auto vertex_buffer = QByteArray(reinterpret_cast<const char*>(verts.data()),
                                     verts.size() * sizeof(LineVertex));
@@ -143,6 +148,8 @@ void RayGeometry::rebuild_geometry() {
                         m_database->bounds_max.y,
                         m_database->bounds_max.z));
     setPrimitiveType(QQuick3DGeometry::PrimitiveType::Lines);
+
+    qDebug() << Q_FUNC_INFO << "Update";
     update();
 }
 
@@ -157,8 +164,8 @@ RayGeometry::RayGeometry(QQuick3DObject* parent) : QQuick3DGeometry(parent) {
             &RayGeometry::rebuild_geometry);
 }
 
-void RayGeometry::set_results(db::SimulationResult* data) {
-    qDebug() << "New ray geometry database";
+void RayGeometry::set_results(db::SimulationResultPtr data) {
+    qDebug() << Q_FUNC_INFO << "New ray geometry database";
     m_database = std::move(data);
     rebuild_geometry();
 }

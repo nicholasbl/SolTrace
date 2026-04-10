@@ -15,7 +15,7 @@ namespace analysis {
 class RayGeometry : public QQuick3DGeometry {
     Q_OBJECT
 
-    QPointer<db::SimulationResult> m_database;
+    db::SimulationResultPtr m_database;
 
     std::unordered_set<db::RayEventType> m_exclude_events = {
         db::RayEventType::CREATE,
@@ -36,7 +36,7 @@ class RayGeometry : public QQuick3DGeometry {
 public:
     explicit RayGeometry(QQuick3DObject* parent = nullptr);
 
-    void set_results(db::SimulationResult*);
+    void set_results(db::SimulationResultPtr);
 
 public slots:
     void rebuild_geometry();

@@ -56,13 +56,11 @@ void construct_result(QPromise<SimResult>&                promise,
 
     auto destination = db::SimulationResult::convert(opts);
 
-    destination->database = exported_source->source_database.release();
-
-    destination->database->setParent(destination.get());
+    destination->database = std::move(exported_source->source_database);
 
     SECTION(100, "Done");
 
-    promise.emplaceResult(std::move(destination.release()));
+    promise.emplaceResult(std::move(destination));
 }
 
 

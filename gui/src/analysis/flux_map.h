@@ -20,13 +20,13 @@ struct FluxMapBakeOptions {
 class FluxMapComputer : public QObject {
     Q_OBJECT
 
-    db::SimulationResult* m_database;
+    db::SimulationResultPtr m_database;
 
 public:
     explicit FluxMapComputer(QObject* parent);
     ~FluxMapComputer() override;
 
-    void set_results(db::SimulationResult*);
+    void set_results(db::SimulationResultPtr);
 
 public slots:
     bool start_generate_for(db::Entity,

@@ -360,20 +360,26 @@ static void raster_mesh_overlay(QPainter&       painter,
 void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
                                 FluxMapBakeOptions         opts,
                                 entt::entity               entity,
-                                db::SimulationResult*      results,
+                                db::SimulationResultPtr    results,
                                 db::Mesh                   mesh) {
+
+    qDebug() << Q_FUNC_INFO << "starting map generation";
 
     promise.setProgressRange(0, 100);
 
     // Image size makes no sense, bail
     if (!glm::all(glm::lessThan(glm::uvec2(1), opts.image_resolution))) {
+        qDebug() << Q_FUNC_INFO << "starting map generation";
         return;
     }
 
     // We need to know what rays have hit this entity
     auto iter = results->entity_to_ray_ids.find(entity);
 
-    if (iter == results->entity_to_ray_ids.end()) { return; }
+    if (iter == results->entity_to_ray_ids.end()) {
+        qDebug() << Q_FUNC_INFO << "no rays for this element";
+        return;
+    }
 
     constexpr int PROGRESS_SETUP      = 10;
     constexpr int PROGRESS_ACCUMULATE = 50;
@@ -472,7 +478,7 @@ FluxMapComputer::FluxMapComputer(QObject* parent) : QObject(parent) { }
 
 FluxMapComputer::~FluxMapComputer() = default;
 
-void FluxMapComputer::set_results(db::SimulationResult* p) {
+void FluxMapComputer::set_results(db::SimulationResultPtr p) {
     m_database = p;
 
     cancel_all();
@@ -495,6 +501,7 @@ bool FluxMapComputer::start_generate_for(db::Entity         e,
             return false;
         }
     }
+
 
     auto future = QtConcurrent::run(
         execute_map_generation_for, options, e, m_database, mesh);

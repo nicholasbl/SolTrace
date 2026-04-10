@@ -54,7 +54,13 @@ void AppData::save_session() {
     s.endGroup();
 }
 
-AppData::AppData(QObject* parent, const QString& documentation_directory)
+AppData* AppData::create(QQmlEngine* qmlEngine, QJSEngine*) {
+    return new AppData(nullptr, qmlEngine, "");
+}
+
+AppData::AppData(QObject*       parent,
+                 QQmlEngine*    engine,
+                 const QString& documentation_directory)
     : m_file_source(new FileSourceModule(this)),
       m_view(new ViewModule(this)),
       m_workflow(new WorkflowModule(this)),
@@ -65,7 +71,7 @@ AppData::AppData(QObject* parent, const QString& documentation_directory)
       m_layout(new LayoutModule(this)),
       m_simulation(new SimulationModule(this)),
       m_intersections(new IntersectionsModule(this)),
-      m_flux(new FluxModule(this)) {
+      m_flux(new FluxModule(engine, this)) {
 
     connect(m_file_source,
             &FileSourceModule::current_database_value_changed,
@@ -93,6 +99,13 @@ AppData::AppData(QObject* parent, const QString& documentation_directory)
             &AppData::new_results);
 
     connect(qApp, &QCoreApplication::aboutToQuit, this, &AppData::save_session);
+
+    connect(this,
+            &AppData::new_results,
+            m_intersections,
+            &IntersectionsModule::set_results);
+
+    connect(this, &AppData::new_results, m_flux, &FluxModule::set_results);
 
     load_session();
 }

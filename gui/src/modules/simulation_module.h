@@ -31,6 +31,8 @@ class SimulationModule : public QObject {
 
     QPointer<RunningJob> m_running;
 
+    QVector<std::shared_ptr<db::SimulationResult>> m_completed_sims;
+
 private slots:
     void job_done();
 
@@ -62,7 +64,7 @@ public slots:
     void cancel();
 
 signals:
-    void new_results(db::SimulationResult*);
+    void new_results(db::SimulationResultPtr);
     void notify(ANotification);
 };
 

@@ -5,6 +5,7 @@
 #include "database/components.h"
 #include "database/database_notification.h"
 
+#include <QDebug>
 #include <QPointer>
 #include <QtTypes>
 #include <qqmlintegration.h>
@@ -68,6 +69,13 @@ public:
     operator entt::entity() const { return value; }
 };
 
+inline QDebug operator<<(QDebug debug, Entity const& c) {
+    QDebugStateSaver saver(debug);
+    debug.nospace() << "(Entity " << entt::to_integral(c.value) << ")";
+
+    return debug;
+}
+
 class Database;
 
 struct DatabaseExport {
@@ -91,7 +99,7 @@ public:
     /// Create a new simulation database
     explicit Database(QObject* p = nullptr);
 
-    virtual ~Database() = default;
+    virtual ~Database();
 
     Database* clone(QObject* p = nullptr) const;
 

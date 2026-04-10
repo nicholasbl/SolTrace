@@ -308,6 +308,12 @@ Database::Database(QObject* p)
         .template connect<&tf_change_callback>();
     m_registry.on_destroy<TransformComponent>()
         .template connect<&tf_destroy_callback>();
+
+    qDebug() << Q_FUNC_INFO;
+}
+
+Database::~Database() {
+    qDebug() << Q_FUNC_INFO;
 }
 
 // =============================================================================
@@ -322,7 +328,7 @@ struct EntityMapper {
         if (item == old_to_new_map.end()) {
             auto new_e        = new_registry.create();
             old_to_new_map[e] = new_e;
-            return e;
+            return new_e;
         }
 
         return item->second;
@@ -360,7 +366,6 @@ void copy_nested_component(entt::registry const& from,
 
 template <class T>
 void copy_resource(entt::registry const& from, entt::registry& to) {
-
     to.ctx().emplace<T>(from.ctx().get<T>().clone());
 }
 
@@ -401,6 +406,9 @@ Database* Database::clone(QObject* p) const {
 
 
     copy_resource<RaySourceResource>(this->m_registry, ret->m_registry);
+
+    ret->m_registry.ctx().emplace<SD::SimulationParameters>(
+        m_registry.ctx().get<SD::SimulationParameters>());
 
 
     copy_plain_component<MaterialComponent>(

@@ -2,6 +2,7 @@
 
 #include "analysis/grid3d.h"
 
+#include <entt/entity/entity.hpp>
 #include <simulation_data.hpp>
 #include <simulation_result.hpp>
 
@@ -39,7 +40,7 @@ enum class RayEventType : uint8_t {
 struct RayEvent {
     glm::dvec3   location;
     glm::dvec3   direction;
-    entt::entity entity;
+    entt::entity entity = entt::null;
     RayEventType event;
 };
 
@@ -48,11 +49,10 @@ struct RayRecord {
     std::vector<RayEvent> events;
 };
 
-class SimulationResult : public QObject {
-    Q_OBJECT
-
+class SimulationResult {
 public:
-    SimulationResult(QObject* parent = nullptr);
+    SimulationResult();
+    ~SimulationResult();
 
     std::vector<RayRecord> records;
 
@@ -63,11 +63,13 @@ public:
 
     std::unordered_map<entt::entity, std::vector<uint64_t>> entity_to_ray_ids;
 
-    QPointer<Database> database;
+    std::unique_ptr<Database> database;
 
     // TODO: Why is this fallible?
     static std::unique_ptr<SimulationResult>
     convert(SimulationResultConversion const&);
 };
+
+using SimulationResultPtr = std::shared_ptr<SimulationResult>;
 
 } // namespace db
