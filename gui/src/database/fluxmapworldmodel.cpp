@@ -29,15 +29,18 @@ PendingFluxMapModel::PendingFluxMapModel(QObject* parent)
 void PendingFluxMapModel::reset(db::SimulationResult* res) {
     emit cleared();
 
-    m_host = res->database;
     m_compute->set_results(res);
+
     on_changed();
 
     if (res->database) {
+        m_host = res->database;
         for (auto const& [e, c] :
              res->database->as_registry().view<HasFluxMapComponent>().each()) {
             emit ready(e, c.map_info, res->database);
         }
+    } else {
+        m_host = nullptr;
     }
 }
 

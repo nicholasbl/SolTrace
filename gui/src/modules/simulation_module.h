@@ -11,6 +11,8 @@
 
 namespace SolTrace::GUI::App {
 
+// TODO: Track added simulation results and allow deletion!
+
 /**
  * @class SimulationModule
  * @brief Simulation execution and progress tracking module.

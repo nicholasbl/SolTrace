@@ -51,7 +51,7 @@ SimulationResult::SimulationResult(QObject* parent) : QObject(parent) { }
 std::unique_ptr<SimulationResult>
 SimulationResult::convert(SimulationResultConversion const& opts) {
 
-    std::unique_ptr<SimulationResult> ret;
+    auto ret = std::make_unique<SimulationResult>();
 
     ret->records.reserve(opts.result.get_number_of_records());
 
