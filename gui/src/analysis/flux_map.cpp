@@ -4,8 +4,10 @@
 #include "vector_utility.hpp"
 
 #include <QFutureWatcher>
+#include <QFile>
 #include <QImage>
 #include <QPainter>
+#include <QTextStream>
 #include <QtConcurrent/qtconcurrentrun.h>
 
 #include <algorithm>
@@ -171,8 +173,6 @@ closest_point_on_triangle(glm::vec3 p, glm::vec3 a, glm::vec3 b, glm::vec3 c) {
 /// TODO: Add accelleration structure for mesh.
 static std::optional<TriangleProjection>
 project_point_to_triangle(db::Mesh const& mesh, glm::vec3 p) {
-
-
     constexpr float INIT = 100000000.0f;
 
     ssize_t closest_triangle = -1;
@@ -356,6 +356,45 @@ static void raster_mesh_overlay(QPainter&       painter,
     painter.restore();
 }
 
+static QImage make_points_debug_image(std::vector<glm::vec2> const& uvs,
+                                      QSize const&                  image_size,
+                                      db::Mesh const&               mesh) {
+    QImage image(image_size, QImage::Format_RGB32);
+    image.fill(Qt::white);
+
+    auto painter = QPainter(&image);
+    raster_mesh_overlay(painter, mesh, image_size, QColor(0, 0, 0, 128));
+
+    painter.save();
+    painter.setPen(QPen(Qt::red, 2.0));
+
+    for (auto const& uv : uvs) {
+        QPointF pixel = uv_to_pixel(uv, image_size);
+        painter.drawPoint(pixel);
+    }
+
+    painter.restore();
+
+    return image;
+}
+
+static bool dump_interaction_points_csv(std::vector<glm::vec3> const& points,
+                                        QString const&                path) {
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+        return false;
+    }
+
+    QTextStream stream(&file);
+    stream << "x,y,z\n";
+
+    for (auto const& point : points) {
+        stream << point.x << ',' << point.y << ',' << point.z << '\n';
+    }
+
+    return true;
+}
+
 /// Main fluxmap compute function
 void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
                                 FluxMapBakeOptions         opts,
@@ -389,6 +428,8 @@ void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
     // Starting setup
     promise.setProgressValue(PROGRESS_SETUP);
 
+    qDebug() << Q_FUNC_INFO << "setup complete";
+
     // Creating image
     auto img = QImage(
         opts.image_resolution.x, opts.image_resolution.y, QImage::Format_RGB32);
@@ -396,7 +437,13 @@ void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
     // Fill triangle bins
     auto triangles = make_triangle_bins(mesh);
 
+    qDebug() << Q_FUNC_INFO << "ready triangle bins";
+
     float total_ray_impact = 0.0f;
+    std::vector<glm::vec2> interaction_uvs;
+    std::vector<glm::vec3> interaction_points;
+    interaction_uvs.reserve(iter->second.size());
+    interaction_points.reserve(iter->second.size());
 
     auto report_progress =
         [&](int item, int max_item, int prog_low, int prog_high) {
@@ -425,6 +472,15 @@ void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
         for (auto const& interaction : results->records.at(ray_index).events) {
             // TODO: we need to double check that this is ok
             if (interaction.entity != entity) { continue; }
+            switch (interaction.event) {
+            case db::RayEventType::CREATE:
+            case db::RayEventType::VIRTUAL:
+            case db::RayEventType::EXIT:
+            case db::RayEventType::UNKNOWN: continue;
+            case db::RayEventType::ABSORB:
+            case db::RayEventType::REFLECT:
+            case db::RayEventType::TRANSMIT: break;
+            }
 
             auto projection =
                 project_point_to_triangle(mesh, interaction.location);
@@ -438,8 +494,12 @@ void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
             triangle.hit_count += 1;
             triangle.accumulated_energy += hit_energy;
             total_ray_impact += hit_energy;
+            interaction_points.push_back(interaction.location);
+            interaction_uvs.push_back(projection->uv);
         }
     }
+
+    qDebug() << Q_FUNC_INFO << "triangle bins filled";
 
     if (promise.isCanceled()) { return; }
 
@@ -458,14 +518,29 @@ void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
                                        PROGRESS_ACCUMULATE,
                                        PROGRESS_RASTER);
 
+    qDebug() << Q_FUNC_INFO << "rastered bins";
+
     if (promise.isCanceled()) { return; }
 
     colorize_raster(img, raster, opts.color_map, max_density);
 
     promise.setProgressValue(PROGRESS_RASTER);
 
-    auto painter = QPainter(&img);
-    raster_mesh_overlay(painter, mesh, img.size(), opts.grid_line_color);
+    {
+        auto painter = QPainter(&img);
+        raster_mesh_overlay(painter, mesh, img.size(), opts.grid_line_color);
+    }
+
+    auto points_img = make_points_debug_image(interaction_uvs, img.size(), mesh);
+
+    qDebug() << Q_FUNC_INFO << "complete";
+
+    img.save("debug.png");
+    points_img.save("points.png");
+    // dump_interaction_points_csv(interaction_points,
+    // "interaction_points.csv");
+
+    img = img.convertToFormat(QImage::Format_RGBA8888);
 
     promise.setProgressValue(PROGRESS_COMPLETE);
     promise.emplaceResult(std::make_shared<BakedFluxMap>(BakedFluxMap {
@@ -491,7 +566,10 @@ bool FluxMapComputer::start_generate_for(db::Entity         e,
                                          db::Mesh           mesh,
                                          FluxMapBakeOptions options) {
 
-    if (!m_database) { return false; }
+    if (!m_database) {
+        qDebug() << Q_FUNC_INFO << "No database, bailing";
+        return false;
+    }
 
     if (options.color_map.isNull()) {
         options.color_map = QImage(":/assets/images/b_to_r_wide.png");
@@ -501,6 +579,9 @@ bool FluxMapComputer::start_generate_for(db::Entity         e,
             return false;
         }
     }
+
+    qDebug() << Q_FUNC_INFO << "Loaded colormap" << options.color_map.size()
+             << options.color_map.sizeInBytes();
 
 
     auto future = QtConcurrent::run(
@@ -532,6 +613,8 @@ bool FluxMapComputer::start_generate_for(db::Entity         e,
             [e, watcher](db::Entity item) {
                 if (item == e) { watcher->cancel(); }
             });
+
+    qDebug() << Q_FUNC_INFO << "Job kicked off to thread.";
 
     return true;
 }

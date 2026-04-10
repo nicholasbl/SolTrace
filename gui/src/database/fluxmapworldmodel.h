@@ -2,6 +2,7 @@
 
 #include <QMutex>
 #include <QObject>
+#include <QQuaternion>
 #include <QQuickImageProvider>
 
 #include "analysis/flux_map.h"
@@ -74,14 +75,18 @@ signals:
 // ============================================================================
 
 struct FluxMappedItem {
-    Entity                           entity;
-    QString                          texture_source;
-    std::shared_ptr<SurfaceGeometry> geometry;
+    Entity                           flux_entity;
+    QString                          flux_texture_source;
+    QVector3D                        flux_position;
+    QQuaternion                      flux_rotation;
+    std::shared_ptr<SurfaceGeometry> flux_geometry;
 
     RECORD_META(FluxMappedItem,
-                SM_EXPOSE_RO(entity),
-                SM_EXPOSE_RO(texture_source),
-                SM_EXPOSE_RO(geometry));
+                SM_EXPOSE_RO(flux_entity),
+                SM_EXPOSE_RO(flux_texture_source),
+                SM_EXPOSE_RO(flux_position),
+                SM_EXPOSE_RO(flux_rotation),
+                SM_EXPOSE_RO(flux_geometry));
 };
 
 class FluxMapWorldModel : public StructModelAdapter<FluxMappedItem> {

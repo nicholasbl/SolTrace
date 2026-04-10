@@ -12,6 +12,11 @@ FluxModule::FluxModule(QQmlEngine* engine, QObject* parent)
     auto provider = m_pending_flux_maps->make_new_provider();
 
     engine->addImageProvider("fluxmap", provider);
+
+    connect(m_pending_flux_maps,
+            &db::PendingFluxMapModel::ready,
+            m_flux_map_world_model,
+            &db::FluxMapWorldModel::on_ready);
 }
 
 void FluxModule::set_results(db::SimulationResultPtr p) {

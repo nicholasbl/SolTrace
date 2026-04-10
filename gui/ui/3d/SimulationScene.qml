@@ -131,6 +131,7 @@ Item {
             rotation: Quaternion.fromEulerAngles(-90, 0, 0)
 
             Repeater3D {
+                visible: flux_repeater.count === 0
                 model: App.layout.world_geometry_model
 
                 delegate: Model {
@@ -154,6 +155,7 @@ Item {
             }
 
             Model {
+                visible: flux_repeater.count === 0
                 geometry: AppData.intersections.ray_geometry
 
                 materials : [
@@ -167,6 +169,40 @@ Item {
                         }
                     }
                 ]
+            }
+
+            Repeater3D {
+                id: flux_repeater
+                model: AppData.flux.flux_map_world_model
+
+                delegate: Model {
+                    required property var flux_position
+                    required property var flux_rotation
+                    required property var flux_geometry
+                    required property string flux_texture_source
+
+                    Component.onCompleted: {
+                        console.log(flux_texture_source)
+                    }
+
+                    geometry: flux_geometry
+                    //source: "#Cube"
+
+                    position: flux_position
+                    rotation: flux_rotation
+
+                    materials: [
+                        PrincipledMaterial {
+                            metalness: 1
+                            roughness: 0
+                            baseColor: "white"
+                            cullMode: PrincipledMaterial.NoCulling
+                            baseColorMap: Texture {
+                                source: flux_texture_source
+                            }
+                        }
+                    ]
+                }
             }
 
         }

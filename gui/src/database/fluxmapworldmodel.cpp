@@ -1,6 +1,7 @@
 #include "fluxmapworldmodel.h"
 
 #include "analysis/flux_map.h"
+#include "database/components.h"
 #include "database/surface.h"
 
 namespace db {
@@ -92,7 +93,23 @@ find_mesh_for(db::SurfaceGenerationOptions surface_options,
 
     if (!surface) { return {}; }
 
-    return db::generate_surface(surface->surface, surface->aperture);
+    auto mesh = db::generate_surface(surface->surface, surface->aperture);
+    if (!mesh) { return {}; }
+
+    auto global = database->global_transform.get(entity);
+    auto world =
+        global ? *global
+               : GlobalTransformComponent::compute_for(database->as_registry(),
+                                                      entity);
+
+    for (auto& vertex : mesh->vertex) {
+        vertex.position =
+            glm::vec3(world.position + world.rotation * glm::dvec3(vertex.position));
+        vertex.normal =
+            glm::normalize(glm::vec3(world.rotation * glm::dvec3(vertex.normal)));
+    }
+
+    return mesh;
 }
 
 // void PendingFluxMapModel::start_debug() {
@@ -115,6 +132,8 @@ bool PendingFluxMapModel::start_generate_for(Entity entity) {
     qDebug() << Q_FUNC_INFO << entity;
 
     auto mesh_res = std::max(1, mesh_resolution_multiply());
+
+    mesh_res = 4;
 
     db::SurfaceGenerationOptions surface_options;
     surface_options.height_field_resolution *= mesh_res;
@@ -141,7 +160,7 @@ bool PendingFluxMapModel::start_generate_for(Entity entity) {
         .image_resolution = { this->image_resolution().width(),
                               this->image_resolution().height(), },
         .grid_line_color =
-            this->show_mesh_grid() ? this->mesh_line_color() : QColor(),
+            this->show_mesh_grid() ? this->mesh_line_color() : QColor("grey"),
         .color_map = QImage(color_map()),
     };
 
@@ -193,17 +212,35 @@ void FluxMapWorldModel::on_ready(Entity                    e,
 
     if (!db) return;
 
+    qDebug() << Q_FUNC_INFO << e << img->image << db;
+
     store_remove_by_predicate(
-        [e](auto const& item) { return item.entity == e; });
+        [e](auto const& item) { return item.flux_entity == e; });
+
+    // get geom params
+
+    auto group = db->geometry_of(e);
 
     auto geom = std::make_shared<SurfaceGeometry>();
 
-    geom->set(db, e);
+    geom->set(db, group);
+
+    auto global = GlobalTransformComponent::compute_for(db->as_registry(), e);
+
+    auto position =
+        QVector3D(global.position.x, global.position.y, global.position.z);
+
+    auto rotation = QQuaternion(global.rotation.w,
+                                global.rotation.x,
+                                global.rotation.y,
+                                global.rotation.z);
 
     store_push_append(FluxMappedItem {
-        .entity         = e,
-        .texture_source = "image://fluxmap/" + image_name(e),
-        .geometry       = geom,
+        .flux_entity         = e,
+        .flux_texture_source = "image://fluxmap/" + image_name(e),
+        .flux_position       = position,
+        .flux_rotation       = rotation,
+        .flux_geometry       = geom,
     });
 }
 
@@ -215,6 +252,7 @@ FluxMapProvider::FluxMapProvider()
 QImage FluxMapProvider::requestImage(QString const& id,
                                      QSize*         size,
                                      QSize const&   requestedSize) {
+    qDebug() << Q_FUNC_INFO << id << requestedSize;
     QImage ret;
 
     {
@@ -226,14 +264,18 @@ QImage FluxMapProvider::requestImage(QString const& id,
 
     if (size) *size = ret.size();
 
+    qDebug() << Q_FUNC_INFO << ret;
+
     return ret;
 }
 
 void FluxMapProvider::on_ready(Entity                    k,
                                analysis::BakedFluxMapPtr v,
                                Database*) {
+    auto name = image_name(k);
+    qDebug() << Q_FUNC_INFO << k << v->image << name;
     m_lock.lock();
-    m_store[image_name(k)] = v;
+    m_store[name] = v;
     m_lock.unlock();
 }
 

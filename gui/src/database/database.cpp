@@ -369,73 +369,81 @@ void copy_resource(entt::registry const& from, entt::registry& to) {
     to.ctx().emplace<T>(from.ctx().get<T>().clone());
 }
 
-Database* Database::clone(QObject* p) const {
-    auto ret = new Database(p);
+struct DatabaseCloneResult {
+    std::unique_ptr<Database>                        database;
+    std::unordered_map<entt::entity, entt::entity> old_to_new_map;
+};
+
+static DatabaseCloneResult clone_database_with_entity_map(Database const& from,
+                                                          QObject*        p) {
+    auto ret = std::make_unique<Database>(p);
+    auto& from_registry = from.as_registry();
+    auto& to_registry   = ret->as_registry();
 
     EntityMapper mapper {
-        .new_registry   = ret->m_registry,
+        .new_registry   = to_registry,
         .old_to_new_map = {},
     };
 
     copy_marker_component<InvisibleComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
     copy_marker_component<DisabledComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
     copy_plain_component<IdentityComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
 
     copy_marker_component<ElementComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
 
     copy_nested_component<ChildOfComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
     copy_nested_component<ChildrenComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
 
     copy_plain_component<TransformComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
     copy_plain_component<GlobalTransformComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
 
-    copy_resource<RaySourceResource>(this->m_registry, ret->m_registry);
+    copy_resource<RaySourceResource>(from_registry, to_registry);
 
-    ret->m_registry.ctx().emplace<SD::SimulationParameters>(
-        m_registry.ctx().get<SD::SimulationParameters>());
+    to_registry.ctx().emplace<SD::SimulationParameters>(
+        from_registry.ctx().get<SD::SimulationParameters>());
 
 
     copy_plain_component<MaterialComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
     copy_nested_component<MaterialGroupComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
     copy_nested_component<MaterialGroupMemberComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
     // GeometryComponent
     {
-        for (auto [e, c] : m_registry.view<GeometryComponent>().each()) {
+        for (auto [e, c] : from_registry.view<GeometryComponent>().each()) {
             auto local = c.clone();
-            ret->m_registry.emplace<GeometryComponent>(mapper(e), local);
+            to_registry.emplace<GeometryComponent>(mapper(e), local);
         }
     }
 
     copy_nested_component<GeometryGroupComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
     copy_nested_component<GeometryGroupMemberComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
     copy_marker_component<TagComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
     // ATagMemberComponent
     {
@@ -444,17 +452,17 @@ Database* Database::clone(QObject* p) const {
         auto all_tags = QSet<entt::entity>();
 
         for (auto [e, c] :
-             this->m_registry.view<TagMembershipComponent>().each()) {
+             from_registry.view<TagMembershipComponent>().each()) {
             for (auto const& t : c.tags) {
                 all_tags.insert(t);
             }
         }
 
         for (auto tag_ent : std::as_const(all_tags)) {
-            auto from_storage = m_registry.storage<ATagMemberComponent>(
+            auto from_storage = from_registry.storage<ATagMemberComponent>(
                 entt::to_integral(tag_ent));
 
-            auto& to_storage = ret->m_registry.storage<ATagMemberComponent>(
+            auto& to_storage = to_registry.storage<ATagMemberComponent>(
                 entt::to_integral(mapper(tag_ent)));
 
             for (auto element : *from_storage) {
@@ -464,21 +472,28 @@ Database* Database::clone(QObject* p) const {
     }
 
     copy_nested_component<TagMembershipComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
     copy_plain_component<ImportErrorComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
     copy_marker_component<SelectedComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
     copy_plain_component<ColorComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
     copy_plain_component<HasFluxMapComponent>(
-        this->m_registry, mapper, ret->m_registry);
+        from_registry, mapper, to_registry);
 
-    return ret;
+    return DatabaseCloneResult {
+        .database       = std::move(ret),
+        .old_to_new_map = std::move(mapper.old_to_new_map),
+    };
+}
+
+Database* Database::clone(QObject* p) const {
+    return clone_database_with_entity_map(*this, p).database.release();
 }
 
 // =============================================================================
@@ -961,10 +976,21 @@ std::shared_ptr<DatabaseExport> Database::export_to_simdata() {
         entity_rev_map[iter->second->get_id()] = iter->first;
     }
 
+    auto clone_result = clone_database_with_entity_map(*this, nullptr);
+
+    for (auto& [element_id, entity] : entity_rev_map) {
+        auto iter = clone_result.old_to_new_map.find(entity);
+        if (iter != clone_result.old_to_new_map.end()) {
+            entity = iter->second;
+        } else {
+            entity = entt::null;
+        }
+    }
+
     DatabaseExport export_ret;
     export_ret.data = std::make_shared<SD::SimulationData>(std::move(ret));
     export_ret.element_map = std::move(entity_rev_map);
-    export_ret.source_database.reset(this->clone());
+    export_ret.source_database = std::move(clone_result.database);
 
     return std::make_shared<DatabaseExport>(std::move(export_ret));
 }
