@@ -23,10 +23,18 @@ Flickable {
             target: App.view.left_panel
         }
 
+        Image {
+            visible: !AppData.flux.current_image.length
+            Layout.fillWidth: true
+            Layout.preferredHeight: width
+            source: AppData.flux.current_image
+        }
+
         STPropertyPanel {
             Layout.fillWidth: true
 
             collapsible: false
+            collapsed: AppData.flux.current_image.length
             title: "Compute Map"
 
             ListView {

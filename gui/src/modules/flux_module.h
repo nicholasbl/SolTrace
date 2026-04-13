@@ -29,6 +29,9 @@ class FluxModule : public QObject {
     QOBJECT_READONLY_PROPERTY(db::FluxMapWorldModel, flux_map_world_model);
     Q_WRITABLE_PROPERTY(db::Entity, current_entity, {});
 
+    // Hack
+    Q_WRITABLE_PROPERTY(QString, current_image, {});
+
 public:
     explicit FluxModule(QQmlEngine*, QObject* parent = nullptr);
 

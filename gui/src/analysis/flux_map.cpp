@@ -1,14 +1,13 @@
 #include "flux_map.h"
 
 #include "analysis/grid2d.h"
+#include "utilities/asynctask.h"
 #include "vector_utility.hpp"
 
-#include <QFutureWatcher>
 #include <QFile>
 #include <QImage>
 #include <QPainter>
 #include <QTextStream>
-#include <QtConcurrent/qtconcurrentrun.h>
 
 #include <algorithm>
 #include <cmath>
@@ -19,24 +18,36 @@
 
 namespace analysis {
 
+/// A point projected to a specific triangle of a mesh.
 struct TriangleProjection {
     size_t    triangle_index = 0;
     glm::vec3 barycentric    = glm::vec3(0.0);
     glm::vec2 uv             = glm::vec2(0.0);
 };
 
+/// A per-triangle bin of ray data.
 struct TriangleFluxBin {
-    float  world_area         = 0.0;
-    float  accumulated_energy = 0.0;
-    size_t hit_count          = 0;
-    float  flux               = 0.0f; // W/m^2 or normalized equivalent
+    /// The area of the triangle in world space.
+    float world_area = 0.0;
+
+    /// Accumulated energy for this bin.
+    float accumulated_energy = 0.0;
+
+    /// How many rays intersected this triangle.
+    size_t hit_count = 0;
+
+    /// The final flux value
+    float flux = 0.0f; // W/m^2 or normalized equivalent
 };
 
+
+/// Barycentric interpolation.
 template <class T>
 static T interpolate(T const& a, T const& b, T const& c, glm::vec3 bary) {
     return a * bary.x + b * bary.y + c * bary.z;
 }
 
+/// For a UV, snap to a pixel
 static QPointF uv_to_pixel(glm::vec2 uv, QSize const& size) {
     auto width  = std::max(0, size.width() - 1);
     auto height = std::max(0, size.height() - 1);
@@ -44,18 +55,14 @@ static QPointF uv_to_pixel(glm::vec2 uv, QSize const& size) {
     return QPointF(uv.x * width, uv.y * height);
 }
 
+/// Get the area of a triangle in world space.
 static float
 triangle_area(glm::vec3 const& a, glm::vec3 const& b, glm::vec3 const& c) {
     return 0.5f * glm::length(glm::cross(b - a, c - a));
 }
 
-static float
-triangle_area(QPointF const& a, QPointF const& b, QPointF const& c) {
-    auto ab = b - a;
-    auto ac = c - a;
-    return 0.5f * std::abs(ab.x() * ac.y() - ab.y() * ac.x());
-}
 
+/// Obtain barycentric coords for a point on a triangle.
 static std::optional<glm::vec3> barycentric_for_point(QPointF const& p,
                                                       QPointF const& a,
                                                       QPointF const& b,
@@ -75,13 +82,14 @@ static std::optional<glm::vec3> barycentric_for_point(QPointF const& p,
     return glm::vec3(w, u, v);
 }
 
-
+/// Results for the point-to-closest triangle algorithm
 struct ClosestPointResult {
     glm::vec3 point;
     glm::vec3 bary;
     float     sq_dist;
 };
 
+/// Classic find-the-closest-point-on-triangle algorithm
 ClosestPointResult
 closest_point_on_triangle(glm::vec3 p, glm::vec3 a, glm::vec3 b, glm::vec3 c) {
     const glm::vec3 ab = b - a;
@@ -175,6 +183,9 @@ static std::optional<TriangleProjection>
 project_point_to_triangle(db::Mesh const& mesh, glm::vec3 p) {
     constexpr float INIT = 100000000.0f;
 
+    // Scan all triangles, and find the closest point on each. Best wins.
+    // TODO: add cutoff so really far away points don't match.
+
     ssize_t closest_triangle = -1;
 
     ClosestPointResult best;
@@ -208,8 +219,7 @@ project_point_to_triangle(db::Mesh const& mesh, glm::vec3 p) {
     };
 }
 
-/// Make triangle bins, that is, a count of intersections per triangle face of a
-/// mesh.
+/// Make triangle bins; the per-triangle stat bin
 static std::vector<TriangleFluxBin> make_triangle_bins(db::Mesh const& mesh) {
     std::vector<TriangleFluxBin> triangles;
     triangles.reserve(mesh.triangles.size());
@@ -229,6 +239,7 @@ static std::vector<TriangleFluxBin> make_triangle_bins(db::Mesh const& mesh) {
     return triangles;
 }
 
+/// For all bins, compute the flux after all energy has been accumulated
 static float
 compute_triangle_flux_and_max(std::vector<TriangleFluxBin>& triangles,
                               float                         total_energy) {
@@ -247,6 +258,7 @@ compute_triangle_flux_and_max(std::vector<TriangleFluxBin>& triangles,
     return max_density;
 }
 
+/// Using triangle bins, burn stats to a 2D grid
 static Grid2D<float>
 raster_triangle_flux(std::vector<TriangleFluxBin> const& triangles,
                      db::Mesh const&                     mesh,
@@ -271,6 +283,8 @@ raster_triangle_flux(std::vector<TriangleFluxBin> const& triangles,
             report_progress(int(tri_index + 1), int(triangles.size()));
             continue;
         }
+
+        // This is just a slightly ugly fill
 
         auto const& v1 = mesh.vertex[mesh.triangles[tri_index].x];
         auto const& v2 = mesh.vertex[mesh.triangles[tri_index].y];
@@ -311,6 +325,7 @@ raster_triangle_flux(std::vector<TriangleFluxBin> const& triangles,
     return raster;
 }
 
+/// Take a raster bin and color map, and burn that to a QImage
 static void colorize_raster(QImage&              image,
                             Grid2D<float> const& raster,
                             QImage const&        color_map,
@@ -331,6 +346,7 @@ static void colorize_raster(QImage&              image,
     }
 }
 
+/// Draw the UV structure to an Image
 static void raster_mesh_overlay(QPainter&       painter,
                                 db::Mesh const& mesh,
                                 QSize const&    image_size,
@@ -381,7 +397,8 @@ static QImage make_points_debug_image(std::vector<glm::vec2> const& uvs,
 static bool dump_interaction_points_csv(std::vector<glm::vec3> const& points,
                                         QString const&                path) {
     QFile file(path);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate |
+                   QIODevice::Text)) {
         return false;
     }
 
@@ -420,6 +437,7 @@ void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
         return;
     }
 
+    // TODO: rescope. might also be good to have a little util for all this
     constexpr int PROGRESS_SETUP      = 10;
     constexpr int PROGRESS_ACCUMULATE = 50;
     constexpr int PROGRESS_RASTER     = 90;
@@ -439,7 +457,7 @@ void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
 
     qDebug() << Q_FUNC_INFO << "ready triangle bins";
 
-    float total_ray_impact = 0.0f;
+    float                  total_ray_impact = 0.0f;
     std::vector<glm::vec2> interaction_uvs;
     std::vector<glm::vec3> interaction_points;
     interaction_uvs.reserve(iter->second.size());
@@ -531,14 +549,15 @@ void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
         raster_mesh_overlay(painter, mesh, img.size(), opts.grid_line_color);
     }
 
-    auto points_img = make_points_debug_image(interaction_uvs, img.size(), mesh);
+    auto points_img =
+        make_points_debug_image(interaction_uvs, img.size(), mesh);
 
     qDebug() << Q_FUNC_INFO << "complete";
 
-    img.save("debug.png");
-    points_img.save("points.png");
-    // dump_interaction_points_csv(interaction_points,
-    // "interaction_points.csv");
+    // img.save("debug.png");
+    // points_img.save("points.png");
+    //  dump_interaction_points_csv(interaction_points,
+    //  "interaction_points.csv");
 
     img = img.convertToFormat(QImage::Format_RGBA8888);
 
@@ -583,35 +602,27 @@ bool FluxMapComputer::start_generate_for(db::Entity         e,
     qDebug() << Q_FUNC_INFO << "Loaded colormap" << options.color_map.size()
              << options.color_map.sizeInBytes();
 
+    auto task =
+        launch_async_task<BakedFluxMapPtr>(e,
+                                           this,
+                                           &FluxMapComputer::image_ready,
+                                           &FluxMapComputer::image_failed,
+                                           execute_map_generation_for,
+                                           options,
+                                           e,
+                                           m_database,
+                                           mesh);
 
-    auto future = QtConcurrent::run(
-        execute_map_generation_for, options, e, m_database, mesh);
 
-    using FW = QFutureWatcher<BakedFluxMapPtr>;
+    // Set up cancelling
+    connect(this, &FluxMapComputer::cancel_all, task, &AsyncTaskBase::cancel);
 
-    auto watcher = new FW(this);
-
-    watcher->setFuture(future);
-
-    connect(watcher, &FW::finished, watcher, &FW::deleteLater);
-
-    connect(watcher, &FW::resultReadyAt, this, [this, e](int index) {
-        auto* from = dynamic_cast<FW*>(sender());
-
-        if (from) { emit image_ready(e, from->result()); }
-    });
-
-    connect(watcher, &FW::progressValueChanged, this, [this, e](int value) {
-        emit image_progress(e, value);
-    });
-
-    connect(this, &FluxMapComputer::cancel_all, watcher, &FW::cancel);
-
+    // Set up targeted cancelling
     connect(this,
             &FluxMapComputer::cancel_specific,
-            watcher,
-            [e, watcher](db::Entity item) {
-                if (item == e) { watcher->cancel(); }
+            task,
+            [e, task](db::Entity item) {
+                if (item == e) { task->cancel(); }
             });
 
     qDebug() << Q_FUNC_INFO << "Job kicked off to thread.";

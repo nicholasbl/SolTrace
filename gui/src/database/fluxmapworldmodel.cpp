@@ -10,6 +10,23 @@ static QString image_name(Entity e) {
     return QString::number(entt::to_integral((entt::entity)e));
 }
 
+FluxTextureData::FluxTextureData(QQuick3DObject* parent)
+    : QQuick3DTextureData(parent) { }
+
+void FluxTextureData::set_image(QImage const& image) {
+    auto rgba = image.convertToFormat(QImage::Format_RGBA8888);
+
+    setSize(rgba.size());
+    setFormat(QQuick3DTextureData::RGBA8);
+    setHasTransparency(rgba.hasAlphaChannel());
+    setTextureData(QByteArray(reinterpret_cast<const char*>(rgba.constBits()),
+                              rgba.sizeInBytes()));
+
+    update();
+}
+
+// ============================================================================
+
 PendingFluxMapModel::PendingFluxMapModel(QObject* parent)
     : StructModelAdapter(parent) {
 
@@ -214,8 +231,13 @@ void FluxMapWorldModel::on_ready(Entity                    e,
 
     qDebug() << Q_FUNC_INFO << e << img->image << db;
 
-    store_remove_by_predicate(
-        [e](auto const& item) { return item.flux_entity == e; });
+    for (auto const& item : m_records) {
+        if (item.flux_entity == e && item.flux_texture_data) {
+            item.flux_texture_data->deleteLater();
+        }
+    }
+
+    store_remove_by_predicate([e](auto const& item) { return item.flux_entity == e; });
 
     // get geom params
 
@@ -235,12 +257,16 @@ void FluxMapWorldModel::on_ready(Entity                    e,
                                 global.rotation.y,
                                 global.rotation.z);
 
+    auto texture_data = std::make_shared<FluxTextureData>();
+    texture_data->set_image(img->image);
+
     store_push_append(FluxMappedItem {
-        .flux_entity         = e,
-        .flux_texture_source = "image://fluxmap/" + image_name(e),
-        .flux_position       = position,
-        .flux_rotation       = rotation,
-        .flux_geometry       = geom,
+        .flux_entity       = e,
+        .flux_texture_data = texture_data,
+        .flux_image_path   = "image://fluxmap/" + image_name(e),
+        .flux_position     = position,
+        .flux_rotation     = rotation,
+        .flux_geometry     = geom,
     });
 }
 

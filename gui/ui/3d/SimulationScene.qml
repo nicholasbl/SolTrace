@@ -179,17 +179,18 @@ Item {
                     required property var flux_position
                     required property var flux_rotation
                     required property var flux_geometry
-                    required property string flux_texture_source
-
-                    Component.onCompleted: {
-                        console.log(flux_texture_source)
-                    }
+                    required property var flux_texture_data
+                    required property string flux_image_path
 
                     geometry: flux_geometry
                     //source: "#Cube"
 
                     position: flux_position
                     rotation: flux_rotation
+
+                    Component.onCompleted: {
+                        AppData.flux.current_image = flux_image_path
+                    }
 
                     materials: [
                         PrincipledMaterial {
@@ -198,7 +199,7 @@ Item {
                             baseColor: "white"
                             cullMode: PrincipledMaterial.NoCulling
                             baseColorMap: Texture {
-                                source: flux_texture_source
+                                textureData: flux_texture_data
                             }
                         }
                     ]

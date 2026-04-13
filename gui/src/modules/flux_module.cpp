@@ -17,6 +17,11 @@ FluxModule::FluxModule(QQmlEngine* engine, QObject* parent)
             &db::PendingFluxMapModel::ready,
             m_flux_map_world_model,
             &db::FluxMapWorldModel::on_ready);
+
+    connect(m_pending_flux_maps,
+            &db::PendingFluxMapModel::cleared,
+            m_flux_map_world_model,
+            &db::FluxMapWorldModel::on_reset);
 }
 
 void FluxModule::set_results(db::SimulationResultPtr p) {
@@ -43,4 +48,3 @@ void FluxModule::start_generate() {
 }
 
 } // namespace SolTrace::GUI::App
-

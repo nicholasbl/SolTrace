@@ -3,6 +3,7 @@
 #include <QMutex>
 #include <QObject>
 #include <QQuaternion>
+#include <QQuick3DTextureData>
 #include <QQuickImageProvider>
 
 #include "analysis/flux_map.h"
@@ -20,6 +21,17 @@ namespace db {
 
 
 class FluxMapProvider;
+
+class FluxTextureData : public QQuick3DTextureData {
+    Q_OBJECT
+
+public:
+    explicit FluxTextureData(QQuick3DObject* parent = nullptr);
+
+    void set_image(QImage const& image);
+};
+
+// ============================================================================
 
 struct FluxMappedPendingItem {
     Entity entity;
@@ -75,15 +87,17 @@ signals:
 // ============================================================================
 
 struct FluxMappedItem {
-    Entity                           flux_entity;
-    QString                          flux_texture_source;
-    QVector3D                        flux_position;
-    QQuaternion                      flux_rotation;
-    std::shared_ptr<SurfaceGeometry> flux_geometry;
+    Entity                               flux_entity;
+    std::shared_ptr<QQuick3DTextureData> flux_texture_data;
+    QString                              flux_image_path;
+    QVector3D                            flux_position;
+    QQuaternion                          flux_rotation;
+    std::shared_ptr<SurfaceGeometry>     flux_geometry;
 
     RECORD_META(FluxMappedItem,
                 SM_EXPOSE_RO(flux_entity),
-                SM_EXPOSE_RO(flux_texture_source),
+                SM_EXPOSE_RO(flux_texture_data),
+                SM_EXPOSE_RO(flux_image_path),
                 SM_EXPOSE_RO(flux_position),
                 SM_EXPOSE_RO(flux_rotation),
                 SM_EXPOSE_RO(flux_geometry));
@@ -93,8 +107,7 @@ class FluxMapWorldModel : public StructModelAdapter<FluxMappedItem> {
     Q_OBJECT
 
 public:
-    // TODO: Make sure we have bins counts and bin areas to export
-    // power per ray
+    // TODO: power per ray
 
     explicit FluxMapWorldModel(QObject* parent = nullptr);
     virtual ~FluxMapWorldModel() = default;
