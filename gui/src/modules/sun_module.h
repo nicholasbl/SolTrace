@@ -3,7 +3,9 @@
 #include "module_common.h"
 #include "utilities/qt_helpers.h"
 #include "utilities/structmodel.h"
+#include <QDateTime>
 #include <QObject>
+#include <QTimeZone>
 
 namespace SolTrace::GUI::App {
 
@@ -14,63 +16,92 @@ struct SunShapePoint {
     RECORD_META(SunShapePoint, SM_EXPOSE_RW(angle), SM_EXPOSE_RW(intensity))
 };
 
-class CustomSunShapeModel : public StructTableModel<SunShapePoint> {
+class SunShapeModel : public StructTableModel<SunShapePoint> {
     Q_OBJECT
 public:
-    explicit CustomSunShapeModel(QObject* parent = nullptr);
+    explicit SunShapeModel(QObject* parent = nullptr);
 
-    Q_INVOKABLE void append(double angle = 0.0, double intensity = 0.0);
-    Q_INVOKABLE void remove(int index);
-    Q_INVOKABLE void clear();
+    std::vector<double> get_angle_data();
+    std::vector<double> get_intensity_data();
 
-    Q_INVOKABLE QVariantList getData() const;
-    Q_INVOKABLE void         setData(const QVariantList& data);
+    Q_WRITABLE_PROPERTY(double, x_axis_from, -5)
+    Q_WRITABLE_PROPERTY(double, x_axis_to, 5)
+    Q_WRITABLE_PROPERTY(double, y_axis_from, 0)
+    Q_WRITABLE_PROPERTY(double, y_axis_to, 1.2)
 
-    Q_INVOKABLE void copy_to_clipboard();
-    Q_INVOKABLE void paste_from_clipboard();
+public slots:
+    void append(double angle = 0.0, double intensity = 0.0);
+    void remove(int index);
+    void clear();
+
+    void copy_to_clipboard();
+    void paste_from_clipboard();
 
     int count() const;
 
 signals:
     void countChanged();
+    void changed();
 };
 
-class SunDefinition : public QObject {
+class SunShape : public QObject {
     Q_OBJECT
+    QML_ELEMENT
+
+    QList<SunShapePoint> m_custom_shape;
+
+    void regenerate();
+    void sample_gaussian();
+    void sample_pillbox();
+    void sample_buie();
+    void update_x_axis();
+
+    void update_current_distribution();
+
 public:
-    explicit SunDefinition(QObject* parent = nullptr);
+    explicit SunShape(QObject* parent = nullptr);
 
-    enum class SunType { Directional, PointSource };
-    enum class SunShape { Gaussian, Pillbox, CSR, Custom };
-    Q_ENUM(SunType)
-    Q_ENUM(SunShape)
+    SolTrace::Data::SunShape get_sunshape_data() const;
 
-    Q_WRITABLE_PROPERTY(SunType, type, SunType::Directional)
-    Q_WRITABLE_PROPERTY(SunShape, shape, SunShape::Gaussian)
+    // Note that this is separate from SolTrace's SunShape enum to maintain
+    // independence from backend modifications
+    enum class Shape { Gaussian, Pillbox, Buie_CSR, Custom };
+    Q_ENUM(Shape)
+    Q_WRITABLE_PROPERTY(Shape, shape, Shape::Gaussian)
 
     // Gaussian
-    Q_WRITABLE_PROPERTY(double, std, 5.18)
+    Q_WRITABLE_PROPERTY(double, sigma, 5.18)
+
     // Pillbox
     Q_WRITABLE_PROPERTY(double, half_width, 4.65)
+
     // Buie
     Q_WRITABLE_PROPERTY(double, csr, 2.0)
-    // Custom Sun Shape
-    Q_WRITABLE_PROPERTY(int, num_points, 1)
 
-    QOBJECT_WRITABLE_PROPERTY(CustomSunShapeModel, custom_shape)
+    // Generated distribution (using sigma, half_width, csr)
+    QOBJECT_READONLY_PROPERTY(SunShapeModel, generated_distribution)
+
+    // Custom distribution (using user-defined points)
+    QOBJECT_READONLY_PROPERTY(SunShapeModel, custom_distribution)
+
+    // Current distribution
+    QOBJECT_WRITABLE_PROPERTY(SunShapeModel, current_distribution)
+
+signals:
+    void changed();
 };
 
-class DirectionalSunPosition : public QObject {
+class SolarCalculatorData : public QObject {
     Q_OBJECT
 public:
-    explicit DirectionalSunPosition(QObject* parent = nullptr);
+    explicit SolarCalculatorData(QObject* parent = nullptr);
 
-    enum class PositionCalculator { Legacy, Duffie, SOLPOS, SPA };
-    Q_ENUM(PositionCalculator)
+    DateTime get_datetime_data() const;
 
-    Q_WRITABLE_PROPERTY(PositionCalculator,
-                        position_calculator,
-                        PositionCalculator::Legacy)
+    // Calculator
+    enum class Calculator { Legacy, Duffie, SOLPOS, SPA };
+    Q_ENUM(Calculator)
+    Q_WRITABLE_PROPERTY(Calculator, calculator, Calculator::Legacy)
 
     // Position
     Q_WRITABLE_PROPERTY(double, latitude, 35.04)
@@ -78,16 +109,19 @@ public:
 
     // Date
     Q_WRITABLE_PROPERTY(int, year, 2026)
-    Q_WRITABLE_PROPERTY(int, month, 12)
-    Q_WRITABLE_PROPERTY(int, day, 25)
+    Q_WRITABLE_PROPERTY(int, month, 3)
+    Q_WRITABLE_PROPERTY(int, day, 20)
 
     // Time
-    Q_WRITABLE_PROPERTY(int, hour, 14)
-    Q_WRITABLE_PROPERTY(int, minute, 30)
+    Q_WRITABLE_PROPERTY(int, hour, 12)
+    Q_WRITABLE_PROPERTY(int, minute, 0)
     Q_WRITABLE_PROPERTY(int, second, 0)
-    Q_WRITABLE_PROPERTY(int, timezone, -7)
+
+    // Timezone offset in hours
+    Q_WRITABLE_PROPERTY(int, timezone_offset, -7)
 
     // SOLPOS
+    Q_WRITABLE_PROPERTY(bool, optional_solpos_fields, false)
     Q_WRITABLE_PROPERTY(int, interval, 1) ///< Averaging interval in seconds
 
     // SPA Optional fields
@@ -96,31 +130,61 @@ public:
     Q_WRITABLE_PROPERTY(double, altitude, 1000)
     Q_WRITABLE_PROPERTY(double, pressure, 1013.25)
     Q_WRITABLE_PROPERTY(double, temperature, 20.0)
+
+signals:
+    void changed();
 };
 
-class PointSourcePosition : public QObject {
+class SolarPositionData : public QObject {
     Q_OBJECT
 public:
-    explicit PointSourcePosition(QObject* parent = nullptr);
+    explicit SolarPositionData(QObject* parent = nullptr);
 
-    Q_WRITABLE_PROPERTY(double, x, 1000)
-    Q_WRITABLE_PROPERTY(double, y, 1000)
-    Q_WRITABLE_PROPERTY(double, z, 1000)
+    Q_WRITABLE_PROPERTY(double, x, 1000.0)
+    Q_WRITABLE_PROPERTY(double, y, 1000.0)
+    Q_WRITABLE_PROPERTY(double, z, 1000.0)
+
+    Q_WRITABLE_PROPERTY(bool, from_calculator, true)
+
+signals:
+    void changed();
 };
 
 class SunModule : public QObject {
     Q_OBJECT
+    QML_ELEMENT
+
+private:
+    void update_shape();
+    void update_type();
+    void update_position();
+
+    Data::SolarPositionCalculator m_calculator;
+
 public:
     explicit SunModule(QObject* parent = nullptr);
 
-    QOBJECT_WRITABLE_PROPERTY(SunBackend, backend)
-    QOBJECT_READONLY_PROPERTY(StatusComponent, status)
-    QOBJECT_READONLY_PROPERTY(CustomSunShapeModel, custom_sun_shape)
-    QOBJECT_READONLY_PROPERTY(SunDefinition, definition)
-    // QOBJECT_READONLY_PROPERTY(PresetComponent<DirectionalSunPosition>,
-    //                           ds_positions)
-    // QOBJECT_READONLY_PROPERTY(PresetComponent<PointSourcePosition>,
-    // ps_positions)
+    QOBJECT_READONLY_PROPERTY(StatusComponent, status);
+    QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
+
+    QOBJECT_READONLY_PROPERTY(SunShape, shape)
+
+    enum class Type { Directional, PointSource };
+    Q_ENUM(Type)
+
+    Q_WRITABLE_PROPERTY(Type, type, Type::Directional)
+
+    // Current sun position
+    QOBJECT_WRITABLE_PROPERTY(SolarPositionData, position)
+
+    // Point source position data
+    QOBJECT_READONLY_PROPERTY(SolarPositionData, ps_position)
+
+    // Directional sun position data (normalized direction vector)
+    QOBJECT_READONLY_PROPERTY(SolarPositionData, ds_position)
+
+    // Solar calculator fields (year, month, day, e.g.)
+    QOBJECT_READONLY_PROPERTY(SolarCalculatorData, calc_data)
 };
 
 } // namespace SolTrace::GUI::App

@@ -313,6 +313,7 @@ qt_add_qml_module(SolTrace
     DEPENDENCIES
         QtQuick
         QtQuick3D
+        QML_FILES ui/primitives/tables/CustomSunShapeTable.qml
 )
 
 CPMAddPackage(

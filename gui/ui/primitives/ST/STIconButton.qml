@@ -10,6 +10,7 @@ Rectangle {
     property alias text: label.text
     property alias label: label
     property real padding: 10
+    property real iconSize: 16
 
     width: label.width + padding
     height: width
@@ -30,7 +31,7 @@ Rectangle {
         id: label
         font.family: "Font Awesome 7 Free"
 
-        font.pointSize: 16
+        font.pointSize: control.iconSize
 
         anchors.centerIn: parent
     }

@@ -28,6 +28,14 @@ void AppData::load_session() {
     s.beginGroup("File");
     m_file_source->set_source(s.value("source", "").toUrl());
     s.endGroup();
+
+    s.beginGroup("Sun");
+    m_sun->shape()->set_shape(
+        static_cast<SunShape::Shape>(s.value("shape", 0).toUInt()));
+    m_sun->shape()->set_sigma(s.value("sigma", 1.551).toUInt());
+    m_sun->shape()->set_half_width(s.value("sigma", 2.023).toUInt());
+    m_sun->shape()->set_csr(s.value("buie_csr", 0.596).toUInt());
+    s.endGroup();
 }
 
 void AppData::save_session() {
@@ -51,6 +59,13 @@ void AppData::save_session() {
 
     s.beginGroup("File");
     s.setValue("source", m_file_source->source());
+    s.endGroup();
+
+    s.beginGroup("Sun");
+    s.setValue("shape", static_cast<int>(m_sun->shape()->shape()));
+    s.setValue("sigma", m_sun->shape()->sigma());
+    s.setValue("half_width", m_sun->shape()->half_width());
+    s.setValue("buie_csr", m_sun->shape()->csr());
     s.endGroup();
 }
 
@@ -76,6 +91,9 @@ AppData::AppData(QObject* parent, const QString& documentation_directory)
             &AppData::new_database,
             m_simulation,
             &SimulationModule::set_current_database);
+
+    connect(
+        this, &AppData::new_database, m_sun, &SunModule::set_current_database);
 
     connect(this,
             &AppData::new_database,

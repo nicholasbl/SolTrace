@@ -106,6 +106,11 @@ ShadowedGlassRectangle {
             }
         }
 
+        Item {
+            Layout.fillWidth: true
+            visible: !App.view.left_panel.is_small()
+        }
+
         PanelButtons {
             id: panel_buttons
             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter

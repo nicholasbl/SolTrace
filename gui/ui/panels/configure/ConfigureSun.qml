@@ -28,6 +28,7 @@ Flickable {
             Layout.margins: 8
         }
 
+
         STComboBar {
             id: bar
             currentIndex: App.view.sun_section
@@ -38,10 +39,9 @@ Flickable {
             fontFamily: App.view.left_panel.size < 1 ? "Font Awesome 7 Free" : ""
 
             model: App.view.left_panel.size < 1 ?
-                        ["\uf0eb", "\uf53f", "\uf06a"]
+                        ["\uf0eb", "\uf06a"]
                       :
-                        ["Shape", "Type", " Position"]
-
+                        ["Type & Position", "Shape"]
         }
 
         StackLayout {
@@ -51,99 +51,11 @@ Flickable {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-
                 STComboBar {
                     Layout.fillWidth: true
 
-                    currentIndex: App.sun.definition.shape
-                    onCurrentIndexChanged: App.sun.definition.shape = currentIndex
-
-                    fontFamily: App.view.left_panel.size < 1 ? "Font Awesome 7 Free" : ""
-
-                    model: App.view.left_panel.size < 1 ?
-                                ["\uf06a", "\uf06a", "\uf06a", "\uf06a"]
-                              :
-                                ["Gaussian", "Pillbox", "CSR", "Custom"]
-
-                }
-
-                InlineDocumentation {
-                    Layout.fillWidth: true
-                    Layout.margins: 8
-                    key: "configure.sun.shape." + ["gaussian", "pillbox", "csr", "custom"][App.sun.definition.shape]
-                    target: App.view.left_panel
-                }
-
-                StackLayout {
-                    currentIndex: App.sun.definition.shape
-
-                    Layout.fillWidth: true
-
-                    STSpinBoxField {
-                        Layout.fillWidth: App.view.left_panel.size < 1
-                        Layout.preferredWidth: App.view.left_panel.size < 1 ? null : 200
-
-                        label: "Standard Deviation"
-                        decimals: 3
-                    }
-
-                    STSpinBoxField {
-                        Layout.fillWidth: App.view.left_panel.size < 1
-                        Layout.preferredWidth: App.view.left_panel.size < 1 ? null : 200
-
-                        label: "Half-width"
-                        decimals: 3
-                    }
-
-                    STSpinBoxField {
-                        Layout.fillWidth: App.view.left_panel.size < 1
-                        Layout.preferredWidth: App.view.left_panel.size < 1 ? null : 200
-
-                        label: "Circumsolar Ratio"
-                        decimals: 3
-                    }
-
-                    STSpinBoxField {
-                        Layout.fillWidth: App.view.left_panel.size < 1
-                        Layout.preferredWidth: App.view.left_panel.size < 1 ? null : 200
-
-                        label: "Number of Points"
-                        from: 0
-                    }
-
-                }
-
-                SunShapeGraph {
-                    Layout.preferredWidth: 300
-                    Layout.preferredHeight: 400
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    title: "Emission Profile"
-                    xAxisTitle: "Angle (mrad)"
-                    yAxisTitle: "Intensity"
-                    xMin: 0; xMax: 10
-                    yMin: 0; yMax: 1
-                }
-            }
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-
-                InlineDocumentation {
-                    Layout.fillWidth: true
-                    Layout.margins: 8
-
-                    key: "configure.sun.type." + ["directional", "point_source"][App.sun.definition.type]
-                    target: App.view.left_panel
-                }
-
-                STComboBar {
-                    Layout.fillWidth: true
-
-                    currentIndex: App.sun.definition.type
-                    onCurrentIndexChanged: App.sun.definition.type = currentIndex
+                    currentIndex: App.sun.type
+                    onCurrentIndexChanged: App.sun.type = currentIndex
 
                     fontFamily: App.view.left_panel.size < 1 ? "Font Awesome 7 Free" : ""
 
@@ -151,7 +63,107 @@ Flickable {
                                 ["\uf06a", "\uf06a"]
                               :
                                 ["Directional Sun", "Point Source"]
+                }
 
+                InlineDocumentation {
+                    Layout.fillWidth: true
+                    Layout.margins: 8
+
+                    key: "configure.sun.type." + ["directional", "point_source"][App.sun.type]
+                    target: App.view.left_panel
+                }
+
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    visible: App.sun.type == SunModule.Directional
+
+                    InlineDocumentation {
+                        Layout.fillWidth: true
+                        Layout.margins: 8
+                        key: "configure.sun.calculators.legacy"
+                        target: App.view.left_panel
+                    }
+
+                    LocationField {
+                        id: location
+                        Layout.fillWidth: true
+                        onModified: {
+                            App.sun.calc_data.latitude = latitude
+                            App.sun.calc_data.longitude = longitude
+                        }
+                    }
+
+                    DateTimeField {
+                        id: date
+                        Layout.fillWidth: true
+                        onModified: {
+                            App.sun.calc_data.month = month
+                            App.sun.calc_data.day = day
+                            App.sun.calc_data.hour = hour
+                            App.sun.calc_data.minute = minute
+                        }
+                    }
+                }
+
+                STPropertyPanel {
+                    Layout.fillWidth: true
+
+                    title: "Manual Position"
+                    collapsible: false
+                    visible: App.sun.type == SunModule.PointSource
+
+                    GridLayout {
+                        width: parent.width
+
+                        STSpinBoxField {
+                            Layout.row: 0
+                            Layout.column: 0
+
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 100
+                            value: App.sun.position.x
+                            onValueModified: {
+                                App.sun.position.x = value
+                                App.sun.position.from_calculator = false
+                            }
+                            label: "X"
+                            from: -1000000
+                            to: 1000000
+                        }
+
+                        STSpinBoxField {
+                            Layout.row: App.view.left_panel.size < 1 ? 1 : 0
+                            Layout.column: App.view.left_panel.size < 1 ? 0 : 1
+
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 100
+                            label: "Y"
+                            value: App.sun.position.y
+                            onValueModified: {
+                                App.sun.position.y = value
+                                App.sun.position.from_calculator = false
+                            }
+                            from: -1000000
+                            to: 1000000
+                        }
+
+                        STSpinBoxField {
+                            Layout.row: App.view.left_panel.size < 1 ? 2 : 0
+                            Layout.column: App.view.left_panel.size < 1 ? 0 : 2
+
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 100
+                            label: "Z"
+                            value: App.sun.position.z
+                            onValueModified: {
+                                App.sun.position.z = value
+                                App.sun.position.from_calculator = false
+                            }
+                            from: -1000000
+                            to: 1000000
+                        }
+                    }
                 }
             }
 
@@ -159,14 +171,77 @@ Flickable {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                LocationField {
+                STComboBar {
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
+                    currentIndex: App.sun.shape.shape
+                    onCurrentIndexChanged: App.sun.shape.shape = currentIndex
+                    fontFamily: App.view.left_panel.size < 1 ? "Font Awesome 7 Free" : ""
+                    model: App.view.left_panel.size < 1 ?
+                                ["\uf06a", "\uf06a", "\uf06a", "\uf06a"]
+                              :
+                                ["Gaussian", "Pillbox", "CSR", "Custom"]
                 }
 
-                DateTimeField {
+                InlineDocumentation {
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
+                    Layout.margins: 8
+                    key: "configure.sun.shape." + ["gaussian", "pillbox", "csr", "custom"][App.sun.shape.shape]
+                    target: App.view.left_panel
+                }
+
+                GridLayout {
+                    rows: 2
+                    columns: 2
+                    Layout.margins: 12
+
+                    StackLayout {
+                        currentIndex: App.sun.shape.shape
+                        Layout.row: App.view.left_panel.size < 2 ? 1 : 0
+                        Layout.column: App.view.left_panel.size < 2 ? 0 : 1
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: 200
+
+                        STSpinBoxField {
+                            Layout.fillWidth: true
+                            label: "Standard Deviation"
+                            value: App.sun.shape.sigma
+                            decimals: 3
+                            onValueChanged: { App.sun.shape.sigma = value }
+                        }
+
+                        STSpinBoxField {
+                            Layout.fillWidth: true
+                            label: "Half-width"
+                            value: App.sun.shape.half_width
+                            decimals: 3
+                            onValueChanged: { App.sun.shape.half_width = value }
+                        }
+
+                        STSpinBoxField {
+                            Layout.fillWidth: true
+                            label: "Circumsolar Ratio"
+                            value: App.sun.shape.csr
+                            decimals: 3
+                            onValueChanged: { App.sun.shape.csr = value }
+                        }
+
+                        CustomSunShapeTable { }
+                    }
+
+                    SunShapeGraph {
+                        Layout.row: 0
+                        Layout.column: 0
+                        Layout.preferredWidth: 300
+                        Layout.preferredHeight: 400
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        title: "Emission Profile"
+                        xAxisTitle: "Angle (mrad)"
+                        yAxisTitle: "Intensity"
+                        xMin: 0; xMax: 10
+                        yMin: 0; yMax: 1
+                    }
                 }
             }
         }

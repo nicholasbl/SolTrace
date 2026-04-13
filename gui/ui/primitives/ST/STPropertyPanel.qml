@@ -25,7 +25,7 @@ Rectangle {
     //border.color: Theme.lineColor
     border.color: Material.dividerColor
     opacity: enabled ? 1.0 : 0.55
-    implicitHeight: form_core.implicitHeight + 24
+    implicitHeight: form_core.implicitHeight + 12
     implicitWidth: form_core.implicitWidth + 24
 
     clip: true
