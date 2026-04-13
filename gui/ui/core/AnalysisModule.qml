@@ -22,7 +22,7 @@ ColumnLayout {
         model : App.view.left_panel.size == PanelData.Small ?
                     ["\uf06a", "\uf06a"]
                   :
-                    ["Flux", "Intersections"]
+                    ["Intersections", "Flux"]
 
     }
 
@@ -34,20 +34,22 @@ ColumnLayout {
 
     StackLayout {
         currentIndex: App.view.analyze_section
+        Layout.fillWidth: true
+        Layout.fillHeight: true
         Layout.margins: 8
 
         ColumnLayout {
-            InlineDocumentation {
-                key: "analyze.flux"
-                target: App.view.left_panel
-            }
-        }
+            Layout.fillWidth: true
+            Layout.fillHeight: true
 
-        ColumnLayout {
             InlineDocumentation {
                 key: "analyze.intersections"
                 target: App.view.left_panel
             }
+        }
+
+        AnalyzeFlux {
+
         }
     }
 }

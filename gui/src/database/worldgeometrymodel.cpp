@@ -23,6 +23,10 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
         auto global = m_database->global_transform.get(member);
         if (!global) continue;
 
+        if (m_database->as_registry().all_of<HasFluxMapComponent>(member)) {
+            continue;
+        }
+
         QColor color = m_database->is_selected(member) ? Qt::red
                        : m_database->color.get(member)
                            ? m_database->color.get(member)->color

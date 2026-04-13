@@ -71,14 +71,16 @@ namespace SolTrace::GUI::App {
 class AppData : public QObject {
     Q_OBJECT
     QML_ELEMENT
-    // QML_SINGLETON (We are demoting this. App.qml declares the App
-    // singleton)
+    QML_SINGLETON
 
     void load_session();
     void save_session();
 
 public:
-    explicit AppData(QObject*       parent                  = nullptr,
+    static AppData* create(QQmlEngine* qmlEngine, QJSEngine*);
+
+    explicit AppData(QObject*       parent,
+                     QQmlEngine*    engine,
                      QString const& documentation_directory = "");
 
     ~AppData();
@@ -109,7 +111,7 @@ public:
 
 signals:
     void notification(ANotification);
-    void new_results(std::shared_ptr<ResultDB>);
+    void new_results(db::SimulationResultPtr);
     void new_database(db::Database*);
 };
 

@@ -22,13 +22,13 @@ constexpr double PI = glm::pi<double>();
 
 struct Mesh2D {
     std::vector<glm::dvec2> vertex;
-    std::vector<uint32_t>   index;
+    std::vector<glm::uvec3> triangles;
 
     template <class F>
     Mesh map(F&& f) const {
         Mesh ret;
 
-        ret.index = index;
+        ret.triangles = triangles;
 
         ret.vertex.reserve(vertex.size());
 
@@ -37,6 +37,19 @@ struct Mesh2D {
         }
 
         return ret;
+    }
+
+    std::tuple<glm::dvec2, glm::dvec2> bb_2d() const {
+        if (vertex.empty()) { return { glm::dvec2 { 0 }, glm::dvec2 { 0 } }; }
+        glm::dvec2 mins = vertex[0];
+        glm::dvec2 maxs = vertex[0];
+
+        for (auto const& p : vertex) {
+            mins = glm::min(p, mins);
+            maxs = glm::max(p, maxs);
+        }
+
+        return { mins, maxs };
     }
 };
 
@@ -61,12 +74,18 @@ Vertex make_vertex(double    x,
     };
 }
 
+// TODO: check all UVs and see if we can do better
+
 std::optional<Mesh> make_flat(SD::Flat& flat, Mesh2D const& m2d) {
+    auto [bb_min, bb_max] = m2d.bb_2d();
+
+    // simple UV
+
     return m2d.map([&](glm::dvec2 p) {
         return Vertex {
             .position = glm::vec3(p, 0.0),
             .normal   = { 0.0f, 0.0f, 1.0f },
-            .uv       = {},
+            .uv       = (p - bb_min) / (bb_max - bb_min),
         };
     });
 }
@@ -76,6 +95,8 @@ std::optional<Mesh> make_cone(SD::Cone& item, Mesh2D const& m2d) {
         qDebug() << Q_FUNC_INFO << "Half angle is <= 0";
         return {};
     }
+
+    auto [bb_min, bb_max] = m2d.bb_2d();
 
     auto tan_angle = std::tan(item.half_angle);
 
@@ -94,7 +115,7 @@ std::optional<Mesh> make_cone(SD::Cone& item, Mesh2D const& m2d) {
         return Vertex {
             .position = glm::vec3(p, z),
             .normal   = normal,
-            .uv       = {},
+            .uv       = (p - bb_min) / (bb_max - bb_min),
         };
     });
 }
@@ -104,6 +125,8 @@ std::optional<Mesh> make_para(SD::Parabola& item, Mesh2D const& m2d) {
         qDebug() << Q_FUNC_INFO << "Focal lengths are zero";
         return {};
     }
+
+    auto [bb_min, bb_max] = m2d.bb_2d();
 
     auto flen = glm::dvec2(item.focal_length_x, item.focal_length_y);
 
@@ -115,12 +138,14 @@ std::optional<Mesh> make_para(SD::Parabola& item, Mesh2D const& m2d) {
         return Vertex {
             .position = glm::vec3(p, z),
             .normal   = normal,
-            .uv       = {},
+            .uv       = (p - bb_min) / (bb_max - bb_min),
         };
     });
 }
 
 std::optional<Mesh> make_sphere(SD::Sphere& item, Mesh2D const& m2d) {
+
+    auto [bb_min, bb_max] = m2d.bb_2d();
 
     return m2d.map([&](glm::dvec2 p) {
         auto p_dot_p = glm::dot(p, p);
@@ -142,19 +167,20 @@ std::optional<Mesh> make_sphere(SD::Sphere& item, Mesh2D const& m2d) {
         return Vertex {
             .position = glm::vec3(p, z),
             .normal   = normal,
-            .uv       = {},
+            .uv       = (p - bb_min) / (bb_max - bb_min),
         };
     });
 }
+
+// Don't do UV's in the base mesh generation as that does not
+// consider final distortion
 
 Mesh2D generate_rectangle_aperture(SD::Rectangle const&            rect,
                                    SurfaceGenerationOptions const& options) {
     Mesh2D mesh;
 
-    uint32_t x_steps =
-        std::max<uint32_t>(1, options.height_field_resolution[0]);
-    uint32_t y_steps =
-        std::max<uint32_t>(1, options.height_field_resolution[1]);
+    uint32_t x_steps = std::max<uint32_t>(1, options.height_field_resolution.x);
+    uint32_t y_steps = std::max<uint32_t>(1, options.height_field_resolution.y);
 
     double x0 = rect.x_coord();
     double y0 = rect.y_coord();
@@ -162,7 +188,7 @@ Mesh2D generate_rectangle_aperture(SD::Rectangle const&            rect,
     double y1 = y0 + rect.y_length();
 
     mesh.vertex.reserve((x_steps + 1) * (y_steps + 1));
-    mesh.index.reserve(x_steps * y_steps * 6);
+    mesh.triangles.reserve(x_steps * y_steps * 2);
 
     for (uint32_t iy = 0; iy <= y_steps; ++iy) {
         double v = static_cast<double>(iy) / y_steps;
@@ -182,12 +208,8 @@ Mesh2D generate_rectangle_aperture(SD::Rectangle const&            rect,
             uint32_t c = (iy + 1) * stride + ix;
             uint32_t d = c + 1;
 
-            mesh.index.push_back(a);
-            mesh.index.push_back(c);
-            mesh.index.push_back(b);
-            mesh.index.push_back(b);
-            mesh.index.push_back(c);
-            mesh.index.push_back(d);
+            mesh.triangles.push_back({ a, c, b });
+            mesh.triangles.push_back({ b, c, d });
         }
     }
 
@@ -207,7 +229,8 @@ Mesh2D generate_circle_aperture(double                          radius,
         std::max<uint32_t>(3, options.perimeter_subdivisions);
 
     mesh.vertex.reserve(1 + radial_steps * angle_steps);
-    mesh.index.reserve(angle_steps * 3 + (radial_steps - 1) * angle_steps * 6);
+    mesh.triangles.reserve(angle_steps * 3 +
+                           (radial_steps - 1) * angle_steps * 2);
 
     mesh.vertex.push_back({ 0.0, 0.0 });
 
@@ -222,9 +245,7 @@ Mesh2D generate_circle_aperture(double                          radius,
     for (uint32_t ia = 0; ia < angle_steps; ++ia) {
         uint32_t a = 1 + ia;
         uint32_t b = 1 + ((ia + 1) % angle_steps);
-        mesh.index.push_back(0);
-        mesh.index.push_back(a);
-        mesh.index.push_back(b);
+        mesh.triangles.push_back({ 0, a, b });
     }
 
     for (uint32_t ir = 1; ir < radial_steps; ++ir) {
@@ -237,12 +258,8 @@ Mesh2D generate_circle_aperture(double                          radius,
             uint32_t c    = outer + ia;
             uint32_t d    = outer + next;
 
-            mesh.index.push_back(a);
-            mesh.index.push_back(c);
-            mesh.index.push_back(b);
-            mesh.index.push_back(b);
-            mesh.index.push_back(c);
-            mesh.index.push_back(d);
+            mesh.triangles.push_back({ a, c, b });
+            mesh.triangles.push_back({ b, c, d });
         }
     }
 
@@ -271,7 +288,7 @@ Mesh2D generate_annulus_aperture(SD::Annulus const&              annulus,
     uint32_t columns = closed ? angle_steps : (angle_steps + 1);
 
     mesh.vertex.reserve((radial_steps + 1) * columns);
-    mesh.index.reserve(radial_steps * angle_steps * 6);
+    mesh.triangles.reserve(radial_steps * angle_steps * 2);
 
     for (uint32_t ir = 0; ir <= radial_steps; ++ir) {
         double t = static_cast<double>(ir) / radial_steps;
@@ -294,12 +311,8 @@ Mesh2D generate_annulus_aperture(SD::Annulus const&              annulus,
             uint32_t c    = (ir + 1) * stride + ia;
             uint32_t d    = (ir + 1) * stride + next;
 
-            mesh.index.push_back(a);
-            mesh.index.push_back(c);
-            mesh.index.push_back(b);
-            mesh.index.push_back(b);
-            mesh.index.push_back(c);
-            mesh.index.push_back(d);
+            mesh.triangles.push_back({ a, c, b });
+            mesh.triangles.push_back({ b, c, d });
         }
     }
 
@@ -323,7 +336,7 @@ Mesh2D generate_polygon_aperture(std::vector<glm::dvec2> const&  corners,
     center /= static_cast<double>(corners.size());
 
     mesh.vertex.reserve(1 + radial_steps * ring_size);
-    mesh.index.reserve(ring_size * 3 + (radial_steps - 1) * ring_size * 6);
+    mesh.triangles.reserve(ring_size * 3 + (radial_steps - 1) * ring_size * 2);
 
     mesh.vertex.push_back(center);
 
@@ -338,9 +351,7 @@ Mesh2D generate_polygon_aperture(std::vector<glm::dvec2> const&  corners,
     for (uint32_t i = 0; i < ring_size; ++i) {
         uint32_t a = first_ring + i;
         uint32_t b = first_ring + ((i + 1) % ring_size);
-        mesh.index.push_back(0);
-        mesh.index.push_back(a);
-        mesh.index.push_back(b);
+        mesh.triangles.push_back({ 0, a, b });
     }
 
     for (uint32_t ir = 1; ir < radial_steps; ++ir) {
@@ -353,12 +364,8 @@ Mesh2D generate_polygon_aperture(std::vector<glm::dvec2> const&  corners,
             uint32_t c    = outer + i;
             uint32_t d    = outer + next;
 
-            mesh.index.push_back(a);
-            mesh.index.push_back(c);
-            mesh.index.push_back(b);
-            mesh.index.push_back(b);
-            mesh.index.push_back(c);
-            mesh.index.push_back(d);
+            mesh.triangles.push_back({ a, c, b });
+            mesh.triangles.push_back({ b, c, d });
         }
     }
 
@@ -475,7 +482,7 @@ generate_height_field_surface(SD::surface_ptr const&          surface,
 
     auto aperture_mesh = generate_aperture_mesh(aperture, options);
     if (!aperture_mesh || aperture_mesh->vertex.empty() ||
-        aperture_mesh->index.empty()) {
+        aperture_mesh->triangles.empty()) {
 
         qDebug() << Q_FUNC_INFO << "Unable to build aperture mesh";
         return std::nullopt;
@@ -492,11 +499,6 @@ generate_height_field_surface(SD::surface_ptr const&          surface,
         max_x = std::max(max_x, point.x);
         max_y = std::max(max_y, point.y);
     }
-
-    double dx = max_x - min_x;
-    double dy = max_y - min_y;
-    if (dx == 0.0) dx = 1.0;
-    if (dy == 0.0) dy = 1.0;
 
     std::optional<Mesh> ret;
 
@@ -552,7 +554,7 @@ generate_cylinder_surface(SD::surface_ptr const&          surface,
     double y1     = rect->y_coord() + rect->y_length();
 
     mesh.vertex.reserve((angular_steps + 1) * (length_steps + 1));
-    mesh.index.reserve(angular_steps * length_steps * 6);
+    mesh.triangles.reserve(angular_steps * length_steps * 2);
 
     for (uint32_t iy = 0; iy <= length_steps; ++iy) {
         double v = static_cast<double>(iy) / length_steps;
@@ -577,12 +579,8 @@ generate_cylinder_surface(SD::surface_ptr const&          surface,
             uint32_t c = (iy + 1) * stride + ia;
             uint32_t d = c + 1;
 
-            mesh.index.push_back(a);
-            mesh.index.push_back(c);
-            mesh.index.push_back(b);
-            mesh.index.push_back(b);
-            mesh.index.push_back(c);
-            mesh.index.push_back(d);
+            mesh.triangles.push_back({ a, c, b });
+            mesh.triangles.push_back({ b, c, d });
         }
     }
 

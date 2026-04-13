@@ -15,12 +15,12 @@ namespace analysis {
 class RayGeometry : public QQuick3DGeometry {
     Q_OBJECT
 
-    std::shared_ptr<ResultDB> m_database;
+    db::SimulationResultPtr m_database;
 
-    std::unordered_set<SolTrace::Result::RayEvent> m_exclude_events = {
-        SolTrace::Result::RayEvent::CREATE,
-        SolTrace::Result::RayEvent::VIRTUAL,
-        SolTrace::Result::RayEvent::UNKNOWN
+    std::unordered_set<db::RayEventType> m_exclude_events = {
+        db::RayEventType::CREATE,
+        db::RayEventType::VIRTUAL,
+        db::RayEventType::UNKNOWN
     };
 
     /*
@@ -36,7 +36,7 @@ class RayGeometry : public QQuick3DGeometry {
 public:
     explicit RayGeometry(QQuick3DObject* parent = nullptr);
 
-    void set_results(std::shared_ptr<ResultDB>);
+    void set_results(db::SimulationResultPtr);
 
 public slots:
     void rebuild_geometry();

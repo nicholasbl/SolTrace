@@ -72,7 +72,7 @@ void execute_process_runner(QPromise<SimResult>&      promise,
         auto source = temp_dir.filePath(SOLTRACE_JOB_MANIFEST);
 
         // throws on write fail
-        data->export_json_file(source.toStdString());
+        data->data->export_json_file(source.toStdString());
 
         auto process = QProcess();
 
@@ -141,49 +141,56 @@ static SimDataPtr worker_start_flow(QByteArray work_dir) {
         return nullptr;
     }
 
+    auto database = db::Database();
+
+    database.import(*dataset);
+
     // TODO: Non native runner
-    return dataset;
+    return database.export_to_simdata();
 }
 
 inline QJsonArray to_json(glm::vec3 v) {
     return QJsonArray() << v.x << v.y << v.z;
 }
 
-static QJsonArray build_results(std::shared_ptr<ResultDB> results) {
-    if (!results) { return {}; }
+static QJsonArray build_results(db::SimulationResultPtr results) {
+    // if (!results) { return {}; }
 
-    auto& result = results->result;
+    // auto& result = results->result;
 
-    QJsonArray array;
+    // QJsonArray array;
 
-    for (auto iter = result.get_ray_record_iteratior(); !result.is_at_end(iter);
-         ++iter) {
-        QJsonArray record;
+    // for (auto iter = result.get_ray_record_iteratior();
+    // !result.is_at_end(iter);
+    //      ++iter) {
+    //     QJsonArray record;
 
-        auto const& collection = *(iter->get());
+    //     auto const& collection = *(iter->get());
 
-        for (auto const& interaction : collection.interactions) {
-            record.push_back(QJsonObject {
-                { QStringLiteral("element"), interaction->element },
-                { QStringLiteral("event"),
-                  static_cast<int>(interaction->event) },
-                { QStringLiteral("location"), to_json(interaction->location) },
-                { QStringLiteral("direction"),
-                  to_json(interaction->direction) },
-            });
-        }
+    //     for (auto const& interaction : collection.interactions) {
+    //         record.push_back(QJsonObject {
+    //             { QStringLiteral("element"), interaction->element },
+    //             { QStringLiteral("event"),
+    //               static_cast<int>(interaction->event) },
+    //             { QStringLiteral("location"), to_json(interaction->location)
+    //             }, { QStringLiteral("direction"),
+    //               to_json(interaction->direction) },
+    //         });
+    //     }
 
-        array.push_back(QJsonObject {
-            { QStringLiteral("id"), collection.id },
-            { QStringLiteral("collection"), record },
-        });
-    }
+    //     array.push_back(QJsonObject {
+    //         { QStringLiteral("id"), collection.id },
+    //         { QStringLiteral("collection"), record },
+    //     });
+    // }
 
-    return array;
+    // return array;
+
+    // TODO: Disabled till we can get process running working
+    abort();
 }
 
-static bool dump_results(std::shared_ptr<ResultDB> results,
-                         QByteArray                work_dir) {
+static bool dump_results(db::SimulationResultPtr results, QByteArray work_dir) {
     auto obj = build_results(results);
 
     auto content = QJsonDocument(obj).toJson();
@@ -238,7 +245,8 @@ void check_if_process_worker(int argc, char* argv[]) {
         std::cout << "done" << std::endl;
 
         // write to disk
-        bool ok = dump_results(ptr->take(), work_dir);
+        auto p  = ptr->take();
+        bool ok = dump_results(p, work_dir);
 
         qApp->exit(ok ? EXIT_SUCCESS : EXIT_FAILURE);
     });

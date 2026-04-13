@@ -1,9 +1,11 @@
 #pragma once
 
-#include <QObject>
-#include "utilities/qt_helpers.h"
 #include "backend.h"
+#include "database/fluxmapworldmodel.h"
+#include "database/rootelementsmodel.h"
 #include "module_common.h"
+#include "utilities/qt_helpers.h"
+#include <QObject>
 
 namespace SolTrace::GUI::App {
 
@@ -20,11 +22,23 @@ namespace SolTrace::GUI::App {
 class FluxModule : public QObject {
     Q_OBJECT
 
-public:
-    explicit FluxModule(QObject* parent = nullptr);
+    db::SimulationResultPtr m_results;
 
-    QOBJECT_WRITABLE_PROPERTY(ResultsBackend, results)
-    QOBJECT_WRITABLE_PROPERTY(FluxBackend, backend)
+    QOBJECT_READONLY_PROPERTY(db::RootElementsModel, entity_model);
+    QOBJECT_READONLY_PROPERTY(db::PendingFluxMapModel, pending_flux_maps);
+    QOBJECT_READONLY_PROPERTY(db::FluxMapWorldModel, flux_map_world_model);
+    Q_WRITABLE_PROPERTY(db::Entity, current_entity, {});
+
+    // Hack
+    Q_WRITABLE_PROPERTY(QString, current_image, {});
+
+public:
+    explicit FluxModule(QQmlEngine*, QObject* parent = nullptr);
+
+public slots:
+    void set_results(db::SimulationResultPtr);
+
+    void start_generate();
 };
 
 } // namespace SolTrace::GUI::App

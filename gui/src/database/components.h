@@ -1,12 +1,15 @@
 #pragma once
 
 #include <QColor>
+#include <QImage>
 #include <QObject>
 #include <QVector>
 
 #include <entt/entt.hpp>
 
 #include <glm/gtc/quaternion.hpp>
+
+#include "analysis/baked_flux_map.h"
 
 #include "simulation_data_api.hpp"
 
@@ -19,6 +22,8 @@ bool operator==(SD::OpticalProperties const& a, SD::OpticalProperties const& b);
 } // namespace SolTrace
 
 namespace db {
+
+// When adding components, be sure to add them to the database clone function!
 
 /// Tag component for visually hiding an element
 struct InvisibleComponent { };
@@ -37,11 +42,23 @@ struct ElementComponent { };
 /// component directly!
 struct ChildOfComponent {
     entt::entity parent;
+
+    template <class M>
+    void remap_entities(M& mapper) {
+        parent = mapper(parent);
+    }
 };
 
 /// Describes the children of an entity. DO NOT modify this component directly!
 struct ChildrenComponent {
     QVector<entt::entity> children;
+
+    template <class M>
+    void remap_entities(M& mapper) {
+        for (auto& e : children) {
+            e = mapper(e);
+        }
+    }
 };
 
 /// Describe the attitude of this entity.
@@ -66,6 +83,8 @@ struct GlobalTransformComponent {
 /// A Global describing the ray source.
 struct RaySourceResource {
     SD::ray_source_ptr source;
+
+    RaySourceResource clone() const;
 };
 
 /// A set of material properties.
@@ -80,12 +99,24 @@ struct MaterialComponent {
 /// directly.
 struct MaterialGroupComponent {
     QVector<entt::entity> members;
+
+    template <class M>
+    void remap_entities(M& mapper) {
+        for (auto& e : members) {
+            e = mapper(e);
+        }
+    }
 };
 
 /// Describes the material group this entity belongs to. DO NOT modify this
 /// component directly!
 struct MaterialGroupMemberComponent {
     entt::entity group;
+
+    template <class M>
+    void remap_entities(M& mapper) {
+        group = mapper(group);
+    }
 };
 
 /// A set of geometry properties.
@@ -94,18 +125,32 @@ struct GeometryComponent {
     SD::surface_ptr  surface;
 
     bool operator==(GeometryComponent const&) const;
+
+    GeometryComponent clone() const;
 };
 
 /// A group using the same geometry. DO NOT modify the member information
 /// directly.
 struct GeometryGroupComponent {
     QVector<entt::entity> members;
+
+    template <class M>
+    void remap_entities(M& mapper) {
+        for (auto& e : members) {
+            e = mapper(e);
+        }
+    }
 };
 
 /// Describes the geometry group this entity belongs to. DO NOT modify this
 /// component directly!
 struct GeometryGroupMemberComponent {
     entt::entity group;
+
+    template <class M>
+    void remap_entities(M& mapper) {
+        group = mapper(group);
+    }
 };
 
 /// A component indicating this entity is a Tag description
@@ -118,6 +163,13 @@ struct ATagMemberComponent { };
 /// Lists the string tags this entity has
 struct TagMembershipComponent {
     QVector<entt::entity> tags;
+
+    template <class M>
+    void remap_entities(M& mapper) {
+        for (auto& e : tags) {
+            e = mapper(e);
+        }
+    }
 };
 
 /// Denotes an entity that could not be imported properly
@@ -132,6 +184,12 @@ struct SelectedComponent { };
 /// Color of the model
 struct ColorComponent {
     QColor color = Qt::white;
+};
+
+/// Marks if this entity has a flux map
+/// Should be hidden during instance rendering
+struct HasFluxMapComponent {
+    analysis::BakedFluxMapPtr map_info;
 };
 
 } // namespace db

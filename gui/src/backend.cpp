@@ -19,7 +19,7 @@
 ResultsBackend::ResultsBackend(QObject* parent)
     : QObject(parent), m_ray_geometry(new analysis::RayGeometry) { }
 
-void ResultsBackend::set_results(std::shared_ptr<ResultDB> ptr) {
+void ResultsBackend::set_results(db::SimulationResultPtr ptr) {
     m_ray_geometry->set_results(ptr);
 }
 

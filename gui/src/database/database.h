@@ -5,6 +5,7 @@
 #include "database/components.h"
 #include "database/database_notification.h"
 
+#include <QDebug>
 #include <QPointer>
 #include <QtTypes>
 #include <qqmlintegration.h>
@@ -68,6 +69,28 @@ public:
     operator entt::entity() const { return value; }
 };
 
+inline QDebug operator<<(QDebug debug, Entity const& c) {
+    QDebugStateSaver saver(debug);
+    debug.nospace() << "(Entity " << entt::to_integral(c.value) << ")";
+
+    return debug;
+}
+
+class Database;
+
+struct DatabaseExport {
+    std::shared_ptr<SolTrace::Data::SimulationData>              data;
+    std::unordered_map<SolTrace::Data::element_id, entt::entity> element_map;
+    std::unique_ptr<Database> source_database;
+
+    DatabaseExport() = default;
+
+    DatabaseExport(DatabaseExport const&)            = delete;
+    DatabaseExport& operator=(DatabaseExport const&) = delete;
+    DatabaseExport(DatabaseExport&&)                 = default;
+    DatabaseExport& operator=(DatabaseExport&&)      = default;
+};
+
 class Database : public QObject {
     Q_OBJECT
     entt::registry m_registry;
@@ -76,7 +99,9 @@ public:
     /// Create a new simulation database
     explicit Database(QObject* p = nullptr);
 
-    virtual ~Database() = default;
+    virtual ~Database();
+
+    Database* clone(QObject* p = nullptr) const;
 
     /// Merge in simulation data. Note, this should be called closely after
     /// the database constructor. We have this split here so that we can
@@ -84,7 +109,7 @@ public:
     void import(SD::SimulationData&);
 
     /// Convert a database back into a Soltrace dataset
-    std::shared_ptr<SolTrace::Data::SimulationData> export_to_simdata();
+    std::shared_ptr<DatabaseExport> export_to_simdata();
 
 public:
     operator entt::registry&();

@@ -32,13 +32,20 @@ void SurfaceGeometry::parameters_changed(entt::entity group) {
 void SurfaceGeometry::rebuild_geometry() {
     clear();
 
-    if (!database()) return;
+    if (!database()) {
+        qDebug() << "no db";
+        return;
+    }
 
     auto ptr = database()->geometry_parameters.get(m_current_group);
 
-    if (!ptr) return;
+    if (!ptr) {
+        qDebug() << "no geometry";
+        return;
+    }
 
     if (!ptr->surface || !ptr->aperture) {
+        qDebug() << "no surf or apt";
         update();
         return;
     }
@@ -47,7 +54,7 @@ void SurfaceGeometry::rebuild_geometry() {
     auto aperture = ptr->aperture;
 
     auto mesh = generate_surface(surface, aperture);
-    if (!mesh || mesh->vertex.empty() || mesh->index.empty()) {
+    if (!mesh || mesh->vertex.empty() || mesh->triangles.empty()) {
         qWarning() << "Geometry is empty, or unable to be generated";
         update();
         return;
@@ -64,8 +71,8 @@ void SurfaceGeometry::rebuild_geometry() {
     }
 
     auto indexBuffer =
-        QByteArray(reinterpret_cast<const char*>(mesh->index.data()),
-                   mesh->index.size() * sizeof(uint32_t));
+        QByteArray(reinterpret_cast<const char*>(mesh->triangles.data()),
+                   mesh->triangles.size() * sizeof(glm::uvec3));
     auto vertexBuffer =
         QByteArray(reinterpret_cast<const char*>(mesh->vertex.data()),
                    mesh->vertex.size() * sizeof(Vertex));
@@ -78,7 +85,7 @@ void SurfaceGeometry::rebuild_geometry() {
                  offsetof(Vertex, normal),
                  QQuick3DGeometry::Attribute::ComponentType::F32Type);
 
-    addAttribute(QQuick3DGeometry::Attribute::TexCoordSemantic,
+    addAttribute(QQuick3DGeometry::Attribute::TexCoord0Semantic,
                  offsetof(Vertex, uv),
                  QQuick3DGeometry::Attribute::ComponentType::F32Type);
 
@@ -99,8 +106,8 @@ void SurfaceGeometry::rebuild_geometry() {
 
     set_bounding_box(bb);
 
-    // qDebug() << Q_FUNC_INFO << entt::to_integral(m_current_group)
-    //          << verts.size() << indices.size();
+    qDebug() << Q_FUNC_INFO << entt::to_integral(m_current_group)
+             << mesh->triangles.size() << mesh->vertex.size();
     // qDebug() << Q_FUNC_INFO << boundsMin << boundsMax;
     //  qDebug() << verts;
 
