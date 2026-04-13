@@ -233,8 +233,8 @@ void SolTraceSystem::run()
     m_raynumber_vec.clear();
     m_element_id_vec.clear();
     m_hit_type_vec.clear();
-    int N_ray_hit = 0;
-    int N_ray_gen = 0;
+    uint_fast64_t N_ray_hit = 0;
+    uint_fast64_t N_ray_gen = 0;
 
     while (N_ray_hit < m_number_of_rays && N_ray_gen < m_max_number_of_rays)
     {
@@ -368,8 +368,8 @@ void SolTraceSystem::write_hp_output(const std::string &filename)
 }
 
 void SolTraceSystem::get_hp_output(std::vector<float4> &hp_vec,
-                                   std::vector<int> &raynumber_vec,
-                                   std::vector<int> &element_id_vec,
+                                   std::vector<uint_fast64_t> &raynumber_vec,
+                                   std::vector<int32_t> &element_id_vec,
                                    std::vector<uint8_t> &hit_type_vec)
 {
     hp_vec = m_hp_vec;
@@ -635,9 +635,9 @@ void SolTraceSystem::setup_device_buffer()
 
 // Collects results from device buffer
 // only keeps rays that hit elements
-void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector<int> &raynumber_vec,
-                                        std::vector<int> &element_id_vec, std::vector<uint8_t> &hit_type_vec,
-                                        std::vector<int> &sunraynumber_vec)
+void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector<uint_fast64_t> &raynumber_vec,
+                                        std::vector<int32_t> &element_id_vec, std::vector<uint8_t> &hit_type_vec,
+                                        std::vector<uint_fast64_t> &sunraynumber_vec)
 {
     const int max_depth = data_manager->launch_params_H.max_depth;
     const int num_rays = data_manager->launch_params_H.width * data_manager->launch_params_H.height;

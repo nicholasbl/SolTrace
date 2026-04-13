@@ -147,11 +147,11 @@ TEST(TwoPlateOptix, ReflectionToAbsorber)
 	OptixCSP::SolTraceSystem* sys = runner.get_optix_system();
 	
 	std::vector<float4> hp_vec;
-	std::vector<int> raynumber_vec;
-	std::vector<int> element_id_vec;
+	std::vector<uint_fast64_t> raynumber_vec;
+	std::vector<int32_t> element_id_vec;
 	std::vector<uint8_t> hit_type_vec;
 	sys->get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);
-	std::vector<int> sunraynumber_vec = sys->get_sunraynumber_vec();
+	std::vector<uint_fast64_t> sunraynumber_vec = sys->get_sunraynumber_vec();
 
 	EXPECT_EQ(hp_vec.size(), raynumber_vec.size());						// Hit results are same size
 	EXPECT_EQ(raynumber_vec.size(), element_id_vec.size());

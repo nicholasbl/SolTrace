@@ -63,7 +63,7 @@ void convert_user_sun_data(const std::vector<double>& sun_shape_angle, const std
     return;
 }
 
-int assign_raydata_from_hitpoints(const std::vector<float4>& hp_vec, const std::vector<int>& raynumber_vec,
+int assign_raydata_from_hitpoints(const std::vector<float4>& hp_vec, const std::vector<uint_fast64_t>& raynumber_vec,
     TSystem* sys)
 {
     // Assign raydata to TSystem (for legacy GUI)
@@ -410,8 +410,8 @@ int run_optix_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
     sts = runner.run_simulation_core(false);
 
     std::vector<float4> hp_vec;
-    std::vector<int> raynumber_vec;
-    std::vector<int> element_id_vec;
+    std::vector<uint_fast64_t> raynumber_vec;
+    std::vector<int32_t> element_id_vec;
     runner.get_hp_output(hp_vec, raynumber_vec, element_id_vec);
 
     assign_raydata_from_hitpoints(hp_vec, raynumber_vec, sys);

@@ -28,11 +28,11 @@ public:
 
     SolTrace::Runner::RunnerStatus run_simulation_core(bool write_output);
     SolTrace::Runner::RunnerStatus get_hp_output(std::vector<float4>& hp_vec,
-        std::vector<int>& raynumber_vec, std::vector<int>& element_id_vec);
+        std::vector<uint_fast64_t>& raynumber_vec, std::vector<int32_t>& element_id_vec);
 
     double get_sun_plane_area() { return m_sys.get_sun_plane_area(); }
 
-    double get_N_sun_rays() { return m_sys.get_N_sun_rays(); }
+    uint_fast64_t get_N_sun_rays() { return m_sys.get_N_sun_rays(); }
 
     // Runner options
     // void disable_sun_shape_errors() { this->include_sun_shape_errors = false; }

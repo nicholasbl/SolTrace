@@ -52,7 +52,7 @@ namespace OptixCSP {
         // write all the hit points to a file
         void write_hp_output(const std::string& filename);
         // Get all hit points
-        void get_hp_output(std::vector<float4>& hp_vec, std::vector<int>& raynumber_vec, std::vector<int>& element_id_vec,
+        void get_hp_output(std::vector<float4>& hp_vec, std::vector<uint_fast64_t>& raynumber_vec, std::vector<int32_t>& element_id_vec,
             std::vector<uint8_t>& hit_type_vec);
         // // write simulation summary to a file, including receiver stats, etc
 	// 	void write_simulation_json(const std::string& filename);
@@ -126,9 +126,9 @@ namespace OptixCSP {
         /// </summary>
         double get_sun_plane_area() const;
 
-        double get_N_sun_rays() { return m_sunraynumber_vec.back(); }
+        uint_fast64_t get_N_sun_rays() { return m_sunraynumber_vec.back(); }
 
-        std::vector<int> get_sunraynumber_vec() const { return m_sunraynumber_vec; }
+        std::vector<uint_fast64_t> get_sunraynumber_vec() const { return m_sunraynumber_vec; }
         void set_sun_shape_errors(bool flag) { this->m_include_sun_shape_errors = flag; }
 
         
@@ -160,10 +160,10 @@ namespace OptixCSP {
 
         // Contains information on rays that hit objects
         std::vector<float4> m_hp_vec;
-        std::vector<int> m_raynumber_vec;
-        std::vector<int> m_element_id_vec;
+        std::vector<uint_fast64_t> m_raynumber_vec;
+        std::vector<int32_t> m_element_id_vec;
         std::vector<uint8_t> m_hit_type_vec;
-        std::vector<int> m_sunraynumber_vec;    // This is ID of hit rays out of all generated rays
+        std::vector<uint_fast64_t> m_sunraynumber_vec;    // This is ID of hit rays out of all generated rays
 
         // Reused host-side scratch buffers for copying launch results back from device.
         std::vector<float4> m_hp_output_buffer_host;
@@ -179,9 +179,9 @@ namespace OptixCSP {
         std::vector<std::shared_ptr<CspElement>> m_element_list;
         void create_shader_binding_table();
         void setup_device_buffer();
-        void get_buffer_results(std::vector<float4>& hp_vec, std::vector<int>& raynumber_vec, 
-            std::vector<int>& element_id_vec, std::vector<uint8_t>& hit_type_vec, 
-            std::vector<int>& sunraynumber_vec);
+        void get_buffer_results(std::vector<float4>& hp_vec, std::vector<uint_fast64_t>& raynumber_vec, 
+            std::vector<int32_t>& element_id_vec, std::vector<uint8_t>& hit_type_vec, 
+            std::vector<uint_fast64_t>& sunraynumber_vec);
 
         Timer m_timer_setup;
         Timer m_timer_trace;

@@ -343,8 +343,8 @@ RunnerStatus OptixRunner::status_simulation(double *progress)
 }
 
 // Temporary function to get hit points
-RunnerStatus OptixRunner::get_hp_output(std::vector<float4> &hp_vec, std::vector<int> &raynumber_vec,
-                                        std::vector<int> &element_id_vec)
+RunnerStatus OptixRunner::get_hp_output(std::vector<float4> &hp_vec, std::vector<uint_fast64_t> &raynumber_vec,
+                                        std::vector<int32_t> &element_id_vec)
 {
     // for different levels of reporting, populate result accordingly
     //
@@ -371,7 +371,7 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
 
     // Get results from optixcsp
     std::vector<float4> hp_vec;
-    std::vector<int> raynumber_vec;
+    std::vector<uint_fast64_t> raynumber_vec;
     std::vector<int32_t> element_id_vec;
     std::vector<uint8_t> hit_type_vec;
     m_sys.get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);

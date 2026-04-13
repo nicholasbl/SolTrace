@@ -248,7 +248,7 @@ public:
         {
             SimulationParameters& params = simData.get_simulation_parameters();
             params.number_of_rays = N_rays;
-            params.max_number_of_rays = N_rays * 1000;
+            params.max_number_of_rays = static_cast<std::uint_fast64_t>(N_rays) * 10000ULL;
         }
         
         RunnerStatus sts = runner.setup_simulation(&simData);
