@@ -417,7 +417,8 @@ public:
         NumberOfRays = 0;
     }
 
-    bool calculate_receiver_flux_map(SimulationResult result, int nbinsx, int nbinsy, bool is_cylinder) {
+    bool calculate_receiver_flux_map(SimulationResult result, int nbinsx, int nbinsy, bool is_cylinder,
+        bool ignore_direct = false) {
         reset_flux_map();
 
         double minx, maxx, miny, maxy;
@@ -495,51 +496,54 @@ public:
             for (size_t j = 0; j < rr->interactions.size(); j++) {
                 if (receiver->get_id() == rr->get_element(j)) {
                     if (rr->get_event(j) == RayEvent::ABSORB) {
-                        rr->get_position(j, global_position);
+                        if (j > 1 || !ignore_direct) // Skip if direct hit
+                        {
+                            rr->get_position(j, global_position);
 
-                        receiver->convert_global_to_local(local_position, global_position);
+                            receiver->convert_global_to_local(local_position, global_position);
 
-                        x = local_position[0];
-                        y = local_position[1];
-                        z = local_position[2];
+                            x = local_position[0];
+                            y = local_position[1];
+                            z = local_position[2];
 
-                        Centroid[0] += x;
-                        Centroid[1] += y;
-                        Centroid[2] += z;
-                        npoints++;
+                            Centroid[0] += x;
+                            Centroid[1] += y;
+                            Centroid[2] += z;
+                            npoints++;
 
-                        if (is_cylinder) {
-                            if (z <= 0.0)
-                                x = rec_radius * asin(x / rec_radius);
-                            else if (z > 0.0) {
-                                if (x < 0) x = -(PI * rec_radius / 2.0 + rec_radius * acos(fabs(x) / rec_radius));
-                                if (x >= 0) x = PI * rec_radius / 2.0 + rec_radius * acos(x / rec_radius);
+                            if (is_cylinder) {
+                                if (z <= 0.0)
+                                    x = rec_radius * asin(x / rec_radius);
+                                else if (z > 0.0) {
+                                    if (x < 0) x = -(PI * rec_radius / 2.0 + rec_radius * acos(fabs(x) / rec_radius));
+                                    if (x >= 0) x = PI * rec_radius / 2.0 + rec_radius * acos(x / rec_radius);
+                                }
                             }
-                        }
 
-                        GridIncrementX = -1; //initialize grid increment counters
-                        GridIncrementY = -1;
+                            GridIncrementX = -1; //initialize grid increment counters
+                            GridIncrementY = -1;
 
-                        //determine which bin the ray falls into
-                        while ((minx + (GridIncrementX + 1) * binszx) < x)
-                            GridIncrementX++;
+                            //determine which bin the ray falls into
+                            while ((minx + (GridIncrementX + 1) * binszx) < x)
+                                GridIncrementX++;
 
-                        while ((miny + (GridIncrementY + 1) * binszy) < y)
-                            GridIncrementY++;
+                            while ((miny + (GridIncrementY + 1) * binszy) < y)
+                                GridIncrementY++;
 
-                        GridIncrementX = nbinsx - GridIncrementX - 1;
-                        GridIncrementY = nbinsy - GridIncrementY - 1;
+                            GridIncrementX = nbinsx - GridIncrementX - 1;
+                            GridIncrementY = nbinsy - GridIncrementY - 1;
 
-                        if (GridIncrementX >= 0 && GridIncrementX < (int)fluxGrid.ncols()
-                            && GridIncrementY >= 0 && GridIncrementY < (int)fluxGrid.nrows())
-                        {
-                            fluxGrid.at(GridIncrementY, GridIncrementX) += 1;//if ray falls inside a bin, increment count for that bin
-                            RayCount++;  //increment ray intersection counter
-                        }
-                        else
-                        {
-                            NotBinned++;
-                            //  qDebug("Not binned: [%d %d],  x=%lg, y=%lg", GridIncrementX, GridIncrementY, x, y);
+                            if (GridIncrementX >= 0 && GridIncrementX < (int)fluxGrid.ncols()
+                                && GridIncrementY >= 0 && GridIncrementY < (int)fluxGrid.nrows())
+                            {
+                                fluxGrid.at(GridIncrementY, GridIncrementX) += 1;//if ray falls inside a bin, increment count for that bin
+                                RayCount++;  //increment ray intersection counter
+                            }
+                            else
+                            {
+                                NotBinned++;
+                                //  qDebug("Not binned: [%d %d],  x=%lg, y=%lg", GridIncrementX, GridIncrementY, x, y);
+                            }
                         }
                     }
                 }
