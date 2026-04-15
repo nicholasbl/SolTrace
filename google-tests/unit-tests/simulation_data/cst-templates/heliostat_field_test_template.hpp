@@ -606,13 +606,11 @@ public:
         minx = maxx = miny = maxy = 0.0;
         Vector3d rec_origin = receiver->get_origin_global();
 
-        double buffer = 50;
-
         minx = -rec_width / 2.0;
         maxx = rec_width / 2.0;
 
-        maxy = rec_height / 2.0 + buffer;
-        miny = -rec_height / 2.0 - buffer;
+        maxy = rec_height / 2.0;
+        miny = -rec_height / 2.0;
 
 
         // Autoscale
@@ -652,8 +650,8 @@ public:
         double gridszy = maxy - miny;
 
         if (is_cylinder) {
-            minx = -PI * rec_radius - buffer;
-            maxx = PI * rec_radius + buffer;
+            minx = -PI * rec_radius;
+            maxx = PI * rec_radius;
             gridszx = maxx - minx;
         }
 
