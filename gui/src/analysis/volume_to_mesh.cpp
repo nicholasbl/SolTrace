@@ -1,5 +1,7 @@
 #include "volume_to_mesh.h"
 
+#include <QDebug>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -204,10 +206,31 @@ void polygonize_tetrahedron(db::Mesh&                        mesh,
 
 void volume_to_mesh(QPromise<db::Mesh>& output,
                     Grid3D<float>       volume,
+                    glm::vec3 const&    bounds_min,
+                    glm::vec3 const&    bounds_max,
                     float               isoval) {
+
+    qDebug() << Q_FUNC_INFO << "generating isosurf @" << isoval;
+
     if (volume.size_x() < 2 || volume.size_y() < 2 || volume.size_z() < 2) {
+
+        qDebug() << Q_FUNC_INFO << "invalid volume dimensions";
+        output.emplaceResult(db::Mesh {});
         return;
     }
+
+    auto const extent = bounds_max - bounds_min;
+    auto const voxel_size = glm::vec3(
+        volume.size_x() > 0 ? extent.x / static_cast<float>(volume.size_x())
+                            : 0.0f,
+        volume.size_y() > 0 ? extent.y / static_cast<float>(volume.size_y())
+                            : 0.0f,
+        volume.size_z() > 0 ? extent.z / static_cast<float>(volume.size_z())
+                            : 0.0f);
+
+    auto to_world_position = [&](glm::vec3 const& grid_position) {
+        return bounds_min + (grid_position + glm::vec3(0.5f)) * voxel_size;
+    };
 
     // Cube index decomposition to tetrahedra
     static constexpr std::array<std::array<int, 4>, 6> tetrahedra = {
@@ -250,9 +273,10 @@ void volume_to_mesh(QPromise<db::Mesh>& output,
 
                 for (size_t i = 0; i < corner_coords.size(); ++i) {
                     auto const& c = corner_coords[i];
-                    positions[i]  = glm::vec3(static_cast<float>(c[0]),
-                                             static_cast<float>(c[1]),
-                                             static_cast<float>(c[2]));
+                    positions[i]  = to_world_position(
+                        glm::vec3(static_cast<float>(c[0]),
+                                  static_cast<float>(c[1]),
+                                  static_cast<float>(c[2])));
                     values[i]     = volume(c[0], c[1], c[2]);
                     gradients[i]  = gradient_at(volume, c[0], c[1], c[2]);
                     has_below |= values[i] < isoval;
@@ -283,7 +307,9 @@ void volume_to_mesh(QPromise<db::Mesh>& output,
         }
     }
 
-    if (mesh.triangles.empty()) { return; }
+    if (mesh.triangles.empty()) {
+        qDebug() << Q_FUNC_INFO << "no triangles generated";
+    }
 
     output.emplaceResult(std::move(mesh));
 }

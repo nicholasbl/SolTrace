@@ -1,7 +1,8 @@
 #pragma once
 
 #include <span>
-#include <vector>
+
+#include <QVector>
 
 namespace analysis {
 
@@ -11,7 +12,7 @@ namespace analysis {
 
 template <typename T>
 class Grid3D {
-    std::vector<T> m_data;
+    QVector<T> m_data;
 
     using DimType = std::array<size_t, 3>;
     DimType m_dimensions;
@@ -40,14 +41,6 @@ public:
     }
 
     ~Grid3D() = default;
-
-    // disable copy
-    Grid3D(Grid3D const&)            = delete;
-    Grid3D& operator=(Grid3D const&) = delete;
-
-    // enable move
-    Grid3D(Grid3D&&)            = default;
-    Grid3D& operator=(Grid3D&&) = default;
 
     /*!
      * \brief Set all grid points to the given value.

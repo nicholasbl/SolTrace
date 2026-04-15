@@ -3,6 +3,8 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
+#include <QVector>
+
 namespace db {
 
 struct Vertex {
@@ -12,8 +14,9 @@ struct Vertex {
 };
 
 struct Mesh {
-    std::vector<Vertex>     vertex;
-    std::vector<glm::uvec3> triangles;
+    // using QVector for COW
+    QVector<Vertex>     vertex;
+    QVector<glm::uvec3> triangles;
 };
 
 

@@ -111,9 +111,34 @@ SimulationResult::convert(SimulationResultConversion const& opts) {
     }
 
     {
+        // TODO: Move out of here.
+
+        qDebug() << Q_FUNC_INFO << "Computing ray grid";
+
+        auto const extent = ret->bounds_max - ret->bounds_min;
+
         // Compute volume
-        auto grid_size =
-            ceil(glm::normalize(ret->bounds_max - ret->bounds_min) * 128.0);
+        auto grid_size = ceil(glm::normalize(extent) * 256.0);
+
+        auto const grid_size_f = glm::vec3(grid_size);
+        auto to_grid_coords    = [&](glm::dvec3 const& p) {
+            glm::vec3 rel(0.0f);
+
+            if (extent.x > 0.0) {
+                rel.x = static_cast<float>((p.x - ret->bounds_min.x) /
+                                           extent.x * grid_size_f.x);
+            }
+            if (extent.y > 0.0) {
+                rel.y = static_cast<float>((p.y - ret->bounds_min.y) /
+                                           extent.y * grid_size_f.y);
+            }
+            if (extent.z > 0.0) {
+                rel.z = static_cast<float>((p.z - ret->bounds_min.z) /
+                                           extent.z * grid_size_f.z);
+            }
+
+            return rel;
+        };
 
         // qDebug() << grid_size[0] << grid_size[1] << grid_size[2];
 
@@ -126,11 +151,12 @@ SimulationResult::convert(SimulationResultConversion const& opts) {
 
             if (ray.events.empty()) continue;
 
-            auto last_p = ray.events[0].location;
+            auto last_p = to_grid_coords(ray.events[0].location);
 
             for (auto i = 1; i < ray.events.size(); ++i) {
                 auto const& this_interaction   = ray.events[i];
-                auto        this_interaction_p = this_interaction.location;
+                auto        this_interaction_p =
+                    to_grid_coords(this_interaction.location);
 
                 if (last_p == this_interaction_p) continue;
 
@@ -146,9 +172,13 @@ SimulationResult::convert(SimulationResultConversion const& opts) {
             largest = std::max(x, largest);
         }
 
-        for (auto& x : grid) {
-            x /= largest;
+        if (largest != 0.0) {
+            for (auto& x : grid) {
+                x /= largest;
+            }
         }
+
+        qDebug() << Q_FUNC_INFO << "Grid largest" << largest;
 
         ret->ray_volume = std::move(grid);
     }
