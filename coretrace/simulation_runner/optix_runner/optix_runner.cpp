@@ -237,7 +237,8 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 auto el_aperture = std::dynamic_pointer_cast<Rectangle>(el->get_aperture());
                 assert(el_aperture != nullptr);
                 // TODO: account for x and y coord?
-                auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length, el_aperture->y_length);
+                auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length, el_aperture->y_length, 
+                    el_aperture->x_coord, el_aperture->y_coord);
                 optix_el->set_aperture(aperture);
                 break;
             }

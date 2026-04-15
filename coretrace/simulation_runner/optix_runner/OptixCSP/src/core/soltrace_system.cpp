@@ -308,30 +308,6 @@ void SolTraceSystem::update()
     data_manager->updateLaunchParams();
 }
 
-int SolTraceSystem::get_num_hits_receiver(CspElement receiver)
-{
-
-    int output_size = m_hp_vec.size();
-    int num_hits_receiver = 0;
-
-    // go through all the hit points, if the point value is inside the receiver element, count it as a hit.
-    for (int i = 0; i < output_size; i++)
-    {
-        float4 hp = m_hp_vec[i];
-
-        // sun ray source, skip it
-        if (hp.x == 0)
-            continue;
-
-        Vec3d hit_point(hp.y, hp.z, hp.w);
-        if (receiver.in_plane(hit_point))
-        {
-            num_hits_receiver++;
-        }
-    }
-    return num_hits_receiver;
-}
-
 void SolTraceSystem::write_hp_output(const std::string &filename)
 {
     // int output_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * data_manager->launch_params_H.max_depth;

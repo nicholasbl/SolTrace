@@ -195,6 +195,9 @@ GeometryDataST CspElement::toDeviceGeometryData() const
 
         double width = m_aperture->get_width();
         double height = m_aperture->get_height();
+        auto rect_aperture = std::dynamic_pointer_cast<ApertureRectangle>(m_aperture);
+        double x_coord = rect_aperture->get_x_coord();
+        double y_coord = rect_aperture->get_y_coord();
 
         Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
 
@@ -203,18 +206,26 @@ GeometryDataST CspElement::toDeviceGeometryData() const
 
         if (surface_type == SurfaceType::FLAT)
         {
-            GeometryDataST::Rectangle_Flat heliostat(OptixCSP::toFloat3(m_origin), OptixCSP::toFloat3(v1), OptixCSP::toFloat3(v2), (float)width, (float)height);
+            Vec3d local_center(x_coord + 0.5 * width, y_coord + 0.5 * height, 0);
+            Vec3d global_center = rotation_matrix * local_center + m_origin;
+            GeometryDataST::Rectangle_Flat heliostat(OptixCSP::toFloat3(global_center), OptixCSP::toFloat3(v1), OptixCSP::toFloat3(v2), (float)width, (float)height);
             geometry_data.setRectangle_Flat(heliostat);
         }
 
         if (surface_type == SurfaceType::PARABOLIC)
         {
-            v1 = v1 * (float)(-width);
-            v2 = v2 * (float)height;
-            float3 anchor = OptixCSP::toFloat3(m_origin - v1 * 0.5 - v2 * 0.5);
-            GeometryDataST::Rectangle_Parabolic heliostat(OptixCSP::toFloat3(v1), OptixCSP::toFloat3(v2), anchor,
-                                                          (float)m_surface->get_curvature_1(),
-                                                          (float)m_surface->get_curvature_2());
+            Vec3d edge_x = v1 * (float)(-width);
+            Vec3d edge_y = v2 * (float)height;
+
+            Vec3d local_anchor(x_coord + width, y_coord, 0.0);
+            //float3 anchor = OptixCSP::toFloat3(m_origin - v1 * 0.5 - v2 * 0.5);
+            Vec3d global_anchor = rotation_matrix * local_anchor + m_origin;
+
+            GeometryDataST::Rectangle_Parabolic heliostat(OptixCSP::toFloat3(edge_x), 
+                OptixCSP::toFloat3(edge_y), 
+                OptixCSP::toFloat3(global_anchor),
+                (float)m_surface->get_curvature_1(),
+                (float)m_surface->get_curvature_2());
             geometry_data.setRectangleParabolic(heliostat);
         }
 
@@ -428,37 +439,6 @@ MaterialData CspElement::toDeviceMaterialDataBack() const
 //         m_upper_box_bound[2] = fmax(fmax(v1_global[2], v2_global[2]), v3_global[2]);
 //     }
 // }
-
-bool CspElement::in_plane(const Vec3d &point) const
-{
-
-    // check if a point is inside the aperture of the surface
-    ApertureType aperture_type = m_aperture->get_aperture_type();
-    if (aperture_type == ApertureType::RECTANGLE)
-    {
-        double width = m_aperture->get_width();
-        double height = m_aperture->get_height();
-        // get the rotation matrix
-        Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
-        // transform the point to local coordinates
-        Vec3d point_local = rotation_matrix.transpose() * (point - m_origin);
-        // check if the point is inside the rectangle
-        if (point_local[0] >= -width / 2 && point_local[0] <= width / 2 &&
-            point_local[1] >= -height / 2 && point_local[1] <= height / 2 &&
-            std::abs(point_local[2]) < 1e-3)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    return false;
-
-    // todo: do this for other aperture and surface types, not that this should be for post processing only
-}
 
 void CspElement::set_id(const int32_t id)
 {

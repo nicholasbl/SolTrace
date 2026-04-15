@@ -54,12 +54,6 @@ namespace OptixCSP {
         // Get all hit points
         void get_hp_output(std::vector<float4>& hp_vec, std::vector<uint_fast64_t>& raynumber_vec, std::vector<int32_t>& element_id_vec,
             std::vector<uint8_t>& hit_type_vec);
-        // // write simulation summary to a file, including receiver stats, etc
-	// 	void write_simulation_json(const std::string& filename);
-		// get number of rays hitting the receiver
-        int get_num_hits_receiver(CspElement e);
-
-      // std::vector<int> get_receiver_indices();
 
 
         /// Explicit cleanup

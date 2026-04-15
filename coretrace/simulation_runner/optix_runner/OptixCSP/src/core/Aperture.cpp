@@ -37,8 +37,11 @@ double ApertureCircle::get_height() const {
 }
 
 // ApertureRectangleEasy implementations
-ApertureRectangle::ApertureRectangle() : x_dim(1.0), y_dim(1.0) {}
-ApertureRectangle::ApertureRectangle(double xDim, double yDim) : x_dim(xDim), y_dim(yDim) {}
+//ApertureRectangle::ApertureRectangle() : x_dim(1.0), y_dim(1.0) {}
+ApertureRectangle::ApertureRectangle(double xlen, double ylen, double xl, double yl) 
+    : x_length(xlen), y_length(ylen), x_coord(xl), y_coord(yl)
+{
+}
 
 ApertureType ApertureRectangle::get_aperture_type() const {
     return ApertureType::RECTANGLE;
@@ -47,9 +50,10 @@ ApertureType ApertureRectangle::get_aperture_type() const {
 //float3 ApertureRectangle::get_origin() { return m_origin; }
 //float3 ApertureRectangle::get_v1() { return m_x_axis; }
 //float3 ApertureRectangle::get_v2() { return m_y_axis; }
-double ApertureRectangle::get_width() const { return x_dim; }
-double ApertureRectangle::get_height() const { return y_dim; }
- 
+double ApertureRectangle::get_width() const { return x_length; }
+double ApertureRectangle::get_height() const { return y_length; }
+double ApertureRectangle::get_x_coord() const { return x_coord; }
+double ApertureRectangle::get_y_coord() const { return y_coord; }
 
 // Aperture Triangle
 ApertureTriangle::ApertureTriangle(Vec3d v0, Vec3d v1, Vec3d v2) : m_v0(v0), m_v1(v1), m_v2(v2) {}

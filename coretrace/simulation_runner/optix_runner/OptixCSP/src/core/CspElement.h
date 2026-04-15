@@ -97,9 +97,6 @@ namespace OptixCSP
         // // this can be called when adding an element to the system
         // void compute_bounding_box();
 
-        // check if a point is inside the surface aperture
-        bool in_plane(const Vec3d &point) const;
-
         // Set id
         void set_id(const int32_t id) override;
 

@@ -51,8 +51,8 @@ namespace OptixCSP {
     // Concrete class for an easy rectangular aperture.
     class ApertureRectangle : public Aperture {
     public:
-        ApertureRectangle();
-        ApertureRectangle(double xDim, double yDim);
+        //ApertureRectangle();
+        ApertureRectangle(double xlen, double ylen, double xl, double yl);
         virtual ~ApertureRectangle() = default;
 
         virtual ApertureType get_aperture_type() const override;
@@ -61,10 +61,15 @@ namespace OptixCSP {
         //virtual float3 get_v2() override;
         virtual double get_width() const override;
         virtual double get_height() const override;
+        double get_x_coord() const;
+        double get_y_coord() const;
 
     private:
-        double x_dim;
-        double y_dim;
+        double x_length;
+        double y_length;
+        double x_coord;
+        double y_coord;
+
         //float3 m_origin;
         //float3 m_x_axis;
         //float3 m_y_axis;
