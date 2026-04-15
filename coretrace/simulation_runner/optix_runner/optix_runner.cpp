@@ -385,8 +385,8 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     // Loop through data, populating ray records
     // Assumes ray data is grouped serially
     size_t ndata = hp_vec.size();
-    int raynum_prev = -1;
-    int raynum = 0;
+    uint_fast64_t raynum_prev = -1;
+    uint_fast64_t raynum = 0;
     SolTrace::Result::ray_record_ptr rec = nullptr;
     SolTrace::Result::interaction_ptr intr = nullptr;
     for (size_t ii = 0; ii < ndata; ++ii)

@@ -655,8 +655,8 @@ void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector
     CUDA_CHECK(cudaMemcpy(m_hit_type_buffer_host.data(), data_manager->launch_params_H.hit_type_buffer, output_size * sizeof(uint8_t), cudaMemcpyDeviceToHost));
 
     // Loop through each buffer slot
-    int ray_number = raynumber_vec.empty() ? 0 : raynumber_vec.back();
-    int sunray_number = sunraynumber_vec.empty() ? 0 : sunraynumber_vec.back();
+    uint_fast64_t ray_number = raynumber_vec.empty() ? 0 : raynumber_vec.back();
+    uint_fast64_t sunray_number = sunraynumber_vec.empty() ? 0 : sunraynumber_vec.back();
     for (int i = 0; i < output_size; ++i)
     {
 
