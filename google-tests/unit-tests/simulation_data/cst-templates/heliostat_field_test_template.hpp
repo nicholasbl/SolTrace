@@ -32,6 +32,11 @@ public:
     bool save_results = false;      // Saves flux map results to CSV files
     bool save_raydata = false;      // Saves ray data to CSV file
 
+    int seed = 123;
+    SolTrace::Data::GenType sun_gen_type = SolTrace::Data::GenType::HALTON;
+    bool use_optical_errors = true;
+    bool use_sunshape_errors = true;
+
     const Vector3d zero = { 0.0, 0.0, 0.0 }; // Global origin
     const Vector3d khat = { 0.0, 0.0, 1.0 }; // Global z-axis
 
@@ -68,6 +73,9 @@ public:
     uint_fast64_t rec_absorb_count;
     uint_fast64_t heat_shield_absorb_count;
     uint_fast64_t miss_count;
+    uint_fast64_t tot_rec_hits;
+    uint_fast64_t rec_direct_count;
+    uint_fast64_t rec_via_helio_count;
 
     // Flux map
     HPM2D fluxGrid;
@@ -79,6 +87,7 @@ public:
     double Centroid[3];
     double zScale;
     size_t NumberOfRays;
+    int NotBinned;
 
     // Expected results
     double expected_power;
@@ -101,10 +110,6 @@ public:
         // Initialize runner
         RunnerStatus sts = runner.initialize();
         EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-        // Native runner speedups
-        //runner.enable_power_tower();
-        //runner.enable_point_focus();
-        runner.set_number_of_threads(14);
 
         // Initial setup of receiver
         receiver = SolTrace::Data::make_element<SingleElement>();
@@ -154,15 +159,17 @@ public:
         SimulationParameters& params = simData.get_simulation_parameters();
         params.number_of_rays = 20.e6;
         params.max_number_of_rays = params.number_of_rays * 100;
+        params.include_optical_errors = use_optical_errors;
+        params.include_sun_shape_errors = use_sunshape_errors;
     }
 
     void set_default_params() {
         SimulationParameters& params = simData.get_simulation_parameters();
         params.number_of_rays = 5.e5;
         params.max_number_of_rays = params.number_of_rays * 100;
-        params.include_optical_errors = true;
-        params.include_sun_shape_errors = true;
-        params.seed = 123;
+        params.include_optical_errors = use_optical_errors;
+        params.include_sun_shape_errors = use_sunshape_errors;
+        params.seed = seed;
     }
 
     void create_heliostat_field() {
@@ -341,11 +348,13 @@ public:
         sun = SolTrace::Data::make_ray_source<Sun>();
         sun->set_position(sun_pos);
         sun->set_shape(SolTrace::Data::SunShape::PILLBOX, 0.0, 4.65, 0.0);
+        sun->set_gen_type(sun_gen_type);
         simData.add_ray_source(sun);
 
         // Set up stages
         stage_ptr st1 = SolTrace::Data::make_stage(1);
         st1->set_reference_frame_geometry(zero, khat, 0.0);
+
         for (const auto& heliostat : heliostat_field) {
             auto ret = st1->add_element(heliostat);
             EXPECT_TRUE(SolTrace::Data::Element::is_success(ret));
@@ -375,9 +384,16 @@ public:
         }
     }
 
-    void simulate(SimulationResult* result) {
+    void simulate(SimulationResult* result, int N_rays = -1) {
         if (high_accuracy) set_high_accuracy_params();
         else set_default_params();
+
+        if (N_rays != -1)
+        {
+            auto& params = simData.get_simulation_parameters();
+            params.number_of_rays = N_rays;
+            params.max_number_of_rays = static_cast<std::uint_fast64_t>(N_rays) * 10000ULL;
+        }
 
         RunnerStatus sts = runner.setup_simulation(&simData);
         EXPECT_EQ(sts, RunnerStatus::SUCCESS);
@@ -412,6 +428,10 @@ public:
         heat_shield_absorb_count = 0;
         miss_count = 0;
 
+        tot_rec_hits = 0;
+        rec_direct_count = 0;
+        rec_via_helio_count = 0;
+
         for (size_t i = 0; i < result.get_number_of_records(); i++) {
             const ray_record_ptr rr = result[i];
             bool first_helio_hit = false;
@@ -428,7 +448,10 @@ public:
 
                 // Check receiver element
                 if (hit_element == receiver->get_id()) {
+                    tot_rec_hits++;
                     if (rev == RayEvent::ABSORB) rec_absorb_count++;
+                    if (j == 1) rec_direct_count++;
+                    else rec_via_helio_count++;
                     continue;
                 }
 
@@ -583,11 +606,13 @@ public:
         minx = maxx = miny = maxy = 0.0;
         Vector3d rec_origin = receiver->get_origin_global();
 
+        double buffer = 50;
+
         minx = -rec_width / 2.0;
         maxx = rec_width / 2.0;
 
-        maxy = rec_height / 2.0;
-        miny = -rec_height / 2.0;
+        maxy = rec_height / 2.0 + buffer;
+        miny = -rec_height / 2.0 - buffer;
 
 
         // Autoscale
@@ -627,9 +652,9 @@ public:
         double gridszy = maxy - miny;
 
         if (is_cylinder) {
-            minx = -PI * rec_radius;
-            maxx = PI * rec_radius;
-            gridszx = 2.0 * PI * rec_radius;
+            minx = -PI * rec_radius - buffer;
+            maxx = PI * rec_radius + buffer;
+            gridszx = maxx - minx;
         }
 
         binszx = gridszx / (double)nbinsx;
@@ -644,7 +669,7 @@ public:
         int GridIncrementX, GridIncrementY;
 
         size_t RayCount = 0;
-        size_t NotBinned = 0;
+        NotBinned = 0;
         size_t npoints = 0;
         Centroid[0] = Centroid[1] = Centroid[2] = 0.0;
         fluxGrid.fill(0.0);
@@ -863,12 +888,47 @@ public:
         }
     }
 
-    void simulate_check_outputs(std::string task_number, std::string aim_strategy, std::string hour) {
-
-        if (print_info) {
-            std::cout << "\n\nTask: " << task_number << ", Aim: " << aim_strategy << ", Hour: " << hour << std::endl;
+    void save_hit_pos_to_file(const SimulationResult& result, std::string filename)
+    {
+        std::ofstream outputFile(filename, std::ios::out | std::ios::trunc);
+        if (!outputFile.is_open()) {
+            std::cerr << "Error: Could not open the file " << filename << std::endl;
+        }
+        for (size_t i = 0; i < result.get_number_of_records(); i++) {
+            const ray_record_ptr rr = result[i];
+            for (size_t j = 0; j < rr->interactions.size(); j++) {
+                SolTrace::Result::RayEvent rev = rr->get_event(j);
+                if (j == 1)
+                {
+                    Vector3d pos;
+                    rr->get_position(j, pos);
+                    outputFile << pos[0] << "," << pos[1] << "," << pos[2];
+                    outputFile << std::endl;
+                }
+            }
         }
 
+    }
+
+    void save_outputs(std::string filename, const std::map<std::string, double>& results)
+    {
+        std::ofstream outputFile(filename, std::ios::out | std::ios::trunc);
+        if (!outputFile.is_open())
+        {
+            std::cerr << "Error: Could not open the file " << filename << std::endl;
+            return;
+        }
+
+        for (const auto& kv : results)
+        {
+            outputFile << kv.first << "," << kv.second << std::endl;
+        }
+
+        outputFile.close();
+    }
+
+    void update_from_hour(std::string hour)
+    {
         // Update simulation geometry based on hour
         if (hour == "8")
             update_simulation_geometry(74.95, 26.26);  // Solar position at 8 AM
@@ -876,6 +936,16 @@ public:
             update_simulation_geometry(0.0, 61.97); // Solar Noon
         else
             throw std::invalid_argument("Hour not supported for simulate_check_outputs.");
+    }
+
+    void simulate_check_outputs(std::string task_number, std::string aim_strategy, std::string hour) {
+
+        if (print_info) {
+            std::cout << "\n\nTask: " << task_number << ", Aim: " << aim_strategy << ", Hour: " << hour << std::endl;
+        }
+
+        // Update simulation geometry based on hour
+        update_from_hour(hour);
 
         SimulationResult result;
         simulate(&result);
