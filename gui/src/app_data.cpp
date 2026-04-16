@@ -85,7 +85,12 @@ AppData::AppData(QObject* parent, const QString& documentation_directory)
     connect(m_file_source,
             &FileSourceModule::current_database_value_changed,
             this,
-            [this](auto* ptr) { emit this->new_database(ptr); });
+            &AppData::set_current_database);
+
+    connect(this,
+            &AppData::current_database_value_changed,
+            this,
+            &AppData::new_database);
 
     connect(this,
             &AppData::new_database,

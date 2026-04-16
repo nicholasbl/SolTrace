@@ -98,20 +98,13 @@ Item {
 
             lightProbe: Texture {
                 textureData: {
-                    let elevation = App.sun.type == SunModule.Directional ? -Math.asin(App.sun.position.y) * 180 / Math.PI : App.sun.position.y
+                    let elevation = App.sun.type == SunModule.Directional ? sunDirectionRayGroup.z : pointSource.z
                     let index = 0
 
-                    if (elevation > 20) index = 0
-                    else if (elevation > 5) index = 1
-                    else if (elevation > -5) index = 2
-                    else index = 3
-
-                    switch (index) {
-                    case 0: return daySky
-                    case 1: return lateAfternoonSky
-                    case 2: return sunsetSky
-                    case 3: return nightSky
-                    }
+                    if (elevation > 30) return daySky
+                    if (elevation > 10) return lateAfternoonSky
+                    if (elevation > -10) return sunsetSky
+                    return nightSky
                 }
                 mappingMode: Texture.LightProbe
             }
@@ -278,7 +271,9 @@ Item {
                             source: "#Cylinder"
                             scale: Qt.vector3d(0.1, 5.0, 0.1)
                             materials: PrincipledMaterial {
-                                metalness: 1; roughness: 0; baseColor: "yellow"
+                            metalness: 1
+                            roughness: 0
+                            baseColor: "yellow"
                             }
                         }
 
@@ -288,7 +283,9 @@ Item {
                             position: Qt.vector3d(0, 250, 0)
                             scale: Qt.vector3d(0.3, 0.5, 0.3)
                             materials: PrincipledMaterial {
-                                metalness: 1; roughness: 0; baseColor: "yellow"
+                            metalness: 1
+                            roughness: 0
+                            baseColor: "yellow"
                             }
                         }
                     }
@@ -309,7 +306,6 @@ Item {
                     return rayPositions
                 }
             }
-
         }
     }
 

@@ -12,7 +12,7 @@ QtObject {
     readonly property Theme theme: Theme {}
     // readonly property Settings settings: Settings {}
 
-
+    readonly property var db: data.current_database
     readonly property var file_source: data.file_source
     readonly property var sun: data.sun
     readonly property var layout: data.layout
