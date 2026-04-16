@@ -212,7 +212,8 @@ namespace SolTrace::EmbreeRunner
                         myrng, PosSunStage.data, Stage->Origin,
                         Stage->RLocToRef, &System->Sun,
                         PosRayGlob, CosRayGlob, PosRaySun);
-                    System->SunRayCount++;
+                    // System->SunRayCount++;
+                    ++sun_ray_count_local;
                 }
                 else
                 {

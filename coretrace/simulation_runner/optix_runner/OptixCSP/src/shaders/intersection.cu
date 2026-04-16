@@ -645,6 +645,7 @@ extern "C" __global__ void __intersection__hexagon_flat()
     // Verify intersection distance and Report ray intersection point
     if (t > ray_tmin && t < ray_tmax)
     {
+        // TODO: Need to adjust for possible rotation...
         bool is_in = false;
         float3 p = ray_orig + ray_dir * t - hex.center;
         // float d = length(p - circ.center);
@@ -703,19 +704,20 @@ extern "C" __global__ void __intersection__annulus_flat()
     // Verify intersection distance and Report ray intersection point
     if (t > ray_tmin && t < ray_tmax)
     {
+        // TODO: Need to adjust for possible rotation...
         float3 p = ray_orig + ray_dir * t - anf.center;
         float d = length(p);
         if (anf.ri <= d && d <= anf.ro)
         {
-	  float theta = atan2f(p.y, p.x);
-	  if (fabsf(theta) <= 0.5f * anf.arc)
-	    {
-            optixReportIntersection(t,
-                                    0,
-                                    __float_as_uint(n.x),
-                                    __float_as_uint(n.y),
-                                    __float_as_uint(n.z));
-	    }
+            float theta = atan2f(p.y, p.x);
+            if (fabsf(theta) <= 0.5f * anf.arc)
+            {
+                optixReportIntersection(t,
+                                        0,
+                                        __float_as_uint(n.x),
+                                        __float_as_uint(n.y),
+                                        __float_as_uint(n.z));
+            }
         }
     }
 }
