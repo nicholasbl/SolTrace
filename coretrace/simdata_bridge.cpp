@@ -6,7 +6,7 @@
 #include "stage_element.hpp"
 #include "single_element.hpp"
 #include "virtual_element.hpp"
-#include <optix_runner.hpp>
+// #include <optix_runner.hpp>
 #include <native_runner.hpp>
 #include "simdata_io.hpp"
 #include <simulation_result.hpp>
@@ -63,36 +63,36 @@ void convert_user_sun_data(const std::vector<double>& sun_shape_angle, const std
     return;
 }
 
-int assign_raydata_from_hitpoints(const std::vector<float4>& hp_vec, const std::vector<int>& raynumber_vec,
-    TSystem* sys)
-{
-    // Assign raydata to TSystem (for legacy GUI)
-    sys->AllRayData.Clear();
-    for (TStage* stage : sys->StageList)
-        sys->AllRayData.Merge(stage->RayData);
-    int i_element = 0;
-    for (float4 element : hp_vec)
-    {
-        double stage_optix = element.x; // This is the DEPTH, NOT the stage in the soltrace sense
-        double PosRaySurfStage[3] = { element.y, element.z, element.w };
-        double CosRaySurfStage[3] = { 0,0,0 };  // Don't have cos reported from optix
-        int element_number = 1; // Don't get element number from optix
-        int raynumber = raynumber_vec[i_element];
+// int assign_raydata_from_hitpoints(const std::vector<float4>& hp_vec, const std::vector<int>& raynumber_vec,
+//     TSystem* sys)
+// {
+//     // Assign raydata to TSystem (for legacy GUI)
+//     sys->AllRayData.Clear();
+//     for (TStage* stage : sys->StageList)
+//         sys->AllRayData.Merge(stage->RayData);
+//     int i_element = 0;
+//     for (float4 element : hp_vec)
+//     {
+//         double stage_optix = element.x; // This is the DEPTH, NOT the stage in the soltrace sense
+//         double PosRaySurfStage[3] = { element.y, element.z, element.w };
+//         double CosRaySurfStage[3] = { 0,0,0 };  // Don't have cos reported from optix
+//         int element_number = 1; // Don't get element number from optix
+//         int raynumber = raynumber_vec[i_element];
 
-        // Only add ray data if it is Not the sun ray ('stage' 0)
-        if (stage_optix != 0)
-        {
-            sys->StageList[0]->RayData.Append(PosRaySurfStage, CosRaySurfStage, element_number,
-                stage_optix, raynumber);
-        }
-        i_element++;
-    }
+//         // Only add ray data if it is Not the sun ray ('stage' 0)
+//         if (stage_optix != 0)
+//         {
+//             sys->StageList[0]->RayData.Append(PosRaySurfStage, CosRaySurfStage, element_number,
+//                 stage_optix, raynumber);
+//         }
+//         i_element++;
+//     }
 
-    for (TStage* stage : sys->StageList)
-        sys->AllRayData.Merge(stage->RayData);
+//     for (TStage* stage : sys->StageList)
+//         sys->AllRayData.Merge(stage->RayData);
 
-    return 0;
-}
+//     return 0;
+// }
 
 int set_tstage_parameters(TSystem* sys_legacy, const SolTrace::NativeRunner::TSystem& sys_native)
 {
@@ -402,42 +402,42 @@ int run_native_file_runner(TSystem* sys, const char* file_name, int nthreads)
     return 0;
 }
 
-int run_optix_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
-{
-    OptixRunner runner;
-    SolTrace::Runner::RunnerStatus sts = runner.initialize();
-    sts = runner.setup_simulation(&sd);
-    sts = runner.run_simulation_core(false);
+// int run_optix_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
+// {
+//     OptixRunner runner;
+//     SolTrace::Runner::RunnerStatus sts = runner.initialize();
+//     sts = runner.setup_simulation(&sd);
+//     sts = runner.run_simulation_core(false);
 
-    std::vector<float4> hp_vec;
-    std::vector<int> raynumber_vec;
-    std::vector<int> element_id_vec;
-    runner.get_hp_output(hp_vec, raynumber_vec, element_id_vec);
+//     std::vector<float4> hp_vec;
+//     std::vector<int> raynumber_vec;
+//     std::vector<int> element_id_vec;
+//     runner.get_hp_output(hp_vec, raynumber_vec, element_id_vec);
 
-    assign_raydata_from_hitpoints(hp_vec, raynumber_vec, sys);
+//     assign_raydata_from_hitpoints(hp_vec, raynumber_vec, sys);
     
-    return 0;
-}
+//     return 0;
+// }
 
-int run_optix_file_runner(TSystem* sys, const char* file_name)
-{
-    // Directly run OptixCSP using stinput file (debug use ONLY)
-    OptixCSP::SolTraceSystem sys_optix;
-    sys_optix.set_number_of_rays(sys->sim_raycount, sys->sim_raymax);
-    bool ok = sys_optix.read_st_input(file_name);
-    sys_optix.initialize();
-    sys_optix.run();
+// int run_optix_file_runner(TSystem* sys, const char* file_name)
+// {
+//     // Directly run OptixCSP using stinput file (debug use ONLY)
+//     OptixCSP::SolTraceSystem sys_optix;
+//     sys_optix.set_number_of_rays(sys->sim_raycount, sys->sim_raymax);
+//     bool ok = sys_optix.read_st_input(file_name);
+//     sys_optix.initialize();
+//     sys_optix.run();
 
-    std::vector<float4> hp_vec;
-    std::vector<int> raynumber_vec;
-    std::vector<int> element_id_vec;
-    std::vector<uint8_t> hit_type_vec;
-    sys_optix.get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);
+//     std::vector<float4> hp_vec;
+//     std::vector<int> raynumber_vec;
+//     std::vector<int> element_id_vec;
+//     std::vector<uint8_t> hit_type_vec;
+//     sys_optix.get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);
 
-    assign_raydata_from_hitpoints(hp_vec, raynumber_vec, sys);
+//     assign_raydata_from_hitpoints(hp_vec, raynumber_vec, sys);
 
-    return 0;
-}
+//     return 0;
+// }
 
 int run_embree_runner(SolTrace::Data::SimulationData& sd, TSystem* sys, const int nthreads)
 {
