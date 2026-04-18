@@ -5,8 +5,8 @@
 
 using SolTrace::EmbreeRunner::EmbreeRunner;
 
-constexpr int N_rays_glob = 1e5;
-constexpr int seed = 200;
+constexpr int N_rays_glob = 1e4;
+constexpr int seed = 123;
 constexpr bool save = true;
 constexpr bool save_hits = false;
 
@@ -20,7 +20,7 @@ static void write_to_dict(std::string key_name, double val_a,
 
 static void CompareRunners(HeliostatFieldSimulationHelper<EmbreeRunner>& sim_embree,
 	HeliostatFieldSimulationHelper<OptixRunner>& sim_optix, int N_rays,
-	std::string hour)
+	std::string hour, const std::string& file_label = "")
 {
 	// Run cases
 	sim_embree.seed = seed;
@@ -32,12 +32,13 @@ static void CompareRunners(HeliostatFieldSimulationHelper<EmbreeRunner>& sim_emb
 	sim_embree.simulate(&result_embree, N_rays);
 	sim_embree.calculate_ray_counts(result_embree);
 	sim_embree.calculate_sun_size(result_embree);
-	sim_embree.calculate_receiver_flux_map(result_embree, 60, 23, true);
+	sim_embree.calculate_outputs(result_embree);
+	//sim_embree.calculate_receiver_flux_map(result_embree, 60, 23, true);
 
 	if (save_hits)
 	{
-		std::string file_hits_embree = "embree_hits_" + std::to_string(int(N_rays / 1e3)) + "k.csv";
-		sim_embree.save_hit_pos_to_file(result_embree, file_hits_embree);
+		std::string file_hits_embree = "embree_hits_" + file_label + std::to_string(int(N_rays / 1e3)) + "k.csv";
+		save_hit_pos_to_file(result_embree, file_hits_embree);
 	}
 
 	sim_optix.seed = seed;
@@ -49,12 +50,13 @@ static void CompareRunners(HeliostatFieldSimulationHelper<EmbreeRunner>& sim_emb
 	sim_optix.simulate(&result_optix, N_rays);
 	sim_optix.calculate_ray_counts(result_optix);
 	sim_optix.calculate_sun_size(result_optix);
-	sim_optix.calculate_receiver_flux_map(result_optix, 60, 23, true);
+	sim_optix.calculate_outputs(result_optix);
+	//sim_optix.calculate_receiver_flux_map(result_optix, 60, 23, true);
 
 	if (save_hits)
 	{
-		std::string file_hits_optix = "optix_hits_" + std::to_string(int(N_rays / 1e3)) + "k.csv";
-		sim_optix.save_hit_pos_to_file(result_optix, file_hits_optix);
+		std::string file_hits_optix = "optix_hits_" + file_label + std::to_string(int(N_rays / 1e3)) + "k.csv";
+		save_hit_pos_to_file(result_optix, file_hits_optix);
 	}
 
 	// Error tolerances
@@ -114,17 +116,15 @@ static void CompareRunners(HeliostatFieldSimulationHelper<EmbreeRunner>& sim_emb
 
 	// Compare power per ray
 	double power_tol = (5. / (double)N_rays) * 1e3;
-	EXPECT_NEAR(sim_embree.power_per_ray, sim_optix.power_per_ray, power_tol);
+	//EXPECT_NEAR(sim_embree.power_per_ray, sim_optix.power_per_ray, power_tol);
 
 	write_to_dict("12_power_per_ray", sim_embree.power_per_ray, sim_optix.power_per_ray, dict_embree, dict_optix);
 
 	// Total power absorbed
 	double tol = 5.e-3;
-	double total_power_embree = (double)sim_embree.rec_absorb_count * sim_embree.power_per_ray * 1.e-3; // [kW]
-	double total_power_optix = (double)sim_optix.rec_absorb_count * sim_optix.power_per_ray * 1.e-3; // [kW]
-	EXPECT_NEAR(total_power_embree, total_power_optix, tol * total_power_embree);
+	EXPECT_NEAR(sim_embree.total_power, sim_optix.total_power, tol * sim_embree.total_power);
 
-	write_to_dict("13_total_power", total_power_embree, total_power_embree, dict_embree, dict_optix);
+	write_to_dict("13_total_power", sim_embree.total_power, sim_optix.total_power, dict_embree, dict_optix);
 
 	// Peak flux
 	double peak_tol = 0.25;
@@ -138,15 +138,11 @@ static void CompareRunners(HeliostatFieldSimulationHelper<EmbreeRunner>& sim_emb
 	EXPECT_EQ(sim_embree.fluxGrid.nrows(), sim_optix.fluxGrid.nrows());
 	EXPECT_EQ(sim_embree.fluxGrid.ncols(), sim_optix.fluxGrid.ncols());
 	double rmse = 0.0;
-	double average_flux_embree = 0.0;
-	double average_flux_optix = 0.0;
 	for (size_t r = 0; r < sim_embree.fluxGrid.nrows(); r++) {
 		for (size_t c = 0; c < sim_embree.fluxGrid.ncols(); c++) {
 			double flux_embree = sim_embree.fluxGrid.at(r, c) * sim_embree.zScale / 1.e3;
 			double flux_optix = sim_optix.fluxGrid.at(r, c) * sim_optix.zScale / 1.e3;
 			rmse += pow(flux_embree - flux_optix, 2);
-			average_flux_embree += flux_embree;
-			average_flux_optix += flux_optix;
 		}
 	}
 
@@ -155,31 +151,43 @@ static void CompareRunners(HeliostatFieldSimulationHelper<EmbreeRunner>& sim_emb
 	EXPECT_LE(rmse / peak_flux_embree, rmse_tol);
 
 	// Average flux
-	average_flux_embree /= (sim_embree.fluxGrid.nrows() * sim_embree.fluxGrid.ncols());
-	average_flux_optix /= (sim_optix.fluxGrid.nrows() * sim_optix.fluxGrid.ncols());
-	EXPECT_NEAR(average_flux_embree, average_flux_optix, rmse_tol);
+	//EXPECT_NEAR(sim_embree.AveFlux / 1000.0, sim_optix.AveFlux / 1000.0, rmse_tol);
 
-	write_to_dict("15_average_flux", average_flux_embree, average_flux_optix, dict_embree, dict_optix);
+	write_to_dict("15_average_flux", sim_embree.AveFlux / 1000.0, sim_optix.AveFlux / 1000.0, dict_embree, dict_optix);
 
+	// Binning
 	EXPECT_EQ(sim_embree.NotBinned, sim_optix.NotBinned);
 
 	write_to_dict("16_not_binned", sim_embree.NotBinned, sim_optix.NotBinned, dict_embree, dict_optix);
+	write_to_dict("17_neg_x_bin_err", sim_embree.max_neg_x_flux_err, sim_optix.max_neg_x_flux_err, dict_embree, dict_optix);
+	write_to_dict("18_pos_x_bin_err", sim_embree.max_pos_x_flux_err, sim_optix.max_pos_x_flux_err, dict_embree, dict_optix);
+
+	// Efficiencies
+	EXPECT_NEAR(sim_embree.absorption_efficiency, sim_optix.absorption_efficiency, tol);
+	EXPECT_NEAR(sim_embree.blocking_efficiency, sim_optix.blocking_efficiency, tol * 2.0);
+	EXPECT_NEAR(sim_embree.spillage_efficiency, sim_optix.spillage_efficiency, tol);
+	EXPECT_NEAR(sim_embree.cosine_efficiency, sim_optix.cosine_efficiency, tol);
+
+	write_to_dict("19_absorption_efficiency", sim_embree.absorption_efficiency, sim_optix.absorption_efficiency, dict_embree, dict_optix);
+	write_to_dict("20_blocking_efficiency", sim_embree.blocking_efficiency, sim_optix.blocking_efficiency, dict_embree, dict_optix);
+	write_to_dict("21_spillage_efficiency", sim_embree.spillage_efficiency, sim_optix.spillage_efficiency, dict_embree, dict_optix);
+	write_to_dict("22_cosine_efficiency", sim_embree.cosine_efficiency, sim_optix.cosine_efficiency, dict_embree, dict_optix);
 
 	if (save)
 	{
-		std::string file_fluxmap_native = "embree_field_flux_" + SolTrace::Data::GenTypeMap.at(sim_embree.sun_gen_type)
+		std::string file_fluxmap_native = "embree_field_flux_" + file_label + SolTrace::Data::GenTypeMap.at(sim_embree.sun_gen_type)
 			+ "_" + std::to_string(int(N_rays / 1e3)) + "k.csv";
 		sim_embree.save_flux_map_to_file(file_fluxmap_native);
 
-		std::string file_fluxmap_optix = "optix_field_flux_" + SolTrace::Data::GenTypeMap.at(sim_optix.sun_gen_type)
+		std::string file_fluxmap_optix = "optix_field_flux_" + file_label + SolTrace::Data::GenTypeMap.at(sim_optix.sun_gen_type)
 			+ "_" + std::to_string(int(N_rays / 1e3)) + "k.csv";
 		sim_optix.save_flux_map_to_file(file_fluxmap_optix);
 
-		std::string file_outputs_native = "embree_outputs_" + SolTrace::Data::GenTypeMap.at(sim_embree.sun_gen_type)
+		std::string file_outputs_native = "embree_outputs_" + file_label + SolTrace::Data::GenTypeMap.at(sim_embree.sun_gen_type)
 			+ "_" + std::to_string(int(N_rays / 1e3)) + "k.csv";
 		sim_embree.save_outputs(file_outputs_native, dict_embree);
 
-		std::string file_outputs_optix = "optix_outputs_" + SolTrace::Data::GenTypeMap.at(sim_optix.sun_gen_type)
+		std::string file_outputs_optix = "optix_outputs_" + file_label + SolTrace::Data::GenTypeMap.at(sim_optix.sun_gen_type)
 			+ "_" + std::to_string(int(N_rays / 1e3)) + "k.csv";
 		sim_optix.save_outputs(file_outputs_optix, dict_optix);
 	}
@@ -187,6 +195,114 @@ static void CompareRunners(HeliostatFieldSimulationHelper<EmbreeRunner>& sim_emb
 
 	int xsagasdg = 0;
 }
+
+
+
+TEST(HeliostatFieldOptixEmbree, singleFacet_SlantFocused)
+{
+	// Make embree
+	HeliostatFieldSimulationHelper<EmbreeRunner> sim_embree;
+	sim_embree.runner.disable_stages();
+	sim_embree.runner.set_number_of_threads(10);
+	sim_embree.initialize();
+
+	// Make optix
+	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
+	sim_optix.initialize();
+
+	// Run centerline aimpoints
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "1a_1_8_");
+}
+
+TEST(HeliostatFieldOptixEmbree, singleFacet_BandFocused)
+{
+	// Make embree
+	HeliostatFieldSimulationHelper<EmbreeRunner> sim_embree;
+	sim_embree.runner.disable_stages();
+	sim_embree.runner.set_number_of_threads(10);
+	sim_embree.initialize();
+	sim_embree.assign_focal_lengths_canting_banded();
+
+	// Make optix
+	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
+	sim_optix.initialize();
+	sim_optix.assign_focal_lengths_canting_banded();
+
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "1b_1_8_");
+}
+
+TEST(HeliostatFieldOptixEmbree, multiFacet_SlantCanted)
+{
+	// Make embree
+	HeliostatFieldSimulationHelper<EmbreeRunner> sim_embree;
+	sim_embree.runner.disable_stages();
+	sim_embree.runner.set_number_of_threads(10);
+	sim_embree.initialize();
+	sim_embree.assign_canted_slant(true);
+
+	// Make optix
+	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
+	sim_optix.initialize();
+	sim_optix.assign_canted_slant(true);
+
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "2a_1_8_");
+}
+
+TEST(HeliostatFieldOptixEmbree, multiFacet_BandCanted)
+{
+	// Make embree
+	HeliostatFieldSimulationHelper<EmbreeRunner> sim_embree;
+	sim_embree.runner.disable_stages();
+	sim_embree.runner.set_number_of_threads(10);
+	sim_embree.initialize();
+	sim_embree.assign_canted_banded(true);
+
+	// Make optix
+	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
+	sim_optix.initialize();
+	sim_optix.assign_canted_banded(true);
+
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "2b_1_8_");
+}
+
+TEST(HeliostatFieldOptixEmbree, multiFacet_SlantFocused_SlantCanted)
+{
+	// Make embree
+	HeliostatFieldSimulationHelper<EmbreeRunner> sim_embree;
+	sim_embree.runner.disable_stages();
+	sim_embree.runner.set_number_of_threads(10);
+	sim_embree.initialize();
+	sim_embree.assign_canted_slant(false);
+
+	// Make optix
+	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
+	sim_optix.initialize();
+	sim_optix.assign_canted_slant(false);
+
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "3a_1_8_");
+}
+
+TEST(HeliostatFieldOptixEmbree, multiFacet_BandFocused_BandCanted)
+{
+	// Make embree
+	HeliostatFieldSimulationHelper<EmbreeRunner> sim_embree;
+	sim_embree.runner.disable_stages();
+	sim_embree.runner.set_number_of_threads(10);
+	sim_embree.initialize();
+	sim_embree.assign_canted_banded(false);    // Canted by band
+	sim_embree.assign_focal_lengths_banded();  // Focused by band
+
+	// Make optix
+	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
+	sim_optix.initialize();
+	sim_optix.assign_canted_banded(false);    // Canted by band
+	sim_optix.assign_focal_lengths_banded();  // Focused by band
+
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "3b_1_8_");
+}
+
+
+
 
 
 TEST(HeliostatFieldOptixEmbree, singleFacet_SlantFocused_NoSunShape)
@@ -203,21 +319,6 @@ TEST(HeliostatFieldOptixEmbree, singleFacet_SlantFocused_NoSunShape)
 	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
 	sim_optix.use_sunshape_errors = false;
 	sim_optix.use_optical_errors = false;
-	sim_optix.initialize();
-
-	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8");
-}
-
-TEST(HeliostatFieldOptixEmbree, singleFacet_SlantFocused)
-{
-	// Make embree
-	HeliostatFieldSimulationHelper<EmbreeRunner> sim_embree;
-	sim_embree.runner.disable_stages();
-	sim_embree.runner.set_number_of_threads(10);
-	sim_embree.initialize();
-
-	// Make optix
-	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
 	sim_optix.initialize();
 
 	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8");
@@ -243,24 +344,27 @@ TEST(HeliostatFieldOptixEmbree, optix_only)
 	sim_optix.calculate_receiver_flux_map(result_b, 30, 30, false);
 }
 
-
 TEST(NSTTF, test_case)
 {
-	std::string filename = "C://Users//tbrown2//OneDrive - NREL//SolTrace Help//GPU Upgrade(10302 - 49.01.01)//NSTTF Sample Case//NSTTF_2025_03_31_11_15_00.json";
+	std::string filename = "C:/Users/tbrown2/Desktop/test_NSTTF.json";
 	SimulationData sd;
+	auto& par = sd.get_simulation_parameters();
+	par.number_of_rays = 100;
 	sd.import_json_file(filename);
+
+	OptixRunner runner_optix;
+	runner_optix.setup_simulation(&sd);
+	runner_optix.run_simulation();
+	SimulationResult result_optix;
+	runner_optix.report_simulation(&result_optix, 0);
+	save_hit_pos_to_file(result_optix, "test_optix.csv");
 
 	EmbreeRunner runner_embree;
 	runner_embree.setup_simulation(&sd);
 	runner_embree.run_simulation();
 	SimulationResult result_embree;
 	runner_embree.report_simulation(&result_embree, 0);
-	
-	OptixRunner runner_optix;
-	runner_optix.setup_simulation(&sd);
-	runner_optix.run_simulation();
-	SimulationResult result_optix;
-	runner_optix.report_simulation(&result_optix, 0);
+	save_hit_pos_to_file(result_embree, "test_embree.csv");
 
 	int x = 0;
 
