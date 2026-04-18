@@ -24,6 +24,27 @@
 using Heliostat = SolTrace::Data::Heliostat;
 using SolTrace::Runner::RunnerStatus;
 
+static void save_hit_pos_to_file(const SimulationResult& result, std::string filename)
+{
+    std::ofstream outputFile(filename, std::ios::out | std::ios::trunc);
+    if (!outputFile.is_open()) {
+        std::cerr << "Error: Could not open the file " << filename << std::endl;
+    }
+    for (size_t i = 0; i < result.get_number_of_records(); i++) {
+        const ray_record_ptr rr = result[i];
+        for (size_t j = 0; j < rr->interactions.size(); j++) {
+            SolTrace::Result::RayEvent rev = rr->get_event(j);
+            if (j == 1)
+            {
+                Vector3d pos;
+                rr->get_position(j, pos);
+                outputFile << pos[0] << "," << pos[1] << "," << pos[2];
+                outputFile << std::endl;
+            }
+        }
+    }
+}
+
 template <typename RunnerT>
 class HeliostatFieldSimulationHelper {
 public:
@@ -88,6 +109,16 @@ public:
     double zScale;
     size_t NumberOfRays;
     int NotBinned;
+    double max_neg_x_flux_err = 0;
+    double max_pos_x_flux_err = 0;
+
+    // Results
+    double absorption_efficiency;
+    double blocking_efficiency;
+    double spillage_efficiency;
+    double cosine_efficiency;
+    double total_power;
+    double rmse;
 
     // Expected results
     double expected_power;
@@ -489,6 +520,35 @@ public:
         }
     }
 
+    void calculate_outputs(const SimulationResult& result) {
+        
+        absorption_efficiency = (double)tot_reflect_count / (double)tot_helio_hits;
+        blocking_efficiency = 1.0 - (double)tot_helio_block_count / (double)tot_reflect_count;
+        spillage_efficiency = (double)rec_absorb_count / (double)(tot_reflect_count - tot_helio_block_count);
+
+        double field_area = 0.0;
+        for (const auto& heliostat : heliostat_field) {
+            field_area += heliostat->get_area();
+        }
+        cosine_efficiency = ((double)tot_helio_hits / (double)nsun_rays) * (A_sun_box / field_area);
+
+        total_power = rec_absorb_count * power_per_ray / 1.e3;   // W to kW
+
+        calculate_receiver_flux_map(result, 60, 23, true);
+
+        rmse = 0.0;
+        for (size_t r = 0; r < fluxGrid.nrows(); r++) {
+            for (size_t c = 0; c < fluxGrid.ncols(); c++) {
+                double sim_flux = fluxGrid.at(r, c) * zScale / 1.e3;
+                double exp_flux = expected_fluxGrid.at(r, c);
+                rmse += pow(sim_flux - exp_flux, 2);
+            }
+        }
+        rmse = sqrt(rmse / (fluxGrid.nrows() * fluxGrid.ncols()));
+
+
+    }
+
     void read_expected_summary_results(std::string filepath) {
         // Reading in fluxData summary
         std::ifstream file(filepath);
@@ -668,6 +728,8 @@ public:
 
         size_t RayCount = 0;
         NotBinned = 0;
+        max_neg_x_flux_err = 0;
+        max_pos_x_flux_err = 0;
         size_t npoints = 0;
         Centroid[0] = Centroid[1] = Centroid[2] = 0.0;
         fluxGrid.fill(0.0);
@@ -687,6 +749,24 @@ public:
                         x = local_position[0];
                         y = local_position[1];
                         z = local_position[2];
+
+                        // Clamp sides (due to precision)
+                        double neg_radius = -1.0 * rec_radius;
+                        if (x < neg_radius)
+                        {
+                            double err = neg_radius - x;
+                            if (err > max_neg_x_flux_err)
+                                max_neg_x_flux_err = err;
+                            x = neg_radius;
+                        }
+                        else if (x > rec_radius)
+                        {
+                            double err = x - rec_radius;
+                            if (err > max_pos_x_flux_err)
+                                max_pos_x_flux_err = err;
+                            x = rec_radius;
+                        }
+                            
 
                         Centroid[0] += x;
                         Centroid[1] += y;
@@ -806,41 +886,21 @@ public:
 
         double tol = high_accuracy ? 1.e-3 : 5.e-3;
         // Check efficiencies
-        double absorption_efficiency = (double)tot_reflect_count / (double)tot_helio_hits;
         EXPECT_NEAR(absorption_efficiency, expected_absorption_efficiency, tol);
-        double blocking_efficiency = 1.0 - (double)tot_helio_block_count / (double)tot_reflect_count;
         EXPECT_NEAR(blocking_efficiency, expected_blocking_efficiency, tol * 2.0);
-        double spillage_efficiency = (double)rec_absorb_count / (double)(tot_reflect_count - tot_helio_block_count);
         EXPECT_NEAR(spillage_efficiency, expected_spillage_efficiency, tol);
-
-        double field_area = 0.0;
-        for (const auto& heliostat : heliostat_field) {
-            field_area += heliostat->get_area();
-        }
-        double cosine_efficiency = ((double)tot_helio_hits / (double)nsun_rays) * (A_sun_box / field_area);
         EXPECT_NEAR(cosine_efficiency, expected_cosine_efficiency, tol);
 
         // Total power absorbed
-        double total_power = rec_absorb_count * power_per_ray / 1.e3;   // W to kW
         EXPECT_NEAR(total_power, expected_power, tol * expected_power);
 
         // Peak flux value
         double peak_tol = high_accuracy ? 2.e-2 : 0.25;
-        calculate_receiver_flux_map(result, 60, 23, true);
         EXPECT_NEAR(PeakFlux / 1.e3, expected_peak_flux, peak_tol * expected_peak_flux);
 
         // RMS of flux values
         EXPECT_EQ(fluxGrid.nrows(), expected_fluxGrid.nrows());
         EXPECT_EQ(fluxGrid.ncols(), expected_fluxGrid.ncols());
-        double rmse = 0.0;
-        for (size_t r = 0; r < fluxGrid.nrows(); r++) {
-            for (size_t c = 0; c < fluxGrid.ncols(); c++) {
-                double sim_flux = fluxGrid.at(r, c) * zScale / 1.e3;
-                double exp_flux = expected_fluxGrid.at(r, c);
-                rmse += pow(sim_flux - exp_flux, 2);
-            }
-        }
-        rmse = sqrt(rmse / (fluxGrid.nrows() * fluxGrid.ncols()));
 
         //EXPECT_LE(rmse, 25.0); // expected_flux_RMS
         double rmse_tol = high_accuracy ? 0.02 : 0.08;  // 2% of peak flux // 0.04
@@ -886,28 +946,6 @@ public:
         }
     }
 
-    void save_hit_pos_to_file(const SimulationResult& result, std::string filename)
-    {
-        std::ofstream outputFile(filename, std::ios::out | std::ios::trunc);
-        if (!outputFile.is_open()) {
-            std::cerr << "Error: Could not open the file " << filename << std::endl;
-        }
-        for (size_t i = 0; i < result.get_number_of_records(); i++) {
-            const ray_record_ptr rr = result[i];
-            for (size_t j = 0; j < rr->interactions.size(); j++) {
-                SolTrace::Result::RayEvent rev = rr->get_event(j);
-                if (j == 1)
-                {
-                    Vector3d pos;
-                    rr->get_position(j, pos);
-                    outputFile << pos[0] << "," << pos[1] << "," << pos[2];
-                    outputFile << std::endl;
-                }
-            }
-        }
-
-    }
-
     void save_outputs(std::string filename, const std::map<std::string, double>& results)
     {
         std::ofstream outputFile(filename, std::ios::out | std::ios::trunc);
@@ -950,6 +988,8 @@ public:
         calculate_sun_size(result);
         calculate_ray_counts(result);
         read_expected_all_results(task_number, aim_strategy, hour);
+
+        calculate_outputs(result);
         check_outputs(result);
 
         // Save results to file
