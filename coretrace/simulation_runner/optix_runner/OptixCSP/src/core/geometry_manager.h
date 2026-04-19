@@ -17,7 +17,9 @@ namespace OptixCSP {
 	 */
 	class GeometryManager {
 	public:
-		GeometryManager(SoltraceState& state) : m_state(state), m_obj_counts(0) {}
+		GeometryManager(SoltraceState& state, bool verbose) : 
+			m_state(state), m_obj_counts(0), m_verbose(verbose)
+		{}
 		~GeometryManager() {}
 
 		/// go through the list of elements and collect the geometry info on the host: 
@@ -46,6 +48,9 @@ namespace OptixCSP {
 		// compute sun plane 
 		void compute_sun_plane_H(LaunchParams& params);
 
+		void set_verbose(bool verbose) { m_verbose = verbose; }
+
+		void clean_up();
 
 	private:
 		SoltraceState& m_state;
@@ -63,11 +68,14 @@ namespace OptixCSP {
 		OptixBuildInput        m_aabb_input = {};                   // needed after the first build
 		OptixAccelBuildOptions m_accel_build_options = {};  // needed after the first build
 		CUdeviceptr            m_aabb_list_D{};          // device pointer to the aabb list
+		CUdeviceptr            m_sbt_index_D{};          // device pointer to the sbt index list
 
 
 		CUdeviceptr m_output_buffer{};   // output buffer
 		CUdeviceptr m_temp_buffer{};     // temporary buffer for building GAS
 		size_t m_output_buffer_size = 0;   // size of that scratch
 		size_t m_temp_buffer_size = 0;     // size of the output buffer
+
+		bool m_verbose;
 	};
 }

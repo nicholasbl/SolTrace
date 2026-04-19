@@ -28,8 +28,19 @@ using namespace OptixCSP;
 // note that this is has to be per optical entity type.
 typedef Record<OptixCSP::HitGroupData> HitGroupRecord;
 
+void SolTraceSystem::set_verbose(bool verbose)
+{
+    m_verbose = verbose;
+    geometry_manager->set_verbose(verbose);
+    pipeline_manager->set_verbose(verbose);
+}
+
 void SolTraceSystem::print_launch_params()
 {
+    if (!m_verbose)
+    {
+        return;
+    }
 
     LaunchParams params = data_manager->launch_params_H;
 
@@ -65,7 +76,7 @@ SolTraceSystem::SolTraceSystem()
       m_include_sun_shape_errors(false),
       m_timer_setup(),
       m_timer_trace(),
-      geometry_manager(std::make_shared<GeometryManager>(m_state)),
+      geometry_manager(std::make_shared<GeometryManager>(m_state, m_verbose)),
       data_manager(std::make_shared<dataManager>()),
       pipeline_manager(std::make_shared<pipelineManager>(m_state)),
       m_sun(nullptr)
@@ -73,10 +84,13 @@ SolTraceSystem::SolTraceSystem()
     unsigned int major = OPTIX_VERSION / 10000;
     unsigned int minor = (OPTIX_VERSION % 10000) / 100;
     unsigned int micro = OPTIX_VERSION % 100;
-    std::cout << "Using OPTIX Version: " << major
-              << "." << minor
-              << "." << micro
-              << std::endl;
+    if (m_verbose)
+    {
+        std::cout << "Using OPTIX Version: " << major
+            << "." << minor
+            << "." << micro
+            << std::endl;
+    }
 
     CUDA_CHECK(cudaFree(0));
     CUcontext cuCtx = 0;
@@ -86,7 +100,7 @@ SolTraceSystem::SolTraceSystem()
     {
         std::cerr << "[" << std::setw(2) << level << "][" << std::setw(12) << tag << "]: " << message << "\n";
     };
-    options.logCallbackLevel = 4;
+    options.logCallbackLevel = m_verbose ? 4 : 0;
     OPTIX_CHECK(optixDeviceContextCreate(cuCtx, &options, &m_state.context));
     m_state.context = nullptr;
     m_state.stream = nullptr;
@@ -113,7 +127,7 @@ void SolTraceSystem::initialize()
         {
             std::cerr << "[" << std::setw(2) << level << "][" << std::setw(12) << tag << "]: " << message << "\n";
         };
-        options.logCallbackLevel = 4;
+        options.logCallbackLevel = m_verbose ? 4 : 0;
         OPTIX_CHECK(optixDeviceContextCreate(cuCtx, &options, &m_state.context));
     }
 
@@ -186,26 +200,22 @@ void SolTraceSystem::initialize()
     AABB_timer.start();
     geometry_manager->collect_geometry_info(m_element_list, data_manager->launch_params_H);
     AABB_timer.stop();
-    std::cout << "Time to compute AABB: " << AABB_timer.get_time_sec() << " seconds" << std::endl;
 
     Timer geometry_timer;
     geometry_timer.start();
     geometry_manager->create_geometries(data_manager->launch_params_H);
     geometry_timer.stop();
-    std::cout << "Time to create geometries: " << geometry_timer.get_time_sec() << " seconds" << std::endl;
 
     // Pipeline setup.
     Timer pipeline_timer;
     pipeline_timer.start();
     pipeline_manager->createPipeline();
     pipeline_timer.stop();
-    std::cout << "Time to create pipeline: " << pipeline_timer.get_time_sec() << " seconds" << std::endl;
 
     Timer sbt_timer;
     sbt_timer.start();
     create_shader_binding_table();
     sbt_timer.stop();
-    std::cout << "Time to create SBT: " << sbt_timer.get_time_sec() << " seconds" << std::endl;
 
     // seed for randomization
     data_manager->launch_params_H.sun_dir_seed = m_seed;
@@ -219,7 +229,17 @@ void SolTraceSystem::initialize()
     data_manager->allocateGeometryDataArray(geometry_manager->get_geometry_data_array());
     data_manager->allocateMaterialDataArray(geometry_manager->get_material_data_array_front(),
                                             geometry_manager->get_material_data_array_back());
-    print_launch_params();
+    
+    if (m_verbose)
+    {
+        std::cout << "Time to compute AABB: " << AABB_timer.get_time_sec() << " seconds" << std::endl;
+        std::cout << "Time to create geometries: " << geometry_timer.get_time_sec() << " seconds" << std::endl;
+        std::cout << "Time to create pipeline: " << pipeline_timer.get_time_sec() << " seconds" << std::endl;
+        std::cout << "Time to create SBT: " << sbt_timer.get_time_sec() << " seconds" << std::endl;
+
+        print_launch_params();
+    }
+        
 
     data_manager->allocateLaunchParams();
     m_timer_setup.stop();
@@ -250,7 +270,9 @@ void SolTraceSystem::run()
         size_t m_mem_free_after;
 	    size_t mem_total;
         cudaMemGetInfo(&m_mem_free_after, &mem_total);
-        std::cout << "Memory used by launch: " << (m_mem_free_before - m_mem_free_after) / (1024.0 * 1024.0) << " MB\n";
+
+        if(m_verbose)
+            std::cout << "Memory used by launch: " << (m_mem_free_before - m_mem_free_after) / (1024.0 * 1024.0) << " MB\n";
 
         m_timer_trace.start();
         // Launch the simulation.
@@ -364,6 +386,9 @@ void SolTraceSystem::clean_up()
     }
 
     CUDA_CHECK(cudaDeviceSynchronize());
+
+    geometry_manager->clean_up();
+
     // destroy pipeline related resources
     pipeline_manager->cleanup();
 
@@ -406,6 +431,38 @@ void SolTraceSystem::clean_up()
     m_element_id_buffer_host.shrink_to_fit();
     m_hit_type_buffer_host.clear();
     m_hit_type_buffer_host.shrink_to_fit();
+
+    m_state.context = nullptr;
+    m_state.stream = nullptr;
+    m_state.pipeline = nullptr;
+    m_state.raygen_prog_group = nullptr;
+    m_state.radiance_miss_prog_group = nullptr;
+    m_state.geometry_module = nullptr;
+    m_state.shading_module = nullptr;
+    m_state.sun_module = nullptr;
+    m_state.gas_handle = 0;
+    m_state.sbt = {};
+    m_state.d_gas_output_buffer = 0;
+}
+
+void SolTraceSystem::reset()
+{
+    clean_up();
+
+    m_element_list.clear();
+    m_hp_vec.clear();
+    m_raynumber_vec.clear();
+    m_element_id_vec.clear();
+    m_hit_type_vec.clear();
+    m_sunraynumber_vec.clear();
+
+    m_hp_output_buffer_host.clear();
+    m_element_id_buffer_host.clear();
+    m_hit_type_buffer_host.clear();
+
+    m_sun = nullptr;
+    m_number_of_rays = 0;
+    m_max_number_of_rays = 0;
 }
 
 // Create and configure the Shader Binding Table (SBT).

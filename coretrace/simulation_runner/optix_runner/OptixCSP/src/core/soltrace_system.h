@@ -59,7 +59,11 @@ namespace OptixCSP {
         /// Explicit cleanup
         void clean_up();
 
-        void set_verbose(bool verbose) { m_verbose = verbose; } // Set verbosity for debugging
+        // Reset sys
+        void reset();
+
+        void set_verbose(bool verbose); // Set verbosity for debugging
+        bool is_verbose() const { return m_verbose; }
         /// <summary>
         /// set the number of rays launched
         /// </summary>

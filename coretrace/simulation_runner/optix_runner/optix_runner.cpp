@@ -45,9 +45,10 @@ RunnerStatus OptixRunner::initialize()
 RunnerStatus OptixRunner::setup_simulation(const SimulationData *data)
 {
 
-    RunnerStatus sts;
+    // Reset
+    this->m_sys.reset();
 
-    // this->simdata = data;
+    RunnerStatus sts;
 
     sts = this->setup_parameters(data);
     if (sts != RunnerStatus::SUCCESS)
@@ -60,6 +61,8 @@ RunnerStatus OptixRunner::setup_simulation(const SimulationData *data)
         return sts;
 
     m_sys.initialize();
+
+    
 
     // std::cout << "Number of stages: " << this->tsys.StageList.size()
     //           << std::endl;
@@ -155,8 +158,11 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             optix_el->set_optics_back(opt_back->my_type == InteractionType::REFRACTION, opt_back->reflectivity,
                                       opt_back->transmitivity, opt_back->slope_error, opt_back->specularity_error, od);
 
-            std::cout << "adding elements " << el->get_name() << std::endl;
-            std::cout << "Origin: " << el->get_origin_global() << std::endl;
+            if (m_sys.is_verbose())
+            {
+                std::cout << "adding elements " << el->get_name() << std::endl;
+                std::cout << "Origin: " << el->get_origin_global() << std::endl;
+            }
 
             if (el->get_surface() == nullptr)
             {
@@ -168,7 +174,10 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 throw std::runtime_error("Element must be assigned an aperture.");
             }
 
-            std::cout << "surface type: " << el->get_surface()->get_type() << std::endl;
+            if (m_sys.is_verbose())
+            {
+                std::cout << "surface type: " << el->get_surface()->get_type() << std::endl;
+            }
 
             switch (el->get_surface()->get_type())
             {
@@ -303,12 +312,18 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             OptixCSP::Vec3d lower(xmin, ymin, zmin);
             optix_el->set_bounding_box_local(lower, upper);
 
-            std::cout << "Bounding Box Upper: " << optix_el->get_upper_bounding_box() << std::endl;
-            std::cout << "Bounding Box Lower: " << optix_el->get_lower_bounding_box() << std::endl;
+            if (m_sys.is_verbose())
+            {
+                std::cout << "Bounding Box Upper: " << optix_el->get_upper_bounding_box() << std::endl;
+                std::cout << "Bounding Box Lower: " << optix_el->get_lower_bounding_box() << std::endl;
+            }
 
             m_sys.add_element(optix_el);
 
-            std::cout << "=====================================================" << std::endl;
+            if (m_sys.is_verbose())
+            {
+                std::cout << "=====================================================" << std::endl;
+            }
         }
     }
     return RunnerStatus::SUCCESS;

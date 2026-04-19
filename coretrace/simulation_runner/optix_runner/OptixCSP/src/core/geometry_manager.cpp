@@ -104,13 +104,15 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
             }
         }
 
-        aabb.minX = (float)(element->get_lower_bounding_box()[0]);
-        aabb.minY = (float)(element->get_lower_bounding_box()[1]);
-        aabb.minZ = (float)(element->get_lower_bounding_box()[2]);
+        float buffer = 0;
 
-        aabb.maxX = (float)(element->get_upper_bounding_box()[0]);
-        aabb.maxY = (float)(element->get_upper_bounding_box()[1]);
-        aabb.maxZ = (float)(element->get_upper_bounding_box()[2]);
+        aabb.minX = (float)(element->get_lower_bounding_box()[0]) - buffer;
+        aabb.minY = (float)(element->get_lower_bounding_box()[1]) - buffer;
+        aabb.minZ = (float)(element->get_lower_bounding_box()[2]) - buffer;
+
+        aabb.maxX = (float)(element->get_upper_bounding_box()[0]) + buffer;
+        aabb.maxY = (float)(element->get_upper_bounding_box()[1]) + buffer;
+        aabb.maxZ = (float)(element->get_upper_bounding_box()[2]) + buffer;
 
         m_aabb_list_H[i] = aabb;       // Store the AABB in the list
         m_sbt_index_H[i] = sbt_offset; // Store the SBT index
@@ -122,7 +124,12 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
     }
 
     // print out computed minimum distance
-    std::cout << "Minimum distance to sun plane: " << m_sun_plane_distance << std::endl;
+    if (m_verbose)
+    {
+        std::cout << "Minimum distance to sun plane: " << m_sun_plane_distance << std::endl;
+    }
+    if(m_verbose)
+        std::cout << "Minimum distance to sun plane: " << m_sun_plane_distance << std::endl;
 }
 
 void GeometryManager::compute_sun_plane_H(LaunchParams &params)
@@ -183,6 +190,40 @@ void GeometryManager::compute_sun_plane_H(LaunchParams &params)
     CUDA_CHECK(cudaFree(reinterpret_cast<void *>(sun_uv_bounds_D)));
 }
 
+void GeometryManager::clean_up()
+{
+    if (m_aabb_list_D)
+    {
+        CUDA_CHECK(cudaFree(reinterpret_cast<void *>(m_aabb_list_D)));
+        m_aabb_list_D = 0;
+    }
+
+    if (m_sbt_index_D)
+    {
+        CUDA_CHECK(cudaFree(reinterpret_cast<void *>(m_sbt_index_D)));
+        m_sbt_index_D = 0;
+    }
+
+    if (m_temp_buffer)
+    {
+        CUDA_CHECK(cudaFree(reinterpret_cast<void *>(m_temp_buffer)));
+        m_temp_buffer = 0;
+    }
+
+    if (m_output_buffer)
+    {
+        CUDA_CHECK(cudaFree(reinterpret_cast<void *>(m_output_buffer)));
+        m_output_buffer = 0;
+    }
+
+    m_temp_buffer_size = 0;
+    m_output_buffer_size = 0;
+    m_obj_counts = 0;
+    m_sun_plane_distance = -1.0f;
+    m_aabb_input = {};
+    m_accel_build_options = {};
+}
+
 void GeometryManager::create_geometries(LaunchParams &params)
 {
 
@@ -203,9 +244,8 @@ void GeometryManager::create_geometries(LaunchParams &params)
     }
 
     // device vector for SBT index, no need to rebuild
-    CUdeviceptr d_sbt_index;
-    CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&d_sbt_index), m_obj_counts * sizeof(uint32_t)));
-    CUDA_CHECK(cudaMemcpy(reinterpret_cast<void *>(d_sbt_index),
+    CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&m_sbt_index_D), m_obj_counts * sizeof(uint32_t)));
+    CUDA_CHECK(cudaMemcpy(reinterpret_cast<void *>(m_sbt_index_D),
                           m_sbt_index_H.data(),
                           m_obj_counts * sizeof(uint32_t),
                           cudaMemcpyHostToDevice));
@@ -216,7 +256,7 @@ void GeometryManager::create_geometries(LaunchParams &params)
     m_aabb_input.customPrimitiveArray.flags = aabb_input_flags.data();
     m_aabb_input.customPrimitiveArray.numSbtRecords = NUM_OPTICAL_ENTITY_TYPES;
     m_aabb_input.customPrimitiveArray.numPrimitives = m_obj_counts;
-    m_aabb_input.customPrimitiveArray.sbtIndexOffsetBuffer = d_sbt_index;
+    m_aabb_input.customPrimitiveArray.sbtIndexOffsetBuffer = m_sbt_index_D;
     m_aabb_input.customPrimitiveArray.sbtIndexOffsetSizeInBytes = sizeof(uint32_t);
     m_aabb_input.customPrimitiveArray.primitiveIndexOffset = 0;
 

@@ -53,18 +53,44 @@ pipelineManager::~pipelineManager()
 
 void pipelineManager::cleanup()
 {
-
-    OPTIX_CHECK(optixPipelineDestroy(m_state.pipeline));
+    if (m_state.pipeline)
+    {
+        OPTIX_CHECK(optixPipelineDestroy(m_state.pipeline));
+        m_state.pipeline = nullptr;
+    }
 
     // destroy all program groups
     for (auto &prog_group : m_program_groups)
     {
-        OPTIX_CHECK(optixProgramGroupDestroy(prog_group));
+        if (prog_group)
+        {
+            OPTIX_CHECK(optixProgramGroupDestroy(prog_group));
+        }
+    }
+    m_program_groups.clear();
+    m_intersection_program_group_map.clear();
+
+    m_state.raygen_prog_group = nullptr;
+    m_state.radiance_miss_prog_group = nullptr;
+    m_state.radiance_receiver_prog_group = nullptr;
+
+    if (m_state.geometry_module)
+    {
+        OPTIX_CHECK(optixModuleDestroy(m_state.geometry_module));
+        m_state.geometry_module = nullptr;
     }
 
-    OPTIX_CHECK(optixModuleDestroy(m_state.geometry_module));
-    OPTIX_CHECK(optixModuleDestroy(m_state.shading_module));
-    OPTIX_CHECK(optixModuleDestroy(m_state.sun_module));
+    if (m_state.shading_module)
+    {
+        OPTIX_CHECK(optixModuleDestroy(m_state.shading_module));
+        m_state.shading_module = nullptr;
+    }
+
+    if (m_state.sun_module)
+    {
+        OPTIX_CHECK(optixModuleDestroy(m_state.sun_module));
+        m_state.sun_module = nullptr;
+    }
 }
 
 std::string pipelineManager::loadPtxFromFile(const std::string &kernelName)
@@ -322,7 +348,10 @@ void pipelineManager::createMissProgram()
     for (int i = 0; i < m_program_groups.size(); i++)
     {
         OptixProgramGroup group = m_program_groups[i];
-        std::cout << "Program group " << i << " address: " << group << ", kind: " << desc.kind << std::endl;
+        if (m_verbose)
+        {
+            std::cout << "Program group " << i << " address: " << group << ", kind: " << desc.kind << std::endl;
+        }
     }
 }
 
