@@ -1,4 +1,5 @@
 #include "flux_module.h"
+#include "analysis/ray_volume_raster.h"
 #include "analysis/volume_to_mesh.h"
 #include "utilities/asynctask.h"
 
@@ -13,6 +14,8 @@ FluxModule::FluxModule(QQmlEngine* engine, QObject* parent)
       m_pending_flux_maps(new db::PendingFluxMapModel(this)),
       m_flux_map_world_model(new db::FluxMapWorldModel(this)),
       m_ray_iso_volume(new db::QMLMesh()) {
+
+    set_ray_volume_flux_in_progress(false);
 
     m_ray_iso_volume->setParent(this);
 
@@ -55,23 +58,50 @@ void FluxModule::set_results(db::SimulationResultPtr p) {
 void FluxModule::start_generate() {
     qDebug() << Q_FUNC_INFO << "Starting fluxmap generation for current entity";
     m_pending_flux_maps->start_generate_for(current_entity());
+}
 
-    // HACK HACK HACK
+void FluxModule::start_generate_volume_flux(unsigned resolution) {
+    if (ray_volume_flux_in_progress()) return;
 
-    qDebug() << Q_FUNC_INFO << "results: " << !!m_results;
+    if (!m_results) return;
 
-    if (m_results) {
-        qDebug() << Q_FUNC_INFO << "launching volume generation";
-        launch_async_task<db::Mesh>(QUuid::createUuid(),
-                                    this,
-                                    &FluxModule::iso_surf_ready,
-                                    &FluxModule::iso_surf_failed,
-                                    analysis::volume_to_mesh,
-                                    m_results->ray_volume,
-                                    glm::vec3(m_results->bounds_min),
-                                    glm::vec3(m_results->bounds_max),
-                                    0.9);
-    }
+    set_ray_volume_flux_in_progress(true);
+
+    qDebug() << Q_FUNC_INFO << "Starting volume flux raster";
+
+    launch_async_task<analysis::SparseGrid3D<float>>(
+        QUuid::createUuid(),
+        this,
+        &FluxModule::flux_vol_ready,
+        &FluxModule::flux_vol_failed,
+        analysis::compute_ray_volume_raster,
+        resolution,
+        m_results);
+}
+
+void FluxModule::start_generate_isosurface(float value) {
+    if (!m_results) return;
+    if (!m_results->ray_volume.size_in_bricks()) return;
+
+    qDebug() << Q_FUNC_INFO << "launching volume generation";
+    launch_async_task<db::Mesh>(QUuid::createUuid(),
+                                this,
+                                &FluxModule::iso_surf_ready,
+                                &FluxModule::iso_surf_failed,
+                                analysis::volume_to_mesh,
+                                m_results->ray_volume,
+                                value);
+}
+
+void FluxModule::flux_vol_ready(QUuid const&                  id,
+                                analysis::SparseGrid3D<float> grid) {
+    if (m_results) m_results->ray_volume = grid;
+    set_ray_volume_flux_in_progress(false);
+    qDebug() << Q_FUNC_INFO << id;
+}
+void FluxModule::flux_vol_failed(QUuid const& id, QString reason) {
+    qDebug() << Q_FUNC_INFO << id;
+    qCritical() << "Unable to generate isosurface" << reason;
 }
 
 void FluxModule::iso_surf_ready(QUuid const& id, db::Mesh mesh) {

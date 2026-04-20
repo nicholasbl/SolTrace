@@ -216,6 +216,7 @@ Item {
                         metalness: 0
                         roughness: .5
                         baseColor: "white"
+                        cullMode: PrincipledMaterial.NoCulling
                     }
                 ]
             }

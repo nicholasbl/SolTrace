@@ -1,6 +1,6 @@
 #pragma once
 
-#include "analysis/grid3d.h"
+#include "utilities/grid3d.h"
 
 #include <entt/entity/entity.hpp>
 #include <simulation_data.hpp>
@@ -59,7 +59,7 @@ public:
     glm::dvec3 bounds_min;
     glm::dvec3 bounds_max;
 
-    analysis::Grid3D<float> ray_volume;
+    analysis::SparseGrid3D<float> ray_volume;
 
     std::unordered_map<entt::entity, std::vector<uint64_t>> entity_to_ray_ids;
 

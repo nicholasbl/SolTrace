@@ -2,7 +2,6 @@
 
 
 #include "job_control/job_run_common.h"
-#include "ray_volume.h"
 #include "utilities/qt_helpers.h"
 
 #include <QtQuick3D/qquick3dgeometry.h>
@@ -29,8 +28,6 @@ class RayGeometry : public QQuick3DGeometry {
     */
 
     Q_WRITABLE_PROPERTY(float, show_percent, 50);
-
-    QOBJECT_WRITABLE_PROPERTY(RayVolume, ray_volume);
 
 
 public:

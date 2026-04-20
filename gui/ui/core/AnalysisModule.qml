@@ -17,9 +17,9 @@ ColumnLayout {
 
         Layout.fillWidth: true
 
-        fontFamily: App.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
+        fontFamily: App.view.left_panel.size === PanelData.Small ? "Font Awesome 7 Free" : ""
 
-        model : App.view.left_panel.size == PanelData.Small ?
+        model : App.view.left_panel.size === PanelData.Small ?
                     ["\uf06a", "\uf06a"]
                   :
                     ["Intersections", "Flux"]

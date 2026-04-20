@@ -80,6 +80,7 @@ qt_add_qml_module(SolTrace
     DEPENDENCIES
         QtQuick
         QtQuick3D
+        SOURCES src/analysis/ray_volume_raster.cpp
 )
 
 CPMAddPackage(

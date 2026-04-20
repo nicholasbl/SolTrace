@@ -1,6 +1,6 @@
 #include "flux_map.h"
 
-#include "analysis/grid2d.h"
+#include "utilities/grid2d.h"
 #include "utilities/asynctask.h"
 #include "vector_utility.hpp"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "analysis/grid2d.h"
+#include "utilities/grid2d.h"
 
 #include <QImage>
 

@@ -23,12 +23,15 @@ namespace SolTrace::GUI::App {
 class FluxModule : public QObject {
     Q_OBJECT
 
+    // TODO: add front or back filtering
+
     db::SimulationResultPtr m_results;
 
     QOBJECT_READONLY_PROPERTY(db::RootElementsModel, entity_model);
     QOBJECT_READONLY_PROPERTY(db::PendingFluxMapModel, pending_flux_maps);
     QOBJECT_READONLY_PROPERTY(db::FluxMapWorldModel, flux_map_world_model);
 
+    Q_READONLY_PROPERTY(bool, ray_volume_flux_in_progress);
     QOBJECT_READONLY_PROPERTY(db::QMLMesh, ray_iso_volume);
 
     Q_WRITABLE_PROPERTY(db::Entity, current_entity, {});
@@ -37,6 +40,9 @@ class FluxModule : public QObject {
     Q_WRITABLE_PROPERTY(QString, current_image, {});
 
 private slots:
+    void flux_vol_ready(QUuid const&, analysis::SparseGrid3D<float>);
+    void flux_vol_failed(QUuid const&, QString);
+
     void iso_surf_ready(QUuid const&, db::Mesh);
     void iso_surf_failed(QUuid const&, QString);
 
@@ -47,6 +53,9 @@ public slots:
     void set_results(db::SimulationResultPtr);
 
     void start_generate();
+
+    void start_generate_volume_flux(unsigned resolution);
+    void start_generate_isosurface(float value);
 };
 
 } // namespace SolTrace::GUI::App

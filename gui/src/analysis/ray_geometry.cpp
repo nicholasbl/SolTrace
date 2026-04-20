@@ -155,9 +155,6 @@ void RayGeometry::rebuild_geometry() {
 
 RayGeometry::RayGeometry(QQuick3DObject* parent) : QQuick3DGeometry(parent) {
 
-    // WATCH OUT HERE
-    m_ray_volume = new RayVolume();
-
     connect(this,
             &RayGeometry::show_percent_changed,
             this,
