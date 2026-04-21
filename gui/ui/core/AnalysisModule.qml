@@ -38,14 +38,8 @@ ColumnLayout {
         Layout.fillHeight: true
         Layout.margins: 8
 
-        ColumnLayout {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+        AnalyzeIntersections {
 
-            InlineDocumentation {
-                key: "analyze.intersections"
-                target: App.view.left_panel
-            }
         }
 
         AnalyzeFlux {

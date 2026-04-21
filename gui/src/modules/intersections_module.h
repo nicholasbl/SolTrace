@@ -22,22 +22,14 @@ class IntersectionsModule : public QObject {
 
     db::SimulationResultPtr m_results;
 
-    std::unique_ptr<analysis::RayGeometry> m_ray_geometry;
-
-    Q_PROPERTY(analysis::RayGeometry* ray_geometry READ ray_geometry NOTIFY
-                   ray_geometry_changed FINAL)
+    QOBJECT_READONLY_PROPERTY(analysis::RayGeometry, ray_geometry)
 
 public:
     explicit IntersectionsModule(QObject* parent = nullptr);
 
 
-    analysis::RayGeometry* ray_geometry() const;
-
 public slots:
     void set_results(db::SimulationResultPtr);
-
-signals:
-    void ray_geometry_changed();
 };
 
 

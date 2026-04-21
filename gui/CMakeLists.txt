@@ -81,6 +81,8 @@ qt_add_qml_module(SolTrace
         QtQuick
         QtQuick3D
         SOURCES src/analysis/ray_volume_raster.cpp
+        QML_FILES ui/panels/analysis/AnalyzeIntersections.qml
+        QML_FILES ui/panels/analysis/RayFilterPopup.qml
 )
 
 CPMAddPackage(

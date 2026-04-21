@@ -3,7 +3,38 @@
 #include "analysis/ray_volume_raster.h"
 #include "utilities/math_utility.h"
 
+#include <magic_enum/magic_enum.hpp>
+
 namespace analysis {
+
+EventTypeContainer::EventTypeContainer(
+    std::initializer_list<db::RayEventType> l)
+    : events(l) { }
+
+EventTypeContainer::EventTypeContainer(QStringList l) {
+    for (auto const& item : l) {
+        auto str = item.toUpper().toStdString();
+
+        auto maybe_enum = magic_enum::enum_cast<db::RayEventType>(str);
+
+        if (!maybe_enum) {
+            qDebug() << "Unknown enum name" << item;
+            continue;
+        }
+
+        events.insert(*maybe_enum);
+    }
+}
+
+QStringList EventTypeContainer::to_list() const {
+    QStringList ret;
+
+    for (auto item : events) {
+        ret << QString(magic_enum::enum_name(item).data());
+    }
+
+    return ret;
+}
 
 struct LineVertex {
     QVector3D position;
@@ -62,7 +93,9 @@ void RayGeometry::rebuild_geometry() {
             // first compute an idea of the total ray distance
             for (auto const& interaction : ray.events) {
 
-                if (m_exclude_events.contains(interaction.event)) { continue; }
+                if (m_exclude_events.events.contains(interaction.event)) {
+                    continue;
+                }
 
                 auto p = convert(interaction.location);
 
@@ -86,7 +119,9 @@ void RayGeometry::rebuild_geometry() {
 
             for (auto const& interaction : ray.events) {
 
-                if (m_exclude_events.contains(interaction.event)) { continue; }
+                if (m_exclude_events.events.contains(interaction.event)) {
+                    continue;
+                }
 
                 auto p = convert(interaction.location);
 
@@ -153,7 +188,22 @@ void RayGeometry::rebuild_geometry() {
     update();
 }
 
+void RayGeometry::inclusion_list_update() {
+    qDebug() << Q_FUNC_INFO << "List changed";
+    m_exclude_events = EventTypeContainer(event_include());
+
+    rebuild_geometry();
+}
+
 RayGeometry::RayGeometry(QQuick3DObject* parent) : QQuick3DGeometry(parent) {
+
+    m_exclude_events = EventTypeContainer({
+        db::RayEventType::CREATE,
+        db::RayEventType::VIRTUAL,
+        db::RayEventType::UNKNOWN,
+    });
+
+    set_event_include(m_exclude_events.to_list());
 
     connect(this,
             &RayGeometry::show_percent_changed,

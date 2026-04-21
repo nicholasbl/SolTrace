@@ -9,6 +9,17 @@
 
 namespace analysis {
 
+struct EventTypeContainer {
+    std::unordered_set<db::RayEventType> events;
+
+    EventTypeContainer() = default;
+
+    EventTypeContainer(std::initializer_list<db::RayEventType>);
+    EventTypeContainer(QStringList);
+
+    QStringList to_list() const;
+};
+
 // TODO make all deltas queued up for Concurrent off thread rebuilding of geom
 // TODO move to tubes and instancing?
 class RayGeometry : public QQuick3DGeometry {
@@ -16,19 +27,18 @@ class RayGeometry : public QQuick3DGeometry {
 
     db::SimulationResultPtr m_database;
 
-    std::unordered_set<db::RayEventType> m_exclude_events = {
-        db::RayEventType::CREATE,
-        db::RayEventType::VIRTUAL,
-        db::RayEventType::UNKNOWN
-    };
+    EventTypeContainer m_exclude_events;
 
     /*
     std::unordered_set<SD::element_id> m_selected_elements;
     std::unordered_set<RD::ray_id>     m_selected_rays;
     */
 
+    Q_WRITABLE_PROPERTY(QStringList, event_include, {});
     Q_WRITABLE_PROPERTY(float, show_percent, 50);
 
+private slots:
+    void inclusion_list_update();
 
 public:
     explicit RayGeometry(QQuick3DObject* parent = nullptr);

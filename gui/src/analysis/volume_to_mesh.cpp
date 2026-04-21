@@ -226,7 +226,7 @@ void volume_to_mesh(QPromise<db::Mesh>& output,
     }
 
     auto to_world_position = [&](glm::vec3 const& grid_position) {
-        return input_volume.grid_to_world(grid_position);
+        return input_volume.grid_to_world(grid_position + 0.5f);
     };
 
     // Cube index decomposition to tetrahedra
