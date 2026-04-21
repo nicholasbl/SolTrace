@@ -30,7 +30,7 @@ QStringList EventTypeContainer::to_list() const {
     QStringList ret;
 
     for (auto item : events) {
-        ret << QString(magic_enum::enum_name(item).data());
+        ret << QString(magic_enum::enum_name(item).data()).toLower();
     }
 
     return ret;
@@ -93,7 +93,7 @@ void RayGeometry::rebuild_geometry() {
             // first compute an idea of the total ray distance
             for (auto const& interaction : ray.events) {
 
-                if (m_exclude_events.events.contains(interaction.event)) {
+                if (!m_exclude_events.events.contains(interaction.event)) {
                     continue;
                 }
 
@@ -119,7 +119,7 @@ void RayGeometry::rebuild_geometry() {
 
             for (auto const& interaction : ray.events) {
 
-                if (m_exclude_events.events.contains(interaction.event)) {
+                if (!m_exclude_events.events.contains(interaction.event)) {
                     continue;
                 }
 
@@ -198,9 +198,9 @@ void RayGeometry::inclusion_list_update() {
 RayGeometry::RayGeometry(QQuick3DObject* parent) : QQuick3DGeometry(parent) {
 
     m_exclude_events = EventTypeContainer({
-        db::RayEventType::CREATE,
-        db::RayEventType::VIRTUAL,
-        db::RayEventType::UNKNOWN,
+        db::RayEventType::ABSORB,
+        db::RayEventType::REFLECT,
+        db::RayEventType::TRANSMIT,
     });
 
     set_event_include(m_exclude_events.to_list());
