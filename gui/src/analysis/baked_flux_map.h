@@ -12,7 +12,10 @@ struct BakedFluxMap {
     Grid2D<float> counts;
 
     /// A generated image using counts and a color map
-    QImage image;
+    QImage bin_map;
+
+    /// A generated image showing UV points of intersecting rays
+    QImage point_map;
 };
 
 using BakedFluxMapPtr = std::shared_ptr<BakedFluxMap const>;

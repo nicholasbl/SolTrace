@@ -83,7 +83,7 @@ void FluxModule::start_generate_isosurface(float value) {
     if (!m_results) return;
     if (!m_results->ray_volume.size_in_bricks()) return;
 
-    qDebug() << Q_FUNC_INFO << "launching volume generation";
+    qDebug() << Q_FUNC_INFO << "launching volume generation" << value;
     launch_async_task<db::Mesh>(QUuid::createUuid(),
                                 this,
                                 &FluxModule::iso_surf_ready,

@@ -563,8 +563,9 @@ void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
 
     promise.setProgressValue(PROGRESS_COMPLETE);
     promise.emplaceResult(std::make_shared<BakedFluxMap>(BakedFluxMap {
-        .counts = std::move(raster),
-        .image  = img,
+        .counts    = std::move(raster),
+        .bin_map   = img,
+        .point_map = points_img,
     }));
 }
 

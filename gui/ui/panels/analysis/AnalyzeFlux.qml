@@ -25,21 +25,48 @@ Flickable {
             target: App.view.left_panel
         }
 
-        Image {
-            visible: AppData.flux.current_image.length
-            Layout.fillWidth: true
-            Layout.preferredHeight: width
-            source: AppData.flux.current_image
-        }
-
         STPropertyPanel {
             Layout.fillWidth: true
 
-            collapsible: false
-            collapsed: AppData.flux.current_image.length
+            collapsible: true
             title: "Compute Flux Map"
 
+            Image {
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
+                Layout.preferredHeight: width
+
+                visible: AppData.flux.current_image.length
+
+                source: map_selector.currentIndex == 0 ?
+                            AppData.flux.current_image
+                          :
+                            AppData.flux.current_image + "_point_map"
+                fillMode: Image.PreserveAspectFit
+
+                mipmap: true
+
+                STIconButton {
+                    text: "\uf019"
+
+                    anchors.bottom: parent.bottom
+                    anchors.right: parent.right
+                    anchors.margins: 10
+                }
+            }
+
+            STComboBar {
+                id: map_selector
+
+                visible: AppData.flux.current_image.length
+
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
+                model: ["Bins", "Points"]
+            }
+
             ListView {
+                visible: false
                 Layout.columnSpan: 2
                 Layout.fillHeight: true
                 Layout.fillWidth: true
