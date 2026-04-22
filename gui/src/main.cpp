@@ -27,6 +27,7 @@ int main(int argc, char* argv[]) {
     check_if_process_worker(argc, argv);
 
     qputenv("QT_QUICK_CONTROLS_MATERIAL_VARIANT", "Dense");
+    qputenv("QML_XHR_ALLOW_FILE_READ", "1");
 
     QApplication app(argc, argv);
 

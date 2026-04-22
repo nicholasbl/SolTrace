@@ -10,7 +10,11 @@
 
 namespace SolTrace::GUI::Script {
 
-// Type is integer, real, string, or vec3
+/// One user-editable argument declared in a script header.
+///
+/// Script headers are parsed into these records and exposed to QML through
+/// ScriptPropertyModel. The `value` field is editable; the remaining fields
+/// describe how the UI should present and validate that value.
 struct ScriptProperty {
     QString name;
     QString type;
@@ -46,10 +50,61 @@ public:
     explicit ScriptPropertyModel(QObject* parent = nullptr);
 };
 
+/// User-authored script plus parsed metadata and execution state.
 ///
-/// Scripts should have a header block, evaluate the script, and then try to
-/// call the result with arguments
+/// Script source must start with a comment header block. No whitespace or code
+/// may appear before it. Both block comments and consecutive line comments are
+/// accepted:
 ///
+///     /*
+///     TITLE Example Script
+///     DESC Creates a few entities.
+///     DESC Additional DESC lines are concatenated with newlines.
+///     PROPERTY mirror_count integer 12 1..=100
+///     PROPERTY radius real 10.0 0.1..
+///     PROPERTY label string Demo
+///     PROPERTY direction vec3 [0,0,1] unit
+///     *\/
+///     (function(mirror_count, radius, label, direction) { ... })
+///
+///     // TITLE Example Script
+///     // DESC Equivalent line-comment form.
+///     // PROPERTY count integer 4 1..=10
+///     (function(count) { ... })
+///
+/// Header directives:
+/// - TITLE text
+///   Required. Must be the first non-empty directive in the header. The
+///   remaining text becomes Script::title.
+/// - DESC text
+///   Optional and repeatable. Each line is appended to Script::description.
+/// - PROPERTY name type initial [extra...]
+///   Optional and repeatable. Properties are parsed in header order, exposed in
+///   Script::properties, and passed as positional arguments to the evaluated
+///   JavaScript function during run(). The initial value is stored as the
+///   editable ScriptProperty::value shown in the UI.
+///
+/// Property types:
+/// - integer initial range
+///   Integer argument. The range follows the initial value and uses Rust-like
+///   syntax: `..0`, `1..`, `1..10`, or `1..=100`. A range is currently
+///   required.
+/// - real initial range
+///   Floating-point argument with the same range syntax as integer.
+/// - string
+///   Unrestricted string argument. The initial value is one token; no extra
+///   arguments are currently used.
+/// - vec3 initial [unit]
+///   Three-component vector argument. The optional `unit` extra follows the
+///   initial value and marks that the vector should be treated as a direction.
+///   The current runner accepts values like `1 0 0`, `[1, 0, 0]`, or a single
+///   scalar such as `1`, which expands to `[1, 1, 1]`. Header initial values
+///   should be written without spaces, for example `[0,0,1]`.
+///
+/// After the header, the script should evaluate to a callable JavaScript value.
+/// Script::run() evaluates the code, converts property values according to the
+/// declarations above, and calls the resulting function with those arguments.
+/// The database script API is intended to be available to JavaScript as `db`.
 class Script : public QObject {
     Q_OBJECT
 

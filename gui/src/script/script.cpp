@@ -95,14 +95,20 @@ ScriptProperty parse_property(QString const& line) {
     auto parts = line.simplified().split(' ', Qt::SkipEmptyParts);
 
     ScriptProperty property;
-    if (parts.size() < 3) {
-        property.error = "PROPERTY requires name and type";
+    if (parts.size() < 4) {
+        property.error = "PROPERTY requires name, type, and initial value";
         return property;
     }
 
-    property.name = parts[1];
+    // Clean up name
+    auto name = parts[1].toLower();
+    name.replace("_", " ");
+    name[0] = name[0].toUpper();
+
+    property.name = name;
     property.type = parts[2].toLower();
-    if (parts.size() > 3) { property.extra = parts.mid(3).join(' '); }
+    property.value = parts[3];
+    if (parts.size() > 4) { property.extra = parts.mid(4).join(' '); }
 
     if (property.name.isEmpty()) {
         property.error = "PROPERTY name is empty";
@@ -144,6 +150,7 @@ Script::Script(QObject* parent)
 }
 
 void Script::set_database(db::Database* db) {
+    qDebug() << Q_FUNC_INFO << db;
     m_database = db;
 }
 
@@ -223,10 +230,12 @@ bool Script::parse() {
 }
 
 void Script::run() {
+    qDebug() << Q_FUNC_INFO;
     set_run_errors({});
 
     if (!m_database) {
         set_run_errors({ "No database available" });
+        qDebug() << Q_FUNC_INFO << "No db.";
         return;
     }
 
@@ -236,11 +245,14 @@ void Script::run() {
 
     QStringList stack_trace;
     engine->installExtensions(QJSEngine::AllExtensions);
-    engine->newQObject(api.get());
+    auto js_api_obj = engine->newQObject(api.get());
+
+    engine->globalObject().setProperty("db", js_api_obj);
 
     auto object = engine->evaluate(code(), title(), 1, &stack_trace);
 
     if (!stack_trace.isEmpty()) {
+        qDebug() << Q_FUNC_INFO << object.toString();
         set_run_errors({
             QString("Script evaluation exception: %1")
                 .arg(object.property("name").toString()),
@@ -304,6 +316,7 @@ void Script::run() {
         }
 
         if (!ok) {
+            qDebug() << Q_FUNC_INFO << "Bad arg";
             set_run_errors(
                 { QString("Invalid argument value for %1").arg(arg.name) });
             return;
@@ -313,6 +326,7 @@ void Script::run() {
     auto call_ret = object.call(list);
 
     if (call_ret.isError()) {
+        qDebug() << Q_FUNC_INFO << "Bad call" << call_ret.toString();
         set_run_errors({
             QString("Script evaluation exception: %1")
                 .arg(object.property("name").toString()),

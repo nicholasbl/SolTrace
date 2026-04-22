@@ -15,18 +15,25 @@ Popup {
     height: parent.height * .9
     width: parent.width * .9
 
+    anchors.centerIn: Overlay.overlay
+
     modal: true
 
-    opened: text_edit_area.text = root.module.code
+    onOpened: text_edit_area.text = root.module.code
 
     ColumnLayout {
-        TextArea {
-            id: text_edit_area
+        anchors.fill: parent
+        ScrollView {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            onTextEdited: {
-                root.module.code = text
+            TextArea {
+                id: text_edit_area
+
+
+                onTextEdited: {
+                    root.module.code = text
+                }
             }
         }
 
@@ -35,12 +42,15 @@ Popup {
 
             property bool has_parse_error: root.module.parse_errors.length
 
-            text: has_parse_error ? "Parse error" : "Ok"
+            text: "Parse error"
+
+            visible: has_parse_error
         }
 
         Label {
             Layout.fillWidth: true
-            Layout.preferredHeight: 240
+
+            visible: text.length
 
             text: (root.module.parse_errors.concat(root.module.run_errors)).join("\n")
         }

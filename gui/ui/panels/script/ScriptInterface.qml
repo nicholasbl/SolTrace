@@ -16,6 +16,21 @@ ScrollView {
 
     contentWidth: availableWidth
 
+    function load_script(url) {
+        const request = new XMLHttpRequest()
+        request.open("GET", url)
+        request.onreadystatechange = function() {
+            if (request.readyState === XMLHttpRequest.DONE) {
+                if (request.status === 0 || request.status === 200) {
+                    root.module.code = request.responseText
+                } else {
+                    console.warn("Unable to load script", url, request.status)
+                }
+            }
+        }
+        request.send()
+    }
+
     ColumnLayout {
         width: root.availableWidth
 
@@ -41,6 +56,8 @@ ScrollView {
                     Layout.fillWidth: true
 
                     text: "Load"
+
+                    onClicked: root.load_script("qrc:/assets/scripts/simple.js")
                 }
 
                 STButton {
@@ -67,6 +84,9 @@ ScrollView {
                 visible: root.module.title.length
                 Layout.fillWidth: true
                 Layout.columnSpan: 2
+
+                Layout.row: 0
+
                 text: root.module.title
                 font.bold: true
             }
@@ -75,6 +95,9 @@ ScrollView {
                 visible: root.module.description.length
                 Layout.fillWidth: true
                 Layout.columnSpan: 2
+
+                Layout.row: 1
+
                 wrapMode: Label.WrapAtWordBoundaryOrAnywhere
                 text: root.module.description
             }
@@ -88,7 +111,8 @@ ScrollView {
                     required property int index
 
                     Layout.column: 0
-                    Layout.row: index
+                    Layout.row: index + 2
+                    Layout.fillWidth: true
                     text: name
                 }
             }
@@ -101,7 +125,8 @@ ScrollView {
                     required property int index
 
                     Layout.column: 1
-                    Layout.row: index
+                    Layout.row: index + 2
+                    Layout.fillWidth: true
 
                     text: value
 

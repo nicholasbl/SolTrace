@@ -16,21 +16,21 @@ class FileSourceModule : public QObject {
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
 
     Q_WRITABLE_PROPERTY(bool, is_loading, false)
-    Q_WRITABLE_PROPERTY(QUrl, source, { })
 
 private slots:
     void file_ready();
-    void handle_source_update();
-
-signals:
-    void cancel_current_load(QPrivateSignal);
 
 public:
     FileSourceModule(QObject* parent = nullptr);
     Q_WRITABLE_PROPERTY(QString, name, "Untitled")
 
+public slots:
+    void load_url(QUrl);
+    void load_new();
+
 signals:
     void notify(ANotification);
+    void cancel_current_load(QPrivateSignal);
 };
 
 } // namespace SolTrace::GUI::App

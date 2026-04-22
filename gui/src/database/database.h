@@ -101,6 +101,8 @@ public:
     ComponentAPI<ChildOfComponent>         parent;
     ComponentAPI<TagComponent>             tag_root;
 
+    ComponentAPI<ElementComponent> element_tag;
+
     ComponentAPI<MaterialGroupComponent>       material_root;
     ComponentAPIUpdate<MaterialComponent>      material_parameters;
     ComponentAPI<MaterialGroupMemberComponent> material_group_membership;

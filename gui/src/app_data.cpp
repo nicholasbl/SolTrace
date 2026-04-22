@@ -24,10 +24,6 @@ void AppData::load_session() {
     m_view->set_sun_section(s.value("sun_section", 0).toUInt());
 
     s.endGroup();
-
-    s.beginGroup("File");
-    m_file_source->set_source(s.value("source", "").toUrl());
-    s.endGroup();
 }
 
 void AppData::save_session() {
@@ -47,10 +43,6 @@ void AppData::save_session() {
 
     s.setValue("sun_section", m_view->sun_section());
 
-    s.endGroup();
-
-    s.beginGroup("File");
-    s.setValue("source", m_file_source->source());
     s.endGroup();
 }
 

@@ -3,6 +3,7 @@
 #include "database/apertureeditor.h"
 #include "database/components.h"
 #include "database/surface.h"
+#include <algorithm>
 #include <cmath>
 
 namespace db {
@@ -33,19 +34,19 @@ void SurfaceGeometry::rebuild_geometry() {
     clear();
 
     if (!database()) {
-        qDebug() << "no db";
+        qDebug() << Q_FUNC_INFO << "no db";
         return;
     }
 
     auto ptr = database()->geometry_parameters.get(m_current_group);
 
     if (!ptr) {
-        qDebug() << "no geometry";
+        qDebug() << Q_FUNC_INFO << "no geometry";
         return;
     }
 
     if (!ptr->surface || !ptr->aperture) {
-        qDebug() << "no surf or apt";
+        qDebug() << Q_FUNC_INFO << "no surf or apt";
         update();
         return;
     }
@@ -55,7 +56,8 @@ void SurfaceGeometry::rebuild_geometry() {
 
     auto mesh = generate_surface(surface, aperture);
     if (!mesh || mesh->vertex.empty() || mesh->triangles.empty()) {
-        qWarning() << "Geometry is empty, or unable to be generated";
+        qWarning() << Q_FUNC_INFO
+                   << "Geometry is empty, or unable to be generated";
         update();
         return;
     }
@@ -68,6 +70,17 @@ void SurfaceGeometry::rebuild_geometry() {
     for (auto const& p : mesh->vertex) {
         bounds_min = glm::min(bounds_min, p.position);
         bounds_max = glm::max(bounds_max, p.position);
+    }
+
+    auto extent     = bounds_max - bounds_min;
+    auto max_extent = std::max({ extent.x, extent.y, extent.z, 1.0f });
+    auto padding    = max_extent * 1.0e-4f;
+
+    for (int axis = 0; axis < 3; ++axis) {
+        if (bounds_min[axis] == bounds_max[axis]) {
+            bounds_min[axis] -= padding;
+            bounds_max[axis] += padding;
+        }
     }
 
     auto indexBuffer =
@@ -106,10 +119,10 @@ void SurfaceGeometry::rebuild_geometry() {
 
     set_bounding_box(bb);
 
-    qDebug() << Q_FUNC_INFO << entt::to_integral(m_current_group)
-             << mesh->triangles.size() << mesh->vertex.size();
-    // qDebug() << Q_FUNC_INFO << boundsMin << boundsMax;
-    //  qDebug() << verts;
+    // qDebug() << Q_FUNC_INFO << entt::to_integral(m_current_group)
+    //          << mesh->triangles.size() << mesh->vertex.size();
+    // qDebug() << Q_FUNC_INFO << bb.min << bb.max;
+    //   qDebug() << verts;
 
     update();
 }
