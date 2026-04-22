@@ -27,7 +27,7 @@ class RayGeometry : public QQuick3DGeometry {
 
     db::SimulationResultPtr m_database;
 
-    EventTypeContainer m_exclude_events;
+    EventTypeContainer m_include_events;
 
     /*
     std::unordered_set<SD::element_id> m_selected_elements;

@@ -71,7 +71,8 @@ AppData::AppData(QObject*       parent,
       m_layout(new LayoutModule(this)),
       m_simulation(new SimulationModule(this)),
       m_intersections(new IntersectionsModule(this)),
-      m_flux(new FluxModule(engine, this)) {
+      m_flux(new FluxModule(engine, this)),
+      m_script(new Script::Script(this)) {
 
     connect(m_file_source,
             &FileSourceModule::current_database_value_changed,
@@ -97,6 +98,9 @@ AppData::AppData(QObject*       parent,
             &SimulationModule::new_results,
             this,
             &AppData::new_results);
+
+    connect(
+        this, &AppData::new_database, m_script, &Script::Script::set_database);
 
     connect(qApp, &QCoreApplication::aboutToQuit, this, &AppData::save_session);
 

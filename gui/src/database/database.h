@@ -14,33 +14,6 @@
 
 namespace db {
 
-/// Helper function: patch a component, skipping it if it does not exist.
-/// Returns true if the patch occurred.
-template <class Component, class Function>
-bool try_patch(entt::registry& reg, entt::entity entity, Function&& f) {
-    if (!reg.valid(entity)) return false;
-
-    if (reg.all_of<Component>(entity)) {
-        reg.patch<Component>(entity, f);
-        return true;
-    }
-
-    return false;
-}
-
-/// Helper function: patch a component, creating it if it does not exist.
-template <class Component, class Function>
-void emplace_patch(entt::registry& reg, entt::entity entity, Function&& f) {
-    if (!reg.all_of<Component>(entity)) {
-        if constexpr (std::is_empty_v<Component>) {
-            reg.emplace<Component>(entity);
-        } else {
-            reg.emplace<Component>(entity, Component { });
-        }
-    }
-
-    reg.patch<Component>(entity, f);
-}
 
 /// Helper function, find a corresponding key to a value in a map
 /// Slow, but OK for UI work
@@ -67,6 +40,8 @@ public:
     bool operator<=>(Entity const& other) const = default;
 
     operator entt::entity() const { return value; }
+
+    Q_INVOKABLE bool is_valid() { return value != entt::null; }
 };
 
 inline QDebug operator<<(QDebug debug, Entity const& c) {
@@ -206,7 +181,7 @@ public:
 public slots:
     /// Get the name of an entity, either using the Identity component, or by
     /// using the entity ID.
-    QString name_of(Entity item) const;
+    QString name_of(db::Entity item) const;
 
     /// Materials
     entt::entity add_material_group(QString               new_name,

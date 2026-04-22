@@ -93,7 +93,7 @@ void RayGeometry::rebuild_geometry() {
             // first compute an idea of the total ray distance
             for (auto const& interaction : ray.events) {
 
-                if (!m_exclude_events.events.contains(interaction.event)) {
+                if (!m_include_events.events.contains(interaction.event)) {
                     continue;
                 }
 
@@ -119,7 +119,7 @@ void RayGeometry::rebuild_geometry() {
 
             for (auto const& interaction : ray.events) {
 
-                if (!m_exclude_events.events.contains(interaction.event)) {
+                if (!m_include_events.events.contains(interaction.event)) {
                     continue;
                 }
 
@@ -190,20 +190,25 @@ void RayGeometry::rebuild_geometry() {
 
 void RayGeometry::inclusion_list_update() {
     qDebug() << Q_FUNC_INFO << "List changed";
-    m_exclude_events = EventTypeContainer(event_include());
+    m_include_events = EventTypeContainer(event_include());
 
     rebuild_geometry();
 }
 
 RayGeometry::RayGeometry(QQuick3DObject* parent) : QQuick3DGeometry(parent) {
 
-    m_exclude_events = EventTypeContainer({
+    m_include_events = EventTypeContainer({
         db::RayEventType::ABSORB,
         db::RayEventType::REFLECT,
         db::RayEventType::TRANSMIT,
     });
 
-    set_event_include(m_exclude_events.to_list());
+    set_event_include(m_include_events.to_list());
+
+    connect(this,
+            &RayGeometry::event_include_changed,
+            this,
+            &RayGeometry::inclusion_list_update);
 
     connect(this,
             &RayGeometry::show_percent_changed,
