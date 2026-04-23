@@ -74,6 +74,8 @@ qt_add_qml_module(SolTrace
     QML_FILES
         ${SOLTRACE_QML_FILES}
 
+        ui/primitives/tables/CustomSunShapeTable.qml
+
     SOURCES
         ${SOLTRACE_CPP_FILES}
 

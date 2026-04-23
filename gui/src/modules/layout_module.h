@@ -1,10 +1,10 @@
 #pragma once
 
-#include <QObject>
-#include "database/rootelementsmodel.h"
-#include "utilities/qt_helpers.h"
 #include "backend.h"
+#include "database/rootelementsmodel.h"
 #include "module_common.h"
+#include "utilities/qt_helpers.h"
+#include <QObject>
 
 namespace SolTrace::GUI::App {
 
@@ -35,7 +35,7 @@ public:
     QOBJECT_WRITABLE_PROPERTY(db::AnInstanceEditor, instance_edit);
     QOBJECT_READONLY_PROPERTY(db::WorldGeometryModel, world_geometry_model);
 
-    Q_WRITABLE_PROPERTY(db::Entity, current_element, {})
+    Q_WRITABLE_PROPERTY(db::Entity, current_element, { })
 
     /// we need a selected element lists. need global pos and rot
 

@@ -25,7 +25,9 @@ AdaptiveEditor {
     }
 
     onItemClicked: function(index, modelData) {
+        // if (App.db) App.db.clear_selection()
         App.materials.current_geometry = modelData.entity
+        // if (App.db) App.db.select_all_with_geometry(modelData.entity)
     }
 
     listHeader: RowLayout {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utilities/qt_helpers.h"
+#include <QColor>
 #include <QObject>
 #include <QQmlEngine>
 
@@ -44,6 +45,28 @@ public slots:
     bool is_normal();
     bool is_wide();
 };
+class SimulationViewState : public QObject {
+    Q_OBJECT
+    QML_ELEMENT
+
+public:
+    enum class Camera { WASD, Orbital };
+
+    enum class Perspective { NormalPerspective, Orthographic };
+
+    Q_ENUM(Camera)
+    Q_ENUM(Perspective)
+
+    Q_WRITABLE_PROPERTY(Camera, camera, Camera::Orbital)
+    Q_WRITABLE_PROPERTY(Perspective,
+                        perspective,
+                        Perspective::NormalPerspective)
+
+    Q_WRITABLE_PROPERTY(bool, sun_viz, true)
+    Q_WRITABLE_PROPERTY(bool, blueprint_mode, false)
+    Q_WRITABLE_PROPERTY(double, sun_viz_scale, 50)
+    Q_WRITABLE_PROPERTY(QColor, geometry_color, "white")
+};
 
 class ViewModule : public QObject {
     Q_OBJECT
@@ -77,18 +100,8 @@ public:
     Q_WRITABLE_PROPERTY(bool, editing_layout, false)
     Q_WRITABLE_PROPERTY(bool, editing_appearance, false)
 
-    // Simulation Navigation State
-    enum class Camera { WASD, Orbital };
+    QOBJECT_READONLY_PROPERTY(SimulationViewState, sim)
 
-    enum class Perspective { NormalPerspective, Orthographic };
-
-    Q_ENUM(Camera)
-    Q_ENUM(Perspective)
-
-    Q_WRITABLE_PROPERTY(Camera, camera, Camera::Orbital)
-    Q_WRITABLE_PROPERTY(Perspective,
-                        perspective,
-                        Perspective::NormalPerspective)
 public slots:
     void fit_panels(int  available_width,
                     bool expanding_right_panel = false,

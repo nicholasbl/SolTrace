@@ -1439,6 +1439,10 @@ void Database::select(entt::entity to_select) {
     selected.set(to_select, SelectedComponent { });
 }
 
+void Database::add_to_selection(entt::entity to_select) {
+    selected.set(to_select, SelectedComponent { });
+}
+
 void Database::deselect(entt::entity to_deselect) {
     selected.remove(to_deselect);
 }
@@ -1460,6 +1464,38 @@ void Database::clear_selection() {
 
 bool Database::is_selected(entt::entity e) const {
     return m_registry.valid(e) && m_registry.all_of<SelectedComponent>(e);
+}
+
+void Database::select_all_with_material(db::Entity material) {
+    if (material.value == entt::null) return;
+    auto view = m_registry.view<GeometryGroupMemberComponent>();
+    for (auto e : view) {
+        if (material_of(e) == material.value) { add_to_selection(e); }
+    }
+}
+
+void Database::select_all_with_geometry(db::Entity geometry) {
+    if (geometry.value == entt::null) return;
+    auto view = m_registry.view<GeometryGroupMemberComponent>();
+    for (auto e : view) {
+        if (geometry_of(e) == geometry.value) { add_to_selection(e); }
+    }
+}
+
+void Database::deselect_all_with_material(db::Entity material) {
+    if (material.value == entt::null) return;
+    auto view = m_registry.view<GeometryGroupMemberComponent>();
+    for (auto e : view) {
+        if (material_of(e) == material.value) { deselect(e); }
+    }
+}
+
+void Database::deselect_all_with_geometry(db::Entity geometry) {
+    if (geometry.value == entt::null) return;
+    auto view = m_registry.view<GeometryGroupMemberComponent>();
+    for (auto e : view) {
+        if (geometry_of(e) == geometry.value) { deselect(e); }
+    }
 }
 
 void Database::set_color(entt::entity to_color, QColor new_color) {

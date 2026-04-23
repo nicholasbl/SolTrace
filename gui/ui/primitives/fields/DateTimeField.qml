@@ -1,74 +1,93 @@
-import QtQuick 2.15
+import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import SolTrace
 
 ColumnLayout {
     id: root
+    property int month: 12
+    property int day: 10
+    property int hour: 12
+    property int minute: 0
+    signal modified()
 
-    Label {
-        text: "Date"
-        font.pointSize: 14
-    }
-
-    GridLayout {
-        rows: 2
-        columns: 2
+    STPropertyPanel {
+        id: date
         Layout.fillWidth: true
 
-        STSpinBoxField {
-            Layout.row: 0
-            Layout.column: 0
-            Layout.preferredWidth: 200
+        title: "Date"
+        collapsible: false
 
-            label: "Month"
-            from: 1
-            to: 12
-            stepSize: 1
-        }
+        GridLayout {
+            rows: 2
+            columns: 2
+            Layout.fillWidth: true
 
-        STSpinBoxField {
-            Layout.row: App.view.left_panel.size == PanelData.Small ? 1 : 0
-            Layout.column: App.view.left_panel.size == PanelData.Small ? 0 : 1
-            Layout.preferredWidth: 200
+            STSpinBoxField {
+                id: monthField
+                Layout.row: 0
+                Layout.column: 0
+                Layout.preferredWidth: 200
+                label: "Month"
+                from: 1
+                to: 12
+                stepSize: 1
+                onValueModified: { root.month = value; root.modified() }
+            }
+            Binding { monthField.value: root.month }
 
-            label: "Day"
-            from: 1
-            to: 31
-            stepSize: 1
+            STSpinBoxField {
+                id: dayField
+                Layout.row: App.view.left_panel.size == PanelData.Small ? 1 : 0
+                Layout.column: App.view.left_panel.size == PanelData.Small ? 0 : 1
+                Layout.preferredWidth: 200
+                label: "Day"
+                from: 1
+                to: 31
+                stepSize: 1
+                onValueModified: { root.day = value; root.modified() }
+            }
+            Binding { dayField.value: root.day }
         }
     }
 
-    Label {
-        text: "Time"
-        font.pointSize: 14
-    }
-
-    GridLayout {
-        rows: 2
-        columns: 2
+    STPropertyPanel {
+        id: time
         Layout.fillWidth: true
 
-        STSpinBoxField {
-            Layout.row: 0
-            Layout.column: 0
-            Layout.preferredWidth: 200
+        title: "Time"
+        collapsible: false
 
-            label: "Hour"
-            from: 0
-            to: 23
-            stepSize: 1
-        }
+        GridLayout {
+            rows: 2
+            columns: 2
+            Layout.fillWidth: true
 
-        STSpinBoxField {
-            Layout.row: App.view.left_panel.size == PanelData.Small ? 1 : 0
-            Layout.column: App.view.left_panel.size == PanelData.Small ? 0 : 1
-            Layout.preferredWidth: 200
+            STSpinBoxField {
+                id: hourField
+                Layout.row: 0
+                Layout.column: 0
+                Layout.preferredWidth: 200
+                label: "Hour"
+                from: 0
+                to: 23
+                stepSize: 1
+                onValueModified: { root.hour = value; root.modified() }
+            }
+            Binding { hourField.value: root.hour }
 
-            label: "Minute"
-            from: 0
-            to: 59
-            stepSize: 1
+            STSpinBoxField {
+                id: minuteField
+                Layout.row: App.view.left_panel.size == PanelData.Small ? 1 : 0
+                Layout.column: App.view.left_panel.size == PanelData.Small ? 0 : 1
+                Layout.preferredWidth: 200
+                label: "Minute"
+                from: 0
+                to: 59
+                stepSize: 1
+                onValueModified: { root.minute = value; root.modified() }
+            }
+            Binding { minuteField.value: root.minute }
         }
     }
 }

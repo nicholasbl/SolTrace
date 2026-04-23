@@ -27,7 +27,7 @@ ShadowedGlassRectangle {
                 font.family: "CMU Serif"
 
                 elide: Label.ElideRight
-                horizontalAlignment: App.view.right_panel.size == PanelData.Small ? Label.AlignLeft : Label.AlignHCenter
+                horizontalAlignment: Label.AlignHCenter
                 verticalAlignment: Label.AlignVCenter
             }
 

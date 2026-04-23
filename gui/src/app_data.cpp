@@ -22,7 +22,24 @@ void AppData::load_session() {
     m_view->set_analyze_section(s.value("analyze_section", 0).toUInt());
 
     m_view->set_sun_section(s.value("sun_section", 0).toUInt());
+    s.endGroup();
 
+    s.beginGroup("File");
+    m_file_source->set_source(s.value("source", "").toUrl());
+    s.endGroup();
+
+    s.beginGroup("Sun");
+    m_sun->shape()->set_shape(
+        static_cast<SunShape::Shape>(s.value("shape", 0).toDouble()));
+    m_sun->shape()->set_sigma(s.value("sigma", 1.551).toDouble());
+    m_sun->shape()->set_half_width(s.value("half_width", 2.023).toDouble());
+    m_sun->shape()->set_csr(s.value("buie_csr", 0.596).toDouble());
+
+    auto* cdist = m_sun->shape()->custom_distribution();
+    if (s.contains("custom_shape"))
+        cdist->set_variant_data(s.value("custom_shape").toList());
+    else
+        m_sun->shape()->reset_current_distribution();
     s.endGroup();
 }
 
@@ -43,6 +60,20 @@ void AppData::save_session() {
 
     s.setValue("sun_section", m_view->sun_section());
 
+    s.endGroup();
+  
+    s.beginGroup("File");
+    s.setValue("source", m_file_source->source());
+    s.endGroup();
+
+    s.beginGroup("Sun");
+    s.setValue("shape", static_cast<int>(m_sun->shape()->shape()));
+    s.setValue("sigma", m_sun->shape()->sigma());
+    s.setValue("half_width", m_sun->shape()->half_width());
+    s.setValue("buie_csr", m_sun->shape()->csr());
+
+    auto* cdist = m_sun->shape()->custom_distribution();
+    s.setValue("custom_shape", cdist->variant_data());
     s.endGroup();
 }
 
@@ -69,12 +100,20 @@ AppData::AppData(QObject*       parent,
     connect(m_file_source,
             &FileSourceModule::current_database_value_changed,
             this,
-            [this](auto* ptr) { emit this->new_database(ptr); });
+            &AppData::set_current_database);
+
+    connect(this,
+            &AppData::current_database_value_changed,
+            this,
+            &AppData::new_database);
 
     connect(this,
             &AppData::new_database,
             m_simulation,
             &SimulationModule::set_current_database);
+
+    connect(
+        this, &AppData::new_database, m_sun, &SunModule::set_current_database);
 
     connect(this,
             &AppData::new_database,

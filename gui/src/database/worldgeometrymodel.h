@@ -48,6 +48,8 @@ public slots:
 
     db::Entity at(int index);
 
+    void set_all_color(QColor color);
+
 public:
     explicit InstancedElements(Database*       db,
                                entt::entity    group,
@@ -78,6 +80,9 @@ private slots:
 
     void group_changed(entt::entity);
     void group_removed(entt::entity);
+
+public slots:
+    void set_all_color(QColor color);
 
 public:
     explicit WorldGeometryModel(QObject* parent = nullptr);

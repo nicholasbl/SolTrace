@@ -100,8 +100,16 @@ void InstancedElements::set_color(int index, QColor color) {
     on_geometry_group_change(m_target_group);
 }
 
+void InstancedElements::set_all_color(QColor color) {
+    auto* ptr = m_database->geometry_root.get(m_target_group);
+    for (auto member : m_member_cache) {
+        m_database->set_color(member, color);
+    }
+    on_geometry_group_change(m_target_group);
+}
+
 Entity InstancedElements::at(int index) {
-    if (index < 0 || index >= m_member_cache.size()) { return {}; }
+    if (index < 0 || index >= m_member_cache.size()) { return { }; }
     return m_member_cache[index];
 }
 
@@ -115,14 +123,14 @@ Entity InstancedElements::geometry_of_group() {
 
 Entity InstancedElements::material_of(int index) {
     entt::entity instance = entity_at(index);
-    if (instance == entt::null) return {};
+    if (instance == entt::null) return { };
     qDebug() << (int)m_database->material_of(instance);
     return m_database->material_of(instance);
 }
 
 Entity InstancedElements::geometry_of(int index) {
     entt::entity instance = entity_at(index);
-    if (instance == entt::null) return {};
+    if (instance == entt::null) return { };
     return m_database->geometry_of(instance);
 }
 
@@ -207,7 +215,7 @@ QVector<VisibleGroup> WorldGeometryModel::rebuild_lists() {
     QVector<VisibleGroup> new_recs;
     m_reverse.clear();
 
-    if (!m_host) return {};
+    if (!m_host) return { };
 
     auto view = m_host->as_registry().view<GeometryGroupComponent>();
 
@@ -239,6 +247,12 @@ void WorldGeometryModel::group_changed(entt::entity e) {
 }
 void WorldGeometryModel::group_removed(entt::entity e) {
     recompute();
+}
+
+void WorldGeometryModel::set_all_color(QColor color) {
+    for (auto const& vg : m_records) {
+        vg.group_instances->set_all_color(color);
+    }
 }
 
 WorldGeometryModel::WorldGeometryModel(QObject* parent)

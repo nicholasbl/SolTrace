@@ -56,7 +56,7 @@ ShadowedGlassRectangle {
 
             Item {
                 Layout.fillWidth: true
-                visible: root.width >= 750
+                visible: root.width >= 500
             }
 
             Repeater {
@@ -104,6 +104,11 @@ ShadowedGlassRectangle {
                 Layout.fillWidth: true
                 visible: !App.view.left_panel.is_small()
             }
+        }
+
+        Item {
+            Layout.fillWidth: true
+            visible: !App.view.left_panel.is_small()
         }
 
         PanelButtons {

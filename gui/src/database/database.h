@@ -207,6 +207,7 @@ public slots:
 
     /// Selection methods
     void select(entt::entity to_select);
+    void add_to_selection(entt::entity to_select);
 
     void deselect(entt::entity to_deselect);
 
@@ -216,8 +217,16 @@ public slots:
 
     bool is_selected(entt::entity e) const;
 
+    void select_all_with_material(db::Entity);
+    void select_all_with_geometry(db::Entity);
+    void deselect_all_with_material(db::Entity);
+    void deselect_all_with_geometry(db::Entity);
+
     /// Color
     void set_color(entt::entity to_color, QColor new_color);
+
+signals:
+    void bulk_selection_changed();
 };
 
 class DatabaseObserver {

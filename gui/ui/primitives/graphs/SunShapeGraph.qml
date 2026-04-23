@@ -5,6 +5,13 @@ import QtGraphs
 Rectangle {
     id: root
 
+    Connections {
+        target: App.sun.shape
+        function onChanged() {
+            rebuild()
+        }
+    }
+
     // Graph content
     property string title: ""
     property string xAxisTitle: ""
@@ -18,6 +25,27 @@ Rectangle {
 
     // Series access
     property alias series: lineSeries
+
+    // Model
+    property var model: App.sun.shape.current_distribution
+
+    function rebuild() {
+        lineSeries.clear()
+        if (!model) {
+            return;
+        }
+
+        for (let i = 0; i < model.rowCount(); i++) {
+            const angle = model.data(model.index(i, 0))
+            const intensity = model.data(model.index(i, 1))
+            lineSeries.append(angle, intensity)
+        }
+
+    }
+
+    onModelChanged: {
+        rebuild()
+    }
 
     color: "transparent"
     radius: 8
@@ -74,15 +102,15 @@ Rectangle {
                 axisX: ValueAxis {
                     id: xAxis
                     titleVisible: false
-                    min: root.xMin
-                    max: root.xMax
+                    min: root.model ? root.model.x_axis_from : root.xMin
+                    max: root.model ? root.model.x_axis_to : root.xMax
                 }
 
                 axisY: ValueAxis {
                     id: yAxis
                     titleVisible: false
-                    min: root.yMin
-                    max: root.yMax
+                    min: root.model ? root.model.y_axis_from : root.yMin
+                    max: root.model ? root.model.y_axis_to : root.yMax
                 }
 
                 LineSeries {
