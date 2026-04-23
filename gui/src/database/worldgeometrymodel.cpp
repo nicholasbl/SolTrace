@@ -10,13 +10,18 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
     m_member_cache.clear();
     m_rev_cache.clear();
 
-    markDirty();
 
-    if (!m_database) return;
+    if (!m_database) {
+        markDirty();
+        return;
+    }
 
     auto* ptr = m_database->geometry_root.get(group);
 
-    if (!ptr) return;
+    if (!ptr) {
+        markDirty();
+        return;
+    }
 
     for (auto member : std::as_const(ptr->members)) {
 
@@ -27,6 +32,8 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
                        : m_database->color.get(member)
                            ? m_database->color.get(member)->color
                            : Qt::white;
+
+        // qDebug() << convert(global->position) << convert(global->rotation);
 
         auto entry =
             calculateTableEntryFromQuaternion(convert(global->position),
@@ -43,6 +50,8 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
 
     qDebug() << Q_FUNC_INFO << "group" << entt::to_integral(group) << "->"
              << m_member_cache.size();
+
+    markDirty();
 }
 
 void InstancedElements::on_geometry_group_membership_change(
@@ -84,6 +93,14 @@ void InstancedElements::set_color(int index, QColor color) {
     entt::entity instance = entity_at(index);
     if (instance == entt::null) return;
     m_database->set_color(instance, color);
+    on_geometry_group_change(m_target_group);
+}
+
+void InstancedElements::set_all_color(QColor color) {
+    auto* ptr = m_database->geometry_root.get(m_target_group);
+    for (auto member : m_member_cache) {
+        m_database->set_color(member, color);
+    }
     on_geometry_group_change(m_target_group);
 }
 
@@ -225,6 +242,12 @@ void WorldGeometryModel::group_changed(entt::entity e) {
 }
 void WorldGeometryModel::group_removed(entt::entity e) {
     recompute();
+}
+
+void WorldGeometryModel::set_all_color(QColor color) {
+    for (auto const& vg : m_records) {
+        vg.group_instances->set_all_color(color);
+    }
 }
 
 WorldGeometryModel::WorldGeometryModel(QObject* parent)

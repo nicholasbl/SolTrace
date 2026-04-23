@@ -109,6 +109,13 @@ SunShape::SunShape(QObject* parent)
     update_current_distribution();
 }
 
+void SunShape::reset_current_distribution() {
+    custom_distribution()->clear();
+    custom_distribution()->append(-1, 0);
+    custom_distribution()->append(0, 0.6);
+    custom_distribution()->append(1, 0);
+}
+
 void SunShape::regenerate() {
     m_generated_distribution->clear();
     switch (m_shape) {
@@ -174,17 +181,18 @@ void SunShape::update_x_axis() {
             double min_x = 0;
             double max_x = 0;
             for (int i = 0; i < cdist->count(); i++) {
-                if (cdist->get_at(i)->angle > max_x)
-                    max_x = cdist->get_at(i)->angle;
-                if (cdist->get_at(i)->angle < min_x)
-                    min_x = cdist->get_at(i)->angle;
+                double angle = cdist->get_at(i)->angle;
+                if (angle > max_x) max_x = angle;
+                if (angle < min_x) min_x = angle;
             }
-            cdist->set_x_axis_from(-1.3 * min_x);
-            cdist->set_x_axis_to(1.3 * max_x);
 
             if (min_x == 0 && max_x == 0) {
                 cdist->set_x_axis_from(-1.3);
                 cdist->set_x_axis_to(1.3);
+            } else {
+                double extent = std::max(std::abs(min_x), std::abs(max_x));
+                cdist->set_x_axis_from(-1.3 * extent);
+                cdist->set_x_axis_to(1.3 * extent);
             }
         }
         break;
@@ -274,14 +282,10 @@ DateTime SolarCalculatorData::get_datetime_data() const {
 }
 
 SunShapeModel::SunShapeModel(QObject* parent) : StructTableModel(parent) {
-    connect(
-        this, &QAbstractItemModel::dataChanged, this, &SunShapeModel::changed);
-    connect(
-        this, &QAbstractItemModel::rowsInserted, this, &SunShapeModel::changed);
-    connect(
-        this, &QAbstractItemModel::rowsRemoved, this, &SunShapeModel::changed);
-    connect(
-        this, &QAbstractItemModel::modelReset, this, &SunShapeModel::changed);
+    connect(this, &SunShapeModel::dataChanged, this, &SunShapeModel::changed);
+    connect(this, &SunShapeModel::rowsInserted, this, &SunShapeModel::changed);
+    connect(this, &SunShapeModel::rowsRemoved, this, &SunShapeModel::changed);
+    connect(this, &SunShapeModel::modelReset, this, &SunShapeModel::changed);
 }
 
 std::vector<double> SunShapeModel::get_angle_data() {
@@ -298,6 +302,24 @@ std::vector<double> SunShapeModel::get_intensity_data() {
         result.push_back(point.intensity);
     }
     return result;
+}
+
+QVariantList SunShapeModel::variant_data() {
+    QVariantList custom_shape;
+    for (int i = 0; i < count(); i++) {
+        QVariantMap point;
+        point["angle"]     = get_at(i)->angle;
+        point["intensity"] = get_at(i)->intensity;
+        custom_shape.append(point);
+    }
+    return custom_shape;
+}
+
+void SunShapeModel::set_variant_data(QVariantList data) {
+    for (const auto& item : data) {
+        QVariantMap point = item.toMap();
+        append(point["angle"].toDouble(), point["intensity"].toDouble());
+    }
 }
 
 int SunShapeModel::count() const {

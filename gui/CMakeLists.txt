@@ -257,11 +257,15 @@ qt_add_qml_module(SolTrace
 
         ui/primitives/fields/DateTimeField.qml
         ui/primitives/fields/LocationField.qml
+        ui/primitives/fields/ColorPickerField.qml
+        ui/primitives/fields/CheckBoxField.qml
 
         ui/primitives/graphs/SunShapeGraph.qml
 
         ui/primitives/widgets/AdaptiveEditor.qml
         ui/primitives/widgets/PanelButtons.qml
+
+        ui/primitives/tables/CustomSunShapeTable.qml
 
     SOURCES
         src/app_data.h src/app_data.cpp
@@ -313,7 +317,6 @@ qt_add_qml_module(SolTrace
     DEPENDENCIES
         QtQuick
         QtQuick3D
-        QML_FILES ui/primitives/tables/CustomSunShapeTable.qml
 )
 
 CPMAddPackage(

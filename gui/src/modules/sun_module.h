@@ -29,6 +29,9 @@ public:
     Q_WRITABLE_PROPERTY(double, y_axis_from, 0)
     Q_WRITABLE_PROPERTY(double, y_axis_to, 1.2)
 
+    QVariantList variant_data();
+    void         set_variant_data(QVariantList data);
+
 public slots:
     void append(double angle = 0.0, double intensity = 0.0);
     void remove(int index);
@@ -86,6 +89,9 @@ public:
 
     // Current distribution
     QOBJECT_WRITABLE_PROPERTY(SunShapeModel, current_distribution)
+
+    // Reset to default value
+    void reset_current_distribution();
 
 signals:
     void changed();

@@ -239,8 +239,6 @@ Flickable {
                         title: "Emission Profile"
                         xAxisTitle: "Angle (mrad)"
                         yAxisTitle: "Intensity"
-                        xMin: 0; xMax: 10
-                        yMin: 0; yMax: 1
                     }
                 }
             }

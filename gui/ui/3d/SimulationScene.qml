@@ -74,7 +74,7 @@ Item {
         id: view
         anchors.fill: parent
 
-        camera: App.view.perspective == ViewModule.Orthographic ? ortho_camera : camera
+        camera: App.view.sim.perspective == SimulationViewState.Orthographic ? ortho_camera : camera
 
         environment: SceneEnvironment {
 
@@ -98,6 +98,7 @@ Item {
 
             lightProbe: Texture {
                 textureData: {
+                    if (App.view.sim.blueprint_mode) return blueprintSky
                     let elevation = App.sun.type == SunModule.Directional ? sunDirectionRayGroup.z : pointSource.z
                     let index = 0
 
@@ -145,6 +146,15 @@ Item {
                 groundBottomColor: Qt.rgba(0.02, 0.02, 0.05, 1.0)
             }
 
+            ProceduralSkyTextureData {
+                id: blueprintSky
+                sunColor: Qt.rgba(0, 0, 0, 0)
+                skyTopColor: "#818182"
+                skyHorizonColor: "#818182"
+                groundHorizonColor: "#4d4d4d"
+                groundBottomColor: "#4d4d4d"
+            }
+
             InfiniteGrid {
                 id: infiniteGrid
                 visible: true
@@ -157,7 +167,7 @@ Item {
             eulerRotation: Qt.vector3d(-10, 45, 0)
 
             PerspectiveCamera {
-                id: camera
+                id: perspective_camera
                 z: 100
             }
 
@@ -180,6 +190,8 @@ Item {
                 model: App.layout.world_geometry_model
 
                 delegate: Model {
+                    id: geometry_model
+
                     required property var group_instances
                     required property var group_geometry
                     property bool is_focused: false
@@ -190,14 +202,22 @@ Item {
 
                     materials: [
                         PrincipledMaterial {
-                            metalness: 1
+                            metalness: App.view.sim.blueprint_mode ? 0 : 1
                             roughness: 0
-                            baseColor: "white"
+                            baseColor: App.view.sim.geometry_color
                             cullMode: PrincipledMaterial.NoCulling
                         }
                     ]
                 }
             }
+
+            Connections {
+                target: App.view.sim
+                function onGeometry_color_changed() {
+                    App.layout.world_geometry_model.set_all_color(App.view.sim.geometry_color)
+                }
+            }
+
 
             Model {
                 geometry: App.intersections.ray_geometry
@@ -223,8 +243,9 @@ Item {
                 x: App.sun.position.x
                 y: App.sun.position.y
                 z: App.sun.position.z
+                scale: Qt.vector3d(App.view.sim.sun_viz_scale / 100, App.view.sim.sun_viz_scale / 100, App.view.sim.sun_viz_scale / 100)
 
-                visible: App.sun.type == SunModule.PointSource
+                visible: App.sun.type == SunModule.PointSource && App.view.sim.sun_viz
 
 
                 materials: [
@@ -244,7 +265,8 @@ Item {
                                                       App.sun.position.z)
                 property int distance: 1000
 
-                visible: App.sun.type == SunModule.Directional
+                visible: App.sun.type == SunModule.Directional && App.view.sim.sun_viz
+                scale: Qt.vector3d(App.view.sim.sun_viz_scale / 100, App.view.sim.sun_viz_scale / 100, App.view.sim.sun_viz_scale / 100)
 
                 // Position the rays at the sun's location
                 position: Qt.vector3d(sunDir.x * distance,
@@ -311,17 +333,17 @@ Item {
 
     // I hate this stupid thing
     WasdController {
-        mouseEnabled: App.view.camera == ViewModule.WASD
-        keysEnabled: App.view.camera == ViewModule.WASD
-        controlledObject: camera
+        mouseEnabled: App.view.sim.camera == SimulationViewState.WASD
+        keysEnabled: App.view.sim.camera == SimulationViewState.WASD
+        controlledObject: perspective_camera
     }
 
     CustomOrbitController {
         anchors.fill: parent
         origin: origin
-        mouseEnabled: App.view.camera == ViewModule.Orbital
-        panEnabled: App.view.camera == ViewModule.Orbital
-        camera: App.view.perspective == ViewModule.Orthographic ? ortho_camera : camera
+        mouseEnabled: App.view.sim.camera == SimulationViewState.Orbital
+        panEnabled: App.view.sim.camera == SimulationViewState.Orbital
+        camera: App.view.sim.perspective == SimulationViewState.Orthographic ? ortho_camera : perspective_camera
         automaticClipping: false
     }
 

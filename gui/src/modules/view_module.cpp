@@ -6,7 +6,8 @@ ViewModule::ViewModule(QObject* parent)
     : QObject { parent },
       m_left_panel(new PanelData()),
       m_right_panel(new PanelData()),
-      m_settings_panel(new PanelData()) { }
+      m_settings_panel(new PanelData()),
+      m_sim(new SimulationViewState()) { }
 
 void PanelData::update_size() {
     PanelSize new_size;

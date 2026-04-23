@@ -22,7 +22,6 @@ void AppData::load_session() {
     m_view->set_analyze_section(s.value("analyze_section", 0).toUInt());
 
     m_view->set_sun_section(s.value("sun_section", 0).toUInt());
-
     s.endGroup();
 
     s.beginGroup("File");
@@ -31,10 +30,16 @@ void AppData::load_session() {
 
     s.beginGroup("Sun");
     m_sun->shape()->set_shape(
-        static_cast<SunShape::Shape>(s.value("shape", 0).toUInt()));
-    m_sun->shape()->set_sigma(s.value("sigma", 1.551).toUInt());
-    m_sun->shape()->set_half_width(s.value("sigma", 2.023).toUInt());
-    m_sun->shape()->set_csr(s.value("buie_csr", 0.596).toUInt());
+        static_cast<SunShape::Shape>(s.value("shape", 0).toDouble()));
+    m_sun->shape()->set_sigma(s.value("sigma", 1.551).toDouble());
+    m_sun->shape()->set_half_width(s.value("half_width", 2.023).toDouble());
+    m_sun->shape()->set_csr(s.value("buie_csr", 0.596).toDouble());
+
+    auto* cdist = m_sun->shape()->custom_distribution();
+    if (s.contains("custom_shape"))
+        cdist->set_variant_data(s.value("custom_shape").toList());
+    else
+        m_sun->shape()->reset_current_distribution();
     s.endGroup();
 }
 
@@ -66,6 +71,9 @@ void AppData::save_session() {
     s.setValue("sigma", m_sun->shape()->sigma());
     s.setValue("half_width", m_sun->shape()->half_width());
     s.setValue("buie_csr", m_sun->shape()->csr());
+
+    auto* cdist = m_sun->shape()->custom_distribution();
+    s.setValue("custom_shape", cdist->variant_data());
     s.endGroup();
 }
 

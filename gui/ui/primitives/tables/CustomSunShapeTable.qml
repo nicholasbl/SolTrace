@@ -33,6 +33,7 @@ ListView {
     delegate: RowLayout {
         width: root.width
         spacing: 4
+        visible: index < root.model.rowCount()
 
         Label {
             id: index_label
@@ -45,6 +46,8 @@ ListView {
         STDoubleSpinBox {
             id: angle
 
+            from: -20
+            to: 20
             decimals: 3
             Layout.fillWidth: true
             value: root.model.data(root.model.index(index, 0))
@@ -69,7 +72,7 @@ ListView {
             Layout.preferredWidth: implicitWidth
             Layout.preferredHeight: implicitWidth
             text: "\uf00d"
-            onClicked: App.sun.shape.custom_distribution.remove(index)
+            onClicked: if (App.sun.shape.custom_distribution.count() > 3) App.sun.shape.custom_distribution.remove(index)
             iconSize: 10
         }
     }
