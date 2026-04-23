@@ -8,7 +8,7 @@
 #include "database/apertureeditor.h"
 #include "database/components.h"
 #include "database/database.h"
-#include "database/surfaceeditor.h"
+#include "database/surfaceparametermodel.h"
 #include "utilities/qt_helpers.h"
 
 #include "aperture.hpp"

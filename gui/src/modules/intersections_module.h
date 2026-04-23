@@ -20,24 +20,16 @@ namespace SolTrace::GUI::App {
 class IntersectionsModule : public QObject {
     Q_OBJECT
 
-    std::shared_ptr<ResultDB> m_results;
+    db::SimulationResultPtr m_results;
 
-    std::unique_ptr<analysis::RayGeometry> m_ray_geometry;
-
-    Q_PROPERTY(analysis::RayGeometry* ray_geometry READ ray_geometry NOTIFY
-                   ray_geometry_changed FINAL)
+    QOBJECT_READONLY_PROPERTY(analysis::RayGeometry, ray_geometry)
 
 public:
     explicit IntersectionsModule(QObject* parent = nullptr);
 
 
-    analysis::RayGeometry* ray_geometry() const;
-
 public slots:
-    void set_results(std::shared_ptr<ResultDB>);
-
-signals:
-    void ray_geometry_changed();
+    void set_results(db::SimulationResultPtr);
 };
 
 

@@ -3,6 +3,7 @@
 #include "database/apertureeditor.h"
 #include "database/components.h"
 #include "database/surface.h"
+#include <algorithm>
 #include <cmath>
 
 namespace db {
@@ -32,13 +33,20 @@ void SurfaceGeometry::parameters_changed(entt::entity group) {
 void SurfaceGeometry::rebuild_geometry() {
     clear();
 
-    if (!database()) return;
+    if (!database()) {
+        qDebug() << Q_FUNC_INFO << "no db";
+        return;
+    }
 
     auto ptr = database()->geometry_parameters.get(m_current_group);
 
-    if (!ptr) return;
+    if (!ptr) {
+        qDebug() << Q_FUNC_INFO << "no geometry";
+        return;
+    }
 
     if (!ptr->surface || !ptr->aperture) {
+        qDebug() << Q_FUNC_INFO << "no surf or apt";
         update();
         return;
     }
@@ -47,8 +55,9 @@ void SurfaceGeometry::rebuild_geometry() {
     auto aperture = ptr->aperture;
 
     auto mesh = generate_surface(surface, aperture);
-    if (!mesh || mesh->vertex.empty() || mesh->index.empty()) {
-        qWarning() << "Geometry is empty, or unable to be generated";
+    if (!mesh || mesh->vertex.empty() || mesh->triangles.empty()) {
+        qWarning() << Q_FUNC_INFO
+                   << "Geometry is empty, or unable to be generated";
         update();
         return;
     }
@@ -63,9 +72,20 @@ void SurfaceGeometry::rebuild_geometry() {
         bounds_max = glm::max(bounds_max, p.position);
     }
 
+    auto extent     = bounds_max - bounds_min;
+    auto max_extent = std::max({ extent.x, extent.y, extent.z, 1.0f });
+    auto padding    = max_extent * 1.0e-4f;
+
+    for (int axis = 0; axis < 3; ++axis) {
+        if (bounds_min[axis] == bounds_max[axis]) {
+            bounds_min[axis] -= padding;
+            bounds_max[axis] += padding;
+        }
+    }
+
     auto indexBuffer =
-        QByteArray(reinterpret_cast<const char*>(mesh->index.data()),
-                   mesh->index.size() * sizeof(uint32_t));
+        QByteArray(reinterpret_cast<const char*>(mesh->triangles.data()),
+                   mesh->triangles.size() * sizeof(glm::uvec3));
     auto vertexBuffer =
         QByteArray(reinterpret_cast<const char*>(mesh->vertex.data()),
                    mesh->vertex.size() * sizeof(Vertex));
@@ -78,7 +98,7 @@ void SurfaceGeometry::rebuild_geometry() {
                  offsetof(Vertex, normal),
                  QQuick3DGeometry::Attribute::ComponentType::F32Type);
 
-    addAttribute(QQuick3DGeometry::Attribute::TexCoordSemantic,
+    addAttribute(QQuick3DGeometry::Attribute::TexCoord0Semantic,
                  offsetof(Vertex, uv),
                  QQuick3DGeometry::Attribute::ComponentType::F32Type);
 
@@ -100,9 +120,9 @@ void SurfaceGeometry::rebuild_geometry() {
     set_bounding_box(bb);
 
     // qDebug() << Q_FUNC_INFO << entt::to_integral(m_current_group)
-    //          << verts.size() << indices.size();
-    // qDebug() << Q_FUNC_INFO << boundsMin << boundsMax;
-    //  qDebug() << verts;
+    //          << mesh->triangles.size() << mesh->vertex.size();
+    // qDebug() << Q_FUNC_INFO << bb.min << bb.max;
+    //   qDebug() << verts;
 
     update();
 }

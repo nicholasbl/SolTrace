@@ -28,6 +28,10 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
         auto global = m_database->global_transform.get(member);
         if (!global) continue;
 
+        if (m_database->as_registry().all_of<HasFluxMapComponent>(member)) {
+            continue;
+        }
+
         QColor color = m_database->is_selected(member) ? Qt::red
                        : m_database->color.get(member)
                            ? m_database->color.get(member)->color
@@ -179,6 +183,9 @@ QByteArray InstancedElements::getInstanceBuffer(int* instanceCount) {
 
     if (instanceCount) { *instanceCount = m_member_cache.size(); }
 
+    qDebug() << Q_FUNC_INFO << entt::to_integral(m_target_group)
+             << m_member_cache.size() << m_instance_data.size();
+
     return m_instance_data;
 }
 
@@ -237,8 +244,6 @@ void WorldGeometryModel::group_changed(entt::entity e) {
     auto iter = m_reverse.find(e);
 
     if (iter == m_reverse.end()) { return recompute(); }
-
-    this->store_push_update(iter->second, vis_assets_for_entity(*m_host, e));
 }
 void WorldGeometryModel::group_removed(entt::entity e) {
     recompute();
@@ -254,6 +259,7 @@ WorldGeometryModel::WorldGeometryModel(QObject* parent)
     : StructModelAdapter(parent) { }
 
 void WorldGeometryModel::reset(Database* database) {
+    qDebug() << Q_FUNC_INFO << database;
     m_host = database;
     recompute();
 

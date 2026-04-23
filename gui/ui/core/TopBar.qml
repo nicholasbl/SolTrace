@@ -140,7 +140,7 @@ RowLayout {
                         id: file_menu
                         MenuItem {
                             text: "New"
-                            onClicked: App.file_source.source = ""
+                            onClicked: App.file_source.load_new()
                         }
                         MenuItem {
                             text: "Open"
@@ -154,39 +154,8 @@ RowLayout {
                         currentFolder: StandardPaths.standardLocations(
                                            StandardPaths.DocumentsLocation
                                            )[0]
-                        onAccepted: App.file_source.source = selectedFile
+                        onAccepted: App.file_source.load_url(selectedFile)
                     }
-
-                    // Popup {
-                    //     id: file_menu
-                    //     ColumnLayout {
-                    //         anchors.fill: parent
-                    //         Label  {
-                    //             text: "New"
-                    //             font.pointSize: 16
-                    //         }
-                    //         Rectangle {
-                    //             Layout.fillWidth: true
-                    //             Layout.preferredHeight: 1
-                    //         }
-
-                    //         Label  {
-                    //             text: "Open"
-                    //             font.pointSize: 16
-                    //         }
-                    //         Label  {
-                    //             text: "Save"
-                    //             font.pointSize: 16
-                    //         }
-                    //     }
-
-                    //     background: Rectangle {
-                    //         border.width: 1
-                    //         border.color: Material.dividerColor
-                    //         radius: 10
-                    //         color: Qt.alpha(Material.backgroundColor, .90)
-                    //     }
-                    // }
                 }
 
 

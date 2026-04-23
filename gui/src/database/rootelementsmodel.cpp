@@ -62,6 +62,16 @@ void RootElementsModel::reset(Database* database) {
             &ComponentAPIBase::removed,
             this,
             &RootElementsModel::recompute);
+
+    connect(database->element_tag.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &RootElementsModel::recompute);
+
+    connect(database->element_tag.self(),
+            &ComponentAPIBase::removed,
+            this,
+            &RootElementsModel::recompute);
 }
 
 } // namespace db

@@ -38,6 +38,32 @@ execute_solve_with(SolTrace::Runner::SimulationRunner* ptr) {
     return ptr->run_simulation();
 }
 
+
+/// Add results from a simulation. We don't use a constructor here as
+/// it does not play well with the progress update and cancel concept
+
+void construct_result(QPromise<SimResult>&                promise,
+                      SimDataPtr                          exported_source,
+                      SolTrace::Result::SimulationResult& result) {
+
+    SECTION(90, "Building lookup tables");
+
+    db::SimulationResultConversion opts {
+        .result = result,
+        .data   = *(exported_source->data),
+        .map    = exported_source->element_map,
+    };
+
+    auto destination = db::SimulationResult::convert(opts);
+
+    destination->database = std::move(exported_source->source_database);
+
+    SECTION(100, "Done");
+
+    promise.emplaceResult(std::move(destination));
+}
+
+
 void execute_thread_runner(QPromise<SimResult>&      promise,
                            SimDataPtr                data,
                            ThreadRunnerConfig const& config) {
@@ -58,13 +84,15 @@ void execute_thread_runner(QPromise<SimResult>&      promise,
 
         current_runner->set_number_of_threads(thread_count);
 
-        qDebug() << "Starting simulation with" << data->get_number_of_rays()
-                 << data->get_max_number_rays_traced();
+        qDebug() << "Starting simulation with"
+                 << data->data->get_number_of_rays()
+                 << data->data->get_max_number_rays_traced();
 
         SOLTRACE_SECTION(initialize(), 0, "Starting simulation");
 
 
-        SOLTRACE_SECTION(setup_simulation(data.get()), 0, "Setup simulation");
+        SOLTRACE_SECTION(
+            setup_simulation(data->data.get()), 0, "Setup simulation");
 
         qDebug() << Q_FUNC_INFO << "setup complete";
 
@@ -150,12 +178,13 @@ void execute_thread_runner(QPromise<SimResult>&      promise,
 
         qDebug() << Q_FUNC_INFO << "Build result database";
 
-        auto ret = std::make_shared<ResultDB>();
+
+        SolTrace::Result::SimulationResult soltrace_result;
 
         SOLTRACE_SECTION(
-            report_simulation(&(ret->result), 100), 90, "Report simulation");
+            report_simulation(&soltrace_result, 100), 90, "Report simulation");
 
-        construct_result(promise, ret, data);
+        return construct_result(promise, data, soltrace_result);
 
     } catch (std::exception& e) {
         promise.emplaceResult(QString(e.what()));

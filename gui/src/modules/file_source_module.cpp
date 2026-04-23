@@ -92,11 +92,11 @@ void FileSourceModule::file_ready() {
                result);
 }
 
-void FileSourceModule::handle_source_update() {
-    if (is_loading()) { emit cancel_current_load(QPrivateSignal { }); }
+void FileSourceModule::load_url(QUrl url) {
+    if (is_loading()) { emit cancel_current_load(QPrivateSignal {}); }
     set_is_loading(false);
 
-    auto new_source = source();
+    auto new_source = url;
 
     if (new_source.isEmpty()) {
         qDebug() << Q_FUNC_INFO;
@@ -126,11 +126,10 @@ void FileSourceModule::handle_source_update() {
     watcher->setFuture(future);
 }
 
-FileSourceModule::FileSourceModule(QObject* parent) : QObject { parent } {
-    connect(this,
-            &FileSourceModule::source_changed,
-            this,
-            &FileSourceModule::handle_source_update);
+void FileSourceModule::load_new() {
+    load_url(QUrl());
 }
+
+FileSourceModule::FileSourceModule(QObject* parent) : QObject { parent } { }
 
 } // namespace SolTrace::GUI::App

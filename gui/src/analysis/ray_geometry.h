@@ -2,7 +2,6 @@
 
 
 #include "job_control/job_run_common.h"
-#include "ray_volume.h"
 #include "utilities/qt_helpers.h"
 
 #include <QtQuick3D/qquick3dgeometry.h>
@@ -10,33 +9,41 @@
 
 namespace analysis {
 
+struct EventTypeContainer {
+    std::unordered_set<db::RayEventType> events;
+
+    EventTypeContainer() = default;
+
+    EventTypeContainer(std::initializer_list<db::RayEventType>);
+    EventTypeContainer(QStringList);
+
+    QStringList to_list() const;
+};
+
 // TODO make all deltas queued up for Concurrent off thread rebuilding of geom
 // TODO move to tubes and instancing?
 class RayGeometry : public QQuick3DGeometry {
     Q_OBJECT
 
-    std::shared_ptr<ResultDB> m_database;
+    db::SimulationResultPtr m_database;
 
-    std::unordered_set<SolTrace::Result::RayEvent> m_exclude_events = {
-        SolTrace::Result::RayEvent::CREATE,
-        SolTrace::Result::RayEvent::VIRTUAL,
-        SolTrace::Result::RayEvent::UNKNOWN
-    };
+    EventTypeContainer m_include_events;
 
     /*
     std::unordered_set<SD::element_id> m_selected_elements;
     std::unordered_set<RD::ray_id>     m_selected_rays;
     */
 
+    Q_WRITABLE_PROPERTY(QStringList, event_include, {});
     Q_WRITABLE_PROPERTY(float, show_percent, 50);
 
-    QOBJECT_WRITABLE_PROPERTY(RayVolume, ray_volume);
-
+private slots:
+    void inclusion_list_update();
 
 public:
     explicit RayGeometry(QQuick3DObject* parent = nullptr);
 
-    void set_results(std::shared_ptr<ResultDB>);
+    void set_results(db::SimulationResultPtr);
 
 public slots:
     void rebuild_geometry();

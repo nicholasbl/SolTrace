@@ -5,6 +5,7 @@
 #include "database/components.h"
 #include "database/database_notification.h"
 
+#include <QDebug>
 #include <QPointer>
 #include <QtTypes>
 #include <qqmlintegration.h>
@@ -13,33 +14,6 @@
 
 namespace db {
 
-/// Helper function: patch a component, skipping it if it does not exist.
-/// Returns true if the patch occurred.
-template <class Component, class Function>
-bool try_patch(entt::registry& reg, entt::entity entity, Function&& f) {
-    if (!reg.valid(entity)) return false;
-
-    if (reg.all_of<Component>(entity)) {
-        reg.patch<Component>(entity, f);
-        return true;
-    }
-
-    return false;
-}
-
-/// Helper function: patch a component, creating it if it does not exist.
-template <class Component, class Function>
-void emplace_patch(entt::registry& reg, entt::entity entity, Function&& f) {
-    if (!reg.all_of<Component>(entity)) {
-        if constexpr (std::is_empty_v<Component>) {
-            reg.emplace<Component>(entity);
-        } else {
-            reg.emplace<Component>(entity, Component { });
-        }
-    }
-
-    reg.patch<Component>(entity, f);
-}
 
 /// Helper function, find a corresponding key to a value in a map
 /// Slow, but OK for UI work
@@ -66,6 +40,30 @@ public:
     bool operator<=>(Entity const& other) const = default;
 
     operator entt::entity() const { return value; }
+
+    Q_INVOKABLE bool is_valid() { return value != entt::null; }
+};
+
+inline QDebug operator<<(QDebug debug, Entity const& c) {
+    QDebugStateSaver saver(debug);
+    debug.nospace() << "(Entity " << entt::to_integral(c.value) << ")";
+
+    return debug;
+}
+
+class Database;
+
+struct DatabaseExport {
+    std::shared_ptr<SolTrace::Data::SimulationData>              data;
+    std::unordered_map<SolTrace::Data::element_id, entt::entity> element_map;
+    std::unique_ptr<Database> source_database;
+
+    DatabaseExport() = default;
+
+    DatabaseExport(DatabaseExport const&)            = delete;
+    DatabaseExport& operator=(DatabaseExport const&) = delete;
+    DatabaseExport(DatabaseExport&&)                 = default;
+    DatabaseExport& operator=(DatabaseExport&&)      = default;
 };
 
 class Database : public QObject {
@@ -76,7 +74,9 @@ public:
     /// Create a new simulation database
     explicit Database(QObject* p = nullptr);
 
-    virtual ~Database() = default;
+    virtual ~Database();
+
+    Database* clone(QObject* p = nullptr) const;
 
     /// Merge in simulation data. Note, this should be called closely after
     /// the database constructor. We have this split here so that we can
@@ -84,7 +84,7 @@ public:
     void import(SD::SimulationData&);
 
     /// Convert a database back into a Soltrace dataset
-    std::shared_ptr<SolTrace::Data::SimulationData> export_to_simdata();
+    std::shared_ptr<DatabaseExport> export_to_simdata();
 
 public:
     operator entt::registry&();
@@ -100,6 +100,8 @@ public:
     ComponentAPIUpdate<InvisibleComponent> invisible;
     ComponentAPI<ChildOfComponent>         parent;
     ComponentAPI<TagComponent>             tag_root;
+
+    ComponentAPI<ElementComponent> element_tag;
 
     ComponentAPI<MaterialGroupComponent>       material_root;
     ComponentAPIUpdate<MaterialComponent>      material_parameters;
@@ -181,7 +183,7 @@ public:
 public slots:
     /// Get the name of an entity, either using the Identity component, or by
     /// using the entity ID.
-    QString name_of(Entity item) const;
+    QString name_of(db::Entity item) const;
 
     /// Materials
     entt::entity add_material_group(QString               new_name,

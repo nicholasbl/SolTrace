@@ -17,12 +17,12 @@ ColumnLayout {
 
         Layout.fillWidth: true
 
-        fontFamily: App.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
+        fontFamily: App.view.left_panel.size === PanelData.Small ? "Font Awesome 7 Free" : ""
 
-        model : App.view.left_panel.size == PanelData.Small ?
+        model : App.view.left_panel.size === PanelData.Small ?
                     ["\uf06a", "\uf06a"]
                   :
-                    ["Flux", "Intersections"]
+                    ["Intersections", "Flux"]
 
     }
 
@@ -34,20 +34,16 @@ ColumnLayout {
 
     StackLayout {
         currentIndex: App.view.analyze_section
+        Layout.fillWidth: true
+        Layout.fillHeight: true
         Layout.margins: 8
 
-        ColumnLayout {
-            InlineDocumentation {
-                key: "analyze.flux"
-                target: App.view.left_panel
-            }
+        AnalyzeIntersections {
+
         }
 
-        ColumnLayout {
-            InlineDocumentation {
-                key: "analyze.intersections"
-                target: App.view.left_panel
-            }
+        AnalyzeFlux {
+
         }
     }
 }

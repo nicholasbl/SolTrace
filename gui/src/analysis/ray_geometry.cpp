@@ -3,7 +3,38 @@
 #include "analysis/ray_volume_raster.h"
 #include "utilities/math_utility.h"
 
+#include <magic_enum/magic_enum.hpp>
+
 namespace analysis {
+
+EventTypeContainer::EventTypeContainer(
+    std::initializer_list<db::RayEventType> l)
+    : events(l) { }
+
+EventTypeContainer::EventTypeContainer(QStringList l) {
+    for (auto const& item : l) {
+        auto str = item.toUpper().toStdString();
+
+        auto maybe_enum = magic_enum::enum_cast<db::RayEventType>(str);
+
+        if (!maybe_enum) {
+            qDebug() << "Unknown enum name" << item;
+            continue;
+        }
+
+        events.insert(*maybe_enum);
+    }
+}
+
+QStringList EventTypeContainer::to_list() const {
+    QStringList ret;
+
+    for (auto item : events) {
+        ret << QString(magic_enum::enum_name(item).data()).toLower();
+    }
+
+    return ret;
+}
 
 struct LineVertex {
     QVector3D position;
@@ -11,7 +42,11 @@ struct LineVertex {
 };
 
 void RayGeometry::rebuild_geometry() {
-    if (!m_database) { return; }
+    qDebug() << Q_FUNC_INFO << "Start";
+    if (!m_database) {
+        qDebug() << Q_FUNC_INFO << "No database";
+        return;
+    }
 
     clear();
 
@@ -19,11 +54,9 @@ void RayGeometry::rebuild_geometry() {
 
     {
 
-        for (auto iter = m_database->result.get_ray_record_iteratior();
-             !m_database->result.is_at_end(iter);
-             ++iter) {
+        for (auto const& rec : m_database->records) {
 
-            vertex_count += (*iter)->interactions.size();
+            vertex_count += rec.events.size();
         }
     }
 
@@ -35,15 +68,13 @@ void RayGeometry::rebuild_geometry() {
     index.reserve(vertex_count * 2); // close enough
 
 
-    size_t ray_limit = m_database->result.get_number_of_records() *
-                       (this->show_percent() / 100.);
+    size_t ray_limit =
+        m_database->records.size() * (this->show_percent() / 100.);
 
     {
         size_t ray_number = 0;
 
-        for (auto iter = m_database->result.get_ray_record_iteratior();
-             !m_database->result.is_at_end(iter);
-             ++iter) {
+        for (auto const& ray : m_database->records) {
 
             if (ray_limit == 0) { break; }
 
@@ -53,8 +84,6 @@ void RayGeometry::rebuild_geometry() {
             ray_number += 1;
 
 
-            auto& this_ray = (**iter);
-
             // since we are now filtering, we cannot use interaction counts
             size_t ray_interaction_count = 0;
             double total_ray_distance    = 0.0;
@@ -62,11 +91,13 @@ void RayGeometry::rebuild_geometry() {
             QVector3D last_point = {};
 
             // first compute an idea of the total ray distance
-            for (auto const& interaction : this_ray.interactions) {
+            for (auto const& interaction : ray.events) {
 
-                if (m_exclude_events.contains(interaction->event)) { continue; }
+                if (!m_include_events.events.contains(interaction.event)) {
+                    continue;
+                }
 
-                auto p = convert(interaction->location);
+                auto p = convert(interaction.location);
 
                 // if this is not the first
                 if (ray_interaction_count > 0) {
@@ -86,11 +117,13 @@ void RayGeometry::rebuild_geometry() {
             ray_interaction_count       = 0;
             double current_ray_distance = 0.0;
 
-            for (auto const& interaction : this_ray.interactions) {
+            for (auto const& interaction : ray.events) {
 
-                if (m_exclude_events.contains(interaction->event)) { continue; }
+                if (!m_include_events.events.contains(interaction.event)) {
+                    continue;
+                }
 
-                auto p = convert(interaction->location);
+                auto p = convert(interaction.location);
 
                 // qDebug() << "Point" << p << "type" <<
                 // (int)interaction->event;
@@ -117,11 +150,11 @@ void RayGeometry::rebuild_geometry() {
                     index.push_back(prev);
                     index.push_back(cur);
                 }
-
             }
         }
     }
 
+    qDebug() << Q_FUNC_INFO << "New buffers ready";
 
     auto vertex_buffer = QByteArray(reinterpret_cast<const char*>(verts.data()),
                                     verts.size() * sizeof(LineVertex));
@@ -143,15 +176,39 @@ void RayGeometry::rebuild_geometry() {
     setStride(sizeof(LineVertex));
     setVertexData(vertex_buffer);
     setIndexData(index_buffer);
-    setBounds(m_database->bounds_min, m_database->bounds_max);
+    setBounds(QVector3D(m_database->bounds_min.x,
+                        m_database->bounds_min.y,
+                        m_database->bounds_min.z),
+              QVector3D(m_database->bounds_max.x,
+                        m_database->bounds_max.y,
+                        m_database->bounds_max.z));
     setPrimitiveType(QQuick3DGeometry::PrimitiveType::Lines);
+
+    qDebug() << Q_FUNC_INFO << "Update";
     update();
+}
+
+void RayGeometry::inclusion_list_update() {
+    qDebug() << Q_FUNC_INFO << "List changed";
+    m_include_events = EventTypeContainer(event_include());
+
+    rebuild_geometry();
 }
 
 RayGeometry::RayGeometry(QQuick3DObject* parent) : QQuick3DGeometry(parent) {
 
-    // WATCH OUT HERE
-    m_ray_volume = new RayVolume();
+    m_include_events = EventTypeContainer({
+        db::RayEventType::ABSORB,
+        db::RayEventType::REFLECT,
+        db::RayEventType::TRANSMIT,
+    });
+
+    set_event_include(m_include_events.to_list());
+
+    connect(this,
+            &RayGeometry::event_include_changed,
+            this,
+            &RayGeometry::inclusion_list_update);
 
     connect(this,
             &RayGeometry::show_percent_changed,
@@ -159,8 +216,8 @@ RayGeometry::RayGeometry(QQuick3DObject* parent) : QQuick3DGeometry(parent) {
             &RayGeometry::rebuild_geometry);
 }
 
-void RayGeometry::set_results(std::shared_ptr<ResultDB> data) {
-    qDebug() << "New ray geometry database";
+void RayGeometry::set_results(db::SimulationResultPtr data) {
+    qDebug() << Q_FUNC_INFO << "New ray geometry database";
     m_database = std::move(data);
     rebuild_geometry();
 }

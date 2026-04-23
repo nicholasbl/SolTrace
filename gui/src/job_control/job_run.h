@@ -9,7 +9,7 @@
 #include "simulation_data_api.hpp"
 #include "simulation_result.hpp"
 
-#include "../analysis/grid3d.h"
+#include "utilities/grid3d.h"
 
 namespace SD = SolTrace::Data;
 namespace RD = SolTrace::Result;
@@ -31,11 +31,9 @@ enum class RunType {
 class RunningJob : public QObject {
     Q_OBJECT
 
-    using Result = RD::SimulationResult;
-
     void* m_watcher;
 
-    std::shared_ptr<ResultDB> m_result;
+    std::shared_ptr<db::SimulationResult> m_result;
 
 public:
     explicit RunningJob(SimDataPtr data,
@@ -44,7 +42,7 @@ public:
                         QObject*   parent = nullptr);
     virtual ~RunningJob();
 
-    std::shared_ptr<ResultDB> take();
+    std::shared_ptr<db::SimulationResult> take();
 
 public slots:
     void pause();

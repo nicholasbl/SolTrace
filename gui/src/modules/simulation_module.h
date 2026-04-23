@@ -12,6 +12,8 @@
 
 namespace SolTrace::GUI::App {
 
+// TODO: Track added simulation results and allow deletion!
+
 /**
  * @class SimulationModule
  * @brief Simulation execution and progress tracking module.
@@ -28,6 +30,8 @@ class SimulationModule : public QObject {
     Q_OBJECT
 
     QPointer<RunningJob> m_running;
+
+    QVector<std::shared_ptr<db::SimulationResult>> m_completed_sims;
 
 private slots:
     void job_done();
@@ -60,7 +64,7 @@ public slots:
     void cancel();
 
 signals:
-    void new_results(std::shared_ptr<ResultDB>);
+    void new_results(db::SimulationResultPtr);
     void notify(ANotification);
 };
 
