@@ -56,7 +56,7 @@ ShadowedGlassRectangle {
 
             Item {
                 Layout.fillWidth: true
-                visible: root.width >= 750
+                visible: root.width >= 500
             }
 
             Repeater {
