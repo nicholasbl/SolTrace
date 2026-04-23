@@ -21,8 +21,8 @@ namespace {
 constexpr double PI = glm::pi<double>();
 
 struct Mesh2D {
-    std::vector<glm::dvec2> vertex;
-    std::vector<glm::uvec3> triangles;
+    QVector<glm::dvec2> vertex;
+    QVector<glm::uvec3> triangles;
 
     template <class F>
     Mesh map(F&& f) const {

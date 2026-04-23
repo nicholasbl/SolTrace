@@ -67,6 +67,9 @@ struct TransformComponent {
     glm::dquat rotation;
 
     glm::dmat4 as_matrix() const;
+
+    static TransformComponent from_json(QJsonObject const&);
+    QJsonObject               to_json() const;
 };
 
 /// Describe the global attitude of this entity.

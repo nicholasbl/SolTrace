@@ -18,30 +18,59 @@ Flickable {
 
     ColumnLayout {
         id: content_column
+        width: root.width
+
         InlineDocumentation {
             key: "analyze.flux"
             target: App.view.left_panel
         }
 
-        Image {
-            visible: !AppData.flux.current_image.length
-            Layout.fillWidth: true
-            Layout.preferredHeight: width
-            source: AppData.flux.current_image
-        }
-
         STPropertyPanel {
             Layout.fillWidth: true
 
-            collapsible: false
-            collapsed: AppData.flux.current_image.length
-            title: "Compute Map"
+            collapsible: true
+            title: "Compute Flux Map"
+
+            Image {
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
+                Layout.preferredHeight: width
+
+                visible: AppData.flux.current_image.length
+
+                source: map_selector.currentIndex == 0 ?
+                            AppData.flux.current_image
+                          :
+                            AppData.flux.current_image + "_point_map"
+                fillMode: Image.PreserveAspectFit
+
+                mipmap: true
+
+                STIconButton {
+                    text: "\uf019"
+
+                    anchors.bottom: parent.bottom
+                    anchors.right: parent.right
+                    anchors.margins: 10
+                }
+            }
+
+            STComboBar {
+                id: map_selector
+
+                visible: AppData.flux.current_image.length
+
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
+                model: ["Bins", "Points"]
+            }
 
             ListView {
+                visible: false
                 Layout.columnSpan: 2
                 Layout.fillHeight: true
                 Layout.fillWidth: true
-                Layout.preferredHeight: 250
+                Layout.preferredHeight: 200
                 clip: true
 
                 model: AppData.flux.entity_model
@@ -78,6 +107,73 @@ Flickable {
 
                 onClicked: {
                     AppData.flux.start_generate()
+                }
+            }
+        }
+
+        STPropertyPanel {
+            Layout.fillWidth: true
+
+            collapsible: true
+            title: "Flux Volume"
+
+            STPropertyLabel {
+                text: "Grid Resolution"
+            }
+
+            STSpinBox {
+                id: resolution_spin
+                Layout.fillWidth: true
+
+                value: 512
+                from: 64
+                to: 2048
+            }
+
+            STButton {
+                enabled: !AppData.flux.ray_volume_flux_in_progress
+                Layout.fillWidth: true
+                Layout.columnSpan: 2
+
+                text: "Start Raster"
+                text_icon: "\uf0da"
+
+                onClicked: {
+                    AppData.flux.start_generate_volume_flux(resolution_spin.value)
+                }
+            }
+        }
+
+        STPropertyPanel {
+            Layout.fillWidth: true
+
+            collapsible: true
+            title: "Flux Isosurface"
+
+            STPropertyLabel {
+                text: "Isovalue"
+            }
+
+            STDoubleSpinBox {
+                id: iso_spin
+                Layout.fillWidth: true
+
+                value: 0.90
+                from: 0.0
+                stepSize: .01
+                to: 1.0
+            }
+
+            STButton {
+                enabled: !AppData.flux.ray_volume_flux_in_progress
+                Layout.fillWidth: true
+                Layout.columnSpan: 2
+
+                text: "Generate Surface"
+                text_icon: "\uf0da"
+
+                onClicked: {
+                    AppData.flux.start_generate_isosurface(iso_spin.value)
                 }
             }
         }

@@ -69,42 +69,9 @@ ShadowedGlassRectangle {
             currentIndex: App.view.right_panel_section
 
             Layout.fillWidth: true
+            Layout.fillHeight: true
 
-            ColumnLayout {
-                ScrollView {
-                    id: left_scroll
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-
-                    contentWidth: availableWidth
-                    STPropertyPanel {
-                        anchors.fill: parent
-
-                        title: "Script Properties"
-                        collapsible: true
-
-                        STPropertyLabel {
-                            text: "Property A"
-                        }
-
-                        STDoubleSpinBox {
-                            Layout.fillWidth: true
-                            decimals: 2
-                        }
-                    }
-                }
-
-                STButton {
-                    text: "Run"
-                    Layout.fillWidth: true
-                }
-
-                TextArea {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: root.height / 2
-                    text: "Script goes here"
-                }
-            }
+            ScriptInterface {}
 
             Item {}
             Item {}

@@ -22,6 +22,7 @@
 #include <modules/tracing_module.h>
 #include <modules/view_module.h>
 #include <modules/workflow_module.h>
+#include <script/script.h>
 
 /**
  * @namespace SolTrace::GUI::AppData
@@ -108,6 +109,8 @@ public:
     QOBJECT_READONLY_PROPERTY(IntersectionsModule, intersections)
 
     QOBJECT_READONLY_PROPERTY(FluxModule, flux)
+
+    QOBJECT_READONLY_PROPERTY(Script::Script, script)
 
 signals:
     void notification(ANotification);

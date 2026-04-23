@@ -9,7 +9,7 @@
 #include "simulation_data_api.hpp"
 #include "simulation_result.hpp"
 
-#include "../analysis/grid3d.h"
+#include "utilities/grid3d.h"
 
 namespace SD = SolTrace::Data;
 namespace RD = SolTrace::Result;

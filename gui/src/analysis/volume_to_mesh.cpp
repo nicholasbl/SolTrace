@@ -1,5 +1,7 @@
 #include "volume_to_mesh.h"
 
+#include <QDebug>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -17,30 +19,21 @@ struct InterpolatedVertex {
     glm::vec3 normal;
 };
 
-glm::vec3
-gradient_at(Grid3D<float> const& volume, size_t x, size_t y, size_t z) {
-    auto left_x  = x > 0 ? x - 1 : x;
-    auto right_x = x + 1 < volume.size_x() ? x + 1 : x;
-    auto left_y  = y > 0 ? y - 1 : y;
-    auto right_y = y + 1 < volume.size_y() ? y + 1 : y;
-    auto left_z  = z > 0 ? z - 1 : z;
-    auto right_z = z + 1 < volume.size_z() ? z + 1 : z;
+glm::vec3 gradient_at(SparseGrid3DLookupCache<float> const& volume,
+                      glm::ivec3                            p) {
+    auto left  = p - 1;
+    auto right = p + 1;
 
-    auto dx_denom = static_cast<float>(right_x - left_x);
-    auto dy_denom = static_cast<float>(right_y - left_y);
-    auto dz_denom = static_cast<float>(right_z - left_z);
+    constexpr auto delta_denom = 2.0;
 
     glm::vec3 gradient(0.0f);
 
-    if (dx_denom > 0.0f) {
-        gradient.x = (volume(right_x, y, z) - volume(left_x, y, z)) / dx_denom;
-    }
-    if (dy_denom > 0.0f) {
-        gradient.y = (volume(x, right_y, z) - volume(x, left_y, z)) / dy_denom;
-    }
-    if (dz_denom > 0.0f) {
-        gradient.z = (volume(x, y, right_z) - volume(x, y, left_z)) / dz_denom;
-    }
+    gradient.x =
+        (volume(right.x, p.y, p.z) - volume(left.x, p.y, p.z)) / delta_denom;
+    gradient.y =
+        (volume(p.x, right.y, p.z) - volume(p.x, left.y, p.z)) / delta_denom;
+    gradient.z =
+        (volume(p.x, p.y, right.z) - volume(p.x, p.y, left.z)) / delta_denom;
 
     return gradient;
 }
@@ -76,21 +69,23 @@ void append_polygon(db::Mesh&                              mesh,
     if (polygon.size() < 3) { return; }
 
     glm::vec3 center(0.0f);
-    glm::vec3 avg_normal(0.0f);
     for (auto const& vertex : polygon) {
         center += vertex.position;
-        avg_normal += vertex.normal;
     }
     center /= static_cast<float>(polygon.size());
 
-    // create basis
-
-    auto plane_normal = glm::length2(avg_normal) > 1e-12f
-                            ? glm::normalize(avg_normal)
-                            : preferred_normal;
-
+    auto plane_normal = preferred_normal;
+    if (glm::length2(plane_normal) <= 1e-12f) {
+        for (size_t i = 0; i < polygon.size(); ++i) {
+            auto const& a = polygon[i].position;
+            auto const& b = polygon[(i + 1) % polygon.size()].position;
+            plane_normal += glm::cross(a - center, b - center);
+        }
+    }
     if (glm::length2(plane_normal) <= 1e-12f) {
         plane_normal = glm::vec3(0.0f, 0.0f, 1.0f);
+    } else {
+        plane_normal = glm::normalize(plane_normal);
     }
 
     auto tangent = glm::cross(plane_normal, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -117,10 +112,25 @@ void append_polygon(db::Mesh&                              mesh,
         return angleA < angleB;
     });
 
+    glm::vec3 ordered_normal(0.0f);
+    for (size_t i = 0; i < order.size(); ++i) {
+        auto const& a = polygon[order[i]].position;
+        auto const& b = polygon[order[(i + 1) % order.size()]].position;
+        ordered_normal += glm::cross(a - center, b - center);
+    }
+    if (glm::dot(ordered_normal, plane_normal) < 0.0f) {
+        std::reverse(order.begin(), order.end());
+    }
+
     auto emit_vertex = [&](InterpolatedVertex const& vertex) -> uint32_t {
+        auto normal = vertex.normal;
+        if (glm::dot(normal, plane_normal) < 0.0f) {
+            normal = -normal;
+        }
+
         mesh.vertex.push_back(db::Vertex {
             .position = vertex.position,
-            .normal   = vertex.normal,
+            .normal   = normal,
             .uv       = glm::vec2(0.0f),
         });
         return static_cast<uint32_t>(mesh.vertex.size() - 1);
@@ -130,16 +140,7 @@ void append_polygon(db::Mesh&                              mesh,
     for (size_t i = 1; i + 1 < order.size(); ++i) {
         auto const i1 = emit_vertex(polygon[order[i]]);
         auto const i2 = emit_vertex(polygon[order[i + 1]]);
-
-        auto tri_normal =
-            glm::cross(mesh.vertex[i1].position - mesh.vertex[base].position,
-                       mesh.vertex[i2].position - mesh.vertex[base].position);
-        if (glm::dot(tri_normal, plane_normal) < 0.0f) {
-            mesh.triangles.push_back({ base, i2, i1 });
-
-        } else {
-            mesh.triangles.push_back({ base, i1, i2 });
-        }
+        mesh.triangles.push_back({ base, i1, i2 });
     }
 }
 
@@ -153,11 +154,14 @@ void polygonize_tetrahedron(db::Mesh&                        mesh,
                             float                            isoval) {
     cached_polygon.clear();
 
-    static constexpr std::array<std::array<int, 2>, 6> tetra_edges = {
-        std::array<int, 2> { 0, 1 }, std::array<int, 2> { 0, 2 },
-        std::array<int, 2> { 0, 3 }, std::array<int, 2> { 1, 2 },
-        std::array<int, 2> { 1, 3 }, std::array<int, 2> { 2, 3 },
-    };
+    static constexpr std::array<std::array<int, 2>, 6> tetra_edges = { {
+        { 0, 1 },
+        { 0, 2 },
+        { 0, 3 },
+        { 1, 2 },
+        { 1, 3 },
+        { 2, 3 },
+    } };
 
     for (auto const& edge : tetra_edges) {
         auto const a  = edge[0];
@@ -189,9 +193,8 @@ void polygonize_tetrahedron(db::Mesh&                        mesh,
     if (cached_polygon.size() < 3) { return; }
 
     glm::vec3 preferred_normal(0.0f);
-
-    for (int i = 0; i < 4; ++i) {
-        preferred_normal += gradients[i];
+    for (auto const& vertex : cached_polygon) {
+        preferred_normal += vertex.normal;
     }
     if (glm::length2(preferred_normal) > 1e-12f) {
         preferred_normal = glm::normalize(preferred_normal);
@@ -203,11 +206,28 @@ void polygonize_tetrahedron(db::Mesh&                        mesh,
 } // namespace
 
 void volume_to_mesh(QPromise<db::Mesh>& output,
-                    Grid3D<float>       volume,
+                    SparseGrid3D<float> input_volume,
                     float               isoval) {
-    if (volume.size_x() < 2 || volume.size_y() < 2 || volume.size_z() < 2) {
+
+
+    qDebug() << Q_FUNC_INFO << "generating isosurf @" << isoval;
+
+    auto active_span = input_volume.active_span();
+    auto grid_scale  = input_volume.scale();
+
+    auto reader = SparseGrid3DLookupCache(input_volume);
+
+    if (active_span.x < 2 || active_span.y < 2 || active_span.z < 2 ||
+        grid_scale.x == 0.0f || grid_scale.y == 0.0f ||
+        grid_scale.z == 0.0f) {
+        qDebug() << Q_FUNC_INFO << "invalid volume dimensions";
+        output.emplaceResult(db::Mesh {});
         return;
     }
+
+    auto to_world_position = [&](glm::vec3 const& grid_position) {
+        return input_volume.grid_to_world(grid_position + 0.5f);
+    };
 
     // Cube index decomposition to tetrahedra
     static constexpr std::array<std::array<int, 4>, 6> tetrahedra = {
@@ -224,22 +244,25 @@ void volume_to_mesh(QPromise<db::Mesh>& output,
 
     // TODO: multithread
 
-    for (size_t z = 0; z + 1 < volume.size_z(); ++z) {
-        for (size_t y = 0; y + 1 < volume.size_y(); ++y) {
+    auto active_min = input_volume.active_min();
+    auto active_max = input_volume.active_max();
+
+    for (int z = active_min.z; z + 1 < active_max.z; ++z) {
+        for (int y = active_min.y; y + 1 < active_max.y; ++y) {
             // dont want to check too often
             if (output.isCanceled()) { return; }
 
-            for (size_t x = 0; x + 1 < volume.size_x(); ++x) {
-                std::array<std::array<size_t, 3>, 8> const corner_coords = {
-                    std::array<size_t, 3> { x, y, z },
-                    std::array<size_t, 3> { x + 1, y, z },
-                    std::array<size_t, 3> { x + 1, y + 1, z },
-                    std::array<size_t, 3> { x, y + 1, z },
-                    std::array<size_t, 3> { x, y, z + 1 },
-                    std::array<size_t, 3> { x + 1, y, z + 1 },
-                    std::array<size_t, 3> { x + 1, y + 1, z + 1 },
-                    std::array<size_t, 3> { x, y + 1, z + 1 },
-                };
+            for (int x = active_min.x; x + 1 < active_max.x; ++x) {
+                std::array<glm::ivec3, 8> const corner_coords = { {
+                    { x, y, z },
+                    { x + 1, y, z },
+                    { x + 1, y + 1, z },
+                    { x, y + 1, z },
+                    { x, y, z + 1 },
+                    { x + 1, y, z + 1 },
+                    { x + 1, y + 1, z + 1 },
+                    { x, y + 1, z + 1 },
+                } };
 
                 std::array<glm::vec3, 8> positions;
                 std::array<glm::vec3, 8> gradients;
@@ -250,11 +273,9 @@ void volume_to_mesh(QPromise<db::Mesh>& output,
 
                 for (size_t i = 0; i < corner_coords.size(); ++i) {
                     auto const& c = corner_coords[i];
-                    positions[i]  = glm::vec3(static_cast<float>(c[0]),
-                                             static_cast<float>(c[1]),
-                                             static_cast<float>(c[2]));
-                    values[i]     = volume(c[0], c[1], c[2]);
-                    gradients[i]  = gradient_at(volume, c[0], c[1], c[2]);
+                    positions[i]  = to_world_position(c);
+                    values[i]     = reader(c[0], c[1], c[2]);
+                    gradients[i]  = gradient_at(reader, c);
                     has_below |= values[i] < isoval;
                     has_above |= values[i] >= isoval;
                 }
@@ -283,7 +304,9 @@ void volume_to_mesh(QPromise<db::Mesh>& output,
         }
     }
 
-    if (mesh.triangles.empty()) { return; }
+    if (mesh.triangles.empty()) {
+        qDebug() << Q_FUNC_INFO << "no triangles generated";
+    }
 
     output.emplaceResult(std::move(mesh));
 }

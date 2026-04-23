@@ -291,6 +291,7 @@ Database::Database(QObject* p)
       invisible(m_registry),
       parent(m_registry),
       tag_root(m_registry),
+      element_tag(m_registry),
       material_root(m_registry),
       material_parameters(m_registry),
       material_group_membership(m_registry),

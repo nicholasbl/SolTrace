@@ -43,7 +43,7 @@ AdaptiveEditor {
     }
 
     listDelegate: ItemDelegate {
-        text: itemModel.name
+        text: itemModel ? itemModel.name : "No name"
         highlighted: isCurrent
         width: parent ? parent.width : implicitWidth
 

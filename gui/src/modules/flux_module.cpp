@@ -1,6 +1,10 @@
 #include "flux_module.h"
+#include "analysis/ray_volume_raster.h"
+#include "analysis/volume_to_mesh.h"
+#include "utilities/asynctask.h"
 
 #include <QQmlEngine>
+#include <QUuid>
 
 namespace SolTrace::GUI::App {
 
@@ -8,7 +12,13 @@ FluxModule::FluxModule(QQmlEngine* engine, QObject* parent)
     : QObject(parent),
       m_entity_model(new db::RootElementsModel(this)),
       m_pending_flux_maps(new db::PendingFluxMapModel(this)),
-      m_flux_map_world_model(new db::FluxMapWorldModel(this)) {
+      m_flux_map_world_model(new db::FluxMapWorldModel(this)),
+      m_ray_iso_volume(new db::QMLMesh()) {
+
+    set_ray_volume_flux_in_progress(false);
+
+    m_ray_iso_volume->setParent(this);
+
     auto provider = m_pending_flux_maps->make_new_provider();
 
     engine->addImageProvider("fluxmap", provider);
@@ -25,8 +35,10 @@ FluxModule::FluxModule(QQmlEngine* engine, QObject* parent)
 }
 
 void FluxModule::set_results(db::SimulationResultPtr p) {
+    m_results = p;
     m_entity_model->reset(p->database.get());
     m_pending_flux_maps->reset(p);
+    m_ray_iso_volume->set_current_mesh({});
 
     // HACK HACK HACK
 
@@ -44,7 +56,61 @@ void FluxModule::set_results(db::SimulationResultPtr p) {
 }
 
 void FluxModule::start_generate() {
+    qDebug() << Q_FUNC_INFO << "Starting fluxmap generation for current entity";
     m_pending_flux_maps->start_generate_for(current_entity());
+}
+
+void FluxModule::start_generate_volume_flux(unsigned resolution) {
+    if (ray_volume_flux_in_progress()) return;
+
+    if (!m_results) return;
+
+    set_ray_volume_flux_in_progress(true);
+
+    qDebug() << Q_FUNC_INFO << "Starting volume flux raster";
+
+    launch_async_task<analysis::SparseGrid3D<float>>(
+        QUuid::createUuid(),
+        this,
+        &FluxModule::flux_vol_ready,
+        &FluxModule::flux_vol_failed,
+        analysis::compute_ray_volume_raster,
+        resolution,
+        m_results);
+}
+
+void FluxModule::start_generate_isosurface(float value) {
+    if (!m_results) return;
+    if (!m_results->ray_volume.size_in_bricks()) return;
+
+    qDebug() << Q_FUNC_INFO << "launching volume generation" << value;
+    launch_async_task<db::Mesh>(QUuid::createUuid(),
+                                this,
+                                &FluxModule::iso_surf_ready,
+                                &FluxModule::iso_surf_failed,
+                                analysis::volume_to_mesh,
+                                m_results->ray_volume,
+                                value);
+}
+
+void FluxModule::flux_vol_ready(QUuid const&                  id,
+                                analysis::SparseGrid3D<float> grid) {
+    if (m_results) m_results->ray_volume = grid;
+    set_ray_volume_flux_in_progress(false);
+    qDebug() << Q_FUNC_INFO << id;
+}
+void FluxModule::flux_vol_failed(QUuid const& id, QString reason) {
+    qDebug() << Q_FUNC_INFO << id;
+    qCritical() << "Unable to generate isosurface" << reason;
+}
+
+void FluxModule::iso_surf_ready(QUuid const& id, db::Mesh mesh) {
+    qDebug() << Q_FUNC_INFO << id;
+    m_ray_iso_volume->set_current_mesh(mesh);
+}
+void FluxModule::iso_surf_failed(QUuid const& id, QString reason) {
+    qDebug() << Q_FUNC_INFO << id;
+    qCritical() << "Unable to generate isosurface" << reason;
 }
 
 } // namespace SolTrace::GUI::App

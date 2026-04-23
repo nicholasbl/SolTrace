@@ -17,9 +17,9 @@ ColumnLayout {
 
         Layout.fillWidth: true
 
-        fontFamily: App.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
+        fontFamily: App.view.left_panel.size === PanelData.Small ? "Font Awesome 7 Free" : ""
 
-        model : App.view.left_panel.size == PanelData.Small ?
+        model : App.view.left_panel.size === PanelData.Small ?
                     ["\uf06a", "\uf06a"]
                   :
                     ["Intersections", "Flux"]
@@ -38,14 +38,8 @@ ColumnLayout {
         Layout.fillHeight: true
         Layout.margins: 8
 
-        ColumnLayout {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+        AnalyzeIntersections {
 
-            InlineDocumentation {
-                key: "analyze.intersections"
-                target: App.view.left_panel
-            }
         }
 
         AnalyzeFlux {

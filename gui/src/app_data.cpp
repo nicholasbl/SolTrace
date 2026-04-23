@@ -24,10 +24,6 @@ void AppData::load_session() {
     m_view->set_sun_section(s.value("sun_section", 0).toUInt());
 
     s.endGroup();
-
-    s.beginGroup("File");
-    m_file_source->set_source(s.value("source", "").toUrl());
-    s.endGroup();
 }
 
 void AppData::save_session() {
@@ -48,10 +44,6 @@ void AppData::save_session() {
     s.setValue("sun_section", m_view->sun_section());
 
     s.endGroup();
-
-    s.beginGroup("File");
-    s.setValue("source", m_file_source->source());
-    s.endGroup();
 }
 
 AppData* AppData::create(QQmlEngine* qmlEngine, QJSEngine*) {
@@ -71,7 +63,8 @@ AppData::AppData(QObject*       parent,
       m_layout(new LayoutModule(this)),
       m_simulation(new SimulationModule(this)),
       m_intersections(new IntersectionsModule(this)),
-      m_flux(new FluxModule(engine, this)) {
+      m_flux(new FluxModule(engine, this)),
+      m_script(new Script::Script(this)) {
 
     connect(m_file_source,
             &FileSourceModule::current_database_value_changed,
@@ -97,6 +90,9 @@ AppData::AppData(QObject*       parent,
             &SimulationModule::new_results,
             this,
             &AppData::new_results);
+
+    connect(
+        this, &AppData::new_database, m_script, &Script::Script::set_database);
 
     connect(qApp, &QCoreApplication::aboutToQuit, this, &AppData::save_session);
 

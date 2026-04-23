@@ -64,6 +64,7 @@ public:
         auto fail_once =
             [this, sink, identity, failed_func = std::move(failed_func)](
                 QString message) {
+                qDebug() << Q_FUNC_INFO << "Failure handler" << message;
                 if (this->m_failed) return;
 
                 this->m_failed = true;
@@ -102,6 +103,8 @@ public:
                  finished_func = std::move(finished_func),
                  sink,
                  identity]() {
+                    qDebug() << Q_FUNC_INFO << watcher << this;
+
                     if (watcher->isCanceled() or this->m_failed) { return; }
 
                     if constexpr (std::invocable<decltype(finished_func),
@@ -129,6 +132,8 @@ public:
                             static_assert(flag, "no match");
                         }();
                     }
+
+                    qDebug() << Q_FUNC_INFO << "Finished";
 
                     emit this->finished();
                 });
@@ -171,6 +176,17 @@ public:
     T result() const { return m_ready.value(0); }
 };
 
+
+/// Launch a task in another thread.
+///
+/// Most standalone functions are supported; special support remains for
+/// QPromise as the first argument.
+///
+/// When finished, calls sink->callback(identity, QVector<T>);
+///  or calls sink->callback(identity, T);
+/// When failed or cancelled, calls sink->callback(identity, QString);
+///
+/// NOTE! for proper handling, please make sure to always emplace a result.
 template <class T,
           class I,
           class U,

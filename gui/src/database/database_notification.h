@@ -8,6 +8,35 @@
 
 namespace db {
 
+
+/// Helper function: patch a component, skipping it if it does not exist.
+/// Returns true if the patch occurred.
+template <class Component, class Function>
+bool try_patch(entt::registry& reg, entt::entity entity, Function&& f) {
+    if (!reg.valid(entity)) return false;
+
+    if (reg.all_of<Component>(entity)) {
+        reg.patch<Component>(entity, f);
+        return true;
+    }
+
+    return false;
+}
+
+/// Helper function: patch a component, creating it if it does not exist.
+template <class Component, class Function>
+void emplace_patch(entt::registry& reg, entt::entity entity, Function&& f) {
+    if (!reg.all_of<Component>(entity)) {
+        if constexpr (std::is_empty_v<Component>) {
+            reg.emplace<Component>(entity);
+        } else {
+            reg.emplace<Component>(entity, Component {});
+        }
+    }
+
+    reg.patch<Component>(entity, f);
+}
+
 class ComponentAPIBase : public QObject {
     Q_OBJECT
 protected:
@@ -106,7 +135,7 @@ public:
 
     template <class Function>
     void patch(entt::entity entity, Function&& f) {
-        emplace_patch<Component>(this->m_host, entity, f);
+        db::emplace_patch<Component>(this->m_host, entity, f);
     }
 
     void remove(entt::entity entity) {

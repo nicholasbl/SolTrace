@@ -10,6 +10,12 @@ static QString image_name(Entity e) {
     return QString::number(entt::to_integral((entt::entity)e));
 }
 
+static QString const POINT_MAP_SUFFIX = QStringLiteral("_point_map");
+
+static QString point_map_name(QString name) {
+    return name + POINT_MAP_SUFFIX;
+}
+
 FluxTextureData::FluxTextureData(QQuick3DObject* parent)
     : QQuick3DTextureData(parent) { }
 
@@ -229,7 +235,7 @@ void FluxMapWorldModel::on_ready(Entity                    e,
 
     if (!db) return;
 
-    qDebug() << Q_FUNC_INFO << e << img->image << db;
+    qDebug() << Q_FUNC_INFO << e << img->bin_map << db;
 
     for (auto const& item : m_records) {
         if (item.flux_entity == e && item.flux_texture_data) {
@@ -258,7 +264,7 @@ void FluxMapWorldModel::on_ready(Entity                    e,
                                 global.rotation.z);
 
     auto texture_data = std::make_shared<FluxTextureData>();
-    texture_data->set_image(img->image);
+    texture_data->set_image(img->bin_map);
 
     store_push_append(FluxMappedItem {
         .flux_entity       = e,
@@ -279,12 +285,29 @@ QImage FluxMapProvider::requestImage(QString const& id,
                                      QSize*         size,
                                      QSize const&   requestedSize) {
     qDebug() << Q_FUNC_INFO << id << requestedSize;
+
+    QString local_id = id;
+
     QImage ret;
+
+    bool needs_point_map = local_id.endsWith(POINT_MAP_SUFFIX);
+
+    if (needs_point_map) {
+        local_id = local_id.left(local_id.size() - POINT_MAP_SUFFIX.size());
+    }
+
 
     {
         m_lock.lock();
-        auto iter = m_store.find(id);
-        if (iter != m_store.end()) { ret = iter.value()->image; }
+        auto iter = m_store.find(local_id);
+        if (iter != m_store.end()) {
+
+            if (needs_point_map) {
+                ret = iter.value()->point_map;
+            } else {
+                ret = iter.value()->bin_map;
+            }
+        }
         m_lock.unlock();
     }
 
@@ -299,7 +322,7 @@ void FluxMapProvider::on_ready(Entity                    k,
                                analysis::BakedFluxMapPtr v,
                                Database*) {
     auto name = image_name(k);
-    qDebug() << Q_FUNC_INFO << k << v->image << name;
+    qDebug() << Q_FUNC_INFO << k << v->bin_map << name;
     m_lock.lock();
     m_store[name] = v;
     m_lock.unlock();

@@ -10,13 +10,18 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
     m_member_cache.clear();
     m_rev_cache.clear();
 
-    markDirty();
 
-    if (!m_database) return;
+    if (!m_database) {
+        markDirty();
+        return;
+    }
 
     auto* ptr = m_database->geometry_root.get(group);
 
-    if (!ptr) return;
+    if (!ptr) {
+        markDirty();
+        return;
+    }
 
     for (auto member : std::as_const(ptr->members)) {
 
@@ -31,6 +36,8 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
                        : m_database->color.get(member)
                            ? m_database->color.get(member)->color
                            : Qt::white;
+
+        // qDebug() << convert(global->position) << convert(global->rotation);
 
         auto entry =
             calculateTableEntryFromQuaternion(convert(global->position),
@@ -47,6 +54,8 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
 
     qDebug() << Q_FUNC_INFO << "group" << entt::to_integral(group) << "->"
              << m_member_cache.size();
+
+    markDirty();
 }
 
 void InstancedElements::on_geometry_group_membership_change(
@@ -166,6 +175,9 @@ QByteArray InstancedElements::getInstanceBuffer(int* instanceCount) {
 
     if (instanceCount) { *instanceCount = m_member_cache.size(); }
 
+    qDebug() << Q_FUNC_INFO << entt::to_integral(m_target_group)
+             << m_member_cache.size() << m_instance_data.size();
+
     return m_instance_data;
 }
 
@@ -224,8 +236,6 @@ void WorldGeometryModel::group_changed(entt::entity e) {
     auto iter = m_reverse.find(e);
 
     if (iter == m_reverse.end()) { return recompute(); }
-
-    this->store_push_update(iter->second, vis_assets_for_entity(*m_host, e));
 }
 void WorldGeometryModel::group_removed(entt::entity e) {
     recompute();
@@ -235,6 +245,7 @@ WorldGeometryModel::WorldGeometryModel(QObject* parent)
     : StructModelAdapter(parent) { }
 
 void WorldGeometryModel::reset(Database* database) {
+    qDebug() << Q_FUNC_INFO << database;
     m_host = database;
     recompute();
 

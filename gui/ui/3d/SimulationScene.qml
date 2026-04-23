@@ -206,6 +206,21 @@ Item {
                 }
             }
 
+            Model {
+                id: iso_vol_mesh
+
+                geometry: AppData.flux.ray_iso_volume
+
+                materials: [
+                    PrincipledMaterial {
+                        metalness: 0
+                        roughness: .5
+                        baseColor: "white"
+                        cullMode: PrincipledMaterial.NoCulling
+                    }
+                ]
+            }
+
         }
     }
 

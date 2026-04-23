@@ -110,49 +110,6 @@ SimulationResult::convert(SimulationResultConversion const& opts) {
         }
     }
 
-    {
-        // Compute volume
-        auto grid_size =
-            ceil(glm::normalize(ret->bounds_max - ret->bounds_min) * 128.0);
-
-        // qDebug() << grid_size[0] << grid_size[1] << grid_size[2];
-
-        // auto cell_size =
-        //     (ptr->bounds_max.x() - ptr->bounds_min.x()) / grid_size[0];
-
-        analysis::Grid3D<float> grid(grid_size[0], grid_size[1], grid_size[2]);
-
-        for (auto const& ray : ret->records) {
-
-            if (ray.events.empty()) continue;
-
-            auto last_p = ray.events[0].location;
-
-            for (auto i = 1; i < ray.events.size(); ++i) {
-                auto const& this_interaction   = ray.events[i];
-                auto        this_interaction_p = this_interaction.location;
-
-                if (last_p == this_interaction_p) continue;
-
-                analysis::raster_segment(grid, last_p, this_interaction_p);
-
-                last_p = this_interaction_p;
-            }
-        }
-
-        // normalize
-        float largest = 0.0;
-        for (auto x : grid) {
-            largest = std::max(x, largest);
-        }
-
-        for (auto& x : grid) {
-            x /= largest;
-        }
-
-        ret->ray_volume = std::move(grid);
-    }
-
     return ret;
 }
 
