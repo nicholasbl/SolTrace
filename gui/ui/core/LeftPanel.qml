@@ -65,7 +65,7 @@ ShadowedGlassRectangle {
                 RowLayout {
                     required property int index
                     required property string modelData
-                    property var icons: ["\uf0ad", "\uf185", "\ue473"]
+                    property var icons: ["\uf0ad", "\uf085", "\uf201"]
 
                     spacing: 4
 

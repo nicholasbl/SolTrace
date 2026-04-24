@@ -24,10 +24,6 @@ void AppData::load_session() {
     m_view->set_sun_section(s.value("sun_section", 0).toUInt());
     s.endGroup();
 
-    s.beginGroup("File");
-    m_file_source->set_source(s.value("source", "").toUrl());
-    s.endGroup();
-
     s.beginGroup("Sun");
     m_sun->shape()->set_shape(
         static_cast<SunShape::Shape>(s.value("shape", 0).toDouble()));
@@ -61,10 +57,7 @@ void AppData::save_session() {
     s.setValue("sun_section", m_view->sun_section());
 
     s.endGroup();
-  
-    s.beginGroup("File");
-    s.setValue("source", m_file_source->source());
-    s.endGroup();
+
 
     s.beginGroup("Sun");
     s.setValue("shape", static_cast<int>(m_sun->shape()->shape()));

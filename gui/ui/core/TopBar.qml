@@ -212,15 +212,21 @@ RowLayout {
                 id: settings_row
                 anchors.fill: parent
 
-                /* Move inline doc toggling to panel buttons
+
                 STIconButton {
                     Layout.preferredWidth: implicitWidth
                     Layout.preferredHeight: implicitHeight
                     label.font.pointSize: 20
                     Layout.leftMargin: 20
 
-                    text: "\uf059"
-                } */
+                    text: "\uf030"
+
+                    onClicked: nav_settings_pop.open()
+
+                    NavigationSettings {
+                        id: nav_settings_pop
+                    }
+                }
 
                 STIconButton {
                     id: settings_button
@@ -229,7 +235,7 @@ RowLayout {
 
                     Layout.preferredWidth: implicitWidth
                     Layout.preferredHeight: implicitHeight
-                    Layout.leftMargin: 20
+                    //Layout.leftMargin: 20
 
                     label.font.pointSize: 20
 

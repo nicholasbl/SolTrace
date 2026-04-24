@@ -55,6 +55,7 @@ Rectangle {
 
         property real padding: 5
 
+
         z: 0
 
         x: (selectedItem ? layout.x + selectedItem.x : 0) - padding
@@ -91,17 +92,17 @@ Rectangle {
             }
         }
 
-        Behavior on width {
-            NumberAnimation {
-                duration: 100
-            }
-        }
+        // Behavior on width {
+        //     NumberAnimation {
+        //         duration: 100
+        //     }
+        // }
 
-        Behavior on height {
-            NumberAnimation {
-                duration: 100
-            }
-        }
+        // Behavior on height {
+        //     NumberAnimation {
+        //         duration: 100
+        //     }
+        // }
     }
 
     function select(index) {

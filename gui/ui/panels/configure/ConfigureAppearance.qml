@@ -44,24 +44,6 @@ ColumnLayout {
     STPropertyPanel {
         Layout.fillWidth: true
 
-        title: "Environment"
-        collapsible: false
-
-        CheckBoxField {
-            Layout.preferredWidth: 200
-
-            text: "Blueprint Mode"
-            value: App.view.sim.blueprint_mode
-
-            onClicked: {
-                App.view.sim.blueprint_mode = !App.view.sim.blueprint_mode
-            }
-        }
-    }
-
-    STPropertyPanel {
-        Layout.fillWidth: true
-
         title: "Geometry"
         collapsible: false
 

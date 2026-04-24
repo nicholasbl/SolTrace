@@ -20,9 +20,9 @@ ColumnLayout {
         fontFamily: AppData.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
 
         model : AppData.view.left_panel.size == PanelData.Small ?
-                    ["\uf828", "\uf03d", "\uf188", "\uf15c"]
+                    ["\uf828", "\uf188", "\uf15c"]
                   :
-                    ["Execution", "Navigation", "Diagnostics", "Logs"]
+                    ["Execution", "Diagnostics", "Logs"]
 
     }
 
@@ -90,49 +90,6 @@ ColumnLayout {
                         AppData.simulation.run()
                     }
                 }
-            }
-        }
-
-        // Navigation
-        ColumnLayout {
-            InlineDocumentation {
-                key: "placeholder_small"
-                title: "Cameras"
-                target: AppData.view.left_panel
-            }
-
-            STComboBar {
-                currentIndex: AppData.view.camera
-                onCurrentIndexChanged: AppData.view.camera  = currentIndex
-
-                Layout.fillWidth: true
-
-                fontFamily: AppData.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
-
-                model : AppData.view.left_panel.size == PanelData.Small ?
-                            ["\uf828", "\uf03d"]
-                          :
-                            ["WASD Camera", "Orbital Camera"]
-            }
-
-            InlineDocumentation {
-                key: "placeholder_small"
-                title: "Camera Perspectives"
-                target: AppData.view.left_panel
-            }
-
-            STComboBar {
-                currentIndex: AppData.view.perspective
-                onCurrentIndexChanged: AppData.view.perspective  = currentIndex
-
-                Layout.fillWidth: true
-
-                fontFamily: AppData.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
-
-                model : AppData.view.left_panel.size == PanelData.Small ?
-                            ["\uf06a", "\uf06a"]
-                          :
-                            ["Normal Perspective", "Orthographic Perspective"]
             }
         }
 
