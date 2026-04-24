@@ -12,7 +12,7 @@ Rectangle {
     property int currentIndex: 0
 
     property string fontFamily
-    property var fontWeight: Font.Normal
+    property int fontWeight: Font.Normal
 
     property var model: []
 
@@ -80,17 +80,11 @@ Rectangle {
             color: Material.dropShadowColor
         }
 
-        Behavior on x {
-            NumberAnimation {
-                duration: 100
-            }
-        }
-
-        Behavior on y {
-            NumberAnimation {
-                duration: 100
-            }
-        }
+        // Behavior on y {
+        //     NumberAnimation {
+        //         duration: 100
+        //     }
+        // }
 
         // Behavior on width {
         //     NumberAnimation {
@@ -195,7 +189,15 @@ Rectangle {
                     horizontalAlignment: Label.AlignHCenter
                     verticalAlignment: Label.AlignVCenter
 
-                    opacity: index === bar.currentIndex ? 1.0 : .5
+                    opacity: index === bar.currentIndex
+                             ?
+                                 1.0
+                               :
+                                 item_mouse.containsMouse
+                                 ?
+                                     .75
+                                   :
+                                     .5
                 }
 
                 Rectangle {
@@ -212,7 +214,10 @@ Rectangle {
                 }
 
                 MouseArea {
+                    id: item_mouse
                     anchors.fill: parent
+
+                    hoverEnabled: true
 
                     onClicked: bar.select(index)
                 }
