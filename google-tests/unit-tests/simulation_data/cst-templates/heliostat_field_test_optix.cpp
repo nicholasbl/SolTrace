@@ -5,10 +5,11 @@
 
 using SolTrace::EmbreeRunner::EmbreeRunner;
 
-constexpr int N_rays_glob = 1e4;
+constexpr int N_rays_glob = 20e6;
 constexpr int seed = 123;
-constexpr bool save = true;
+constexpr bool save = false;
 constexpr bool save_hits = false;
+constexpr bool ignore_direct = true;
 
 static void write_to_dict(std::string key_name, double val_a,
 	double val_b, std::map<std::string, double>& dict_a,
@@ -20,20 +21,14 @@ static void write_to_dict(std::string key_name, double val_a,
 
 static void CompareRunners(HeliostatFieldSimulationHelper<EmbreeRunner>& sim_embree,
 	HeliostatFieldSimulationHelper<OptixRunner>& sim_optix, int N_rays,
-	std::string hour, const std::string& file_label = "")
+	const std::string& hour, const std::string& file_label = "")
 {
-	// Run cases
-	sim_embree.seed = seed;
-	sim_embree.sun_gen_type = SolTrace::Data::GenType::HALTON;
-	sim_embree.create_heliostat_field();
-	sim_embree.setup_simData();
 	sim_embree.update_from_hour(hour);
 	SimulationResult result_embree;
 	sim_embree.simulate(&result_embree, N_rays);
 	sim_embree.calculate_ray_counts(result_embree);
 	sim_embree.calculate_sun_size(result_embree);
-	sim_embree.calculate_outputs(result_embree);
-	//sim_embree.calculate_receiver_flux_map(result_embree, 60, 23, true);
+	sim_embree.calculate_outputs(result_embree, ignore_direct);
 
 	if (save_hits)
 	{
@@ -41,17 +36,12 @@ static void CompareRunners(HeliostatFieldSimulationHelper<EmbreeRunner>& sim_emb
 		save_hit_pos_to_file(result_embree, file_hits_embree);
 	}
 
-	sim_optix.seed = seed;
-	sim_optix.sun_gen_type = SolTrace::Data::GenType::HALTON;
-	sim_optix.create_heliostat_field();
-	sim_optix.setup_simData();
 	sim_optix.update_from_hour(hour);
 	SimulationResult result_optix;
 	sim_optix.simulate(&result_optix, N_rays);
 	sim_optix.calculate_ray_counts(result_optix);
 	sim_optix.calculate_sun_size(result_optix);
-	sim_optix.calculate_outputs(result_optix);
-	//sim_optix.calculate_receiver_flux_map(result_optix, 60, 23, true);
+	sim_optix.calculate_outputs(result_optix, ignore_direct);
 
 	if (save_hits)
 	{
@@ -115,9 +105,6 @@ static void CompareRunners(HeliostatFieldSimulationHelper<EmbreeRunner>& sim_emb
 	write_to_dict("11_frac_via_helio", frac_via_helio_a, frac_via_helio_b, dict_embree, dict_optix);
 
 	// Compare power per ray
-	double power_tol = (5. / (double)N_rays) * 1e3;
-	//EXPECT_NEAR(sim_embree.power_per_ray, sim_optix.power_per_ray, power_tol);
-
 	write_to_dict("12_power_per_ray", sim_embree.power_per_ray, sim_optix.power_per_ray, dict_embree, dict_optix);
 
 	// Total power absorbed
@@ -173,6 +160,12 @@ static void CompareRunners(HeliostatFieldSimulationHelper<EmbreeRunner>& sim_emb
 	write_to_dict("21_spillage_efficiency", sim_embree.spillage_efficiency, sim_optix.spillage_efficiency, dict_embree, dict_optix);
 	write_to_dict("22_cosine_efficiency", sim_embree.cosine_efficiency, sim_optix.cosine_efficiency, dict_embree, dict_optix);
 
+	write_to_dict("23_sigmaflux", sim_embree.SigmaFlux, sim_optix.SigmaFlux, dict_embree, dict_optix);
+	write_to_dict("24_uniformity", sim_embree.Uniformity, sim_optix.Uniformity, dict_embree, dict_optix);
+	write_to_dict("25_rmse", rmse, rmse, dict_embree, dict_optix);
+	double rmse_over_peak = rmse / (peak_flux_embree);
+	write_to_dict("26_rmse_over_peak", rmse_over_peak, rmse_over_peak, dict_embree, dict_optix);
+
 	if (save)
 	{
 		std::string file_fluxmap_native = "embree_field_flux_" + file_label + SolTrace::Data::GenTypeMap.at(sim_embree.sun_gen_type)
@@ -191,12 +184,7 @@ static void CompareRunners(HeliostatFieldSimulationHelper<EmbreeRunner>& sim_emb
 			+ "_" + std::to_string(int(N_rays / 1e3)) + "k.csv";
 		sim_optix.save_outputs(file_outputs_optix, dict_optix);
 	}
-
-
-	int xsagasdg = 0;
 }
-
-
 
 TEST(HeliostatFieldOptixEmbree, singleFacet_SlantFocused)
 {
@@ -205,13 +193,31 @@ TEST(HeliostatFieldOptixEmbree, singleFacet_SlantFocused)
 	sim_embree.runner.disable_stages();
 	sim_embree.runner.set_number_of_threads(10);
 	sim_embree.initialize();
+	sim_embree.seed = seed;
+	sim_embree.sun_gen_type = SolTrace::Data::GenType::HALTON;
 
 	// Make optix
 	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
 	sim_optix.initialize();
+	sim_optix.seed = seed;
+	sim_optix.sun_gen_type = SolTrace::Data::GenType::HALTON;
 
-	// Run centerline aimpoints
+	// Centerline aimpoints
+	sim_embree.create_heliostat_field();
+	sim_optix.create_heliostat_field();
+
+	sim_embree.setup_simData();
+	sim_optix.setup_simData();
+
 	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "1a_1_8_");
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "12", "1a_1_12_");
+
+	// Scatter aimpoints
+	sim_embree.set_scatter_aimpoints();
+	sim_optix.set_scatter_aimpoints();
+
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "1a_2_8_");
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "12", "1a_2_12_");
 }
 
 TEST(HeliostatFieldOptixEmbree, singleFacet_BandFocused)
@@ -221,14 +227,34 @@ TEST(HeliostatFieldOptixEmbree, singleFacet_BandFocused)
 	sim_embree.runner.disable_stages();
 	sim_embree.runner.set_number_of_threads(10);
 	sim_embree.initialize();
-	sim_embree.assign_focal_lengths_canting_banded();
+	sim_embree.seed = seed;
+	sim_embree.sun_gen_type = SolTrace::Data::GenType::HALTON;
 
 	// Make optix
 	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
 	sim_optix.initialize();
+	sim_optix.seed = seed;
+	sim_optix.sun_gen_type = SolTrace::Data::GenType::HALTON;
+
+	// Centerline aimpoints
+	sim_embree.create_heliostat_field();
+	sim_optix.create_heliostat_field();
+
+	sim_embree.assign_focal_lengths_canting_banded();
 	sim_optix.assign_focal_lengths_canting_banded();
 
+	sim_embree.setup_simData();
+	sim_optix.setup_simData();
+
 	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "1b_1_8_");
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "12", "1b_1_12_");
+
+	// Scatter aimpoints
+	sim_embree.set_scatter_aimpoints();
+	sim_optix.set_scatter_aimpoints();
+
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "1b_2_8_");
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "12", "1b_2_12_");
 }
 
 TEST(HeliostatFieldOptixEmbree, multiFacet_SlantCanted)
@@ -238,14 +264,34 @@ TEST(HeliostatFieldOptixEmbree, multiFacet_SlantCanted)
 	sim_embree.runner.disable_stages();
 	sim_embree.runner.set_number_of_threads(10);
 	sim_embree.initialize();
-	sim_embree.assign_canted_slant(true);
+	sim_embree.seed = seed;
+	sim_embree.sun_gen_type = SolTrace::Data::GenType::HALTON;
 
 	// Make optix
 	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
 	sim_optix.initialize();
+	sim_optix.seed = seed;
+	sim_optix.sun_gen_type = SolTrace::Data::GenType::HALTON;
+
+	// Centerline aimpoints
+	sim_embree.create_heliostat_field();
+	sim_optix.create_heliostat_field();
+
+	sim_embree.assign_canted_slant(true);
 	sim_optix.assign_canted_slant(true);
 
+	sim_embree.setup_simData();
+	sim_optix.setup_simData();
+
 	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "2a_1_8_");
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "12", "2a_1_12_");
+
+	// Scatter aimpoints
+	sim_embree.set_scatter_aimpoints();
+	sim_optix.set_scatter_aimpoints();
+
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "2a_2_8_");
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "12", "2a_2_12_");
 }
 
 TEST(HeliostatFieldOptixEmbree, multiFacet_BandCanted)
@@ -255,14 +301,34 @@ TEST(HeliostatFieldOptixEmbree, multiFacet_BandCanted)
 	sim_embree.runner.disable_stages();
 	sim_embree.runner.set_number_of_threads(10);
 	sim_embree.initialize();
-	sim_embree.assign_canted_banded(true);
+	sim_embree.seed = seed;
+	sim_embree.sun_gen_type = SolTrace::Data::GenType::HALTON;
 
 	// Make optix
 	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
 	sim_optix.initialize();
+	sim_optix.seed = seed;
+	sim_optix.sun_gen_type = SolTrace::Data::GenType::HALTON;
+
+	// Centerline aimpoints
+	sim_embree.create_heliostat_field();
+	sim_optix.create_heliostat_field();
+
+	sim_embree.assign_canted_banded(true);
 	sim_optix.assign_canted_banded(true);
 
+	sim_embree.setup_simData();
+	sim_optix.setup_simData();
+
 	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "2b_1_8_");
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "12", "2b_1_12_");
+
+	// Scatter aimpoints
+	sim_embree.set_scatter_aimpoints();
+	sim_optix.set_scatter_aimpoints();
+
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "2b_2_8_");
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "12", "2b_2_12_");
 }
 
 TEST(HeliostatFieldOptixEmbree, multiFacet_SlantFocused_SlantCanted)
@@ -272,14 +338,34 @@ TEST(HeliostatFieldOptixEmbree, multiFacet_SlantFocused_SlantCanted)
 	sim_embree.runner.disable_stages();
 	sim_embree.runner.set_number_of_threads(10);
 	sim_embree.initialize();
-	sim_embree.assign_canted_slant(false);
+	sim_embree.seed = seed;
+	sim_embree.sun_gen_type = SolTrace::Data::GenType::HALTON;
 
 	// Make optix
 	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
 	sim_optix.initialize();
+	sim_optix.seed = seed;
+	sim_optix.sun_gen_type = SolTrace::Data::GenType::HALTON;
+
+	// Centerline aimpoints
+	sim_embree.create_heliostat_field();
+	sim_optix.create_heliostat_field();
+
+	sim_embree.assign_canted_slant(false);
 	sim_optix.assign_canted_slant(false);
 
+	sim_embree.setup_simData();
+	sim_optix.setup_simData();
+
 	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "3a_1_8_");
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "12", "3a_1_12_");
+
+	// Scatter aimpoints
+	sim_embree.set_scatter_aimpoints();
+	sim_optix.set_scatter_aimpoints();
+
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "3a_2_8_");
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "12", "3a_2_12_");
 }
 
 TEST(HeliostatFieldOptixEmbree, multiFacet_BandFocused_BandCanted)
@@ -289,59 +375,37 @@ TEST(HeliostatFieldOptixEmbree, multiFacet_BandFocused_BandCanted)
 	sim_embree.runner.disable_stages();
 	sim_embree.runner.set_number_of_threads(10);
 	sim_embree.initialize();
-	sim_embree.assign_canted_banded(false);    // Canted by band
-	sim_embree.assign_focal_lengths_banded();  // Focused by band
+	sim_embree.seed = seed;
+	sim_embree.sun_gen_type = SolTrace::Data::GenType::HALTON;
 
 	// Make optix
 	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
-	sim_optix.initialize();
-	sim_optix.assign_canted_banded(false);    // Canted by band
-	sim_optix.assign_focal_lengths_banded();  // Focused by band
-
-	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "3b_1_8_");
-}
-
-
-
-
-
-TEST(HeliostatFieldOptixEmbree, singleFacet_SlantFocused_NoSunShape)
-{
-	// Make embree
-	HeliostatFieldSimulationHelper<EmbreeRunner> sim_embree;
-	sim_embree.runner.disable_stages();
-	sim_embree.runner.set_number_of_threads(10);
-	sim_embree.use_sunshape_errors = false;
-	sim_embree.use_optical_errors = false;
-	sim_embree.initialize();
-
-	// Make optix
-	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
-	sim_optix.use_sunshape_errors = false;
-	sim_optix.use_optical_errors = false;
-	sim_optix.initialize();
-
-	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8");
-}
-
-TEST(HeliostatFieldOptixEmbree, optix_only)
-{
-	// Make optix
-	int N_rays = 100e3;
-	HeliostatFieldSimulationHelper<OptixRunner> sim_optix;
-	sim_optix.use_sunshape_errors = false;
-	sim_optix.use_optical_errors = false;
 	sim_optix.initialize();
 	sim_optix.seed = seed;
 	sim_optix.sun_gen_type = SolTrace::Data::GenType::HALTON;
+
+	// Centerline aimpoints
+	sim_embree.create_heliostat_field();
 	sim_optix.create_heliostat_field();
+
+	sim_embree.assign_canted_banded(false);    // Canted by band
+	sim_embree.assign_focal_lengths_banded();  // Focused by band
+
+	sim_optix.assign_canted_banded(false);     // Canted by band
+	sim_optix.assign_focal_lengths_banded();   // Focused by band
+
+	sim_embree.setup_simData();
 	sim_optix.setup_simData();
-	sim_optix.update_from_hour("8");
-	SimulationResult result_b;
-	sim_optix.simulate(&result_b, N_rays);
-	sim_optix.calculate_ray_counts(result_b);
-	sim_optix.calculate_sun_size(result_b);
-	sim_optix.calculate_receiver_flux_map(result_b, 30, 30, false);
+
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "3b_1_8_");
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "12", "3b_1_12_");
+
+	// Scatter aimpoints
+	sim_embree.set_scatter_aimpoints();
+	sim_optix.set_scatter_aimpoints();
+
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "3b_2_8_");
+	CompareRunners(sim_embree, sim_optix, N_rays_glob, "12", "3b_2_12_");
 }
 
 TEST(NSTTF, test_case)
@@ -367,5 +431,4 @@ TEST(NSTTF, test_case)
 	save_hit_pos_to_file(result_embree, "test_embree.csv");
 
 	int x = 0;
-
 }

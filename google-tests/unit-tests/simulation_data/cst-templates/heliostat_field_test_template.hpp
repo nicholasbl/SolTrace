@@ -118,7 +118,6 @@ public:
     double spillage_efficiency;
     double cosine_efficiency;
     double total_power;
-    double rmse;
 
     // Expected results
     double expected_power;
@@ -152,6 +151,7 @@ public:
         Vector3d offset = { 0.0, 0.0, 0.0 };
         Vector3d rec_origin_offset;
         vector_add(1.0, rec_origin, 1.0, offset, rec_origin_offset);
+        double seam_angle_deg = 60;
         Vector3d v1 = { 0.0, -1.0, 0.0 };
         Vector3d aim_point;
         vector_add(1.0, rec_origin_offset, 1.0, v1, aim_point);
@@ -520,7 +520,7 @@ public:
         }
     }
 
-    void calculate_outputs(const SimulationResult& result) {
+    void calculate_outputs(const SimulationResult& result, bool ignore_direct = false) {
         
         absorption_efficiency = (double)tot_reflect_count / (double)tot_helio_hits;
         blocking_efficiency = 1.0 - (double)tot_helio_block_count / (double)tot_reflect_count;
@@ -534,19 +534,7 @@ public:
 
         total_power = rec_absorb_count * power_per_ray / 1.e3;   // W to kW
 
-        calculate_receiver_flux_map(result, 60, 23, true);
-
-        rmse = 0.0;
-        for (size_t r = 0; r < fluxGrid.nrows(); r++) {
-            for (size_t c = 0; c < fluxGrid.ncols(); c++) {
-                double sim_flux = fluxGrid.at(r, c) * zScale / 1.e3;
-                double exp_flux = expected_fluxGrid.at(r, c);
-                rmse += pow(sim_flux - exp_flux, 2);
-            }
-        }
-        rmse = sqrt(rmse / (fluxGrid.nrows() * fluxGrid.ncols()));
-
-
+        calculate_receiver_flux_map(result, 60, 23, true, ignore_direct);
     }
 
     void read_expected_summary_results(std::string filepath) {
@@ -653,13 +641,15 @@ public:
         binszx = binszy = 0.0;
         PeakFlux = PeakFluxUncertainty = 0.0;
         AveFlux = AveFluxUncertainty = 0.0;
-        MinFlux = SigmaFlux = Uniformity = 0.0;
+        MinFlux = SigmaFlux = Uniformity;
         Centroid[0] = Centroid[1] = Centroid[2] = 0.0;
         zScale = 0.0;
         NumberOfRays = 0;
     }
 
-    bool calculate_receiver_flux_map(const SimulationResult& result, int nbinsx, int nbinsy, bool is_cylinder) {
+    bool calculate_receiver_flux_map(const SimulationResult& result, int nbinsx, int nbinsy, 
+        bool is_cylinder, bool ignore_direct) 
+    {
         reset_flux_map();
 
         double minx, maxx, miny, maxy;
@@ -742,69 +732,88 @@ public:
             for (size_t j = 0; j < rr->interactions.size(); j++) {
                 if (receiver->get_id() == rr->get_element(j)) {
                     if (rr->get_event(j) == RayEvent::ABSORB) {
-                        rr->get_position(j, global_position);
-
-                        receiver->convert_global_to_local(local_position, global_position);
-
-                        x = local_position[0];
-                        y = local_position[1];
-                        z = local_position[2];
-
-                        // Clamp sides (due to precision)
-                        double neg_radius = -1.0 * rec_radius;
-                        if (x < neg_radius)
+                        if (j > 1 || !ignore_direct)
                         {
-                            double err = neg_radius - x;
-                            if (err > max_neg_x_flux_err)
-                                max_neg_x_flux_err = err;
-                            x = neg_radius;
-                        }
-                        else if (x > rec_radius)
-                        {
-                            double err = x - rec_radius;
-                            if (err > max_pos_x_flux_err)
-                                max_pos_x_flux_err = err;
-                            x = rec_radius;
-                        }
-                            
+                            rr->get_position(j, global_position);
 
-                        Centroid[0] += x;
-                        Centroid[1] += y;
-                        Centroid[2] += z;
-                        npoints++;
+                            receiver->convert_global_to_local(local_position, global_position);
 
-                        if (is_cylinder) {
-                            if (z <= 0.0)
-                                x = rec_radius * asin(x / rec_radius);
-                            else if (z > 0.0) {
-                                if (x < 0) x = -(PI * rec_radius / 2.0 + rec_radius * acos(fabs(x) / rec_radius));
-                                if (x >= 0) x = PI * rec_radius / 2.0 + rec_radius * acos(x / rec_radius);
+                            x = local_position[0];
+                            y = local_position[1];
+                            z = local_position[2];
+
+                            //// Clamp sides (due to precision)
+                            //double neg_radius = -1.0 * rec_radius;
+                            //if (x < neg_radius)
+                            //{
+                            //    double err = neg_radius - x;
+                            //    if (err > max_neg_x_flux_err)
+                            //        max_neg_x_flux_err = err;
+                            //    x = neg_radius;
+                            //}
+                            //else if (x > rec_radius)
+                            //{
+                            //    double err = x - rec_radius;
+                            //    if (err > max_pos_x_flux_err)
+                            //        max_pos_x_flux_err = err;
+                            //    x = rec_radius;
+                            //}
+
+
+                            Centroid[0] += x;
+                            Centroid[1] += y;
+                            Centroid[2] += z;
+                            npoints++;
+
+                            if (is_cylinder) {
+                                //if (z <= 0.0)
+                                //    x = rec_radius * asin(x / rec_radius);
+                                //else if (z > 0.0) {
+                                //    if (x < 0) x = -(PI * rec_radius / 2.0 + rec_radius * acos(fabs(x) / rec_radius));
+                                //    if (x >= 0) x = PI * rec_radius / 2.0 + rec_radius * acos(x / rec_radius);
+                                //}
+
+                                double rho = std::hypot(x, z);
+                                if (rho <= 0.0)
+                                {
+                                    NotBinned++;
+                                    continue;
+                                }
+
+                                // Project to cylinder surface
+                                double xp = rec_radius * x / rho;
+                                double zp = rec_radius * z / rho;
+
+                                // Unwrap angle in [-pi, pi], with 0 at the front center (z < 0)
+                                double theta = std::atan2(xp, -zp);
+
+                                x = rec_radius * theta;
                             }
-                        }
 
-                        GridIncrementX = -1; //initialize grid increment counters
-                        GridIncrementY = -1;
+                            GridIncrementX = -1; //initialize grid increment counters
+                            GridIncrementY = -1;
 
-                        //determine which bin the ray falls into
-                        while ((minx + (GridIncrementX + 1) * binszx) < x)
-                            GridIncrementX++;
+                            //determine which bin the ray falls into
+                            while ((minx + (GridIncrementX + 1) * binszx) < x)
+                                GridIncrementX++;
 
-                        while ((miny + (GridIncrementY + 1) * binszy) < y)
-                            GridIncrementY++;
+                            while ((miny + (GridIncrementY + 1) * binszy) < y)
+                                GridIncrementY++;
 
-                        GridIncrementX = nbinsx - GridIncrementX - 1;
-                        GridIncrementY = nbinsy - GridIncrementY - 1;
+                            GridIncrementX = nbinsx - GridIncrementX - 1;
+                            GridIncrementY = nbinsy - GridIncrementY - 1;
 
-                        if (GridIncrementX >= 0 && GridIncrementX < (int)fluxGrid.ncols()
-                            && GridIncrementY >= 0 && GridIncrementY < (int)fluxGrid.nrows())
-                        {
-                            fluxGrid.at(GridIncrementY, GridIncrementX) += 1;//if ray falls inside a bin, increment count for that bin
-                            RayCount++;  //increment ray intersection counter
-                        }
-                        else
-                        {
-                            NotBinned++;
-                            //	qDebug("Not binned: [%d %d],  x=%lg, y=%lg", GridIncrementX, GridIncrementY, x, y);
+                            if (GridIncrementX >= 0 && GridIncrementX < (int)fluxGrid.ncols()
+                                && GridIncrementY >= 0 && GridIncrementY < (int)fluxGrid.nrows())
+                            {
+                                fluxGrid.at(GridIncrementY, GridIncrementX) += 1;//if ray falls inside a bin, increment count for that bin
+                                RayCount++;  //increment ray intersection counter
+                            }
+                            else
+                            {
+                                NotBinned++;
+                                //	qDebug("Not binned: [%d %d],  x=%lg, y=%lg", GridIncrementX, GridIncrementY, x, y);
+                            }
                         }
                     }
                 }
@@ -897,6 +906,16 @@ public:
         // Peak flux value
         double peak_tol = high_accuracy ? 2.e-2 : 0.25;
         EXPECT_NEAR(PeakFlux / 1.e3, expected_peak_flux, peak_tol * expected_peak_flux);
+
+        double rmse = 0.0;
+        for (size_t r = 0; r < fluxGrid.nrows(); r++) {
+            for (size_t c = 0; c < fluxGrid.ncols(); c++) {
+                double sim_flux = fluxGrid.at(r, c) * zScale / 1.e3;
+                double exp_flux = expected_fluxGrid.at(r, c);
+                rmse += pow(sim_flux - exp_flux, 2);
+            }
+        }
+        rmse = sqrt(rmse / (fluxGrid.nrows() * fluxGrid.ncols()));
 
         // RMS of flux values
         EXPECT_EQ(fluxGrid.nrows(), expected_fluxGrid.nrows());
