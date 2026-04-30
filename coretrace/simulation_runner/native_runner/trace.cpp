@@ -78,7 +78,6 @@
 
 namespace SolTrace::NativeRunner
 {
-
 	using SolTrace::Result::RayEvent;
 	using SolTrace::Runner::RunnerStatus;
 
@@ -96,12 +95,12 @@ namespace SolTrace::NativeRunner
 		bool AsPowerTower)
 	{
 		// Initialize Sun
-		Vector3d PosSunStage;
+		glm::dvec3 PosSunStage;
 		if (!SunToPrimaryStage(logger,
 							   System,
 							   System->StageList[0].get(),
 							   &System->Sun,
-							   PosSunStage.data))
+							   PosSunStage))
 			return RunnerStatus::ERROR;
 
 		// Determine if PT optimizations should be applied
@@ -115,12 +114,11 @@ namespace SolTrace::NativeRunner
 		// Calculate hash tree for reflection to receiver plane(polar coordinates).
 		st_hash_tree sun_hash;
 		st_hash_tree rec_hash;
-		// double reccm_helio[3]; // receiver centroid in heliostat field coordinates
-		Vector3d reccm_helio;
+		glm::dvec3 reccm_helio;
 		if (!PT_override)
 		{
 			SetupPTOptimizations(System, AsPowerTower, sun_hash,
-								 rec_hash, reccm_helio.data);
+								 rec_hash, reccm_helio);
 		}
 
 		// Bundle many args into a struct because the compiler was
@@ -177,10 +175,10 @@ namespace SolTrace::NativeRunner
 		bool IncludeSunShape,
 		bool IncludeErrors,
 		bool AsPowerTower,
-		const Vector3d &PosSunStage,
+		const glm::dvec3 &PosSunStage,
 		st_hash_tree *sun_hash,
 		st_hash_tree *rec_hash,
-		const Vector3d &reccm_helio)
+		const glm::dvec3 &reccm_helio)
 	{
 		// Initialize variables
 		MTRand myrng(seed);
@@ -243,12 +241,12 @@ namespace SolTrace::NativeRunner
 			while (StageHasRays)
 			{
 				// Initialize Global Coordinates
-				double PosRayGlob[3] = {0.0, 0.0, 0.0};
-				double CosRayGlob[3] = {0.0, 0.0, 0.0};
+				glm::dvec3 PosRayGlob = {0.0, 0.0, 0.0};
+            	glm::dvec3 CosRayGlob = {0.0, 0.0, 0.0};
 
 				// Initialize Stage Coordinates
-				double PosRayStage[3] = {0.0, 0.0, 0.0};
-				double CosRayStage[3] = {0.0, 0.0, 0.0};
+				glm::dvec3 PosRayStage = {0.0, 0.0, 0.0};
+            	glm::dvec3 CosRayStage = {0.0, 0.0, 0.0};
 
 				// Initialize PT Optimization variables
 				bool has_elements = true;
@@ -260,12 +258,11 @@ namespace SolTrace::NativeRunner
 				{
 					// TODO: This function seems to ignore the MaxNumberOfRays
 					// argument. Should fix that.
-
 					const uint_fast64_t sample_index = ray_index_offset + sun_ray_count_local + 1;
 
 					// Make ray (if first stage)
-					double PosRaySun[3];
-					GenerateRay(myrng, PosSunStage.data, Stage->Origin,
+					glm::dvec3 PosRaySun;
+					GenerateRay(myrng, PosSunStage, Stage->Origin,
 								Stage->RLocToRef, &System->Sun,
 								sample_index,
 								PosRayGlob, CosRayGlob, PosRaySun,
@@ -292,8 +289,8 @@ namespace SolTrace::NativeRunner
 				{
 					// Get ray from previous stage
 					RayNumber = IncomingRays[StageDataArrayIndex].Num;
-					CopyVec3(PosRayGlob, IncomingRays[StageDataArrayIndex].Pos);
-					CopyVec3(CosRayGlob, IncomingRays[StageDataArrayIndex].Cos);
+					PosRayGlob = IncomingRays[StageDataArrayIndex].Pos;
+					CosRayGlob = IncomingRays[StageDataArrayIndex].Cos;
 					StageDataArrayIndex++;
 				}
 
@@ -305,18 +302,18 @@ namespace SolTrace::NativeRunner
 				// Initialize internal variables for ray intersection tracing
 				bool RayInStage = true;
 				bool in_multi_hit_loop = false;
-				double LastPosRaySurfElement[3] = {0.0, 0.0, 0.0};
-				double LastCosRaySurfElement[3] = {0.0, 0.0, 0.0};
-				double LastPosRaySurfStage[3] = {0.0, 0.0, 0.0};
-				double LastCosRaySurfStage[3] = {0.0, 0.0, 0.0};
-				double LastDFXYZ[3] = {0.0, 0.0, 0.0};
+				glm::dvec3 LastPosRaySurfElement = {0.0, 0.0, 0.0};
+				glm::dvec3 LastCosRaySurfElement = {0.0, 0.0, 0.0};
+				glm::dvec3 LastPosRaySurfStage = {0.0, 0.0, 0.0};
+				glm::dvec3 LastCosRaySurfStage = {0.0, 0.0, 0.0};
+				glm::dvec3 LastDFXYZ = {0.0, 0.0, 0.0};
 				uint_fast64_t LastElementNumber = 0;
 				uint_fast64_t LastRayNumber = 0;
 				int LastHitBackSide = 0;
 				bool StageHit = false;
 				int MultipleHitCount = 0;
-				double PosRayOutElement[3] = {0.0, 0.0, 0.0};
-				double CosRayOutElement[3] = {0.0, 0.0, 0.0};
+				glm::dvec3 PosRayOutElement = {0.0, 0.0, 0.0};
+				glm::dvec3 CosRayOutElement = {0.0, 0.0, 0.0};
 
 				// Start Loop to trace ray until it leaves stage
 				bool RayIsAbsorbed = false;
@@ -328,10 +325,10 @@ namespace SolTrace::NativeRunner
 					if (!PT_override) // if using opt AND first stage
 					{
 						nintelements = GetPTElements(AsPowerTower, Stage, i,
-													 in_multi_hit_loop, PosRayStage,
-													 reccm_helio.data, rec_hash,
-													 sunint_elements,
-													 reflint_elements, has_elements);
+                                                 in_multi_hit_loop, PosRayStage,
+                                                 reccm_helio, rec_hash,
+                                                 sunint_elements,
+                                                 reflint_elements, has_elements);
 					}
 					else
 					{
@@ -385,8 +382,8 @@ namespace SolTrace::NativeRunner
 					if (Stage->Virtual)
 					{
 						// If stage is virtual, there is no interaction
-						CopyVec3(PosRayOutElement, LastPosRaySurfElement);
-						CopyVec3(CosRayOutElement, LastCosRaySurfElement);
+						PosRayOutElement = LastPosRaySurfElement;
+						CosRayOutElement = LastCosRaySurfElement;
 					}
 					else
 					{
@@ -542,10 +539,8 @@ namespace SolTrace::NativeRunner
 					else
 					{
 						// Ray hit an element, so save it for next stage
-						CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Pos,
-								 PosRayGlob);
-						CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Cos,
-								 CosRayGlob);
+						IncomingRays[PreviousStageDataArrayIndex].Pos = PosRayGlob;
+						IncomingRays[PreviousStageDataArrayIndex].Cos = CosRayGlob;
 						IncomingRays[PreviousStageDataArrayIndex].Num = RayNumber;
 
 						// Is Ray the last in the stage?
@@ -570,10 +565,8 @@ namespace SolTrace::NativeRunner
 					if (Stage->TraceThrough || MultipleHitCount > 0)
 					{
 						// Ray is saved for the next stage
-						CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Pos,
-								 PosRayGlob);
-						CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Cos,
-								 CosRayGlob);
+						IncomingRays[PreviousStageDataArrayIndex].Pos = PosRayGlob;
+						IncomingRays[PreviousStageDataArrayIndex].Cos = CosRayGlob;
 						IncomingRays[PreviousStageDataArrayIndex].Num = RayNumber;
 
 						// Check if ray is last in stage

@@ -29,14 +29,18 @@ namespace SolTrace::EmbreeRunner
     using SolTrace::NativeRunner::TStage;
     using SolTrace::NativeRunner::tstage_ptr;
 
-    template <typename T>
-    bool compare_Vec3(T vec1[3], T vec2[3], double tol_diff)
+    bool compare_Vec3(const glm::dvec3 &v1,
+                      const glm::dvec3 &v2,
+                      double rel_tol,
+                      double abs_tol = 1e-5)
     {
-        for (int i = 0; i < 3; i++)
-        {
-            if ((std::abs(vec1[i] / vec2[i] - 1) > tol_diff) &&
-                (std::abs(vec1[i] - vec2[i]) > 1e-5))
-                return false;
+        auto diff = v1 - v2;
+        auto scale = glm::max(glm::abs(v1), glm::abs(v2));
+
+        auto rel_tol_v = glm::max(glm::dvec3(abs_tol), rel_tol * scale);
+
+        if (glm::any(glm::greaterThan(diff, rel_tol_v))) {
+            return false;
         }
         return true;
     }
@@ -74,8 +78,8 @@ namespace SolTrace::EmbreeRunner
         TElement *st_element = (TElement *)args->geometryUserPtr;
 
         // Get bounds
-        float min_coord_global[3];
-        float max_coord_global[3];
+        glm::vec3 min_coord_global;
+        glm::vec3 max_coord_global;
         bool success = get_bounds(st_element,
                                   min_coord_global,
                                   max_coord_global);
@@ -101,38 +105,36 @@ namespace SolTrace::EmbreeRunner
         // Get payload object
         RayIntersectPayload *payload = (RayIntersectPayload *)args->context;
 
-        double PosRayGlob[3], CosRayGlob[3];
-        CopyVec3(PosRayGlob, payload->PosRayGlobIn);
-        CopyVec3(CosRayGlob, payload->CosRayGlobIn);
+        glm::dvec3 PosRayGlob, CosRayGlob;
+        PosRayGlob = payload->PosRayGlobIn;
+        CosRayGlob = payload->CosRayGlobIn;
 
         // Get Element data
         TElement *st_element = (TElement *)args->geometryUserPtr;
-        tstage_ptr st_stage = st_element->parent_stage;
+        tstage_ptr const& st_stage = st_element->parent_stage;
 
         // First, convert ray coordinates to element
         // Global -> stage -> element
         // transform the global incoming ray to local stage coordinates
-        double PosRayStage[3], CosRayStage[3];
+        glm::dvec3 PosRayStage, CosRayStage;
         TransformToLocal(PosRayGlob, CosRayGlob,
                          st_stage->Origin, st_stage->RRefToLoc,
                          PosRayStage, CosRayStage);
 
         //  {Transform ray to element[j] coord system of Stage[i]}
-        double PosRayElement[3], CosRayElement[3];
+        glm::dvec3 PosRayElement, CosRayElement;
         TransformToLocal(PosRayStage, CosRayStage,
                          st_element->Origin, st_element->RRefToLoc,
                          PosRayElement, CosRayElement);
 
         // Increment position by tiny amount to get off the element if 
         // tracing to the same element.
-        PosRayElement[0] = PosRayElement[0] + 1.0e-4 * CosRayElement[0];
-        PosRayElement[1] = PosRayElement[1] + 1.0e-4 * CosRayElement[1];
-        PosRayElement[2] = PosRayElement[2] + 1.0e-4 * CosRayElement[2];
+        PosRayElement += 1.0e-4 * CosRayElement;
 
         // Call DeterminElementIntersectionNew
-        double PosRaySurfElement[3] = {0.0, 0.0, 0.0};
-        double CosRaySurfElement[3] = {0.0, 0.0, 0.0};
-        double DFXYZ[3] = {0.0, 0.0, 0.0};
+        glm::dvec3 PosRaySurfElement = {0.0, 0.0, 0.0};
+        glm::dvec3 CosRaySurfElement = {0.0, 0.0, 0.0};
+        glm::dvec3 DFXYZ = {0.0, 0.0, 0.0};
         double PathLength = 0;
 
         int InterceptFlag = 0;
@@ -161,8 +163,8 @@ namespace SolTrace::EmbreeRunner
                 {
 
                     // Transform ray back to stage coordinate system
-                    double PosRaySurfStage[3] = {0.0, 0.0, 0.0};
-                    double CosRaySurfStage[3] = {0.0, 0.0, 0.0};
+                    glm::dvec3 PosRaySurfStage = {0.0, 0.0, 0.0};
+                    glm::dvec3 CosRaySurfStage = {0.0, 0.0, 0.0};
                     TransformToReference(PosRaySurfElement, CosRaySurfElement,
                                          st_element->Origin, st_element->RLocToRef,
                                          PosRaySurfStage, CosRaySurfStage);
@@ -178,13 +180,13 @@ namespace SolTrace::EmbreeRunner
 
                     // Assign custom outputs
                     payload->LastHitBackSide = HitBackSide;
-                    CopyVec3(payload->LastDFXYZ, DFXYZ);
+                    payload->LastDFXYZ = DFXYZ;
                     // CopyVec3(payload->LastPosRaySurfGlob, PosRaySurfGlob);
                     // CopyVec3(payload->LastCosRaySurfGlob, CosRaySurfGlob);
-                    CopyVec3(payload->LastPosRaySurfStage, PosRaySurfStage);
-                    CopyVec3(payload->LastCosRaySurfStage, CosRaySurfStage);
-                    CopyVec3(payload->LastPosRaySurfElement, PosRaySurfElement);
-                    CopyVec3(payload->LastCosRaySurfElement, CosRaySurfElement);
+                    payload->LastPosRaySurfStage = PosRaySurfStage;
+                    payload->LastCosRaySurfStage = CosRaySurfStage;
+                    payload->LastPosRaySurfElement = PosRaySurfElement;
+                    payload->LastCosRaySurfElement = CosRaySurfElement;
                     payload->element_number = st_element->element_number;
                     payload->LastPathLength = PathLength;
                 }
@@ -240,23 +242,24 @@ namespace SolTrace::EmbreeRunner
         return scene;
     }
 
-    bool validate_intersect(double (&LastPosRaySurfElement1)[3],
-                            double (&LastCosRaySurfElement1)[3],
-                            double (&LastDFXYZ1)[3],
+    bool validate_intersect(glm::dvec3 &LastPosRaySurfElement1,
+                            glm::dvec3 &LastCosRaySurfElement1,
+                            glm::dvec3 &LastDFXYZ1,
                             uint_fast64_t &LastElementNumber1,
                             uint_fast64_t &LastRayNumber1,
-                            double (&LastPosRaySurfStage1)[3],
-                            double (&LastCosRaySurfStage1)[3],
+                            glm::dvec3 &LastPosRaySurfStage1,
+                            glm::dvec3 &LastCosRaySurfStage1,
                             int &ErrorFlag1,
                             int &LastHitBackSide1,
                             bool &StageHit1,
-                            double (&LastPosRaySurfElement2)[3],
-                            double (&LastCosRaySurfElement2)[3],
-                            double (&LastDFXYZ2)[3],
+
+                            glm::dvec3 &LastPosRaySurfElement2,
+                            glm::dvec3 &LastCosRaySurfElement2,
+                            glm::dvec3 &LastDFXYZ2,
                             uint_fast64_t &LastElementNumber2,
                             uint_fast64_t &LastRayNumber2,
-                            double (&LastPosRaySurfStage2)[3],
-                            double (&LastCosRaySurfStage2)[3],
+                            glm::dvec3 &LastPosRaySurfStage2,
+                            glm::dvec3 &LastCosRaySurfStage2,
                             int &ErrorFlag2,
                             int &LastHitBackSide2,
                             bool &StageHit2)

@@ -18,7 +18,6 @@ using SolTrace::Data::Hexagon;
 using SolTrace::Data::InteractionType;
 using SolTrace::Data::IrregularQuadrilateral;
 using SolTrace::Data::IrregularTriangle;
-using SolTrace::Data::Matrix3d;
 using SolTrace::Data::OpticalProperties;
 using SolTrace::Data::Parabola;
 using SolTrace::Data::Rectangle;
@@ -32,7 +31,6 @@ using SolTrace::Data::Sun;
 using SolTrace::Data::SolarPositionCalculator;
 using SolTrace::Data::Surface;
 using SolTrace::Data::SurfaceType;
-using SolTrace::Data::Vector3d;
 using SolTrace::Data::VirtualElement;
 using SolTrace::Data::VirtualPlane;
 
@@ -60,13 +58,6 @@ using SolTrace::Data::make_surface;
 using SolTrace::Data::make_surface_from_type;
 
 // Matrix-Vector Functions
-using SolTrace::Data::dot_product;
-using SolTrace::Data::matrix_copy;
-using SolTrace::Data::matrix_matrix_product;
-using SolTrace::Data::matrix_vector_product;
-using SolTrace::Data::vector_add;
-using SolTrace::Data::vector_copy;
-using SolTrace::Data::vector_norm;
 using SolTrace::Data::AddVec3;
 using SolTrace::Data::CopyVec3;
 using SolTrace::Data::DOT;

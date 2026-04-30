@@ -69,23 +69,15 @@
 namespace SolTrace::NativeRunner
 {
 
-	class GlobalRay_refactored
-	{
-	public:
-		GlobalRay_refactored() // : active(true)
-		{
-			Num = 0;
-			for (int i = 0; i < 3; i++)
-				Pos[i] = Cos[i] = 0.0;
-		}
+    struct GlobalRay_refactored
+    {
+        glm::dvec3 Pos = glm::dvec3{0};
+        glm::dvec3 Cos = glm::dvec3{0};
+        uint_fast64_t Num = 0;
+        // bool active;
+    };
 
-		double Pos[3];
-		double Cos[3];
-		uint_fast64_t Num;
-		// bool active;
-	};
-
-	// #define ACOSM1O180 0.017453292519943295 // acos(-1)/180.0
+    // #define ACOSM1O180 0.017453292519943295 // acos(-1)/180.0
 	// #endif
 
 	// class nanexcept : public std::exception
@@ -169,12 +161,12 @@ namespace SolTrace::NativeRunner
 		// bool Enabled;
 
 		/////////// ORIENTATION PARAMETERS ///////////////
-		double Origin[3];
-		double AimPoint[3];
-		double ZRot;
-		double RRefToLoc[3][3];
-		double RLocToRef[3][3];
-		double PosSunCoords[3]; // calculated -- position in sun plane coordinates - mw
+        glm::dvec3 Origin;
+        glm::dvec3 AimPoint;
+        double ZRot;
+        glm::dmat3 RRefToLoc;
+        glm::dmat3 RLocToRef;
+        glm::dvec3 PosSunCoords; // calculated -- position in sun plane coordinates - mw
 
 		/////////// APERTURE PARAMETERS //////////////
 		double ZAperture; // calculated
@@ -228,12 +220,12 @@ namespace SolTrace::NativeRunner
 		double buie_kappa; // Buie CSR model kappa parameter
 		double buie_gamma; // Buie CSR model gamma parameter
 
-		double Origin[3];
+        glm::dvec3 Origin;
 
-		// calculated
-		double Euler[3];
-		double RRefToLoc[3][3];
-		double RLocToRef[3][3];
+        // calculated
+        glm::dvec3 Euler;
+        glm::dmat3 RRefToLoc;
+        glm::dmat3 RLocToRef;
 
 		double MaxRad;
 		double Xcm;
@@ -252,9 +244,9 @@ namespace SolTrace::NativeRunner
 
 		struct ray_t
 		{
-			double pos[3];
-			double cos[3];
-			int element;
+            glm::dvec3 pos = {0, 0, 0};
+            glm::dvec3 cos = {0, 0, 0};
+            int element;
 			int stage;
 			// unsigned int raynum;
 			SolTrace::Result::ray_id raynum;
@@ -262,21 +254,21 @@ namespace SolTrace::NativeRunner
 		};
 		using ray_t_ptr = std::shared_ptr<ray_t>;
 
-		ray_t_ptr Append(unsigned thread_id,
-						 double pos[3],
-						 double cos[3],
-						 int element,
-						 int stage,
-						 uint_fast64_t raynum,
-						 SolTrace::Result::RayEvent rev);
+        ray_t_ptr Append(unsigned thread_id,
+                         glm::dvec3& pos,
+                         glm::dvec3& cos,
+                         int element,
+                         int stage,
+                         uint_fast64_t raynum,
+                         SolTrace::Result::RayEvent rev);
 
-		bool Query(uint_fast64_t idx,
-				   double pos[3],
-				   double cos[3],
-				   int *element,
-				   int *stage,
-				   uint_fast64_t *raynum,
-				   SolTrace::Result::RayEvent *it) const;
+        bool Query(uint_fast64_t idx,
+                   glm::dvec3& pos,
+                   glm::dvec3& cos,
+                   int* element,
+                   int* stage,
+                   uint_fast64_t* raynum,
+                   SolTrace::Result::RayEvent* it) const;
 
 		void Clear();
 
@@ -344,18 +336,18 @@ namespace SolTrace::NativeRunner
 		bool Virtual;
 		bool TraceThrough;
 
-		double Origin[3];
-		double AimPoint[3];
-		double ZRot;
+        glm::dvec3 Origin;
+        glm::dvec3 AimPoint;
+        double ZRot;
 
-		// std::vector<TElement*> ElementList;
-		std::vector<telement_ptr> ElementList;
-		// std::map<element_id, telement_ptr> ElementList;
+        // std::vector<TElement*> ElementList;
+        std::vector<telement_ptr> ElementList;
+        // std::map<element_id, telement_ptr> ElementList;
 
-		// calculated
-		double Euler[3];
-		double RRefToLoc[3][3];
-		double RLocToRef[3][3];
+        // calculated
+        glm::dvec3 Euler;
+        glm::dmat3 RRefToLoc;
+        glm::dmat3 RLocToRef;
 
 		// TRayData RayData;
 

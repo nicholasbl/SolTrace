@@ -102,10 +102,12 @@ namespace SolTrace::EmbreeRunner
         System->SunRayCount = 0;
 
         // Initialize Sun
-        Vector3d PosSunStage;
-        bool status = SolTrace::NativeRunner::SunToPrimaryStage(
-            logger, System, System->StageList[0].get(),
-            &System->Sun, PosSunStage.data);
+        glm::dvec3 PosSunStage;
+        bool status = SolTrace::NativeRunner::SunToPrimaryStage(logger,
+                                                                System,
+                                                                System->StageList[0].get(),
+                                                                &System->Sun,
+                                                                PosSunStage);
 
         if (!status)
             return RunnerStatus::ERROR;
@@ -150,7 +152,7 @@ namespace SolTrace::EmbreeRunner
         uint_fast64_t ray_index_offset,
         bool IncludeSunShape,
         bool IncludeErrors,
-        const SolTrace::Data::Vector3d &PosSunStage,
+        const glm::dvec3 &PosSunStage,
         const RTCScene &embree_scene)
     {
         // std::cout << "Thread " << thread_id << " with seed " << seed
@@ -189,7 +191,7 @@ namespace SolTrace::EmbreeRunner
             }
 
             // Get Current Stage
-            tstage_ptr Stage = System->StageList[i];
+            tstage_ptr const& Stage = System->StageList[i];
 
             // Initialize stage variables
             StageDataArrayIndex = 0;
@@ -200,12 +202,13 @@ namespace SolTrace::EmbreeRunner
             while (StageHasRays)
             {
                 // Initialize Global Coordinates
-                double PosRayGlob[3] = {0.0, 0.0, 0.0};
-                double CosRayGlob[3] = {0.0, 0.0, 0.0};
+                glm::dvec3 PosRayGlob(0.0);
+                glm::dvec3 CosRayGlob(0.0);
 
                 // Initialize Stage Coordinates
-                double PosRayStage[3] = {0.0, 0.0, 0.0};
-                double CosRayStage[3] = {0.0, 0.0, 0.0};
+                glm::dvec3 PosRayStage(0.0);
+                glm::dvec3 CosRayStage(0.0);
+
 
                 // Get Ray
                 if (i == 0)
@@ -213,9 +216,9 @@ namespace SolTrace::EmbreeRunner
                     const uint_fast64_t sample_index = ray_index_offset + sun_ray_count_local + 1;
 
                     // Make ray (if first stage)
-                    double PosRaySun[3];
+                    glm::dvec3 PosRaySun;
                     SolTrace::NativeRunner::GenerateRay(
-                        myrng, PosSunStage.data, Stage->Origin,
+                        myrng, PosSunStage, Stage->Origin,
                         Stage->RLocToRef, &System->Sun,
                         sample_index,
                         PosRayGlob, CosRayGlob, PosRaySun,
@@ -227,13 +230,14 @@ namespace SolTrace::EmbreeRunner
                     }
 
                     sun_ray_count_local++;
+                    
                 }
                 else
                 {
                     // Get ray from previous stage
                     RayNumber = IncomingRays[StageDataArrayIndex].Num;
-                    CopyVec3(PosRayGlob, IncomingRays[StageDataArrayIndex].Pos);
-                    CopyVec3(CosRayGlob, IncomingRays[StageDataArrayIndex].Cos);
+                    PosRayGlob = IncomingRays[StageDataArrayIndex].Pos;
+                    CosRayGlob = IncomingRays[StageDataArrayIndex].Cos;
                     StageDataArrayIndex++;
                 }
 
@@ -245,18 +249,21 @@ namespace SolTrace::EmbreeRunner
                 // Initialize internal variables for ray intersection tracing
                 bool RayInStage = true;
                 bool in_multi_hit_loop = false;
-                double LastPosRaySurfElement[3] = {0.0, 0.0, 0.0};
-                double LastCosRaySurfElement[3] = {0.0, 0.0, 0.0};
-                double LastPosRaySurfStage[3] = {0.0, 0.0, 0.0};
-                double LastCosRaySurfStage[3] = {0.0, 0.0, 0.0};
-                double LastDFXYZ[3] = {0.0, 0.0, 0.0};
+
+                glm::dvec3 LastPosRaySurfElement(0.0);
+                glm::dvec3 LastCosRaySurfElement(0.0);
+                glm::dvec3 LastPosRaySurfStage(0.0);
+                glm::dvec3 LastCosRaySurfStage(0.0);
+                glm::dvec3 LastDFXYZ(0.0);
+
                 uint_fast64_t LastElementNumber = 0;
                 uint_fast64_t LastRayNumber = 0;
                 int LastHitBackSide;
                 bool StageHit;
                 int MultipleHitCount = 0;
-                double PosRayOutElement[3] = {0.0, 0.0, 0.0};
-                double CosRayOutElement[3] = {0.0, 0.0, 0.0};
+
+                glm::dvec3 PosRayOutElement(0.0);
+                glm::dvec3 CosRayOutElement(0.0);
 
                 // Start Loop to trace ray until it leaves stage
                 bool RayIsAbsorbed = false;
@@ -305,12 +312,12 @@ namespace SolTrace::EmbreeRunner
                     if (Stage->Virtual)
                     {
                         // If stage is virtual, there is no interaction
-                        CopyVec3(PosRayOutElement, LastPosRaySurfElement);
-                        CopyVec3(CosRayOutElement, LastCosRaySurfElement);
+                        PosRayOutElement = LastPosRaySurfElement;
+                        CosRayOutElement = LastCosRaySurfElement;
                     }
                     else
                     {
-                        telement_ptr optelm =
+                        telement_ptr const& optelm =
                             Stage->ElementList[LastElementNumber - 1];
                         if (LastHitBackSide)
                             optics = &optelm->Optics.Back;
@@ -464,8 +471,8 @@ namespace SolTrace::EmbreeRunner
                     else
                     {
                         // Ray hit an element, so save it for next stage
-                        CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Pos, PosRayGlob);
-                        CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Cos, CosRayGlob);
+                        IncomingRays[PreviousStageDataArrayIndex].Pos = PosRayGlob;
+                        IncomingRays[PreviousStageDataArrayIndex].Cos = CosRayGlob;
                         IncomingRays[PreviousStageDataArrayIndex].Num = RayNumber;
 
                         // Is Ray the last in the stage?
@@ -490,8 +497,8 @@ namespace SolTrace::EmbreeRunner
                     if (Stage->TraceThrough || MultipleHitCount > 0)
                     {
                         // Ray is saved for the next stage
-                        CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Pos, PosRayGlob);
-                        CopyVec3(IncomingRays[PreviousStageDataArrayIndex].Cos, CosRayGlob);
+                        IncomingRays[PreviousStageDataArrayIndex].Pos = PosRayGlob;
+                        IncomingRays[PreviousStageDataArrayIndex].Cos = CosRayGlob;
                         IncomingRays[PreviousStageDataArrayIndex].Num = RayNumber;
 
                         // Check if ray is last in stage
@@ -592,7 +599,7 @@ namespace SolTrace::EmbreeRunner
 
         // Close out any remaining rays as misses
         unsigned idx = System->StageList.size() - 1;
-        tstage_ptr Stage = System->StageList[idx];
+        tstage_ptr const& Stage = System->StageList[idx];
         for (uint_fast64_t k = 0; k < n_rays_active; ++k)
         {
             GlobalRay_refactored ray = IncomingRays[k];
@@ -607,6 +614,9 @@ namespace SolTrace::EmbreeRunner
 
         // System->SunRayCount is atomic so this is thread safe
         System->SunRayCount += sun_ray_count_local;
+
+        if (manager->terminate(thread_id))
+            return RunnerStatus::CANCEL;
 
         return RunnerStatus::SUCCESS;
     }

@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 #include "utilities.hpp"
+#include "vector_utility.hpp"
 
 namespace SolTrace::Data
 {
@@ -27,10 +28,13 @@ namespace SolTrace::Data
           heliostat_area(-1.0),
           tracking_azimuth(-1.0),
           tracking_elevation(-1.0),
+          elevation_axis(0.0),
+          sun_position(0.0),
+          target_pos(0.0),
           target_set(false)
     {
-        this->elevation_axis.set_values(1.0, 0.0, 0.0);
-        this->sun_position.set_values(0.0, 0.0, 1.0);
+        this->elevation_axis = {1.0, 0.0, 0.0};
+        this->sun_position = {0.0, 0.0, 1.0};
         this->optics_mirror.set_ideal_reflection();
         this->optics_back.set_ideal_absorption();
         return;
@@ -61,22 +65,19 @@ namespace SolTrace::Data
 
         double tracking_azimuth = 0.0, tracking_elevation = 0.0;
         double delta_azimuth = 0.0, delta_elevation = 0.0;
-        Vector3d elevation_axis_rotated = { 1.0, 0.0, 0.0 };
-        Vector3d sun_vec;
+        glm::dvec3 elevation_axis_rotated = { 1.0, 0.0, 0.0 };
+        glm::dvec3 sun_vec;
         if (this->canting_method == OFF_AXIS)
         {
             // Determine sun position vector from azimuth and zenith
             sun_position_vector_degrees(sun_vec,
                                         this->offaxis_canting_sun_position_azimuth,
                                         90.0 - this->offaxis_canting_sun_position_zenith);
-            Vector3d target_dir;
-            vector_add(1.0, this->target_pos,               // TODO: is target pos set?
-                      -1.0, this->get_origin_global(),
-                      target_dir);
-            target_dir.make_unit();
-            Vector3d aim_vector;
-            vector_add(1.0, target_dir, 1.0, sun_vec, aim_vector);
-            aim_vector.make_unit();
+            glm::dvec3 target_dir =
+                this->target_pos - this->get_origin_global(); // TODO: is target pos set?
+            normalize_inplace(target_dir);
+            glm::dvec3 aim_vector = glm::normalize(target_dir + sun_vec);
+
 
             // Calculate the tracking azimuth and elevation from the aim vector
             tracking_azimuth = atan2(aim_vector[0], aim_vector[1]);
@@ -86,8 +87,8 @@ namespace SolTrace::Data
             delta_azimuth = tracking_azimuth - PI;
             delta_elevation = tracking_elevation - PI / 2.0;
 
-            Vector3d z_axis = { 0.0, 0.0, 1.0 };
-            Vector3d elevation_axis = { 1.0, 0.0, 0.0 };
+            glm::dvec3 z_axis = { 0.0, 0.0, 1.0 };
+            glm::dvec3 elevation_axis = { 1.0, 0.0, 0.0 };
             rotate_vector_radians(z_axis, elevation_axis, -delta_azimuth, elevation_axis_rotated);
         }
 
@@ -96,8 +97,8 @@ namespace SolTrace::Data
         double panel_y = -0.5 * (this->aperture_size_y - panel_len_y);
 
         single_element_ptr elem;
-        Vector3d origin;
-        Vector3d aim;
+        glm::dvec3 origin;
+        glm::dvec3 aim;
         aperture_ptr ap;
         surface_ptr surf;
         element_id sts;
@@ -111,54 +112,43 @@ namespace SolTrace::Data
 
                 if (this->canting_method == NONE)
                 {
-                    origin.set_values(panel_x, panel_y, 0.0);
-                    aim.set_values(panel_x, panel_y, 1000.0);
+                    origin = {panel_x, panel_y, 0.0};
+                    aim = {panel_x, panel_y, 1000.0};
                 }
                 else if (this->canting_method == ON_AXIS)
                 {
                     c = 0.5 / (this->onaxis_canting_distance);
                     z = 0.5 * c * (panel_x * panel_x + panel_y * panel_y);
-                    origin.set_values(panel_x, panel_y, z);
-                    aim.set_values(0.0, 0.0, 2.0 * this->onaxis_canting_distance);
+                    origin = {panel_x, panel_y, z};
+                    aim = {0.0, 0.0, 2.0 * this->onaxis_canting_distance};
                 }
                 else if (this->canting_method == OFF_AXIS)
                 {
-                    origin.set_values(panel_x, panel_y, 0.0); // Facets center points all fall on the same plane
+                    origin = {panel_x, panel_y, 0.0}; // Facets center points all fall on the same plane
 
                     // Calculate the panel's position within the global coordinates
-                    Vector3d panel_pos = origin;
-                    Vector3d scratch;
-                    Vector3d z_axis = { 0.0, 0.0, 1.0 };
+                    glm::dvec3 panel_pos = origin;
+                    glm::dvec3 scratch;
+                    glm::dvec3 z_axis = { 0.0, 0.0, 1.0 };
                     rotate_vector_radians(z_axis, panel_pos, -delta_azimuth, scratch);
                     rotate_vector_radians(elevation_axis_rotated, scratch, -delta_elevation, panel_pos);
-                    vector_add(1.0, this ->get_origin_global(),
-                               1.0, panel_pos);
+                    panel_pos = this ->get_origin_global() + panel_pos;
 
                     // Determine the vector from the panel centroid to the target
-                    Vector3d target_dir;
-                    vector_add(1.0, this->target_pos,               // TODO: is target pos set?
-                              -1.0, panel_pos,
-                               target_dir);
-                    target_dir.make_unit();
-                    Vector3d panel_norm;
-                    vector_add(1.0, target_dir, 1.0, sun_vec, panel_norm);
-                    panel_norm.make_unit();
+                    glm::dvec3 target_dir = this->target_pos - panel_pos; // TODO: is target pos set?
+
+                    normalize_inplace(target_dir);
+                    glm::dvec3 panel_norm = target_dir + sun_vec;
+                    normalize_inplace(panel_norm);
 
                     // Translate back to stow position
                     rotate_vector_radians(elevation_axis_rotated, panel_norm, delta_elevation, scratch);
                     rotate_vector_radians(z_axis, scratch, delta_azimuth, panel_norm);
 
                     // Scale aim to target and translate to panel position
-                    vector_add(1.0, this->target_pos,
-                              -1.0, panel_pos, 
-                               scratch);
-                    double scale = 2.0 * scratch.norm();
-                    vector_add(scale, panel_norm,
-                        1.0, origin, aim);
-
-                    // TODO: Set aim vector values
-                    //aim.set_values(0.0, 0.0, 1.0);
-                    //throw std::runtime_error("OFF_AXIS is not yet implemented");
+                    scratch = this->target_pos - panel_pos;
+                    double scale = 2.0 * glm::length(scratch);
+                    aim = scale * panel_norm + origin;
                 }
                 else if (this->canting_method == UNSET)
                 {
@@ -244,36 +234,34 @@ namespace SolTrace::Data
         this->tracking_elevation = elevation;
 
         sun_position_vector_degrees(this->sun_position, azimuth, elevation);
-        Vector3d target_dir;
-        vector_add(1.0, this->target_pos,
-                   -1.0, this->get_origin_global(),
-                   target_dir);
+        glm::dvec3 target_dir = this->target_pos +
+                                -1.0 * this->get_origin_global();
 
-        Vector3d aim_vector;
-        this->sun_position.make_unit();
-        target_dir.make_unit();
-        vector_add(1.0, target_dir, 1.0, this->sun_position, aim_vector);
-        aim_vector.make_unit();
+        glm::dvec3 aim_vector;
+        this->sun_position = glm::normalize(this->sun_position);
+
+        target_dir = glm::normalize(target_dir);
+        aim_vector = glm::normalize(target_dir + this->sun_position);
+
         this->convert_global_to_reference(this->aim, aim_vector);
         aim_vector = this->aim;
-        vector_add(1.0, this->get_origin_ref(),
-                   1000.0, this->aim);
+        this->aim = this->get_origin_ref() +
+                   1000.0 *this->aim;
 
         // Project into xy-plane
         double aim_azimuth = atan2(aim_vector[0], aim_vector[1]);
 
         // Elevation axis
-        Vector3d elevation_axis = { 1.0, 0.0, 0.0 };
-        Vector3d rotated_elevation_axis;
+        glm::dvec3 elevation_axis = { 1.0, 0.0, 0.0 };
+        glm::dvec3 rotated_elevation_axis;
         rotate_vector_radians(
             { 0.0, 0.0, 1.0 },
             elevation_axis,
             -aim_azimuth,
             rotated_elevation_axis);
 
-        Vector3d helio_y_axis;
-        cross_product(aim_vector, rotated_elevation_axis, helio_y_axis);
-        helio_y_axis.make_unit();
+        glm::dvec3 helio_y_axis = glm::normalize(
+            glm::cross(aim_vector, rotated_elevation_axis));
 
         double gamma = 0.0;
         if (aim_vector[1] != 1.0 && aim_vector[1] != -1.0)
@@ -465,7 +453,7 @@ namespace SolTrace::Data
         return;
     }
 
-    void Heliostat::set_target_position(const Vector3d &pos)
+    void Heliostat::set_target_position(const glm::dvec3 &pos)
     {
         this->target_pos = pos;
         this->target_set = true;

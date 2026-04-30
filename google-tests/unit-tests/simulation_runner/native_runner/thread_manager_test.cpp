@@ -14,6 +14,10 @@ using SolTrace::NativeRunner::thread_manager_ptr;
 using SolTrace::NativeRunner::ThreadManager;
 using SolTrace::NativeRunner::trace_logger_ptr;
 
+//TODO:
+// - Add thread launch barrier
+// - Change test strat to not be on fixed wall times for CI
+
 // "Runs" nsteps step where each step takes at least tlen milliseconds
 // checking the manager to see if it needs to terminate early after
 // each step
@@ -55,8 +59,8 @@ ThreadManager::ThreadStatus error_task(thread_manager_ptr manager,
 TEST(ThreadManager, CleanExit)
 {
     const unsigned NTHREADS = 2;
-    const uint_fast64_t NSTEPS = 5;
-    const uint_fast64_t T_MS = 100;
+    const uint_fast64_t NSTEPS = 10;
+    const uint_fast64_t T_MS = 250;
 
     auto logger = make_trace_logger();
     auto manager = make_thread_manager(logger);
@@ -87,8 +91,8 @@ TEST(ThreadManager, CleanExit)
 TEST(ThreadManager, ErrorExit)
 {
     const unsigned NTHREADS = 2;
-    const uint_fast64_t NSTEPS = 5;
-    const uint_fast64_t T_MS = 100;
+    const uint_fast64_t NSTEPS = 10;
+    const uint_fast64_t T_MS = 250;
 
     auto logger = make_trace_logger();
     auto manager = make_thread_manager(logger);
@@ -127,8 +131,8 @@ TEST(ThreadManager, ErrorExit)
 TEST(ThreadManager, CancelExit)
 {
     const unsigned NTHREADS = 2;
-    const uint_fast64_t NSTEPS = 5;
-    const uint_fast64_t T_MS = 100;
+    const uint_fast64_t NSTEPS = 10;
+    const uint_fast64_t T_MS = 250;
 
     auto logger = make_trace_logger();
     auto manager = make_thread_manager(logger);

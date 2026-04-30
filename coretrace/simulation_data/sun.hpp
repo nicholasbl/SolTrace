@@ -15,7 +15,8 @@
 
 #include "ray_source.hpp"
 #include "datetime.hpp"
-#include "vector3d.hpp"
+
+#include <glm/vec3.hpp>
 
 namespace SolTrace::Data {
 
@@ -23,9 +24,7 @@ class Sun : public RaySource
 {
 public:
     Sun() : my_shape(SunShape::UNKNOWN),
-            my_position(Vector3d(std::numeric_limits<double>::quiet_NaN(), 
-                std::numeric_limits<double>::quiet_NaN(), 
-                std::numeric_limits<double>::quiet_NaN())),
+            my_position(0.0),
             my_gen_type(GenType::RANDOM)
     { this->my_position.zero(); }
 
@@ -33,22 +32,23 @@ public:
 
     virtual ~Sun() {}
 
-    virtual const Vector3d &get_position() const override
+    virtual const glm::dvec3 &get_position() const
     {
         return this->my_position;
     }
-    virtual Vector3d &get_position() override
+ 
+    virtual glm::dvec3 &get_position()
     {
         return this->my_position;
     }
-    virtual void set_position(const Vector3d &pos) override
+    virtual void set_position(const glm::dvec3 &pos)
     {
         this->my_position = pos;
         return;
     }
     virtual void set_position(double x, double y, double z) override
     {
-        this->my_position.set_values(x, y, z);
+        this->my_position = glm::dvec3(x, y, z);
         return;
     }
     virtual void set_position(const DateTime &, double lat, double long) override {}
@@ -78,7 +78,7 @@ private:
                                        std::vector<double> _user_intensity);
 
     SunShape my_shape;
-    Vector3d my_position;
+    glm::dvec3 my_position;
     GenType my_gen_type;
 };
 

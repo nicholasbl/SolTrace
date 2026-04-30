@@ -12,22 +12,21 @@ namespace SolTrace::NativeRunner
 {
     using SolTrace::Result::RayEvent;
 
-    bool determine_interaction_type(
-        trace_logger_ptr logger,
-        int_fast64_t stage,
-        unsigned thread_id,
-        MTRand &myrng,
-        const OpticalProperties *optics,
-        const double (&LastDFXYZ)[3],
-        const double (&LastCosRaySurfElement)[3],
-        // bool LastHitBackSide,
-        RayEvent &rev)
+    bool determine_interaction_type(trace_logger_ptr logger,
+                                    int_fast64_t stage,
+                                    unsigned thread_id,
+                                    MTRand &myrng,
+                                    const OpticalProperties *optics,
+                                    const glm::dvec3 &LastDFXYZ,
+                                    const glm::dvec3 &LastCosRaySurfElement,
+                                    // bool LastHitBackSide,
+                                    RayEvent &rev)
     {
         bool good = true;
         rev = RayEvent::VIRTUAL;
 
         double TestValue;
-        double UnitLastDFXYZ[3] = {0.0, 0.0, 0.0};
+        auto UnitLastDFXYZ = glm::dvec3{0.0};
         double IncidentAngle = 0;
         // TODO: Implement tables...
         switch (optics->my_type)

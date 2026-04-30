@@ -12,7 +12,7 @@ namespace SolTrace::NativeRunner
         TSystem *System,
         TStage *Stage,
         TSun *Sun,
-        double PosSunStage[3]);
+        glm::dvec3 & PosSunStage);
 
 } // namespace SolTrace::NativeRunner
 

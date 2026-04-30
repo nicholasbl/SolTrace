@@ -57,7 +57,7 @@ jobs:
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: |
         # Capture coverage info; ignore mismatches to prevent geninfo line errors
-        lcov --capture --directory . --output-file coverage.info --ignore-errors unused
+        lcov --capture --directory . --output-file coverage.info --ignore-errors unused,negative --rc geninfo_unexecuted_blocks=1
         # Remove unwanted directories (3rd-party, deps)
         lcov --remove coverage.info '*/_deps/*' '*/nlohmann_json-src/*' '/usr/*' --output-file coverage.info --ignore-errors unused
 

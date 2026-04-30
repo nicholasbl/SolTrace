@@ -18,15 +18,14 @@ double halton(uint_fast64_t index, uint_fast64_t base)
 }
 
 void GenerateRay(
-	MTRand &myrng,
-	const double PosSunStage[3],
-	double Origin[3],
-	double RLocToRef[3][3],
-	TSun *Sun,
-	uint_fast64_t sample_index,
-	double PosRayGlobal[3],
-	double CosRayGlobal[3],
-	double PosRaySun[3],
+    MTRand& myrng,
+    const glm::dvec3& PosSunStage,
+    glm::dvec3& Origin,
+    glm::dmat3& RLocToRef,
+    TSun* Sun,
+    glm::dvec3& PosRayGlobal,
+    glm::dvec3& CosRayGlobal,
+    glm::dvec3& PosRaySun,
 	int& ErrorFlag)
 {
 	/*{This procedure generates a randomly located ray in the x-y plane of the sun coordinate system in
@@ -45,29 +44,25 @@ void GenerateRay(
 		   - CosRayGlobal = Direction cosines of ray in Global coordinate system} */
 
 	double XRaySun = 0.0, YRaySun = 0.0, ZRaySun = 0.0;
-	double CosRaySun[3] = {0.0, 0.0, 0.0};
-	double PosRayStage[3] = {0.0, 0.0, 0.0};
-	double CosRayStage[3] = {0.0, 0.0, 0.0};
+    glm::dvec3 CosRaySun(0.0, 0.0, 0.0);
+    glm::dvec3 PosRayStage(0.0, 0.0, 0.0);
+    glm::dvec3 CosRayStage(0.0, 0.0, 0.0);
 	int NegPosSign = 0;
-	PosRaySun[0] = 0.;
-	PosRaySun[1] = 0.;
-	PosRaySun[2] = 0.;
 	ErrorFlag = 0;
+    PosRaySun = glm::dvec3(0.0);
 
-	// ZRaySun := 0.0;  //Origin of rays in xy plane of sun coord system.
-	ZRaySun = -10000.0; // changed 5/1/00.  rays originate from well bebind the sun coordinate system xy
-						//  plane which has been translated to primary stage origin.         This value has been reduced signficantly because of numerical issues in tracing rays from sun
-						//  to the closer form solution for a cylinder.  It used to 1e6 and has been reduced to 1e4, which should still be sufficient.   10-26-09 Wendelin
+    // ZRaySun := 0.0;  //Origin of rays in xy plane of sun coord system.
+    ZRaySun = -10000.0; // changed 5/1/00.  rays originate from well bebind the sun coordinate system xy
+                        //  plane which has been translated to primary stage origin.         This value has been reduced signficantly because of numerical issues in tracing rays from sun
+                        //  to the closer form solution for a cylinder.  It used to 1e6 and has been reduced to 1e4, which should still be sufficient.   10-26-09 Wendelin
 
-	//{Generate random rays inside of region of interest or from point source}
+    //{Generate random rays inside of region of interest or from point source}
 
-	if (Sun->PointSource) // fixed this on 3-18-13
-	{
-		PosRayGlobal[0] = Sun->Origin[0];
-		PosRayGlobal[1] = Sun->Origin[1];
-		PosRayGlobal[2] = Sun->Origin[2];
+    if (Sun->PointSource) // fixed this on 3-18-13
+    {
+        PosRayGlobal = Sun->Origin;
 
-		if (myrng() <= 0.5)
+        if (myrng() <= 0.5)
 			NegPosSign = -1;
 		else
 			NegPosSign = 1;
@@ -88,13 +83,9 @@ void GenerateRay(
 
 		CosRayGlobal[2] = NegPosSign * myrng(); // random direction for z part of ray vector
 
-		double CosRayGMag = sqrt(CosRayGlobal[0] * CosRayGlobal[0] +
-								 CosRayGlobal[1] * CosRayGlobal[1] +
-								 CosRayGlobal[2] * CosRayGlobal[2]);
+        double CosRayGMag = glm::length(CosRayGlobal);
 
-		CosRayGlobal[0] = CosRayGlobal[0] / CosRayGMag; // obtain unit vector by dividing by magnitude
-		CosRayGlobal[1] = CosRayGlobal[1] / CosRayGMag;
-		CosRayGlobal[2] = CosRayGlobal[2] / CosRayGMag;
+		CosRayGlobal /= CosRayGMag;
 	}
 	else
 	{
@@ -123,12 +114,8 @@ void GenerateRay(
 				// 		  << std::endl;
 
 				//{Offload ray location and direction cosines into sun array}
-				PosRaySun[0] = XRaySun;
-				PosRaySun[1] = YRaySun;
-				PosRaySun[2] = ZRaySun;
-				CosRaySun[0] = 0.0;
-				CosRaySun[1] = 0.0;
-				CosRaySun[2] = 1.0;
+				PosRaySun = {XRaySun, YRaySun, ZRaySun};
+				CosRaySun = {0.0, 0.0, 1.0};
 				break;
 			}
 			case(SolTrace::Data::GenType::HALTON):
@@ -139,12 +126,9 @@ void GenerateRay(
 				XRaySun = Sun->MinXSun + (Sun->MaxXSun - Sun->MinXSun) * u;
 				YRaySun = Sun->MinYSun + (Sun->MaxYSun - Sun->MinYSun) * v;
 
-				PosRaySun[0] = XRaySun;
-				PosRaySun[1] = YRaySun;
-				PosRaySun[2] = ZRaySun;
-				CosRaySun[0] = 0.0;
-				CosRaySun[1] = 0.0;
-				CosRaySun[2] = 1.0;
+				//{Offload ray location and direction cosines into sun array}
+				PosRaySun = {XRaySun, YRaySun, ZRaySun};
+				CosRaySun = {0.0, 0.0, 1.0};
 				break;
 			}
 			default:
@@ -155,14 +139,24 @@ void GenerateRay(
 
 		
 
-		//{Transform ray locations and dir cosines into Stage system}
-		TransformToReference(PosRaySun, CosRaySun, PosSunStage, Sun->RLocToRef, PosRayStage, CosRayStage);
+        //{Transform ray locations and dir cosines into Stage system}
+        Data::TransformToReference(PosRaySun,
+                                   CosRaySun,
+                                   PosSunStage,
+                                   Sun->RLocToRef,
+                                   PosRayStage,
+                                   CosRayStage);
 
-		//{Transform ray locations and dir cosines into global system}
-		TransformToReference(PosRayStage, CosRayStage, Origin, RLocToRef, PosRayGlobal, CosRayGlobal);
-	}
+        //{Transform ray locations and dir cosines into global system}
+        Data::TransformToReference(PosRayStage,
+                                   CosRayStage,
+                                   Origin,
+                                   RLocToRef,
+                                   PosRayGlobal,
+                                   CosRayGlobal);
+    }
 
-	return;
+    return;
 }
 
 } // namespace SolTrace::NativeRunner

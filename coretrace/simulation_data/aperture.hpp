@@ -16,6 +16,8 @@
 #include <cmath>
 #include <memory>
 #include <vector>
+
+#include <glm/vec2.hpp>
 #include <nlohmann/json.hpp>
 
 #include "constants.hpp"
@@ -320,8 +322,6 @@ namespace SolTrace::Data
     {
         double diameter;
 
-        // Circle() : Aperture(CIRCLE), diameter(0.0) {}
-
         /**
          * @brief Constructor for circular aperture
          * @param d Diameter of the circle
@@ -519,15 +519,18 @@ namespace SolTrace::Data
         triangulation() const override;
     };
 
-    struct Rectangle : public Aperture
+    class Rectangle : public Aperture
     {
-        double x_length;
-        double y_length;
+        glm::dvec2 m_length;
         // NOTE: The point (x_coord, y_coord) gives the location of the
         // lower left hand corner of the rectangle in the xy-plane.
-        double x_coord;
-        double y_coord;
+        glm::dvec2 m_coord;
 
+        glm::dvec2 m_cached_range;
+
+        void update_cached() { m_cached_range = m_coord + m_length; }
+
+    public:
         /**
          * @brief Constructor for centered rectangular aperture
          * @param xlen Length in x direction
@@ -551,6 +554,32 @@ namespace SolTrace::Data
         Rectangle(const nlohmann::ordered_json &jnode);
 
         virtual ~Rectangle() {}
+
+        double x_length() const { return m_length.x; }
+        double y_length() const { return m_length.y; }
+        double x_coord() const { return m_coord.x; }
+        double y_coord() const { return m_coord.y; }
+
+        void set_x_length(double x_length)
+        {
+            m_length.x = x_length;
+            update_cached();
+        }
+        void set_y_length(double y_length)
+        {
+            m_length.y = y_length;
+            update_cached();
+        }
+        void set_x_coord(double x_coord)
+        {
+            m_coord.x = x_coord;
+            update_cached();
+        }
+        void set_y_coord(double y_coord)
+        {
+            m_coord.y = y_coord;
+            update_cached();
+        }
 
         /**
          * @brief Calculate rectangular aperture area
