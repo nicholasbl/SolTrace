@@ -132,24 +132,40 @@ configure_file(
 # ---------------------------------------------------------------------------
 # export targets for linking to third-party projects
 # ---------------------------------------------------------------------------
-set(OptixCSP_EXPORT_CONFIG_DIR "${CMAKE_BINARY_DIR}/cmake/")
+#set(OptixCSP_EXPORT_CONFIG_DIR "${CMAKE_BINARY_DIR}/cmake/")
 
 # simdata is a PRIVATE dependency of OptixCSP_core; it must be included in the
 # build-tree export so consumers can resolve it. Export it without a namespace
 # prefix first, then append OptixCSP_core with its own namespace.
-export(TARGETS simdata
-       FILE ${OptixCSP_EXPORT_CONFIG_DIR}/OptixCSPTargets.cmake
-)
-export(TARGETS OptixCSP_core
-       NAMESPACE OptixCSP::
-       APPEND FILE ${OptixCSP_EXPORT_CONFIG_DIR}/OptixCSPTargets.cmake
-)
+#export(TARGETS simdata
+#       FILE ${OptixCSP_EXPORT_CONFIG_DIR}/OptixCSPTargets.cmake
+#)
+#export(TARGETS OptixCSP_core
+#       NAMESPACE OptixCSP::
+#       APPEND FILE ${OptixCSP_EXPORT_CONFIG_DIR}/OptixCSPTargets.cmake
+#)
 
 # Generate Config file
-include(CMakePackageConfigHelpers)
+#include(CMakePackageConfigHelpers)
 
-configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/OptixCSPConfig.cmake.in
-    ${OptixCSP_EXPORT_CONFIG_DIR}/OptixCSPConfig.cmake
-    INSTALL_DESTINATION lib/cmake/OptixCSP
-)
+#configure_package_config_file(
+#    ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/OptixCSPConfig.cmake.in
+#    ${OptixCSP_EXPORT_CONFIG_DIR}/OptixCSPConfig.cmake
+#    INSTALL_DESTINATION lib/cmake/OptixCSP
+#)
+
+# ---------------------------------------------------------------------------
+# standalone package export
+# ---------------------------------------------------------------------------
+#
+# OptixCSP is built as part of the parent SolTrace project. Do not export
+# `simdata` from here:
+#
+# - `simdata` belongs to the parent SolTrace package
+# - `simdata` has PUBLIC dependencies on `nlohmann_json::nlohmann_json`
+#   and `glm::glm`
+# - exporting it here causes CMake generate-time failures because those
+#   dependencies are not part of the OptixCSP export set
+#
+# The parent project already owns installation/export of SolTrace targets,
+# so skip nested OptixCSP package export in this build.
