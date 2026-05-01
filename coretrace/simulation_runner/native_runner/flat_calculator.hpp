@@ -19,7 +19,7 @@ namespace SolTrace::NativeRunner
                               glm::dvec3 &PosXYZ,
                               glm::dvec3 &CosKLM,
                               glm::dvec3 &DFXYZ,
-                              double *PathLength);
+                              double *PathLength) override;
 
         virtual double compute_z_aperture(SolTrace::Data::aperture_ptr ap) override;
 

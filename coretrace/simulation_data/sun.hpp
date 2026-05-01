@@ -32,16 +32,16 @@ public:
 
     virtual ~Sun() {}
 
-    virtual const glm::dvec3 &get_position() const
+    virtual const glm::dvec3 &get_position() const override
     {
         return this->my_position;
     }
  
-    virtual glm::dvec3 &get_position()
+    virtual glm::dvec3 &get_position() override
     {
         return this->my_position;
     }
-    virtual void set_position(const glm::dvec3 &pos)
+    virtual void set_position(const glm::dvec3 &pos) override
     {
         this->my_position = pos;
         return;

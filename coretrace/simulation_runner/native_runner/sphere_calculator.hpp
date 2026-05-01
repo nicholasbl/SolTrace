@@ -20,7 +20,7 @@ namespace SolTrace::NativeRunner
                               glm::dvec3& PosXYZ,
                               glm::dvec3& CosKLM,
                               glm::dvec3& DFXYZ,
-                              double *PathLength);
+                              double *PathLength) override;
 
         void surface_normal(const glm::dvec3 PosXYZ, glm::dvec3& DFXYZ);
 
