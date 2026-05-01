@@ -26,7 +26,7 @@ public:
     Sun() : my_shape(SunShape::UNKNOWN),
             my_position(0.0),
             my_gen_type(GenType::RANDOM)
-    { this->my_position.zero(); }
+    { }
 
     Sun(const nlohmann::ordered_json& jnode);
 

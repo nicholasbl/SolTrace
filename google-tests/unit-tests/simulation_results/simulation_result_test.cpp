@@ -160,8 +160,8 @@ TEST(ElementRecord, OutputOperator)
     ElementRecord erec(ID);
     for (uint_fast32_t ell = 0; ell < NINTER; ++ell)
     {
-        Vector3d loc(1.0 * ell * ell, 2.0 * ell * ell, 3.0 * ell * ell);
-        Vector3d dir(2.0 * ell + 1.0, 4.0 * ell + 2.0, 6.0 * ell + 3.0);
+        glm::dvec3 loc(1.0 * ell * ell, 2.0 * ell * ell, 3.0 * ell * ell);
+        glm::dvec3 dir(2.0 * ell + 1.0, 4.0 * ell + 2.0, 6.0 * ell + 3.0);
         RayEvent it = my_types[ell];
         interaction_ptr ir = make_interaction_record(ell, it, loc, dir);
         erec.add_interaction_record(ir);

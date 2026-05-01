@@ -71,8 +71,8 @@ TEST(OpticalErrors, Disabled)
     ASSERT_EQ(result.get_number_of_records(), NRAYS);
 
     element_id plate_id = plate->get_id();
-    Vector3d nhat(0.0, 0.0, 1.0);
-    Vector3d u;
+    glm::dvec3 nhat(0.0, 0.0, 1.0);
+    glm::dvec3 u;
 
     auto it = result.get_ray_record_iterator();
 
@@ -177,8 +177,8 @@ TEST(OpticalErrors, None)
     ASSERT_EQ(result.get_number_of_records(), NRAYS);
 
     element_id plate_id = plate->get_id();
-    Vector3d nhat(0.0, 0.0, 1.0);
-    Vector3d u;
+    glm::dvec3 nhat(0.0, 0.0, 1.0);
+    glm::dvec3 u;
 
     auto it = result.get_ray_record_iterator();
 
@@ -283,8 +283,8 @@ TEST(OpticalErrors, Gaussian)
     ASSERT_EQ(result_error.get_number_of_records(), NRAYS);
 
     element_id plate_id = plate->get_id();
-    Vector3d nhat(0.0, 0.0, 1.0);
-    Vector3d u;
+    glm::dvec3 nhat(0.0, 0.0, 1.0);
+    glm::dvec3 u;
 
     auto it_error = result_error.get_ray_record_iterator();
 
@@ -388,8 +388,8 @@ TEST(OpticalErrors, PILLBOX)
     ASSERT_EQ(result_error.get_number_of_records(), NRAYS);
 
     element_id plate_id = plate->get_id();
-    Vector3d nhat(0.0, 0.0, 1.0);
-    Vector3d u;
+    glm::dvec3 nhat(0.0, 0.0, 1.0);
+    glm::dvec3 u;
 
     auto it_error = result_error.get_ray_record_iterator();
 

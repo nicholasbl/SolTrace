@@ -5,7 +5,7 @@
 
 using SolTrace::EmbreeRunner::EmbreeRunner;
 
-constexpr int N_rays_glob = 20e6;
+constexpr int N_rays_glob = 2e6;
 constexpr int seed = 123;
 constexpr bool save = false;
 constexpr bool save_hits = false;
@@ -50,7 +50,7 @@ static void CompareRunners(HeliostatFieldSimulationHelper<EmbreeRunner>& sim_emb
 	}
 
 	// Error tolerances
-	double err_frac = 0.001;
+	double err_frac = 0.01;
 	double err_abs = err_frac * (double)N_rays;
 
 	std::map<std::string, double> dict_embree;

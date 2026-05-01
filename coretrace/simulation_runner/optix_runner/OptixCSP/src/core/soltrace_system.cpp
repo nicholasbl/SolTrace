@@ -136,9 +136,9 @@ void SolTraceSystem::initialize()
     m_timer_setup.start();
 
     // set up input related to sun
-    Vector3d sun_vec = m_sun->get_position();
-    Vector3d sun_vec_norm = sun_vec;
-    sun_vec_norm.make_unit();
+    glm::dvec3 sun_vec = m_sun->get_position();
+    glm::dvec3 sun_vec_norm = sun_vec;
+    sun_vec_norm = glm::normalize(sun_vec_norm);
 
     data_manager->launch_params_H.sun_vector = make_float3(static_cast<float>(sun_vec_norm[0]),
                                                            static_cast<float>(sun_vec_norm[1]), static_cast<float>(sun_vec_norm[2]));

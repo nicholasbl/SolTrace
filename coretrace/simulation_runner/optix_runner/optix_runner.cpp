@@ -6,17 +6,6 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace
-{
-    OptixCSP::Matrix33d ToMatrix33d(const SolTrace::Data::Matrix3d& mat)
-    {
-        return OptixCSP::Matrix33d(
-            mat.data[0][0], mat.data[0][1], mat.data[0][2],
-            mat.data[1][0], mat.data[1][1], mat.data[1][2],
-            mat.data[2][0], mat.data[2][1], mat.data[2][2]);
-    }
-}
-
 using SolTrace::Runner::RunnerStatus;
 using SolTrace::Runner::SimulationRunner;
 
@@ -163,7 +152,8 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             if (m_sys.is_verbose())
             {
                 std::cout << "adding elements " << el->get_name() << std::endl;
-                std::cout << "Origin: " << el->get_origin_global() << std::endl;
+                auto origin = el->get_origin_global();
+                std::cout << "Origin: (" << origin.x << ", " << origin.y << ", " << origin.z << ")" << std::endl;
             }
 
             if (el->get_surface() == nullptr)
@@ -218,14 +208,14 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                     throw std::runtime_error("Cylinder surface type must have rectangular aperture.");
                 }
 
-                if (fabs(0.5 * el_aperture->x_length - el_surface->radius) > 1e-6)
+                if (fabs(0.5 * el_aperture->x_length() - el_surface->radius) > 1e-6)
                 {
                     throw std::runtime_error("Rectangle aperture has incorrect dimension for cylinder surface.");
                 }
 
                 auto surface = std::make_shared<OptixCSP::SurfaceCylinder>();
                 // surface->set_half_height(2.); // TODO this needs to come from the aperture
-                surface->set_half_height(0.5 * el_aperture->y_length);
+                surface->set_half_height(0.5 * el_aperture->y_length());
                 surface->set_radius(el_surface->radius);
                 optix_el->set_surface(surface);
 
@@ -248,8 +238,8 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 auto el_aperture = std::dynamic_pointer_cast<Rectangle>(el->get_aperture());
                 assert(el_aperture != nullptr);
                 // TODO: account for x and y coord?
-                auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length, el_aperture->y_length, 
-                    el_aperture->x_coord, el_aperture->y_coord);
+                auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length(), el_aperture->y_length(),
+                    el_aperture->x_coord(), el_aperture->y_coord());
                 optix_el->set_aperture(aperture);
                 break;
             }
@@ -411,8 +401,8 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     {
         // Collect results for record
         raynum = raynumber_vec[ii];
-        Vector3d pos = Vector3d(hp_vec[ii].y, hp_vec[ii].z, hp_vec[ii].w); // x is depth
-        Vector3d cos = Vector3d(0, 0, 0);                                  // TODO: calculate directions
+        glm::dvec3 pos(hp_vec[ii].y, hp_vec[ii].z, hp_vec[ii].w); // x is depth
+        glm::dvec3 cos(0.0);                                  // TODO: calculate directions
         int32_t element_id = element_id_vec[ii];
         uint8_t hit_type = hit_type_vec[ii];
         SolTrace::Result::RayEvent rev = hit_type_to_ray_event(static_cast<OptixCSP::HitType>(hit_type));
@@ -457,6 +447,14 @@ OptixCSP::Vec3d OptixRunner::ToVec3d(glm::dvec3 v)
 {
     OptixCSP::Vec3d vec(v.x, v.y, v.z);
     return vec;
+}
+
+OptixCSP::Matrix33d OptixRunner::ToMatrix33d(const glm::dmat3& mat)
+{
+    return OptixCSP::Matrix33d(
+        mat[0][0], mat[1][0], mat[2][0],
+        mat[0][1], mat[1][1], mat[2][1],
+        mat[0][2], mat[1][2], mat[2][2]);
 }
 
 OptixCSP::OpticalDistribution OptixRunner::to_optical_distribution(SolTrace::Data::DistributionType dt)

@@ -71,8 +71,8 @@ TEST(OpticalErrors, Gaussian)
     ASSERT_EQ(result_error.get_number_of_records(), NRAYS);
 
     element_id plate_id = plate->get_id();
-    Vector3d nhat(0.0, 0.0, 1.0);
-    Vector3d u;
+    glm::dvec3 nhat(0.0, 0.0, 1.0);
+    glm::dvec3 u;
 
     // auto it_ideal = result_ideal.get_ray_record_iterator();
     auto it_error = result_error.get_ray_record_iterator();
@@ -91,14 +91,14 @@ TEST(OpticalErrors, Gaussian)
 
         err->get_direction(1, u);
         // Extend u so that dot_product(nhat, u - nhat) == 0
-        double alpha = 1.0 / dot_product(nhat, u);
-        u.scalar_mult(alpha);
+        double alpha = 1.0 / glm::dot(nhat, u);
+        u = alpha * u;
         // u = u - nhat
-        vector_add(-1.0, nhat, 1.0, u);
+        u = u - nhat;
 
         // u is now the original perturbation vector. Do tests
         // on it.
-        EXPECT_GT(u.norm(), 0.0);
+        EXPECT_GT(glm::length(u), 0.0);
 
         // TODO: Devise some better statistical tests.
 
@@ -174,8 +174,8 @@ TEST(OpticalErrors, Uniform)
     ASSERT_EQ(result_error.get_number_of_records(), NRAYS);
 
     element_id plate_id = plate->get_id();
-    Vector3d nhat(0.0, 0.0, 1.0);
-    Vector3d u;
+    glm::dvec3 nhat(0.0, 0.0, 1.0);
+    glm::dvec3 u;
 
     // auto it_ideal = result_ideal.get_ray_record_iterator();
     auto it_error = result_error.get_ray_record_iterator();
@@ -195,14 +195,14 @@ TEST(OpticalErrors, Uniform)
 
         err->get_direction(1, u);
         // Extend u so that dot_product(nhat, u - nhat) == 0
-        double alpha = 1.0 / dot_product(nhat, u);
-        u.scalar_mult(alpha);
+        double alpha = 1.0 / glm::dot(nhat, u);
+        u = alpha * u;
         // u = u - nhat
-        vector_add(-1.0, nhat, 1.0, u);
+        u = u - nhat;
 
         // u is now the original perturbation vector. Do tests
         // on it.
-        EXPECT_GT(u.norm(), 0.0);
+        EXPECT_GT(glm::length(u), 0.0);
 
         // TODO: Devise some better statistical tests.
 

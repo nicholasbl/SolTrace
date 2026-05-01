@@ -431,11 +431,11 @@ TEST(NativeRunner, ValidationTest2)
     auto surf = std::dynamic_pointer_cast<Cylinder>(absorb->get_surface());
     ASSERT_TRUE(surf != nullptr);
     double r = surf->radius;
-    Vector3d offset(0.0, r, 0.0);
-    Vector3d oref = absorb->get_origin_ref();
-    vector_add(1.0, offset, 1.0, oref);
-    Vector3d aref = absorb->get_aim_vector_ref();
-    vector_add(1.0, offset, 1.0, aref);
+    glm::dvec3 offset(0.0, r, 0.0);
+    glm::dvec3 oref = absorb->get_origin_ref();
+    oref = oref + offset;
+    glm::dvec3 aref = absorb->get_aim_vector_ref();
+    aref = aref + offset;
     absorb->set_reference_frame_geometry(oref, aref, 0.0);
 
     // Parameters

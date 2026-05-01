@@ -54,7 +54,7 @@ static std::vector<float3> estimate_dirs_from_result(const SimulationResult& res
         if (n_interactions < 2)
             continue;
 
-        Vector3d p0, p1;
+        glm::dvec3 p0, p1;
         rec->get_position(0, p0);
         rec->get_position(1, p1);
 
@@ -188,7 +188,7 @@ static void make_sun_sd(SimulationData& sd,
                         double sigma_mrad,
                         double half_width_mrad,
                         bool include_sun_shape_errors,
-                        const Vector3d& sun_pos,
+                        const glm::dvec3& sun_pos,
                         double csr = 0)
 {
     element_ptr plate;
@@ -258,7 +258,7 @@ TEST(Sun, GaussianSunAngleDistribution)
     const double SIGMA_MRAD = 4.65;
 
     SimulationData sd_gaussian;
-    auto sun_pos = Vector3d(0.0, 0.0, 100.0);
+    auto sun_pos = glm::dvec3(0.0, 0.0, 100.0);
 
     make_sun_sd(sd_gaussian, SolTrace::Data::SunShape::GAUSSIAN,
                 SIGMA_MRAD, 0.0, true, sun_pos);
@@ -329,7 +329,7 @@ TEST(Sun, PillboxSunAngleDistribution)
     const double HALF_WIDTH_MRAD = 4.65;
 
     SimulationData sd_pillbox;
-    auto sun_pos = Vector3d(0.0, 0.0, 100.0);
+    auto sun_pos = glm::dvec3(0.0, 0.0, 100.0);
 
     make_sun_sd(sd_pillbox, SolTrace::Data::SunShape::PILLBOX,
                 0.0, HALF_WIDTH_MRAD, true, sun_pos);
@@ -390,7 +390,7 @@ TEST(Sun, BuieCSRSunAngleDistribution)
     const double MAX_ANGLE_MRAD = 43.6;
 
     SimulationData sd_buie;
-    auto sun_pos = Vector3d(0.0, 0.0, 100.0);
+    auto sun_pos = glm::dvec3(0.0, 0.0, 100.0);
 
     make_sun_sd(sd_buie, SolTrace::Data::SunShape::BUIE_CSR,
                 0.0, 0.0, true, sun_pos, 0.1);

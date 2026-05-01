@@ -34,7 +34,7 @@ Sun::Sun(const nlohmann::ordered_json& jnode)
     }
 
     std::array<double, 3> pos = jnode.at("pos").get<std::array<double, 3>>();
-    Vector3d pos_vec(pos.data());
+    glm::dvec3 pos_vec = from_array(pos);
     this->my_position = pos_vec;
 }
 
@@ -261,7 +261,7 @@ void Sun::write_json(nlohmann::ordered_json& jnode)
     jnode["user_angle"] = this->user_angle;
     jnode["user_intensity"] = this->user_intensity;
     jnode["gen_type"] = SolTrace::Data::GenTypeMap.at(this->my_gen_type);
-    jnode["pos"] = this->my_position.data;
+    jnode["pos"] = to_array(this->my_position);
 }
 
 } // namespace SolTrace::Data

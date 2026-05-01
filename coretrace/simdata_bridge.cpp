@@ -11,6 +11,7 @@
 #include "simdata_io.hpp"
 #include <simulation_result.hpp>
 #include <embree_runner/embree_runner.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 // Private
 
@@ -134,7 +135,7 @@ void get_raydata_from_native_tsys(TSystem* sys_legacy, const SolTrace::NativeRun
     for (uint_fast64_t i = 0; i < nCount; ++i)
     {
         // Native TRayData::ray_t layout (Query API)
-        double pos_glob[3], cos_glob[3];
+        glm::dvec3 pos_glob, cos_glob;
         int element = 0, stageIdx1 = 0;
         uint_fast64_t raynum = 0;
         SolTrace::Result::RayEvent ray_event;
@@ -164,13 +165,13 @@ void get_raydata_from_native_tsys(TSystem* sys_legacy, const SolTrace::NativeRun
             continue; // out-of-range stage index, skip
 
         // Need to convert native runner GLOBAL coords to stage
-        double pos_stage[3], cos_stage[3];
+        glm::dvec3 pos_stage, cos_stage;
         SolTrace::NativeRunner::TStage stage = *sys_native.StageList[stageIdx1 - 1];
         SolTrace::Data::TransformToLocal(pos_glob, cos_glob, stage.Origin, stage.RRefToLoc, pos_stage, cos_stage);
 
         sys_legacy->AllRayData.Append(
-            pos_stage,
-            cos_stage,
+            glm::value_ptr(pos_stage),
+            glm::value_ptr(cos_stage),
             element,        // negative if absorbed already encoded
             stageIdx1,      // 1-based
             raynum);
@@ -270,8 +271,8 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
                     {
                         throw std::invalid_argument("This should not happen!");
                     }
-                    rect->x_length = 2.0 * cyl->radius;
-                    rect->x_coord = -1.0 * cyl->radius;
+                    rect->set_x_length(2.0 * cyl->radius);
+                    rect->set_x_coord(-1.0 * cyl->radius);
                 }
 
                 // Set element position and orientation

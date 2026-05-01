@@ -39,9 +39,9 @@ namespace
         auto mirror = SolTrace::Data::make_element<SingleElement>();
         mirror->set_aperture(SolTrace::Data::make_aperture<Rectangle>(20.0, 20.0));
         mirror->set_surface(SolTrace::Data::make_surface<Flat>());
-        mirror->set_reference_frame_geometry(Vector3d(0.0, 0.0, 0.0),
-                                             Vector3d(0.0, 0.0, 1.0),
-                                             0.0);
+        mirror->set_reference_frame_geometry(glm::dvec3(0.0, 0.0, 0.0),
+            glm::dvec3(0.0, 0.0, 1.0),
+            0.0);
         mirror->get_front_optical_properties()->set_ideal_reflection();
         mirror->get_back_optical_properties()->set_ideal_reflection();
         stage->add_element(mirror);
@@ -98,7 +98,7 @@ TEST(GenerateRay, HaltonCommonSenseSingleThread)
         ASSERT_GT(rr->get_number_of_interactions(), 0);
         EXPECT_EQ(rr->get_event(0), RayEvent::CREATE);
 
-        Vector3d pos;
+        glm::dvec3 pos;
         rr->get_position(0, pos);
         EXPECT_DOUBLE_EQ(pos[2], 10000.0);
         create_points.emplace(pos[0], pos[1], pos[2]);
@@ -121,12 +121,11 @@ TEST(GenerateRay, HaltonUniqueMultiThread)
     sun.MaxXSun = 10.0;
     sun.MinYSun = -10.0;
     sun.MaxYSun = 10.0;
-    make_identity(sun.RLocToRef);
+    sun.RLocToRef = glm::dmat3(1.0);    // Set identity
 
-    const double PosSunStage[3] = {0.0, 0.0, 0.0};
-    double Origin[3] = {0.0, 0.0, 0.0};
-    double RLocToRef[3][3];
-    make_identity(RLocToRef);
+    const glm::dvec3 PosSunStage = {0.0, 0.0, 0.0};
+    glm::dvec3 Origin = {0.0, 0.0, 0.0};
+    glm::dmat3 RLocToRef(1.0);
 
     struct ThreadResult
     {
@@ -149,9 +148,9 @@ TEST(GenerateRay, HaltonUniqueMultiThread)
             for (uint_fast64_t k = 0; k < local_count; ++k)
             {
                 const uint_fast64_t sample_index = ray_index_offset + k + 1;
-                double PosRayGlobal[3] = {0.0, 0.0, 0.0};
-                double CosRayGlobal[3] = {0.0, 0.0, 0.0};
-                double PosRaySun[3] = {0.0, 0.0, 0.0};
+                glm::dvec3 PosRayGlobal = {0.0, 0.0, 0.0};
+                glm::dvec3 CosRayGlobal = {0.0, 0.0, 0.0};
+                glm::dvec3 PosRaySun = {0.0, 0.0, 0.0};
                 int ErrorFlag = 0;
 
                 GenerateRay(myrng, PosSunStage, Origin, RLocToRef, &sun,

@@ -36,7 +36,7 @@ static void save_hit_pos_to_file(const SimulationResult& result, std::string fil
             SolTrace::Result::RayEvent rev = rr->get_event(j);
             if (j == 1)
             {
-                Vector3d pos;
+                glm::dvec3 pos;
                 rr->get_position(j, pos);
                 outputFile << pos[0] << "," << pos[1] << "," << pos[2];
                 outputFile << std::endl;

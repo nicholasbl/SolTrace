@@ -34,6 +34,7 @@ namespace SolTrace::NativeRunner
                                                        unsigned seed,
                                                        uint_fast64_t NumberOfRays,
                                                        uint_fast64_t MaxNumberOfRays,
+                                                       uint_fast64_t ray_index_offset,
                                                        bool IncludeSunShape,
                                                        bool IncludeErrors,
                                                        bool AsPowerTower,
