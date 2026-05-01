@@ -101,15 +101,20 @@ target_include_directories(simdata
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cst_templates>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/solar_position_calculators>
         $<BUILD_INTERFACE:${nlohmann_json_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${glm_SOURCE_DIR}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/simulation_data>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/simulation_data/cst_templates>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/simulation_data/solar_position_calculators>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-# Link dependencies
+# Link dependencies as PRIVATE: nlohmann_json and glm are header-only; their
+# include directories are propagated above via target_include_directories, and
+# consumers find them through find_dependency() in SolTraceConfig.cmake.
+# Using PRIVATE avoids the CMake export error caused by CPM-fetched targets
+# (which are not IMPORTED) appearing in the installed INTERFACE_LINK_LIBRARIES.
 target_link_libraries(simdata
-    PUBLIC
+    PRIVATE
     nlohmann_json::nlohmann_json
     glm::glm
 )
@@ -137,5 +142,10 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
 
 # Install nlohmann_json headers for consumers of simdata
 install(DIRECTORY "${nlohmann_json_SOURCE_DIR}/include/"
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+# Install glm headers for consumers of simdata
+install(DIRECTORY "${glm_SOURCE_DIR}/glm"
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )

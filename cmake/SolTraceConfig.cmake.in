@@ -2,8 +2,11 @@
 
 include(CMakeFindDependencyMacro)
 
-# nlohmann_json is a transitive dependency of simdata
+# nlohmann_json and glm are transitive dependencies of simdata.
+# Their headers are installed alongside SolTrace; these calls make
+# the CMake targets available for consumers who reference them directly.
 find_dependency(nlohmann_json QUIET)
+find_dependency(glm QUIET)
 
 include("${CMAKE_CURRENT_LIST_DIR}/SolTraceTargets.cmake")
 

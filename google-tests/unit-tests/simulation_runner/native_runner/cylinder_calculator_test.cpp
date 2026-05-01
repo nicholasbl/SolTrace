@@ -87,7 +87,7 @@ TEST(CylinderCalculator, Case3)
     CylinderCalculator calc(surface, aperture);
 
     // Ray position and direction
-    glm::dvec3 x0(5.0, -3.0, 1.0);
+    glm::dvec3 x0(5.0, -3.0, 0.0);
     glm::dvec3 m(-1.0, 1.0, 0.0);
 
     // Solution values
@@ -119,7 +119,7 @@ TEST(CylinderCalculator, Case4)
     CylinderCalculator calc(surface, aperture);
 
     // Ray position and direction
-    glm::dvec3 x0(0.0, -1.0, 1.0);
+    glm::dvec3 x0(0.0, -1.0, 0.0);
     glm::dvec3 m(-1.0, 1.0, 0.0);
 
     // Solution values
