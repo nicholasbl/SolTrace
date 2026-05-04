@@ -101,7 +101,6 @@ SolTraceSystem::SolTraceSystem()
         std::cerr << "[" << std::setw(2) << level << "][" << std::setw(12) << tag << "]: " << message << "\n";
     };
     options.logCallbackLevel = m_verbose ? 4 : 0;
-    OPTIX_CHECK(optixDeviceContextCreate(cuCtx, &options, &m_state.context));
     m_state.context = nullptr;
     m_state.stream = nullptr;
     m_state.sbt = {};

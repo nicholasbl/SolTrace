@@ -124,7 +124,12 @@ namespace OptixCSP {
         /// </summary>
         double get_sun_plane_area() const;
 
-        uint_fast64_t get_N_sun_rays() { return m_sunraynumber_vec.back(); }
+        uint_fast64_t get_N_sun_rays() 
+        { 
+            if (m_sunraynumber_vec.empty())
+                return 0;
+            return m_sunraynumber_vec.back(); 
+        }
 
         std::vector<uint_fast64_t> get_sunraynumber_vec() const { return m_sunraynumber_vec; }
         void set_sun_shape_errors(bool flag) { this->m_include_sun_shape_errors = flag; }
