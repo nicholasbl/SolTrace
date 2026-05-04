@@ -69,14 +69,6 @@ namespace OptixCSP {
             m_max_number_of_rays = maxrays;
         }
 
-        /// <summary>
-        /// set normalized sun vector
-        /// </summary>
-        /// <param name="sunVector"></param>
-        //void set_sun_vector(OptixCSP::Vec3d vect);
-
-        //void set_sun_angle(double angle) { m_sun_angle = angle; } // Set the sun angle
-
         void set_sun(SolTrace::Data::Sun* sun) { m_sun = sun; }
 
         void set_seed(uint64_t seed) { m_seed = seed; }  // Set sun seed
@@ -84,23 +76,6 @@ namespace OptixCSP {
         void set_optical_errors(bool include_optical_errors)
         {
             m_optical_errors = include_optical_errors;
-        }
-
-        /// <summary>
-        /// compute number of heliostat CspElements added to the system 
-        /// </summary>
-        /// <returns></returns>
-        size_t get_num_heliostats() const
-        {
-            return m_element_list.size() - 1; // Return the number of heliostats (elements) added
-        }
-
-        /// <summary>
-        /// compute number of receiver elements added to the system
-        /// </summary>
-        /// <returns></returns>
-        int get_num_receivers() const {
-            return 1; // Assuming one receiver for now, can be modified later
         }
 
         /// <summary>
