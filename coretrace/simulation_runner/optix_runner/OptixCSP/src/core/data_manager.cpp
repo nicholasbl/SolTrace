@@ -46,6 +46,16 @@ dataManager::dataManager()
 	launch_params_H.sun_v1 = make_float3(0.0f, 0.0f, 0.0f);
 	launch_params_H.sun_v2 = make_float3(0.0f, 0.0f, 0.0f);
 	launch_params_H.sun_v3 = make_float3(0.0f, 0.0f, 0.0f);
+
+	launch_params_H.optical_errors = false;
+	launch_params_H.material_data_array_front = nullptr;
+	launch_params_H.material_data_array_back = nullptr;
+	launch_params_H.sun_dir_seed = 0ULL;
+
+	launch_params_H.geometry_data_array = nullptr;
+	launch_params_H.handle = OptixTraversableHandle{};
+
+	
 }
 
 dataManager::~dataManager()
@@ -163,21 +173,26 @@ void dataManager::cleanup() {
 		CUDA_CHECK(cudaFree(geometry_data_array_D));
 		geometry_data_array_D = nullptr;
 	}
+	launch_params_H.geometry_data_array = nullptr;
 
 	if (material_data_array_front_D) {
 		CUDA_CHECK(cudaFree(material_data_array_front_D));
 		material_data_array_front_D = nullptr;
 	}
+	launch_params_H.material_data_array_front = nullptr;
 
 	if (material_data_array_back_D) {
 		CUDA_CHECK(cudaFree(material_data_array_back_D));
 		material_data_array_back_D = nullptr;
 	}
+	launch_params_H.material_data_array_back = nullptr;
 
-	if (rng_states_D != nullptr)
-	{
+	if (rng_states_D != nullptr) {
 		CUDA_CHECK(cudaFree(rng_states_D));
 		rng_states_D = nullptr;
 		rng_states_capacity = 0;
 	}
+	launch_params_H.rng_states = nullptr;
+
+	launch_params_H.handle = OptixTraversableHandle{};
 }
