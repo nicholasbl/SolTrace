@@ -408,7 +408,7 @@ int run_optix_runner(SolTrace::Data::SimulationData& sd, TSystem* sys)
     OptixRunner runner;
     SolTrace::Runner::RunnerStatus sts = runner.initialize();
     sts = runner.setup_simulation(&sd);
-    sts = runner.run_simulation_core(false);
+    sts = runner.run_simulation_core();
 
     std::vector<float4> hp_vec;
     std::vector<uint_fast64_t> raynumber_vec;

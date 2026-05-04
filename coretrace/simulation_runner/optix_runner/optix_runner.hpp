@@ -26,7 +26,7 @@ public:
         SolTrace::Result::SimulationResult *result,
         int level_spec) override;
 
-    SolTrace::Runner::RunnerStatus run_simulation_core(bool write_output);
+    SolTrace::Runner::RunnerStatus run_simulation_core();
     SolTrace::Runner::RunnerStatus get_hp_output(std::vector<float4>& hp_vec,
         std::vector<uint_fast64_t>& raynumber_vec, std::vector<int32_t>& element_id_vec);
 

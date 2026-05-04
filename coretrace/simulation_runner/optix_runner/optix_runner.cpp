@@ -330,16 +330,13 @@ RunnerStatus OptixRunner::update_simulation(const SimulationData *data)
 
 RunnerStatus OptixRunner::run_simulation()
 {
-    return run_simulation_core(false);
+    return run_simulation_core();
 }
 
-RunnerStatus OptixRunner::run_simulation_core(bool write_output)
+RunnerStatus OptixRunner::run_simulation_core()
 {
 
     m_sys.run();
-
-    if (write_output)
-        m_sys.write_hp_output("output.txt");
 
     return RunnerStatus::SUCCESS;
 }

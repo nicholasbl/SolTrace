@@ -47,14 +47,9 @@ namespace OptixCSP {
         /// Update launch params
         void update();
 
-        // Write sun point to a file
-        void write_sun_output(const std::string& filename);
-        // write all the hit points to a file
-        void write_hp_output(const std::string& filename);
         // Get all hit points
         void get_hp_output(std::vector<float4>& hp_vec, std::vector<uint_fast64_t>& raynumber_vec, std::vector<int32_t>& element_id_vec,
             std::vector<uint8_t>& hit_type_vec);
-
 
         /// Explicit cleanup
         void clean_up();

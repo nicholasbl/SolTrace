@@ -109,7 +109,6 @@ SolTraceSystem::SolTraceSystem()
 
 SolTraceSystem::~SolTraceSystem()
 {
-    // cleanup();
 }
 
 void SolTraceSystem::initialize()
@@ -327,41 +326,6 @@ void SolTraceSystem::update()
     CUDA_CHECK(cudaMemset(data_manager->launch_params_H.hit_type_buffer, HitType::HIT_UNASSIGNED, hit_type_buffer_size));
 
     data_manager->updateLaunchParams();
-}
-
-void SolTraceSystem::write_hp_output(const std::string &filename)
-{
-    // int output_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * data_manager->launch_params_H.max_depth;
-    // std::vector<float4> hp_output_buffer(output_size);
-    // CUDA_CHECK(cudaMemcpy(hp_output_buffer.data(), data_manager->launch_params_H.hit_point_buffer, output_size * sizeof(float4), cudaMemcpyDeviceToHost));
-
-    int output_size = m_hp_vec.size();
-
-    std::ofstream outFile(filename);
-
-    if (!outFile.is_open())
-    {
-        std::cerr << "Error: Could not open the file " << filename << " for writing." << std::endl;
-        return;
-    }
-
-    // Write header
-    // TODO, if statements to check if one needs to write dir_cos_buffer or not
-    outFile << "number,stage,loc_x,loc_y,loc_z,cosx,cosy,cosz\n";
-
-    for (int i = 0; i < output_size; ++i)
-    {
-        const float4 &hit_record = m_hp_vec[i];
-        const int currentRay = m_raynumber_vec[i];
-
-        // Write to file
-        outFile << currentRay << ","
-                << hit_record.x << "," << hit_record.y << ","
-                << hit_record.z << "," << hit_record.w << "\n";
-    }
-
-    outFile.close();
-    std::cout << "Data successfully written to " << filename << std::endl;
 }
 
 void SolTraceSystem::get_hp_output(std::vector<float4> &hp_vec,
@@ -761,24 +725,6 @@ double SolTraceSystem::get_time_setup()
 {
     return m_timer_setup.get_time_sec();
 }
-
-// void SolTraceSystem::set_sun_vector(Vec3d vect) {
-//     m_sun_vector = vect;
-//     Vec3d sun_v = m_sun_vector.normalized(); // Normalize the sun vector
-//	data_manager->launch_params_H.sun_vector = OptixCSP::toFloat3(sun_v);
-// }
-
-// std::vector<int> SolTraceSystem::get_receiver_indices() {
-
-// 	std::vector<int> receiver_indices;
-//     for (int i = 0; i < m_element_list.size(); i++) {
-//         if (m_element_list[i]->is_receiver()) {
-//             receiver_indices.push_back(i);
-//         }
-// 	}
-
-// 	return receiver_indices;
-// }
 
 double SolTraceSystem::get_sun_plane_area() const
 {
