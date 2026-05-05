@@ -6,6 +6,8 @@ import QtQuick.Effects
 Item {
     id: control
 
+    property alias glassColor: background.glassColor
+
     property var blur_source
 
     property real radius: 10

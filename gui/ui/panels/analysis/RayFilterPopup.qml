@@ -6,7 +6,7 @@ import QtQuick.Layouts
 
 import SolTrace
 
-Popup {
+STPopup {
     id: root
 
     signal modified(list<string> filter)

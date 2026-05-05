@@ -5,6 +5,8 @@ import QtQuick3D.AssetUtils
 
 import QtQuick.Controls
 
+import SolTrace
+
 View3D {
     id: root
 
@@ -42,18 +44,12 @@ View3D {
         }
     }
 
-    Node {
-        id: origin
+    PerspectiveCamera {
+        id: camera
+        z: 5
 
-        eulerRotation: Qt.vector3d(-10, 45, 0)
-
-        PerspectiveCamera {
-            id: camera
-            z: 5
-
-            clipNear: 0.01
-            clipFar: 100
-        }
+        clipNear: 0.1
+        clipFar: 100
     }
 
 
@@ -65,11 +61,10 @@ View3D {
     // TODO we need a proper camera controller with orbit
     // for perspective and ortho
     // AND zoom to control
-    CustomOrbitController {
+    CameraController {
         anchors.fill: parent
-        origin: origin
-        camera: camera
-        automaticClipping: true
+        perspective_camera: camera
+        orthographic_camera: camera
     }
 
     Node {

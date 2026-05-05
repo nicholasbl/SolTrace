@@ -5,7 +5,7 @@ import QtQuick.Layouts
 
 import SolTrace
 
-Popup {
+STPopup {
 
     margins: 10
 

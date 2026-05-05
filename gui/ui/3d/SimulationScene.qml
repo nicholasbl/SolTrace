@@ -74,7 +74,7 @@ Item {
         id: view
         anchors.fill: parent
 
-        camera: App.view.sim.perspective === SimulationViewState.Orthographic ? ortho_camera : camera
+        camera: controller.active_camera
 
         environment: SceneEnvironment {
 
@@ -162,20 +162,15 @@ Item {
             }
         }
 
-        Node {
-            id: origin
-            eulerRotation: Qt.vector3d(-10, 45, 0)
+        PerspectiveCamera {
+            id: main_perspective_camera
+            z: 100
+        }
 
-            PerspectiveCamera {
-                id: perspective_camera
-                z: 100
-            }
-
-            OrthographicCamera {
-                id: ortho_camera
-                z: 500
-                clipNear: 0.01
-            }
+        OrthographicCamera {
+            id: main_ortho_camera
+            z: 500
+            clipNear: 0.01
         }
 
         DirectionalLight {
@@ -387,19 +382,32 @@ Item {
     }
 
     // I hate this stupid thing
-    WasdController {
-        mouseEnabled: App.view.sim.camera === SimulationViewState.WASD
-        keysEnabled: App.view.sim.camera === SimulationViewState.WASD
-        controlledObject: perspective_camera
-    }
+    // WasdController {
+    //     mouseEnabled: App.view.sim.camera === SimulationViewState.WASD
+    //     keysEnabled: App.view.sim.camera === SimulationViewState.WASD
+    //     controlledObject: perspective_camera
+    // }
 
-    CustomOrbitController {
+    // CustomOrbitController {
+    //     anchors.fill: parent
+    //     origin: origin
+    //     mouseEnabled: App.view.sim.camera === SimulationViewState.Orbital
+    //     panEnabled: App.view.sim.camera === SimulationViewState.Orbital
+    //     camera: App.view.sim.perspective === SimulationViewState.Orthographic ? ortho_camera : perspective_camera
+    //     automaticClipping: false
+    // }
+
+    CameraController {
+        id: controller
+
+        perspective_camera: main_perspective_camera
+        orthographic_camera: main_ortho_camera
+
+        use_wasd: App.view.sim.camera === SimulationViewState.WASD
+
+        use_orthographic: App.view.sim.perspective === SimulationViewState.Orthographic
+
         anchors.fill: parent
-        origin: origin
-        mouseEnabled: App.view.sim.camera === SimulationViewState.Orbital
-        panEnabled: App.view.sim.camera === SimulationViewState.Orbital
-        camera: App.view.sim.perspective === SimulationViewState.Orthographic ? ortho_camera : perspective_camera
-        automaticClipping: false
     }
 
     MouseArea {
