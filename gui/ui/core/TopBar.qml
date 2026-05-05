@@ -147,6 +147,15 @@ RowLayout {
                             onClicked: openFileDialog.open()
                         }
                         MenuItem { text: "Save" }
+
+                        background: Rectangle {
+                            implicitWidth: 150
+                                    implicitHeight: 40
+
+                            radius: 14
+
+                            color: Qt.alpha(Material.backgroundColor, .90)
+                        }
                     }
 
                     FileDialog {
@@ -179,14 +188,56 @@ RowLayout {
         Layout.fillHeight: true
         Layout.fillWidth: true
 
-        Label {
-            anchors.centerIn: parent
-            anchors.verticalCenterOffset: 2
-            text: App.file_source.name
-            font.family: "CMU Serif"
-            font.bold: true
-            font.pointSize: 18
+        glassColor: data_mouse_area.containsMouse ?
+                        Qt.rgba(1, 1, 1, 0.25) : Qt.rgba(0, 0, 0, 0.25)
+
+        RowLayout {
+            anchors.fill: parent
+            Label {
+                Layout.fillHeight: true
+                Layout.preferredWidth: 24
+                verticalAlignment: Qt.AlignVCenter
+                horizontalAlignment: Qt.AlignHCenter
+
+                Layout.leftMargin: 20
+
+                text: "\uf07b"
+
+                font.family: "Font Awesome 7 Free"
+                font.pointSize: 16
+            }
+
+            Label {
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                verticalAlignment: Qt.AlignVCenter
+                horizontalAlignment: Qt.AlignHCenter
+                text: App.file_source.name
+                font.family: "CMU Serif"
+                font.bold: true
+                font.pointSize: 18
+            }
+
+            Item {
+                Layout.fillHeight: true
+                Layout.preferredWidth: 24
+                Layout.rightMargin: 20
+            }
         }
+
+        MouseArea {
+            id: data_mouse_area
+            anchors.fill: parent
+
+            hoverEnabled: true
+
+
+        }
+
+        // DataPopup {
+        //     id: data_pop
+        // }
+
     }
 
     RowLayout {
