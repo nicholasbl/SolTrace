@@ -21,25 +21,7 @@ set(CST_TEST_SRC
 	parabolic_trough_test.cpp
 	parabolic_dish_test.cpp
 	heliostat_test.cpp
-	heliostat_field_test_native.cpp
-	single_heliostat_test_native.cpp
 )
-
-# Conditionally include OptiX tests
-if(SOLTRACE_BUILD_OPTIX_SUPPORT)
-	list(APPEND CST_TEST_SRC
-		single_heliostat_test_optix.cpp
-		heliostat_field_test_optix.cpp
-	)
-endif()
-
-# Conditionally include Embree tests
-if(SOLTRACE_BUILD_EMBREE_SUPPORT)
-	list(APPEND CST_TEST_SRC
-		single_heliostat_test_embree.cpp
-		heliostat_field_test_embree.cpp
-	)
-endif()
 
 # Add headers for Visual Studio solution
 set(CST_TEST_HEADERS
@@ -47,7 +29,7 @@ set(CST_TEST_HEADERS
 	single_heliostat_test_template.hpp
 )
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release" OR FULL_FIELD_VALIDATION_TEST)
+if(FULL_FIELD_VALIDATION_TEST)
 	# In release or full-field validation builds, also add backend-specific tests
 	if(SOLTRACE_BUILD_OPTIX_SUPPORT)
 		list(APPEND CST_TEST_SRC
@@ -57,12 +39,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" OR FULL_FIELD_VALIDATION_TEST)
 	endif()
 	if(SOLTRACE_BUILD_EMBREE_SUPPORT)
 		list(APPEND CST_TEST_SRC
-			single_heliostat_test_native.cpp
 			single_heliostat_test_embree.cpp
-			heliostat_field_test_native.cpp
 			heliostat_field_test_embree.cpp
 		)
 	endif()
+	list(APPEND CST_TEST_SRC
+		single_heliostat_test_native.cpp
+		heliostat_field_test_native.cpp
+	)
 endif()
 
 add_executable(CSTUnitTests
