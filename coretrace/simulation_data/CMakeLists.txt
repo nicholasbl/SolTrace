@@ -108,15 +108,17 @@ target_include_directories(simdata
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-# Link dependencies as PRIVATE: nlohmann_json and glm are header-only; their
-# include directories are propagated above via target_include_directories, and
-# consumers find them through find_dependency() in SolTraceConfig.cmake.
-# Using PRIVATE avoids the CMake export error caused by CPM-fetched targets
-# (which are not IMPORTED) appearing in the installed INTERFACE_LINK_LIBRARIES.
+# Link dependencies via BUILD_INTERFACE: nlohmann_json and glm are header-only;
+# their include directories are propagated above via target_include_directories,
+# and consumers find them through find_dependency() in SolTraceConfig.cmake.
+# Wrapping in $<BUILD_INTERFACE:...> excludes these CPM-fetched (non-IMPORTED)
+# targets from the install interface, avoiding the CMake export error:
+#   install(EXPORT "SolTraceTargets") includes target "simdata" which requires
+#   target "nlohmann_json"/"glm" that is not in any export set.
 target_link_libraries(simdata
     PRIVATE
-    nlohmann_json::nlohmann_json
-    glm::glm
+    $<BUILD_INTERFACE:nlohmann_json::nlohmann_json>
+    $<BUILD_INTERFACE:glm::glm>
 )
 
 if (NOT APPLE AND ENABLE_COVERAGE)
