@@ -147,7 +147,7 @@ public:
         receiver->get_back_optical_properties()->set_ideal_reflection();
         receiver->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_height));
         receiver->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(rec_radius));
-        glm::dvec3 offset = {0.0, rec_radius, 0.0}; // Cylinder origin is on the edge
+        glm::dvec3 offset = {0.0, 0.0, 0.0};
         glm::dvec3 rec_origin_offset = rec_origin + offset;
         glm::dvec3 v1 = {0.0, -1.0, 0.0};
         glm::dvec3 aim_point = rec_origin_offset + v1;
@@ -160,7 +160,7 @@ public:
         top_heat_shield->get_back_optical_properties()->set_ideal_reflection();
         top_heat_shield->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_heat_shield_height));
         top_heat_shield->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(rec_radius));
-        offset = { 0.0, rec_radius, (rec_height + rec_heat_shield_height)/2.};    // Cylinder origin is on the edge
+        offset = { 0.0, 0.0, (rec_height + rec_heat_shield_height)/2.};
         rec_origin_offset = rec_origin + offset;
         aim_point = rec_origin_offset + v1;
         top_heat_shield->set_reference_frame_geometry(rec_origin_offset, aim_point, 0.0);
@@ -172,7 +172,7 @@ public:
         bottom_heat_shield->get_back_optical_properties()->set_ideal_reflection();
         bottom_heat_shield->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_heat_shield_height));
         bottom_heat_shield->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(rec_radius));
-        offset = { 0.0, 0, -(rec_height + rec_heat_shield_height) / 2. };    // Cylinder origin is on the edge
+        offset = { 0.0, 0.0, -(rec_height + rec_heat_shield_height) / 2. };
         rec_origin_offset = rec_origin + offset;
         aim_point = rec_origin_offset + v1;
         bottom_heat_shield->set_reference_frame_geometry(rec_origin_offset, aim_point, 0.0);
