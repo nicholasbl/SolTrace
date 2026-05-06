@@ -43,10 +43,12 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" OR FULL_FIELD_VALIDATION_TEST)
 			heliostat_field_test_embree.cpp
 		)
 	endif()
-	list(APPEND CST_TEST_SRC
-		single_heliostat_test_native.cpp
-		heliostat_field_test_native.cpp
-	)
+	if(FULL_FIELD_VALIDATION_TEST)
+		list(APPEND CST_TEST_SRC
+			single_heliostat_test_native.cpp
+			heliostat_field_test_native.cpp
+		)
+	endif()
 endif()
 
 add_executable(CSTUnitTests
