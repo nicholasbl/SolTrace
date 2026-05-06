@@ -29,7 +29,7 @@ set(CST_TEST_HEADERS
 	single_heliostat_test_template.hpp
 )
 
-if(FULL_FIELD_VALIDATION_TEST)
+if(CMAKE_BUILD_TYPE STREQUAL "Release" OR FULL_FIELD_VALIDATION_TEST)
 	# In release or full-field validation builds, also add backend-specific tests
 	if(SOLTRACE_BUILD_OPTIX_SUPPORT)
 		list(APPEND CST_TEST_SRC
