@@ -11,6 +11,8 @@ constexpr bool save = false;
 constexpr bool save_hits = false;
 constexpr bool ignore_direct = true;
 
+static const int N_threads = static_cast<int>(std::max(1u, std::min(std::thread::hardware_concurrency(), 10u)));
+
 static void write_to_dict(std::string key_name, double val_a,
 	double val_b, std::map<std::string, double>& dict_a,
 	std::map<std::string, double>& dict_b)
@@ -191,7 +193,7 @@ TEST(HeliostatFieldOptixEmbree, singleFacet_SlantFocused)
 	// Make embree
 	HeliostatFieldSimulationHelper<EmbreeRunner> sim_embree;
 	sim_embree.runner.disable_stages();
-	sim_embree.runner.set_number_of_threads(10);
+	sim_embree.runner.set_number_of_threads(N_threads);
 	sim_embree.initialize();
 	sim_embree.seed = seed;
 	sim_embree.sun_gen_type = SolTrace::Data::GenType::HALTON;
@@ -225,7 +227,7 @@ TEST(HeliostatFieldOptixEmbree, singleFacet_BandFocused)
 	// Make embree
 	HeliostatFieldSimulationHelper<EmbreeRunner> sim_embree;
 	sim_embree.runner.disable_stages();
-	sim_embree.runner.set_number_of_threads(10);
+	sim_embree.runner.set_number_of_threads(N_threads);
 	sim_embree.initialize();
 	sim_embree.seed = seed;
 	sim_embree.sun_gen_type = SolTrace::Data::GenType::HALTON;
@@ -262,7 +264,7 @@ TEST(HeliostatFieldOptixEmbree, multiFacet_SlantCanted)
 	// Make embree
 	HeliostatFieldSimulationHelper<EmbreeRunner> sim_embree;
 	sim_embree.runner.disable_stages();
-	sim_embree.runner.set_number_of_threads(10);
+	sim_embree.runner.set_number_of_threads(N_threads);
 	sim_embree.initialize();
 	sim_embree.seed = seed;
 	sim_embree.sun_gen_type = SolTrace::Data::GenType::HALTON;
@@ -299,7 +301,7 @@ TEST(HeliostatFieldOptixEmbree, multiFacet_BandCanted)
 	// Make embree
 	HeliostatFieldSimulationHelper<EmbreeRunner> sim_embree;
 	sim_embree.runner.disable_stages();
-	sim_embree.runner.set_number_of_threads(10);
+	sim_embree.runner.set_number_of_threads(N_threads);
 	sim_embree.initialize();
 	sim_embree.seed = seed;
 	sim_embree.sun_gen_type = SolTrace::Data::GenType::HALTON;
@@ -336,7 +338,7 @@ TEST(HeliostatFieldOptixEmbree, multiFacet_SlantFocused_SlantCanted)
 	// Make embree
 	HeliostatFieldSimulationHelper<EmbreeRunner> sim_embree;
 	sim_embree.runner.disable_stages();
-	sim_embree.runner.set_number_of_threads(10);
+	sim_embree.runner.set_number_of_threads(N_threads);
 	sim_embree.initialize();
 	sim_embree.seed = seed;
 	sim_embree.sun_gen_type = SolTrace::Data::GenType::HALTON;
@@ -373,7 +375,7 @@ TEST(HeliostatFieldOptixEmbree, multiFacet_BandFocused_BandCanted)
 	// Make embree
 	HeliostatFieldSimulationHelper<EmbreeRunner> sim_embree;
 	sim_embree.runner.disable_stages();
-	sim_embree.runner.set_number_of_threads(10);
+	sim_embree.runner.set_number_of_threads(N_threads);
 	sim_embree.initialize();
 	sim_embree.seed = seed;
 	sim_embree.sun_gen_type = SolTrace::Data::GenType::HALTON;
@@ -406,29 +408,4 @@ TEST(HeliostatFieldOptixEmbree, multiFacet_BandFocused_BandCanted)
 
 	CompareRunners(sim_embree, sim_optix, N_rays_glob, "8", "3b_2_8_");
 	CompareRunners(sim_embree, sim_optix, N_rays_glob, "12", "3b_2_12_");
-}
-
-TEST(NSTTF, test_case)
-{
-	std::string filename = "C:/Users/tbrown2/Desktop/test_NSTTF.json";
-	SimulationData sd;
-	auto& par = sd.get_simulation_parameters();
-	par.number_of_rays = 100;
-	sd.import_json_file(filename);
-
-	OptixRunner runner_optix;
-	runner_optix.setup_simulation(&sd);
-	runner_optix.run_simulation();
-	SimulationResult result_optix;
-	runner_optix.report_simulation(&result_optix, 0);
-	save_hit_pos_to_file(result_optix, "test_optix.csv");
-
-	EmbreeRunner runner_embree;
-	runner_embree.setup_simulation(&sd);
-	runner_embree.run_simulation();
-	SimulationResult result_embree;
-	runner_embree.report_simulation(&result_embree, 0);
-	save_hit_pos_to_file(result_embree, "test_embree.csv");
-
-	int x = 0;
 }

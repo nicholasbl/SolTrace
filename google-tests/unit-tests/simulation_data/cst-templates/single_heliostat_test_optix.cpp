@@ -11,8 +11,9 @@ constexpr int N_rays_glob = 2e6;
 constexpr int seed = 123;
 constexpr bool save = false;
 constexpr bool save_flux = false;
-constexpr int N_threads = 10;
 constexpr bool ignore_direct = true;
+
+int N_threads = static_cast<int>(std::max(1u, std::min(std::thread::hardware_concurrency(), 10u)));
 
 static void write_to_dict(std::string key_name, double val_native,
     double val_optix, std::map<std::string, double>& dict_native,
@@ -377,30 +378,6 @@ TEST(SingleHeliostatOptixNative, MultiFacetFocused_SlantCanting_Southeast)
     sim_optix.set_onaxis_slant_canting();
 
     CompareRunners(sim_native, sim_optix, N_rays_glob, "_4_SE_");
-}
-
-
-
-
-
-
-TEST(SingleHeliostatOptixNativeTEST, SingleFacetFlat_Southeast_OptixONLY)
-{
-    // Make optix
-    SingleHeliostatSimulationHelper<OptixRunner> sim_optix;
-    sim_optix.initialize();
-    sim_optix.set_heliostat_to_southeast();
-
-    sim_optix.seed = seed;
-    sim_optix.sun_gen_type = SolTrace::Data::GenType::HALTON;
-    sim_optix.setup_simData();
-    sim_optix.update_simulation_geometry(sim_optix.solar_azimuth, sim_optix.solar_elevation);
-    SimulationResult result_optix;
-    sim_optix.simulate(&result_optix, N_rays_glob);
-    sim_optix.calculate_ray_counts(result_optix);
-    sim_optix.calculate_sun_size(result_optix);
-    sim_optix.read_expected_all_results("1a", "N");
-    sim_optix.calculate_receiver_flux_map(result_optix, 30, 30, false);
 }
 
 TEST(SingleHeliostatOptixNative_ErrorTesting, NoErrors)

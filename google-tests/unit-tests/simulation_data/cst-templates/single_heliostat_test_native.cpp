@@ -5,7 +5,7 @@ using NativeRunnerType = SolTrace::NativeRunner::NativeRunner;
 
 using SingleHeliostatSimulationNative = SingleHeliostatSimulation<NativeRunnerType>;
 
-const int N_threads = 10;
+static const int N_threads = static_cast<int>(std::max(1u, std::min(std::thread::hardware_concurrency(), 10u)));
 
 TEST_F(SingleHeliostatSimulationNative, SingleFacetFlat_North)
 {

@@ -6,8 +6,12 @@ using NativeRunnerType = SolTrace::NativeRunner::NativeRunner;
 
 using HeliostatFieldSimulationNative = HeliostatFieldSimulation<NativeRunnerType>;
 
+static const int N_threads = static_cast<int>(std::max(1u, std::min(std::thread::hardware_concurrency(), 10u)));
+
 TEST_F(HeliostatFieldSimulationNative, singleFacet_SlantFocused)
 {
+    this->runner.set_number_of_threads(N_threads);
+
     // Centerline aimpoints
     create_heliostat_field();
     setup_simData();
@@ -22,6 +26,8 @@ TEST_F(HeliostatFieldSimulationNative, singleFacet_SlantFocused)
 
 TEST_F(HeliostatFieldSimulationNative, singleFacet_BandFocused)
 {
+    this->runner.set_number_of_threads(N_threads);
+
     // Centerline aimpoints
     create_heliostat_field();
     assign_focal_lengths_canting_banded();
@@ -37,6 +43,8 @@ TEST_F(HeliostatFieldSimulationNative, singleFacet_BandFocused)
 
 TEST_F(HeliostatFieldSimulationNative, multiFacet_SlantCanted)
 {
+    this->runner.set_number_of_threads(N_threads);
+
     // Centerline aimpoints
     create_heliostat_field();
     assign_canted_slant(true);      // Flat facets
@@ -53,6 +61,8 @@ TEST_F(HeliostatFieldSimulationNative, multiFacet_SlantCanted)
 
 TEST_F(HeliostatFieldSimulationNative, multiFacet_BandCanted)
 {
+    this->runner.set_number_of_threads(N_threads);
+
     // Centerline aimpoints
     create_heliostat_field();
     assign_canted_banded(true);     // Flat facets
@@ -69,6 +79,8 @@ TEST_F(HeliostatFieldSimulationNative, multiFacet_BandCanted)
 
 TEST_F(HeliostatFieldSimulationNative, multiFacet_SlantFocused_SlantCanted)
 {
+    this->runner.set_number_of_threads(N_threads);
+
     // Center aimpoints;
     create_heliostat_field();
     assign_canted_slant(false);     // Slant focused (default)
@@ -85,6 +97,8 @@ TEST_F(HeliostatFieldSimulationNative, multiFacet_SlantFocused_SlantCanted)
 
 TEST_F(HeliostatFieldSimulationNative, multiFacet_BandFocused_BandCanted)
 {
+    this->runner.set_number_of_threads(N_threads);
+
     // Center aimpoints
     create_heliostat_field();
     assign_canted_banded(false);    // Canted by band

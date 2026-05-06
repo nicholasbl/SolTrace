@@ -5,7 +5,7 @@ using EmbreeRunnerType = SolTrace::EmbreeRunner::EmbreeRunner;
 
 using SingleHeliostatSimulationEmbree = SingleHeliostatSimulation<EmbreeRunnerType>;
 
-const int N_threads = 10;
+static const int N_threads = static_cast<int>(std::max(1u, std::min(std::thread::hardware_concurrency(), 10u)));
 
 TEST_F(SingleHeliostatSimulationEmbree, SingleFacetFlat_North)
 {
