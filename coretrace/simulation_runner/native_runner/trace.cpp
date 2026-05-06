@@ -114,7 +114,7 @@ namespace SolTrace::NativeRunner
 		// Calculate hash tree for reflection to receiver plane(polar coordinates).
 		st_hash_tree sun_hash;
 		st_hash_tree rec_hash;
-		glm::dvec3 reccm_helio;
+		glm::dvec3 reccm_helio(0.0,0.0,0.0);
 		if (!PT_override)
 		{
 			SetupPTOptimizations(System, AsPowerTower, sun_hash,
