@@ -11,7 +11,7 @@ Item {
     }
 
     required property PerspectiveCamera perspective_camera
-    required property OrthographicCamera orthographic_camera
+    property OrthographicCamera orthographic_camera
 
     readonly property Camera active_camera : use_orthographic ? orthographic_camera : perspective_camera
 
@@ -224,7 +224,6 @@ Item {
 
         onFinished: {
             console.log("Animation done")
-            internal.is_animating = false
         }
     }
 

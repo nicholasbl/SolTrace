@@ -9,6 +9,10 @@ import SolTrace
 Item {
     id: root
 
+    function align_to_axis(axis, invert) {
+        controller.align_to_axis(axis, invert)
+    }
+
     Menu {
         id: geometryInstanceContextMenu
         property var focused_group: null
@@ -380,22 +384,6 @@ Item {
 
         }
     }
-
-    // I hate this stupid thing
-    // WasdController {
-    //     mouseEnabled: App.view.sim.camera === SimulationViewState.WASD
-    //     keysEnabled: App.view.sim.camera === SimulationViewState.WASD
-    //     controlledObject: perspective_camera
-    // }
-
-    // CustomOrbitController {
-    //     anchors.fill: parent
-    //     origin: origin
-    //     mouseEnabled: App.view.sim.camera === SimulationViewState.Orbital
-    //     panEnabled: App.view.sim.camera === SimulationViewState.Orbital
-    //     camera: App.view.sim.perspective === SimulationViewState.Orthographic ? ortho_camera : perspective_camera
-    //     automaticClipping: false
-    // }
 
     CameraController {
         id: controller

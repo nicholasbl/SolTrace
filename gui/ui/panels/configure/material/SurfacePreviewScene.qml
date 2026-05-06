@@ -64,7 +64,6 @@ View3D {
     CameraController {
         anchors.fill: parent
         perspective_camera: camera
-        orthographic_camera: camera
     }
 
     Node {

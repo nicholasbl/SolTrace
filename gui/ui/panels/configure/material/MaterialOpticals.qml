@@ -32,38 +32,55 @@ STPropertyPanel {
     // =========================================================================
 
     STPropertyLabel {
-        text: "Ideal presets"
+        text: "Preset"
     }
 
-    RowLayout {
+    STButton {
+        text: "Load"
+
         Layout.fillWidth: true
 
-        Button {
-            Layout.fillWidth: true
-            text: "Absorber"
-            onClicked: {
-                if (root.side_editor) {
-                    root.side_editor.set_ideal_absorption()
-                }
-            }
+        onClicked: {
+            preset_popup.open()
         }
 
-        Button {
-            Layout.fillWidth: true
-            text: "Reflector"
-            onClicked: {
-                if (root.side_editor) {
-                    root.side_editor.set_ideal_reflection()
-                }
-            }
-        }
+        STPopup {
+            id: preset_popup
 
-        Button {
-            Layout.fillWidth: true
-            text: "Transmitter"
-            onClicked: {
-                if (root.side_editor) {
-                    root.side_editor.set_ideal_transmission()
+            RowLayout {
+                Layout.fillWidth: true
+
+                STButton {
+                    Layout.fillWidth: true
+                    text: "Absorber"
+                    onClicked: {
+                        if (root.side_editor) {
+                            root.side_editor.set_ideal_absorption()
+                        }
+                        preset_popup.close()
+                    }
+                }
+
+                STButton {
+                    Layout.fillWidth: true
+                    text: "Reflector"
+                    onClicked: {
+                        if (root.side_editor) {
+                            root.side_editor.set_ideal_reflection()
+                        }
+                        preset_popup.close()
+                    }
+                }
+
+                STButton {
+                    Layout.fillWidth: true
+                    text: "Transmitter"
+                    onClicked: {
+                        if (root.side_editor) {
+                            root.side_editor.set_ideal_transmission()
+                        }
+                        preset_popup.close()
+                    }
                 }
             }
         }
@@ -149,7 +166,7 @@ STPropertyPanel {
         value: root.side_editor ? root.side_editor.reflectivity : 0
         onValueModified: {
             if (root.side_editor) {
-                root.side_editor.reflectivity = realValue
+                root.side_editor.reflectivity = value
             }
         }
     }
@@ -169,7 +186,7 @@ STPropertyPanel {
         value: root.side_editor ? root.side_editor.transmitivity : 0
         onValueModified: {
             if (root.side_editor) {
-                root.side_editor.transmitivity = realValue
+                root.side_editor.transmitivity = value
             }
         }
     }
@@ -190,7 +207,7 @@ STPropertyPanel {
         value: root.side_editor ? root.side_editor.refraction_index_front : 1
         onValueModified: {
             if (root.side_editor) {
-                root.side_editor.refraction_index_front = realValue
+                root.side_editor.refraction_index_front = value
             }
         }
     }
@@ -211,7 +228,7 @@ STPropertyPanel {
         value: root.side_editor ? root.side_editor.refraction_index_back : 1
         onValueModified: {
             if (root.side_editor) {
-                root.side_editor.refraction_index_back = realValue
+                root.side_editor.refraction_index_back = value
             }
         }
     }
@@ -233,7 +250,7 @@ STPropertyPanel {
         value: root.side_editor ? root.side_editor.slope_error : 0
         onValueModified: {
             if (root.side_editor) {
-                root.side_editor.slope_error = realValue
+                root.side_editor.slope_error = value
             }
         }
     }
@@ -255,7 +272,7 @@ STPropertyPanel {
         value: root.side_editor ? root.side_editor.specularity_error : 0
         onValueModified: {
             if (root.side_editor) {
-                root.side_editor.specularity_error = realValue
+                root.side_editor.specularity_error = value
             }
         }
     }

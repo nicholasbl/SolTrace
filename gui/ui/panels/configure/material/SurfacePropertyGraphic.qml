@@ -1,9 +1,10 @@
 import QtQuick
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtQuick.Shapes
 
 Item {
     id: root
-    width: 320
-    height: 220
 
     property real reflectance: 0.85   // ρ
     property real transmittance: 0.10 // τ
@@ -12,154 +13,478 @@ Item {
     property real slopeErrorMrad: 8.0
     property real specularityErrorMrad: 3.0
 
-    Canvas {
-        id: canvas
+    property real incidentRayAngle: 33
+
+    property real radius: Math.min(root.height * 0.5, root.width * .4)
+
+    property real band_radius: radius * .5
+
+    Rectangle {
         anchors.fill: parent
+        radius: 10
+        color: Material.backgroundColor
+    }
 
-        onPaint: {
-            const ctx = getContext("2d")
-            ctx.reset()
+    Rectangle {
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
 
-            const w = width
-            const h = height
-            const cx = w * 0.52
-            const cy = h * 0.52
+        anchors.bottom: parent.verticalCenter
 
-            const surfaceHalf = w * 0.34
-            const rayLen = 78
-            const incidentAngleDeg = 35
-            const incidentAngle = incidentAngleDeg * Math.PI / 180
+        color: Qt.alpha(Material.color(Material.Blue), .1)
 
-            const slopeErrDeg = root.slopeErrorMrad * 0.0572958
-            const specErrDeg = root.specularityErrorMrad * 0.0572958
-            const slopeErr = slopeErrDeg * Math.PI / 180
-            const specErr = specErrDeg * Math.PI / 180
+        topLeftRadius: 10
+        topRightRadius: 10
+    }
 
-            function line(x1, y1, x2, y2, color, width, dash) {
-                ctx.save()
-                ctx.beginPath()
-                ctx.strokeStyle = color
-                ctx.lineWidth = width || 1
-                ctx.setLineDash(dash || [])
-                ctx.moveTo(x1, y1)
-                ctx.lineTo(x2, y2)
-                ctx.stroke()
-                ctx.restore()
-            }
+    Rectangle {
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
 
-            function arrow(x1, y1, x2, y2, color, width) {
-                const head = 8
-                const ang = Math.atan2(y2 - y1, x2 - x1)
+        anchors.top: parent.verticalCenter
 
-                line(x1, y1, x2, y2, color, width || 2)
+        color: Qt.alpha(Material.color(Material.Green), .1)
 
-                ctx.save()
-                ctx.beginPath()
-                ctx.fillStyle = color
-                ctx.moveTo(x2, y2)
-                ctx.lineTo(
-                    x2 - head * Math.cos(ang - Math.PI / 6),
-                    y2 - head * Math.sin(ang - Math.PI / 6)
-                )
-                ctx.lineTo(
-                    x2 - head * Math.cos(ang + Math.PI / 6),
-                    y2 - head * Math.sin(ang + Math.PI / 6)
-                )
-                ctx.closePath()
-                ctx.fill()
-                ctx.restore()
-            }
+        bottomLeftRadius: 10
+        bottomRightRadius: 10
+    }
 
-            function text(txt, x, y, color, font, align) {
-                ctx.save()
-                ctx.fillStyle = color || "#d8dee9"
-                ctx.font = font || "12px sans-serif"
-                ctx.textAlign = align || "left"
-                ctx.textBaseline = "middle"
-                ctx.fillText(txt, x, y)
-                ctx.restore()
-            }
+    Rectangle {
+        id: surface_level
+        color: Material.foreground
 
-            function polarLine(x, y, len, ang, color, width, dash) {
-                const x2 = x + len * Math.cos(ang)
-                const y2 = y + len * Math.sin(ang)
-                line(x, y, x2, y2, color, width, dash)
-                return { x: x2, y: y2 }
-            }
+        opacity: .75
 
-            function polarArrow(x, y, len, ang, color, width) {
-                const x2 = x + len * Math.cos(ang)
-                const y2 = y + len * Math.sin(ang)
-                arrow(x, y, x2, y2, color, width)
-                return { x: x2, y: y2 }
-            }
+        anchors.centerIn: parent
+        width: parent.width * .75
+        height: 3
 
-            function arcFan(x, y, r, a0, a1, color, width) {
-                ctx.save()
-                ctx.beginPath()
-                ctx.strokeStyle = color
-                ctx.lineWidth = width || 1
-                ctx.arc(x, y, r, a0, a1, false)
-                ctx.stroke()
-                ctx.restore()
-            }
-
-            // front/back media tint
-            ctx.fillStyle = "rgba(120, 160, 220, 0.08)"
-            ctx.fillRect(0, 0, w, cy)
-            ctx.fillStyle = "rgba(120, 220, 160, 0.08)"
-            ctx.fillRect(0, cy, w, h - cy)
-
-            // surface
-            line(cx - surfaceHalf, cy, cx + surfaceHalf, cy, "#e5e9f0", 3)
-
-            // hit point
-            ctx.beginPath()
-            ctx.fillStyle = "#ffffff"
-            ctx.arc(cx, cy, 3, 0, 2 * Math.PI)
-            ctx.fill()
-
-            // ideal normal
-            polarLine(cx, cy, 62, -Math.PI / 2, "#aaaaaa", 1.5, [5, 4])
-            polarLine(cx, cy, 62,  Math.PI / 2, "#aaaaaa", 1.5, [5, 4])
-            text("ideal normal", cx + 10, cy - 52, "#aaaaaa", "11px sans-serif")
-
-            // slope error normals
-            polarLine(cx, cy, 48, -Math.PI / 2 - slopeErr, "#ffcc66", 1, [2, 3])
-            polarLine(cx, cy, 48, -Math.PI / 2 + slopeErr, "#ffcc66", 1, [2, 3])
-            text("σ_slope", cx - 58, cy - 58, "#ffcc66", "12px sans-serif")
-
-            // incident ray
-            const inStartX = cx - rayLen * Math.cos(incidentAngle)
-            const inStartY = cy - rayLen * Math.sin(incidentAngle)
-            arrow(inStartX, inStartY, cx, cy, "#f6ad55", 2.5)
-            text("incident ray", inStartX - 8, inStartY - 8, "#f6ad55", "12px sans-serif", "left")
-
-            // reflected ray (ideal)
-            const reflectedAngle = -incidentAngle
-            const refl = polarArrow(cx, cy, rayLen, reflectedAngle, "#63b3ed", 2.5)
-            text("ρ", cx + 38, cy - 36, "#63b3ed", "bold 14px sans-serif")
-            text(root.reflectance.toFixed(2), refl.x + 8, refl.y - 2, "#63b3ed", "11px sans-serif")
-
-            // transmitted ray
-            // simplified visual only, not exact Snell calculation
-            const transmitAngle = incidentAngle * 0.72
-            const trans = polarArrow(cx, cy, rayLen, transmitAngle, "#68d391", 2.5)
-            text("τ", cx + 34, cy + 34, "#68d391", "bold 14px sans-serif")
-            text(root.transmittance.toFixed(2), trans.x + 8, trans.y + 2, "#68d391", "11px sans-serif")
-
-            // specularity fan around reflected direction
-            arcFan(cx, cy, 34, reflectedAngle - specErr, reflectedAngle + specErr, "#f687b3", 1.5)
-            polarLine(cx, cy, 40, reflectedAngle - specErr, "#f687b3", 1, [2, 2])
-            polarLine(cx, cy, 40, reflectedAngle + specErr, "#f687b3", 1, [2, 2])
-            text("σ_spec", cx + 8, cy - 18, "#f687b3", "12px sans-serif")
-
-            // labels for indices of refraction
-            text("n front = " + root.nFront.toFixed(2), 18, cy - 26, "#cbd5e0", "12px sans-serif")
-            text("n back = " + root.nBack.toFixed(2), 18, cy + 26, "#cbd5e0", "12px sans-serif")
-
-            // surface label
-            text("surface", cx + surfaceHalf - 12, cy - 10, "#e5e9f0", "11px sans-serif", "right")
+        Label {
+            text: "Surface"
+            anchors.bottom: parent.top
+            anchors.right: parent.right
+            opacity: .5
+            font.pointSize: 10
         }
     }
+
+    component Ray : Rectangle {
+        id: ray
+        antialiasing: true
+
+        property string title
+
+        property real ray_angle: 0.0
+
+        property bool other_side: false
+
+        property bool label_lower: false
+
+        width: root.radius
+        height: 2
+
+        anchors.right: other_side ? undefined : parent.horizontalCenter
+        anchors.left:  other_side ? parent.horizontalCenter : undefined
+        anchors.verticalCenter: parent.verticalCenter
+
+        transform: [
+            Rotation {
+                origin.x: ray.other_side ? 0 : ray.width
+                origin.y: ray.height / 2
+                angle: ray_angle
+            }
+        ]
+
+        Label {
+            text: ray.title
+            anchors.left: parent.other_side ? undefined : parent.left
+            anchors.right: parent.other_side ? parent.right : undefined
+            anchors.bottom: label_lower ? undefined : parent.top
+            //anchors.bottomMargin: 4
+            anchors.top: label_lower ? parent.bottom : undefined
+            anchors.margins: 5
+
+            //anchors.topMargin:
+            font.pointSize: 11
+            color: ray.color
+        }
+
+        Rectangle {
+            id: arrow_1
+            height: parent.height
+            width: 5
+
+            antialiasing: true
+
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+
+            color: ray.color
+
+            transform: [
+                Rotation {
+                    origin.x: arrow_1.width
+                    origin.y: arrow_1.height / 2
+                    angle: 45
+                }
+            ]
+        }
+
+        Rectangle {
+            id: arrow_2
+            height: parent.height
+            width: 5
+
+            antialiasing: true
+
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+
+            color: ray.color
+
+            transform: [
+                Rotation {
+                    origin.x: arrow_2.width
+                    origin.y: arrow_2.height / 2
+                    angle: -45
+                }
+            ]
+        }
+    }
+
+
+    Ray {
+        id: incident_ray
+
+        title: "Incident"
+
+        color: Material.color(Material.Orange)
+
+        ray_angle: root.incidentRayAngle
+    }
+
+    Ray {
+        id: reflect_ray
+
+        title: "ρ"
+
+        other_side: true
+
+        color: Material.color(Material.Blue)
+
+        ray_angle: -root.incidentRayAngle
+    }
+
+    Ray {
+        id: transmit_ray
+
+        title: "τ"
+
+        other_side: true
+
+        label_lower: true
+
+        color: Material.color(Material.Green)
+
+        ray_angle: root.incidentRayAngle
+    }
+
+    // We use two lines per band to avoid weird dash artifacts
+
+    Shape {
+        id: error_shape
+
+        anchors.centerIn: parent
+        width: root.radius * 2
+        height: root.radius * 2
+
+        preferredRendererType: Shape.CurveRenderer
+
+        property vector2d center_pin: Qt.vector2d(width / 2, height / 2)
+
+        // Angle convention:
+        // 0 deg = right, -90 deg = up, +90 deg = down
+        property real normalAngleDeg: -90
+        property real reflectedAngleDeg: -root.incidentRayAngle
+
+        property real slopeHalfAngleDeg: root.slopeErrorMrad * 180 / Math.PI / 1000
+        property real specularHalfAngleDeg: root.specularityErrorMrad * 180 / Math.PI / 1000
+
+        function degToRad(deg) {
+            return deg * Math.PI / 180
+        }
+
+        function point_x(angleDeg) {
+            return Math.cos(degToRad(angleDeg)) * root.band_radius + center_pin.x
+        }
+
+        function point_y(angleDeg) {
+            return Math.sin(degToRad(angleDeg)) * root.band_radius + center_pin.y
+        }
+
+        ShapePath {
+            strokeWidth: 2
+            strokeColor: "grey"
+            strokeStyle: ShapePath.DashLine
+            fillColor: "transparent"
+            dashPattern: [1, 2]
+
+            startX: error_shape.center_pin.x
+            startY: error_shape.center_pin.y
+
+            PathLine {
+                x: Math.cos(error_shape.degToRad(-90)) * root.radius * .75 + error_shape.center_pin.x
+                y: Math.sin(error_shape.degToRad(-90)) * root.radius * .75 + error_shape.center_pin.y
+            }
+        }
+
+        // ----------------------------
+        // Yellow slope-error band around vertical normal
+        // ----------------------------
+
+        ShapePath {
+            id: surface_error_wedge
+
+            strokeWidth: 0
+            strokeColor: "transparent"
+            fillColor: Qt.alpha(Material.color(Material.Yellow), 0.1)
+
+            readonly property real a0: error_shape.normalAngleDeg
+                                       - error_shape.slopeHalfAngleDeg
+            readonly property real a1: error_shape.normalAngleDeg
+                                       + error_shape.slopeHalfAngleDeg
+
+            startX: error_shape.center_pin.x
+            startY: error_shape.center_pin.y
+
+            PathLine {
+                x: error_shape.point_x(surface_error_wedge.a0)
+                y: error_shape.point_y(surface_error_wedge.a0)
+            }
+
+            PathArc {
+                x: error_shape.point_x(surface_error_wedge.a1)
+                y: error_shape.point_y(surface_error_wedge.a1)
+
+                radiusX: root.band_radius
+                radiusY: root.band_radius
+
+                useLargeArc: error_shape.slopeHalfAngleDeg > 90
+            }
+
+            PathLine {
+                x: error_shape.center_pin.x
+                y: error_shape.center_pin.y
+            }
+        }
+
+        ShapePath {
+            strokeWidth: 2
+            strokeColor: Material.color(Material.Yellow)
+            strokeStyle: ShapePath.DashLine
+            fillColor: "transparent"
+            dashPattern: [1, 2]
+
+            startX: error_shape.center_pin.x
+            startY: error_shape.center_pin.y
+
+            PathLine {
+                id: slope_error_left
+                x: error_shape.point_x(
+                       error_shape.normalAngleDeg - error_shape.slopeHalfAngleDeg,
+                       )
+                y: error_shape.point_y(
+                       error_shape.normalAngleDeg - error_shape.slopeHalfAngleDeg,
+                       )
+            }
+        }
+
+        ShapePath {
+            strokeWidth: 2
+            strokeColor: Material.color(Material.Yellow)
+            strokeStyle: ShapePath.DashLine
+            fillColor: "transparent"
+            dashPattern: [1, 2]
+
+            startX: error_shape.center_pin.x
+            startY: error_shape.center_pin.y
+
+            PathLine {
+                x: error_shape.point_x(
+                       error_shape.normalAngleDeg + error_shape.slopeHalfAngleDeg,
+                       )
+                y: error_shape.point_y(
+                       error_shape.normalAngleDeg + error_shape.slopeHalfAngleDeg,
+                       )
+            }
+        }
+
+        // Optional center line for the vertical normal
+        ShapePath {
+            strokeWidth: 1
+            strokeColor: Qt.alpha(Material.color(Material.Yellow), 0.5)
+            strokeStyle: ShapePath.DashLine
+            fillColor: "transparent"
+            dashPattern: [1, 3]
+
+            startX: error_shape.center_pin.x
+            startY: error_shape.center_pin.y
+
+            PathLine {
+                x: error_shape.point_x(error_shape.normalAngleDeg)
+                y: error_shape.point_y(error_shape.normalAngleDeg)
+            }
+        }
+
+
+
+        // ----------------------------
+        // Pink specular-error band around reflected ray
+        // ----------------------------
+
+        ShapePath {
+            id: specular_error_wedge
+
+            strokeWidth: 0
+            strokeColor: "transparent"
+            fillColor: Qt.alpha(Material.color(Material.Pink), 0.1)
+
+            readonly property real a0: error_shape.reflectedAngleDeg
+                                       - error_shape.specularHalfAngleDeg
+            readonly property real a1: error_shape.reflectedAngleDeg
+                                       + error_shape.specularHalfAngleDeg
+
+            startX: error_shape.center_pin.x
+            startY: error_shape.center_pin.y
+
+            PathLine {
+                x: error_shape.point_x(specular_error_wedge.a0)
+                y: error_shape.point_y(specular_error_wedge.a0)
+            }
+
+            PathArc {
+                x: error_shape.point_x(specular_error_wedge.a1)
+                y: error_shape.point_y(specular_error_wedge.a1)
+
+                radiusX: root.band_radius
+                radiusY: root.band_radius
+
+                useLargeArc: error_shape.specularHalfAngleDeg > 90
+            }
+
+            PathLine {
+                x: error_shape.center_pin.x
+                y: error_shape.center_pin.y
+            }
+        }
+
+        ShapePath {
+            strokeWidth: 2
+            strokeColor: Material.color(Material.Pink)
+            strokeStyle: ShapePath.DashLine
+            fillColor: "transparent"
+            dashPattern: [1, 2]
+
+            startX: error_shape.center_pin.x
+            startY: error_shape.center_pin.y
+
+            PathLine {
+                x: error_shape.point_x(
+                       error_shape.reflectedAngleDeg - error_shape.specularHalfAngleDeg,
+                       )
+                y: error_shape.point_y(
+                       error_shape.reflectedAngleDeg - error_shape.specularHalfAngleDeg,
+                       )
+            }
+        }
+
+        ShapePath {
+            strokeWidth: 2
+            strokeColor: Material.color(Material.Pink)
+            strokeStyle: ShapePath.DashLine
+            fillColor: "transparent"
+            dashPattern: [1, 2]
+
+            startX: error_shape.center_pin.x
+            startY: error_shape.center_pin.y
+
+            PathLine {
+                id: spec_error_left
+
+                x: error_shape.point_x(
+                       error_shape.reflectedAngleDeg + error_shape.specularHalfAngleDeg,
+                       )
+                y: error_shape.point_y(
+                       error_shape.reflectedAngleDeg + error_shape.specularHalfAngleDeg,
+                       )
+            }
+        }
+    }
+
+    property vector2d slope_error_placement: mapFromItem(error_shape,
+                                             Qt.vector2d(slope_error_left.x, slope_error_left.y))
+
+    Label {
+        color: Material.color(Material.Yellow)
+        text : "σ<sub>slope</sub>"
+        textFormat: Label.RichText
+
+        x: parent.slope_error_placement.x - width
+        y: parent.slope_error_placement.y - 20
+    }
+
+    property vector2d spec_error_placement: mapFromItem(error_shape,
+                                             Qt.vector2d(spec_error_left.x, spec_error_left.y))
+
+    Label {
+        color: Material.color(Material.Pink)
+        text : "σ<sub>spec</sub>"
+        textFormat: Label.RichText
+
+        x: parent.spec_error_placement.x
+        y: parent.spec_error_placement.y
+    }
+
+    Label {
+        color: Material.color(Material.Grey)
+        text: "<em>n</em> Front = " + root.nFront
+        textFormat: Label.RichText
+
+        x: parent.width * .05
+        anchors.bottom: parent.verticalCenter
+        anchors.bottomMargin: 3
+    }
+
+    Label {
+        color: Material.color(Material.Grey)
+        text: "<em>n</em> Back = " + root.nBack
+        textFormat: Label.RichText
+
+        x: parent.width * .05
+        anchors.top: parent.verticalCenter
+        anchors.topMargin: 3
+    }
+
+    Label {
+        color: Material.color(Material.Green)
+        text: root.transmittance
+        textFormat: Label.RichText
+
+        anchors.right: parent.right
+        anchors.rightMargin: 10
+        y: parent.height * .75 - height / 2
+    }
+
+    Label {
+        color: Material.color(Material.Blue)
+        text: root.reflectance
+        textFormat: Label.RichText
+
+        anchors.right: parent.right
+        anchors.rightMargin: 10
+        y: parent.height * .25 - height / 2
+    }
+
 }
