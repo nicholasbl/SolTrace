@@ -24,7 +24,7 @@ namespace SolTrace::NativeRunner
                               glm::dvec3 &PosXYZ,
                               glm::dvec3 &CosKLM,
                               glm::dvec3 &DFXYZ,
-                              double *PathLength);
+                              double *PathLength) override;
 
         // For x = PosXYZ[0], y = PosXYZ[1], make a guess at
         // value of z and place in PosXYZ[2].

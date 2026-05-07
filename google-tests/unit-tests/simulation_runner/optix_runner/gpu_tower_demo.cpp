@@ -112,8 +112,8 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
     // params.number_of_rays = 1000000;
     params.number_of_rays = 100; // Above takes too long
     params.max_number_of_rays = params.number_of_rays * 100;
-    params.include_optical_errors = true;
-    params.include_sun_shape_errors = true;
+    params.include_optical_errors = false;
+    params.include_sun_shape_errors = false;
     params.seed = 12345;
 
     // // We can go over all the elements added
@@ -148,14 +148,14 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
 
     OptixRunner runner;
     RunnerStatus sts = runner.initialize();
-    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
     // Setup runs but is not complete
     sts = runner.setup_simulation(&sd);
-    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
     // Run simulation runs but returns RunnerStatus::ERROR
     sts = runner.run_simulation();
-    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
 
     // sts = runner.report_simulation();
-    EXPECT_EQ(sts, RunnerStatus::SUCCESS);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
 }

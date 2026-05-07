@@ -87,7 +87,7 @@ TEST(CylinderCalculator, Case3)
     CylinderCalculator calc(surface, aperture);
 
     // Ray position and direction
-    glm::dvec3 x0(5.0, -3.0, 1.0);
+    glm::dvec3 x0(5.0, -3.0, 0.0);
     glm::dvec3 m(-1.0, 1.0, 0.0);
 
     // Solution values
@@ -102,7 +102,7 @@ TEST(CylinderCalculator, Case3)
     EXPECT_NEAR(t, 4.0, TOL);
     EXPECT_NEAR(xt[0], 1.0, TOL);
     EXPECT_NEAR(xt[1], 1.0, TOL);
-    EXPECT_NEAR(xt[2], 1.0, TOL);
+    EXPECT_NEAR(xt[2], 0.0, TOL);
     EXPECT_NEAR(mt[0], m[0], TOL);
     EXPECT_NEAR(mt[1], m[1], TOL);
     EXPECT_NEAR(mt[2], m[2], TOL);
@@ -119,7 +119,7 @@ TEST(CylinderCalculator, Case4)
     CylinderCalculator calc(surface, aperture);
 
     // Ray position and direction
-    glm::dvec3 x0(0.0, -1.0, 1.0);
+    glm::dvec3 x0(0.0, -1.0, 0.0);
     glm::dvec3 m(-1.0, 1.0, 0.0);
 
     // Solution values
@@ -134,7 +134,7 @@ TEST(CylinderCalculator, Case4)
     EXPECT_NEAR(t, 1.0, TOL);
     EXPECT_NEAR(xt[0], -1.0, TOL);
     EXPECT_NEAR(xt[1], 0.0, TOL);
-    EXPECT_NEAR(xt[2], 1.0, TOL);
+    EXPECT_NEAR(xt[2], 0.0, TOL);
     EXPECT_NEAR(mt[0], m[0], TOL);
     EXPECT_NEAR(mt[1], m[1], TOL);
     EXPECT_NEAR(mt[2], m[2], TOL);

@@ -13,6 +13,7 @@ endif()
 add_subdirectory(simulation_data)
 add_subdirectory(simulation_results)
 add_subdirectory(simulation_runner)
+add_subdirectory(simdriver)
 
 #####################################################################################################################
 #
@@ -22,7 +23,14 @@ add_subdirectory(simulation_runner)
 
 Project(coretrace)
 
-include_directories(.)
+include_directories(.
+	./simulation_data
+	./simulation_results
+	./simulation_runner
+	./simulation_runner/native_runner
+	./simulation_runner/optix_runner
+	./simulation_runner/embree_runner
+)
 
 set(CORETRACE_SRC
 	interpolate.cpp
@@ -49,7 +57,10 @@ set(CORETRACE_SRC
 	torusclosedform.cpp
 	treemesh.cpp
 	types.cpp
-	vshot.cpp)
+	vshot.cpp
+
+	simdata_bridge.cpp
+)
 
 # Add header files for IDE visibility
 set(CORETRACE_HEADERS
@@ -106,7 +117,6 @@ else(MSVC)
 	endif()
 endif(MSVC)
 
-
 #####################################################################################################################
 #
 # CMake Targets
@@ -120,6 +130,15 @@ if(SOLTRACE_BUILD_CORETRACE)
 		DEBUG_POSTFIX "d"
 		PREFIX ""
 		)
+	target_include_directories(coretrace_api
+		PUBLIC
+			$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+			$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/coretrace>
+		PRIVATE
+			${embree_INCLUDE_DIRS}
+	)
+	target_link_libraries(coretrace_api PRIVATE simdata native_runner optix_runner simresult embree_runner ${embree_LIBRARIES})
+
 	if(MSVC)
 		target_compile_definitions(coretrace_api PRIVATE STCORE_API_EXPORTS _STCOREDLL_)
 	endif()
@@ -136,6 +155,14 @@ if(SOLTRACE_BUILD_CORETRACE)
 		DEBUG_POSTFIX "d"
 		PREFIX ""
 		)
+	target_include_directories(coretrace
+		PUBLIC
+			$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+			$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/coretrace>
+		PRIVATE
+			${embree_INCLUDE_DIRS}
+	)
+	target_link_libraries(coretrace PRIVATE simdata native_runner optix_runner simresult embree_runner ${embree_LIBRARIES})
 
 #####################################################################################################################
 #
@@ -148,6 +175,18 @@ if(SOLTRACE_BUILD_CORETRACE)
 	endif()
 
 	add_subdirectory(strace)
+
+	install(TARGETS coretrace coretrace_api
+		EXPORT SolTraceTargets
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+		INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+	)
+
+	install(FILES ${CORETRACE_HEADERS}
+		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/coretrace
+	)
 
 endif()
 
