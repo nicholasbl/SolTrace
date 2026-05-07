@@ -9,7 +9,7 @@ Popup {
     background: Rectangle {
         radius: 14
 
-        color: Qt.alpha(Material.backgroundColor, .90)
+        color: Qt.alpha(Material.backgroundColor, .80)
     }
 
     margins: 1

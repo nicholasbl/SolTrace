@@ -45,7 +45,7 @@ ComboBox {
 
             ScrollIndicator.vertical: ScrollIndicator { }
 
-            delegate: ItemDelegate {
+            delegate: STItemDelegate {
                 id: delegate
                 width: ListView.view.width
 
@@ -53,23 +53,6 @@ ComboBox {
                 required property int index
 
                 text: root.textAt(index)
-
-                //onClicked: console.log("clicked delegate", index, text)
-
-                background: Rectangle {
-                    implicitHeight: 24
-                    implicitWidth: 100
-                    opacity: enabled ? 1 : 0.3
-                    color: parent.down
-                           ? Material.rippleColor : "transparent"
-                }
-
-                contentItem: Label {
-                    text: delegate.text
-                    font: delegate.font
-                    color: delegate.enabled ? delegate.Material.foreground : delegate.Material.hintTextColor
-                }
-
             }
         }
 

@@ -11,6 +11,9 @@ Button {
 
     property string text_icon
 
+    property color down_color: Material.rippleColor
+    property color idle_color: App.theme.glassColor
+
     contentItem: RowLayout {
         opacity: enabled ? 1.0 : 0.3
 
@@ -76,11 +79,12 @@ Button {
             anchors.fill: parent
             radius: height / 2
             color: control.down ?
-                       Material.rippleColor
+                       control.down_color
                      :
-                       App.theme.glassColor
+                       control.idle_color
 
-            border.color:  Material.dividerColor
+
+            border.color: Material.dividerColor
 
             border.width: 1
         }

@@ -60,17 +60,9 @@ AdaptiveEditor {
         }
     }
 
-    listDelegate: ItemDelegate {
+    listDelegate: STItemDelegate {
         text: itemModel ? itemModel.name : "Unnamed"
         highlighted: isCurrent
-        width: parent ? parent.width : implicitWidth
-
-        background: Rectangle {
-            implicitHeight: 24
-            implicitWidth: 100
-            opacity: enabled ? 1 : 0.3
-            color: parent.down ? Material.rippleColor : "transparent"
-        }
     }
 
     detailView: ColumnLayout {

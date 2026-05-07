@@ -435,10 +435,15 @@ protected:
         this->m_records[i] = item;
 
         auto col_count = this->columnCount();
+        QVector<int> roles { Qt::DisplayRole, Qt::EditRole };
+
+        for (int role = 0; role < col_count; role++) {
+            roles.push_back(Qt::UserRole + role);
+        }
 
         Q_EMIT this->dataChanged(this->index(i, 0),
-                                 this->index(i, col_count),
-                                 { Qt::DisplayRole, Qt::EditRole });
+                                 this->index(i, col_count - 1),
+                                 roles);
     }
     void store_reset(QVector<Record> new_records = {}) {
         this->beginResetModel();

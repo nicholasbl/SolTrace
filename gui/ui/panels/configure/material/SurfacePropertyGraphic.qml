@@ -1,7 +1,10 @@
 import QtQuick
+import QtQuick.Layouts
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Shapes
+
+import SolTrace
 
 Item {
     id: root
@@ -14,6 +17,8 @@ Item {
     property real specularityErrorMrad: 3.0
 
     property real incidentRayAngle: 33
+
+    property bool exaggerateAngle: true
 
     property real radius: Math.min(root.height * 0.5, root.width * .4)
 
@@ -209,8 +214,8 @@ Item {
         property real normalAngleDeg: -90
         property real reflectedAngleDeg: -root.incidentRayAngle
 
-        property real slopeHalfAngleDeg: root.slopeErrorMrad * 180 / Math.PI / 1000
-        property real specularHalfAngleDeg: root.specularityErrorMrad * 180 / Math.PI / 1000
+        property real slopeHalfAngleDeg: root.slopeErrorMrad * 180 / Math.PI / 1000 * (root.exaggerateAngle ? 10 : 1)
+        property real specularHalfAngleDeg: root.specularityErrorMrad * 180 / Math.PI / 1000 * (root.exaggerateAngle ? 10 : 1)
 
         function degToRad(deg) {
             return deg * Math.PI / 180
@@ -487,4 +492,31 @@ Item {
         y: parent.height * .25 - height / 2
     }
 
+    STIconButton {
+        text: "\uf013"
+
+        onClicked: graphic_pop.open()
+
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+
+        anchors.margins: 3
+
+        STPopup {
+            id: graphic_pop
+
+            ColumnLayout {
+                anchors.fill: parent
+                CheckBoxField {
+                    id: ex_angles
+                    text: "Exaggerate angles"
+                    value: root.exaggerateAngle
+
+                    onClicked: {
+                        root.exaggerateAngle = !root.exaggerateAngle
+                    }
+                }
+            }
+        }
+    }
 }

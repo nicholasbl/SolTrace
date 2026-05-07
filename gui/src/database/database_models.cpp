@@ -214,12 +214,17 @@ void MaterialGroupsModel::group_changed(entt::entity e) {
 
     auto iter = m_reverse.find(e);
 
-    if (iter == m_reverse.end()) { return recompute(); }
+    if (iter == m_reverse.end()) {
+        if (!m_host->as_registry().all_of<MaterialGroupComponent>(e)) return;
+
+        return recompute();
+    }
 
     this->store_push_update(iter->second,
                             EntityNamePair::record_for_entity(*m_host, e));
 }
 void MaterialGroupsModel::group_removed(entt::entity e) {
+    qDebug() << Q_FUNC_INFO << db::Entity(e);
     recompute();
 }
 
@@ -227,11 +232,17 @@ MaterialGroupsModel::MaterialGroupsModel(QObject* parent)
     : StructModelAdapter(parent) { }
 
 void MaterialGroupsModel::reset(Database* database) {
+    if (m_host) QObject::disconnect(m_host, nullptr, this, nullptr);
     qDebug() << Q_FUNC_INFO << database;
     m_host = database;
     recompute();
 
     if (!database) { return; }
+
+    connect(database->identity.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &MaterialGroupsModel::group_changed);
 
     connect(database->material_root.self(),
             &ComponentAPIBase::changed,
@@ -242,11 +253,6 @@ void MaterialGroupsModel::reset(Database* database) {
             &ComponentAPIBase::removed,
             this,
             &MaterialGroupsModel::group_removed);
-
-    connect(database->identity.self(),
-            &ComponentAPIBase::changed,
-            this,
-            &MaterialGroupsModel::group_changed);
 }
 
 // =============================================================================
@@ -281,7 +287,11 @@ void GeometryGroupsModel::group_changed(entt::entity e) {
 
     auto iter = m_reverse.find(e);
 
-    if (iter == m_reverse.end()) { return recompute(); }
+    if (iter == m_reverse.end()) {
+        if (!m_host->as_registry().all_of<GeometryGroupComponent>(e)) return;
+
+        return recompute();
+    }
 
     this->store_push_update(iter->second,
                             EntityNamePair::record_for_entity(*m_host, e));
@@ -294,11 +304,17 @@ GeometryGroupsModel::GeometryGroupsModel(QObject* parent)
     : StructModelAdapter(parent) { }
 
 void GeometryGroupsModel::reset(Database* database) {
+    if (m_host) QObject::disconnect(m_host, nullptr, this, nullptr);
     qDebug() << Q_FUNC_INFO << database;
     m_host = database;
     recompute();
 
     if (!database) { return; }
+
+    connect(database->identity.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &GeometryGroupsModel::group_changed);
 
     connect(database->geometry_root.self(),
             &ComponentAPIBase::changed,
@@ -309,11 +325,6 @@ void GeometryGroupsModel::reset(Database* database) {
             &ComponentAPIBase::removed,
             this,
             &GeometryGroupsModel::group_removed);
-
-    connect(database->identity.self(),
-            &ComponentAPIBase::changed,
-            this,
-            &GeometryGroupsModel::group_changed);
 }
 
 // =============================================================================

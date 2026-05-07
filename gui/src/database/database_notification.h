@@ -3,6 +3,7 @@
 #include "components.h"
 
 #include <QObject>
+#include <QTimer>
 
 #include <entt/entity/fwd.hpp>
 
@@ -58,7 +59,10 @@ class ComponentAPI : public ComponentAPIBase {
     }
 
     void remove_callback(entt::registry& reg, entt::entity entity) {
-        emit removed(entity);
+        // We HAVE to do this, because entt's callback is "about to be removed"
+        // not "removed"
+        QTimer::singleShot(
+            0, this, [this, entity]() { emit this->removed(entity); });
     }
 
 public:

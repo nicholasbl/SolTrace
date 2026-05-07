@@ -6,10 +6,11 @@ import QtQuick.Layouts
 
 import SolTrace
 
-AdaptiveEditor {
+AdaptiveFilteredEditor {
     id: root
 
-    model: App.materials.materials_list
+    source_model: App.materials.materials_list
+
     wideThreshold: 500
     listWidth: 250
 
@@ -31,30 +32,32 @@ AdaptiveEditor {
     }
 
     listHeader: RowLayout {
-        STTextField {
+        STSearchField {
+            id: search_field
             Layout.fillWidth: true
-            leftIcon: "\uf002"
-            placeholderText: "Search..."
+
+            Binding {
+                target: root
+                property: "filterText"
+                value: search_field.text
+            }
         }
     }
 
     listFooter: RowLayout {
-        STIconButton {
-            text: "\uf055"
+        CreateNewItemButton {
+            title: "New Material"
+
+            onCreateRequested: function(name) {
+                var new_name = AppData.current_database.sanitize_material_name(name)
+                AppData.current_database.add_material_group(new_name)
+            }
         }
     }
 
-    listDelegate: ItemDelegate {
+    listDelegate: STItemDelegate {
         text: itemModel ? itemModel.name : "No name"
         highlighted: isCurrent
-        width: parent ? parent.width : implicitWidth
-
-        background: Rectangle {
-            implicitHeight: 24
-            implicitWidth: 100
-            opacity: enabled ? 1 : 0.3
-            color: parent.down ? Material.rippleColor : "transparent"
-        }
     }
 
     detailView: ColumnLayout {
@@ -81,8 +84,8 @@ AdaptiveEditor {
             Layout.preferredHeight: 148
 
             property var face: bar.currentIndex == 0
-                ? App.materials.material_edit.front_editor
-                : App.materials.material_edit.back_editor
+                               ? App.materials.material_edit.front_editor
+                               : App.materials.material_edit.back_editor
 
             reflectance: face.reflectivity
             transmittance: face.transmitivity
@@ -124,8 +127,33 @@ AdaptiveEditor {
         }
 
         RowLayout {
-            STIconButton {
-                text: "\uf2ed"
+            DeleteItemButton {
+                id: delete_button
+
+                title: "Delete Material"
+                itemType: "material"
+                replacementModel: root.source_model
+
+                toDelete: AppData.materials.current_material
+
+                onBeforeOpened: {
+                    isDangerous = AppData.current_database.material_use_count(
+                                delete_button.toDelete
+                                )
+                }
+
+                onDeleteRequested: {
+                    AppData.current_database.delete_material_group(
+                                delete_button.toDelete
+                                )
+                }
+
+                onDeleteReassignRequested: (entity) => {
+                    AppData.current_database.delete_material_group(
+                                delete_button.toDelete,
+                                entity
+                                )
+                }
             }
         }
     }

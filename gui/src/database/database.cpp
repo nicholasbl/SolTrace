@@ -1167,6 +1167,51 @@ SD::SimulationParameters const& Database::get_sim_params() const {
     throw std::runtime_error("missing simulation parameters");
 }
 
+template <class Component>
+QString
+sanitize_new_name(entt::registry& registry, QString name, QString class_type) {
+    // Names are case-sensitive: "Tag" and "tag" are allowed as distinct names.
+
+    name = name.trimmed();
+
+    if (name.isEmpty()) { name = class_type; }
+
+    QSet<QString> current_name_list;
+
+    for (auto const& pack :
+         registry.view<Component, IdentityComponent>().each()) {
+        auto const& ident = std::get<IdentityComponent&>(pack);
+        current_name_list.insert(ident.name);
+    }
+
+    auto stem    = name;
+    int  counter = 1;
+
+    // If name ends in "_N", continue from the base name.
+    const int underscore = name.lastIndexOf('_');
+
+    if (underscore > 0 && underscore < name.size() - 1) {
+        bool ok     = false;
+        int  number = QStringView(name).mid(underscore + 1).toInt(&ok);
+
+        if (ok && number > 0) {
+            stem    = name.left(underscore);
+            counter = number + 1;
+        }
+    }
+
+    while (current_name_list.contains(name)) {
+        name = QString("%1_%2").arg(stem).arg(counter);
+        counter++;
+    }
+
+    return name;
+}
+
+QString Database::sanitize_tag_name(QString name) {
+    return sanitize_new_name<TagComponent>(m_registry, name, "Tag");
+}
+
 entt::entity Database::create_tag(QString name) {
     auto ret = m_registry.create();
 
@@ -1251,9 +1296,13 @@ QString Database::name_of(Entity item) const {
     return QString("Entity %1").arg(entt::to_integral(item.value));
 }
 
-entt::entity Database::add_material_group(QString               new_name,
-                                          QVector<entt::entity> members,
-                                          entt::entity          clone_from) {
+QString Database::sanitize_material_name(QString name) {
+    return sanitize_new_name<MaterialComponent>(m_registry, name, "Material");
+}
+
+db::Entity Database::add_material_group(QString             new_name,
+                                        QVector<db::Entity> members,
+                                        db::Entity          clone_from) {
     auto set = std::unordered_set(members.begin(), members.end());
 
     MaterialComponent params;
@@ -1269,7 +1318,7 @@ entt::entity Database::add_material_group(QString               new_name,
         params.optics_front.set_ideal_reflection();
     }
 
-    for (auto mem : members) {
+    for (auto mem : std::as_const(members)) {
         this->remove_material(mem);
     }
 
@@ -1292,8 +1341,16 @@ entt::entity Database::add_material_group(QString               new_name,
     return ent;
 }
 
-void Database::delete_material_group(entt::entity to_delete,
-                                     entt::entity move_to) {
+size_t Database::material_use_count(db::Entity material) {
+    auto* ptr = m_registry.try_get<MaterialGroupComponent>(material);
+
+    if (!ptr) { return 0; }
+
+    return ptr->members.size();
+}
+
+void Database::delete_material_group(db::Entity to_delete, db::Entity move_to) {
+    qDebug() << Q_FUNC_INFO << to_delete << move_to;
     if (to_delete == move_to) {
         qWarning()
             << "Trying to delete a group and move members to the same group!";
@@ -1301,7 +1358,10 @@ void Database::delete_material_group(entt::entity to_delete,
     }
 
     // if not a group, bail
-    if (!m_registry.all_of<MaterialGroupComponent>(to_delete)) { return; }
+    if (!m_registry.all_of<MaterialGroupComponent>(to_delete)) {
+        qDebug() << Q_FUNC_INFO << "Not a group";
+        return;
+    }
 
     // steal current member list
     auto members =
@@ -1327,21 +1387,27 @@ void Database::delete_material_group(entt::entity to_delete,
     } else {
         // invalid target. clear
 
+        qDebug() << Q_FUNC_INFO << "Removing component";
+
         m_registry.remove<MaterialGroupMemberComponent>(members.begin(),
                                                         members.end());
     }
 }
 
-entt::entity Database::material_of(entt::entity element) const {
+db::Entity Database::material_of(db::Entity element) const {
     if (auto* m = m_registry.try_get<MaterialGroupMemberComponent>(element)) {
         return m->group;
     }
-    return entt::null;
+    return {};
 }
 
-entt::entity Database::add_geometry_group(QString               new_name,
-                                          QVector<entt::entity> members,
-                                          entt::entity          clone_from) {
+QString Database::sanitize_geometry_name(QString name) {
+    return sanitize_new_name<GeometryComponent>(m_registry, name, "Geometry");
+}
+
+db::Entity Database::add_geometry_group(QString             new_name,
+                                        QVector<db::Entity> members,
+                                        db::Entity          clone_from) {
     auto set = std::unordered_set(members.begin(), members.end());
 
     GeometryComponent params;
@@ -1387,8 +1453,15 @@ entt::entity Database::add_geometry_group(QString               new_name,
     return ent;
 }
 
-void Database::delete_geometry_group(entt::entity to_delete,
-                                     entt::entity move_to) {
+size_t Database::geometry_use_count(db::Entity geometry) {
+    auto* ptr = m_registry.try_get<GeometryGroupComponent>(geometry);
+
+    if (!ptr) { return 0; }
+
+    return ptr->members.size();
+}
+
+void Database::delete_geometry_group(db::Entity to_delete, db::Entity move_to) {
     if (to_delete == move_to) {
         qWarning()
             << "Trying to delete a group and move members to the same group!";
@@ -1427,27 +1500,27 @@ void Database::delete_geometry_group(entt::entity to_delete,
     }
 }
 
-entt::entity Database::geometry_of(entt::entity element) const {
+db::Entity Database::geometry_of(db::Entity element) const {
     if (auto* m = m_registry.try_get<GeometryGroupMemberComponent>(element)) {
         return m->group;
     }
-    return entt::null;
+    return {};
 }
 
-void Database::select(entt::entity to_select) {
+void Database::select(db::Entity to_select) {
     clear_selection();
     selected.set(to_select, SelectedComponent { });
 }
 
-void Database::add_to_selection(entt::entity to_select) {
+void Database::add_to_selection(db::Entity to_select) {
     selected.set(to_select, SelectedComponent { });
 }
 
-void Database::deselect(entt::entity to_deselect) {
+void Database::deselect(db::Entity to_deselect) {
     selected.remove(to_deselect);
 }
 
-void Database::toggle_selection(entt::entity to_toggle_selection) {
+void Database::toggle_selection(db::Entity to_toggle_selection) {
     if (m_registry.all_of<SelectedComponent>(to_toggle_selection)) {
         selected.remove(to_toggle_selection);
     } else {
@@ -1462,7 +1535,7 @@ void Database::clear_selection() {
         selected.remove(e);
 }
 
-bool Database::is_selected(entt::entity e) const {
+bool Database::is_selected(db::Entity e) const {
     return m_registry.valid(e) && m_registry.all_of<SelectedComponent>(e);
 }
 
@@ -1470,7 +1543,9 @@ void Database::select_all_with_material(db::Entity material) {
     if (material.value == entt::null) return;
     auto view = m_registry.view<GeometryGroupMemberComponent>();
     for (auto e : view) {
-        if (material_of(e) == material.value) { add_to_selection(e); }
+        if (material_of(e) == db::Entity(material.value)) {
+            add_to_selection(e);
+        }
     }
 }
 
@@ -1478,7 +1553,9 @@ void Database::select_all_with_geometry(db::Entity geometry) {
     if (geometry.value == entt::null) return;
     auto view = m_registry.view<GeometryGroupMemberComponent>();
     for (auto e : view) {
-        if (geometry_of(e) == geometry.value) { add_to_selection(e); }
+        if (geometry_of(e) == db::Entity(geometry.value)) {
+            add_to_selection(e);
+        }
     }
 }
 
@@ -1486,7 +1563,7 @@ void Database::deselect_all_with_material(db::Entity material) {
     if (material.value == entt::null) return;
     auto view = m_registry.view<GeometryGroupMemberComponent>();
     for (auto e : view) {
-        if (material_of(e) == material.value) { deselect(e); }
+        if (material_of(e) == db::Entity(material.value)) { deselect(e); }
     }
 }
 
@@ -1494,11 +1571,11 @@ void Database::deselect_all_with_geometry(db::Entity geometry) {
     if (geometry.value == entt::null) return;
     auto view = m_registry.view<GeometryGroupMemberComponent>();
     for (auto e : view) {
-        if (geometry_of(e) == geometry.value) { deselect(e); }
+        if (geometry_of(e) == db::Entity(geometry.value)) { deselect(e); }
     }
 }
 
-void Database::set_color(entt::entity to_color, QColor new_color) {
+void Database::set_color(db::Entity to_color, QColor new_color) {
     this->color.set(to_color, ColorComponent { .color = new_color });
 }
 

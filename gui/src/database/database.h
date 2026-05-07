@@ -157,6 +157,9 @@ public:
     void remove_geometry(entt::entity child);
 
     /// Create a new tag. Note that tag names should be unique.
+
+    QString sanitize_tag_name(QString);
+
     entt::entity create_tag(QString name);
 
     /// Ask if an entity has been given a tag
@@ -186,36 +189,44 @@ public slots:
     QString name_of(db::Entity item) const;
 
     /// Materials
-    entt::entity add_material_group(QString               new_name,
-                                    QVector<entt::entity> members,
-                                    entt::entity clone_from = entt::null);
 
-    void delete_material_group(entt::entity to_delete,
-                               entt::entity move_to = entt::null);
+    QString sanitize_material_name(QString);
 
-    entt::entity material_of(entt::entity element) const;
+    db::Entity add_material_group(QString             new_name,
+                                  QVector<db::Entity> members    = {},
+                                  db::Entity          clone_from = {});
+
+    size_t material_use_count(db::Entity material);
+
+    void delete_material_group(db::Entity to_delete, db::Entity move_to = {});
+
+    db::Entity material_of(db::Entity element) const;
 
     /// Geometry
-    entt::entity add_geometry_group(QString               new_name,
-                                    QVector<entt::entity> members,
-                                    entt::entity clone_from = entt::null);
 
-    void delete_geometry_group(entt::entity to_delete,
-                               entt::entity move_to = entt::null);
+    QString sanitize_geometry_name(QString);
 
-    entt::entity geometry_of(entt::entity element) const;
+    db::Entity add_geometry_group(QString             new_name,
+                                  QVector<db::Entity> members    = {},
+                                  db::Entity          clone_from = {});
+
+    size_t geometry_use_count(db::Entity geometry);
+
+    void delete_geometry_group(db::Entity to_delete, db::Entity move_to = {});
+
+    db::Entity geometry_of(db::Entity element) const;
 
     /// Selection methods
-    void select(entt::entity to_select);
-    void add_to_selection(entt::entity to_select);
+    void select(db::Entity to_select);
+    void add_to_selection(db::Entity to_select);
 
-    void deselect(entt::entity to_deselect);
+    void deselect(db::Entity to_deselect);
 
-    void toggle_selection(entt::entity to_toggle_selection);
+    void toggle_selection(db::Entity to_toggle_selection);
 
     void clear_selection();
 
-    bool is_selected(entt::entity e) const;
+    bool is_selected(db::Entity e) const;
 
     void select_all_with_material(db::Entity);
     void select_all_with_geometry(db::Entity);
@@ -223,7 +234,7 @@ public slots:
     void deselect_all_with_geometry(db::Entity);
 
     /// Color
-    void set_color(entt::entity to_color, QColor new_color);
+    void set_color(db::Entity to_color, QColor new_color);
 
 signals:
     void bulk_selection_changed();
@@ -272,5 +283,14 @@ public:
 };
 
 } // namespace db
+
+namespace std {
+template <>
+struct hash<db::Entity> {
+    std::size_t operator()(db::Entity e) const noexcept {
+        return std::hash<entt::entity>()(e.value);
+    }
+};
+} // namespace std
 
 Q_DECLARE_METATYPE(db::Entity);

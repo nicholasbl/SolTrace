@@ -124,7 +124,7 @@ Entity InstancedElements::geometry_of_group() {
 Entity InstancedElements::material_of(int index) {
     entt::entity instance = entity_at(index);
     if (instance == entt::null) return { };
-    qDebug() << (int)m_database->material_of(instance);
+    // qDebug() << m_database->material_of(instance);
     return m_database->material_of(instance);
 }
 

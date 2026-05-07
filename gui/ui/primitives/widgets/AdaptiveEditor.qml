@@ -55,32 +55,9 @@ Item {
                 : internal.model.count
     }
 
-    function _selectFirst() {
-        if (!internal.model) return
-        var count = _getModelCount()
-        if (count > 0 && currentIndex == -1) {
-            currentIndex = 0
-            editing = true
-        }
-    }
-
-    Component.onCompleted: {
-        _selectFirst()
-    }
-
-    onModelChanged: {
-        _selectFirst()
-    }
-    
     Connections {
         target: internal.model
         ignoreUnknownSignals: true
-        function onRowsInserted(modelParent, first, last) {
-            root._selectFirst()
-        }
-        function onModelReset() {
-            root._selectFirst()
-        }
         function onRowsRemoved(modelParent, first, last) {
             if (root._getModelCount() === 0) {
                 root.currentIndex = -1

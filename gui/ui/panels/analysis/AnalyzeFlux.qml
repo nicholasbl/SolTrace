@@ -77,20 +77,12 @@ Flickable {
 
                 ScrollIndicator.vertical: ScrollIndicator { }
 
-                delegate: ItemDelegate {
+                delegate: STItemDelegate {
                     id: delegate
                     required property string name
                     required property var entity
                     text: delegate.name
                     //highlighted: isCurrent
-                    width: parent ? parent.width : implicitWidth
-
-                    background: Rectangle {
-                        implicitHeight: 24
-                        implicitWidth: 100
-                        opacity: enabled ? 1 : 0.3
-                        color: parent.down ? Material.rippleColor : "transparent"
-                    }
 
                     onClicked: {
                         AppData.flux.current_entity = delegate.entity

@@ -39,22 +39,19 @@ AdaptiveEditor {
     }
 
     listFooter: RowLayout {
-        STIconButton {
-            text: "\uf055"
+        CreateNewItemButton {
+            title: "New Geometry"
+
+            onCreateRequested: function(name) {
+                var new_name = AppData.current_database.sanitize_geometry_name(name)
+                AppData.current_database.add_geometry_group(new_name)
+            }
         }
     }
 
-    listDelegate: ItemDelegate {
+    listDelegate: STItemDelegate {
         text: itemModel ? itemModel.name : "No name"
         highlighted: isCurrent
-        width: parent ? parent.width : implicitWidth
-
-        background: Rectangle {
-            implicitHeight: 24
-            implicitWidth: 100
-            opacity: enabled ? 1 : 0.3
-            color: parent.down ? Material.rippleColor : "transparent"
-        }
     }
 
     detailView: ColumnLayout {
