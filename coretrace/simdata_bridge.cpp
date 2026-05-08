@@ -6,7 +6,7 @@
 #include "stage_element.hpp"
 #include "single_element.hpp"
 #include "virtual_element.hpp"
-#include <optix_runner.hpp>
+// #include <optix_runner.hpp>
 #include <native_runner.hpp>
 #include "simdata_io.hpp"
 #include <simulation_result.hpp>
@@ -80,20 +80,20 @@ int assign_raydata_from_hitpoints(const std::vector<float4>& hp_vec, const std::
         int element_number = 1; // Don't get element number from optix
         int raynumber = raynumber_vec[i_element];
 
-        // Only add ray data if it is Not the sun ray ('stage' 0)
-        if (stage_optix != 0)
-        {
-            sys->StageList[0]->RayData.Append(PosRaySurfStage, CosRaySurfStage, element_number,
-                stage_optix, raynumber);
-        }
-        i_element++;
-    }
+//         // Only add ray data if it is Not the sun ray ('stage' 0)
+//         if (stage_optix != 0)
+//         {
+//             sys->StageList[0]->RayData.Append(PosRaySurfStage, CosRaySurfStage, element_number,
+//                 stage_optix, raynumber);
+//         }
+//         i_element++;
+//     }
 
-    for (TStage* stage : sys->StageList)
-        sys->AllRayData.Merge(stage->RayData);
+//     for (TStage* stage : sys->StageList)
+//         sys->AllRayData.Merge(stage->RayData);
 
-    return 0;
-}
+//     return 0;
+// }
 
 int set_tstage_parameters(TSystem* sys_legacy, const SolTrace::NativeRunner::TSystem& sys_native)
 {

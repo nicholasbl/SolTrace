@@ -268,3 +268,115 @@ TEST(OptixRunner, Cylinder)
         EXPECT_NEAR(p1[2], z1, TOL * Z_ELEM) << "ray " << i;
     }
 }
+
+TEST(OptixRunner, FlatCircle)
+{
+    const double R = 5.0;
+    auto surf = make_surface<Flat>();
+    auto aper = make_aperture<Circle>(2*R);
+
+    SimulationData sd;
+    set_default_sd(sd, surf, aper);
+    SimulationResult result;
+
+    OptixRunner runner;
+    RunnerStatus sts = runner.initialize();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.report_simulation(&result, 0);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+
+    ASSERT_EQ(result.get_number_of_records(),
+              sd.get_simulation_parameters().number_of_rays);
+    for (int i = 0; i < (int)result.get_number_of_records(); ++i)
+    {
+        auto rr = result[i];
+        ASSERT_GE(rr->get_number_of_interactions(), 2);
+        Vector3d p0, p1;
+        rr->get_position(0, p0);
+        rr->get_position(1, p1);
+        EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
+        EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
+        EXPECT_LE(sqrt(p1[0]*p1[0] + p1[1]*p1[1]), R);
+    }
+}
+
+TEST(OptixRunner, FlatHexagon)
+{
+    const double S = 5.0;
+    auto surf = make_surface<Flat>();
+    auto aper = make_aperture<Hexagon>(2*S);
+
+    SimulationData sd;
+    set_default_sd(sd, surf, aper);
+    SimulationResult result;
+
+    OptixRunner runner;
+    RunnerStatus sts = runner.initialize();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.report_simulation(&result, 0);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+
+    ASSERT_EQ(result.get_number_of_records(),
+              sd.get_simulation_parameters().number_of_rays);
+    for (int i = 0; i < (int)result.get_number_of_records(); ++i)
+    {
+        auto rr = result[i];
+        ASSERT_GE(rr->get_number_of_interactions(), 2);
+        Vector3d p0, p1;
+        rr->get_position(0, p0);
+        rr->get_position(1, p1);
+        EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
+        EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
+        EXPECT_TRUE(aper->is_in(p1[0], p1[1]));
+    }
+}
+
+TEST(OptixRunner, FlatAnnulus)
+{
+    const double R0 = 5.0;
+    const double R1 = 10.0;
+    const double ARC = 2 * PI;
+    auto surf = make_surface<Flat>();
+    auto aper = make_aperture<Annulus>(R0, R1, ARC);
+
+    SimulationData sd;
+    set_default_sd(sd, surf, aper);
+    SimulationResult result;
+
+    OptixRunner runner;
+    RunnerStatus sts = runner.initialize();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.report_simulation(&result, 0);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+
+    ASSERT_EQ(result.get_number_of_records(),
+              sd.get_simulation_parameters().number_of_rays);
+    for (int i = 0; i < (int)result.get_number_of_records(); ++i)
+    {
+        auto rr = result[i];
+        ASSERT_GE(rr->get_number_of_interactions(), 2);
+        Vector3d p0, p1;
+        rr->get_position(0, p0);
+        rr->get_position(1, p1);
+        EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
+        EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
+        double r = sqrt(p1[0]*p1[0] + p1[1]*p1[1]);
+        EXPECT_GE(r, R0);
+        EXPECT_LE(r, R1);
+    }
+}
