@@ -28,7 +28,7 @@ include_directories(.
 	./simulation_results
 	./simulation_runner
 	./simulation_runner/native_runner
-	# ./simulation_runner/optix_runner
+	./simulation_runner/optix_runner
 	./simulation_runner/embree_runner
 )
 
@@ -136,7 +136,7 @@ if(SOLTRACE_BUILD_CORETRACE)
 		PRIVATE
 			${embree_INCLUDE_DIRS}
 	)
-	target_link_libraries(coretrace_api PRIVATE simdata native_runner simresult embree_runner ${embree_LIBRARIES})
+	target_link_libraries(coretrace_api PRIVATE simdata native_runner optix_runner simresult embree_runner ${embree_LIBRARIES})
 
 	if(MSVC)
 		target_compile_definitions(coretrace_api PRIVATE STCORE_API_EXPORTS _STCOREDLL_)

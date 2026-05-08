@@ -102,7 +102,7 @@ Matrix33d CspElement::get_rotation_matrix() const
     return m_rotation_matrix;
 }
 
-void CspElement::set_rotation_matrix(const Matrix33d& rotation_matrix)
+void CspElement::set_rotation_matrix(const Matrix33d &rotation_matrix)
 {
     m_rotation_matrix = rotation_matrix;
 }
@@ -229,14 +229,14 @@ GeometryDataST CspElement::toDeviceGeometryData() const
             Vec3d edge_y = v2 * (float)height;
 
             Vec3d local_anchor(x_coord + width, y_coord, 0.0);
-            //float3 anchor = OptixCSP::toFloat3(m_origin - v1 * 0.5 - v2 * 0.5);
+            // float3 anchor = OptixCSP::toFloat3(m_origin - v1 * 0.5 - v2 * 0.5);
             Vec3d global_anchor = rotation_matrix * local_anchor + m_origin;
 
-            GeometryDataST::Rectangle_Parabolic heliostat(OptixCSP::toFloat3(edge_x), 
-                OptixCSP::toFloat3(edge_y), 
-                OptixCSP::toFloat3(global_anchor),
-                (float)m_surface->get_curvature_1(),
-                (float)m_surface->get_curvature_2());
+            GeometryDataST::Rectangle_Parabolic heliostat(OptixCSP::toFloat3(edge_x),
+                                                          OptixCSP::toFloat3(edge_y),
+                                                          OptixCSP::toFloat3(global_anchor),
+                                                          (float)m_surface->get_curvature_1(),
+                                                          (float)m_surface->get_curvature_2());
             geometry_data.setRectangleParabolic(heliostat);
         }
 
@@ -333,7 +333,7 @@ GeometryDataST CspElement::toDeviceGeometryData() const
         ApertureAnnulus anf = static_cast<ApertureAnnulus &>(*m_aperture);
         float radius_in = anf.get_radius_inner();
         float radius_out = anf.get_radius_outer();
-	float arc = anf.get_arc();
+        float arc = anf.get_arc();
         float3 o = OptixCSP::toFloat3(m_origin);
         float3 n = normalize(OptixCSP::toFloat3(m_aim_point - m_origin));
         if (surface_type == SurfaceType::FLAT)
