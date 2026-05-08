@@ -69,7 +69,7 @@ void SolTraceSystem::print_launch_params()
 SolTraceSystem::SolTraceSystem()
     : m_number_of_rays(0),
       m_max_number_of_rays(0),
-      m_verbose(false),
+      m_verbose(true),
       m_mem_free_before(0),
       m_mem_free_after(0),
       m_optical_errors(false),
@@ -254,13 +254,22 @@ void SolTraceSystem::run()
     uint_fast64_t N_ray_hit = 0;
     uint_fast64_t N_ray_gen = 0;
 
+    Timer timer_setup_buffer;
+    Timer timer_optix_launch;
+    Timer timer_collect_results;
+    uint64_t n_iterations = 0;
+
     while (N_ray_hit < m_number_of_rays && N_ray_gen < m_max_number_of_rays)
     {
+        ++n_iterations;
+
         // Update ray offset (pushed to device in setup_device_buffer)
         data_manager->launch_params_H.ray_offset = N_ray_gen;
 
         // Allocate buffer (sets data_manager->launch_params_H buffer)
+        timer_setup_buffer.start();
         setup_device_buffer();
+        timer_setup_buffer.stop();
 
         int width = data_manager->launch_params_H.width;
         int height = data_manager->launch_params_H.height;
@@ -272,8 +281,8 @@ void SolTraceSystem::run()
         if(m_verbose)
             std::cout << "Memory used by launch: " << (m_mem_free_before - m_mem_free_after) / (1024.0 * 1024.0) << " MB\n";
 
-        m_timer_trace.start();
         // Launch the simulation.
+        timer_optix_launch.start();
         OPTIX_CHECK(optixLaunch(
             m_state.pipeline,
             m_state.stream, // Assume this stream is properly created.
@@ -284,10 +293,14 @@ void SolTraceSystem::run()
             height,
             1));
         CUDA_SYNC_CHECK();
+        timer_optix_launch.stop();
 
         // Collect results
+        timer_collect_results.start();
         get_buffer_results(m_hp_vec, m_raynumber_vec, m_element_id_vec, m_hit_type_vec,
                            m_sunraynumber_vec);
+        timer_collect_results.stop();
+
         N_ray_hit = m_raynumber_vec.empty() ? 0 : m_raynumber_vec.back();
         N_ray_gen += width;
     }
@@ -306,6 +319,30 @@ void SolTraceSystem::run()
     }
 
     m_timer_trace.stop();
+
+    if (m_verbose)
+    {
+        const double t_setup   = timer_setup_buffer.get_time_sec();
+        const double t_launch  = timer_optix_launch.get_time_sec();
+        const double t_collect = timer_collect_results.get_time_sec();
+        const double t_total   = t_setup + t_launch + t_collect;
+        const double inv_n     = n_iterations > 0 ? 1.0 / static_cast<double>(n_iterations) : 0.0;
+
+        std::cout << "\n--- SolTraceSystem::run() timing (" << n_iterations << " iteration"
+                  << (n_iterations == 1 ? "" : "s") << ") ---\n";
+        std::cout << std::fixed << std::setprecision(6);
+        std::cout << "  setup_device_buffer : total = " << t_setup   << " s"
+                  << "  avg = " << t_setup   * inv_n << " s"
+                  << "  fraction = " << (t_total > 0.0 ? 100.0 * t_setup   / t_total : 0.0) << " %\n";
+        std::cout << "  optixLaunch         : total = " << t_launch  << " s"
+                  << "  avg = " << t_launch  * inv_n << " s"
+                  << "  fraction = " << (t_total > 0.0 ? 100.0 * t_launch  / t_total : 0.0) << " %\n";
+        std::cout << "  get_buffer_results  : total = " << t_collect << " s"
+                  << "  avg = " << t_collect * inv_n << " s"
+                  << "  fraction = " << (t_total > 0.0 ? 100.0 * t_collect / t_total : 0.0) << " %\n";
+        std::cout << "  total (3 sections)  : " << t_total << " s\n";
+        std::cout << "----------------------------------------------\n";
+    }
 }
 
 void SolTraceSystem::update()
