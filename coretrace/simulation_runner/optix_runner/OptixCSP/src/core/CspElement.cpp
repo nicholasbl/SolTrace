@@ -22,6 +22,7 @@ CspElementBase::CspElementBase()
 CspElement::CspElement()
 {
     m_origin = Vec3d(0.0, 0.0, 0.0);
+    m_aim_point = Vec3d(0.0, 0.0, 1.0);
     m_rotation_matrix = Matrix33d();
     m_surface = nullptr;
     m_aperture = nullptr;
@@ -40,6 +41,16 @@ const Vec3d &CspElement::get_origin() const
 void CspElement::set_origin(const Vec3d &o)
 {
     m_origin = o;
+}
+
+const Vec3d &CspElement::get_aim_point() const
+{
+    return m_aim_point;
+}
+
+void CspElement::set_aim_point(const Vec3d &ap)
+{
+    m_aim_point = ap;
 }
 
 std::shared_ptr<Aperture> CspElement::get_aperture() const

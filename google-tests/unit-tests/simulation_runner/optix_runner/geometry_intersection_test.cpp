@@ -295,7 +295,7 @@ TEST(OptixRunner, FlatCircle)
     {
         auto rr = result[i];
         ASSERT_GE(rr->get_number_of_interactions(), 2);
-        Vector3d p0, p1;
+	glm::dvec3 p0, p1;
         rr->get_position(0, p0);
         rr->get_position(1, p1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
@@ -331,7 +331,7 @@ TEST(OptixRunner, FlatHexagon)
     {
         auto rr = result[i];
         ASSERT_GE(rr->get_number_of_interactions(), 2);
-        Vector3d p0, p1;
+        glm::dvec3 p0, p1;
         rr->get_position(0, p0);
         rr->get_position(1, p1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
@@ -369,7 +369,7 @@ TEST(OptixRunner, FlatAnnulus)
     {
         auto rr = result[i];
         ASSERT_GE(rr->get_number_of_interactions(), 2);
-        Vector3d p0, p1;
+        glm::dvec3 p0, p1;
         rr->get_position(0, p0);
         rr->get_position(1, p1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;

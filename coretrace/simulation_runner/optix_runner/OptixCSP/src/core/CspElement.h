@@ -26,6 +26,9 @@ namespace OptixCSP
         // Positioning and orientation.
         virtual const Vec3d &get_origin() const = 0;
         virtual void set_origin(const OptixCSP::Vec3d &) = 0;
+      virtual const Vec3d &get_aim_point() const = 0;
+      virtual void set_aim_point(const Vec3d &o) = 0;
+
         // virtual const Vec3d& get_euler_angles() const = 0;
         // virtual void set_euler_angles(const Vec3d&) = 0;
 
@@ -54,6 +57,9 @@ namespace OptixCSP
         // set and get origin
         const Vec3d &get_origin() const override;
         void set_origin(const Vec3d &o) override;
+
+      const Vec3d &get_aim_point() const override;
+      void set_aim_point(const Vec3d &o) override;
 
         std::shared_ptr<Aperture> get_aperture() const;
         std::shared_ptr<Surface> get_surface() const;
@@ -106,6 +112,7 @@ namespace OptixCSP
                         const OpticalDistribution od);
 
         Vec3d m_origin;
+        Vec3d m_aim_point;
         Matrix33d m_rotation_matrix;
 
         Vec3d m_upper_box_bound; // Global coordinates
