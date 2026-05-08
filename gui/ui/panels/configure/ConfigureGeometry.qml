@@ -6,10 +6,10 @@ import QtQuick.Layouts
 
 import SolTrace
 
-AdaptiveEditor {
+AdaptiveFilteredEditor {
     id: root
 
-    model: App.materials.geometry_list
+    source_model: App.materials.geometry_list
     wideThreshold: 500
     listWidth: 250
 
@@ -25,16 +25,19 @@ AdaptiveEditor {
     }
 
     onItemClicked: function(index, modelData) {
-        // if (App.db) App.db.clear_selection()
         App.materials.current_geometry = modelData.entity
-        // if (App.db) App.db.select_all_with_geometry(modelData.entity)
     }
 
     listHeader: RowLayout {
-        STTextField {
+        STSearchField {
+            id: search_field
             Layout.fillWidth: true
-            leftIcon: "\uf002"
-            placeholderText: "Search..."
+
+            Binding {
+                target: root
+                property: "filterText"
+                value: search_field.text
+            }
         }
     }
 
@@ -75,21 +78,78 @@ AdaptiveEditor {
         SurfacePreviewScene {
             Layout.fillWidth: true
             Layout.preferredHeight: 148
+
+            property bool no_geometry: App.materials.geometry_edit.surface_geometry.vertex_count === 0
+
+            RowLayout {
+                visible: parent.no_geometry
+
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.margins: 3
+
+                Label {
+                    text: "\uf071"
+
+                    font.family: "Font Awesome 7 Free"
+
+                    color: Material.color(Material.Yellow)
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    text: "No geometry for this configuration."
+
+                    elide: Label.ElideRight
+
+                    color: Material.color(Material.Yellow)
+                }
+            }
         }
 
         ScrollView {
+            id: geometry_scroll
             Layout.fillHeight: true
             Layout.fillWidth: true
             contentWidth: availableWidth
 
             GeometryProperties {
-                anchors.fill: parent
+                width: geometry_scroll.availableWidth
+                height: implicitHeight
             }
         }
 
         RowLayout {
-            STIconButton {
-                text: "\uf2ed"
+            DeleteItemButton {
+                id: delete_button
+
+                title: "Delete Geometry"
+                itemType: "geometry"
+                replacementModel: root.source_model
+
+                toDelete: AppData.materials.current_geometry
+
+                onBeforeOpened: {
+                    isDangerous = AppData.current_database.geometry_use_count(
+                                delete_button.toDelete
+                                )
+                }
+
+                onDeleteRequested: {
+                    AppData.current_database.delete_geometry_group(
+                                delete_button.toDelete
+                                )
+                    root.clearSelection()
+                }
+
+                onDeleteReassignRequested: (entity) => {
+                    AppData.current_database.delete_geometry_group(
+                                delete_button.toDelete,
+                                entity
+                                )
+                    root.clearSelection()
+                }
             }
         }
     }

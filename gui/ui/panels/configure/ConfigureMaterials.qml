@@ -102,12 +102,14 @@ AdaptiveFilteredEditor {
         }
 
         ScrollView {
+            id: mat_scroll
             Layout.fillHeight: true
             Layout.fillWidth: true
             contentWidth: availableWidth
 
             SwipeView {
-                anchors.fill: parent
+                width: mat_scroll.availableWidth
+                height: currentItem ? currentItem.implicitHeight : 0
                 interactive: false
                 clip: true
                 currentIndex: bar.currentIndex
@@ -146,6 +148,7 @@ AdaptiveFilteredEditor {
                     AppData.current_database.delete_material_group(
                                 delete_button.toDelete
                                 )
+                    root.clearSelection()
                 }
 
                 onDeleteReassignRequested: (entity) => {
@@ -153,6 +156,7 @@ AdaptiveFilteredEditor {
                                 delete_button.toDelete,
                                 entity
                                 )
+                    root.clearSelection()
                 }
             }
         }

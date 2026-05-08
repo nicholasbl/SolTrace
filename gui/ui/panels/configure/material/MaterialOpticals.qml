@@ -9,26 +9,6 @@ STPropertyPanel {
     property var material_editor : App.materials.group_edit
     property var side_editor
 
-    function syncComboToValue(combo, value) {
-        if (!combo || !combo.count || !value || value.length === 0) {
-            return
-        }
-
-        for (let i = 0; i < combo.count; i++) {
-            if (combo.textAt(i) === value) {
-                combo.currentIndex = i
-                return
-            }
-        }
-    }
-
-    onSide_editorChanged: {
-        syncComboToValue(interactionCombo,
-                         root.side_editor ? root.side_editor.interaction_type : "")
-        syncComboToValue(distributionCombo,
-                         root.side_editor ? root.side_editor.error_distribution_type : "")
-    }
-
     // =========================================================================
 
     STPropertyLabel {
@@ -97,17 +77,15 @@ STPropertyPanel {
         Layout.fillWidth: true
         model: App.materials.material_edit.interaction_type_model
         textRole: "display"
+        valueRole: "display"
+
+        currentValue: root.side_editor.interaction_type
+
+        displayText: currentText.charAt(0).toUpperCase() + currentText.slice(1).toLowerCase();
 
         onActivated: {
             if (root.side_editor && currentText.length > 0) {
                 root.side_editor.interaction_type = currentText
-            }
-        }
-
-        Connections {
-            target: root.side_editor
-            function onInteraction_type_changed() {
-                root.syncComboToValue(interactionCombo, root.side_editor.interaction_type)
             }
         }
     }
@@ -125,27 +103,15 @@ STPropertyPanel {
         Layout.fillWidth: true
         model: App.materials.material_edit.distribution_type_model
         textRole: "display"
-        enabled: count > 0
-        onCountChanged: {
-            root.syncComboToValue(distributionCombo,
-                                  root.side_editor ? root.side_editor.error_distribution_type : "")
-        }
-        onModelChanged: {
-            root.syncComboToValue(distributionCombo,
-                                  root.side_editor ? root.side_editor.error_distribution_type : "")
-        }
+        valueRole: "display"
+
+        currentValue: root.side_editor.error_distribution_type
+
+        displayText: currentText.charAt(0).toUpperCase() + currentText.slice(1).toLowerCase();
+
         onActivated: {
             if (root.side_editor && currentText.length > 0) {
                 root.side_editor.error_distribution_type = currentText
-            }
-        }
-
-
-        Connections {
-            target: root.side_editor
-            function onError_distribution_type_changed() {
-                root.syncComboToValue(distributionCombo,
-                                      root.side_editor ? root.side_editor.error_distribution_type : "")
             }
         }
     }

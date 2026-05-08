@@ -15,7 +15,7 @@ Item {
     // Width threshold for switching between stacked and side-by-side
     property int wideThreshold: 500
 
-    // List side preferred width in wide mode
+    // List side preferred width in wide modes
     property int listWidth: 250
 
     // The delegate used for each row in the list

@@ -395,7 +395,7 @@ Item {
         id: orbit_control
 
         property real sensitivity: 0.2
-        property real mouse_sensitivity_deg: 0.3
+        property real mouse_sensitivity_deg: 0.6
 
         property real yaw_deg: 0
         property real pitch_deg: 0

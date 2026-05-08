@@ -40,16 +40,19 @@ View3D {
         InfiniteGrid {
             id: infiniteGrid
             visible: true
-            gridInterval: 50
+            gridInterval: 1
         }
     }
 
     PerspectiveCamera {
         id: camera
-        z: 5
-
+        position: Qt.vector3d(3,3,3)
         clipNear: 0.1
         clipFar: 100
+
+        // TODO: Fix hardcode
+        eulerRotation.x: -45
+        eulerRotation.y: 45
     }
 
 
@@ -58,12 +61,11 @@ View3D {
         eulerRotation.y: 45
     }
 
-    // TODO we need a proper camera controller with orbit
-    // for perspective and ortho
-    // AND zoom to control
     CameraController {
         anchors.fill: parent
         perspective_camera: camera
+
+        rotation_target: camera_target
     }
 
     Node {
@@ -80,6 +82,16 @@ View3D {
                     cullMode: Material.NoCulling
                 }
             ]
+        }
+
+        Node {
+            id: camera_target
+
+            property var bb: App.materials.geometry_edit.surface_geometry.bounding_box
+
+            property vector3d center: bb.max.minus(bb.min).times(0.5).plus(bb.min)
+
+            position: center
         }
 
     }

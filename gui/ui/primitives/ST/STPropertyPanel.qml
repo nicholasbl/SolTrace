@@ -25,8 +25,8 @@ Rectangle {
     //border.color: Theme.lineColor
     border.color: Material.dividerColor
     opacity: enabled ? 1.0 : 0.55
-    implicitHeight: form_core.implicitHeight + 12
-    implicitWidth: form_core.implicitWidth + 24
+    implicitHeight: form_core.implicitHeight + 20
+    implicitWidth: form_core.implicitWidth + 20
 
     clip: true
 
@@ -36,9 +36,11 @@ Rectangle {
     default property alias contentChildren: layout.children
 
     ColumnLayout {
-        anchors.fill: parent
         id: form_core
 
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
         anchors.margins: 10
 
         spacing: 10
@@ -79,15 +81,8 @@ Rectangle {
         GridLayout {
             id: layout
             Layout.fillWidth: true
-            Layout.fillHeight: true
 
             columns: 2
-
-            visible: !root.collapsed
-        }
-
-        Item {
-            Layout.fillHeight: true
 
             visible: !root.collapsed
         }

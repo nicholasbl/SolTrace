@@ -94,12 +94,14 @@ AdaptiveEditor {
         }
 
         ScrollView {
+            id: layout_scroll
             Layout.fillHeight: true
             Layout.fillWidth: true
             contentWidth: availableWidth
 
             InstanceEdit {
-                anchors.fill: parent
+                width: layout_scroll.availableWidth
+                height: implicitHeight
             }
         }
 
