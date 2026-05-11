@@ -65,15 +65,17 @@ ShadowedGlassRectangle {
                         text: parent.icons[parent.index]
                         font.family: "Font Awesome 7 Free"
                         opacity: is_active ? 1 : 0.5
+                        borderWidth: 0
                         font.pointSize: App.view.left_panel.is_small() ? 16 : 12
 
                         onClicked: App.view.workflow_phase = parent.index
                     }
 
                     STClickableLabel {
+                        text: parent.modelData
+                        borderWidth: 0
                         font.pointSize: 16
                         font.bold: true
-                        text: parent.modelData
                         font.family: "CMU Serif"
                         font.underline: is_active && !App.view.left_panel.is_small()
                         opacity: is_active ? 1 : 0.5

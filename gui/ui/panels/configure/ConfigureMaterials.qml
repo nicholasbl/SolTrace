@@ -70,12 +70,24 @@ AdaptiveFilteredEditor {
                 onClicked: root.goBack()
             }
 
-            Label {
+            RenameLabel {
                 text: App.materials.current_material_name
 
                 font.family: "CMU Serif"
                 font.pointSize: 16
                 font.bold: true
+
+                onAccepted: (new_name) => {
+                    var mats = App.materials;
+                    var curr_db = mats.current_database
+
+                    new_name = curr_db.sanitize_material_name(new_name);
+
+                    curr_db.set_name_of(
+                                    mats.current_material,
+                                    new_name
+                                    )
+                }
             }
         }
 

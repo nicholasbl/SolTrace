@@ -131,6 +131,8 @@ RowLayout {
                     Layout.leftMargin: 10
                     Layout.rightMargin: 20
 
+                    borderWidth: 0
+
                     text: "File"
                     font.pointSize: 16
 

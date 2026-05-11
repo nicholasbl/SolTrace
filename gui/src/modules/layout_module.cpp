@@ -13,15 +13,23 @@ LayoutModule::LayoutModule(QObject* parent)
     : QObject(parent),
       m_status(new StatusComponent(this)),
       m_root_elements_model(new db::RootElementsModel(this)),
+      m_filtered_root_elements_model(new db::InstanceSortFilter(this)),
       m_child_model(new db::ChildModel(this)),
       m_breadcrumb_model(new db::BreadcrumbModel(this)),
       m_instance_edit(new db::AnInstanceEditor(this)),
       m_world_geometry_model(new db::WorldGeometryModel(this)) {
 
+    m_filtered_root_elements_model->setSourceModel(m_root_elements_model);
+
     connect(this,
             &LayoutModule::current_database_value_changed,
             m_root_elements_model,
             &db::RootElementsModel::reset);
+
+    connect(this,
+            &LayoutModule::current_database_value_changed,
+            m_filtered_root_elements_model,
+            &db::InstanceSortFilter::reset);
 
     connect(this,
             &LayoutModule::current_database_value_changed,

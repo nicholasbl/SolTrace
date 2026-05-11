@@ -58,7 +58,7 @@ public:
 
     operator entt::entity() const { return value; }
 
-    Q_INVOKABLE bool is_valid() { return value != entt::null; }
+    Q_INVOKABLE bool is_valid() const { return value != entt::null; }
 };
 
 inline QDebug operator<<(QDebug debug, Entity const& c) {
@@ -205,8 +205,9 @@ public slots:
     /// using the entity ID.
     QString name_of(db::Entity item) const;
 
-    /// Materials
+    void set_name_of(db::Entity item, QString new_name);
 
+    /// Materials
     QString sanitize_material_name(QString);
 
     db::Entity add_material_group(QString             new_name,

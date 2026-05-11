@@ -41,7 +41,7 @@ STDialog {
         }
 
         ListView {
-            Layout.fillHeight: true
+            Layout.preferredHeight: 256
             Layout.fillWidth: true
             clip: true
 

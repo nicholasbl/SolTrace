@@ -30,6 +30,9 @@ public:
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
 
     QOBJECT_READONLY_PROPERTY(db::RootElementsModel, root_elements_model);
+    QOBJECT_READONLY_PROPERTY(db::InstanceSortFilter,
+                              filtered_root_elements_model);
+
     QOBJECT_WRITABLE_PROPERTY(db::ChildModel, child_model);
     QOBJECT_WRITABLE_PROPERTY(db::BreadcrumbModel, breadcrumb_model);
     QOBJECT_WRITABLE_PROPERTY(db::AnInstanceEditor, instance_edit);

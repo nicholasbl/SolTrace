@@ -1296,6 +1296,13 @@ QString Database::name_of(Entity item) const {
     return QString("Entity %1").arg(entt::to_integral(item.value));
 }
 
+void Database::set_name_of(db::Entity item, QString new_name) {
+    if (!m_registry.valid(item)) return;
+
+    m_registry.emplace_or_replace<IdentityComponent>(
+        item, IdentityComponent { .name = new_name });
+}
+
 QString Database::sanitize_material_name(QString name) {
     return sanitize_new_name<MaterialComponent>(m_registry, name, "Material");
 }
