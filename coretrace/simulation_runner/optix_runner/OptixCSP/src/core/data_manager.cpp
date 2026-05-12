@@ -26,11 +26,12 @@ dataManager::dataManager()
 	launch_params_H.max_depth = 5;
 	launch_params_H.ray_offset = 0;
 
-	launch_params_H.hit_point_buffer = nullptr;
+	// launch_params_H.hit_point_buffer = nullptr;
+	launch_params_H.hit_buffer = nullptr;
 	launch_params_H.sun_dir_buffer = nullptr;
 	launch_params_H.rng_states = nullptr;
-	launch_params_H.element_id_buffer = nullptr;
-	launch_params_H.hit_type_buffer = nullptr;
+	// launch_params_H.element_id_buffer = nullptr;
+	// launch_params_H.hit_type_buffer = nullptr;
 	launch_params_H.sun_vector = make_float3(0.0f, 0.0f, 10.0f);
 	launch_params_H.sun_shape = OptixCSP::SunShape::UNKNOWN;
 	launch_params_H.include_sun_shape_errors = false;
