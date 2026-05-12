@@ -50,6 +50,18 @@ void LayoutModule::identity_changed(entt::entity entity) {
     set_edited_element_name(m_current_database->name_of(m_edited_element));
 }
 
+void LayoutModule::delete_edited_element() {
+    if (!m_current_database) return;
+    if (!m_edited_element.is_valid()) return;
+
+    auto to_delete = m_edited_element;
+
+    m_current_database->delete_element(to_delete);
+    set_edited_element({});
+
+    if (m_viewed_element == to_delete) { set_viewed_element({}); }
+}
+
 LayoutModule::LayoutModule(QObject* parent)
     : QObject(parent),
       m_status(new StatusComponent(this)),

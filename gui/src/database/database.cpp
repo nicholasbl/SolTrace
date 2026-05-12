@@ -1314,6 +1314,60 @@ QString Database::sanitize_entity_name(QString name) {
     return sanitize_new_name<ElementComponent>(m_registry, name, "Entity");
 }
 
+db::Entity Database::add_element(QString new_name, db::Entity parent) {
+    auto entity = create();
+
+    m_registry.emplace<ElementComponent>(entity);
+    m_registry.emplace<TransformComponent>(
+        entity,
+        TransformComponent {
+            .position = glm::dvec3 { 0.0 },
+            .rotation = glm::dquat { 1.0, 0.0, 0.0, 0.0 },
+        });
+    m_registry.emplace<IdentityComponent>(
+        entity,
+        IdentityComponent {
+            .name = new_name,
+        });
+
+    if (parent.is_valid()) { set_parent(entity, parent); }
+
+    return entity;
+}
+
+void Database::delete_element(db::Entity to_delete) {
+    if (!valid(to_delete)) return;
+
+    if (!m_registry.all_of<ElementComponent>(to_delete)) return;
+
+    if (auto children = children_of(to_delete); !children.empty()) {
+        QVector<Entity> copy;
+        copy.reserve(children.size());
+        for (auto child : children) {
+            copy.push_back(child);
+        }
+        for (auto child : std::as_const(copy)) {
+            unset_parent(child);
+        }
+    }
+
+    unset_parent(to_delete);
+    remove_material(to_delete);
+    remove_geometry(to_delete);
+
+    auto tags = tags_for(to_delete);
+    QVector<Entity> tag_copy;
+    tag_copy.reserve(tags.size());
+    for (auto tag : tags) {
+        tag_copy.push_back(tag);
+    }
+    for (auto tag : std::as_const(tag_copy)) {
+        unassign_tag(to_delete, tag);
+    }
+
+    m_registry.destroy(to_delete);
+}
+
 QString Database::sanitize_material_name(QString name) {
     return sanitize_new_name<MaterialComponent>(m_registry, name, "Material");
 }

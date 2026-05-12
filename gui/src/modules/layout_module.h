@@ -58,6 +58,7 @@ public:
 public slots:
     void clear_viewed_element() { set_viewed_element({}); }
     void clear_edited_element() { set_edited_element({}); }
+    void delete_edited_element();
 };
 
 

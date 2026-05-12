@@ -185,6 +185,10 @@ public slots:
 
     QString sanitize_entity_name(QString);
 
+    db::Entity add_element(QString new_name, db::Entity parent = {});
+
+    void delete_element(db::Entity to_delete);
+
     /// Materials
     QString sanitize_material_name(QString);
 

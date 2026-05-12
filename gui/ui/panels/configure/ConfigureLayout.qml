@@ -142,8 +142,33 @@ EntityListEditor {
     }
 
     listFooter: RowLayout {
-        STIconButton {
+        CreateNewItemButton {
+            title: "New Element"
             text: "\uf055"
+
+            onCreateRequested: function(name) {
+                var new_name = AppData.current_database.sanitize_entity_name(name)
+                var entity = AppData.current_database.add_element(new_name)
+                root.module.edited_element = entity
+                root.editing = true
+            }
+        }
+
+        CreateNewItemButton {
+            title: "New Child Element"
+            text: "\uf0fe"
+            enabled: root.has_viewed_entity
+            opacity: enabled ? 1.0 : 0.4
+
+            onCreateRequested: function(name) {
+                var new_name = AppData.current_database.sanitize_entity_name(name)
+                var entity = AppData.current_database.add_element(
+                            new_name,
+                            root.module.viewed_element
+                            )
+                root.module.edited_element = entity
+                root.editing = true
+            }
         }
     }
 
@@ -194,6 +219,44 @@ EntityListEditor {
         RowLayout {
             STIconButton {
                 text: "\uf2ed"
+                onClicked: delete_element_dialog.open()
+
+                STDialog {
+                    id: delete_element_dialog
+
+                    title: "Delete Element"
+
+                    ColumnLayout {
+                        anchors.fill: parent
+
+                        Label {
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
+                            text: "Delete this element? Any children of this entity will be made top-level."
+                        }
+                    }
+
+                    footer: STDialogButtonBox {
+                        STButton {
+                            text: qsTr("Cancel")
+                            DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
+                        }
+
+                        STButton {
+                            text: qsTr("Delete")
+                            Material.foreground: Material.Red
+                            DialogButtonBox.buttonRole: DialogButtonBox.DestructiveRole
+                            idle_color: App.theme.destructiveGlassColor
+                            down_color: Material.color(Material.Red)
+
+                            onClicked: {
+                                root.module.delete_edited_element()
+                                root.goBack()
+                                delete_element_dialog.close()
+                            }
+                        }
+                    }
+                }
             }
         }
     }

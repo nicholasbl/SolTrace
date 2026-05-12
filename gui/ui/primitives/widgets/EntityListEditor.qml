@@ -93,13 +93,19 @@ Item {
             required property string name
             required property var entity
 
+            signal opened(db_entity entity)
+
             text: name
 
             highlighted: entity === AppData.layout.edited_element
 
             onClicked: {
-                root.editing = true
-                root.itemClicked(entity)
+                st_del_root.ListView.view.editorRoot.editing = true
+                st_del_root.ListView.view.editorRoot.itemClicked(entity)
+            }
+
+            onOpened: {
+                st_del_root.ListView.view.editorRoot.editing = false
             }
 
             STIconButton {
@@ -108,7 +114,7 @@ Item {
                 onClicked: {
                     AppData.layout.viewed_element = st_del_root.entity
                     AppData.layout.clear_edited_element()
-                    root.editing = false
+                    st_del_root.opened(st_del_root.entity)
                 }
 
                 anchors.right: parent.right
@@ -150,6 +156,7 @@ Item {
                 Layout.fillWidth: true
                 clip: true
                 model: internal.model
+                property var editorRoot: root
                 ScrollIndicator.vertical: ScrollIndicator { }
 
                 delegate: listDelegate
@@ -204,6 +211,7 @@ Item {
                     Layout.fillHeight: true
                     clip: true
                     model: internal.model
+                    property var editorRoot: root
                     ScrollIndicator.vertical: ScrollIndicator { }
 
                     delegate: listDelegate
