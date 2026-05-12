@@ -7,6 +7,42 @@ void LayoutModule::new_entity_selected() {
     child_model()->set_node(m_current_element);
     breadcrumb_model()->set_node(m_current_element);
     instance_edit()->set(m_current_element);
+
+    if (!m_current_database) {
+        set_current_element_name(QString());
+        return;
+    }
+
+    set_current_element_name(m_current_database->name_of(m_current_element));
+}
+
+void LayoutModule::reset(db::Database* database) {
+    if (m_observed_database) {
+        disconnect(
+            m_observed_database->identity.self(), nullptr, this, nullptr);
+    }
+
+    m_observed_database = database;
+
+    if (!database) {
+        set_current_element_name(QString());
+        return;
+    }
+
+    connect(database->identity.self(),
+            &db::ComponentAPIBase::changed,
+            this,
+            &LayoutModule::identity_changed);
+
+    set_current_element_name(database->name_of(m_current_element));
+}
+
+void LayoutModule::identity_changed(entt::entity entity) {
+    if (!m_current_database) return;
+
+    if (db::Entity(entity) != m_current_element) return;
+
+    set_current_element_name(m_current_database->name_of(m_current_element));
 }
 
 LayoutModule::LayoutModule(QObject* parent)
@@ -25,6 +61,11 @@ LayoutModule::LayoutModule(QObject* parent)
             &LayoutModule::current_database_value_changed,
             m_root_elements_model,
             &db::RootElementsModel::reset);
+
+    connect(this,
+            &LayoutModule::current_database_value_changed,
+            this,
+            &LayoutModule::reset);
 
     connect(this,
             &LayoutModule::current_database_value_changed,

@@ -114,7 +114,7 @@ AdaptiveEditor {
 
                         STIconButton {
                             text: "\uf0e2"
-                            onClicked: root.model.clear_material()
+                            onClicked: root.model.clear_geometry()
                         }
 
                         STButton {
@@ -159,22 +159,23 @@ AdaptiveEditor {
                 onClicked: root.goBack()
             }
 
-            Label {
-                text: "Element:"
+            RenameLabel {
+                text: root.module.current_element_name
 
                 font.family: "CMU Serif"
                 font.pointSize: 16
                 font.bold: true
-            }
 
-            Label {
-                text: root.module.current_database
-                      ? root.module.current_database.name_of(module.current_element)
-                      : "None"
+                onAccepted: (new_name) => {
+                    var curr_db = root.module.current_database
 
-                font.family: "CMU Serif"
-                font.pointSize: 16
-                font.bold: true
+                    new_name = curr_db.sanitize_entity_name(new_name);
+
+                    curr_db.set_name_of(
+                                    root.module.current_element,
+                                    new_name
+                                    )
+                }
             }
         }
 

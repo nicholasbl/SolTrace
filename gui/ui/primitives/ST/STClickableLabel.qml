@@ -24,6 +24,12 @@ Label {
 
         border.color: Material.dividerColor
         border.width: 0
+
+        Behavior on color {
+            ColorAnimation {
+                duration: 100
+            }
+        }
     }
 
     MouseArea {

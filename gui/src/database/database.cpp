@@ -289,6 +289,7 @@ Database::Database(QObject* p)
       transform(m_registry),
       global_transform(m_registry),
       invisible(m_registry),
+      disabled(m_registry),
       parent(m_registry),
       tag_root(m_registry),
       element_tag(m_registry),
@@ -1301,6 +1302,10 @@ void Database::set_name_of(db::Entity item, QString new_name) {
 
     m_registry.emplace_or_replace<IdentityComponent>(
         item, IdentityComponent { .name = new_name });
+}
+
+QString Database::sanitize_entity_name(QString name) {
+    return sanitize_new_name<ElementComponent>(m_registry, name, "Entity");
 }
 
 QString Database::sanitize_material_name(QString name) {

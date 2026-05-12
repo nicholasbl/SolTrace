@@ -405,15 +405,25 @@ void AnInstanceEditor::recompute() {
     emit position_changed();
     emit orientation_changed();
     emit hidden_changed();
+    emit disabled_changed();
     emit material_group_changed();
+    emit current_material_changed();
+    emit current_material_name_changed();
     emit geometry_group_changed();
+    emit current_geometry_changed();
+    emit current_geometry_name_changed();
     emit parent_changed();
     emit tags_changed();
 }
 
 void AnInstanceEditor::an_entity_changed(entt::entity e) {
-    if (m_entity != e) return;
-    recompute();
+    if (m_entity == e) {
+        recompute();
+        return;
+    }
+
+    if (material_group() == e) { emit current_material_name_changed(); }
+    if (geometry_group() == e) { emit current_geometry_name_changed(); }
 }
 
 AnInstanceEditor::AnInstanceEditor(QObject* parent) : QObject(parent) {
@@ -437,9 +447,25 @@ void AnInstanceEditor::set(entt::entity ent) {
 }
 
 void AnInstanceEditor::reset(Database* database) {
+    if (m_host) {
+        QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->transform.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->invisible.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->disabled.self(), nullptr, this, nullptr);
+        QObject::disconnect(
+            m_host->material_group_membership.self(), nullptr, this, nullptr);
+        QObject::disconnect(
+            m_host->geometry_group_membership.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->tag_membership.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->parent.self(), nullptr, this, nullptr);
+    }
+
     m_host = database;
 
-    if (!database) return;
+    if (!database) {
+        recompute();
+        return;
+    }
 
     connect(database->identity.self(),
             &ComponentAPIBase::changed,
@@ -456,13 +482,38 @@ void AnInstanceEditor::reset(Database* database) {
             this,
             &AnInstanceEditor::an_entity_changed);
 
+    connect(database->invisible.self(),
+            &ComponentAPIBase::removed,
+            this,
+            &AnInstanceEditor::an_entity_changed);
+
+    connect(database->disabled.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &AnInstanceEditor::an_entity_changed);
+
+    connect(database->disabled.self(),
+            &ComponentAPIBase::removed,
+            this,
+            &AnInstanceEditor::an_entity_changed);
+
     connect(database->material_group_membership.self(),
             &ComponentAPIBase::changed,
             this,
             &AnInstanceEditor::an_entity_changed);
 
+    connect(database->material_group_membership.self(),
+            &ComponentAPIBase::removed,
+            this,
+            &AnInstanceEditor::an_entity_changed);
+
     connect(database->geometry_group_membership.self(),
             &ComponentAPIBase::changed,
+            this,
+            &AnInstanceEditor::an_entity_changed);
+
+    connect(database->geometry_group_membership.self(),
+            &ComponentAPIBase::removed,
             this,
             &AnInstanceEditor::an_entity_changed);
 
@@ -548,6 +599,27 @@ void AnInstanceEditor::set_hidden(bool newHidden) {
     emit hidden_changed();
 }
 
+bool AnInstanceEditor::disabled() const {
+    if (m_host and m_host->valid(m_entity)) {
+        return m_host->as_registry().any_of<DisabledComponent>(m_entity);
+    }
+
+    return false;
+}
+
+void AnInstanceEditor::set_disabled(bool newDisabled) {
+    if (disabled() == newDisabled) return;
+    FIND(disabled);
+
+    if (newDisabled) {
+        component.set(m_entity, DisabledComponent {});
+    } else {
+        component.remove(m_entity);
+    }
+
+    emit disabled_changed();
+}
+
 entt::entity AnInstanceEditor::material_group() const {
     if (m_host and m_host->valid(m_entity)) {
         if (auto tf = m_host->material_group_membership.get(m_entity); tf) {
@@ -560,10 +632,14 @@ entt::entity AnInstanceEditor::material_group() const {
 
 void AnInstanceEditor::set_material_group(entt::entity newGroup) {
     if (material_group() == newGroup) return;
+    if (!m_host) return;
+    if (!m_host->valid(m_entity)) return;
 
     m_host->assign_material(m_entity, newGroup);
 
     emit material_group_changed();
+    emit current_material_changed();
+    emit current_material_name_changed();
 }
 
 entt::entity AnInstanceEditor::geometry_group() const {
@@ -578,10 +654,46 @@ entt::entity AnInstanceEditor::geometry_group() const {
 
 void AnInstanceEditor::set_geometry_group(entt::entity newGroup) {
     if (geometry_group() == newGroup) return;
+    if (!m_host) return;
+    if (!m_host->valid(m_entity)) return;
 
     m_host->assign_geometry(m_entity, newGroup);
 
     emit geometry_group_changed();
+    emit current_geometry_changed();
+    emit current_geometry_name_changed();
+}
+
+Entity AnInstanceEditor::current_material() const {
+    return material_group();
+}
+
+void AnInstanceEditor::set_current_material(Entity newGroup) {
+    set_material_group(newGroup);
+}
+
+QString AnInstanceEditor::current_material_name() const {
+    if (m_host and m_host->valid(current_material())) {
+        return m_host->name_of(current_material());
+    }
+
+    return {};
+}
+
+Entity AnInstanceEditor::current_geometry() const {
+    return geometry_group();
+}
+
+void AnInstanceEditor::set_current_geometry(Entity newGroup) {
+    set_geometry_group(newGroup);
+}
+
+QString AnInstanceEditor::current_geometry_name() const {
+    if (m_host and m_host->valid(current_geometry())) {
+        return m_host->name_of(current_geometry());
+    }
+
+    return {};
 }
 
 entt::entity AnInstanceEditor::parent() const {
@@ -651,6 +763,10 @@ void AnInstanceEditor::set_entity_name(const QString& newEntity_name) {
     component.set(m_entity, IdentityComponent { .name = newEntity_name });
 
     emit entity_name_changed();
+}
+
+void AnInstanceEditor::set_from_angles(QVector3D angles) {
+    set_orientation(QQuaternion::fromEulerAngles(angles));
 }
 
 } // namespace db

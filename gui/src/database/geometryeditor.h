@@ -20,6 +20,7 @@ namespace SD = SolTrace::Data;
 namespace db {
 
 struct MaterialComponent;
+struct SurfaceGenerationOptions;
 
 class BoundingBox {
     Q_GADGET
@@ -42,6 +43,7 @@ class SurfaceGeometry : public QQuick3DGeometry, public DatabaseObserver {
     entt::entity m_current_group = entt::null;
 
     void set_new_database_connections(Database* ptr) override;
+    SurfaceGenerationOptions surface_generation_options() const;
 
 private slots:
     void parameters_changed(entt::entity);
@@ -50,8 +52,12 @@ private slots:
     Q_READONLY_PROPERTY(unsigned, vertex_count);
 
 public:
+    enum class Quality { Low, Normal, High };
+    Q_ENUM(Quality)
+
     SurfaceGeometry();
 
+    Q_WRITABLE_PROPERTY(Quality, quality, Quality::Normal)
     Q_READONLY_PROPERTY(BoundingBox, bounding_box)
 
     void set(Database*, entt::entity group);

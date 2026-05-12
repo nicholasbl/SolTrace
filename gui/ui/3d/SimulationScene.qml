@@ -83,7 +83,7 @@ Item {
         environment: SceneEnvironment {
 
             antialiasingMode: SceneEnvironment.MSAA
-            antialiasingQuality: SceneEnvironment.VeryHigh
+            antialiasingQuality: SceneEnvironment.High
 
             temporalAAEnabled: true
             temporalAAStrength: 0.8

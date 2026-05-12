@@ -29,7 +29,6 @@ STClickableLabel {
     }
 
     Label {
-        visible: parent.containsMouse
         text: "\uf303"
         font.family: "Font Awesome 7 Free"
 
@@ -38,6 +37,12 @@ STClickableLabel {
         anchors.left: parent.right
         anchors.bottom: parent.top
 
-        opacity: .80
+        opacity: parent.containsMouse * .80
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 100
+            }
+        }
     }
 }

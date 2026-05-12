@@ -21,8 +21,12 @@ namespace SolTrace::GUI::App {
 class LayoutModule : public QObject {
     Q_OBJECT
 
+    QPointer<db::Database> m_observed_database;
+
 private slots:
     void new_entity_selected();
+    void reset(db::Database*);
+    void identity_changed(entt::entity);
 
 public:
     explicit LayoutModule(QObject* parent = nullptr);
@@ -39,6 +43,7 @@ public:
     QOBJECT_READONLY_PROPERTY(db::WorldGeometryModel, world_geometry_model);
 
     Q_WRITABLE_PROPERTY(db::Entity, current_element, { })
+    Q_READONLY_PROPERTY(QString, current_element_name);
 
     /// we need a selected element lists. need global pos and rot
 

@@ -12,6 +12,11 @@
 namespace db {
 
 SurfaceGeometry::SurfaceGeometry() {
+    connect(this,
+            &SurfaceGeometry::quality_changed,
+            this,
+            &SurfaceGeometry::rebuild_geometry);
+
     rebuild_geometry();
 }
 
@@ -31,6 +36,34 @@ void SurfaceGeometry::set(Database* ptr, entt::entity group) {
 
 void SurfaceGeometry::parameters_changed(entt::entity group) {
     if (group == m_current_group) rebuild_geometry();
+}
+
+SurfaceGenerationOptions SurfaceGeometry::surface_generation_options() const {
+    SurfaceGenerationOptions options;
+
+    auto scale = [this](uint32_t value) {
+        switch (quality()) {
+        case Quality::Low:
+            return std::max<uint32_t>(1, value / 2);
+        case Quality::Normal:
+            return value;
+        case Quality::High:
+            return value * 2;
+        }
+
+        return value;
+    };
+
+    options.height_field_resolution = {
+        scale(options.height_field_resolution.x),
+        scale(options.height_field_resolution.y),
+    };
+    options.radial_subdivisions           = scale(options.radial_subdivisions);
+    options.perimeter_subdivisions        = scale(options.perimeter_subdivisions);
+    options.cylinder_angular_subdivisions = scale(options.cylinder_angular_subdivisions);
+    options.cylinder_length_subdivisions  = scale(options.cylinder_length_subdivisions);
+
+    return options;
 }
 
 void SurfaceGeometry::rebuild_geometry() {
@@ -57,7 +90,7 @@ void SurfaceGeometry::rebuild_geometry() {
     auto surface  = ptr->surface;
     auto aperture = ptr->aperture;
 
-    auto mesh = generate_surface(surface, aperture);
+    auto mesh = generate_surface(surface, aperture, surface_generation_options());
     if (!mesh || mesh->vertex.empty() || mesh->triangles.empty()) {
         qWarning() << Q_FUNC_INFO
                    << "Geometry is empty, or unable to be generated";
@@ -146,6 +179,7 @@ GeometryEditor::GeometryEditor(QObject* parent)
 
 {
     m_surface_geometry->setParent(this);
+    m_surface_geometry->set_quality(SurfaceGeometry::Quality::High);
 
     connect(m_surface_parameter_model,
             &SurfaceParameterModel::updated,

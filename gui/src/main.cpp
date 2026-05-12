@@ -31,6 +31,14 @@ int main(int argc, char* argv[]) {
 
     QApplication app(argc, argv);
 
+
+#ifdef QT_QML_DEBUG
+    QQmlDebuggingEnabler::startTcpDebugServer(
+        3768,
+        QQmlDebuggingEnabler::DoNotWaitForClient,
+        QStringLiteral("127.0.0.1"));
+#endif
+
     // Load fonts
     for (auto font : font_list) {
         auto result = QFontDatabase::addApplicationFont(font);

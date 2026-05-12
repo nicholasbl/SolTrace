@@ -115,6 +115,7 @@ public:
     ComponentAPIUpdate<TransformComponent> transform;
     ComponentAPI<GlobalTransformComponent> global_transform;
     ComponentAPIUpdate<InvisibleComponent> invisible;
+    ComponentAPIUpdate<DisabledComponent>  disabled;
     ComponentAPI<ChildOfComponent>         parent;
     ComponentAPI<TagComponent>             tag_root;
 
@@ -206,6 +207,8 @@ public slots:
     QString name_of(db::Entity item) const;
 
     void set_name_of(db::Entity item, QString new_name);
+
+    QString sanitize_entity_name(QString);
 
     /// Materials
     QString sanitize_material_name(QString);

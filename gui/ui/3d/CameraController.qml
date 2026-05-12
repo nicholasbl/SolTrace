@@ -136,38 +136,6 @@ Item {
         internal.mouse_delta_pos = Qt.vector2d(0,0)
     }
 
-    // DragHandler {
-    //     id: ctrlDragHandler
-    //     target: null
-    //     enabled: root.mouseEnabled && root.panEnabled
-    //     acceptedButtons: root.acceptedButtons
-    //     acceptedModifiers: Qt.ControlModifier
-    //     onCentroidChanged: {
-    //         root.panEvent(Qt.vector2d(centroid.position.x, centroid.position.y));
-    //     }
-
-    //     onActiveChanged: {
-    //         if (active)
-    //             root.startPan(Qt.vector2d(centroid.position.x, centroid.position.y));
-    //         else
-    //             root.endPan();
-    //     }
-    // }
-
-    // PinchHandler {
-    //     id: pinchHandler
-    //     target: null
-    //     enabled: root.mouseEnabled
-    //     onScaleChanged: (delta) => {
-    //                         root.camera.z = root.camera.z * (1 / delta)
-    //                     }
-    // }
-
-    // TapHandler {
-    //     acceptedButtons: root.acceptedButtons
-    //     onTapped: root.forceActiveFocus() // qmllint disable signal-handler-parameters
-    // }
-
     WheelHandler {
         id: wheel_handler
 

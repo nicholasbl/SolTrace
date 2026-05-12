@@ -66,12 +66,24 @@ AdaptiveFilteredEditor {
                 onClicked: root.goBack()
             }
 
-            Label {
-                text: root.App.materials.current_geometry_name
+            RenameLabel {
+                text: App.materials.current_geometry_name
 
                 font.family: "CMU Serif"
                 font.pointSize: 16
                 font.bold: true
+
+                onAccepted: (new_name) => {
+                    var mats = App.materials;
+                    var curr_db = mats.current_database
+
+                    new_name = curr_db.sanitize_geometry_name(new_name);
+
+                    curr_db.set_name_of(
+                                    mats.current_geometry,
+                                    new_name
+                                    )
+                }
             }
         }
 

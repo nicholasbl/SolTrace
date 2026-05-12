@@ -63,8 +63,8 @@ public:
 // =============================================================================
 
 struct EntityNamePair {
-    QString      name;
-    Entity       entity;
+    QString name;
+    Entity  entity;
 
     RECORD_META(db::EntityNamePair, SM_EXPOSE_RW(name), SM_EXPOSE_RO(entity), );
 
@@ -209,12 +209,24 @@ class AnInstanceEditor : public QObject {
                    NOTIFY orientation_changed FINAL)
     Q_PROPERTY(
         bool hidden READ hidden WRITE set_hidden NOTIFY hidden_changed FINAL)
+    Q_PROPERTY(bool disabled READ disabled WRITE set_disabled NOTIFY
+                   disabled_changed FINAL)
 
     Q_PROPERTY(entt::entity material_group READ material_group WRITE
                    set_material_group NOTIFY material_group_changed FINAL)
 
     Q_PROPERTY(entt::entity geometry_group READ geometry_group WRITE
                    set_geometry_group NOTIFY geometry_group_changed FINAL)
+
+    Q_PROPERTY(Entity current_material READ current_material WRITE
+                   set_current_material NOTIFY current_material_changed FINAL)
+    Q_PROPERTY(QString current_material_name READ current_material_name NOTIFY
+                   current_material_name_changed FINAL)
+
+    Q_PROPERTY(Entity current_geometry READ current_geometry WRITE
+                   set_current_geometry NOTIFY current_geometry_changed FINAL)
+    Q_PROPERTY(QString current_geometry_name READ current_geometry_name NOTIFY
+                   current_geometry_name_changed FINAL)
 
     Q_PROPERTY(entt::entity parent READ parent WRITE set_parent NOTIFY
                    parent_changed FINAL)
@@ -247,10 +259,21 @@ public:
     bool hidden() const;
     void set_hidden(bool newHidden);
 
+    bool disabled() const;
+    void set_disabled(bool newDisabled);
+
     entt::entity material_group() const;
     void         set_material_group(entt::entity newGroup);
     entt::entity geometry_group() const;
     void         set_geometry_group(entt::entity newGroup);
+
+    Entity  current_material() const;
+    void    set_current_material(Entity newGroup);
+    QString current_material_name() const;
+
+    Entity  current_geometry() const;
+    void    set_current_geometry(Entity newGroup);
+    QString current_geometry_name() const;
 
     entt::entity parent() const;
     void         set_parent(entt::entity newParent);
@@ -258,12 +281,21 @@ public:
     QVector<entt::entity> tags() const;
     void                  set_tags(const QVector<entt::entity>& newTags);
 
+public slots:
+    void set_from_angles(QVector3D angles);
+    // void set_from_dir_up(QVector3D direction, QVector3D up);
+
 signals:
     void position_changed();
     void orientation_changed();
     void hidden_changed();
+    void disabled_changed();
     void material_group_changed();
     void geometry_group_changed();
+    void current_material_changed();
+    void current_material_name_changed();
+    void current_geometry_changed();
+    void current_geometry_name_changed();
     void parent_changed();
     void tags_changed();
     void entity_name_changed();
