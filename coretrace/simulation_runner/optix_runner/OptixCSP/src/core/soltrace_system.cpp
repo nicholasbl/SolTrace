@@ -22,6 +22,10 @@
 #include <iostream>
 #include <iomanip>
 
+#ifdef NVTX_ENABLED
+#include <nvtx3/nvtx3.hpp>
+#endif
+
 #include <optix_function_table_definition.h>
 #include <optix_stubs.h>
 
@@ -36,7 +40,7 @@ typedef Record<OptixCSP::HitGroupData> HitGroupRecord;
 SolTraceSystem::SolTraceSystem()
     : m_number_of_rays(0),
       m_max_number_of_rays(0),
-      m_verbose(true),
+      m_verbose(false),
       m_mem_free_before(0),
       m_mem_free_after(0),
       m_optical_errors(false),
@@ -252,6 +256,9 @@ void SolTraceSystem::initialize()
 
 void SolTraceSystem::run()
 {
+#ifdef NVTX_ENABLED
+    NVTX3_FUNC_RANGE();
+#endif
 
     // Initialize results vectors
     m_hp_vec.clear();
@@ -275,7 +282,12 @@ void SolTraceSystem::run()
 
         // Allocate buffer (sets data_manager->launch_params_H buffer)
         timer_setup_buffer.start();
-        setup_device_buffer();
+        {
+#ifdef NVTX_ENABLED
+            nvtx3::scoped_range nvtx_setup{"setup_device_buffer"};
+#endif
+            setup_device_buffer();
+        }
         timer_setup_buffer.stop();
 
         int width = data_manager->launch_params_H.width;
@@ -290,6 +302,10 @@ void SolTraceSystem::run()
 
         // Launch the simulation.
         timer_optix_launch.start();
+        {
+#ifdef NVTX_ENABLED
+        nvtx3::scoped_range nvtx_launch{"optixLaunch"};
+#endif
         OPTIX_CHECK(optixLaunch(
             m_state.pipeline,
             m_state.stream, // Assume this stream is properly created.
@@ -300,12 +316,18 @@ void SolTraceSystem::run()
             height,
             1));
         CUDA_SYNC_CHECK();
+        } // nvtx_launch
         timer_optix_launch.stop();
 
         // Collect results
         timer_collect_results.start();
-        get_buffer_results(m_hp_vec, m_raynumber_vec, m_element_id_vec, m_hit_type_vec,
-                           m_sunraynumber_vec);
+        {
+#ifdef NVTX_ENABLED
+            nvtx3::scoped_range nvtx_collect{"get_buffer_results"};
+#endif
+            get_buffer_results(m_hp_vec, m_raynumber_vec, m_element_id_vec, m_hit_type_vec,
+                               m_sunraynumber_vec);
+        }
         timer_collect_results.stop();
 
         N_ray_hit = m_raynumber_vec.empty() ? 0 : m_raynumber_vec.back();
@@ -698,6 +720,9 @@ void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector
                                         std::vector<int32_t> &element_id_vec, std::vector<uint8_t> &hit_type_vec,
                                         std::vector<uint_fast64_t> &sunraynumber_vec)
 {
+#ifdef NVTX_ENABLED
+    NVTX3_FUNC_RANGE();
+#endif
     const uint_fast64_t max_depth = data_manager->launch_params_H.max_depth;
     const uint_fast64_t num_rays = data_manager->launch_params_H.width * data_manager->launch_params_H.height;
     // const int output_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * data_manager->launch_params_H.max_depth;
