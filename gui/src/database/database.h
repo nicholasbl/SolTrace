@@ -4,6 +4,7 @@
 
 #include "database/components.h"
 #include "database/database_notification.h"
+#include "entity.h"
 #include "magic_enum/magic_enum.hpp"
 
 #include <QDebug>
@@ -41,32 +42,6 @@ void build_options(QStringListModel& dest) {
     dest.setStringList(items);
 }
 
-
-/// Wrapper type for Qt/QML interface
-struct Entity {
-    Q_GADGET
-    QML_VALUE_TYPE(db_entity);
-    // Q_PROPERTY(qint64 value MEMBER value);
-
-public:
-    Entity() = default;
-    Entity(entt::entity e) : value(e) { }
-
-    entt::entity value = entt::null;
-
-    bool operator<=>(Entity const& other) const = default;
-
-    operator entt::entity() const { return value; }
-
-    Q_INVOKABLE bool is_valid() const { return value != entt::null; }
-};
-
-inline QDebug operator<<(QDebug debug, Entity const& c) {
-    QDebugStateSaver saver(debug);
-    debug.nospace() << "(Entity " << entt::to_integral(c.value) << ")";
-
-    return debug;
-}
 
 class Database;
 
@@ -157,7 +132,7 @@ public:
 
     /// Get the list of children of this entity. Returns an empty list if there
     /// are none.
-    std::span<entt::entity const> children_of(entt::entity parent) const;
+    std::span<Entity const> children_of(entt::entity parent) const;
 
     /// Get the parent of this entity. Returns entt::null if there is none.
     entt::entity parent_of(entt::entity child) const;
@@ -181,10 +156,10 @@ public:
     entt::entity create_tag(QString name);
 
     /// Ask if an entity has been given a tag
-    bool is_tagged(entt::entity item, entt::entity tag) const;
+    bool is_tagged(Entity item, Entity tag) const;
 
     /// Assign an entity to a specific tag
-    void assign_tag(entt::entity item, entt::entity tag);
+    void assign_tag(Entity item, Entity tag);
 
     /// Remove a tag from an entity
     void unassign_tag(entt::entity item, entt::entity tag);
@@ -193,7 +168,7 @@ public:
     void delete_tag(entt::entity tag);
 
     /// Get all the tags for an entity
-    std::span<entt::entity const> tags_for(entt::entity item) const;
+    std::span<Entity const> tags_for(entt::entity item) const;
 
     /// Get the global ray source of the database
     SD::ray_source_ptr get_ray_source() const;
@@ -305,13 +280,5 @@ public:
 
 } // namespace db
 
-namespace std {
-template <>
-struct hash<db::Entity> {
-    std::size_t operator()(db::Entity e) const noexcept {
-        return std::hash<entt::entity>()(e.value);
-    }
-};
-} // namespace std
 
 Q_DECLARE_METATYPE(db::Entity);

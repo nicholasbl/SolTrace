@@ -48,6 +48,7 @@ void LayoutModule::identity_changed(entt::entity entity) {
 LayoutModule::LayoutModule(QObject* parent)
     : QObject(parent),
       m_status(new StatusComponent(this)),
+      m_all_elements_model(new db::AllElementsModel(this)),
       m_root_elements_model(new db::RootElementsModel(this)),
       m_filtered_root_elements_model(new db::InstanceSortFilter(this)),
       m_child_model(new db::ChildModel(this)),
@@ -56,6 +57,11 @@ LayoutModule::LayoutModule(QObject* parent)
       m_world_geometry_model(new db::WorldGeometryModel(this)) {
 
     m_filtered_root_elements_model->setSourceModel(m_root_elements_model);
+
+    connect(this,
+            &LayoutModule::current_database_value_changed,
+            m_all_elements_model,
+            &db::AllElementsModel::reset);
 
     connect(this,
             &LayoutModule::current_database_value_changed,
@@ -91,6 +97,8 @@ LayoutModule::LayoutModule(QObject* parent)
             &LayoutModule::current_database_value_changed,
             m_world_geometry_model,
             &db::WorldGeometryModel::reset);
+
+    // Element changes
 
     connect(this,
             &LayoutModule::current_element_changed,

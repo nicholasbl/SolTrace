@@ -19,7 +19,7 @@ class InstancedElements : public QQuick3DInstancing {
     QByteArray getInstanceBuffer(int* instanceCount) override;
 
     QPointer<Database> m_database;
-    entt::entity       m_target_group = entt::null;
+    Entity             m_target_group;
 
 private slots:
     // When the geometry information for this group has changed

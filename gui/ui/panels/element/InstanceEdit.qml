@@ -10,6 +10,32 @@ STPropertyPanel {
     id: root
     property var module : App.layout.instance_edit
 
+
+    STPropertyLabel {
+        text: "Parent"
+    }
+
+    STButton {
+        Layout.fillWidth: true
+        property string parent_name: root.module.parent_name
+        text: parent_name.length ? parent_name : "Unassigned"
+
+        onClicked: parent_pop.open()
+
+        SelectItemPopup {
+            id: parent_pop
+            source_model: AppData.layout.all_elements_model
+
+            exclude: [root.module.entity]
+
+            allowNothing: true
+
+            onSelectedEntity: (entity) => root.module.parent = entity
+            onSelectedNothing: root.module.clear_parent()
+        }
+    }
+
+
     STPropertyLabel {
         text: "Material"
     }

@@ -10,11 +10,14 @@ STDialog {
 
     property var source_model: null
 
+    property bool allowNothing: false
+
     property string filterText
 
     property list<db_entity> exclude
 
     signal selectedEntity(db_entity item)
+    signal selectedNothing()
 
     onFilterTextChanged: {
         filtered_model.invalidate()
@@ -96,6 +99,19 @@ STDialog {
                     selectedEntity(delegate.entity)
                     root.accept()
                 }
+            }
+        }
+
+        STButton {
+            id: do_nothing
+            visible: root.allowNothing
+            Layout.fillWidth: true
+
+            text: "Unassign"
+
+            onClicked: {
+                root.selectedNothing()
+                root.close()
             }
         }
     }

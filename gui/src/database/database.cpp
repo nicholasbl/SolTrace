@@ -1023,8 +1023,9 @@ void Database::unset_parent(entt::entity child) {
 
     m_registry.erase<ChildOfComponent>(child);
 
-    m_registry.patch<ChildrenComponent>(
-        parent, [child](ChildrenComponent& c) { erase(c.children, child); });
+    m_registry.patch<ChildrenComponent>(parent, [child](ChildrenComponent& c) {
+        erase(c.children, Entity(child));
+    });
 
     update_global_transform_subtree(m_registry, child);
 }
@@ -1059,7 +1060,7 @@ void Database::set_parent(entt::entity child, entt::entity parent) {
     update_global_transform_subtree(m_registry, child);
 }
 
-std::span<entt::entity const> Database::children_of(entt::entity parent) const {
+std::span<Entity const> Database::children_of(entt::entity parent) const {
     auto parent_comp = m_registry.try_get<ChildrenComponent>(parent);
 
     if (!parent_comp) { return { }; }
@@ -1095,8 +1096,9 @@ void Database::remove_material(entt::entity child) {
     // remove us from the parent
 
     m_registry.patch<MaterialGroupComponent>(
-        child_comp->group,
-        [child](MaterialGroupComponent& comp) { erase(comp.members, child); });
+        child_comp->group, [child](MaterialGroupComponent& comp) {
+            erase(comp.members, Entity(child));
+        });
 }
 
 void Database::assign_material(entt::entity child, entt::entity group) {
@@ -1132,8 +1134,9 @@ void Database::remove_geometry(entt::entity child) {
 
     // remove us from the parent
     m_registry.patch<GeometryGroupComponent>(
-        child_comp->group,
-        [child](GeometryGroupComponent& comp) { erase(comp.members, child); });
+        child_comp->group, [child](GeometryGroupComponent& comp) {
+            erase(comp.members, Entity(child));
+        });
 }
 
 void Database::assign_geometry(entt::entity child, entt::entity group) {
@@ -1223,7 +1226,7 @@ entt::entity Database::create_tag(QString name) {
     return ret;
 }
 
-bool Database::is_tagged(entt::entity item, entt::entity tag) const {
+bool Database::is_tagged(Entity item, Entity tag) const {
     if (auto* ptr = m_registry.try_get<TagMembershipComponent>(item); ptr) {
         auto& t = ptr->tags;
 
@@ -1232,13 +1235,13 @@ bool Database::is_tagged(entt::entity item, entt::entity tag) const {
     return false;
 }
 
-void Database::assign_tag(entt::entity item, entt::entity tag) {
+void Database::assign_tag(Entity item, Entity tag) {
     if (!m_registry.all_of<TagComponent>(tag)) { return; }
 
     if (is_tagged(item, tag)) return;
 
     auto& storage =
-        m_registry.storage<ATagMemberComponent>(entt::to_integral(tag));
+        m_registry.storage<ATagMemberComponent>(entt::to_integral(tag.value));
 
     storage.emplace(item);
 
@@ -1254,7 +1257,8 @@ void Database::unassign_tag(entt::entity item, entt::entity tag) {
     if (!m_registry.all_of<TagMembershipComponent>(item)) { return; }
 
     m_registry.patch<TagMembershipComponent>(
-        item, [tag](TagMembershipComponent& tc) { erase(tc.tags, tag); });
+        item,
+        [tag](TagMembershipComponent& tc) { erase(tc.tags, Entity(tag)); });
 
     auto& storage =
         m_registry.storage<ATagMemberComponent>(entt::to_integral(tag));
@@ -1271,7 +1275,9 @@ void Database::delete_tag(entt::entity tag) {
     for (auto x : storage) {
 
         m_registry.patch<TagMembershipComponent>(
-            x, [tag](TagMembershipComponent& comp) { erase(comp.tags, tag); });
+            x, [tag](TagMembershipComponent& comp) {
+                erase(comp.tags, Entity(tag));
+            });
     }
 
     m_registry.reset(entt::to_integral(tag));
@@ -1279,7 +1285,7 @@ void Database::delete_tag(entt::entity tag) {
     m_registry.destroy(tag);
 }
 
-std::span<entt::entity const> Database::tags_for(entt::entity item) const {
+std::span<Entity const> Database::tags_for(entt::entity item) const {
     if (auto ptr = m_registry.try_get<TagMembershipComponent>(item); ptr) {
         return ptr->tags;
     }
@@ -1338,7 +1344,7 @@ db::Entity Database::add_material_group(QString             new_name,
     m_registry.emplace<MaterialGroupComponent>(
         ent,
         MaterialGroupComponent {
-            .members = QVector<entt::entity>(set.begin(), set.end()),
+            .members = QVector<Entity>(set.begin(), set.end()),
         });
     m_registry.emplace<MaterialComponent>(ent, params);
 
@@ -1450,7 +1456,7 @@ db::Entity Database::add_geometry_group(QString             new_name,
     m_registry.emplace<GeometryGroupComponent>(
         ent,
         GeometryGroupComponent {
-            .members = QVector<entt::entity>(set.begin(), set.end()),
+            .members = QVector<Entity>(set.begin(), set.end()),
         });
     m_registry.emplace<GeometryComponent>(ent, params);
 

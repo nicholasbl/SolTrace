@@ -4,7 +4,7 @@
 namespace db {
 
 void InstancedElements::on_geometry_group_change(entt::entity group) {
-    if (group != entt::null && group != m_target_group) return;
+    if (group != entt::null && Entity(group) != m_target_group) return;
 
     m_instance_data.clear();
     m_member_cache.clear();
@@ -64,7 +64,7 @@ void InstancedElements::on_geometry_group_membership_change(
 
     if (!ptr) return;
 
-    if (m_target_group == entt::null) return;
+    if (!m_target_group.is_valid()) return;
 
     if (ptr->group != m_target_group) return;
 
@@ -183,8 +183,8 @@ QByteArray InstancedElements::getInstanceBuffer(int* instanceCount) {
 
     if (instanceCount) { *instanceCount = m_member_cache.size(); }
 
-    qDebug() << Q_FUNC_INFO << entt::to_integral(m_target_group)
-             << m_member_cache.size() << m_instance_data.size();
+    qDebug() << Q_FUNC_INFO << m_target_group << m_member_cache.size()
+             << m_instance_data.size();
 
     return m_instance_data;
 }

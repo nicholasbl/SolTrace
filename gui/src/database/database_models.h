@@ -2,6 +2,7 @@
 
 
 #include "database/database.h"
+#include "utilities/notification.h"
 #include "utilities/qt_helpers.h"
 #include "utilities/structmodel.h"
 
@@ -19,13 +20,13 @@ class NameModel : public QObject {
 
     QPointer<Database> m_host;
 
-    entt::entity m_target;
+    Entity m_target;
 
-    Q_WRITABLE_PROPERTY(entt::entity, node, entt::null);
+    Q_WRITABLE_PROPERTY(Entity, node, {});
     Q_READONLY_PROPERTY(QString, name);
 
 private slots:
-    void recompute(entt::entity);
+    void recompute(db::Entity);
 
 public:
     explicit NameModel(QObject* parent = nullptr);
@@ -46,9 +47,9 @@ class BreadcrumbModel : public QStringListModel {
 
     QPointer<Database> m_host;
 
-    QVector<entt::entity> m_path;
+    QVector<Entity> m_path;
 
-    Q_WRITABLE_PROPERTY(entt::entity, node, entt::null);
+    Q_WRITABLE_PROPERTY(Entity, node, {});
 
 private slots:
     void recompute();
@@ -68,7 +69,7 @@ struct EntityNamePair {
 
     RECORD_META(db::EntityNamePair, SM_EXPOSE_RW(name), SM_EXPOSE_RO(entity), );
 
-    static EntityNamePair record_for_entity(Database& db, entt::entity entity);
+    static EntityNamePair record_for_entity(Database& db, Entity entity);
 };
 
 /// A model providing all children of a given entity
@@ -76,16 +77,16 @@ class ChildModel : public StructModelAdapter<EntityNamePair> {
     Q_OBJECT
     QPointer<Database> m_host;
 
-    Q_WRITABLE_PROPERTY(entt::entity, node, entt::null);
+    Q_WRITABLE_PROPERTY(Entity, node, {});
 
-    // QVector<entt::entity>                 m_list;
-    std::unordered_map<entt::entity, int> m_reverse;
+    // QVector<Entity>                 m_list;
+    std::unordered_map<Entity, int> m_reverse;
 
     QVector<EntityNamePair> rebuild_lists();
 
 private slots:
     void recompute();
-    void ident_changed(entt::entity);
+    void ident_changed(db::Entity);
 
 public:
     explicit ChildModel(QObject* parent = nullptr);
@@ -101,15 +102,15 @@ public:
 //     Q_OBJECT
 //     QPointer<Database> m_host;
 
-//     Q_WRITABLE_PROPERTY(entt::entity, node, entt::null);
+//     Q_WRITABLE_PROPERTY(Entity, node, entt::null);
 
-//     std::unordered_map<entt::entity, int> m_reverse;
+//     std::unordered_map<Entity, int> m_reverse;
 
 //     QVector<EntityNamePair> rebuild_lists();
 
 // private slots:
 //     void recompute();
-//     void ident_changed(entt::entity);
+//     void ident_changed(Entity);
 
 // public:
 //     explicit AllEntityModel(QObject* parent = nullptr);
@@ -126,15 +127,15 @@ class MaterialGroupsModel : public StructModelAdapter<EntityNamePair> {
 
     QPointer<Database> m_host;
 
-    std::unordered_map<entt::entity, int> m_reverse;
+    std::unordered_map<Entity, int> m_reverse;
 
     QVector<EntityNamePair> rebuild_lists();
 
 private slots:
     void recompute();
 
-    void group_changed(entt::entity);
-    void group_removed(entt::entity);
+    void group_changed(db::Entity);
+    void group_removed(db::Entity);
 
 public:
     explicit MaterialGroupsModel(QObject* parent = nullptr);
@@ -156,8 +157,8 @@ class GeometryGroupsModel : public StructModelAdapter<EntityNamePair> {
 private slots:
     void recompute();
 
-    void group_changed(entt::entity);
-    void group_removed(entt::entity);
+    void group_changed(db::Entity);
+    void group_removed(db::Entity);
 
 public:
     explicit GeometryGroupsModel(QObject* parent = nullptr);
@@ -180,8 +181,8 @@ class TagsModel : public StructModelAdapter<EntityNamePair> {
 private slots:
     void recompute();
 
-    void tag_changed(entt::entity);
-    void tag_removed(entt::entity);
+    void tag_changed(db::Entity);
+    void tag_removed(db::Entity);
 
 public:
     explicit TagsModel(QObject* parent = nullptr);
@@ -198,7 +199,7 @@ class AnInstanceEditor : public QObject {
     Q_OBJECT
     QPointer<Database> m_host;
 
-    entt::entity m_entity = entt::null;
+    Q_WRITABLE_PROPERTY(Entity, entity, {});
 
     Q_PROPERTY(QString entity_name READ entity_name WRITE set_entity_name NOTIFY
                    entity_name_changed FINAL)
@@ -212,10 +213,10 @@ class AnInstanceEditor : public QObject {
     Q_PROPERTY(bool disabled READ disabled WRITE set_disabled NOTIFY
                    disabled_changed FINAL)
 
-    Q_PROPERTY(entt::entity material_group READ material_group WRITE
+    Q_PROPERTY(Entity material_group READ material_group WRITE
                    set_material_group NOTIFY material_group_changed FINAL)
 
-    Q_PROPERTY(entt::entity geometry_group READ geometry_group WRITE
+    Q_PROPERTY(Entity geometry_group READ geometry_group WRITE
                    set_geometry_group NOTIFY geometry_group_changed FINAL)
 
     Q_PROPERTY(Entity current_material READ current_material WRITE
@@ -228,14 +229,16 @@ class AnInstanceEditor : public QObject {
     Q_PROPERTY(QString current_geometry_name READ current_geometry_name NOTIFY
                    current_geometry_name_changed FINAL)
 
-    Q_PROPERTY(entt::entity parent READ parent WRITE set_parent NOTIFY
-                   parent_changed FINAL)
+    Q_PROPERTY(
+        Entity parent READ parent WRITE set_parent NOTIFY parent_changed FINAL)
+    Q_PROPERTY(QString parent_name READ parent_name NOTIFY parent_name_changed
+                   FINAL)
 
-    Q_PROPERTY(QVector<entt::entity> tags READ tags WRITE set_tags NOTIFY
-                   tags_changed FINAL)
+    Q_PROPERTY(
+        QVector<Entity> tags READ tags WRITE set_tags NOTIFY tags_changed FINAL)
 
 private slots:
-    void an_entity_changed(entt::entity);
+    void an_entity_changed(db::Entity);
     void recompute();
 
 public:
@@ -244,7 +247,7 @@ public:
 
     void reset(Database* database);
 
-    void set(entt::entity);
+    void set(Entity);
 
 public:
     QString entity_name() const;
@@ -262,10 +265,10 @@ public:
     bool disabled() const;
     void set_disabled(bool newDisabled);
 
-    entt::entity material_group() const;
-    void         set_material_group(entt::entity newGroup);
-    entt::entity geometry_group() const;
-    void         set_geometry_group(entt::entity newGroup);
+    Entity material_group() const;
+    void   set_material_group(Entity newGroup);
+    Entity geometry_group() const;
+    void   set_geometry_group(Entity newGroup);
 
     Entity  current_material() const;
     void    set_current_material(Entity newGroup);
@@ -275,15 +278,18 @@ public:
     void    set_current_geometry(Entity newGroup);
     QString current_geometry_name() const;
 
-    entt::entity parent() const;
-    void         set_parent(entt::entity newParent);
+    Entity       parent() const;
+    void         set_parent(Entity newParent);
+    QString      parent_name() const;
 
-    QVector<entt::entity> tags() const;
-    void                  set_tags(const QVector<entt::entity>& newTags);
+    QVector<Entity> tags() const;
+    void            set_tags(const QVector<Entity>& newTags);
 
 public slots:
     void set_from_angles(QVector3D angles);
     // void set_from_dir_up(QVector3D direction, QVector3D up);
+
+    void clear_parent();
 
 signals:
     void position_changed();
@@ -297,8 +303,11 @@ signals:
     void current_geometry_changed();
     void current_geometry_name_changed();
     void parent_changed();
+    void parent_name_changed();
     void tags_changed();
     void entity_name_changed();
+
+    void notify(ANotification);
 };
 
 } // namespace db
