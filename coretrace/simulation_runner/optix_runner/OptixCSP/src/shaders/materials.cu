@@ -244,14 +244,14 @@ extern "C" __global__ void __closesthit__element()
         const int slot = params.max_depth * prd.ray_path_index + new_depth;
 
         // Store the hit point in the hit point buffer (used for visualization or further calculations)
-        params.hit_point_buffer[slot] = make_float4(new_depth, hit_point);
+        params.hit_buffer[slot].hit_point = make_float4(new_depth, hit_point);
 
         // Store element id
         const int32_t elementId = params.geometry_data_array[optixGetPrimitiveIndex()].id;
-        params.element_id_buffer[slot] = elementId;
+        params.hit_buffer[slot].element_id = elementId;
 
         // Store hit type
-        params.hit_type_buffer[slot] = hit_type;
+        params.hit_buffer[slot].hit_type = hit_type;
 
         // Store the reflected direction in its buffer (used for visualization or further calculations)
         /*

@@ -1,22 +1,21 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdio>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>                 
-#include <cstddef>                
-#include <cstdio>                 
-
-
 
 #include "core/soltrace_state.h" // SoltraceState
-#include "core/vec3d.h"      // Vec3d
+#include "core/vec3d.h"          // Vec3d
 #include "core/timer.h"
 #include "core/CspElement.h" // CspElement
 #include "core/Surface.h"    // Surface and derived classes
 
 #include "../../../../../simulation_data/simulation_data_export.hpp"
 
-namespace OptixCSP {
+namespace OptixCSP
+{
 
     class GeometryManager;
     class pipelineManager;
@@ -25,16 +24,17 @@ namespace OptixCSP {
     class Vec3d;
     class Surface;
 
-    static constexpr SolTrace::Data::SunShape kSupportedSunshapes[] = {
-            SolTrace::Data::SunShape::GAUSSIAN,
-            SolTrace::Data::SunShape::PILLBOX,
-            SolTrace::Data::SunShape::BUIE_CSR
-    };
+    struct HitRecord;
 
-    class SolTraceSystem {
+    static constexpr SolTrace::Data::SunShape kSupportedSunshapes[] = {
+        SolTrace::Data::SunShape::GAUSSIAN,
+        SolTrace::Data::SunShape::PILLBOX,
+        SolTrace::Data::SunShape::BUIE_CSR};
+
+    class SolTraceSystem
+    {
 
     public:
-        
         SolTraceSystem();
         ~SolTraceSystem();
 
@@ -48,8 +48,8 @@ namespace OptixCSP {
         void update();
 
         // Get all hit points
-        void get_hp_output(std::vector<float4>& hp_vec, std::vector<uint_fast64_t>& raynumber_vec, std::vector<int32_t>& element_id_vec,
-            std::vector<uint8_t>& hit_type_vec);
+        void get_hp_output(std::vector<float4> &hp_vec, std::vector<uint_fast64_t> &raynumber_vec, std::vector<int32_t> &element_id_vec,
+                           std::vector<uint8_t> &hit_type_vec);
 
         /// Explicit cleanup
         void clean_up();
@@ -64,14 +64,14 @@ namespace OptixCSP {
         /// </summary>
         /// <param name="numSunPoints"></param>
         void set_number_of_rays(uint_fast64_t nrays, uint_fast64_t maxrays)
-        { 
+        {
             m_number_of_rays = nrays;
             m_max_number_of_rays = maxrays;
         }
 
-        void set_sun(SolTrace::Data::Sun* sun) { m_sun = sun; }
+        void set_sun(SolTrace::Data::Sun *sun) { m_sun = sun; }
 
-        void set_seed(uint64_t seed) { m_seed = seed; }  // Set sun seed
+        void set_seed(uint64_t seed) { m_seed = seed; } // Set sun seed
 
         void set_optical_errors(bool include_optical_errors)
         {
@@ -94,23 +94,20 @@ namespace OptixCSP {
         /// </summary>
         double get_sun_plane_area() const;
 
-        uint_fast64_t get_N_sun_rays() 
-        { 
+        uint_fast64_t get_N_sun_rays()
+        {
             if (m_sunraynumber_vec.empty())
                 return 0;
-            return m_sunraynumber_vec.back(); 
+            return m_sunraynumber_vec.back();
         }
 
         std::vector<uint_fast64_t> get_sunraynumber_vec() const { return m_sunraynumber_vec; }
         void set_sun_shape_errors(bool flag) { this->m_include_sun_shape_errors = flag; }
 
-        
-
     private:
-
         std::shared_ptr<GeometryManager> geometry_manager;
         std::shared_ptr<pipelineManager> pipeline_manager;
-        std::shared_ptr<dataManager>     data_manager;
+        std::shared_ptr<dataManager> data_manager;
 
         uint_fast64_t m_number_of_rays;
         uint_fast64_t m_max_number_of_rays;
@@ -118,12 +115,11 @@ namespace OptixCSP {
         bool m_verbose;
 
         // Sun
-        //OptixCSP::Vec3d m_sun_vector;
-        //double m_sun_angle;
-        
-        SolTrace::Data::Sun* m_sun;
-        bool m_include_sun_shape_errors = false;
+        // OptixCSP::Vec3d m_sun_vector;
+        // double m_sun_angle;
 
+        SolTrace::Data::Sun *m_sun;
+        bool m_include_sun_shape_errors = false;
 
         uint64_t m_seed = 123456ULL;
         bool m_optical_errors;
@@ -136,25 +132,30 @@ namespace OptixCSP {
         std::vector<uint_fast64_t> m_raynumber_vec;
         std::vector<int32_t> m_element_id_vec;
         std::vector<uint8_t> m_hit_type_vec;
-        std::vector<uint_fast64_t> m_sunraynumber_vec;    // This is ID of hit rays out of all generated rays
+        std::vector<uint_fast64_t> m_sunraynumber_vec; // This is ID of hit rays out of all generated rays
 
         // Reused host-side scratch buffers for copying launch results back from device.
-        std::vector<float4> m_hp_output_buffer_host;
-        std::vector<int32_t> m_element_id_buffer_host;
-        std::vector<uint8_t> m_hit_type_buffer_host;
+        // Allocated with cudaMallocHost, deallocated with cudaFreeHost resulting in using
+        // page-locked memory for faster transfers between device and host.
+        HitRecord *m_hit_buffer_host;
+        uint_fast64_t m_hit_buffer_host_capacity;
+        // std::vector<float4> m_hp_output_buffer_host;
+        // std::vector<int32_t> m_element_id_buffer_host;
+        // std::vector<uint8_t> m_hit_type_buffer_host;
 
         // Current allocated device launch buffer sizes.
-        size_t m_hit_point_buffer_size_allocated = 0;
-        size_t m_element_id_buffer_size_allocated = 0;
-        size_t m_hit_type_buffer_size_allocated = 0;
+        // size_t m_hit_point_buffer_size_allocated = 0;
+        // size_t m_element_id_buffer_size_allocated = 0;
+        // size_t m_hit_type_buffer_size_allocated = 0;
+        size_t m_hit_buffer_size_allocated = 0;
         size_t m_sun_dir_buffer_size_allocated = 0;
 
         std::vector<std::shared_ptr<CspElement>> m_element_list;
         void create_shader_binding_table();
         void setup_device_buffer();
-        void get_buffer_results(std::vector<float4>& hp_vec, std::vector<uint_fast64_t>& raynumber_vec, 
-            std::vector<int32_t>& element_id_vec, std::vector<uint8_t>& hit_type_vec, 
-            std::vector<uint_fast64_t>& sunraynumber_vec);
+        void get_buffer_results(std::vector<float4> &hp_vec, std::vector<uint_fast64_t> &raynumber_vec,
+                                std::vector<int32_t> &element_id_vec, std::vector<uint8_t> &hit_type_vec,
+                                std::vector<uint_fast64_t> &sunraynumber_vec);
 
         Timer m_timer_setup;
         Timer m_timer_trace;
@@ -162,7 +163,5 @@ namespace OptixCSP {
         // memory usage
         size_t m_mem_free_before;
         size_t m_mem_free_after;
-
-
     };
 }

@@ -239,9 +239,12 @@ extern "C" __global__ void __raygen__sun_source()
     prd.depth = 0;
 
     // TODO make this a launch parameter
-    params.hit_point_buffer[params.max_depth * prd.ray_path_index] = make_float4(0.0f, ray_gen_pos);
-    params.element_id_buffer[params.max_depth * prd.ray_path_index] = OptixCSP::kElementIdRayGen;
-    params.hit_type_buffer[params.max_depth * prd.ray_path_index] = OptixCSP::HitType::HIT_CREATE;
+    // params.hit_point_buffer[params.max_depth * prd.ray_path_index] = make_float4(0.0f, ray_gen_pos);
+    // params.element_id_buffer[params.max_depth * prd.ray_path_index] = OptixCSP::kElementIdRayGen;
+    // params.hit_type_buffer[params.max_depth * prd.ray_path_index] = OptixCSP::HitType::HIT_CREATE;
+    params.hit_buffer[params.max_depth * prd.ray_path_index].hit_point = make_float4(0.0f, ray_gen_pos);
+    params.hit_buffer[params.max_depth * prd.ray_path_index].element_id = OptixCSP::kElementIdRayGen;
+    params.hit_buffer[params.max_depth * prd.ray_path_index].hit_type = OptixCSP::HitType::HIT_CREATE;
     params.sun_dir_buffer[prd.ray_path_index] = ray_dir;
     
 

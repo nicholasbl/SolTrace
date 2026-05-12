@@ -19,6 +19,13 @@ namespace OptixCSP{
         MaterialData material_data;
     };
 
+    struct HitRecord {
+        float4 hit_point;
+        int32_t element_id;
+        uint8_t hit_type;
+        uint8_t _pad[3]; // TODO: Is this necessary?
+    };
+
     enum RayType
     {
         RAY_TYPE_RADIANCE = 0,
@@ -46,12 +53,14 @@ namespace OptixCSP{
         int                         max_depth;
         unsigned int                ray_offset; // Global offset for current branch
 
-        float4*                     hit_point_buffer;
+        // float4*                     hit_point_buffer;
+        HitRecord*                  hit_buffer;
         float3*                     sun_dir_buffer;
         curandState*                rng_states;
         OptixTraversableHandle      handle;
-        int32_t*                    element_id_buffer;
-        uint8_t*                    hit_type_buffer;
+        // int32_t*                    element_id_buffer;
+        // uint8_t*                    hit_type_buffer;
+
 
         float3                      sun_vector;
         bool                        include_sun_shape_errors;
