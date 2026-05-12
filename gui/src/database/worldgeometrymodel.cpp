@@ -259,6 +259,11 @@ WorldGeometryModel::WorldGeometryModel(QObject* parent)
     : StructModelAdapter(parent) { }
 
 void WorldGeometryModel::reset(Database* database) {
+    if (m_host) {
+        disconnect(m_host->geometry_root.self(), nullptr, this, nullptr);
+        disconnect(m_host->identity.self(), nullptr, this, nullptr);
+    }
+
     qDebug() << Q_FUNC_INFO << database;
     m_host = database;
     recompute();

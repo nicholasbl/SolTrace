@@ -21,10 +21,10 @@ SurfaceGeometry::SurfaceGeometry() {
 }
 
 void SurfaceGeometry::set_new_database_connections(Database* ptr) {
-    connect(ptr->geometry_parameters.self(),
-            &ComponentAPIBase::changed,
-            this,
-            &SurfaceGeometry::parameters_changed);
+    add_connection(connect(ptr->geometry_parameters.self(),
+                           &ComponentAPIBase::changed,
+                           this,
+                           &SurfaceGeometry::parameters_changed));
 }
 
 void SurfaceGeometry::set(Database* ptr, entt::entity group) {

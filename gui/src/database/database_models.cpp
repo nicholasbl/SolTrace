@@ -16,6 +16,10 @@ void NameModel::recompute(db::Entity e) {
 NameModel::NameModel(QObject* parent) : QObject(parent) { }
 
 void NameModel::reset(Database* database) {
+    if (m_host) {
+        QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
+    }
+
     m_host = database;
 
     if (!m_host) return;
@@ -76,17 +80,22 @@ void BreadcrumbModel::recompute() {
 }
 
 BreadcrumbModel::BreadcrumbModel(QObject* parent)
-    : StructModelAdapter(parent) { }
-
-void BreadcrumbModel::reset(Database* database) {
-    m_host = database;
-    m_node = {};
-    recompute();
-
+    : StructModelAdapter(parent) {
     connect(this,
             &BreadcrumbModel::node_changed,
             this,
             &BreadcrumbModel::recompute);
+}
+
+void BreadcrumbModel::reset(Database* database) {
+    if (m_host) {
+        QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->parent.self(), nullptr, this, nullptr);
+    }
+
+    m_host = database;
+    m_node = {};
+    recompute();
 
     if (database) {
         connect(database->identity.self(),
@@ -151,14 +160,19 @@ void ChildModel::ident_changed(db::Entity e) {
     }
 }
 
-ChildModel::ChildModel(QObject* parent) : StructModelAdapter(parent) { }
+ChildModel::ChildModel(QObject* parent) : StructModelAdapter(parent) {
+    connect(this, &ChildModel::node_changed, this, &ChildModel::recompute);
+}
 
 void ChildModel::reset(Database* database) {
+    if (m_host) {
+        QObject::disconnect(m_host->children.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
+    }
+
     m_host = database;
     m_node = {};
     recompute();
-
-    connect(this, &ChildModel::node_changed, this, &ChildModel::recompute);
 
     if (database) {
         connect(database->children.self(),
@@ -232,7 +246,10 @@ MaterialGroupsModel::MaterialGroupsModel(QObject* parent)
     : StructModelAdapter(parent) { }
 
 void MaterialGroupsModel::reset(Database* database) {
-    if (m_host) QObject::disconnect(m_host, nullptr, this, nullptr);
+    if (m_host) {
+        QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->material_root.self(), nullptr, this, nullptr);
+    }
     qDebug() << Q_FUNC_INFO << database;
     m_host = database;
     recompute();
@@ -304,7 +321,10 @@ GeometryGroupsModel::GeometryGroupsModel(QObject* parent)
     : StructModelAdapter(parent) { }
 
 void GeometryGroupsModel::reset(Database* database) {
-    if (m_host) QObject::disconnect(m_host, nullptr, this, nullptr);
+    if (m_host) {
+        QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->geometry_root.self(), nullptr, this, nullptr);
+    }
     qDebug() << Q_FUNC_INFO << database;
     m_host = database;
     recompute();
@@ -372,6 +392,11 @@ void TagsModel::tag_removed(db::Entity e) {
 TagsModel::TagsModel(QObject* parent) : StructModelAdapter(parent) { }
 
 void TagsModel::reset(Database* database) {
+    if (m_host) {
+        QObject::disconnect(m_host->tag_root.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
+    }
+
     m_host = database;
     recompute();
 
