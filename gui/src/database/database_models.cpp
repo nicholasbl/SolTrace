@@ -66,16 +66,17 @@ void BreadcrumbModel::recompute() {
 
     std::reverse(m_path.begin(), m_path.end());
 
-    QStringList ret;
+    QVector<EntityNamePair> ret;
 
     for (auto e : std::as_const(m_path)) {
-        ret << m_host->name_of(e);
+        ret << EntityNamePair { m_host->name_of(e), e };
     }
 
-    this->setStringList(ret);
+    this->store_reset(ret);
 }
 
-BreadcrumbModel::BreadcrumbModel(QObject* parent) : QStringListModel(parent) { }
+BreadcrumbModel::BreadcrumbModel(QObject* parent)
+    : StructModelAdapter(parent) { }
 
 void BreadcrumbModel::reset(Database* database) {
     m_host = database;
@@ -103,7 +104,6 @@ void BreadcrumbModel::reset(Database* database) {
                 });
     }
 }
-
 
 // =============================================================================
 

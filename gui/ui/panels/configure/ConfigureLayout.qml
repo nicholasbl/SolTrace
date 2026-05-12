@@ -6,12 +6,14 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 import SolTrace
 
-AdaptiveEditor {
+EntityListEditor {
     id: root
 
     property var module: App.layout
 
-    model: module.filtered_root_elements_model
+    property bool has_viewed_entity: module.viewed_element.is_valid()
+
+    model: has_viewed_entity ? module.filtered_child_model : module.filtered_root_elements_model
     wideThreshold: 500
     listWidth: 250
 
@@ -26,8 +28,8 @@ AdaptiveEditor {
         }
     }
 
-    onItemClicked: function(index, modelData) {
-        module.current_element = modelData.entity
+    onItemClicked: function(entity) {
+        module.edited_element = entity
     }
 
     listHeader: ColumnLayout {
@@ -145,22 +147,20 @@ AdaptiveEditor {
         }
     }
 
-    listDelegate: STItemDelegate {
-        text: itemModel ? itemModel.name : "Unnamed"
-        highlighted: isCurrent
-    }
-
     detailView: ColumnLayout {
 
         RowLayout {
             STIconButton {
                 text: "\uf053"
                 visible: !root.wideMode
-                onClicked: root.goBack()
+                onClicked: {
+                    root.module.clear_edited_element()
+                    root.goBack()
+                }
             }
 
             RenameLabel {
-                text: root.module.current_element_name
+                text: root.module.edited_element_name
 
                 font.family: "CMU Serif"
                 font.pointSize: 16
@@ -172,7 +172,7 @@ AdaptiveEditor {
                     new_name = curr_db.sanitize_entity_name(new_name);
 
                     curr_db.set_name_of(
-                                    root.module.current_element,
+                                    root.module.edited_element,
                                     new_name
                                     )
                 }

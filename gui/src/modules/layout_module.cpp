@@ -3,17 +3,20 @@
 
 namespace SolTrace::GUI::App {
 
-void LayoutModule::new_entity_selected() {
-    child_model()->set_node(m_current_element);
-    breadcrumb_model()->set_node(m_current_element);
-    instance_edit()->set(m_current_element);
+void LayoutModule::viewed_entity_changed() {
+    child_model()->set_node(m_viewed_element);
+    breadcrumb_model()->set_node(m_viewed_element);
+}
+
+void LayoutModule::edited_entity_changed() {
+    instance_edit()->set(m_edited_element);
 
     if (!m_current_database) {
-        set_current_element_name(QString());
+        set_edited_element_name(QString());
         return;
     }
 
-    set_current_element_name(m_current_database->name_of(m_current_element));
+    set_edited_element_name(m_current_database->name_of(m_edited_element));
 }
 
 void LayoutModule::reset(db::Database* database) {
@@ -23,9 +26,11 @@ void LayoutModule::reset(db::Database* database) {
     }
 
     m_observed_database = database;
+    set_viewed_element({});
+    set_edited_element({});
 
     if (!database) {
-        set_current_element_name(QString());
+        set_edited_element_name(QString());
         return;
     }
 
@@ -34,15 +39,15 @@ void LayoutModule::reset(db::Database* database) {
             this,
             &LayoutModule::identity_changed);
 
-    set_current_element_name(database->name_of(m_current_element));
+    set_edited_element_name(database->name_of(m_edited_element));
 }
 
 void LayoutModule::identity_changed(entt::entity entity) {
     if (!m_current_database) return;
 
-    if (db::Entity(entity) != m_current_element) return;
+    if (db::Entity(entity) != m_edited_element) return;
 
-    set_current_element_name(m_current_database->name_of(m_current_element));
+    set_edited_element_name(m_current_database->name_of(m_edited_element));
 }
 
 LayoutModule::LayoutModule(QObject* parent)
@@ -52,11 +57,13 @@ LayoutModule::LayoutModule(QObject* parent)
       m_root_elements_model(new db::RootElementsModel(this)),
       m_filtered_root_elements_model(new db::InstanceSortFilter(this)),
       m_child_model(new db::ChildModel(this)),
+      m_filtered_child_model(new db::InstanceSortFilter(this)),
       m_breadcrumb_model(new db::BreadcrumbModel(this)),
       m_instance_edit(new db::AnInstanceEditor(this)),
       m_world_geometry_model(new db::WorldGeometryModel(this)) {
 
     m_filtered_root_elements_model->setSourceModel(m_root_elements_model);
+    m_filtered_child_model->setSourceModel(m_child_model);
 
     connect(this,
             &LayoutModule::current_database_value_changed,
@@ -76,6 +83,11 @@ LayoutModule::LayoutModule(QObject* parent)
     connect(this,
             &LayoutModule::current_database_value_changed,
             m_filtered_root_elements_model,
+            &db::InstanceSortFilter::reset);
+
+    connect(this,
+            &LayoutModule::current_database_value_changed,
+            m_filtered_child_model,
             &db::InstanceSortFilter::reset);
 
     connect(this,
@@ -101,9 +113,14 @@ LayoutModule::LayoutModule(QObject* parent)
     // Element changes
 
     connect(this,
-            &LayoutModule::current_element_changed,
+            &LayoutModule::viewed_element_changed,
             this,
-            &LayoutModule::new_entity_selected);
+            &LayoutModule::viewed_entity_changed);
+
+    connect(this,
+            &LayoutModule::edited_element_changed,
+            this,
+            &LayoutModule::edited_entity_changed);
 }
 
 } // namespace SolTrace::GUI::App

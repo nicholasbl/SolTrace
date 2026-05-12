@@ -24,7 +24,8 @@ class LayoutModule : public QObject {
     QPointer<db::Database> m_observed_database;
 
 private slots:
-    void new_entity_selected();
+    void viewed_entity_changed();
+    void edited_entity_changed();
     void reset(db::Database*);
     void identity_changed(entt::entity);
 
@@ -40,16 +41,23 @@ public:
                               filtered_root_elements_model);
 
     QOBJECT_WRITABLE_PROPERTY(db::ChildModel, child_model);
+    QOBJECT_READONLY_PROPERTY(db::InstanceSortFilter, filtered_child_model);
+
     QOBJECT_WRITABLE_PROPERTY(db::BreadcrumbModel, breadcrumb_model);
     QOBJECT_WRITABLE_PROPERTY(db::AnInstanceEditor, instance_edit);
     QOBJECT_READONLY_PROPERTY(db::WorldGeometryModel, world_geometry_model);
 
-    Q_WRITABLE_PROPERTY(db::Entity, current_element, { })
-    Q_READONLY_PROPERTY(QString, current_element_name);
+    Q_WRITABLE_PROPERTY(db::Entity, viewed_element, { })
+    Q_WRITABLE_PROPERTY(db::Entity, edited_element, { })
+    Q_READONLY_PROPERTY(QString, edited_element_name);
 
     /// we need a selected element lists. need global pos and rot
 
     QOBJECT_READONLY_PROPERTY(StatusComponent, status);
+
+public slots:
+    void clear_viewed_element() { set_viewed_element({}); }
+    void clear_edited_element() { set_edited_element({}); }
 };
 
 

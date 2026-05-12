@@ -14,6 +14,17 @@
 
 namespace db {
 
+
+struct EntityNamePair {
+    QString name;
+    Entity  entity;
+
+    RECORD_META(db::EntityNamePair, SM_EXPOSE_RW(name), SM_EXPOSE_RO(entity), );
+
+    static EntityNamePair record_for_entity(Database& db, Entity entity);
+};
+
+
 /// Observe an entity's name
 class NameModel : public QObject {
     Q_OBJECT
@@ -42,7 +53,7 @@ public slots:
 
 /// Get the hierarchy of an entity, walks the parent chain and provides a string
 /// list, starting from the root on down.
-class BreadcrumbModel : public QStringListModel {
+class BreadcrumbModel : public StructModelAdapter<EntityNamePair> {
     Q_OBJECT
 
     QPointer<Database> m_host;
@@ -62,15 +73,6 @@ public:
 };
 
 // =============================================================================
-
-struct EntityNamePair {
-    QString name;
-    Entity  entity;
-
-    RECORD_META(db::EntityNamePair, SM_EXPOSE_RW(name), SM_EXPOSE_RO(entity), );
-
-    static EntityNamePair record_for_entity(Database& db, Entity entity);
-};
 
 /// A model providing all children of a given entity
 class ChildModel : public StructModelAdapter<EntityNamePair> {

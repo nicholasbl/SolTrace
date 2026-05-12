@@ -66,7 +66,7 @@ Item {
                 if (geometryInstanceContextMenu.focused_group) {
                     App.view.workflow_phase = 0
                     App.view.left_panel.visible = true
-                    App.layout.current_element = geometryInstanceContextMenu.focused_group.group_instances.at(geometryInstanceContextMenu.index)
+                    App.layout.edited_element = geometryInstanceContextMenu.focused_group.group_instances.at(geometryInstanceContextMenu.index)
                     App.view.configure_section = 3
                     App.view.editing_layout = true
                 }
