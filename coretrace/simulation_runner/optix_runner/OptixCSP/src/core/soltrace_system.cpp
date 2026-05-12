@@ -698,8 +698,8 @@ void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector
                                         std::vector<int32_t> &element_id_vec, std::vector<uint8_t> &hit_type_vec,
                                         std::vector<uint_fast64_t> &sunraynumber_vec)
 {
-    const int max_depth = data_manager->launch_params_H.max_depth;
-    const int num_rays = data_manager->launch_params_H.width * data_manager->launch_params_H.height;
+    const uint_fast64_t max_depth = data_manager->launch_params_H.max_depth;
+    const uint_fast64_t num_rays = data_manager->launch_params_H.width * data_manager->launch_params_H.height;
     // const int output_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * data_manager->launch_params_H.max_depth;
     const uint_fast64_t output_size = num_rays * max_depth;
 
@@ -721,67 +721,127 @@ void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector
     // CUDA_CHECK(cudaMemcpy(m_hit_type_buffer_host.data(), data_manager->launch_params_H.hit_type_buffer, output_size * sizeof(uint8_t), cudaMemcpyDeviceToHost));
     CUDA_CHECK(cudaMemcpy(m_hit_buffer_host, data_manager->launch_params_H.hit_buffer, output_size * sizeof(HitRecord), cudaMemcpyDeviceToHost));
 
-    // Loop through each buffer slot
+    // Loop through each ray
     uint_fast64_t ray_number = raynumber_vec.empty() ? 0 : raynumber_vec.back();
     uint_fast64_t sunray_number = sunraynumber_vec.empty() ? 0 : sunraynumber_vec.back();
-    for (int i = 0; i < output_size; ++i)
+    HitRecord pending_record;
+    bool pending_create = false;
+    for (uint_fast64_t ray = 0; ray < num_rays; ++ray)
     {
-
-        // Get hit type
-        // const uint8_t &hit_type = m_hit_type_buffer_host[i];
-        const HitRecord &hr = m_hit_buffer_host[i];
-        const uint8_t &hit_type = hr.hit_type;
-
-        // Skip if empty
-        if (hit_type < HitType::HIT_CREATE || hit_type > HitType::HIT_EXIT)
+        // bool ray_hit_something = false;
+        for (uint_fast64_t depth = 0; depth < max_depth; ++depth)
         {
-            continue;
-        }
+            uint_fast64_t idx = max_depth * ray + depth;
+            const HitRecord &hr = m_hit_buffer_host[idx];
+            const uint8_t &hit_type = hr.hit_type;
 
-        // If new ray, check if previous ray hit anything
-        if (hit_type == HitType::HIT_CREATE)
-        {
-            // Remove last ray if it has no hits
-            if (!hit_type_vec.empty() && hit_type_vec.back() == HitType::HIT_CREATE)
+            if (hit_type < HitType::HIT_CREATE || hit_type > HitType::HIT_EXIT)
             {
-                hp_vec.pop_back();
-                raynumber_vec.pop_back();
-                hit_type_vec.pop_back();
-                element_id_vec.pop_back();
-                sunraynumber_vec.pop_back();
-                ray_number--;
+                // Hit end of ray history--go to next ray
+                break;
             }
 
-            // New ray
-            ray_number++;
+            if (hit_type == HitType::HIT_CREATE)
+            {
+                // New ray -- capture data and wait to see if the ray hit anything
+                pending_record = hr;
+                pending_create = true;
+                sunray_number++;
+            }
+            else
+            {
+                // Any invalid hit types have already been handled by the first if block
 
-            // Sun ray number always increments, even if no hit
-            sunray_number++;
+                // Clear the pending data if necessary
+                if (pending_create)
+                {
+                    pending_create = false;
+                    ray_number++;
+                    hp_vec.push_back(pending_record.hit_point);
+                    raynumber_vec.push_back(ray_number);
+                    hit_type_vec.push_back(pending_record.hit_type);
+                    element_id_vec.push_back(pending_record.element_id);
+                    sunraynumber_vec.push_back(sunray_number);
+                }
+
+                hp_vec.push_back(hr.hit_point);
+                raynumber_vec.push_back(ray_number);
+                hit_type_vec.push_back(hit_type);
+                element_id_vec.push_back(hr.element_id);
+                sunraynumber_vec.push_back(sunray_number);
+
+                if (hit_type == HitType::HIT_ABSORB || hit_type == HitType::HIT_EXIT)
+                {
+                    // Ray has terminated. Go to the next.
+                    // NOTE: As of this writing, OptixRunner does not  mark rays
+                    // with HIT_EXIT. Include it here anyway.
+                    break;
+                }
+            }
         }
-
-        // Get hit record, element_id
-        // const float4 &hit_record = m_hp_output_buffer_host[i]; // [depth, pos x, pos y, pos z]
-        // const int32_t &element_id = m_element_id_buffer_host[i];
-        const float4 &hit_point = hr.hit_point;
-        const int32_t &element_id = hr.element_id;
-
-        // Collect results
-        hp_vec.push_back(hit_point);
-        raynumber_vec.push_back(ray_number);
-        hit_type_vec.push_back(hit_type);
-        element_id_vec.push_back(element_id);
-        sunraynumber_vec.push_back(sunray_number);
     }
 
-    // Remove last ray if it is only CREATE
-    if (!hit_type_vec.empty() && hit_type_vec.back() == HitType::HIT_CREATE)
-    {
-        hp_vec.pop_back();
-        raynumber_vec.pop_back();
-        element_id_vec.pop_back();
-        hit_type_vec.pop_back();
-        sunraynumber_vec.pop_back();
-    }
+    // // Loop through each buffer slot
+    // uint_fast64_t ray_number = raynumber_vec.empty() ? 0 : raynumber_vec.back();
+    // uint_fast64_t sunray_number = sunraynumber_vec.empty() ? 0 : sunraynumber_vec.back();
+    // for (int i = 0; i < output_size; ++i)
+    // {
+
+    //     // Get hit type
+    //     // const uint8_t &hit_type = m_hit_type_buffer_host[i];
+    //     const HitRecord &hr = m_hit_buffer_host[i];
+    //     const uint8_t &hit_type = hr.hit_type;
+
+    //     // Skip if empty
+    //     if (hit_type < HitType::HIT_CREATE || hit_type > HitType::HIT_EXIT)
+    //     {
+    //         continue;
+    //     }
+
+    //     // If new ray, check if previous ray hit anything
+    //     if (hit_type == HitType::HIT_CREATE)
+    //     {
+    //         // Remove last ray if it has no hits
+    //         if (!hit_type_vec.empty() && hit_type_vec.back() == HitType::HIT_CREATE)
+    //         {
+    //             hp_vec.pop_back();
+    //             raynumber_vec.pop_back();
+    //             hit_type_vec.pop_back();
+    //             element_id_vec.pop_back();
+    //             sunraynumber_vec.pop_back();
+    //             ray_number--;
+    //         }
+
+    //         // New ray
+    //         ray_number++;
+
+    //         // Sun ray number always increments, even if no hit
+    //         sunray_number++;
+    //     }
+
+    //     // Get hit record, element_id
+    //     // const float4 &hit_record = m_hp_output_buffer_host[i]; // [depth, pos x, pos y, pos z]
+    //     // const int32_t &element_id = m_element_id_buffer_host[i];
+    //     const float4 &hit_point = hr.hit_point;
+    //     const int32_t &element_id = hr.element_id;
+
+    //     // Collect results
+    //     hp_vec.push_back(hit_point);
+    //     raynumber_vec.push_back(ray_number);
+    //     hit_type_vec.push_back(hit_type);
+    //     element_id_vec.push_back(element_id);
+    //     sunraynumber_vec.push_back(sunray_number);
+    // }
+
+    // // Remove last ray if it is only CREATE
+    // if (!hit_type_vec.empty() && hit_type_vec.back() == HitType::HIT_CREATE)
+    // {
+    //     hp_vec.pop_back();
+    //     raynumber_vec.pop_back();
+    //     element_id_vec.pop_back();
+    //     hit_type_vec.pop_back();
+    //     sunraynumber_vec.pop_back();
+    // }
 
     return;
 }

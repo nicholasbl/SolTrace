@@ -12,6 +12,9 @@ namespace OptixCSP{
 
     const unsigned int NUM_ATTRIBUTE_VALUES = 4u;
     const unsigned int NUM_PAYLOAD_VALUES   = 2u;
+    // NOTE: Maximum number of ray interactions in tracing with the geometry is
+    // MAX_TRACE_DEPTH - 1 (so currently 4). See the end of the function
+    // __closesthit__element in materials.cu.
     const unsigned int MAX_TRACE_DEPTH      = 5u;
 
     struct HitGroupData
