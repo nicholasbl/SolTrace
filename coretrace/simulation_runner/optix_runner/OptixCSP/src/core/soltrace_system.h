@@ -86,6 +86,10 @@ namespace OptixCSP
         double get_time_trace();
         double get_time_setup();
 
+        /// Print a formatted summary of all timing information collected during
+        /// the last initialize() and run() calls.
+        void print_timing() const;
+
         void print_launch_params();
 
         /// <summary>
@@ -159,6 +163,21 @@ namespace OptixCSP
 
         Timer m_timer_setup;
         Timer m_timer_trace;
+
+        // initialize() sub-timers
+        Timer m_timer_aabb;
+        Timer m_timer_geometry;
+        Timer m_timer_pipeline;
+        Timer m_timer_sbt;
+
+        // run() sub-timers
+        Timer m_timer_setup_buffer;
+        Timer m_timer_optix_launch;
+        Timer m_timer_collect_results;
+        // get_buffer_results() sub-timers
+        Timer m_timer_memcpy;
+        Timer m_timer_host_processing;
+        uint64_t m_n_run_iterations;
 
         // memory usage
         size_t m_mem_free_before;

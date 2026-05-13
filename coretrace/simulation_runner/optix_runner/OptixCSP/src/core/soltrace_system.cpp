@@ -49,6 +49,16 @@ SolTraceSystem::SolTraceSystem()
       m_include_sun_shape_errors(false),
       m_timer_setup(),
       m_timer_trace(),
+      m_timer_aabb(),
+      m_timer_geometry(),
+      m_timer_pipeline(),
+      m_timer_sbt(),
+      m_timer_setup_buffer(),
+      m_timer_optix_launch(),
+      m_timer_collect_results(),
+      m_timer_memcpy(),
+      m_timer_host_processing(),
+      m_n_run_iterations(0),
       geometry_manager(std::make_shared<GeometryManager>(m_state, m_verbose)),
       data_manager(std::make_shared<dataManager>()),
       pipeline_manager(std::make_shared<pipelineManager>(m_state)),
@@ -206,26 +216,26 @@ void SolTraceSystem::initialize()
         data_manager->launch_params_H.sun_max_intensity = static_cast<float>(m_sun->get_max_intensity());
     }
 
-    Timer AABB_timer;
-    AABB_timer.start();
+    m_timer_aabb.reset();
+    m_timer_aabb.start();
     geometry_manager->collect_geometry_info(m_element_list, data_manager->launch_params_H);
-    AABB_timer.stop();
+    m_timer_aabb.stop();
 
-    Timer geometry_timer;
-    geometry_timer.start();
+    m_timer_geometry.reset();
+    m_timer_geometry.start();
     geometry_manager->create_geometries(data_manager->launch_params_H);
-    geometry_timer.stop();
+    m_timer_geometry.stop();
 
     // Pipeline setup.
-    Timer pipeline_timer;
-    pipeline_timer.start();
+    m_timer_pipeline.reset();
+    m_timer_pipeline.start();
     pipeline_manager->createPipeline();
-    pipeline_timer.stop();
+    m_timer_pipeline.stop();
 
-    Timer sbt_timer;
-    sbt_timer.start();
+    m_timer_sbt.reset();
+    m_timer_sbt.start();
     create_shader_binding_table();
-    sbt_timer.stop();
+    m_timer_sbt.stop();
 
     // seed for randomization
     data_manager->launch_params_H.sun_dir_seed = m_seed;
@@ -242,10 +252,10 @@ void SolTraceSystem::initialize()
 
     if (m_verbose)
     {
-        std::cout << "Time to compute AABB: " << AABB_timer.get_time_sec() << " seconds" << std::endl;
-        std::cout << "Time to create geometries: " << geometry_timer.get_time_sec() << " seconds" << std::endl;
-        std::cout << "Time to create pipeline: " << pipeline_timer.get_time_sec() << " seconds" << std::endl;
-        std::cout << "Time to create SBT: " << sbt_timer.get_time_sec() << " seconds" << std::endl;
+        std::cout << "Time to compute AABB: " << m_timer_aabb.get_time_sec() << " seconds" << std::endl;
+        std::cout << "Time to create geometries: " << m_timer_geometry.get_time_sec() << " seconds" << std::endl;
+        std::cout << "Time to create pipeline: " << m_timer_pipeline.get_time_sec() << " seconds" << std::endl;
+        std::cout << "Time to create SBT: " << m_timer_sbt.get_time_sec() << " seconds" << std::endl;
 
         print_launch_params();
     }
@@ -268,27 +278,31 @@ void SolTraceSystem::run()
     uint_fast64_t N_ray_hit = 0;
     uint_fast64_t N_ray_gen = 0;
 
-    Timer timer_setup_buffer;
-    Timer timer_optix_launch;
-    Timer timer_collect_results;
-    uint64_t n_iterations = 0;
+    m_timer_trace.reset();
+    m_timer_trace.start();
+    m_timer_setup_buffer.reset();
+    m_timer_optix_launch.reset();
+    m_timer_collect_results.reset();
+    m_timer_memcpy.reset();
+    m_timer_host_processing.reset();
+    m_n_run_iterations = 0;
 
     while (N_ray_hit < m_number_of_rays && N_ray_gen < m_max_number_of_rays)
     {
-        ++n_iterations;
+        ++m_n_run_iterations;
 
         // Update ray offset (pushed to device in setup_device_buffer)
         data_manager->launch_params_H.ray_offset = N_ray_gen;
 
         // Allocate buffer (sets data_manager->launch_params_H buffer)
-        timer_setup_buffer.start();
+        m_timer_setup_buffer.start();
         {
 #ifdef NVTX_ENABLED
             nvtx3::scoped_range nvtx_setup{"setup_device_buffer"};
 #endif
             setup_device_buffer();
         }
-        timer_setup_buffer.stop();
+        m_timer_setup_buffer.stop();
 
         int width = data_manager->launch_params_H.width;
         int height = data_manager->launch_params_H.height;
@@ -301,7 +315,7 @@ void SolTraceSystem::run()
             std::cout << "Memory used by launch: " << (m_mem_free_before - m_mem_free_after) / (1024.0 * 1024.0) << " MB\n";
 
         // Launch the simulation.
-        timer_optix_launch.start();
+        m_timer_optix_launch.start();
         {
 #ifdef NVTX_ENABLED
         nvtx3::scoped_range nvtx_launch{"optixLaunch"};
@@ -317,10 +331,10 @@ void SolTraceSystem::run()
             1));
         CUDA_SYNC_CHECK();
         } // nvtx_launch
-        timer_optix_launch.stop();
+        m_timer_optix_launch.stop();
 
         // Collect results
-        timer_collect_results.start();
+        m_timer_collect_results.start();
         {
 #ifdef NVTX_ENABLED
             nvtx3::scoped_range nvtx_collect{"get_buffer_results"};
@@ -328,7 +342,7 @@ void SolTraceSystem::run()
             get_buffer_results(m_hp_vec, m_raynumber_vec, m_element_id_vec, m_hit_type_vec,
                                m_sunraynumber_vec);
         }
-        timer_collect_results.stop();
+        m_timer_collect_results.stop();
 
         N_ray_hit = m_raynumber_vec.empty() ? 0 : m_raynumber_vec.back();
         N_ray_gen += width;
@@ -351,14 +365,14 @@ void SolTraceSystem::run()
 
     if (m_verbose)
     {
-        const double t_setup = timer_setup_buffer.get_time_sec();
-        const double t_launch = timer_optix_launch.get_time_sec();
-        const double t_collect = timer_collect_results.get_time_sec();
+        const double t_setup = m_timer_setup_buffer.get_time_sec();
+        const double t_launch = m_timer_optix_launch.get_time_sec();
+        const double t_collect = m_timer_collect_results.get_time_sec();
         const double t_total = t_setup + t_launch + t_collect;
-        const double inv_n = n_iterations > 0 ? 1.0 / static_cast<double>(n_iterations) : 0.0;
+        const double inv_n = m_n_run_iterations > 0 ? 1.0 / static_cast<double>(m_n_run_iterations) : 0.0;
 
-        std::cout << "\n--- SolTraceSystem::run() timing (" << n_iterations << " iteration"
-                  << (n_iterations == 1 ? "" : "s") << ") ---\n";
+        std::cout << "\n--- SolTraceSystem::run() timing (" << m_n_run_iterations << " iteration"
+                  << (m_n_run_iterations == 1 ? "" : "s") << ") ---\n";
         std::cout << std::fixed << std::setprecision(6);
         std::cout << "  setup_device_buffer : total = " << t_setup << " s"
                   << "  avg = " << t_setup * inv_n << " s"
@@ -744,13 +758,16 @@ void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector
     // CUDA_CHECK(cudaMemcpy(m_hp_output_buffer_host.data(), data_manager->launch_params_H.hit_point_buffer, output_size * sizeof(float4), cudaMemcpyDeviceToHost));
     // CUDA_CHECK(cudaMemcpy(m_element_id_buffer_host.data(), data_manager->launch_params_H.element_id_buffer, output_size * sizeof(int32_t), cudaMemcpyDeviceToHost));
     // CUDA_CHECK(cudaMemcpy(m_hit_type_buffer_host.data(), data_manager->launch_params_H.hit_type_buffer, output_size * sizeof(uint8_t), cudaMemcpyDeviceToHost));
+    m_timer_memcpy.start();
     CUDA_CHECK(cudaMemcpy(m_hit_buffer_host, data_manager->launch_params_H.hit_buffer, output_size * sizeof(HitRecord), cudaMemcpyDeviceToHost));
+    m_timer_memcpy.stop();
 
     // Loop through each ray
     uint_fast64_t ray_number = raynumber_vec.empty() ? 0 : raynumber_vec.back();
     uint_fast64_t sunray_number = sunraynumber_vec.empty() ? 0 : sunraynumber_vec.back();
     HitRecord pending_record;
     bool pending_create = false;
+    m_timer_host_processing.start();
     for (uint_fast64_t ray = 0; ray < num_rays; ++ray)
     {
         // bool ray_hit_something = false;
@@ -805,6 +822,7 @@ void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector
             }
         }
     }
+    m_timer_host_processing.stop();
 
     // // Loop through each buffer slot
     // uint_fast64_t ray_number = raynumber_vec.empty() ? 0 : raynumber_vec.back();
@@ -884,6 +902,63 @@ double SolTraceSystem::get_time_trace()
 double SolTraceSystem::get_time_setup()
 {
     return m_timer_setup.get_time_sec();
+}
+
+void SolTraceSystem::print_timing() const
+{
+    const double t_setup       = m_timer_setup.get_time_sec();
+    const double t_aabb        = m_timer_aabb.get_time_sec();
+    const double t_geometry    = m_timer_geometry.get_time_sec();
+    const double t_pipeline    = m_timer_pipeline.get_time_sec();
+    const double t_sbt         = m_timer_sbt.get_time_sec();
+
+    const double t_trace       = m_timer_trace.get_time_sec();
+    const double t_buf_setup   = m_timer_setup_buffer.get_time_sec();
+    const double t_launch      = m_timer_optix_launch.get_time_sec();
+    const double t_collect     = m_timer_collect_results.get_time_sec();
+    const double t_memcpy      = m_timer_memcpy.get_time_sec();
+    const double t_host_proc   = m_timer_host_processing.get_time_sec();
+
+    const double inv_n = m_n_run_iterations > 0
+                             ? 1.0 / static_cast<double>(m_n_run_iterations)
+                             : 0.0;
+
+    const auto pct = [](double num, double denom) -> double {
+        return denom > 0.0 ? 100.0 * num / denom : 0.0;
+    };
+
+    std::cout << std::fixed << std::setprecision(6);
+    std::cout << "\n=== SolTraceSystem Timing Summary ===\n";
+
+    std::cout << "\n--- initialize() ---\n";
+    std::cout << "  AABB computation    : " << t_aabb     << " s  (" << pct(t_aabb,     t_setup) << " %)\n";
+    std::cout << "  Geometry creation   : " << t_geometry << " s  (" << pct(t_geometry, t_setup) << " %)\n";
+    std::cout << "  Pipeline creation   : " << t_pipeline << " s  (" << pct(t_pipeline, t_setup) << " %)\n";
+    std::cout << "  SBT creation        : " << t_sbt      << " s  (" << pct(t_sbt,      t_setup) << " %)\n";
+    std::cout << "  Total setup         : " << t_setup    << " s\n";
+
+    std::cout << "\n--- run() [" << m_n_run_iterations
+              << " iteration" << (m_n_run_iterations == 1 ? "" : "s") << "] ---\n";
+    std::cout << "  Setup device buffer : total = " << t_buf_setup << " s"
+              << "  avg/iter = " << t_buf_setup * inv_n << " s"
+              << "  (" << pct(t_buf_setup, t_trace) << " %)\n";
+    std::cout << "  OptiX launch        : total = " << t_launch    << " s"
+              << "  avg/iter = " << t_launch    * inv_n << " s"
+              << "  (" << pct(t_launch,    t_trace) << " %)\n";
+    std::cout << "  Collect results     : total = " << t_collect   << " s"
+              << "  avg/iter = " << t_collect   * inv_n << " s"
+              << "  (" << pct(t_collect,   t_trace) << " %)\n";
+    std::cout << "    memcpy D->H       : total = " << t_memcpy    << " s"
+              << "  avg/iter = " << t_memcpy    * inv_n << " s"
+              << "  (" << pct(t_memcpy,    t_collect) << " % of collect)\n";
+    std::cout << "    host processing   : total = " << t_host_proc << " s"
+              << "  avg/iter = " << t_host_proc * inv_n << " s"
+              << "  (" << pct(t_host_proc, t_collect) << " % of collect)\n";
+    std::cout << "  Total trace         : " << t_trace    << " s\n";
+
+    std::cout << "\n--- Grand Total ---\n";
+    std::cout << "  Setup + Trace       : " << (t_setup + t_trace) << " s\n";
+    std::cout << "=====================================\n";
 }
 
 double SolTraceSystem::get_sun_plane_area() const

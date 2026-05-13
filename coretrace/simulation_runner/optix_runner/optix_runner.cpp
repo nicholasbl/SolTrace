@@ -25,6 +25,11 @@ void OptixRunner::set_verbose(bool verbose)
     m_sys.set_verbose(verbose);
 }
 
+void OptixRunner::print_timing() const
+{
+    m_sys.print_timing();
+}
+
 RunnerStatus OptixRunner::initialize()
 {
     // add elements to sys using data structure from SimulationData

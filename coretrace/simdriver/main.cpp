@@ -369,6 +369,11 @@ int main(int argc, char *argv[])
         {
             std::cout << "Skipping result retrieval (--no-output).\n";
         }
+
+        if (!verbose)
+        {
+            runner.print_timing();
+        }
     }
     else
 #endif
