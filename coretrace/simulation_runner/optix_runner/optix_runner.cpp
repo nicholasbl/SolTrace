@@ -20,6 +20,11 @@ OptixRunner::~OptixRunner()
     this->m_sys.clean_up();
 }
 
+void OptixRunner::set_verbose(bool verbose)
+{
+    m_sys.set_verbose(verbose);
+}
+
 RunnerStatus OptixRunner::initialize()
 {
     // add elements to sys using data structure from SimulationData
