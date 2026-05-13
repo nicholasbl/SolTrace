@@ -287,6 +287,17 @@ void SolTraceSystem::run()
     m_timer_host_processing.reset();
     m_n_run_iterations = 0;
 
+    // Initialize RNG states once for the entire simulation run.
+    // curand states are persistent on the device and advance naturally across kernel launches.
+    {
+        const unsigned int num_rng_states = static_cast<unsigned int>(m_number_of_rays);
+        data_manager->ensureCurandStates(
+            num_rng_states,
+            data_manager->launch_params_H.sun_dir_seed,
+            0,
+            m_state.stream);
+    }
+
     while (N_ray_hit < m_number_of_rays && N_ray_gen < m_max_number_of_rays)
     {
         ++m_n_run_iterations;
@@ -717,13 +728,6 @@ void SolTraceSystem::setup_device_buffer()
         m_sun_dir_buffer_size_allocated = sun_dir_size;
     }
     CUDA_CHECK(cudaMemset(data_manager->launch_params_H.sun_dir_buffer, 0, sun_dir_size));
-
-    const unsigned int num_rng_states = static_cast<unsigned int>(data_manager->launch_params_H.width * data_manager->launch_params_H.height);
-    data_manager->ensureCurandStates(
-        num_rng_states,
-        data_manager->launch_params_H.sun_dir_seed,
-        data_manager->launch_params_H.ray_offset,
-        m_state.stream);
 
     data_manager->updateLaunchParams();
 }
