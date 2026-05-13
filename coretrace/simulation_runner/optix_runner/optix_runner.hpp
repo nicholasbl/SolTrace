@@ -34,6 +34,8 @@ public:
 
     uint_fast64_t get_N_sun_rays() { return m_sys.get_N_sun_rays(); }
 
+    void set_verbose(bool verbose) { m_sys.set_verbose(verbose); }
+
     // Runner options
     // void disable_sun_shape_errors() { this->include_sun_shape_errors = false; }
     // void enable_sun_shape_errors() { this->include_sun_shape_errors = true; }

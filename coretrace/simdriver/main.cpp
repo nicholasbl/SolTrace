@@ -320,7 +320,7 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
 
-        runner.get_optix_system()->set_verbose(verbose);
+        runner.set_verbose(verbose);
 
         std::cout << "Using OptiX runner\n";
 
