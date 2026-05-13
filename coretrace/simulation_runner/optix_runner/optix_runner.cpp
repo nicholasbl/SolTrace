@@ -51,8 +51,6 @@ RunnerStatus OptixRunner::setup_simulation(const SimulationData *data)
 
     m_sys.initialize();
 
-    
-
     // std::cout << "Number of stages: " << this->tsys.StageList.size()
     //           << std::endl;
 
@@ -124,10 +122,10 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
             auto optix_el = std::make_shared<OptixCSP::CspElement>();
             auto origin = el->get_origin_global();
-	    auto ap = el->get_aim_vector_global();
+            auto ap = el->get_aim_vector_global();
             OptixCSP::Vec3d origin_vec(origin.x, origin.y, origin.z);
             optix_el->set_origin(ToVec3d(origin));
-	    optix_el->set_aim_point(ToVec3d(ap));
+            optix_el->set_aim_point(ToVec3d(ap));
             optix_el->set_rotation_matrix(ToMatrix33d(el->get_local_to_global()));
 
             // Safely narrow element id to int32_t
@@ -230,7 +228,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             }
 
             auto soltrace_aperture_type = el->get_aperture()->get_type();
-            
+
             switch (soltrace_aperture_type)
             {
             case ApertureType::RECTANGLE:
@@ -239,11 +237,11 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 assert(el_aperture != nullptr);
                 // TODO: account for x and y coord?
                 // auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length(),
-		// 							      el_aperture->y_length());
-		auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length(),
-									      el_aperture->y_length(),
-									      el_aperture->x_coord(),
-									      el_aperture->y_coord());
+                // 							      el_aperture->y_length());
+                auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length(),
+                                                                              el_aperture->y_length(),
+                                                                              el_aperture->x_coord(),
+                                                                              el_aperture->y_coord());
                 optix_el->set_aperture(aperture);
                 break;
             }
@@ -423,7 +421,7 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
         // Collect results for record
         raynum = raynumber_vec[ii];
         glm::dvec3 pos(hp_vec[ii].y, hp_vec[ii].z, hp_vec[ii].w); // x is depth
-        glm::dvec3 cos(0.0);                                  // TODO: calculate directions
+        glm::dvec3 cos(0.0);                                      // TODO: calculate directions
         int32_t element_id = element_id_vec[ii];
         uint8_t hit_type = hit_type_vec[ii];
         SolTrace::Result::RayEvent rev = hit_type_to_ray_event(static_cast<OptixCSP::HitType>(hit_type));
@@ -470,7 +468,7 @@ OptixCSP::Vec3d OptixRunner::ToVec3d(glm::dvec3 v)
     return vec;
 }
 
-OptixCSP::Matrix33d OptixRunner::ToMatrix33d(const glm::dmat3& mat)
+OptixCSP::Matrix33d OptixRunner::ToMatrix33d(const glm::dmat3 &mat)
 {
     return OptixCSP::Matrix33d(
         mat[0][0], mat[1][0], mat[2][0],

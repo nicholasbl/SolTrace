@@ -19,6 +19,7 @@
  *   --optix         Use the OptiX runner (only available if built with
  *                   SOLTRACE_BUILD_OPTIX_SUPPORT=ON; falls back to native
  *                   runner with a warning if OptiX support is absent)
+ *   --verbose       Enable verbose logging in the OptiX runner
  */
 
 #include <cstdlib>
@@ -64,6 +65,7 @@ static void print_usage(const char *prog)
         << "  --optix         Use OptiX runner instead of the native runner\n"
         << "                  (requires SOLTRACE_BUILD_OPTIX_SUPPORT=ON at build time)\n"
 #endif
+        << "  --verbose       Enable verbose logging in the OptiX runner\n"
         ;
 }
 
@@ -101,6 +103,7 @@ int main(int argc, char *argv[])
     long long num_rays_override = -1; // -1 means use what the JSON specifies
     bool use_embree = false;
     bool use_optix = false;
+    bool verbose = false;
 
     // Start parsing options from argv[2] if skip_output, else from argv[3]
     const int opts_start = skip_output ? 2 : 3;
@@ -162,6 +165,10 @@ int main(int argc, char *argv[])
         else if (arg == "--optix")
         {
             use_optix = true;
+        }
+        else if (arg == "--verbose")
+        {
+            verbose = true;
         }
         else
         {
@@ -312,6 +319,8 @@ int main(int argc, char *argv[])
             std::cerr << "Error: failed to initialize OptiX runner\n";
             return EXIT_FAILURE;
         }
+
+        runner.get_optix_system()->set_verbose(verbose);
 
         std::cout << "Using OptiX runner\n";
 
