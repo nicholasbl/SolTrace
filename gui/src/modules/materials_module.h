@@ -27,9 +27,13 @@ class MaterialsModule : public QObject {
 
     // TODO: A name module that always watches the name of an entity
 
+    QPointer<db::Database> m_database;
+
 private slots:
     void new_material_selected();
     void new_geometry_selected();
+
+    void reset(db::Database*);
 
 public:
     explicit MaterialsModule(QObject* parent = nullptr);

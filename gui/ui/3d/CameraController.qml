@@ -11,7 +11,7 @@ Item {
     }
 
     required property PerspectiveCamera perspective_camera
-    required property OrthographicCamera orthographic_camera
+    property OrthographicCamera orthographic_camera
 
     readonly property Camera active_camera : use_orthographic ? orthographic_camera : perspective_camera
 
@@ -136,38 +136,6 @@ Item {
         internal.mouse_delta_pos = Qt.vector2d(0,0)
     }
 
-    // DragHandler {
-    //     id: ctrlDragHandler
-    //     target: null
-    //     enabled: root.mouseEnabled && root.panEnabled
-    //     acceptedButtons: root.acceptedButtons
-    //     acceptedModifiers: Qt.ControlModifier
-    //     onCentroidChanged: {
-    //         root.panEvent(Qt.vector2d(centroid.position.x, centroid.position.y));
-    //     }
-
-    //     onActiveChanged: {
-    //         if (active)
-    //             root.startPan(Qt.vector2d(centroid.position.x, centroid.position.y));
-    //         else
-    //             root.endPan();
-    //     }
-    // }
-
-    // PinchHandler {
-    //     id: pinchHandler
-    //     target: null
-    //     enabled: root.mouseEnabled
-    //     onScaleChanged: (delta) => {
-    //                         root.camera.z = root.camera.z * (1 / delta)
-    //                     }
-    // }
-
-    // TapHandler {
-    //     acceptedButtons: root.acceptedButtons
-    //     onTapped: root.forceActiveFocus() // qmllint disable signal-handler-parameters
-    // }
-
     WheelHandler {
         id: wheel_handler
 
@@ -224,7 +192,6 @@ Item {
 
         onFinished: {
             console.log("Animation done")
-            internal.is_animating = false
         }
     }
 
@@ -396,7 +363,7 @@ Item {
         id: orbit_control
 
         property real sensitivity: 0.2
-        property real mouse_sensitivity_deg: 0.3
+        property real mouse_sensitivity_deg: 0.6
 
         property real yaw_deg: 0
         property real pitch_deg: 0

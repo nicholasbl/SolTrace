@@ -4,39 +4,138 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import SolTrace
 
-STPropertyPanel {
-    //title: "Geometry"
-    //collapsed: false
+ColumnLayout {
+    id: root
 
     property var group_edit: App.materials.geometry_edit
 
-    STPropertyLabel {
-        text: "Surface Type"
-    }
+    spacing: 8
 
-    STComboBox {
-        id: surfaceTypeCombo
+    STPropertyPanel {
         Layout.fillWidth: true
-        model: group_edit.surface_type_model
-        textRole: "display"
 
-        onActivated: {
-            group_edit.surface_kind = currentText
+        title: "Surface Properties"
+        collapsible: true
+
+        STPropertyLabel {
+            text: "Surface Type"
+
+            Layout.row: 0
+            Layout.column: 0
+        }
+
+        STComboBox {
+            id: surfaceTypeCombo
+            Layout.fillWidth: true
+            Layout.row: 0
+            Layout.column: 1
+            model: root.group_edit.surface_parameter_model.surface_type_model
+            textRole: "display"
+            valueRole: "display"
+
+            currentValue: root.group_edit.surface_parameter_model.surface_kind
+
+            onActivated: {
+                root.group_edit.surface_parameter_model.surface_kind = currentText
+            }
+        }
+
+        Repeater {
+            model: root.group_edit.surface_parameter_model
+            delegate: STPropertyLabel {
+                required property int index
+                required property string name
+
+                text: name
+
+                Layout.row: index + 1
+                Layout.column: 0
+            }
+        }
+
+        Repeater {
+            model: root.group_edit.surface_parameter_model
+            delegate: STDoubleSpinBox {
+                required property int index
+                required property var model
+                required property real content
+                required property real min
+                required property real max
+
+                Layout.fillWidth: true
+                Layout.row: index + 1
+                Layout.column: 1
+
+                value: content
+                from: min
+                to: max
+                stepSize: 0.01
+                onValueModified: model.content = value
+            }
         }
     }
 
-    STPropertyLabel {
-        text: "Aperture Type"
-    }
-
-    STComboBox {
-        id: apertureTypeCombo
+    STPropertyPanel {
         Layout.fillWidth: true
-        model: group_edit.aperture_type_model
-        textRole: "display"
 
-        onActivated: {
-            group_edit.aperture_kind = currentText
+        title: "Aperture Properties"
+        collapsible: true
+
+        STPropertyLabel {
+            text: "Aperture Type"
+
+            Layout.row: 0
+            Layout.column: 0
+        }
+
+        STComboBox {
+            id: apertureTypeCombo
+            Layout.fillWidth: true
+            Layout.row: 0
+            Layout.column: 1
+            model: root.group_edit.aperture_parameter_model.aperture_type_model
+            textRole: "display"
+            valueRole: "display"
+
+            currentValue: root.group_edit.aperture_parameter_model.aperture_kind
+
+            onActivated: {
+                root.group_edit.aperture_parameter_model.aperture_kind = currentText
+            }
+        }
+
+        Repeater {
+            model: root.group_edit.aperture_parameter_model
+            delegate: STPropertyLabel {
+                required property int index
+                required property string name
+
+                text: name
+
+                Layout.row: index + 1
+                Layout.column: 0
+            }
+        }
+
+        Repeater {
+            model: root.group_edit.aperture_parameter_model
+            delegate: STDoubleSpinBox {
+                required property int index
+                required property var model
+                required property real content
+                required property real min
+                required property real max
+
+                Layout.fillWidth: true
+                Layout.row: index + 1
+                Layout.column: 1
+
+                value: content
+                from: min
+                to: max
+                stepSize: 0.01
+                onValueModified: model.content = value
+            }
         }
     }
 }

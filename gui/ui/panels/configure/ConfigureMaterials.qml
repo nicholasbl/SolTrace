@@ -6,10 +6,11 @@ import QtQuick.Layouts
 
 import SolTrace
 
-AdaptiveEditor {
+AdaptiveFilteredEditor {
     id: root
 
-    model: App.materials.materials_list
+    source_model: App.materials.materials_list
+
     wideThreshold: 500
     listWidth: 250
 
@@ -31,30 +32,32 @@ AdaptiveEditor {
     }
 
     listHeader: RowLayout {
-        STTextField {
+        STSearchField {
+            id: search_field
             Layout.fillWidth: true
-            leftIcon: "\uf002"
-            placeholderText: "Search..."
+
+            Binding {
+                target: root
+                property: "filterText"
+                value: search_field.text
+            }
         }
     }
 
     listFooter: RowLayout {
-        STIconButton {
-            text: "\uf055"
+        CreateNewItemButton {
+            title: "New Material"
+
+            onCreateRequested: function(name) {
+                var new_name = AppData.current_database.sanitize_material_name(name)
+                AppData.current_database.add_material_group(new_name)
+            }
         }
     }
 
-    listDelegate: ItemDelegate {
+    listDelegate: STItemDelegate {
         text: itemModel ? itemModel.name : "No name"
         highlighted: isCurrent
-        width: parent ? parent.width : implicitWidth
-
-        background: Rectangle {
-            implicitHeight: 24
-            implicitWidth: 100
-            opacity: enabled ? 1 : 0.3
-            color: parent.down ? Material.rippleColor : "transparent"
-        }
     }
 
     detailView: ColumnLayout {
@@ -67,12 +70,24 @@ AdaptiveEditor {
                 onClicked: root.goBack()
             }
 
-            Label {
+            RenameLabel {
                 text: App.materials.current_material_name
 
                 font.family: "CMU Serif"
                 font.pointSize: 16
                 font.bold: true
+
+                onAccepted: (new_name) => {
+                    var mats = App.materials;
+                    var curr_db = mats.current_database
+
+                    new_name = curr_db.sanitize_material_name(new_name);
+
+                    curr_db.set_name_of(
+                                    mats.current_material,
+                                    new_name
+                                    )
+                }
             }
         }
 
@@ -81,8 +96,8 @@ AdaptiveEditor {
             Layout.preferredHeight: 148
 
             property var face: bar.currentIndex == 0
-                ? App.materials.material_edit.front_editor
-                : App.materials.material_edit.back_editor
+                               ? App.materials.material_edit.front_editor
+                               : App.materials.material_edit.back_editor
 
             reflectance: face.reflectivity
             transmittance: face.transmitivity
@@ -99,12 +114,14 @@ AdaptiveEditor {
         }
 
         ScrollView {
+            id: mat_scroll
             Layout.fillHeight: true
             Layout.fillWidth: true
             contentWidth: availableWidth
 
             SwipeView {
-                anchors.fill: parent
+                width: mat_scroll.availableWidth
+                height: currentItem ? currentItem.implicitHeight : 0
                 interactive: false
                 clip: true
                 currentIndex: bar.currentIndex
@@ -124,8 +141,35 @@ AdaptiveEditor {
         }
 
         RowLayout {
-            STIconButton {
-                text: "\uf2ed"
+            DeleteItemButton {
+                id: delete_button
+
+                title: "Delete Material"
+                itemType: "material"
+                replacementModel: root.source_model
+
+                toDelete: AppData.materials.current_material
+
+                onBeforeOpened: {
+                    isDangerous = AppData.current_database.material_use_count(
+                                delete_button.toDelete
+                                )
+                }
+
+                onDeleteRequested: {
+                    AppData.current_database.delete_material_group(
+                                delete_button.toDelete
+                                )
+                    root.clearSelection()
+                }
+
+                onDeleteReassignRequested: (entity) => {
+                    AppData.current_database.delete_material_group(
+                                delete_button.toDelete,
+                                entity
+                                )
+                    root.clearSelection()
+                }
             }
         }
     }

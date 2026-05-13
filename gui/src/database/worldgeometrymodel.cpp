@@ -4,7 +4,7 @@
 namespace db {
 
 void InstancedElements::on_geometry_group_change(entt::entity group) {
-    if (group != entt::null && group != m_target_group) return;
+    if (group != entt::null && Entity(group) != m_target_group) return;
 
     m_instance_data.clear();
     m_member_cache.clear();
@@ -64,7 +64,7 @@ void InstancedElements::on_geometry_group_membership_change(
 
     if (!ptr) return;
 
-    if (m_target_group == entt::null) return;
+    if (!m_target_group.is_valid()) return;
 
     if (ptr->group != m_target_group) return;
 
@@ -124,7 +124,7 @@ Entity InstancedElements::geometry_of_group() {
 Entity InstancedElements::material_of(int index) {
     entt::entity instance = entity_at(index);
     if (instance == entt::null) return { };
-    qDebug() << (int)m_database->material_of(instance);
+    // qDebug() << m_database->material_of(instance);
     return m_database->material_of(instance);
 }
 
@@ -183,8 +183,8 @@ QByteArray InstancedElements::getInstanceBuffer(int* instanceCount) {
 
     if (instanceCount) { *instanceCount = m_member_cache.size(); }
 
-    qDebug() << Q_FUNC_INFO << entt::to_integral(m_target_group)
-             << m_member_cache.size() << m_instance_data.size();
+    qDebug() << Q_FUNC_INFO << m_target_group << m_member_cache.size()
+             << m_instance_data.size();
 
     return m_instance_data;
 }
@@ -259,6 +259,11 @@ WorldGeometryModel::WorldGeometryModel(QObject* parent)
     : StructModelAdapter(parent) { }
 
 void WorldGeometryModel::reset(Database* database) {
+    if (m_host) {
+        disconnect(m_host->geometry_root.self(), nullptr, this, nullptr);
+        disconnect(m_host->identity.self(), nullptr, this, nullptr);
+    }
+
     qDebug() << Q_FUNC_INFO << database;
     m_host = database;
     recompute();

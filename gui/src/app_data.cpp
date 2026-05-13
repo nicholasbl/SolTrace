@@ -136,6 +136,8 @@ AppData::AppData(QObject*       parent,
     connect(this, &AppData::new_results, m_flux, &FluxModule::set_results);
 
     load_session();
+
+    m_file_source->load_new();
 }
 
 AppData::~AppData() {

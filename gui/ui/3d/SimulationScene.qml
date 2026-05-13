@@ -9,6 +9,10 @@ import SolTrace
 Item {
     id: root
 
+    function align_to_axis(axis, invert) {
+        controller.align_to_axis(axis, invert)
+    }
+
     Menu {
         id: geometryInstanceContextMenu
         property var focused_group: null
@@ -62,7 +66,7 @@ Item {
                 if (geometryInstanceContextMenu.focused_group) {
                     App.view.workflow_phase = 0
                     App.view.left_panel.visible = true
-                    App.layout.current_element = geometryInstanceContextMenu.focused_group.group_instances.at(geometryInstanceContextMenu.index)
+                    App.layout.edited_element = geometryInstanceContextMenu.focused_group.group_instances.at(geometryInstanceContextMenu.index)
                     App.view.configure_section = 3
                     App.view.editing_layout = true
                 }
@@ -79,7 +83,7 @@ Item {
         environment: SceneEnvironment {
 
             antialiasingMode: SceneEnvironment.MSAA
-            antialiasingQuality: SceneEnvironment.VeryHigh
+            antialiasingQuality: SceneEnvironment.High
 
             temporalAAEnabled: true
             temporalAAStrength: 0.8
@@ -380,22 +384,6 @@ Item {
 
         }
     }
-
-    // I hate this stupid thing
-    // WasdController {
-    //     mouseEnabled: App.view.sim.camera === SimulationViewState.WASD
-    //     keysEnabled: App.view.sim.camera === SimulationViewState.WASD
-    //     controlledObject: perspective_camera
-    // }
-
-    // CustomOrbitController {
-    //     anchors.fill: parent
-    //     origin: origin
-    //     mouseEnabled: App.view.sim.camera === SimulationViewState.Orbital
-    //     panEnabled: App.view.sim.camera === SimulationViewState.Orbital
-    //     camera: App.view.sim.perspective === SimulationViewState.Orthographic ? ortho_camera : perspective_camera
-    //     automaticClipping: false
-    // }
 
     CameraController {
         id: controller

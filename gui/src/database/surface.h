@@ -17,11 +17,11 @@ namespace SD = SolTrace::Data;
 namespace db {
 
 struct SurfaceGenerationOptions {
-    glm::uvec2              height_field_resolution       = { 24, 24 };
-    uint32_t                radial_subdivisions           = 24;
-    uint32_t                perimeter_subdivisions        = 64;
-    uint32_t                cylinder_angular_subdivisions = 64;
-    uint32_t                cylinder_length_subdivisions  = 24;
+    glm::uvec2 height_field_resolution       = { 24, 24 };
+    uint32_t   radial_subdivisions           = 24;
+    uint32_t   perimeter_subdivisions        = 64;
+    uint32_t   cylinder_angular_subdivisions = 64;
+    uint32_t   cylinder_length_subdivisions  = 24;
 };
 
 std::optional<Mesh>

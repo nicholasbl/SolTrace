@@ -6,11 +6,10 @@
 #include <QVector>
 
 #include <entt/entt.hpp>
-
 #include <glm/gtc/quaternion.hpp>
 
 #include "analysis/baked_flux_map.h"
-
+#include "entity.h"
 #include "simulation_data_api.hpp"
 
 namespace SD = SolTrace::Data;
@@ -41,7 +40,7 @@ struct ElementComponent { };
 /// Describes the parent of this entity, if it has one. DO NOT modify this
 /// component directly!
 struct ChildOfComponent {
-    entt::entity parent;
+    Entity parent;
 
     template <class M>
     void remap_entities(M& mapper) {
@@ -51,7 +50,7 @@ struct ChildOfComponent {
 
 /// Describes the children of an entity. DO NOT modify this component directly!
 struct ChildrenComponent {
-    QVector<entt::entity> children;
+    QVector<Entity> children;
 
     template <class M>
     void remap_entities(M& mapper) {
@@ -101,7 +100,7 @@ struct MaterialComponent {
 /// A group using the same material. DO NOT modify the member information
 /// directly.
 struct MaterialGroupComponent {
-    QVector<entt::entity> members;
+    QVector<Entity> members;
 
     template <class M>
     void remap_entities(M& mapper) {
@@ -114,7 +113,7 @@ struct MaterialGroupComponent {
 /// Describes the material group this entity belongs to. DO NOT modify this
 /// component directly!
 struct MaterialGroupMemberComponent {
-    entt::entity group;
+    Entity group;
 
     template <class M>
     void remap_entities(M& mapper) {
@@ -135,7 +134,7 @@ struct GeometryComponent {
 /// A group using the same geometry. DO NOT modify the member information
 /// directly.
 struct GeometryGroupComponent {
-    QVector<entt::entity> members;
+    QVector<Entity> members;
 
     template <class M>
     void remap_entities(M& mapper) {
@@ -148,7 +147,7 @@ struct GeometryGroupComponent {
 /// Describes the geometry group this entity belongs to. DO NOT modify this
 /// component directly!
 struct GeometryGroupMemberComponent {
-    entt::entity group;
+    Entity group;
 
     template <class M>
     void remap_entities(M& mapper) {
@@ -165,7 +164,7 @@ struct ATagMemberComponent { };
 
 /// Lists the string tags this entity has
 struct TagMembershipComponent {
-    QVector<entt::entity> tags;
+    QVector<Entity> tags;
 
     template <class M>
     void remap_entities(M& mapper) {

@@ -61,10 +61,9 @@ ShadowedGlassRectangle {
                 ListElement { name: "Documentation"; icon: "\uf02d" }
             }
 
-            listDelegate: ItemDelegate {
+            listDelegate: STItemDelegate {
                 text: itemModel ? itemModel.name : ""
                 highlighted: isCurrent
-                width: parent ? parent.width : implicitWidth
 
                 contentItem: RowLayout {
                     spacing: 8
@@ -77,17 +76,6 @@ ShadowedGlassRectangle {
                         text: itemModel ? itemModel.name : ""
                         Layout.fillWidth: true
                     }
-                }
-
-                background: Rectangle {
-                    implicitHeight: 36
-                    implicitWidth: 100
-                    opacity: enabled ? 1 : 0.3
-                    color: parent.down ? Material.rippleColor
-                         : parent.highlighted ? Qt.rgba(Material.accentColor.r,
-                                                         Material.accentColor.g,
-                                                         Material.accentColor.b, 0.12)
-                         : "transparent"
                 }
             }
 

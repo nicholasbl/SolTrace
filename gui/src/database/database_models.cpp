@@ -7,8 +7,8 @@
 
 namespace db {
 
-void NameModel::recompute(entt::entity e) {
-    if (!m_host or e == entt::null or !m_host->valid(e)) return;
+void NameModel::recompute(db::Entity e) {
+    if (!m_host or !e.is_valid() or !m_host->valid(e)) return;
 
     set_name(m_host->name_of(e));
 }
@@ -16,6 +16,10 @@ void NameModel::recompute(entt::entity e) {
 NameModel::NameModel(QObject* parent) : QObject(parent) { }
 
 void NameModel::reset(Database* database) {
+    if (m_host) {
+        QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
+    }
+
     m_host = database;
 
     if (!m_host) return;
@@ -27,7 +31,7 @@ void NameModel::reset(Database* database) {
 }
 
 void NameModel::update_name(QString name) {
-    if (!m_host or m_node == entt::null or !m_host->valid(m_node)) return;
+    if (!m_host or !m_node.is_valid() or !m_host->valid(m_node)) return;
 
     if (m_host->name_of(m_node) != m_name) {
         m_host->identity.patch(
@@ -66,49 +70,54 @@ void BreadcrumbModel::recompute() {
 
     std::reverse(m_path.begin(), m_path.end());
 
-    QStringList ret;
+    QVector<EntityNamePair> ret;
 
     for (auto e : std::as_const(m_path)) {
-        ret << m_host->name_of(e);
+        ret << EntityNamePair { m_host->name_of(e), e };
     }
 
-    this->setStringList(ret);
+    this->store_reset(ret);
 }
 
-BreadcrumbModel::BreadcrumbModel(QObject* parent) : QStringListModel(parent) { }
-
-void BreadcrumbModel::reset(Database* database) {
-    m_host = database;
-    m_node = entt::null;
-    recompute();
-
+BreadcrumbModel::BreadcrumbModel(QObject* parent)
+    : StructModelAdapter(parent) {
     connect(this,
             &BreadcrumbModel::node_changed,
             this,
             &BreadcrumbModel::recompute);
+}
+
+void BreadcrumbModel::reset(Database* database) {
+    if (m_host) {
+        QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->parent.self(), nullptr, this, nullptr);
+    }
+
+    m_host = database;
+    m_node = {};
+    recompute();
 
     if (database) {
         connect(database->identity.self(),
                 &ComponentAPIBase::changed,
                 this,
                 [this](entt::entity e) {
-                    if (m_path.contains(e)) { this->recompute(); }
+                    if (m_path.contains(Entity(e))) { this->recompute(); }
                 });
 
         connect(database->parent.self(),
                 &ComponentAPIBase::changed,
                 this,
                 [this](entt::entity e) {
-                    if (m_path.contains(e)) { this->recompute(); }
+                    if (m_path.contains(Entity(e))) { this->recompute(); }
                 });
     }
 }
 
-
 // =============================================================================
 
-EntityNamePair EntityNamePair::record_for_entity(Database&    db,
-                                                 entt::entity entity) {
+EntityNamePair EntityNamePair::record_for_entity(Database&  db,
+                                                 db::Entity entity) {
     return EntityNamePair { .name = db.name_of(entity), .entity = entity };
 }
 
@@ -142,7 +151,7 @@ void ChildModel::recompute() {
     this->store_reset(r);
 }
 
-void ChildModel::ident_changed(entt::entity e) {
+void ChildModel::ident_changed(db::Entity e) {
     if (!m_host) return;
 
     if (auto iter = m_reverse.find(e); iter != m_reverse.end()) {
@@ -151,28 +160,33 @@ void ChildModel::ident_changed(entt::entity e) {
     }
 }
 
-ChildModel::ChildModel(QObject* parent) : StructModelAdapter(parent) { }
+ChildModel::ChildModel(QObject* parent) : StructModelAdapter(parent) {
+    connect(this, &ChildModel::node_changed, this, &ChildModel::recompute);
+}
 
 void ChildModel::reset(Database* database) {
-    m_host = database;
-    m_node = entt::null;
-    recompute();
+    if (m_host) {
+        QObject::disconnect(m_host->children.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
+    }
 
-    connect(this, &ChildModel::node_changed, this, &ChildModel::recompute);
+    m_host = database;
+    m_node = {};
+    recompute();
 
     if (database) {
         connect(database->children.self(),
                 &ComponentAPIBase::changed,
                 this,
                 [this](entt::entity e) {
-                    if (node() == e) { recompute(); }
+                    if ((entt::entity)node() == e) { recompute(); }
                 });
 
         connect(database->children.self(),
                 &ComponentAPIBase::removed,
                 this,
                 [this](entt::entity e) {
-                    if (node() == e) { recompute(); }
+                    if ((entt::entity)node() == e) { recompute(); }
                 });
 
         connect(database->identity.self(),
@@ -209,17 +223,22 @@ void MaterialGroupsModel::recompute() {
     this->store_reset(r);
 }
 
-void MaterialGroupsModel::group_changed(entt::entity e) {
+void MaterialGroupsModel::group_changed(db::Entity e) {
     if (!m_host) return;
 
     auto iter = m_reverse.find(e);
 
-    if (iter == m_reverse.end()) { return recompute(); }
+    if (iter == m_reverse.end()) {
+        if (!m_host->as_registry().all_of<MaterialGroupComponent>(e)) return;
+
+        return recompute();
+    }
 
     this->store_push_update(iter->second,
                             EntityNamePair::record_for_entity(*m_host, e));
 }
-void MaterialGroupsModel::group_removed(entt::entity e) {
+void MaterialGroupsModel::group_removed(db::Entity e) {
+    qDebug() << Q_FUNC_INFO << db::Entity(e);
     recompute();
 }
 
@@ -227,11 +246,20 @@ MaterialGroupsModel::MaterialGroupsModel(QObject* parent)
     : StructModelAdapter(parent) { }
 
 void MaterialGroupsModel::reset(Database* database) {
+    if (m_host) {
+        QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->material_root.self(), nullptr, this, nullptr);
+    }
     qDebug() << Q_FUNC_INFO << database;
     m_host = database;
     recompute();
 
     if (!database) { return; }
+
+    connect(database->identity.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &MaterialGroupsModel::group_changed);
 
     connect(database->material_root.self(),
             &ComponentAPIBase::changed,
@@ -242,11 +270,6 @@ void MaterialGroupsModel::reset(Database* database) {
             &ComponentAPIBase::removed,
             this,
             &MaterialGroupsModel::group_removed);
-
-    connect(database->identity.self(),
-            &ComponentAPIBase::changed,
-            this,
-            &MaterialGroupsModel::group_changed);
 }
 
 // =============================================================================
@@ -276,17 +299,21 @@ void GeometryGroupsModel::recompute() {
     this->store_reset(r);
 }
 
-void GeometryGroupsModel::group_changed(entt::entity e) {
+void GeometryGroupsModel::group_changed(db::Entity e) {
     if (!m_host) return;
 
     auto iter = m_reverse.find(e);
 
-    if (iter == m_reverse.end()) { return recompute(); }
+    if (iter == m_reverse.end()) {
+        if (!m_host->as_registry().all_of<GeometryGroupComponent>(e)) return;
+
+        return recompute();
+    }
 
     this->store_push_update(iter->second,
                             EntityNamePair::record_for_entity(*m_host, e));
 }
-void GeometryGroupsModel::group_removed(entt::entity e) {
+void GeometryGroupsModel::group_removed(db::Entity e) {
     recompute();
 }
 
@@ -294,11 +321,20 @@ GeometryGroupsModel::GeometryGroupsModel(QObject* parent)
     : StructModelAdapter(parent) { }
 
 void GeometryGroupsModel::reset(Database* database) {
+    if (m_host) {
+        QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->geometry_root.self(), nullptr, this, nullptr);
+    }
     qDebug() << Q_FUNC_INFO << database;
     m_host = database;
     recompute();
 
     if (!database) { return; }
+
+    connect(database->identity.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &GeometryGroupsModel::group_changed);
 
     connect(database->geometry_root.self(),
             &ComponentAPIBase::changed,
@@ -309,11 +345,6 @@ void GeometryGroupsModel::reset(Database* database) {
             &ComponentAPIBase::removed,
             this,
             &GeometryGroupsModel::group_removed);
-
-    connect(database->identity.self(),
-            &ComponentAPIBase::changed,
-            this,
-            &GeometryGroupsModel::group_changed);
 }
 
 // =============================================================================
@@ -344,7 +375,7 @@ void TagsModel::recompute() {
     this->store_reset(r);
 }
 
-void TagsModel::tag_changed(entt::entity e) {
+void TagsModel::tag_changed(db::Entity e) {
     if (!m_host) return;
 
     auto iter = m_reverse.find(e);
@@ -354,13 +385,18 @@ void TagsModel::tag_changed(entt::entity e) {
     this->store_push_update(iter->second,
                             EntityNamePair::record_for_entity(*m_host, e));
 }
-void TagsModel::tag_removed(entt::entity e) {
+void TagsModel::tag_removed(db::Entity e) {
     recompute();
 }
 
 TagsModel::TagsModel(QObject* parent) : StructModelAdapter(parent) { }
 
 void TagsModel::reset(Database* database) {
+    if (m_host) {
+        QObject::disconnect(m_host->tag_root.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
+    }
+
     m_host = database;
     recompute();
 
@@ -394,15 +430,27 @@ void AnInstanceEditor::recompute() {
     emit position_changed();
     emit orientation_changed();
     emit hidden_changed();
+    emit disabled_changed();
     emit material_group_changed();
+    emit current_material_changed();
+    emit current_material_name_changed();
     emit geometry_group_changed();
+    emit current_geometry_changed();
+    emit current_geometry_name_changed();
     emit parent_changed();
+    emit parent_name_changed();
     emit tags_changed();
 }
 
-void AnInstanceEditor::an_entity_changed(entt::entity e) {
-    if (m_entity != e) return;
-    recompute();
+void AnInstanceEditor::an_entity_changed(db::Entity e) {
+    if (m_entity == e) {
+        recompute();
+        return;
+    }
+
+    if (material_group() == e) { emit current_material_name_changed(); }
+    if (geometry_group() == e) { emit current_geometry_name_changed(); }
+    if (parent() == e) { emit parent_name_changed(); }
 }
 
 AnInstanceEditor::AnInstanceEditor(QObject* parent) : QObject(parent) {
@@ -420,15 +468,31 @@ AnInstanceEditor::AnInstanceEditor(QObject* parent) : QObject(parent) {
      */
 }
 
-void AnInstanceEditor::set(entt::entity ent) {
-    m_entity = ent;
+void AnInstanceEditor::set(db::Entity ent) {
+    set_entity(ent);
     recompute();
 }
 
 void AnInstanceEditor::reset(Database* database) {
+    if (m_host) {
+        QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->transform.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->invisible.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->disabled.self(), nullptr, this, nullptr);
+        QObject::disconnect(
+            m_host->material_group_membership.self(), nullptr, this, nullptr);
+        QObject::disconnect(
+            m_host->geometry_group_membership.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->tag_membership.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->parent.self(), nullptr, this, nullptr);
+    }
+
     m_host = database;
 
-    if (!database) return;
+    if (!database) {
+        recompute();
+        return;
+    }
 
     connect(database->identity.self(),
             &ComponentAPIBase::changed,
@@ -445,13 +509,38 @@ void AnInstanceEditor::reset(Database* database) {
             this,
             &AnInstanceEditor::an_entity_changed);
 
+    connect(database->invisible.self(),
+            &ComponentAPIBase::removed,
+            this,
+            &AnInstanceEditor::an_entity_changed);
+
+    connect(database->disabled.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &AnInstanceEditor::an_entity_changed);
+
+    connect(database->disabled.self(),
+            &ComponentAPIBase::removed,
+            this,
+            &AnInstanceEditor::an_entity_changed);
+
     connect(database->material_group_membership.self(),
             &ComponentAPIBase::changed,
             this,
             &AnInstanceEditor::an_entity_changed);
 
+    connect(database->material_group_membership.self(),
+            &ComponentAPIBase::removed,
+            this,
+            &AnInstanceEditor::an_entity_changed);
+
     connect(database->geometry_group_membership.self(),
             &ComponentAPIBase::changed,
+            this,
+            &AnInstanceEditor::an_entity_changed);
+
+    connect(database->geometry_group_membership.self(),
+            &ComponentAPIBase::removed,
             this,
             &AnInstanceEditor::an_entity_changed);
 
@@ -537,59 +626,155 @@ void AnInstanceEditor::set_hidden(bool newHidden) {
     emit hidden_changed();
 }
 
-entt::entity AnInstanceEditor::material_group() const {
+bool AnInstanceEditor::disabled() const {
+    if (m_host and m_host->valid(m_entity)) {
+        return m_host->as_registry().any_of<DisabledComponent>(m_entity);
+    }
+
+    return false;
+}
+
+void AnInstanceEditor::set_disabled(bool newDisabled) {
+    if (disabled() == newDisabled) return;
+    FIND(disabled);
+
+    if (newDisabled) {
+        component.set(m_entity, DisabledComponent {});
+    } else {
+        component.remove(m_entity);
+    }
+
+    emit disabled_changed();
+}
+
+db::Entity AnInstanceEditor::material_group() const {
     if (m_host and m_host->valid(m_entity)) {
         if (auto tf = m_host->material_group_membership.get(m_entity); tf) {
             return tf->group;
         }
     }
 
-    return entt::null;
+    return {};
 }
 
-void AnInstanceEditor::set_material_group(entt::entity newGroup) {
+void AnInstanceEditor::set_material_group(db::Entity newGroup) {
     if (material_group() == newGroup) return;
+    if (!m_host) return;
+    if (!m_host->valid(m_entity)) return;
 
     m_host->assign_material(m_entity, newGroup);
 
     emit material_group_changed();
+    emit current_material_changed();
+    emit current_material_name_changed();
 }
 
-entt::entity AnInstanceEditor::geometry_group() const {
+db::Entity AnInstanceEditor::geometry_group() const {
     if (m_host and m_host->valid(m_entity)) {
         if (auto tf = m_host->geometry_group_membership.get(m_entity); tf) {
             return tf->group;
         }
     }
 
-    return entt::null;
+    return {};
 }
 
-void AnInstanceEditor::set_geometry_group(entt::entity newGroup) {
+void AnInstanceEditor::set_geometry_group(db::Entity newGroup) {
     if (geometry_group() == newGroup) return;
+    if (!m_host) return;
+    if (!m_host->valid(m_entity)) return;
 
     m_host->assign_geometry(m_entity, newGroup);
 
     emit geometry_group_changed();
+    emit current_geometry_changed();
+    emit current_geometry_name_changed();
 }
 
-entt::entity AnInstanceEditor::parent() const {
+Entity AnInstanceEditor::current_material() const {
+    return material_group();
+}
+
+void AnInstanceEditor::set_current_material(Entity newGroup) {
+    set_material_group(newGroup);
+}
+
+QString AnInstanceEditor::current_material_name() const {
+    if (m_host and m_host->valid(current_material())) {
+        return m_host->name_of(current_material());
+    }
+
+    return {};
+}
+
+Entity AnInstanceEditor::current_geometry() const {
+    return geometry_group();
+}
+
+void AnInstanceEditor::set_current_geometry(Entity newGroup) {
+    set_geometry_group(newGroup);
+}
+
+QString AnInstanceEditor::current_geometry_name() const {
+    if (m_host and m_host->valid(current_geometry())) {
+        return m_host->name_of(current_geometry());
+    }
+
+    return {};
+}
+
+db::Entity AnInstanceEditor::parent() const {
     if (m_host and m_host->valid(m_entity)) {
         if (auto tf = m_host->parent.get(m_entity); tf) { return tf->parent; }
     }
 
-    return entt::null;
+    return {};
 }
 
-void AnInstanceEditor::set_parent(entt::entity newParent) {
+void AnInstanceEditor::set_parent(db::Entity newParent) {
     if (parent() == newParent) return;
+
+    if (newParent == m_entity) {
+        emit notify(
+            ANotification::error("Cannot make entity a parent of itself"));
+        return;
+    }
+
+    // Guard cycles
+    {
+        auto cursor = newParent;
+
+        while (true) {
+            auto ptr = m_host->parent.get(cursor);
+
+            if (!ptr) { break; }
+
+            if (ptr->parent == m_entity) {
+                // cycle
+                emit notify(ANotification::error(
+                    "Cycle detected in parent/child relationships"));
+                return;
+            }
+
+            cursor = ptr->parent;
+        }
+    }
 
     m_host->set_parent(m_entity, newParent);
 
     emit parent_changed();
+    emit parent_name_changed();
 }
 
-QVector<entt::entity> AnInstanceEditor::tags() const {
+QString AnInstanceEditor::parent_name() const {
+    if (m_host and m_host->valid(parent())) {
+        return m_host->name_of(parent());
+    }
+
+    return {};
+}
+
+QVector<db::Entity> AnInstanceEditor::tags() const {
     if (m_host and m_host->valid(m_entity)) {
         if (auto tf = m_host->tag_membership.get(m_entity); tf) { return tf->tags; }
     }
@@ -597,12 +782,12 @@ QVector<entt::entity> AnInstanceEditor::tags() const {
     return {};
 }
 
-void AnInstanceEditor::set_tags(QVector<entt::entity> const& newTags) {
+void AnInstanceEditor::set_tags(QVector<db::Entity> const& newTags) {
     auto current_tags = tags();
 
-    std::unordered_set<entt::entity> incoming(newTags.begin(), newTags.end());
-    std::unordered_set<entt::entity> current(current_tags.begin(),
-                                             current_tags.end());
+    std::unordered_set<db::Entity> incoming(newTags.begin(), newTags.end());
+    std::unordered_set<db::Entity> current(current_tags.begin(),
+                                           current_tags.end());
 
     if (incoming == current) return;
     if (!m_host) return;
@@ -640,6 +825,18 @@ void AnInstanceEditor::set_entity_name(const QString& newEntity_name) {
     component.set(m_entity, IdentityComponent { .name = newEntity_name });
 
     emit entity_name_changed();
+}
+
+void AnInstanceEditor::set_from_angles(QVector3D angles) {
+    set_orientation(QQuaternion::fromEulerAngles(angles));
+}
+
+void AnInstanceEditor::clear_parent() {
+    if (m_host and m_host->valid(m_entity)) {
+        m_host->unset_parent(m_entity);
+        emit parent_changed();
+        emit parent_name_changed();
+    }
 }
 
 } // namespace db

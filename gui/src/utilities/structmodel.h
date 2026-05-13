@@ -106,7 +106,7 @@ QHash<int, QByteArray> const& get_name_map() {
 
 template <class Record>
 constexpr int role_for_member_offset(size_t off) {
-    constexpr auto const& meta = sm_meta_getter<Record>();
+    constexpr auto meta = Record::sm_meta_getter();
 
     for (int i = 0; i < std::size(meta); i++) {
         if (meta[i].offset == off) { return Qt::UserRole + i; }
@@ -115,7 +115,12 @@ constexpr int role_for_member_offset(size_t off) {
     return -1;
 }
 
-#define ROLE_FOR_MEMBER(RT, MEM) role_for_member_offset(offsetof(RT, MEM))
+#define ROLE_FOR_MEMBER(RT, MEM)                                               \
+    [] {                                                                       \
+        constexpr auto role = role_for_member_offset<RT>(offsetof(RT, MEM));   \
+        static_assert(role != -1, "Member is not exposed as a model role");    \
+        return role;                                                           \
+    }()
 
 
 template <class T>
@@ -435,10 +440,15 @@ protected:
         this->m_records[i] = item;
 
         auto col_count = this->columnCount();
+        QVector<int> roles { Qt::DisplayRole, Qt::EditRole };
+
+        for (int role = 0; role < col_count; role++) {
+            roles.push_back(Qt::UserRole + role);
+        }
 
         Q_EMIT this->dataChanged(this->index(i, 0),
-                                 this->index(i, col_count),
-                                 { Qt::DisplayRole, Qt::EditRole });
+                                 this->index(i, col_count - 1),
+                                 roles);
     }
     void store_reset(QVector<Record> new_records = {}) {
         this->beginResetModel();

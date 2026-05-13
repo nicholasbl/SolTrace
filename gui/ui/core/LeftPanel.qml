@@ -49,16 +49,6 @@ ShadowedGlassRectangle {
                 visible: App.view.left_panel.is_small()
             }
 
-            Item {
-                Layout.preferredWidth: panel_buttons.width
-                visible: root.width >= 750
-            }
-
-            Item {
-                Layout.fillWidth: true
-                visible: root.width >= 500
-            }
-
             Repeater {
                 model: ["Configure", "Simulate", "Analyze"]
 
@@ -67,25 +57,40 @@ ShadowedGlassRectangle {
                     required property string modelData
                     property var icons: ["\uf0ad", "\uf085", "\uf201"]
 
+                    property bool is_active : App.view.workflow_phase === index
+
                     spacing: 4
 
                     STClickableLabel {
                         text: parent.icons[parent.index]
                         font.family: "Font Awesome 7 Free"
-                        opacity: App.view.workflow_phase === parent.index ? 1 : 0.5
+                        opacity: is_active ? 1 : 0.5
+                        borderWidth: 0
                         font.pointSize: App.view.left_panel.is_small() ? 16 : 12
 
                         onClicked: App.view.workflow_phase = parent.index
                     }
 
                     STClickableLabel {
+                        text: parent.modelData
+                        borderWidth: 0
                         font.pointSize: 16
                         font.bold: true
-                        text: parent.modelData
                         font.family: "CMU Serif"
-                        font.underline: App.view.workflow_phase === parent.index && !App.view.left_panel.is_small()
-                        opacity: App.view.workflow_phase === parent.index ? 1 : 0.5
-                        visible: App.view.left_panel.width >= 525
+                        font.underline: is_active && !App.view.left_panel.is_small()
+                        opacity: is_active ? 1 : 0.5
+                        visible: {
+                            if (is_active && App.view.left_panel.width >= 300) {
+                                return true
+                            }
+
+                            if (App.view.left_panel.width >= 525) {
+                                return true
+                            }
+
+                            return false
+
+                        }
 
                         onClicked: App.view.workflow_phase = parent.index
                     }

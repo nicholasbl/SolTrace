@@ -4,9 +4,12 @@
 
 #include "database/components.h"
 #include "database/database_notification.h"
+#include "entity.h"
+#include "magic_enum/magic_enum.hpp"
 
 #include <QDebug>
 #include <QPointer>
+#include <QStringListModel>
 #include <QtTypes>
 #include <qqmlintegration.h>
 
@@ -25,31 +28,20 @@ std::optional<K> reverse_lookup(std::map<K, V> const& map, V const& value) {
     return std::nullopt;
 }
 
-/// Wrapper type for Qt/QML interface
-struct Entity {
-    Q_GADGET
-    QML_VALUE_TYPE(db_entity);
-    // Q_PROPERTY(qint64 value MEMBER value);
+/// Write all enum options to a string list model
+template <class K>
+void build_options(QStringListModel& dest) {
+    QStringList items;
 
-public:
-    Entity() = default;
-    Entity(entt::entity e) : value(e) { }
+    for (auto const& iter : magic_enum::enum_entries<K>()) {
+        auto val = QString(iter.second.data());
 
-    entt::entity value = entt::null;
+        items.push_back(val);
+    }
 
-    bool operator<=>(Entity const& other) const = default;
-
-    operator entt::entity() const { return value; }
-
-    Q_INVOKABLE bool is_valid() { return value != entt::null; }
-};
-
-inline QDebug operator<<(QDebug debug, Entity const& c) {
-    QDebugStateSaver saver(debug);
-    debug.nospace() << "(Entity " << entt::to_integral(c.value) << ")";
-
-    return debug;
+    dest.setStringList(items);
 }
+
 
 class Database;
 
@@ -98,6 +90,7 @@ public:
     ComponentAPIUpdate<TransformComponent> transform;
     ComponentAPI<GlobalTransformComponent> global_transform;
     ComponentAPIUpdate<InvisibleComponent> invisible;
+    ComponentAPIUpdate<DisabledComponent>  disabled;
     ComponentAPI<ChildOfComponent>         parent;
     ComponentAPI<TagComponent>             tag_root;
 
@@ -139,7 +132,7 @@ public:
 
     /// Get the list of children of this entity. Returns an empty list if there
     /// are none.
-    std::span<entt::entity const> children_of(entt::entity parent) const;
+    std::span<Entity const> children_of(entt::entity parent) const;
 
     /// Get the parent of this entity. Returns entt::null if there is none.
     entt::entity parent_of(entt::entity child) const;
@@ -157,13 +150,16 @@ public:
     void remove_geometry(entt::entity child);
 
     /// Create a new tag. Note that tag names should be unique.
+
+    QString sanitize_tag_name(QString);
+
     entt::entity create_tag(QString name);
 
     /// Ask if an entity has been given a tag
-    bool is_tagged(entt::entity item, entt::entity tag) const;
+    bool is_tagged(Entity item, Entity tag) const;
 
     /// Assign an entity to a specific tag
-    void assign_tag(entt::entity item, entt::entity tag);
+    void assign_tag(Entity item, Entity tag);
 
     /// Remove a tag from an entity
     void unassign_tag(entt::entity item, entt::entity tag);
@@ -172,7 +168,7 @@ public:
     void delete_tag(entt::entity tag);
 
     /// Get all the tags for an entity
-    std::span<entt::entity const> tags_for(entt::entity item) const;
+    std::span<Entity const> tags_for(entt::entity item) const;
 
     /// Get the global ray source of the database
     SD::ray_source_ptr get_ray_source() const;
@@ -185,37 +181,52 @@ public slots:
     /// using the entity ID.
     QString name_of(db::Entity item) const;
 
+    void set_name_of(db::Entity item, QString new_name);
+
+    QString sanitize_entity_name(QString);
+
+    db::Entity add_element(QString new_name, db::Entity parent = {});
+
+    void delete_element(db::Entity to_delete);
+
     /// Materials
-    entt::entity add_material_group(QString               new_name,
-                                    QVector<entt::entity> members,
-                                    entt::entity clone_from = entt::null);
+    QString sanitize_material_name(QString);
 
-    void delete_material_group(entt::entity to_delete,
-                               entt::entity move_to = entt::null);
+    db::Entity add_material_group(QString             new_name,
+                                  QVector<db::Entity> members    = {},
+                                  db::Entity          clone_from = {});
 
-    entt::entity material_of(entt::entity element) const;
+    size_t material_use_count(db::Entity material);
+
+    void delete_material_group(db::Entity to_delete, db::Entity move_to = {});
+
+    db::Entity material_of(db::Entity element) const;
 
     /// Geometry
-    entt::entity add_geometry_group(QString               new_name,
-                                    QVector<entt::entity> members,
-                                    entt::entity clone_from = entt::null);
 
-    void delete_geometry_group(entt::entity to_delete,
-                               entt::entity move_to = entt::null);
+    QString sanitize_geometry_name(QString);
 
-    entt::entity geometry_of(entt::entity element) const;
+    db::Entity add_geometry_group(QString             new_name,
+                                  QVector<db::Entity> members    = {},
+                                  db::Entity          clone_from = {});
+
+    size_t geometry_use_count(db::Entity geometry);
+
+    void delete_geometry_group(db::Entity to_delete, db::Entity move_to = {});
+
+    db::Entity geometry_of(db::Entity element) const;
 
     /// Selection methods
-    void select(entt::entity to_select);
-    void add_to_selection(entt::entity to_select);
+    void select(db::Entity to_select);
+    void add_to_selection(db::Entity to_select);
 
-    void deselect(entt::entity to_deselect);
+    void deselect(db::Entity to_deselect);
 
-    void toggle_selection(entt::entity to_toggle_selection);
+    void toggle_selection(db::Entity to_toggle_selection);
 
     void clear_selection();
 
-    bool is_selected(entt::entity e) const;
+    bool is_selected(db::Entity e) const;
 
     void select_all_with_material(db::Entity);
     void select_all_with_geometry(db::Entity);
@@ -223,7 +234,7 @@ public slots:
     void deselect_all_with_geometry(db::Entity);
 
     /// Color
-    void set_color(entt::entity to_color, QColor new_color);
+    void set_color(db::Entity to_color, QColor new_color);
 
 signals:
     void bulk_selection_changed();
@@ -272,5 +283,6 @@ public:
 };
 
 } // namespace db
+
 
 Q_DECLARE_METATYPE(db::Entity);

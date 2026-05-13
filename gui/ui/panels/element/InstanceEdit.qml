@@ -7,7 +7,72 @@ import QtQuick.Layouts
 import SolTrace
 
 STPropertyPanel {
+    id: root
     property var module : App.layout.instance_edit
+
+
+    STPropertyLabel {
+        text: "Parent"
+    }
+
+    STButton {
+        Layout.fillWidth: true
+        property string parent_name: root.module.parent_name
+        text: parent_name.length ? parent_name : "Unassigned"
+
+        onClicked: parent_pop.open()
+
+        SelectItemPopup {
+            id: parent_pop
+            source_model: AppData.layout.all_elements_model
+
+            exclude: [root.module.entity]
+
+            allowNothing: true
+
+            onSelectedEntity: (entity) => root.module.parent = entity
+            onSelectedNothing: root.module.clear_parent()
+        }
+    }
+
+
+    STPropertyLabel {
+        text: "Material"
+    }
+
+    STButton {
+        Layout.fillWidth: true
+        property string material_name: module.current_material_name
+        text: material_name.length ? material_name : "Unassigned"
+
+        onClicked: material_pop.open()
+
+        SelectItemPopup {
+            id: material_pop
+            source_model: AppData.materials.materials_list
+
+            onSelectedEntity: (entity) => module.current_material = entity
+        }
+    }
+
+    STPropertyLabel {
+        text: "Geometry"
+    }
+
+    STButton {
+        Layout.fillWidth: true
+        property string geometry_name: module.current_geometry_name
+        text: geometry_name.length ? geometry_name : "Unassigned"
+
+        onClicked: geometry_pop.open()
+
+        SelectItemPopup {
+            id: geometry_pop
+            source_model: AppData.materials.geometry_list
+
+            onSelectedEntity: (entity) => module.current_geometry = entity
+        }
+    }
 
     STPropertyPanel {
         id: position_panel
@@ -68,56 +133,83 @@ STPropertyPanel {
     }
 
     STPropertyPanel {
+        id: rotation_panel
         Layout.columnSpan: 2
         Layout.fillWidth: true
 
         title: "Parent-relative Rotation"
         collapsible: true
 
+        property vector3d angles: module.orientation.toEulerAngles()
+
         STPropertyLabel {
-            text: "X"
+            text: "X Angle"
         }
 
         STTextField {
+            id: x_euler
             Layout.fillWidth: true
-            text: module.orientation.x
+            text: rotation_panel.angles.x
+
+            validator: DoubleValidator {}
+
+            onAccepted: rotation_panel.update_from_angles()
         }
 
         STPropertyLabel {
-            text: "Y"
+            text: "Y Angle"
         }
 
         STTextField {
+            id: y_euler
             Layout.fillWidth: true
-            text: module.orientation.y
+            text: rotation_panel.angles.y
+
+            validator: DoubleValidator {}
+
+            onAccepted: rotation_panel.update_from_angles()
         }
 
         STPropertyLabel {
-            text: "Z"
+            text: "Z Angle"
         }
 
         STTextField {
+            id: z_euler
             Layout.fillWidth: true
-            text: module.orientation.z
+            text: rotation_panel.angles.z
+
+            validator: DoubleValidator {}
+
+            onAccepted: rotation_panel.update_from_angles()
         }
 
-        STPropertyLabel {
-            text: "W"
-        }
-
-        STTextField {
-            Layout.fillWidth: true
-            text: module.orientation.scalar
+        function update_from_angles() {
+            root.module.set_from_angles(
+                        Qt.vector3d(x_euler.text, y_euler.text, z_euler.text)
+                        )
         }
 
     }
 
-    STPropertyLabel {
+    CheckBoxField {
         text: "Hidden"
+        value: module.hidden
+        Layout.fillWidth: true
+        Layout.columnSpan: 2
+
+        onClicked: module.hidden = !module.hidden
     }
 
-    CheckBox {
+    CheckBoxField {
+        text: "Disabled"
+        value: module.disabled
         Layout.fillWidth: true
+        Layout.columnSpan: 2
+
+        onClicked: module.disabled = !module.disabled
     }
+
+
 
 }

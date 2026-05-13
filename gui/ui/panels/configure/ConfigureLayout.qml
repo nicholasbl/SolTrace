@@ -6,12 +6,14 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 import SolTrace
 
-AdaptiveEditor {
+EntityListEditor {
     id: root
 
     property var module: App.layout
 
-    model: module.root_elements_model
+    property bool has_viewed_entity: module.viewed_element.is_valid()
+
+    model: has_viewed_entity ? module.filtered_child_model : module.filtered_root_elements_model
     wideThreshold: 500
     listWidth: 250
 
@@ -26,50 +28,147 @@ AdaptiveEditor {
         }
     }
 
-    onItemClicked: function(index, modelData) {
-        module.current_element = modelData.entity
+    onItemClicked: function(entity) {
+        module.edited_element = entity
     }
 
     listHeader: ColumnLayout {
         spacing: 0
 
-        STTextField {
-            Layout.fillWidth: true
-            leftIcon: "\uf002"
-            placeholderText: "Filter..."
-        }
-
         RowLayout {
             Layout.fillWidth: true
-            Button {
+
+            STSearchField {
+                id: search_field
                 Layout.fillWidth: true
-                text: "With Material..."
-                flat: true
+
+                text: root.model.name_filter
+
+                Binding {
+                    target: root.model
+                    property: "name_filter"
+                    value: search_field.text
+                }
             }
-            Button {
-                Layout.fillWidth: true
-                text: "With Geometry..."
-                flat: true
+
+            STIconButton {
+                text: "\uf0b0"
+
+                onClicked: filter_popup.open()
+
+                STPopup {
+                    id: filter_popup
+
+                    GridLayout {
+                        columns: 3
+
+                        Label {
+                            Layout.fillWidth: true
+                            Layout.columnSpan: 3
+
+                            text: "Filter entities by:"
+                        }
+
+                        Label {
+                            text: "Material:"
+                        }
+
+                        STClickableLabel {
+                            Layout.fillWidth: true
+                            property string mat_name: root.model.material_filter_name
+                            text: mat_name.length ? mat_name : "All"
+
+                            onClicked: mat_pop.open()
+
+                            SelectItemPopup {
+                                id: mat_pop
+                                source_model: AppData.materials.materials_list
+
+                                onSelectedEntity: (entity) =>
+                                                  root.model.material_filter = entity
+                            }
+                        }
+
+                        STIconButton {
+                            text: "\uf0e2"
+                            onClicked: root.model.clear_material()
+                        }
+
+                        Label {
+                            text: "Geometry:"
+                        }
+
+                        STClickableLabel {
+                            Layout.fillWidth: true
+                            property string geo_name: root.model.geometry_filter_name
+                            text: geo_name.length ? geo_name : "All"
+
+                            onClicked: geo_pop.open()
+
+                            SelectItemPopup {
+                                id: geo_pop
+                                source_model: AppData.materials.geometry_list
+
+                                onSelectedEntity: (entity) =>
+                                                  root.model.geometry_filter = entity
+                            }
+                        }
+
+                        STIconButton {
+                            text: "\uf0e2"
+                            onClicked: root.model.clear_geometry()
+                        }
+
+                        STButton {
+                            text: "Reset All"
+
+                            onClicked: root.model.clear_all_filters()
+                        }
+
+                    }
+                }
+            }
+
+            STIconButton {
+                id: clear_filter_button
+
+                visible: root.model.has_filter
+
+                text: "\ue17b"
+
+                onClicked: root.model.clear_all_filters()
             }
         }
     }
 
     listFooter: RowLayout {
-        STIconButton {
+        CreateNewItemButton {
+            title: "New Element"
             text: "\uf055"
+
+            onCreateRequested: function(name) {
+                var new_name = AppData.current_database.sanitize_entity_name(name)
+                var entity = AppData.current_database.add_element(new_name)
+                root.module.edited_element = entity
+                root.editing = true
+            }
         }
-    }
 
-    listDelegate: ItemDelegate {
-        text: itemModel ? itemModel.name : "Unnamed"
-        highlighted: isCurrent
-        width: parent ? parent.width : implicitWidth
+        CreateNewItemButton {
+            title: "New Child Element"
+            text: "\uf0fe"
+            enabled: root.has_viewed_entity
+            opacity: enabled ? 1.0 : 0.4
 
-        background: Rectangle {
-            implicitHeight: 24
-            implicitWidth: 100
-            opacity: enabled ? 1 : 0.3
-            color: parent.down ? Material.rippleColor : "transparent"
+            onCreateRequested: function(name) {
+                var new_name = AppData.current_database.sanitize_entity_name(name)
+                var entity = AppData.current_database.add_element(
+                            new_name,
+                            root.module.viewed_element
+                            )
+                root.module.edited_element = entity
+                root.editing = true
+            }
         }
     }
 
@@ -79,41 +178,85 @@ AdaptiveEditor {
             STIconButton {
                 text: "\uf053"
                 visible: !root.wideMode
-                onClicked: root.goBack()
+                onClicked: {
+                    root.module.clear_edited_element()
+                    root.goBack()
+                }
             }
 
-            Label {
-                text: "Element:"
+            RenameLabel {
+                text: root.module.edited_element_name
 
                 font.family: "CMU Serif"
                 font.pointSize: 16
                 font.bold: true
-            }
 
-            Label {
-                text: root.module.current_database
-                      ? root.module.current_database.name_of(module.current_element)
-                      : "None"
+                onAccepted: (new_name) => {
+                    var curr_db = root.module.current_database
 
-                font.family: "CMU Serif"
-                font.pointSize: 16
-                font.bold: true
+                    new_name = curr_db.sanitize_entity_name(new_name);
+
+                    curr_db.set_name_of(
+                                    root.module.edited_element,
+                                    new_name
+                                    )
+                }
             }
         }
 
         ScrollView {
+            id: layout_scroll
             Layout.fillHeight: true
             Layout.fillWidth: true
             contentWidth: availableWidth
 
             InstanceEdit {
-                anchors.fill: parent
+                width: layout_scroll.availableWidth
+                height: implicitHeight
             }
         }
 
         RowLayout {
             STIconButton {
                 text: "\uf2ed"
+                onClicked: delete_element_dialog.open()
+
+                STDialog {
+                    id: delete_element_dialog
+
+                    title: "Delete Element"
+
+                    ColumnLayout {
+                        anchors.fill: parent
+
+                        Label {
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
+                            text: "Delete this element? Any children of this entity will be made top-level."
+                        }
+                    }
+
+                    footer: STDialogButtonBox {
+                        STButton {
+                            text: qsTr("Cancel")
+                            DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
+                        }
+
+                        STButton {
+                            text: qsTr("Delete")
+                            Material.foreground: Material.Red
+                            DialogButtonBox.buttonRole: DialogButtonBox.DestructiveRole
+                            idle_color: App.theme.destructiveGlassColor
+                            down_color: Material.color(Material.Red)
+
+                            onClicked: {
+                                root.module.delete_edited_element()
+                                root.goBack()
+                                delete_element_dialog.close()
+                            }
+                        }
+                    }
+                }
             }
         }
     }

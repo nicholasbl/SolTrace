@@ -9,7 +9,7 @@ Item {
     id: root
 
     property alias model: internal.model
-    property int currentIndex: -1
+
     property bool editing: false
 
     // Width threshold for switching between stacked and side-by-side
@@ -17,9 +17,6 @@ Item {
 
     // List side preferred width in wide modes
     property int listWidth: 250
-
-    // The delegate used for each row in the list
-    property Component listDelegate: null
 
     // Header component shown above the list (e.g. a search field)
     property Component listHeader: null
@@ -35,17 +32,23 @@ Item {
 
     // Read only data
     readonly property bool wideMode: width >= wideThreshold
-    readonly property bool hasSelection: currentIndex >= 0
+    readonly property bool hasSelection: editing
 
     // Signal
-    signal itemClicked(int index, var modelData)
+    signal itemClicked(db_entity entity)
+
+    onEditingChanged: {
+        if (root.editing && narrowStack.depth < 2)
+            narrowStack.push(narrowDetailComponent)
+        else if (!root.editing && narrowStack.depth > 1)
+            narrowStack.pop()
+    }
 
     function goBack() {
         editing = false
     }
 
     function clearSelection() {
-        currentIndex = -1
         editing = false
     }
 
@@ -59,15 +62,7 @@ Item {
         target: internal.model
         ignoreUnknownSignals: true
         function onRowsRemoved(modelParent, first, last) {
-            if (root._getModelCount() === 0) {
-                root.currentIndex = -1
-                root.editing = false
-            } else if (root.currentIndex > last) {
-                root.currentIndex -= last - first + 1
-            } else if (root.currentIndex >= first && root.currentIndex <= last) {
-                root.currentIndex = -1
-                root.editing = false
-            }
+            root.editing = false
         }
     }
 
@@ -85,16 +80,46 @@ Item {
             id: narrowStack
             initialItem: narrowListComponent
             anchors.fill: parent
+        }
+    }
 
-            Connections {
-                    target: root
-                    function onEditingChanged() {
-                        if (root.editing && narrowStack.depth < 2)
-                            narrowStack.push(narrowDetailComponent)
-                        else if (!root.editing && narrowStack.depth > 1)
-                            narrowStack.pop()
-                    }
+    Component{
+        id: listDelegate
+
+        STItemDelegate {
+            id: st_del_root
+            required property int index
+
+            required property string name
+            required property var entity
+
+            signal opened(db_entity entity)
+
+            text: name
+
+            highlighted: entity === AppData.layout.edited_element
+
+            onClicked: {
+                st_del_root.ListView.view.editorRoot.editing = true
+                st_del_root.ListView.view.editorRoot.itemClicked(entity)
+            }
+
+            onOpened: {
+                st_del_root.ListView.view.editorRoot.editing = false
+            }
+
+            STIconButton {
+                text: "\uf802"
+
+                onClicked: {
+                    AppData.layout.viewed_element = st_del_root.entity
+                    AppData.layout.clear_edited_element()
+                    st_del_root.opened(st_del_root.entity)
                 }
+
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+            }
         }
     }
 
@@ -103,6 +128,19 @@ Item {
 
         ColumnLayout {
             spacing: 0
+
+            Breadcrumb {
+                Layout.fillWidth: true
+                Layout.margins: 3
+
+                onItemSelected: {
+                    root.editing = true
+                }
+
+                onItemDeselected: {
+                    root.editing = false
+                }
+            }
 
             Loader {
                 Layout.fillWidth: true
@@ -118,28 +156,10 @@ Item {
                 Layout.fillWidth: true
                 clip: true
                 model: internal.model
+                property var editorRoot: root
                 ScrollIndicator.vertical: ScrollIndicator { }
 
-                delegate: Loader {
-                    required property int index
-                    required property var model
-                    width: ListView.view.width
-
-                    sourceComponent: root.listDelegate
-
-                    property int itemIndex: index
-                    property var itemModel: model
-                    property bool isCurrent: root.currentIndex === index
-
-                    Connections {
-                        target: item
-                        function onClicked() {
-                            root.currentIndex = index
-                            root.editing = true
-                            root.itemClicked(index, model)
-                        }
-                    }
-                }
+                delegate: listDelegate
             }
 
             Loader {
@@ -191,28 +211,10 @@ Item {
                     Layout.fillHeight: true
                     clip: true
                     model: internal.model
+                    property var editorRoot: root
                     ScrollIndicator.vertical: ScrollIndicator { }
 
-                    delegate: Loader {
-                        required property int index
-                        required property var model
-                        width: ListView.view.width
-
-                        sourceComponent: root.listDelegate
-
-                        property int itemIndex: index
-                        property var itemModel: model
-                        property bool isCurrent: root.currentIndex === index
-
-                        Connections {
-                            target: item
-                            function onClicked() {
-                                root.currentIndex = index
-                                root.editing = true
-                                root.itemClicked(index, model)
-                            }
-                        }
-                    }
+                    delegate: listDelegate
                 }
 
                 Loader {

@@ -24,57 +24,81 @@ RowLayout {
     }
 
     STIconButton {
-        id: smaller_button
+        id: popup_opts_button
 
         Layout.preferredWidth: implicitWidth
         Layout.preferredHeight: implicitWidth
 
-        text: "\uf422"
-        visible: root.target.size !== PanelData.Small
-        onClicked: {
-            if (root.target.size == PanelData.Full)
-                root.otherTarget.visible = true
+        text: "\uf2d2"
+        onClicked: window_opts_pop.open()
 
-            root.target.width = root.target.sizes[root.target.size - 1]
-            App.view.fit_panels(root.available_width, root.is_right_panel, false)
+        STPopup {
+            id: window_opts_pop
+            RowLayout {
+                anchors.fill: parent
+
+                STIconButton {
+                    id: smaller_button
+
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitWidth
+
+                    text: "\uf422"
+                    onClicked: {
+                        if (root.target.size === PanelData.Full)
+                            root.otherTarget.visible = true
+
+                        if (root.target.size > 1){
+                            root.target.width = root.target.sizes[root.target.size - 1]
+                        }
+                        App.view.fit_panels(root.available_width, root.is_right_panel, false)
+                        window_opts_pop.close()
+                    }
+                }
+
+                STIconButton {
+                    id: larger_button
+
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitWidth
+
+                    text: "\uf424"
+                    onClicked: {
+                        root.target.width = root.target.sizes[root.target.size + 1]
+                        App.view.fit_panels(root.available_width, root.is_right_panel, false)
+                        window_opts_pop.close()
+                    }
+                }
+
+                STIconButton {
+                    id: fullsize
+
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitWidth
+
+                    text: "\uf065"
+                    onClicked: {
+                        root.target.width = root.target.sizes[PanelData.Full]
+                        App.view.fit_panels(root.available_width, root.is_right_panel, false)
+                        window_opts_pop.close()
+                    }
+                }
+
+                STIconButton {
+                    id: close_button
+
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitWidth
+
+                    text: "\uf00d"
+                    onClicked: {
+                        root.target.visible = false
+                        window_opts_pop.close()
+                    }
+                }
+            }
         }
     }
 
-    STIconButton {
-        id: larger_button
 
-        Layout.preferredWidth: implicitWidth
-        Layout.preferredHeight: implicitWidth
-
-        text: "\uf424"
-        visible: root.target.size < 2
-        onClicked: {
-            root.target.width = root.target.sizes[root.target.size + 1]
-            App.view.fit_panels(root.available_width, root.is_right_panel, false)
-        }
-    }
-
-    STIconButton {
-        id: fullsize
-
-        Layout.preferredWidth: implicitWidth
-        Layout.preferredHeight: implicitWidth
-
-        text: "\uf065"
-        visible: root.target.size !== PanelData.Full
-        onClicked: {
-            root.target.width = root.target.sizes[PanelData.Full]
-            App.view.fit_panels(root.available_width, root.is_right_panel, false)
-        }
-    }
-
-    STIconButton {
-        id: close_button
-
-        Layout.preferredWidth: implicitWidth
-        Layout.preferredHeight: implicitWidth
-
-        text: "\uf00d"
-        onClicked: root.target.visible = false
-    }
 }

@@ -6,10 +6,10 @@ import QtQuick.Layouts
 
 import SolTrace
 
-AdaptiveEditor {
+AdaptiveFilteredEditor {
     id: root
 
-    model: App.materials.geometry_list
+    source_model: App.materials.geometry_list
     wideThreshold: 500
     listWidth: 250
 
@@ -25,36 +25,36 @@ AdaptiveEditor {
     }
 
     onItemClicked: function(index, modelData) {
-        // if (App.db) App.db.clear_selection()
         App.materials.current_geometry = modelData.entity
-        // if (App.db) App.db.select_all_with_geometry(modelData.entity)
     }
 
     listHeader: RowLayout {
-        STTextField {
+        STSearchField {
+            id: search_field
             Layout.fillWidth: true
-            leftIcon: "\uf002"
-            placeholderText: "Search..."
+
+            Binding {
+                target: root
+                property: "filterText"
+                value: search_field.text
+            }
         }
     }
 
     listFooter: RowLayout {
-        STIconButton {
-            text: "\uf055"
+        CreateNewItemButton {
+            title: "New Geometry"
+
+            onCreateRequested: function(name) {
+                var new_name = AppData.current_database.sanitize_geometry_name(name)
+                AppData.current_database.add_geometry_group(new_name)
+            }
         }
     }
 
-    listDelegate: ItemDelegate {
+    listDelegate: STItemDelegate {
         text: itemModel ? itemModel.name : "No name"
         highlighted: isCurrent
-        width: parent ? parent.width : implicitWidth
-
-        background: Rectangle {
-            implicitHeight: 24
-            implicitWidth: 100
-            opacity: enabled ? 1 : 0.3
-            color: parent.down ? Material.rippleColor : "transparent"
-        }
     }
 
     detailView: ColumnLayout {
@@ -66,33 +66,102 @@ AdaptiveEditor {
                 onClicked: root.goBack()
             }
 
-            Label {
-                text: root.App.materials.current_geometry_name
+            RenameLabel {
+                text: App.materials.current_geometry_name
 
                 font.family: "CMU Serif"
                 font.pointSize: 16
                 font.bold: true
+
+                onAccepted: (new_name) => {
+                    var mats = App.materials;
+                    var curr_db = mats.current_database
+
+                    new_name = curr_db.sanitize_geometry_name(new_name);
+
+                    curr_db.set_name_of(
+                                    mats.current_geometry,
+                                    new_name
+                                    )
+                }
             }
         }
 
         SurfacePreviewScene {
             Layout.fillWidth: true
             Layout.preferredHeight: 148
+
+            property bool no_geometry: App.materials.geometry_edit.surface_geometry.vertex_count === 0
+
+            RowLayout {
+                visible: parent.no_geometry
+
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.margins: 3
+
+                Label {
+                    text: "\uf071"
+
+                    font.family: "Font Awesome 7 Free"
+
+                    color: Material.color(Material.Yellow)
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    text: "No geometry for this configuration."
+
+                    elide: Label.ElideRight
+
+                    color: Material.color(Material.Yellow)
+                }
+            }
         }
 
         ScrollView {
+            id: geometry_scroll
             Layout.fillHeight: true
             Layout.fillWidth: true
             contentWidth: availableWidth
 
             GeometryProperties {
-                anchors.fill: parent
+                width: geometry_scroll.availableWidth
+                height: implicitHeight
             }
         }
 
         RowLayout {
-            STIconButton {
-                text: "\uf2ed"
+            DeleteItemButton {
+                id: delete_button
+
+                title: "Delete Geometry"
+                itemType: "geometry"
+                replacementModel: root.source_model
+
+                toDelete: AppData.materials.current_geometry
+
+                onBeforeOpened: {
+                    isDangerous = AppData.current_database.geometry_use_count(
+                                delete_button.toDelete
+                                )
+                }
+
+                onDeleteRequested: {
+                    AppData.current_database.delete_geometry_group(
+                                delete_button.toDelete
+                                )
+                    root.clearSelection()
+                }
+
+                onDeleteReassignRequested: (entity) => {
+                    AppData.current_database.delete_geometry_group(
+                                delete_button.toDelete,
+                                entity
+                                )
+                    root.clearSelection()
+                }
             }
         }
     }

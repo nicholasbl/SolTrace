@@ -12,6 +12,11 @@ MaterialsModule::MaterialsModule(QObject* parent)
 
     connect(this,
             &MaterialsModule::current_database_value_changed,
+            this,
+            &MaterialsModule::reset);
+
+    connect(this,
+            &MaterialsModule::current_database_value_changed,
             m_materials_list,
             &db::MaterialGroupsModel::reset);
 
@@ -19,11 +24,6 @@ MaterialsModule::MaterialsModule(QObject* parent)
             &MaterialsModule::current_database_value_changed,
             m_geometry_list,
             &db::GeometryGroupsModel::reset);
-
-    // connect(this,
-    //         &MaterialsModule::current_database_changed,
-    //         this,
-    //         &MaterialsModule::select_first_material);
 
     connect(this,
             &MaterialsModule::current_material_changed,
@@ -36,30 +36,51 @@ MaterialsModule::MaterialsModule(QObject* parent)
             &MaterialsModule::new_geometry_selected);
 }
 
-// void MaterialsModule::select_first_material() {
-//     // TODO: this seems to be fired a lot
-//     qDebug() << Q_FUNC_INFO;
-//     for (auto const& [e, comp] :
-//          current_database()->material_parameters.view().each()) {
-//         qDebug() << Q_FUNC_INFO << "Selecting " << entt::to_integral(e);
-//         set_current_material(e);
-//     }
-
-//     set_current_material(db::Entity());
-// }
-
 void MaterialsModule::new_material_selected() {
-    qDebug() << Q_FUNC_INFO;
+    if (!m_current_database) {
+        set_current_material_name(QString());
+        return;
+    }
+
     material_edit()->set(m_current_database, m_current_material);
 
     set_current_material_name(m_current_database->name_of(m_current_material));
 }
 
 void MaterialsModule::new_geometry_selected() {
-    qDebug() << Q_FUNC_INFO;
+    if (!m_current_database) {
+        set_current_geometry_name(QString());
+        return;
+    }
+
     geometry_edit()->set(m_current_database, m_current_geometry);
 
     set_current_geometry_name(m_current_database->name_of(m_current_geometry));
+}
+
+void MaterialsModule::reset(db::Database* db) {
+    if (m_database) {
+        disconnect(m_database->identity.self(), nullptr, this, nullptr);
+        disconnect(m_database, nullptr, this, nullptr);
+    }
+
+    m_database = db;
+
+    if (!db) return;
+
+    connect(db->identity.self(),
+            &db::ComponentAPIBase::changed,
+            this,
+            [this](entt::entity e) {
+                if (db::Entity(e) == m_current_material) {
+                    set_current_material_name(
+                        m_current_database->name_of(m_current_material));
+                }
+                if (db::Entity(e) == m_current_geometry) {
+                    set_current_geometry_name(
+                        m_current_database->name_of(m_current_geometry));
+                }
+            });
 }
 
 } // namespace SolTrace::GUI::App
