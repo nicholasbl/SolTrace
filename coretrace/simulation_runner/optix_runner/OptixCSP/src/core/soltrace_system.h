@@ -142,7 +142,6 @@ namespace OptixCSP
         // Allocated with cudaMallocHost, deallocated with cudaFreeHost resulting in using
         // page-locked memory for faster transfers between device and host.
         HitRecord *m_hit_buffer_host;
-        uint_fast64_t m_hit_buffer_host_capacity;
         // std::vector<float4> m_hp_output_buffer_host;
         // std::vector<int32_t> m_element_id_buffer_host;
         // std::vector<uint8_t> m_hit_type_buffer_host;
@@ -156,6 +155,7 @@ namespace OptixCSP
 
         std::vector<std::shared_ptr<CspElement>> m_element_list;
         void create_shader_binding_table();
+        void allocate_device_buffers();
         void setup_device_buffer();
         void get_buffer_results(std::vector<float4> &hp_vec, std::vector<uint_fast64_t> &raynumber_vec,
                                 std::vector<int32_t> &element_id_vec, std::vector<uint8_t> &hit_type_vec,
