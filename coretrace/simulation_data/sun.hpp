@@ -22,7 +22,7 @@ class Sun : public RaySource
 {
 public:
     Sun() : my_shape(SunShape::UNKNOWN),
-          my_position(0.0) {}
+            my_position(0.0) {}
     virtual ~Sun() {}
 
     virtual const glm::dvec3 &get_position() const
@@ -51,7 +51,7 @@ public:
     virtual void set_shape(SunShape shape,
                            double _sigma,
                            double _half_width,
-                           double _csr,
+                           double _csr,        
                            std::vector<double> _user_angle = {},
                            std::vector<double> _user_intensity = {});
     virtual void calculate_buie_parameters(double& kappa, double& gamma);
