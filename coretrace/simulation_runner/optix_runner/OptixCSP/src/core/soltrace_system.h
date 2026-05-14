@@ -9,8 +9,10 @@
 #include "core/soltrace_state.h" // SoltraceState
 #include "core/vec3d.h"          // Vec3d
 #include "core/timer.h"
-#include "core/CspElement.h" // CspElement
-#include "core/Surface.h"    // Surface and derived classes
+#include "core/CspElement.h"  // CspElement
+#include "core/Surface.h"     // Surface and derived classes
+#include "shaders/Soltrace.h" // HitRecord, HitType
+#include "ray_utils.h"        // CompactionScratch
 
 #include "../../../../../simulation_data/simulation_data_export.hpp"
 
@@ -23,8 +25,6 @@ namespace OptixCSP
     class CspElement;
     class Vec3d;
     class Surface;
-
-    struct HitRecord;
 
     static constexpr SolTrace::Data::SunShape kSupportedSunshapes[] = {
         SolTrace::Data::SunShape::GAUSSIAN,
@@ -98,14 +98,13 @@ namespace OptixCSP
         /// </summary>
         double get_sun_plane_area() const;
 
-        uint_fast64_t get_N_sun_rays()
-        {
-            if (m_sunraynumber_vec.empty())
-                return 0;
-            return m_sunraynumber_vec.back();
-        }
+        uint_fast64_t get_N_sun_rays() const { return m_n_sun_rays; }
 
-        std::vector<uint_fast64_t> get_sunraynumber_vec() const { return m_sunraynumber_vec; }
+        /// Returns the compacted hit records (CREATE + hits, misses excluded).
+        const std::vector<HitRecord> &get_hit_records() const { return m_hit_records; }
+
+        /// Returns the number of rays that hit at least one element.
+        uint_fast64_t get_N_hit_rays() const { return m_n_hit_rays; }
         void set_sun_shape_errors(bool flag) { this->m_include_sun_shape_errors = flag; }
 
     private:
@@ -131,35 +130,35 @@ namespace OptixCSP
 
         // Results
 
-        // Contains information on rays that hit objects
-        std::vector<float4> m_hp_vec;
-        std::vector<uint_fast64_t> m_raynumber_vec;
-        std::vector<int32_t> m_element_id_vec;
-        std::vector<uint8_t> m_hit_type_vec;
-        std::vector<uint_fast64_t> m_sunraynumber_vec; // This is ID of hit rays out of all generated rays
+        // Compacted hit records: one contiguous array of HitRecord.
+        // Each ray group starts with a HIT_CREATE record followed by its hits.
+        // Rays that produced no hits (CREATE-only) are excluded.
+        std::vector<HitRecord>  m_hit_records;
 
-        // Reused host-side scratch buffers for copying launch results back from device.
-        // Allocated with cudaMallocHost, deallocated with cudaFreeHost resulting in using
-        // page-locked memory for faster transfers between device and host.
-        HitRecord *m_hit_buffer_host;
-        // std::vector<float4> m_hp_output_buffer_host;
-        // std::vector<int32_t> m_element_id_buffer_host;
-        // std::vector<uint8_t> m_hit_type_buffer_host;
+        // Global ray index (ray_offset + local_index) for each logical hit ray in m_hit_records.
+        // Parallel to the logical rays (not records): m_hit_ray_ids.size() == m_n_hit_rays.
+        std::vector<uint32_t>   m_hit_ray_ids;
+
+        // Count of rays that produced at least one non-CREATE hit.
+        uint_fast64_t m_n_hit_rays = 0;
+
+        // Total rays generated (launched from the sun plane) across all run() iterations.
+        uint_fast64_t m_n_sun_rays = 0;
 
         // Current allocated device launch buffer sizes.
-        // size_t m_hit_point_buffer_size_allocated = 0;
-        // size_t m_element_id_buffer_size_allocated = 0;
-        // size_t m_hit_type_buffer_size_allocated = 0;
         size_t m_hit_buffer_size_allocated = 0;
         size_t m_sun_dir_buffer_size_allocated = 0;
+
+        // Pre-allocated device scratch buffers for GPU stream compaction.
+        CompactionScratch m_compaction_scratch;
 
         std::vector<std::shared_ptr<CspElement>> m_element_list;
         void create_shader_binding_table();
         void allocate_device_buffers();
         void setup_device_buffer();
-        void get_buffer_results(std::vector<float4> &hp_vec, std::vector<uint_fast64_t> &raynumber_vec,
-                                std::vector<int32_t> &element_id_vec, std::vector<uint8_t> &hit_type_vec,
-                                std::vector<uint_fast64_t> &sunraynumber_vec);
+        // GPU-side compaction: count hits, compact buffer on device, copy result to m_hit_records.
+        // Increments m_n_hit_rays by the number of newly collected hit rays.
+        void get_buffer_results();
 
         Timer m_timer_setup;
         Timer m_timer_trace;
@@ -174,9 +173,6 @@ namespace OptixCSP
         Timer m_timer_setup_buffer;
         Timer m_timer_optix_launch;
         Timer m_timer_collect_results;
-        // get_buffer_results() sub-timers
-        Timer m_timer_memcpy;
-        Timer m_timer_host_processing;
         uint64_t m_n_run_iterations;
 
         // memory usage

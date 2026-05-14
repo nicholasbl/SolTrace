@@ -133,7 +133,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             auto optix_el = std::make_shared<OptixCSP::CspElement>();
             auto origin = el->get_origin_global();
             auto ap = el->get_aim_vector_global();
-            OptixCSP::Vec3d origin_vec(origin.x, origin.y, origin.z);
+            // OptixCSP::Vec3d origin_vec(origin.x, origin.y, origin.z);
             optix_el->set_origin(ToVec3d(origin));
             optix_el->set_aim_point(ToVec3d(ap));
             optix_el->set_rotation_matrix(ToMatrix33d(el->get_local_to_global()));
@@ -355,9 +355,10 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
 RunnerStatus OptixRunner::update_simulation(const SimulationData *data)
 {
-    this->setup_simulation(data);
-    // TODO: Implement this
-    return RunnerStatus::SUCCESS;
+    // TODO: Need this call?
+    // this->m_sys.clean_up();
+    return this->setup_simulation(data);
+    // TODO: Implement this in a less lazy manner...
 }
 
 RunnerStatus OptixRunner::run_simulation()
@@ -406,6 +407,8 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     std::map<unsigned int, SolTrace::Result::ray_record_ptr> ray_records;
     std::map<unsigned int, SolTrace::Result::ray_record_ptr>::iterator iter;
 
+    // TODO: This should be redone without using these vectors and just using the
+    // internal hit record vector
     // Get results from optixcsp
     std::vector<float4> hp_vec;
     std::vector<uint_fast64_t> raynumber_vec;
@@ -422,7 +425,7 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     // Loop through data, populating ray records
     // Assumes ray data is grouped serially
     size_t ndata = hp_vec.size();
-    uint_fast64_t raynum_prev = -1;
+    // uint_fast64_t raynum_prev = -1;
     uint_fast64_t raynum = 0;
     SolTrace::Result::ray_record_ptr rec = nullptr;
     SolTrace::Result::interaction_ptr intr = nullptr;

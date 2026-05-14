@@ -285,8 +285,8 @@ namespace SolTrace::NativeRunner
     {
         // TODO: Do a more efficient implementation of this?
         this->tsys.ClearAll();
-        this->setup_simulation(data);
-        return RunnerStatus::SUCCESS;
+        return this->setup_simulation(data);
+        // return RunnerStatus::SUCCESS;
     }
 
     RunnerStatus NativeRunner::run_simulation()

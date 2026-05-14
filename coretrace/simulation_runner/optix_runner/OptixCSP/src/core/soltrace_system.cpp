@@ -1,4 +1,5 @@
 #include "soltrace_system.h"
+#include "ray_utils.h"
 
 #include "CspElement.h"
 #include "data_manager.h"
@@ -17,6 +18,7 @@
 #include "utils/util_check.hpp"
 #include "utils/math_util.h"
 
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -44,7 +46,8 @@ SolTraceSystem::SolTraceSystem()
       m_mem_free_before(0),
       m_mem_free_after(0),
       m_optical_errors(false),
-      m_hit_buffer_host(nullptr),
+      m_n_hit_rays(0),
+      m_n_sun_rays(0),
       m_include_sun_shape_errors(false),
       m_timer_setup(),
       m_timer_trace(),
@@ -55,8 +58,6 @@ SolTraceSystem::SolTraceSystem()
       m_timer_setup_buffer(),
       m_timer_optix_launch(),
       m_timer_collect_results(),
-      m_timer_memcpy(),
-      m_timer_host_processing(),
       m_n_run_iterations(0),
       geometry_manager(std::make_shared<GeometryManager>(m_state, m_verbose)),
       data_manager(std::make_shared<dataManager>()),
@@ -269,11 +270,10 @@ void SolTraceSystem::run()
     NVTX3_FUNC_RANGE();
 #endif
 
-    // Initialize results vectors
-    m_hp_vec.clear();
-    m_raynumber_vec.clear();
-    m_element_id_vec.clear();
-    m_hit_type_vec.clear();
+    // Initialize results
+    m_hit_records.clear();
+    m_n_hit_rays = 0;
+    m_n_sun_rays = 0;
     uint_fast64_t N_ray_hit = 0;
     uint_fast64_t N_ray_gen = 0;
 
@@ -282,8 +282,6 @@ void SolTraceSystem::run()
     m_timer_setup_buffer.reset();
     m_timer_optix_launch.reset();
     m_timer_collect_results.reset();
-    m_timer_memcpy.reset();
-    m_timer_host_processing.reset();
     m_n_run_iterations = 0;
 
     // Allocate device buffers and initialize RNG states once (sizes are constant across the while loop).
@@ -320,18 +318,18 @@ void SolTraceSystem::run()
         m_timer_optix_launch.start();
         {
 #ifdef NVTX_ENABLED
-        nvtx3::scoped_range nvtx_launch{"optixLaunch"};
+            nvtx3::scoped_range nvtx_launch{"optixLaunch"};
 #endif
-        OPTIX_CHECK(optixLaunch(
-            m_state.pipeline,
-            m_state.stream, // Assume this stream is properly created.
-            reinterpret_cast<CUdeviceptr>(data_manager->getDeviceLaunchParams()),
-            sizeof(OptixCSP::LaunchParams),
-            &m_state.sbt, // Shader Binding Table.
-            width,        // Launch dimensions
-            height,
-            1));
-        CUDA_SYNC_CHECK();
+            OPTIX_CHECK(optixLaunch(
+                m_state.pipeline,
+                m_state.stream, // Assume this stream is properly created.
+                reinterpret_cast<CUdeviceptr>(data_manager->getDeviceLaunchParams()),
+                sizeof(OptixCSP::LaunchParams),
+                &m_state.sbt, // Shader Binding Table.
+                width,        // Launch dimensions
+                height,
+                1));
+            CUDA_SYNC_CHECK();
         } // nvtx_launch
         m_timer_optix_launch.stop();
 
@@ -341,27 +339,32 @@ void SolTraceSystem::run()
 #ifdef NVTX_ENABLED
             nvtx3::scoped_range nvtx_collect{"get_buffer_results"};
 #endif
-            get_buffer_results(m_hp_vec, m_raynumber_vec, m_element_id_vec, m_hit_type_vec,
-                               m_sunraynumber_vec);
+            get_buffer_results();
         }
         m_timer_collect_results.stop();
 
-        N_ray_hit = m_raynumber_vec.empty() ? 0 : m_raynumber_vec.back();
+        N_ray_hit = m_n_hit_rays;
         N_ray_gen += width;
+        m_n_sun_rays = N_ray_gen;
     }
 
-    // Trim excess rays
-    if (N_ray_hit > m_number_of_rays)
+    // Trim excess rays: remove ray groups from the tail until m_n_hit_rays == m_number_of_rays.
+    // Each group starts at the last HIT_CREATE record in m_hit_records.
+    while (m_n_hit_rays > m_number_of_rays && !m_hit_records.empty())
     {
-        while (m_raynumber_vec.back() > m_number_of_rays)
-        {
-            m_hp_vec.pop_back();
-            m_raynumber_vec.pop_back();
-            m_element_id_vec.pop_back();
-            m_hit_type_vec.pop_back();
-            m_sunraynumber_vec.pop_back();
-        }
+        // Walk backwards to find the last CREATE record
+        auto rit = std::find_if(m_hit_records.rbegin(), m_hit_records.rend(),
+                                [](const HitRecord &r)
+                                { return r.hit_type == HitType::HIT_CREATE; });
+        if (rit == m_hit_records.rend())
+            break;
+        m_hit_records.erase(std::prev(rit.base()), m_hit_records.end());
+        m_hit_ray_ids.pop_back();
+        --m_n_hit_rays;
     }
+    // m_n_sun_rays = rays generated up to and including the last retained hit ray.
+    if (!m_hit_ray_ids.empty())
+        m_n_sun_rays = static_cast<uint_fast64_t>(m_hit_ray_ids.back()) + 1;
 
     m_timer_trace.stop();
 
@@ -394,9 +397,6 @@ void SolTraceSystem::update()
 {
 
     const int N_slots = data_manager->launch_params_H.width * data_manager->launch_params_H.height * data_manager->launch_params_H.max_depth;
-    // const size_t hit_point_buffer_size = N_slots * sizeof(float4);
-    // const size_t element_id_size = N_slots * sizeof(int32_t);
-    // const size_t hit_type_buffer_size = N_slots * sizeof(uint8_t);
     const size_t hit_buffer_size = N_slots * sizeof(HitRecord);
 
     // update aabb and sun plane accordingly
@@ -404,9 +404,6 @@ void SolTraceSystem::update()
 
     // update data on the device
     data_manager->updateGeometryDataArray(geometry_manager->get_geometry_data_array());
-    // CUDA_CHECK(cudaMemset(data_manager->launch_params_H.hit_point_buffer, 0, hit_point_buffer_size));
-    // CUDA_CHECK(cudaMemset(data_manager->launch_params_H.element_id_buffer, kElementIdBuffer, element_id_size));
-    // CUDA_CHECK(cudaMemset(data_manager->launch_params_H.hit_type_buffer, HitType::HIT_UNASSIGNED, hit_type_buffer_size));
     CUDA_CHECK(cudaMemset(data_manager->launch_params_H.hit_buffer, 0, hit_buffer_size));
 
     data_manager->updateLaunchParams();
@@ -417,10 +414,25 @@ void SolTraceSystem::get_hp_output(std::vector<float4> &hp_vec,
                                    std::vector<int32_t> &element_id_vec,
                                    std::vector<uint8_t> &hit_type_vec)
 {
-    hp_vec = m_hp_vec;
-    raynumber_vec = m_raynumber_vec;
-    element_id_vec = m_element_id_vec;
-    hit_type_vec = m_hit_type_vec;
+    hp_vec.clear();
+    raynumber_vec.clear();
+    element_id_vec.clear();
+    hit_type_vec.clear();
+    hp_vec.reserve(m_hit_records.size());
+    raynumber_vec.reserve(m_hit_records.size());
+    element_id_vec.reserve(m_hit_records.size());
+    hit_type_vec.reserve(m_hit_records.size());
+
+    uint_fast64_t ray_number = 0;
+    for (const HitRecord &r : m_hit_records)
+    {
+        if (r.hit_type == HitType::HIT_CREATE)
+            ++ray_number;
+        hp_vec.push_back(r.hit_point);
+        raynumber_vec.push_back(ray_number);
+        element_id_vec.push_back(r.element_id);
+        hit_type_vec.push_back(r.hit_type);
+    }
 }
 
 void SolTraceSystem::clean_up()
@@ -464,10 +476,9 @@ void SolTraceSystem::clean_up()
     m_hit_buffer_size_allocated = 0;
     m_sun_dir_buffer_size_allocated = 0;
 
-    data_manager->cleanup();
+    free_compaction_scratch(m_compaction_scratch);
 
-    CUDA_CHECK(cudaFreeHost(reinterpret_cast<void *>(m_hit_buffer_host)));
-    m_hit_buffer_host = nullptr;
+    data_manager->cleanup();
 
     m_state.context = nullptr;
     m_state.stream = nullptr;
@@ -487,11 +498,10 @@ void SolTraceSystem::reset()
     clean_up();
 
     m_element_list.clear();
-    m_hp_vec.clear();
-    m_raynumber_vec.clear();
-    m_element_id_vec.clear();
-    m_hit_type_vec.clear();
-    m_sunraynumber_vec.clear();
+    m_hit_records.clear();
+    m_hit_ray_ids.clear();
+    m_n_hit_rays = 0;
+    m_n_sun_rays = 0;
 
     m_sun = nullptr;
     m_number_of_rays = 0;
@@ -608,9 +618,12 @@ void SolTraceSystem::allocate_device_buffers()
     {
         CUDA_CHECK(cudaFree(reinterpret_cast<void *>(data_manager->launch_params_H.hit_buffer)));
         CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&data_manager->launch_params_H.hit_buffer), hit_buffer_size));
-        CUDA_CHECK(cudaFreeHost(reinterpret_cast<void *>(m_hit_buffer_host)));
-        CUDA_CHECK(cudaMallocHost(reinterpret_cast<void **>(&m_hit_buffer_host), hit_buffer_size));
         m_hit_buffer_size_allocated = hit_buffer_size;
+
+        // Reallocate compaction scratch whenever ray-buffer dimensions change
+        const uint32_t num_rays = data_manager->launch_params_H.width * data_manager->launch_params_H.height;
+        const uint32_t max_depth = static_cast<uint32_t>(data_manager->launch_params_H.max_depth);
+        allocate_compaction_scratch(m_compaction_scratch, num_rays, max_depth);
     }
 
     if (data_manager->launch_params_H.sun_dir_buffer == nullptr || m_sun_dir_buffer_size_allocated != sun_dir_size)
@@ -629,7 +642,6 @@ void SolTraceSystem::allocate_device_buffers()
         data_manager->launch_params_H.sun_dir_seed,
         0,
         m_state.stream);
-
 }
 
 void SolTraceSystem::setup_device_buffer()
@@ -643,87 +655,29 @@ void SolTraceSystem::setup_device_buffer()
     data_manager->updateLaunchParams();
 }
 
-// Collects results from device buffer
-// only keeps rays that hit elements
-void SolTraceSystem::get_buffer_results(std::vector<float4> &hp_vec, std::vector<uint_fast64_t> &raynumber_vec,
-                                        std::vector<int32_t> &element_id_vec, std::vector<uint8_t> &hit_type_vec,
-                                        std::vector<uint_fast64_t> &sunraynumber_vec)
+// Compacts the device hit buffer on the GPU, then copies only qualifying records to host.
+// Rays that produced only a HIT_CREATE event (missed all elements) are discarded.
+// Empty depth slots are discarded. The compacted HitRecord array is appended to
+// m_hit_records and m_n_hit_rays is incremented by the number of newly collected hit rays.
+void SolTraceSystem::get_buffer_results()
 {
 #ifdef NVTX_ENABLED
     NVTX3_FUNC_RANGE();
 #endif
-    const uint_fast64_t max_depth = data_manager->launch_params_H.max_depth;
-    const uint_fast64_t num_rays = data_manager->launch_params_H.width * data_manager->launch_params_H.height;
-    // const int output_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * data_manager->launch_params_H.max_depth;
-    const uint_fast64_t output_size = num_rays * max_depth;
+    const uint32_t num_rays = static_cast<uint32_t>(data_manager->launch_params_H.width *
+                                                    data_manager->launch_params_H.height);
+    const uint32_t max_depth = static_cast<uint32_t>(data_manager->launch_params_H.max_depth);
 
-    m_timer_memcpy.start();
-    CUDA_CHECK(cudaMemcpy(m_hit_buffer_host, data_manager->launch_params_H.hit_buffer, output_size * sizeof(HitRecord), cudaMemcpyDeviceToHost));
-    m_timer_memcpy.stop();
-
-    // Loop through each ray
-    uint_fast64_t ray_number = raynumber_vec.empty() ? 0 : raynumber_vec.back();
-    uint_fast64_t sunray_number = sunraynumber_vec.empty() ? 0 : sunraynumber_vec.back();
-    HitRecord pending_record;
-    bool pending_create = false;
-    m_timer_host_processing.start();
-    for (uint_fast64_t ray = 0; ray < num_rays; ++ray)
-    {
-        // bool ray_hit_something = false;
-        for (uint_fast64_t depth = 0; depth < max_depth; ++depth)
-        {
-            uint_fast64_t idx = max_depth * ray + depth;
-            const HitRecord &hr = m_hit_buffer_host[idx];
-            const uint8_t &hit_type = hr.hit_type;
-
-            if (hit_type < HitType::HIT_CREATE || hit_type > HitType::HIT_EXIT)
-            {
-                // Hit end of ray history--go to next ray
-                break;
-            }
-
-            if (hit_type == HitType::HIT_CREATE)
-            {
-                // New ray -- capture data and wait to see if the ray hit anything
-                pending_record = hr;
-                pending_create = true;
-                sunray_number++;
-            }
-            else
-            {
-                // Any invalid hit types have already been handled by the first if block
-
-                // Clear the pending data if necessary
-                if (pending_create)
-                {
-                    pending_create = false;
-                    ray_number++;
-                    hp_vec.push_back(pending_record.hit_point);
-                    raynumber_vec.push_back(ray_number);
-                    hit_type_vec.push_back(pending_record.hit_type);
-                    element_id_vec.push_back(pending_record.element_id);
-                    sunraynumber_vec.push_back(sunray_number);
-                }
-
-                hp_vec.push_back(hr.hit_point);
-                raynumber_vec.push_back(ray_number);
-                hit_type_vec.push_back(hit_type);
-                element_id_vec.push_back(hr.element_id);
-                sunraynumber_vec.push_back(sunray_number);
-
-                if (hit_type == HitType::HIT_ABSORB || hit_type == HitType::HIT_EXIT)
-                {
-                    // Ray has terminated. Go to the next.
-                    // NOTE: As of this writing, OptixRunner does not  mark rays
-                    // with HIT_EXIT. Include it here anyway.
-                    break;
-                }
-            }
-        }
-    }
-    m_timer_host_processing.stop();
-
-    return;
+    const uint32_t n_new_hits = gpu_compact_hit_buffer(
+        data_manager->launch_params_H.hit_buffer,
+        num_rays,
+        max_depth,
+        data_manager->launch_params_H.ray_offset,
+        m_hit_records,
+        m_hit_ray_ids,
+        m_state.stream,
+        m_compaction_scratch);
+    m_n_hit_rays += n_new_hits;
 }
 
 void SolTraceSystem::add_element(std::shared_ptr<CspElement> e)
@@ -743,24 +697,23 @@ double SolTraceSystem::get_time_setup()
 
 void SolTraceSystem::print_timing() const
 {
-    const double t_setup       = m_timer_setup.get_time_sec();
-    const double t_aabb        = m_timer_aabb.get_time_sec();
-    const double t_geometry    = m_timer_geometry.get_time_sec();
-    const double t_pipeline    = m_timer_pipeline.get_time_sec();
-    const double t_sbt         = m_timer_sbt.get_time_sec();
+    const double t_setup = m_timer_setup.get_time_sec();
+    const double t_aabb = m_timer_aabb.get_time_sec();
+    const double t_geometry = m_timer_geometry.get_time_sec();
+    const double t_pipeline = m_timer_pipeline.get_time_sec();
+    const double t_sbt = m_timer_sbt.get_time_sec();
 
-    const double t_trace       = m_timer_trace.get_time_sec();
-    const double t_buf_setup   = m_timer_setup_buffer.get_time_sec();
-    const double t_launch      = m_timer_optix_launch.get_time_sec();
-    const double t_collect     = m_timer_collect_results.get_time_sec();
-    const double t_memcpy      = m_timer_memcpy.get_time_sec();
-    const double t_host_proc   = m_timer_host_processing.get_time_sec();
+    const double t_trace = m_timer_trace.get_time_sec();
+    const double t_buf_setup = m_timer_setup_buffer.get_time_sec();
+    const double t_launch = m_timer_optix_launch.get_time_sec();
+    const double t_collect = m_timer_collect_results.get_time_sec();
 
     const double inv_n = m_n_run_iterations > 0
                              ? 1.0 / static_cast<double>(m_n_run_iterations)
                              : 0.0;
 
-    const auto pct = [](double num, double denom) -> double {
+    const auto pct = [](double num, double denom) -> double
+    {
         return denom > 0.0 ? 100.0 * num / denom : 0.0;
     };
 
@@ -768,30 +721,24 @@ void SolTraceSystem::print_timing() const
     std::cout << "\n=== SolTraceSystem Timing Summary ===\n";
 
     std::cout << "\n--- initialize() ---\n";
-    std::cout << "  AABB computation    : " << t_aabb     << " s  (" << pct(t_aabb,     t_setup) << " %)\n";
+    std::cout << "  AABB computation    : " << t_aabb << " s  (" << pct(t_aabb, t_setup) << " %)\n";
     std::cout << "  Geometry creation   : " << t_geometry << " s  (" << pct(t_geometry, t_setup) << " %)\n";
     std::cout << "  Pipeline creation   : " << t_pipeline << " s  (" << pct(t_pipeline, t_setup) << " %)\n";
-    std::cout << "  SBT creation        : " << t_sbt      << " s  (" << pct(t_sbt,      t_setup) << " %)\n";
-    std::cout << "  Total setup         : " << t_setup    << " s\n";
+    std::cout << "  SBT creation        : " << t_sbt << " s  (" << pct(t_sbt, t_setup) << " %)\n";
+    std::cout << "  Total setup         : " << t_setup << " s\n";
 
     std::cout << "\n--- run() [" << m_n_run_iterations
               << " iteration" << (m_n_run_iterations == 1 ? "" : "s") << "] ---\n";
     std::cout << "  Setup device buffer : total = " << t_buf_setup << " s"
               << "  avg/iter = " << t_buf_setup * inv_n << " s"
               << "  (" << pct(t_buf_setup, t_trace) << " %)\n";
-    std::cout << "  OptiX launch        : total = " << t_launch    << " s"
-              << "  avg/iter = " << t_launch    * inv_n << " s"
-              << "  (" << pct(t_launch,    t_trace) << " %)\n";
-    std::cout << "  Collect results     : total = " << t_collect   << " s"
-              << "  avg/iter = " << t_collect   * inv_n << " s"
-              << "  (" << pct(t_collect,   t_trace) << " %)\n";
-    std::cout << "    memcpy D->H       : total = " << t_memcpy    << " s"
-              << "  avg/iter = " << t_memcpy    * inv_n << " s"
-              << "  (" << pct(t_memcpy,    t_collect) << " % of collect)\n";
-    std::cout << "    host processing   : total = " << t_host_proc << " s"
-              << "  avg/iter = " << t_host_proc * inv_n << " s"
-              << "  (" << pct(t_host_proc, t_collect) << " % of collect)\n";
-    std::cout << "  Total trace         : " << t_trace    << " s\n";
+    std::cout << "  OptiX launch        : total = " << t_launch << " s"
+              << "  avg/iter = " << t_launch * inv_n << " s"
+              << "  (" << pct(t_launch, t_trace) << " %)\n";
+    std::cout << "  Collect results     : total = " << t_collect << " s"
+              << "  avg/iter = " << t_collect * inv_n << " s"
+              << "  (" << pct(t_collect, t_trace) << " %)\n";
+    std::cout << "  Total trace         : " << t_trace << " s\n";
 
     std::cout << "\n--- Grand Total ---\n";
     std::cout << "  Setup + Trace       : " << (t_setup + t_trace) << " s\n";

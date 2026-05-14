@@ -151,12 +151,12 @@ TEST(TwoPlateOptix, ReflectionToAbsorber)
 	std::vector<int32_t> element_id_vec;
 	std::vector<uint8_t> hit_type_vec;
 	sys->get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);
-	std::vector<uint_fast64_t> sunraynumber_vec = sys->get_sunraynumber_vec();
+	// std::vector<uint_fast64_t> sunraynumber_vec = sys->get_sunraynumber_vec();
 
 	EXPECT_EQ(hp_vec.size(), raynumber_vec.size());						// Hit results are same size
 	EXPECT_EQ(raynumber_vec.size(), element_id_vec.size());
 	EXPECT_EQ(element_id_vec.size(), hit_type_vec.size());
-	EXPECT_EQ(N_sun_rays, sunraynumber_vec.back());						// Reported sun rays is the sun ray id of last hit
+	// EXPECT_EQ(N_sun_rays, sunraynumber_vec.back());						// Reported sun rays is the sun ray id of last hit
 	EXPECT_TRUE(N_sun_rays <= sd.get_simulation_parameters().max_number_of_rays);	// Only generated max number of rays or fewer
 }
 
