@@ -2,7 +2,9 @@
 
 #include <cstddef>
 #include <cstdio>
+#include <limits>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -69,6 +71,17 @@ namespace OptixCSP
             m_max_number_of_rays = maxrays;
         }
 
+        /// Set the number of rays launched per iteration. Use 0 (default) to
+        /// launch all rays in a single batch (previous behaviour).
+        /// Throws std::out_of_range if batch_size exceeds the maximum int value.
+        void set_batch_size(uint_fast64_t batch_size)
+        {
+            if (batch_size > static_cast<uint_fast64_t>(std::numeric_limits<int>::max()))
+                throw std::out_of_range("batch_size exceeds std::numeric_limits<int>::max()");
+            m_batch_size = batch_size;
+        }
+        uint_fast64_t get_batch_size() const { return m_batch_size; }
+
         void set_sun(SolTrace::Data::Sun *sun) { m_sun = sun; }
 
         void set_seed(uint64_t seed) { m_seed = seed; } // Set sun seed
@@ -114,6 +127,7 @@ namespace OptixCSP
 
         uint_fast64_t m_number_of_rays;
         uint_fast64_t m_max_number_of_rays;
+        uint_fast64_t m_batch_size = 0; // 0 means single batch (= m_number_of_rays)
 
         bool m_verbose;
 

@@ -19,6 +19,7 @@
 #include "utils/math_util.h"
 
 #include <algorithm>
+#include <limits>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -42,6 +43,7 @@ typedef Record<OptixCSP::HitGroupData> HitGroupRecord;
 SolTraceSystem::SolTraceSystem()
     : m_number_of_rays(0),
       m_max_number_of_rays(0),
+      m_batch_size(0),
       m_verbose(false),
       m_mem_free_before(0),
       m_mem_free_after(0),
@@ -606,7 +608,10 @@ void SolTraceSystem::create_shader_binding_table()
 void SolTraceSystem::allocate_device_buffers()
 {
     // Set constant launch params (unchanged across the while loop).
-    data_manager->launch_params_H.width = m_number_of_rays;
+    const uint_fast64_t effective_batch_raw = (m_batch_size > 0) ? m_batch_size : m_number_of_rays;
+    const uint_fast64_t effective_batch = std::min(effective_batch_raw,
+        static_cast<uint_fast64_t>(std::numeric_limits<int>::max()));
+    data_manager->launch_params_H.width = static_cast<int>(effective_batch);
     data_manager->launch_params_H.height = 1;
     data_manager->launch_params_H.max_depth = MAX_TRACE_DEPTH;
 

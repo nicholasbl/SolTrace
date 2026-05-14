@@ -38,6 +38,9 @@ public:
 
     void set_verbose(bool verbose);
 
+    void set_batch_size(uint_fast64_t batch_size);
+    uint_fast64_t get_batch_size() const;
+
     // Runner options
     // void disable_sun_shape_errors() { this->include_sun_shape_errors = false; }
     // void enable_sun_shape_errors() { this->include_sun_shape_errors = true; }

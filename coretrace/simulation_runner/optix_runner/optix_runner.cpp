@@ -30,6 +30,16 @@ void OptixRunner::print_timing() const
     m_sys.print_timing();
 }
 
+void OptixRunner::set_batch_size(uint_fast64_t batch_size)
+{
+    m_sys.set_batch_size(batch_size);
+}
+
+uint_fast64_t OptixRunner::get_batch_size() const
+{
+    return m_sys.get_batch_size();
+}
+
 RunnerStatus OptixRunner::initialize()
 {
     // add elements to sys using data structure from SimulationData
