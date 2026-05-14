@@ -50,7 +50,7 @@ SpinBox {
         radius: height / 2
         opacity: (control.hovered || control.activeFocus) ? 1 : 0
 
-        STLabel {
+        Label {
             text: "\u002b"
             font.family: "Font Awesome 7 Free"
             font.pointSize: control.font.pointSize
@@ -68,7 +68,7 @@ SpinBox {
         radius: height / 2
         opacity: (control.hovered || control.activeFocus) ? 1 : 0
 
-        STLabel {
+        Label {
             text: "\uf068"
             font.family: "Font Awesome 7 Free"
             font.pointSize: control.font.pointSize

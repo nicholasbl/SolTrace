@@ -31,7 +31,7 @@ ColumnLayout {
         }
     }
 
-    STLabel {
+    Label {
         id: label
         Layout.alignment: Qt.AlignHCenter
         text: root.text + ": " + root.value

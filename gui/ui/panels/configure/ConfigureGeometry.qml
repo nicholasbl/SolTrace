@@ -169,7 +169,7 @@ AdaptiveFilteredEditor {
     }
 
     placeholder: Item {
-        STLabel {
+        Label {
             anchors.centerIn: parent
             text: "Select a geometry"
             font.pointSize: 16

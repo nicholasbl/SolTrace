@@ -18,7 +18,7 @@ ComboBox {
         radius: height / 2
     }
 
-    indicator: STLabel {
+    indicator: Label {
         font.family: "Font Awesome 7 Free"
         text: "\uf078"
 
@@ -64,7 +64,7 @@ ComboBox {
                            ? Material.rippleColor : "transparent"
                 }
 
-                contentItem: STLabel {
+                contentItem: Label {
                     text: delegate.text
                     font: delegate.font
                 }

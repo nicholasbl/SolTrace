@@ -50,7 +50,7 @@ Item {
             }
         }
 
-        STLabel {
+        Label {
             id: label
             text: root.label
             Layout.fillWidth: true

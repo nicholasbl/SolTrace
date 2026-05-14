@@ -80,7 +80,7 @@ ScrollView {
             title: "Script"
             collapsible: true
 
-            STLabel {
+            Label {
                 visible: root.module.title.length
                 Layout.fillWidth: true
                 Layout.columnSpan: 2
@@ -91,7 +91,7 @@ ScrollView {
                 font.bold: true
             }
 
-            STLabel {
+            Label {
                 visible: root.module.description.length
                 Layout.fillWidth: true
                 Layout.columnSpan: 2

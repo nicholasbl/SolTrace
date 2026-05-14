@@ -95,7 +95,7 @@ ShadowedGlassRectangle {
                         onClicked: App.view.workflow_phase = parent.index
                     }
 
-                    STLabel {
+                    Label {
                         Layout.leftMargin: 4
                         Layout.rightMargin: 4
                         font.family: "Font Awesome 7 Free"

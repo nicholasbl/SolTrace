@@ -18,7 +18,7 @@ ShadowedGlassRectangle {
             Layout.fillWidth: true
             Layout.leftMargin: 5
 
-            STLabel {
+            Label {
                 id: info_row
                 Layout.fillWidth: true
 

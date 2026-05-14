@@ -201,7 +201,7 @@ Item {
                 }
             }
 
-            STLabel {
+            Label {
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.margins: 6
@@ -221,7 +221,7 @@ Item {
             }
 
             // TODO: seems to fire on everything
-            STLabel {
+            Label {
                 anchors.bottom: parent.bottom
                 anchors.right: parent.right
                 //visible: right_side.hasSelection && groupEditor.geometry_validation_status !== groupEditor.Ok

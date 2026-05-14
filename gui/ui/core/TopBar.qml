@@ -92,7 +92,7 @@ RowLayout {
                             }
                         }
 
-                        STLabel {
+                        Label {
                             id: logo_text
                             Layout.fillWidth: true
                             Layout.alignment: Qt.AlignBottom
@@ -113,7 +113,7 @@ RowLayout {
                     }
                 }
 
-                STLabel {
+                Label {
                     id: beta_logo
 
                     Layout.alignment: Qt.AlignVCenter

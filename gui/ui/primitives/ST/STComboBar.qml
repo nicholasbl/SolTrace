@@ -43,7 +43,7 @@ Rectangle {
     }
 
     // Horrible.
-    STLabel {
+    Label {
         id: default_label
         visible: false
     }
@@ -170,7 +170,7 @@ Rectangle {
                 Layout.fillHeight: true
                 z: 0
 
-                STLabel {
+                Label {
                     id: label
 
                     anchors.fill: parent

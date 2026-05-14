@@ -216,7 +216,7 @@ ColumnLayout {
             text: "Stage"
         }
 
-        STLabel {
+        Label {
             Layout.fillWidth: true
             text: AppData.simulation.current_stage
         }

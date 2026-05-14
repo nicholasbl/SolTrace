@@ -15,7 +15,7 @@ ListView {
     header: RowLayout {
         width: root.width
 
-        STLabel {
+        Label {
             text: "Angle (mrad)"
             Layout.fillWidth: true
             font.bold: true
@@ -23,7 +23,7 @@ ListView {
             
         }
 
-        STLabel {
+        Label {
             text: "Intensity"
             Layout.fillWidth: true
             font.bold: true
@@ -37,7 +37,7 @@ ListView {
         spacing: 4
         visible: index < root.model.rowCount()
 
-        STLabel {
+        Label {
             id: index_label
 
             Layout.preferredWidth: implicitWidth + 5

@@ -47,7 +47,7 @@ Item {
                     anchors.fill: parent
                     spacing: 6
 
-                    STLabel {
+                    Label {
                         text: modelData
                         color: "#dfe7f2"
                         font.bold: true

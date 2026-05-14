@@ -28,7 +28,7 @@ Button {
             //color: "blue"
         }
 
-        STLabel {
+        Label {
             visible: control.text_icon.length > 0
             text: control.text_icon
             horizontalAlignment: Text.AlignHCenter
@@ -43,7 +43,7 @@ Button {
             Layout.fillHeight: true
         }
 
-        STLabel {
+        Label {
             text: control.text
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter

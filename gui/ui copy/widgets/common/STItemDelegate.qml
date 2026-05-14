@@ -6,7 +6,7 @@ import SolTraceProto
 ItemDelegate {
     id: root
 
-    contentItem: STLabel {
+    contentItem: Label {
         rightPadding: root.spacing
         text: root.text
         font: root.font

@@ -36,7 +36,7 @@ Column {
         decimals: root.decimals
     }
 
-    STLabel {
+    Label {
         text: root.label
         visible: root.label !== ""
         font.pointSize: root.labelSize

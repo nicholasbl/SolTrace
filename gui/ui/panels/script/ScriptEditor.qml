@@ -37,7 +37,7 @@ Popup {
             }
         }
 
-        STLabel {
+        Label {
             id: status_label
 
             property bool has_parse_error: root.module.parse_errors.length
@@ -47,7 +47,7 @@ Popup {
             visible: has_parse_error
         }
 
-        STLabel {
+        Label {
             Layout.fillWidth: true
 
             visible: text.length

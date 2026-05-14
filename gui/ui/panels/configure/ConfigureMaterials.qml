@@ -177,7 +177,7 @@ AdaptiveFilteredEditor {
     }
 
     placeholder: Item {
-        STLabel {
+        Label {
             anchors.centerIn: parent
             text: "Select a material"
             font.pointSize: 16

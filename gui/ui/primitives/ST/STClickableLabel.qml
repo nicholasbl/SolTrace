@@ -4,7 +4,7 @@ import QtQuick.Controls.Material
 
 import SolTrace
 
-STLabel {
+Label {
     id: control
 
     text: "Initialize"

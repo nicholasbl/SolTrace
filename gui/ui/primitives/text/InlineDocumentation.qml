@@ -26,7 +26,7 @@ ColumnLayout {
         Layout.fillWidth: true
     }
 
-    STLabel {
+    Label {
         id: body
 
         Layout.fillWidth: true

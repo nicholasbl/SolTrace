@@ -167,14 +167,14 @@ ShadowedGlassRectangle {
                                     spacing: 5
                                     RowLayout {
                                         spacing: 8
-                                        STLabel {
+                                        Label {
                                             text: icon
                                             font.family: "Font Awesome 7 Free"
                                             font.pointSize: 16
                                         }
                                         SubHeader { text: name }
                                     }
-                                    STLabel {
+                                    Label {
                                         Layout.fillWidth: true
                                         text: description
                                         wrapMode: Text.WordWrap
@@ -197,14 +197,14 @@ ShadowedGlassRectangle {
                                     spacing: 5
                                     RowLayout {
                                         spacing: 8
-                                        STLabel {
+                                        Label {
                                             text: icon
                                             font.family: "Font Awesome 7 Free"
                                             font.pointSize: 16
                                         }
                                         SubHeader { text: name }
                                     }
-                                    STLabel {
+                                    Label {
                                         Layout.fillWidth: true
                                         text: description
                                         wrapMode: Text.WordWrap

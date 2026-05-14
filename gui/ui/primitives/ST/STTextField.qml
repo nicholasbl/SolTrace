@@ -29,7 +29,7 @@ Item {
 
         spacing: 0
 
-        STLabel {
+        Label {
             text: root.leftIcon
 
             Layout.fillHeight: true
@@ -73,7 +73,7 @@ Item {
             // }
         }
 
-        STLabel {
+        Label {
             text: root.rightIcon
 
             Layout.fillHeight: true

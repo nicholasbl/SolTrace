@@ -257,7 +257,7 @@ EntityListEditor {
     }
 
     placeholder: Item {
-        STLabel {
+        Label {
             anchors.centerIn: parent
             text: "Select an element"
             font.pointSize: 16

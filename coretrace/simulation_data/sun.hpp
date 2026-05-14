@@ -11,37 +11,50 @@
 #ifndef SOLTRACE_SUN_H
 #define SOLTRACE_SUN_H
 
-#include "datetime.hpp"
 #include "ray_source.hpp"
+#include "datetime.hpp"
 
 #include <glm/vec3.hpp>
 
 namespace SolTrace::Data {
 
-class Sun : public RaySource {
+class Sun : public RaySource
+{
 public:
-    Sun() : my_shape(SunShape::UNKNOWN), my_position(0.0) { }
-    virtual ~Sun() { }
+    Sun() : my_shape(SunShape::UNKNOWN),
+          my_position(0.0) {}
+    virtual ~Sun() {}
 
-    virtual const glm::dvec3& get_position() const { return this->my_position; }
-    virtual glm::dvec3&       get_position() { return this->my_position; }
-    virtual void              set_position(const glm::dvec3& pos) {
+    virtual const glm::dvec3 &get_position() const
+    {
+        return this->my_position;
+    }
+    virtual glm::dvec3 &get_position()
+    {
+        return this->my_position;
+    }
+    virtual void set_position(const glm::dvec3 &pos)
+    {
         this->my_position = pos;
         return;
     }
-    virtual void set_position(double x, double y, double z) {
+    virtual void set_position(double x, double y, double z)
+    {
         this->my_position = glm::dvec3(x, y, z);
         return;
     }
-    virtual void     set_position(const DateTime&, double lat, double long) { }
-    virtual SunShape get_shape() const { return this->my_shape; }
-    virtual void     set_shape(SunShape            shape,
-                               double              _sigma,
-                               double              _half_width,
-                               double              _csr,
-                               std::vector<double> _user_angle     = { },
-                               std::vector<double> _user_intensity = { });
-    virtual void     calculate_buie_parameters(double& kappa, double& gamma);
+    virtual void set_position(const DateTime &, double lat, double long) {}
+    virtual SunShape get_shape() const
+    {
+        return this->my_shape;
+    }
+    virtual void set_shape(SunShape shape,
+                           double _sigma,
+                           double _half_width,
+                           double _csr,
+                           std::vector<double> _user_angle = {},
+                           std::vector<double> _user_intensity = {});
+    virtual void calculate_buie_parameters(double& kappa, double& gamma);
 
 private:
     void set_gaussian_distribution(double _sigma);
@@ -50,7 +63,7 @@ private:
     void set_user_defined_distribution(std::vector<double> _user_angle,
                                        std::vector<double> _user_intensity);
 
-    SunShape   my_shape;
+    SunShape my_shape;
     glm::dvec3 my_position;
 };
 

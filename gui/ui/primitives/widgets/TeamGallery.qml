@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import SolTrace
 
 STPropertyPanel {
@@ -16,7 +17,7 @@ STPropertyPanel {
             property string role
             spacing: 5
             SubHeader { text: name }
-            STLabel { text: role }
+            Label { text: role }
         }
 
         preview: ColumnLayout {
@@ -28,8 +29,8 @@ STPropertyPanel {
 
             spacing: 8
             SubHeader { text: name }
-            STLabel { text: role }
-            STLabel {
+            Label { text: role }
+            Label {
                 Layout.fillWidth: true
                 text: description
                 wrapMode: Text.WordWrap

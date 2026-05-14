@@ -12,7 +12,7 @@ Column {
     property alias month: monthSpinBox.value
     property alias day: daySpinBox.value
 
-    STLabel {
+    Label {
         text: root.label
         visible: root.label !== ""
         font.pointSize: Theme.controlRowLabelSize
@@ -41,7 +41,7 @@ Column {
                 }
             }
 
-            STLabel {
+            Label {
                 text: "Year"
                 font.pointSize: Theme.controlLabelSize
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -63,7 +63,7 @@ Column {
                 }
             }
 
-            STLabel {
+            Label {
                 text: "Month"
                 font.pointSize: Theme.controlLabelSize
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -85,7 +85,7 @@ Column {
                 }
             }
 
-            STLabel {
+            Label {
                 text: "Day"
                 font.pointSize: Theme.controlLabelSize
                 anchors.horizontalCenter: parent.horizontalCenter

@@ -49,7 +49,7 @@ Rectangle {
             visible: root.title.length > 0
             Layout.bottomMargin: root.collapsed ? 8 : 0
 
-            STLabel {
+            Label {
                 visible: root.collapsible
                 text: root.collapsed ? "▼" : "▶"
 
@@ -64,7 +64,7 @@ Rectangle {
                 id: check_box
             }
 
-            STLabel {
+            Label {
                 text: root.title
                 font.bold: true
 

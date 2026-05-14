@@ -38,7 +38,7 @@ MouseArea {
             }
         }
 
-        STLabel {
+        Label {
             text: root.label
             font.pointSize: root.labelSize
             anchors.verticalCenter: parent.verticalCenter

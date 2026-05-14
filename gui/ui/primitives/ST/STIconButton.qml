@@ -29,7 +29,7 @@ Rectangle {
     implicitWidth: implicitHeight
 
 
-    STLabel {
+    Label {
         id: label
         font.family: "Font Awesome 7 Free"
 

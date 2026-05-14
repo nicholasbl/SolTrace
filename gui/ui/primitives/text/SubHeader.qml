@@ -1,6 +1,7 @@
 import QtQuick
+import QtQuick.Controls
 
-STLabel {
+Label {
     font.family: "CMU Serif"
     font.bold: true
     font.pointSize: App.theme.subHeaderSize
