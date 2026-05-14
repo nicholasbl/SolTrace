@@ -34,6 +34,8 @@ public:
 
     uint_fast64_t get_N_sun_rays() { return m_sys.get_N_sun_rays(); }
 
+    uint64_t get_N_run_iterations() const;
+
     void print_timing() const;
 
     void set_verbose(bool verbose);

@@ -40,6 +40,11 @@ uint_fast64_t OptixRunner::get_batch_size() const
     return m_sys.get_batch_size();
 }
 
+uint64_t OptixRunner::get_N_run_iterations() const
+{
+    return m_sys.get_N_run_iterations();
+}
+
 RunnerStatus OptixRunner::initialize()
 {
     // add elements to sys using data structure from SimulationData

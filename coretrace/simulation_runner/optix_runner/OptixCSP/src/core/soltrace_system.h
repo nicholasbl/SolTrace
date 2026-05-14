@@ -113,6 +113,9 @@ namespace OptixCSP
 
         uint_fast64_t get_N_sun_rays() const { return m_n_sun_rays; }
 
+        /// Returns the number of run() iterations executed during the last run() call.
+        uint64_t get_N_run_iterations() const { return m_n_run_iterations; }
+
         /// Returns the compacted hit records (CREATE + hits, misses excluded).
         const std::vector<HitRecord> &get_hit_records() const { return m_hit_records; }
 
