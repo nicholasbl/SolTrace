@@ -5,7 +5,9 @@
 
 #include <cuda_runtime.h>
 #include <cub/cub.cuh>
+#include <thrust/iterator/counting_iterator.h>
 
+#include <chrono>
 #include <cstdint>
 #include <vector>
 
@@ -111,7 +113,7 @@ namespace OptixCSP
         cub::DeviceReduce::Sum(scratch.d_red_tmp, scratch.red_bytes, null_u32, null_u32, num_rays);
 
         size_t select_bytes = 0;
-        cub::CountingInputIterator<uint32_t> count_iter(0u);
+        thrust::counting_iterator<uint32_t> count_iter(0u);
         cub::DeviceSelect::Flagged(nullptr, select_bytes, count_iter, null_u32, null_u32, null_u32, num_rays);
         if (select_bytes > scratch.scan_bytes)
             scratch.scan_bytes = select_bytes;
@@ -121,6 +123,12 @@ namespace OptixCSP
 
         // Worst-case compacted output: every slot in the hit buffer could be kept
         CUDA_CHECK(cudaMalloc(&scratch.d_compacted, num_rays * max_depth * sizeof(HitRecord)));
+
+        // CUDA events for GPU-phase timing
+        CUDA_CHECK(cudaEventCreate(&scratch.e_gpu1_start));
+        CUDA_CHECK(cudaEventCreate(&scratch.e_gpu1_stop));
+        CUDA_CHECK(cudaEventCreate(&scratch.e_gpu2_start));
+        CUDA_CHECK(cudaEventCreate(&scratch.e_gpu2_stop));
     }
 
     void free_compaction_scratch(CompactionScratch &scratch)
@@ -133,6 +141,11 @@ namespace OptixCSP
         cudaFree(scratch.d_scan_tmp);
         cudaFree(scratch.d_red_tmp);
         cudaFree(scratch.d_compacted);
+        // cudaEventDestroy is not nullptr-safe
+        if (scratch.e_gpu1_start) cudaEventDestroy(scratch.e_gpu1_start);
+        if (scratch.e_gpu1_stop)  cudaEventDestroy(scratch.e_gpu1_stop);
+        if (scratch.e_gpu2_start) cudaEventDestroy(scratch.e_gpu2_start);
+        if (scratch.e_gpu2_stop)  cudaEventDestroy(scratch.e_gpu2_stop);
         scratch = CompactionScratch{};
     }
 
@@ -147,7 +160,8 @@ namespace OptixCSP
         std::vector<HitRecord> &host_out,
         std::vector<uint32_t> &host_ray_ids,
         cudaStream_t stream,
-        CompactionScratch &scratch)
+        CompactionScratch &scratch,
+        CompactionTimings *timings)
     {
         if (num_rays == 0)
             return 0;
@@ -155,6 +169,9 @@ namespace OptixCSP
         // ---- Pass 1: count records per ray ----
         const uint32_t block_size = 256;
         const uint32_t grid_size = (num_rays + block_size - 1) / block_size;
+
+        if (timings) CUDA_CHECK(cudaEventRecord(scratch.e_gpu1_start, stream));
+
         count_ray_outputs<<<grid_size, block_size, 0, stream>>>(
             d_hit_buffer, num_rays, max_depth, scratch.d_count, scratch.d_has_hit);
 
@@ -164,26 +181,45 @@ namespace OptixCSP
         // ---- Reduce: sum(d_has_hit) → d_n_hit ----
         cub::DeviceReduce::Sum(scratch.d_red_tmp, scratch.red_bytes, scratch.d_has_hit, scratch.d_n_hit, num_rays, stream);
 
+        if (timings) CUDA_CHECK(cudaEventRecord(scratch.e_gpu1_stop, stream));
+
         // ---- Synchronize to read back scalar results ----
         CUDA_CHECK(cudaStreamSynchronize(stream));
+
+        if (timings)
+        {
+            float ms = 0.f;
+            CUDA_CHECK(cudaEventElapsedTime(&ms, scratch.e_gpu1_start, scratch.e_gpu1_stop));
+            timings->gpu_phase1_ms += ms;
+        }
+
+        // ---- D→H scalar memcpy (CPU wall-clock) ----
+        std::chrono::high_resolution_clock::time_point t_scalar;
+        if (timings) t_scalar = std::chrono::high_resolution_clock::now();
 
         uint32_t last_offset = 0, last_count = 0, n_hit_rays = 0;
         CUDA_CHECK(cudaMemcpy(&last_offset, scratch.d_offsets + (num_rays - 1), sizeof(uint32_t), cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(&last_count, scratch.d_count + (num_rays - 1), sizeof(uint32_t), cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(&n_hit_rays, scratch.d_n_hit, sizeof(uint32_t), cudaMemcpyDeviceToHost));
 
+        if (timings)
+            timings->scalar_dth_ms += std::chrono::duration<float, std::milli>(
+                std::chrono::high_resolution_clock::now() - t_scalar).count();
+
         const uint32_t total_records = last_offset + last_count;
 
         if (total_records > 0)
         {
             // ---- Pass 2: write compacted HitRecords to pre-allocated device buffer ----
+            if (timings) CUDA_CHECK(cudaEventRecord(scratch.e_gpu2_start, stream));
+
             compact_ray_outputs<<<grid_size, block_size, 0, stream>>>(
                 d_hit_buffer, num_rays, max_depth, scratch.d_offsets, scratch.d_has_hit, scratch.d_compacted);
 
             // ---- After Pass 2 d_offsets is free; reuse it to compact global ray IDs ----
             // DeviceSelect::Flagged selects (ray_offset + i) for each i where d_has_hit[i] == 1.
             // d_scan_tmp is also free (ExclusiveSum already completed).
-            cub::CountingInputIterator<uint32_t> ray_id_iter(ray_offset);
+            thrust::counting_iterator<uint32_t> ray_id_iter(ray_offset);
             cub::DeviceSelect::Flagged(
                 scratch.d_scan_tmp, scratch.scan_bytes,
                 ray_id_iter, scratch.d_has_hit,
@@ -191,7 +227,20 @@ namespace OptixCSP
                 scratch.d_n_hit,     // output count (already read; safe to overwrite)
                 num_rays, stream);
 
+            if (timings) CUDA_CHECK(cudaEventRecord(scratch.e_gpu2_stop, stream));
+
             CUDA_CHECK(cudaStreamSynchronize(stream));
+
+            if (timings)
+            {
+                float ms = 0.f;
+                CUDA_CHECK(cudaEventElapsedTime(&ms, scratch.e_gpu2_start, scratch.e_gpu2_stop));
+                timings->gpu_phase2_ms += ms;
+            }
+
+            // ---- D→H bulk memcpy (CPU wall-clock) ----
+            std::chrono::high_resolution_clock::time_point t_bulk;
+            if (timings) t_bulk = std::chrono::high_resolution_clock::now();
 
             // ---- Copy compacted HitRecords to host ----
             const size_t prev_rec = host_out.size();
@@ -210,8 +259,13 @@ namespace OptixCSP
                 scratch.d_offsets,
                 n_hit_rays * sizeof(uint32_t),
                 cudaMemcpyDeviceToHost));
+
+            if (timings)
+                timings->bulk_dth_ms += std::chrono::duration<float, std::milli>(
+                    std::chrono::high_resolution_clock::now() - t_bulk).count();
         }
 
+        if (timings) ++timings->n_calls;
         return n_hit_rays;
     }
 

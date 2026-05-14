@@ -150,7 +150,8 @@ namespace OptixCSP
         size_t m_sun_dir_buffer_size_allocated = 0;
 
         // Pre-allocated device scratch buffers for GPU stream compaction.
-        CompactionScratch m_compaction_scratch;
+        CompactionScratch   m_compaction_scratch;
+        CompactionTimings   m_compaction_timings;
 
         std::vector<std::shared_ptr<CspElement>> m_element_list;
         void create_shader_binding_table();

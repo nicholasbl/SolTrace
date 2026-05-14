@@ -283,6 +283,7 @@ void SolTraceSystem::run()
     m_timer_optix_launch.reset();
     m_timer_collect_results.reset();
     m_n_run_iterations = 0;
+    m_compaction_timings = CompactionTimings{};
 
     // Allocate device buffers and initialize RNG states once (sizes are constant across the while loop).
     allocate_device_buffers();
@@ -676,7 +677,8 @@ void SolTraceSystem::get_buffer_results()
         m_hit_records,
         m_hit_ray_ids,
         m_state.stream,
-        m_compaction_scratch);
+        m_compaction_scratch,
+        &m_compaction_timings);
     m_n_hit_rays += n_new_hits;
 }
 
@@ -738,6 +740,20 @@ void SolTraceSystem::print_timing() const
     std::cout << "  Collect results     : total = " << t_collect << " s"
               << "  avg/iter = " << t_collect * inv_n << " s"
               << "  (" << pct(t_collect, t_trace) << " %)\n";
+    if (m_compaction_timings.n_calls > 0)
+    {
+        const float inv_c = 1.0f / static_cast<float>(m_compaction_timings.n_calls);
+        std::cout << std::fixed << std::setprecision(4);
+        std::cout << "    GPU pass 1 (count/scan/reduce) : total = " << m_compaction_timings.gpu_phase1_ms << " ms"
+                  << "  avg/call = " << m_compaction_timings.gpu_phase1_ms * inv_c << " ms\n";
+        std::cout << "    D->H scalars (3x memcpy)       : total = " << m_compaction_timings.scalar_dth_ms << " ms"
+                  << "  avg/call = " << m_compaction_timings.scalar_dth_ms * inv_c << " ms\n";
+        std::cout << "    GPU pass 2 (compact/select)    : total = " << m_compaction_timings.gpu_phase2_ms << " ms"
+                  << "  avg/call = " << m_compaction_timings.gpu_phase2_ms * inv_c << " ms\n";
+        std::cout << "    D->H bulk (records+ids)        : total = " << m_compaction_timings.bulk_dth_ms << " ms"
+                  << "  avg/call = " << m_compaction_timings.bulk_dth_ms * inv_c << " ms\n";
+        std::cout << std::fixed << std::setprecision(6);
+    }
     std::cout << "  Total trace         : " << t_trace << " s\n";
 
     std::cout << "\n--- Grand Total ---\n";
