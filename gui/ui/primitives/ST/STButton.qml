@@ -4,6 +4,8 @@ import QtQuick.Controls.Material
 import QtQuick.Effects
 import QtQuick.Layouts
 
+import SolTrace
+
 Button {
     id: control
 
@@ -34,7 +36,8 @@ Button {
 
             font.family: "Font Awesome 7 Free"
 
-            font.pointSize: control.font.pointSize + 4
+
+            
 
             //Layout.fillWidth: true
             Layout.fillHeight: true
@@ -42,10 +45,12 @@ Button {
 
         Label {
             text: control.text
-            font: control.font
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight
+
+
+            
 
             //Layout.fillWidth: true
             Layout.fillHeight: true

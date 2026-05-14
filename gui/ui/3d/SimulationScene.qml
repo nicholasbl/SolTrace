@@ -77,11 +77,9 @@ Item {
     View3D {
         id: view
         anchors.fill: parent
-
         camera: controller.active_camera
 
         environment: SceneEnvironment {
-
             antialiasingMode: SceneEnvironment.MSAA
             antialiasingQuality: SceneEnvironment.High
 
@@ -256,7 +254,7 @@ Item {
                     PrincipledMaterial {
                         metalness: 1
                         roughness: 0
-                        baseColor: "yellow"
+                        baseColor: App.view.sim.sun_color
                     }
                 ]
             }
@@ -299,7 +297,7 @@ Item {
                             materials: PrincipledMaterial {
                             metalness: 0
                             roughness: 1
-                            baseColor: "yellow"
+                            baseColor: App.view.sim.sun_color
                             }
                         }
 
@@ -311,7 +309,7 @@ Item {
                             materials: PrincipledMaterial {
                             metalness: 0
                             roughness: 1
-                            baseColor: "yellow"
+                            baseColor: App.view.sim.sun_color
                             }
                         }
                     }

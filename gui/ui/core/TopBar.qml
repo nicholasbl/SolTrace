@@ -6,6 +6,7 @@ import QtQuick.Effects
 import QtQuick.Layouts
 import QtQuick.Dialogs
 
+
 import SolTrace
 
 
@@ -83,6 +84,12 @@ RowLayout {
                             Layout.alignment: Qt.AlignBottom
                             mipmap: true
                             fillMode: Image.PreserveAspectFit
+
+                            layer.enabled: true
+                            layer.effect: MultiEffect {
+                                colorization: 1.0
+                                colorizationColor: App.theme.fontColor
+                            }
                         }
 
                         Label {
@@ -100,7 +107,7 @@ RowLayout {
                     }
 
                     Rectangle {
-                        color: "white"
+                        color: App.theme.fontColor
                         width: logo_row.width
                         height: 1
                     }
@@ -113,11 +120,12 @@ RowLayout {
                     Layout.topMargin: 10
                     Layout.rightMargin: 20
 
-                    text: "BETA"
+                    text: "ALPHA"
                     font.pointSize: 10
                     font.family: "CMU Serif"
                     font.bold: true
                     font.italic: true
+
                 }
 
                 Rectangle {
@@ -191,7 +199,7 @@ RowLayout {
         Layout.fillWidth: true
 
         glassColor: data_mouse_area.containsMouse ?
-                        Qt.rgba(1, 1, 1, 0.25) : Qt.rgba(0, 0, 0, 0.25)
+                        App.theme.shadedGlassColor : App.theme.glassColor
 
         RowLayout {
             anchors.fill: parent
@@ -232,14 +240,11 @@ RowLayout {
             anchors.fill: parent
 
             hoverEnabled: true
-
-
         }
 
         // DataPopup {
         //     id: data_pop
         // }
-
     }
 
     RowLayout {
@@ -283,8 +288,6 @@ RowLayout {
 
                 STIconButton {
                     id: settings_button
-                    property bool show_left_panel: false
-                    property bool show_right_panel: false
 
                     Layout.preferredWidth: implicitWidth
                     Layout.preferredHeight: implicitHeight
@@ -298,14 +301,14 @@ RowLayout {
                         target: App.view.settings_panel
                         function onVisible_changed() {
                             if (App.view.settings_panel.visible) {
-                                settings_button.show_left_panel = App.view.left_panel.visible
+                                App.view.left_panel.saved_visible = App.view.left_panel.visible
                                 App.view.left_panel.visible = false
 
-                                settings_button.show_right_panel = App.view.right_panel.visible
+                                App.view.right_panel.saved_visible = App.view.right_panel.visible
                                 App.view.right_panel.visible = false
                             } else {
-                                App.view.left_panel.visible = settings_button.show_left_panel
-                                App.view.right_panel.visible = settings_button.show_right_panel
+                                App.view.left_panel.visible = App.view.left_panel.saved_visible
+                                App.view.right_panel.visible = App.view.right_panel.saved_visible
                                 App.view.fit_panels(root.available_width, false, true)
                             }
                         }

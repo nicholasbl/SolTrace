@@ -9,6 +9,8 @@ import QtQuick.Layouts
 ComboBox {
     id: root
     Layout.fillWidth: true
+    Material.foreground: App.theme.fontColor
+    font.pointSize: App.theme.labelSize
 
     background: WellRectangle {
         implicitWidth: 80
@@ -48,11 +50,24 @@ ComboBox {
             delegate: STItemDelegate {
                 id: delegate
                 width: ListView.view.width
+                text: root.textAt(index)
 
                 required property var model
                 required property int index
 
-                text: root.textAt(index)
+
+                background: Rectangle {
+                    implicitHeight: 24
+                    implicitWidth: 100
+                    opacity: enabled ? 1 : 0.3
+                    color: parent.down
+                           ? Material.rippleColor : "transparent"
+                }
+
+                contentItem: Label {
+                    text: delegate.text
+                    font: delegate.font
+                }
             }
         }
 

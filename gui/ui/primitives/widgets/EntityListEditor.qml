@@ -144,6 +144,7 @@ Item {
 
             Loader {
                 Layout.fillWidth: true
+                Layout.maximumWidth: root.listWidth
                 Layout.margins: 8
 
                 sourceComponent: root.listHeader

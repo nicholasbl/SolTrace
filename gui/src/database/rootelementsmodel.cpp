@@ -9,10 +9,10 @@ QVector<EntityNamePair> RootElementsModel::rebuild_lists() {
     QVector<EntityNamePair> new_recs;
     m_reverse.clear();
 
-    if (!m_host) return {};
+    if (!m_host) return { };
 
-    auto view =
-        m_host->as_registry().view<ElementComponent>(entt::exclude<ChildOfComponent>);
+    auto view = m_host->as_registry().view<ElementComponent>(
+        entt::exclude<ChildOfComponent>);
 
     for (auto [entity] : view.each()) {
         new_recs.push_back(EntityNamePair::record_for_entity(*m_host, entity));
@@ -88,7 +88,7 @@ QVector<EntityNamePair> AllElementsModel::rebuild_lists() {
     QVector<EntityNamePair> new_recs;
     m_reverse.clear();
 
-    if (!m_host) return {};
+    if (!m_host) return { };
 
     auto view = m_host->as_registry().view<ElementComponent>();
 
@@ -275,19 +275,19 @@ void InstanceSortFilter::reset(Database* database) {
 }
 
 void InstanceSortFilter::clear_material() {
-    set_material_filter({});
+    set_material_filter({ });
     set_material_filter_name(QString());
 }
 
 void InstanceSortFilter::clear_geometry() {
-    set_geometry_filter({});
+    set_geometry_filter({ });
     set_geometry_filter_name(QString());
 }
 
 void InstanceSortFilter::clear_all_filters() {
     clear_material();
     clear_geometry();
-    set_name_filter({});
+    set_name_filter({ });
 }
 
 bool db::InstanceSortFilter::filterAcceptsRow(
@@ -336,6 +336,12 @@ bool db::InstanceSortFilter::filterAcceptsRow(
     }
 
     return true;
+}
+
+QVariant RootElementsModel::get(int index) {
+    auto rec = get_at(index);
+    if (!rec) return { };
+    return QVariant::fromValue(rec->entity);
 }
 
 } // namespace db

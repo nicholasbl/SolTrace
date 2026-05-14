@@ -181,6 +181,9 @@ Rectangle {
                                 default_label.font.family
 
 
+                    font.pointSize: App.theme.comboBarTextSize
+
+                    
 
                     text: modelData
 

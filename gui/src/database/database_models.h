@@ -21,9 +21,8 @@ struct EntityNamePair {
 
     RECORD_META(db::EntityNamePair, SM_EXPOSE_RW(name), SM_EXPOSE_RO(entity), );
 
-    static EntityNamePair record_for_entity(Database& db, Entity entity);
+    static EntityNamePair record_for_entity(Database& db, db::Entity entity);
 };
-
 
 /// Observe an entity's name
 class NameModel : public QObject {
@@ -33,7 +32,7 @@ class NameModel : public QObject {
 
     Entity m_target;
 
-    Q_WRITABLE_PROPERTY(Entity, node, {});
+    Q_WRITABLE_PROPERTY(Entity, node, { });
     Q_READONLY_PROPERTY(QString, name);
 
 private slots:
@@ -60,7 +59,7 @@ class BreadcrumbModel : public StructModelAdapter<EntityNamePair> {
 
     QVector<Entity> m_path;
 
-    Q_WRITABLE_PROPERTY(Entity, node, {});
+    Q_WRITABLE_PROPERTY(Entity, node, { });
 
 private slots:
     void recompute();
@@ -79,7 +78,7 @@ class ChildModel : public StructModelAdapter<EntityNamePair> {
     Q_OBJECT
     QPointer<Database> m_host;
 
-    Q_WRITABLE_PROPERTY(Entity, node, {});
+    Q_WRITABLE_PROPERTY(Entity, node, { });
 
     // QVector<Entity>                 m_list;
     std::unordered_map<Entity, int> m_reverse;
@@ -144,6 +143,9 @@ public:
     virtual ~MaterialGroupsModel() = default;
 
     void reset(Database* database);
+
+public slots:
+    QVariant get(int index);
 };
 
 /// A model providing the active geometry groups in a database
@@ -167,6 +169,9 @@ public:
     virtual ~GeometryGroupsModel() = default;
 
     void reset(Database* database);
+
+public slots:
+    QVariant get(int index);
 };
 
 // =============================================================================
@@ -201,7 +206,7 @@ class AnInstanceEditor : public QObject {
     Q_OBJECT
     QPointer<Database> m_host;
 
-    Q_WRITABLE_PROPERTY(Entity, entity, {});
+    Q_WRITABLE_PROPERTY(Entity, entity, { });
 
     Q_PROPERTY(QString entity_name READ entity_name WRITE set_entity_name NOTIFY
                    entity_name_changed FINAL)
@@ -233,8 +238,8 @@ class AnInstanceEditor : public QObject {
 
     Q_PROPERTY(
         Entity parent READ parent WRITE set_parent NOTIFY parent_changed FINAL)
-    Q_PROPERTY(QString parent_name READ parent_name NOTIFY parent_name_changed
-                   FINAL)
+    Q_PROPERTY(
+        QString parent_name READ parent_name NOTIFY parent_name_changed FINAL)
 
     Q_PROPERTY(
         QVector<Entity> tags READ tags WRITE set_tags NOTIFY tags_changed FINAL)
@@ -280,9 +285,9 @@ public:
     void    set_current_geometry(Entity newGroup);
     QString current_geometry_name() const;
 
-    Entity       parent() const;
-    void         set_parent(Entity newParent);
-    QString      parent_name() const;
+    Entity  parent() const;
+    void    set_parent(Entity newParent);
+    QString parent_name() const;
 
     QVector<Entity> tags() const;
     void            set_tags(const QVector<Entity>& newTags);

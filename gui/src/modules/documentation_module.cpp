@@ -117,6 +117,7 @@ QString DocumentationModule::locale_string() {
     switch (m_locale) {
     case Locale::EN: return "en";
     case Locale::ES: return "es";
+    default: return "";
     }
 }
 
@@ -124,14 +125,12 @@ QString DocumentationModule::locale_name_string() {
     switch (m_locale) {
     case Locale::EN: return "English";
     case Locale::ES: return "Spanish";
+    default: return "";
     }
 }
 
 QString DocumentationModule::locale_directory() {
-    switch (m_locale) {
-    case Locale::EN: return m_directory_path + "/en";
-    case Locale::ES: return m_directory_path + "/es";
-    }
+    return m_directory_path + "/" + locale_string();
 }
 
 } // namespace SolTrace::GUI::App

@@ -41,7 +41,6 @@ EntityListEditor {
             STSearchField {
                 id: search_field
                 Layout.fillWidth: true
-
                 text: root.model.name_filter
 
                 Binding {
@@ -187,10 +186,6 @@ EntityListEditor {
             RenameLabel {
                 text: root.module.edited_element_name
 
-                font.family: "CMU Serif"
-                font.pointSize: 16
-                font.bold: true
-
                 onAccepted: (new_name) => {
                     var curr_db = root.module.current_database
 
@@ -200,7 +195,7 @@ EntityListEditor {
                                     root.module.edited_element,
                                     new_name
                                     )
-                }
+                }                
             }
         }
 

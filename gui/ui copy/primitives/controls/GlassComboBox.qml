@@ -38,7 +38,7 @@ ComboBox {
 
         opacity: delegate.containsMouse ? 1 : 0.9
 
-        contentItem: STLabel {
+        contentItem: Label {
             text: modelData ? modelData : model.display
             font.pointSize: root.optionFontSize
             anchors.fill: parent
@@ -50,7 +50,7 @@ ComboBox {
         highlighted: root.highlightedIndex === index
     }
 
-    contentItem: STLabel {
+    contentItem: Label {
         leftPadding: 5
         rightPadding: root.indicator.width + root.spacing
 
@@ -61,7 +61,7 @@ ComboBox {
         elide: Text.ElideRight
     }
 
-    indicator: STLabel {
+    indicator: Label {
         id: indicator
         text: "▼"
         font.pointSize: 14

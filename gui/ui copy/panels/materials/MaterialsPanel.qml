@@ -98,7 +98,7 @@ ColumnLayout {
     }
     Spacer { visible: UserSettings.showDocumentation}
 
-    STLabel {
+    Label {
         visible: root.current_material_name.length === 0
         text: "No Material Selected"
         font.pointSize: 17

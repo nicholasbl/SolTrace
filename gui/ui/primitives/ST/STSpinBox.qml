@@ -24,9 +24,10 @@ SpinBox {
 
     contentItem: TextInput {
         z: 2
-        color: Material.foreground
+        color: App.theme.fontColor
         text: control.textFromValue(control.value, control.locale)
-        font: control.font
+        font.family: control.font.family
+        font.pointSize: App.theme.labelSize
         horizontalAlignment: Qt.AlignHCenter
         verticalAlignment: Qt.AlignVCenter
         readOnly: !control.editable
@@ -52,7 +53,8 @@ SpinBox {
         Label {
             text: "\u002b"
             font.family: "Font Awesome 7 Free"
-            font.pixelSize: control.font.pixelSize
+            font.pointSize: control.font.pointSize
+
             anchors.centerIn: parent
         }
     }
@@ -69,7 +71,8 @@ SpinBox {
         Label {
             text: "\uf068"
             font.family: "Font Awesome 7 Free"
-            font.pixelSize: control.font.pixelSize
+            font.pointSize: control.font.pointSize
+
             anchors.centerIn: parent
         }
     }

@@ -47,10 +47,12 @@ Rectangle {
 
         RowLayout {
             visible: root.title.length > 0
+            Layout.bottomMargin: root.collapsed ? 8 : 0
 
             Label {
                 visible: root.collapsible
                 text: root.collapsed ? "▼" : "▶"
+
                 MouseArea {
                     anchors.fill: parent
                     onClicked: root.collapsed = !root.collapsed
@@ -65,10 +67,11 @@ Rectangle {
             Label {
                 text: root.title
                 font.bold: true
+
+                font.pointSize: App.theme.propertyPanelHeaderSize
+                
             }
         }
-
-
 
         Rectangle {
             Layout.fillWidth: true

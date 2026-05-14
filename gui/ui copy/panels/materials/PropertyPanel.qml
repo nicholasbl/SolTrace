@@ -44,7 +44,7 @@ Rectangle {
         RowLayout {
             visible: root.title.length > 0
 
-            STLabel {
+            Label {
                 visible: root.collapsible
                 text: root.collapsed ? "▼" : "▶"
                 MouseArea {
@@ -58,7 +58,7 @@ Rectangle {
                 id: check_box
             }
 
-            STLabel {
+            Label {
                 text: root.title
                 font.bold: true
             }

@@ -191,6 +191,8 @@ public:
 
     // Solar calculator fields (year, month, day, e.g.)
     QOBJECT_READONLY_PROPERTY(SolarCalculatorData, calc_data)
+
+    Q_WRITABLE_PROPERTY(bool, sun_error_enabled, false)
 };
 
 } // namespace SolTrace::GUI::App

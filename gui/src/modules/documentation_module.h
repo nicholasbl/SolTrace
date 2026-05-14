@@ -74,7 +74,7 @@ public:
     QOBJECT_READONLY_PROPERTY(StatusComponent, status)
     Q_WRITABLE_PROPERTY(QString, directory_path, "")
 
-    enum class Locale { EN, ES };
+    enum class Locale { EN = 0, ES = 1 };
     Q_ENUM(Locale)
 
     Q_WRITABLE_PROPERTY(int, version, 0)

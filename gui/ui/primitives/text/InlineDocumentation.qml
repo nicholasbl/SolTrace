@@ -15,7 +15,7 @@ ColumnLayout {
 
     visible: root.target ? root.target.inline_docs && root.target.size > 0 : true
 
-    Text {
+    SubHeader {
         id: title
         text: {
             App.docs.locale
@@ -24,15 +24,9 @@ ColumnLayout {
         }
 
         Layout.fillWidth: true
-
-        font.pointSize: 15
-        font.bold: true
-        font.family: "CMU Serif"
-
-        color: Material.foreground
     }
 
-    Text {
+    Label {
         id: body
 
         Layout.fillWidth: true
@@ -44,6 +38,7 @@ ColumnLayout {
         }
 
         wrapMode: Text.WordWrap
-        color: Material.foreground
+
+        font.pointSize: App.theme.normalSize
     }
 }

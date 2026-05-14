@@ -25,6 +25,9 @@ public:
     ~RootElementsModel() override = default;
 
     void reset(Database* database);
+
+public slots:
+    QVariant get(int index);
 };
 
 // =============================================================================

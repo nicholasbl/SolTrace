@@ -18,8 +18,9 @@ ApplicationWindow {
 
     Material.theme: Material.Dark
     Material.accent: Material.Blue
+    Material.foreground: App.theme.fontColor
 
-    font.pointSize: 12
+    font.pointSize: App.theme.labelSize
     font.family: "Roboto"
 
     SimulationScene {

@@ -21,7 +21,7 @@ Rectangle {
         anchors.centerIn: parent
         text: "—" // Placeholder text
         color: Qt.rgba(Theme.textColor.r, Theme.textColor.g, Theme.textColor.b, 0.5)
-        font.pixelSize: 16
+        font.pointSize: 16
         font.bold: true
         visible: field.isFunction && !textFieldItem.activeFocus && textFieldItem.text === ""
     }

@@ -51,7 +51,7 @@ Item {
                         text: modelData
                         color: "#dfe7f2"
                         font.bold: true
-                        font.pixelSize: 14
+                        font.pointSize: 14
                         Layout.alignment: Qt.AlignHCenter
                     }
 

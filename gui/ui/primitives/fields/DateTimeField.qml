@@ -27,7 +27,8 @@ ColumnLayout {
                 id: monthField
                 Layout.row: 0
                 Layout.column: 0
-                Layout.preferredWidth: 200
+                Layout.fillWidth: true
+                Layout.maximumWidth: 200
                 label: "Month"
                 from: 1
                 to: 12
@@ -67,7 +68,8 @@ ColumnLayout {
                 id: hourField
                 Layout.row: 0
                 Layout.column: 0
-                Layout.preferredWidth: 200
+                Layout.fillWidth: true
+                Layout.maximumWidth: 200
                 label: "Hour"
                 from: 0
                 to: 23
@@ -80,7 +82,8 @@ ColumnLayout {
                 id: minuteField
                 Layout.row: App.view.left_panel.size == PanelData.Small ? 1 : 0
                 Layout.column: App.view.left_panel.size == PanelData.Small ? 0 : 1
-                Layout.preferredWidth: 200
+                Layout.fillWidth: true
+                Layout.maximumWidth: 200
                 label: "Minute"
                 from: 0
                 to: 59

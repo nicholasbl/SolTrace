@@ -19,14 +19,16 @@ ListView {
             text: "Angle (mrad)"
             Layout.fillWidth: true
             font.bold: true
-            font.pointSize: 13
+
+            
         }
 
         Label {
             text: "Intensity"
             Layout.fillWidth: true
             font.bold: true
-            font.pointSize: 13
+
+            
         }
     }
 
@@ -41,6 +43,8 @@ ListView {
             Layout.preferredWidth: implicitWidth + 5
             Layout.preferredHeight: implicitWidth + 5
             text: index + 1
+
+            
         }
 
         STDoubleSpinBox {
@@ -52,6 +56,8 @@ ListView {
             Layout.fillWidth: true
             value: root.model.data(root.model.index(index, 0))
             onValueModified: root.model.setData(root.model.index(index, 0), value, Qt.EditRole)
+
+            
         }
 
         STDoubleSpinBox {
@@ -64,6 +70,8 @@ ListView {
             Layout.fillWidth: true
             value: root.model.data(root.model.index(index, 1))
             onValueModified: root.model.setData(root.model.index(index, 1), value, Qt.EditRole)
+
+            
         }
 
         STIconButton {

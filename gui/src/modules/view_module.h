@@ -35,6 +35,8 @@ public:
     Q_WRITABLE_PROPERTY(PanelSize, size, PanelSize::Normal)
 
     Q_WRITABLE_PROPERTY(bool, visible, false)
+    Q_WRITABLE_PROPERTY(bool, saved_visible, false)
+
     Q_WRITABLE_PROPERTY(bool, inline_docs, false)
 
     // Q_WRITABLE_PROPERTY(bool, tags, false)
@@ -50,21 +52,20 @@ class SimulationViewState : public QObject {
     QML_ELEMENT
 
 public:
-    enum class Camera { WASD, Orbital };
+    enum class Camera { WASD = 0, Orbital = 1 };
 
-    enum class Perspective { NormalPerspective, Orthographic };
+    enum class Perspective { Normal = 0, Orthographic = 1 };
 
     Q_ENUM(Camera)
     Q_ENUM(Perspective)
 
     Q_WRITABLE_PROPERTY(Camera, camera, Camera::Orbital)
-    Q_WRITABLE_PROPERTY(Perspective,
-                        perspective,
-                        Perspective::NormalPerspective)
+    Q_WRITABLE_PROPERTY(Perspective, perspective, Perspective::Normal)
 
     Q_WRITABLE_PROPERTY(bool, sun_viz, true)
     Q_WRITABLE_PROPERTY(bool, blueprint_mode, false)
     Q_WRITABLE_PROPERTY(double, sun_viz_scale, 50)
+    Q_WRITABLE_PROPERTY(QColor, sun_color, "yellow")
     Q_WRITABLE_PROPERTY(QColor, geometry_color, "white")
 };
 
@@ -100,6 +101,10 @@ public:
     Q_WRITABLE_PROPERTY(bool, editing_layout, false)
     Q_WRITABLE_PROPERTY(bool, editing_appearance, false)
 
+    // Settings State
+    Q_WRITABLE_PROPERTY(int, documentation_section, 0)
+
+    // Viewport State
     QOBJECT_READONLY_PROPERTY(SimulationViewState, sim)
 
 public slots:

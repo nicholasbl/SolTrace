@@ -80,6 +80,7 @@ Item {
     Item {
         anchors.fill: parent
         visible: !root.wideMode
+        enabled: !root.wideMode
 
         StackView {
             id: narrowStack
@@ -157,7 +158,7 @@ Item {
 
         Loader {
             sourceComponent: root.detailView
-            active: root.detailView !== null
+            active: root.detailView !== null && root.hasSelection
         }
     }
 
@@ -165,6 +166,7 @@ Item {
     Item {
         anchors.fill: parent
         visible: root.wideMode
+        enabled: root.wideMode
 
         RowLayout {
             anchors.fill: parent
@@ -234,7 +236,7 @@ Item {
                 Layout.fillHeight: true
                 Layout.margins: 8
                 sourceComponent: root.hasSelection ? root.detailView : root.placeholder
-                active: true
+                active: (root.hasSelection && root.detailView) || root.placeholder !== null
             }
         }
     }

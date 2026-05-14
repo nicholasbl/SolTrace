@@ -78,7 +78,7 @@ SpinBox {
 
         Text {
             text: "+"
-            font.pixelSize: control.font.pixelSize * 1.5
+            font.pointSize: control.font.pointSize * 1.5
             color: Theme.textColor
             anchors.centerIn: parent
         }
@@ -95,7 +95,7 @@ SpinBox {
 
         Text {
             text: "-"
-            font.pixelSize: control.font.pixelSize * 1.5
+            font.pointSize: control.font.pointSize * 1.5
             color: Theme.textColor
             anchors.centerIn: parent
         }
