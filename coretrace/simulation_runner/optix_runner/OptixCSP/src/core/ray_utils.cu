@@ -9,6 +9,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <cstring>
 #include <vector>
 
 namespace OptixCSP
@@ -124,6 +125,10 @@ namespace OptixCSP
         // Worst-case compacted output: every slot in the hit buffer could be kept
         CUDA_CHECK(cudaMalloc(&scratch.d_compacted, num_rays * max_depth * sizeof(HitRecord)));
 
+        // Pinned host staging buffers — avoids CUDA's internal small-chunk staging for pageable memory
+        CUDA_CHECK(cudaMallocHost(&scratch.h_compacted, num_rays * max_depth * sizeof(HitRecord)));
+        CUDA_CHECK(cudaMallocHost(&scratch.h_ray_ids, num_rays * sizeof(uint32_t)));
+
         // CUDA events for GPU-phase timing
         CUDA_CHECK(cudaEventCreate(&scratch.e_gpu1_start));
         CUDA_CHECK(cudaEventCreate(&scratch.e_gpu1_stop));
@@ -141,6 +146,9 @@ namespace OptixCSP
         cudaFree(scratch.d_scan_tmp);
         cudaFree(scratch.d_red_tmp);
         cudaFree(scratch.d_compacted);
+        // cudaFreeHost is nullptr-safe
+        cudaFreeHost(scratch.h_compacted);
+        cudaFreeHost(scratch.h_ray_ids);
         // cudaEventDestroy is not nullptr-safe
         if (scratch.e_gpu1_start) cudaEventDestroy(scratch.e_gpu1_start);
         if (scratch.e_gpu1_stop)  cudaEventDestroy(scratch.e_gpu1_stop);
@@ -238,27 +246,25 @@ namespace OptixCSP
                 timings->gpu_phase2_ms += ms;
             }
 
-            // ---- D→H bulk memcpy (CPU wall-clock) ----
+            // ---- D→H bulk: device → pinned staging (full PCIe bandwidth), then
+            //                  CPU memcpy pinned → std::vector (DRAM bandwidth) ----
             std::chrono::high_resolution_clock::time_point t_bulk;
             if (timings) t_bulk = std::chrono::high_resolution_clock::now();
 
-            // ---- Copy compacted HitRecords to host ----
+            CUDA_CHECK(cudaMemcpy(scratch.h_compacted, scratch.d_compacted,
+                total_records * sizeof(HitRecord), cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(scratch.h_ray_ids, scratch.d_offsets,
+                n_hit_rays * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+
             const size_t prev_rec = host_out.size();
             host_out.resize(prev_rec + total_records);
-            CUDA_CHECK(cudaMemcpy(
-                host_out.data() + prev_rec,
-                scratch.d_compacted,
-                total_records * sizeof(HitRecord),
-                cudaMemcpyDeviceToHost));
+            std::memcpy(host_out.data() + prev_rec, scratch.h_compacted,
+                total_records * sizeof(HitRecord));
 
-            // ---- Copy global ray IDs to host (one per logical hit ray) ----
             const size_t prev_ids = host_ray_ids.size();
             host_ray_ids.resize(prev_ids + n_hit_rays);
-            CUDA_CHECK(cudaMemcpy(
-                host_ray_ids.data() + prev_ids,
-                scratch.d_offsets,
-                n_hit_rays * sizeof(uint32_t),
-                cudaMemcpyDeviceToHost));
+            std::memcpy(host_ray_ids.data() + prev_ids, scratch.h_ray_ids,
+                n_hit_rays * sizeof(uint32_t));
 
             if (timings)
                 timings->bulk_dth_ms += std::chrono::duration<float, std::milli>(

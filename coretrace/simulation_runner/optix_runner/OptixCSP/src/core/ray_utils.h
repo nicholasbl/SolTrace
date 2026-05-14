@@ -24,6 +24,10 @@ namespace OptixCSP
         size_t red_bytes = 0;
         HitRecord *d_compacted = nullptr; // worst-case compacted output (num_rays * max_depth)
 
+        // Pinned host staging buffers for fast D->H transfer (matched worst-case size).
+        HitRecord *h_compacted = nullptr; // pinned mirror of d_compacted
+        uint32_t  *h_ray_ids   = nullptr; // pinned mirror of d_offsets (ray ID output)
+
         // CUDA events for GPU-phase timing (non-null after allocate_compaction_scratch).
         cudaEvent_t e_gpu1_start = nullptr; // before count/scan/reduce kernels
         cudaEvent_t e_gpu1_stop  = nullptr; // after  count/scan/reduce kernels
@@ -36,7 +40,7 @@ namespace OptixCSP
     struct CompactionTimings
     {
         float    gpu_phase1_ms = 0.f; // count + scan + reduce kernels  (GPU time via CUDA events)
-        float    scalar_dth_ms = 0.f; // 3x scalar D\u2192H cudaMemcpy  (CPU wall-clock)
+        float    scalar_dth_ms = 0.f; // 3x scalar D->H cudaMemcpy  (CPU wall-clock)
         float    gpu_phase2_ms = 0.f; // compact + select kernels       (GPU time via CUDA events)
         float    bulk_dth_ms   = 0.f; // HitRecord + ray-ID bulk D\u2192H (CPU wall-clock)
         uint32_t n_calls       = 0;   // total gpu_compact_hit_buffer invocations
