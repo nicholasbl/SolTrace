@@ -1,14 +1,12 @@
 pragma Singleton
 
 import QtQuick
-import QtCore
 import SolTrace
 
 QtObject {
     id: root
 
     readonly property Theme theme: Theme {}
-    // readonly property Settings settings: Settings {}
 
     readonly property var db: AppData.current_database
     readonly property var file_source: AppData.file_source
@@ -19,4 +17,6 @@ QtObject {
     readonly property var tracing: AppData.tracing
     readonly property var simulation: AppData.simulation
     readonly property var docs: AppData.docs
+
+
 }

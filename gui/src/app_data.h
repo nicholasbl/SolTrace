@@ -19,9 +19,7 @@
 #include <modules/module_common.h>
 #include <modules/simulation_module.h>
 #include <modules/sun_module.h>
-#include <modules/tracing_module.h>
 #include <modules/view_module.h>
-#include <modules/workflow_module.h>
 #include <script/script.h>
 
 /**
@@ -90,13 +88,9 @@ public:
 
     QOBJECT_READONLY_PROPERTY(FileSourceModule, file_source)
 
-    QOBJECT_READONLY_PROPERTY(WorkflowModule, workflow)
-
     QOBJECT_READONLY_PROPERTY(DocumentationModule, docs)
 
     QOBJECT_READONLY_PROPERTY(SunModule, sun)
-
-    QOBJECT_READONLY_PROPERTY(TracingModule, tracing)
 
     QOBJECT_READONLY_PROPERTY(MaterialsModule, materials)
 

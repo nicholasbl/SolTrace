@@ -103,7 +103,7 @@ Column {
             anchors.verticalCenter: parent.verticalCenter
         }
     }
-    Label {
+    STLabel {
         text: root.unitLabel
         visible: root.unitLabel !== ""
         font.pointSize: Theme.controlLabelSize

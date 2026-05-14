@@ -18,12 +18,7 @@ ShadowedGlassRectangle {
             Layout.fillWidth: true
             Layout.leftMargin: 5
 
-            Item {
-                Layout.preferredWidth: panel_buttons.width
-                visible: App.view.right_panel.size > 0
-            }
-
-            Label {
+            STLabel {
                 id: info_row
                 Layout.fillWidth: true
 
@@ -33,7 +28,7 @@ ShadowedGlassRectangle {
                 font.bold: true
 
                 elide: Label.ElideRight
-                horizontalAlignment: App.view.right_panel.size == PanelData.Small ? Label.AlignLeft : Label.AlignHCenter
+                // horizontalAlignment: App.view.right_panel.size == PanelData.Small ? Label.AlignLeft : Label.AlignHCenter
                 verticalAlignment: Label.AlignVCenter
             }
 
@@ -45,8 +40,6 @@ ShadowedGlassRectangle {
                 is_right_panel: true
             }
         }
-
-
 
         STComboBar {
             id: section

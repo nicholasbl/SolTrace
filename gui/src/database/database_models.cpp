@@ -125,9 +125,9 @@ QVector<EntityNamePair> ChildModel::rebuild_lists() {
     QVector<EntityNamePair> new_recs;
     m_reverse.clear();
 
-    if (!m_host) return {};
+    if (!m_host) return { };
 
-    if (!m_host->valid(m_node)) return {};
+    if (!m_host->valid(m_node)) return { };
 
     auto children = m_host->children_of(m_node);
 
@@ -202,7 +202,7 @@ QVector<EntityNamePair> MaterialGroupsModel::rebuild_lists() {
     QVector<EntityNamePair> new_recs;
     m_reverse.clear();
 
-    if (!m_host) return {};
+    if (!m_host) return { };
 
     auto view = m_host->as_registry().view<MaterialGroupComponent>();
 
@@ -272,13 +272,19 @@ void MaterialGroupsModel::reset(Database* database) {
             &MaterialGroupsModel::group_removed);
 }
 
+QVariant MaterialGroupsModel::get(int index) {
+    auto rec = get_at(index);
+    if (!rec) return { };
+    return QVariant::fromValue(rec->entity);
+}
+
 // =============================================================================
 
 QVector<EntityNamePair> GeometryGroupsModel::rebuild_lists() {
     QVector<EntityNamePair> new_recs;
     m_reverse.clear();
 
-    if (!m_host) return {};
+    if (!m_host) return { };
 
     auto view = m_host->as_registry().view<GeometryGroupComponent>();
 
@@ -347,13 +353,19 @@ void GeometryGroupsModel::reset(Database* database) {
             &GeometryGroupsModel::group_removed);
 }
 
+QVariant GeometryGroupsModel::get(int index) {
+    auto rec = get_at(index);
+    if (!rec) return { };
+    return QVariant::fromValue(rec->entity);
+}
+
 // =============================================================================
 
 QVector<EntityNamePair> TagsModel::rebuild_lists() {
     QVector<EntityNamePair> new_recs;
     m_reverse.clear();
 
-    if (!m_host) return {};
+    if (!m_host) return { };
 
     auto view = m_host->as_registry().view<TagComponent>();
 
@@ -565,7 +577,7 @@ QVector3D AnInstanceEditor::position() const {
         }
     }
 
-    return {};
+    return { };
 }
 
 
@@ -587,7 +599,7 @@ QQuaternion AnInstanceEditor::orientation() const {
             return convert(tf->rotation);
         }
     }
-    return {};
+    return { };
 }
 
 void AnInstanceEditor::set_orientation(const QQuaternion& newOrientation) {
@@ -617,7 +629,7 @@ void AnInstanceEditor::set_hidden(bool newHidden) {
     FIND(invisible);
 
     if (newHidden) {
-        component.set(m_entity, InvisibleComponent {});
+        component.set(m_entity, InvisibleComponent { });
     } else {
         component.remove(m_entity);
     }
@@ -776,10 +788,12 @@ QString AnInstanceEditor::parent_name() const {
 
 QVector<db::Entity> AnInstanceEditor::tags() const {
     if (m_host and m_host->valid(m_entity)) {
-        if (auto tf = m_host->tag_membership.get(m_entity); tf) { return tf->tags; }
+        if (auto tf = m_host->tag_membership.get(m_entity); tf) {
+            return tf->tags;
+        }
     }
 
-    return {};
+    return { };
 }
 
 void AnInstanceEditor::set_tags(QVector<db::Entity> const& newTags) {
@@ -814,7 +828,7 @@ QString AnInstanceEditor::entity_name() const {
         if (auto tf = m_host->identity.get(m_entity); tf) { return tf->name; }
     }
 
-    return {};
+    return { };
 }
 
 void AnInstanceEditor::set_entity_name(const QString& newEntity_name) {

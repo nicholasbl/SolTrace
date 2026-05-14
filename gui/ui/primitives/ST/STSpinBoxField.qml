@@ -29,7 +29,7 @@ Column {
 
     Binding { spinBox.value: root.value }
 
-    Label {
+    STLabel {
         id: label
         text: root.label
         width: parent.width

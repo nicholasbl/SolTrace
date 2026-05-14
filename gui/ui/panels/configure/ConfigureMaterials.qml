@@ -14,6 +14,12 @@ AdaptiveFilteredEditor {
     wideThreshold: 500
     listWidth: 250
 
+    onCurrentIndexChanged: {
+        if (currentIndex >= 0) {
+            App.materials.current_material = model.get(currentIndex)
+        }
+    }
+
     onEditingChanged: {
         App.view.editing_material = editing
     }
@@ -72,10 +78,6 @@ AdaptiveFilteredEditor {
 
             RenameLabel {
                 text: App.materials.current_material_name
-
-                font.family: "CMU Serif"
-                font.pointSize: 16
-                font.bold: true
 
                 onAccepted: (new_name) => {
                     var mats = App.materials;
@@ -175,7 +177,7 @@ AdaptiveFilteredEditor {
     }
 
     placeholder: Item {
-        Label {
+        STLabel {
             anchors.centerIn: parent
             text: "Select a material"
             font.pointSize: 16

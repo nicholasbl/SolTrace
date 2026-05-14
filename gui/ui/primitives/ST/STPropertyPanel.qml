@@ -47,10 +47,12 @@ Rectangle {
 
         RowLayout {
             visible: root.title.length > 0
+            Layout.bottomMargin: root.collapsed ? 8 : 0
 
-            Label {
+            STLabel {
                 visible: root.collapsible
                 text: root.collapsed ? "▼" : "▶"
+
                 MouseArea {
                     anchors.fill: parent
                     onClicked: root.collapsed = !root.collapsed
@@ -62,13 +64,14 @@ Rectangle {
                 id: check_box
             }
 
-            Label {
+            STLabel {
                 text: root.title
                 font.bold: true
+
+                font.pointSize: App.theme.propertyPanelHeaderSize
+                
             }
         }
-
-
 
         Rectangle {
             Layout.fillWidth: true

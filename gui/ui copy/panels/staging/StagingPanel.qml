@@ -36,7 +36,7 @@ ColumnLayout {
                         Repeater {
                             model: App.layout.breadcrumb_model
 
-                            delegate: Label {
+                            delegate: STLabel {
                                 text: ">" + name
                             }
                         }

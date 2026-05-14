@@ -11,7 +11,7 @@ Column {
     property alias latitude: latitudeField.value
     property alias longitude: longitudeField.value
 
-    Label {
+    STLabel {
         text: root.label
         visible: root.label !== ""
         font.pointSize: Theme.controlRowLabelSize

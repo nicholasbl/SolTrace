@@ -14,7 +14,7 @@ Column {
     property alias second: secondSpinBox.value
     property alias timezone: timezoneSpinBox.value
 
-    Label {
+    STLabel {
         text: root.label
         visible: root.label !== ""
         font.pointSize: Theme.controlRowLabelSize
@@ -38,7 +38,7 @@ Column {
                 }
             }
 
-            Label {
+            STLabel {
                 text: "Hour"
                 font.pointSize: Theme.controlLabelSize
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -61,7 +61,7 @@ Column {
                 }
             }
 
-            Label {
+            STLabel {
                 text: "Minute"
                 font.pointSize: Theme.controlLabelSize
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -84,7 +84,7 @@ Column {
                 }
             }
 
-            Label {
+            STLabel {
                 text: "Second"
                 font.pointSize: Theme.controlLabelSize
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -112,7 +112,7 @@ Column {
                 }
             }
 
-            Label {
+            STLabel {
                 text: "Timezone"
                 font.pointSize: Theme.controlLabelSize
                 anchors.horizontalCenter: parent.horizontalCenter

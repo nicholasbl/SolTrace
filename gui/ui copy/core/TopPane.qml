@@ -66,7 +66,7 @@ Item {
                             id: logoText
                             text: "SolTrace"
                             font.family: "CMU Serif"
-                            font.pixelSize: 18
+                            font.pointSize: 18
                             color: "white"
                             font.weight: Font.Bold
                             font.capitalization: Font.SmallCaps
@@ -155,7 +155,7 @@ Item {
                     Text {
                         text: modelData
                         font.family: parent.isLast ? "CMU Serif" : ""
-                        font.pixelSize: parent.isLast ? 15 : 15
+                        font.pointSize: parent.isLast ? 15 : 15
                         font.weight: parent.isLast ? Font.Bold : Font.Normal
                         color: "white"
                         opacity: parent.isLast ? 1.0 : 0.8

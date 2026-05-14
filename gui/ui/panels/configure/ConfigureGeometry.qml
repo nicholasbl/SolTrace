@@ -17,6 +17,12 @@ AdaptiveFilteredEditor {
         App.view.editing_geometry = editing
     }
 
+    onCurrentIndexChanged: {
+        if (currentIndex >= 0) {
+            App.materials.current_geometry = model.get(currentIndex)
+        }
+    }
+
     Connections {
         target: App.view
         function onEditing_geometry_changed() {
@@ -68,10 +74,6 @@ AdaptiveFilteredEditor {
 
             RenameLabel {
                 text: App.materials.current_geometry_name
-
-                font.family: "CMU Serif"
-                font.pointSize: 16
-                font.bold: true
 
                 onAccepted: (new_name) => {
                     var mats = App.materials;
@@ -167,11 +169,12 @@ AdaptiveFilteredEditor {
     }
 
     placeholder: Item {
-        Label {
+        STLabel {
             anchors.centerIn: parent
             text: "Select a geometry"
             font.pointSize: 16
             opacity: 0.5
+            
         }
     }
 }

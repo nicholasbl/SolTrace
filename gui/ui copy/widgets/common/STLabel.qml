@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls.Material
 
-Label {
+STLabel {
     font.pointSize: 14
     font.weight: Font.Bold
 }

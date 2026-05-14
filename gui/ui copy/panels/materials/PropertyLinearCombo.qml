@@ -27,7 +27,7 @@ Rectangle {
         Repeater {
             model: root.model
 
-            Label {
+            STLabel {
                 Layout.fillWidth: true
                 text: modelData
 

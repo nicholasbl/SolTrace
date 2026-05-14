@@ -29,7 +29,7 @@ Item {
 
         spacing: 0
 
-        Label {
+        STLabel {
             text: root.leftIcon
 
             Layout.fillHeight: true
@@ -44,6 +44,7 @@ Item {
             font.pointSize: 48
 
             fontSizeMode: Label.Fit
+            
 
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
@@ -62,6 +63,7 @@ Item {
             padding: 0
 
             background: Item {}
+            
 
             onAccepted: root.accepted()
 
@@ -71,7 +73,7 @@ Item {
             // }
         }
 
-        Label {
+        STLabel {
             text: root.rightIcon
 
             Layout.fillHeight: true
@@ -84,6 +86,7 @@ Item {
             font.family: "Font Awesome 7 Free"
 
             font.pointSize: 48
+            
 
             fontSizeMode: Label.Fit
 

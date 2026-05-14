@@ -78,7 +78,7 @@ Item {
     ]
 
     // Phase title component
-    component PhaseTitle: Label {
+    component PhaseTitle: STLabel {
         font.family: "Roboto"
         font.capitalization: Font.AllUppercase
         anchors.verticalCenter: parent.verticalCenter

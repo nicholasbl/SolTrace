@@ -4,6 +4,8 @@ import QtQuick.Controls.Material
 import QtQuick.Effects
 import QtQuick.Layouts
 
+import SolTrace
+
 Button {
     id: control
 
@@ -26,7 +28,7 @@ Button {
             //color: "blue"
         }
 
-        Label {
+        STLabel {
             visible: control.text_icon.length > 0
             text: control.text_icon
             horizontalAlignment: Text.AlignHCenter
@@ -34,18 +36,21 @@ Button {
 
             font.family: "Font Awesome 7 Free"
 
-            font.pointSize: control.font.pointSize + 4
+
+            
 
             //Layout.fillWidth: true
             Layout.fillHeight: true
         }
 
-        Label {
+        STLabel {
             text: control.text
-            font: control.font
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight
+
+
+            
 
             //Layout.fillWidth: true
             Layout.fillHeight: true

@@ -9,8 +9,14 @@ void AppData::load_session() {
     s.beginGroup("View");
     m_view->left_panel()->set_visible(
         s.value("show_left_panel", true).toBool());
+    m_view->left_panel()->set_saved_visible(
+        s.value("show_left_panel_saved", true).toBool());
     m_view->right_panel()->set_visible(
         s.value("show_right_panel", true).toBool());
+    m_view->right_panel()->set_saved_visible(
+        s.value("show_right_panel_saved", true).toBool());
+    m_view->settings_panel()->set_visible(
+        s.value("show_settings_panel", true).toBool());
 
     m_view->left_panel()->set_width(s.value("left_panel_width", 550).toUInt());
     m_view->right_panel()->set_width(s.value("right_panel_width", 0).toUInt());
@@ -22,6 +28,10 @@ void AppData::load_session() {
     m_view->set_analyze_section(s.value("analyze_section", 0).toUInt());
 
     m_view->set_sun_section(s.value("sun_section", 0).toUInt());
+
+    m_view->set_documentation_section(
+        s.value("documentation_section", 0).toUInt());
+
     s.endGroup();
 
     s.beginGroup("Sun");
@@ -44,6 +54,10 @@ void AppData::save_session() {
     s.beginGroup("View");
     s.setValue("show_left_panel", m_view->left_panel()->visible());
     s.setValue("show_right_panel", m_view->right_panel()->visible());
+    s.setValue("show_left_panel_saved", m_view->left_panel()->saved_visible());
+    s.setValue("show_right_panel_saved",
+               m_view->right_panel()->saved_visible());
+    s.setValue("show_settings_panel", m_view->settings_panel()->visible());
 
     s.setValue("left_panel_width", m_view->left_panel()->width());
     s.setValue("right_panel_width", m_view->right_panel()->width());
@@ -55,6 +69,8 @@ void AppData::save_session() {
     s.setValue("analyze_section", m_view->analyze_section());
 
     s.setValue("sun_section", m_view->sun_section());
+
+    s.setValue("documentation_section", m_view->documentation_section());
 
     s.endGroup();
 
@@ -79,10 +95,8 @@ AppData::AppData(QObject*       parent,
                  const QString& documentation_directory)
     : m_file_source(new FileSourceModule(this)),
       m_view(new ViewModule(this)),
-      m_workflow(new WorkflowModule(this)),
       m_docs(new DocumentationModule(this)),
       m_sun(new SunModule(this)),
-      m_tracing(new TracingModule(this)),
       m_materials(new MaterialsModule(this)),
       m_layout(new LayoutModule(this)),
       m_simulation(new SimulationModule(this)),

@@ -4,11 +4,12 @@ import QtQuick.Effects
 import SolTrace
 
 Rectangle {
+    id: root
+
     property var blur_source
     property int blurMax: 32
-    property color glassColor: Qt.rgba(0, 0, 0, 0.25)
+    property color glassColor: App.theme.glassColor
 
-    id: root
     clip: true
     color: "transparent"
 

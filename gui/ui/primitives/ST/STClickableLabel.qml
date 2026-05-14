@@ -2,9 +2,13 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 
-Label {
+import SolTrace
+
+STLabel {
     id: control
 
+    text: "Initialize"
+    
     signal clicked
 
     property alias containsMouse: mouse_area.containsMouse

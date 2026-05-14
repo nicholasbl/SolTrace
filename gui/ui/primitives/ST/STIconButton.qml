@@ -2,6 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 
+import SolTrace
+
 Rectangle {
     id: control
 
@@ -27,12 +29,13 @@ Rectangle {
     implicitWidth: implicitHeight
 
 
-    Label {
+    STLabel {
         id: label
         font.family: "Font Awesome 7 Free"
 
         font.pointSize: control.iconSize
 
+        
         anchors.centerIn: parent
     }
 

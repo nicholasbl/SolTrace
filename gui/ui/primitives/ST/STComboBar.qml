@@ -43,7 +43,7 @@ Rectangle {
     }
 
     // Horrible.
-    Label {
+    STLabel {
         id: default_label
         visible: false
     }
@@ -170,7 +170,7 @@ Rectangle {
                 Layout.fillHeight: true
                 z: 0
 
-                Label {
+                STLabel {
                     id: label
 
                     anchors.fill: parent
@@ -181,6 +181,9 @@ Rectangle {
                                 default_label.font.family
 
 
+                    font.pointSize: App.theme.comboBarTextSize
+
+                    
 
                     text: modelData
 

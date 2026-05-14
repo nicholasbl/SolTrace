@@ -4,7 +4,10 @@ import QtQuick.Controls.Material
 import SolTrace
 
 
-Label {
+STLabel {
     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
     elide: Label.ElideRight
+
+    
+    
 }

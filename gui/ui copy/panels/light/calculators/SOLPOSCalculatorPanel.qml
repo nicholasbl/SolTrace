@@ -75,7 +75,7 @@ Column {
                     Session.core.sun.directionalSun.interval = intervals[currentIndex]
                 }
             }
-            Label {
+            STLabel {
                 text: "Interval (sec)"
                 font.pointSize: Theme.controlLabelSize
             }

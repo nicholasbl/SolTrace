@@ -47,11 +47,20 @@ ColumnLayout {
                 title: "Simulation Runner"
             }
 
+
             STPropertyPanel {
                 Layout.fillWidth: true
 
                 collapsible: false
                 title: "New Job"
+
+                STComboBox {
+                    Layout.fillWidth: true
+                    Layout.columnSpan: 2
+                    model: ["CPU Runner", "Embree Runner", "GPU Runner"]
+                    currentIndex: App.simulation.runner
+                    onCurrentIndexChanged: App.simulation.runner = currentIndex
+                }
 
                 STPropertyLabel {
                     text: "# of Rays"
@@ -77,6 +86,57 @@ ColumnLayout {
                     to: 1000000000
 
                     onValueModified: AppData.simulation.ray_count = value
+                }
+
+                STPropertyLabel {
+                    text: "# of CPU Cores"
+                    visible: App.simulation.runner < 2
+                }
+
+                STSpinBox {
+                    Layout.fillWidth: true
+                    from: 1
+                    value: AppData.simulation.cpu_cores
+                    to: 64
+
+                    visible: App.simulation.runner < 2
+                    onValueModified: AppData.simulation.cpu_cores = value
+                }
+
+                STPropertyLabel {
+                    text: "Seed Value"
+                }
+
+                STSpinBox {
+                    Layout.fillWidth: true
+                    from: 1
+                    value: AppData.simulation.seed_value
+                    to: 10000000
+
+                    onValueModified: AppData.simulation.seed_value = value
+                }
+
+                CheckBoxField {
+                    text: "Sun Error"
+                    value: App.simulation.sun_error
+                    onValueChanged: App.simulation.sun_error = value
+                }
+
+                CheckBoxField {
+                    text: "Sun Shape"
+                    value: App.simulation.sun_shape
+                    onValueChanged: App.simulation.sun_shape = value
+                }
+
+                CheckBoxField {
+                    text: "Optical Errors"
+                    value: App.simulation.optical_errors
+                    onValueChanged: App.simulation.optical_errors = value
+                }
+                CheckBoxField {
+                    text: "Point Focus System"
+                    value: App.simulation.point_focus_system
+                    onValueChanged: App.simulation.point_focus_system = value
                 }
 
                 STButton {
@@ -156,7 +216,7 @@ ColumnLayout {
             text: "Stage"
         }
 
-        Label {
+        STLabel {
             Layout.fillWidth: true
             text: AppData.simulation.current_stage
         }

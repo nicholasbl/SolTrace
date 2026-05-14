@@ -21,9 +21,15 @@ ColumnLayout {
 
                 text: "Visible"
                 value: App.view.sim.sun_viz
+                onValueChanged: App.view.sim.sun_viz = value
+            }
 
-                onClicked: {
-                    App.view.sim.sun_viz = !App.view.sim.sun_viz
+            ColorPickerField {
+                id: sunColorPicker
+                color: App.view.sim.sun_color
+                label: "Sun Color"
+                onUpdated: {
+                    App.view.sim.sun_color = sunColorPicker.color
                 }
             }
 
@@ -48,11 +54,11 @@ ColumnLayout {
         collapsible: false
 
         ColorPickerField {
-            id: colorPicker
+            id: geometryColorPicker
             color: App.view.sim.geometry_color
-            label: "Receiver Color"
+            label: "Global Geometry Color"
             onUpdated: {
-                App.view.sim.geometry_color = colorPicker.color
+                App.view.sim.geometry_color = geometryColorPicker.color
             }
         }
     }
