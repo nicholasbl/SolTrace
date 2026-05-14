@@ -24,10 +24,6 @@ namespace OptixCSP
         size_t red_bytes = 0;
         HitRecord *d_compacted = nullptr; // worst-case compacted output (num_rays * max_depth)
 
-        // Pinned host staging buffers for fast D->H transfer (matched worst-case size).
-        HitRecord *h_compacted = nullptr; // pinned mirror of d_compacted
-        uint32_t  *h_ray_ids   = nullptr; // pinned mirror of d_offsets (ray ID output)
-
         // CUDA events for GPU-phase timing (non-null after allocate_compaction_scratch).
         cudaEvent_t e_gpu1_start = nullptr; // before count/scan/reduce kernels
         cudaEvent_t e_gpu1_stop  = nullptr; // after  count/scan/reduce kernels
