@@ -112,7 +112,8 @@ public:
                                                  I,
                                                  QVector<T>>) {
 
-                        std::invoke(finished_func, sink, identity, m_ready);
+                        std::invoke(
+                            finished_func, sink, identity, std::move(m_ready));
 
                     } else if constexpr (std::invocable<decltype(finished_func),
                                                         U*,
@@ -120,8 +121,10 @@ public:
                                                         T>) {
 
                         if (m_ready.size()) {
-                            std::invoke(
-                                finished_func, sink, identity, m_ready[0]);
+                            std::invoke(finished_func,
+                                        sink,
+                                        identity,
+                                        std::move(m_ready[0]));
                         } else {
                             std::invoke(finished_func, sink, identity, T());
                         }

@@ -10,7 +10,7 @@ namespace SolTrace::GUI::App {
 
 FluxModule::FluxModule(QQmlEngine* engine, QObject* parent)
     : QObject(parent),
-      m_entity_model(new db::RootElementsModel(this)),
+      m_entity_model(new db::AllElementsModel(this)),
       m_pending_flux_maps(new db::PendingFluxMapModel(this)),
       m_flux_map_world_model(new db::FluxMapWorldModel(this)),
       m_ray_iso_volume(new db::QMLMesh()) {
@@ -36,7 +36,14 @@ FluxModule::FluxModule(QQmlEngine* engine, QObject* parent)
 
 void FluxModule::set_results(db::SimulationResultPtr p) {
     m_results = p;
-    m_entity_model->reset(p->database.get());
+    set_current_entity({});
+    set_current_entity_name(QString());
+
+    if (!p) return;
+
+    auto mptr = const_cast<db::Database*>(p->database.get());
+
+    m_entity_model->reset(mptr);
     m_pending_flux_maps->reset(p);
     m_ray_iso_volume->set_current_mesh({});
 
@@ -52,7 +59,18 @@ void FluxModule::set_results(db::SimulationResultPtr p) {
         }
     }
 
-    set_current_entity(largest);
+    select_entity(largest);
+}
+
+void FluxModule::select_entity(db::Entity entity) {
+    set_current_entity(entity);
+
+    if (!m_results || !m_results->database || !entity.is_valid()) {
+        set_current_entity_name(QString());
+        return;
+    }
+
+    set_current_entity_name(m_results->database->name_of(entity));
 }
 
 void FluxModule::start_generate() {

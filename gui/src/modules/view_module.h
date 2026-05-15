@@ -104,6 +104,8 @@ public:
     // Settings State
     Q_WRITABLE_PROPERTY(int, documentation_section, 0)
 
+    Q_WRITABLE_PROPERTY(bool, simulation_content_view, false)
+
     // Viewport State
     QOBJECT_READONLY_PROPERTY(SimulationViewState, sim)
 

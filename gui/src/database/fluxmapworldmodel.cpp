@@ -75,8 +75,16 @@ void PendingFluxMapModel::on_changed() {
 void PendingFluxMapModel::on_ready(Entity e, analysis::BakedFluxMapPtr image) {
     if (!m_host) return;
 
-    m_host->as_registry().emplace_or_replace<HasFluxMapComponent>(
-        e, HasFluxMapComponent { .map_info = image });
+    {
+        // super hazardous, but this is how we make sure modification of a
+        // 'frozen' database is kept limited
+
+        auto* ptr = const_cast<db::Database*>(m_host.data());
+
+        ptr->as_registry().emplace_or_replace<HasFluxMapComponent>(
+            e, HasFluxMapComponent { .map_info = image });
+    }
+
 
     store_remove_by_predicate([e](auto& record) { return record.entity == e; });
 
@@ -105,7 +113,7 @@ void PendingFluxMapModel::on_progress(Entity e, int progress) {
 
 static std::optional<Mesh>
 find_mesh_for(db::SurfaceGenerationOptions surface_options,
-              Database*                    database,
+              Database const*              database,
               Entity                       entity) {
     auto* surface_membership = database->geometry_group_membership.get(entity);
 
@@ -229,7 +237,7 @@ FluxMapWorldModel::FluxMapWorldModel(QObject* parent)
 
 void FluxMapWorldModel::on_ready(Entity                    e,
                                  analysis::BakedFluxMapPtr img,
-                                 Database*                 db) {
+                                 Database const*           db) {
     // make sure we dont have this already. Not the cleanest, but we shouldn't
     // have that many maps here
 
@@ -320,7 +328,7 @@ QImage FluxMapProvider::requestImage(QString const& id,
 
 void FluxMapProvider::on_ready(Entity                    k,
                                analysis::BakedFluxMapPtr v,
-                               Database*) {
+                               Database const*) {
     auto name = image_name(k);
     qDebug() << Q_FUNC_INFO << k << v->bin_map << name;
     m_lock.lock();

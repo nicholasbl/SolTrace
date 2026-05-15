@@ -40,24 +40,6 @@ ColumnLayout {
     StackLayout {
         currentIndex: App.view.configure_section
 
-        /*
-        ColumnLayout {
-            STDoubleSpinBox {
-                Layout.fillWidth: true
-                from: 0
-                to: 1000
-                decimals: 3
-                stepSize: 0.01
-                suffix: "mrad"
-            }
-
-            STComboBox {
-                Layout.fillWidth: true
-
-                model: ["This is Option A", "Option B", "Option C"]
-            }
-        }*/
-
         ConfigureSun {
         }
 

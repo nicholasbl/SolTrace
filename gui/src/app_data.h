@@ -10,8 +10,8 @@
 
 #include <backend.h>
 
+#include <modules/database_module.h>
 #include <modules/documentation_module.h>
-#include <modules/file_source_module.h>
 #include <modules/flux_module.h>
 #include <modules/intersections_module.h>
 #include <modules/layout_module.h>
@@ -86,7 +86,7 @@ public:
 
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
 
-    QOBJECT_READONLY_PROPERTY(FileSourceModule, file_source)
+    QOBJECT_READONLY_PROPERTY(DatabaseModule, file_source)
 
     QOBJECT_READONLY_PROPERTY(DocumentationModule, docs)
 

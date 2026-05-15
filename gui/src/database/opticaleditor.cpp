@@ -22,8 +22,9 @@ void OpticalPropertiesObject::trigger_all_changed() {
 void OpticalPropertiesObject::set(Database* db, entt::entity group) {
     observe(db);
 
-    if (!db->material_parameters.get(group)) {
+    if (!db or !db->material_parameters.get(group)) {
         m_current_group = entt::null;
+        trigger_all_changed();
         return;
     }
 

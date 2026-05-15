@@ -32,111 +32,105 @@ EntityListEditor {
         module.edited_element = entity
     }
 
-    listHeader: ColumnLayout {
-        spacing: 0
-
-        RowLayout {
+    listHeader: RowLayout {
+        STSearchField {
+            id: search_field
             Layout.fillWidth: true
+            text: root.model.name_filter
 
-            STSearchField {
-                id: search_field
-                Layout.fillWidth: true
-                text: root.model.name_filter
-
-                Binding {
-                    target: root.model
-                    property: "name_filter"
-                    value: search_field.text
-                }
+            Binding {
+                target: root.model
+                property: "name_filter"
+                value: search_field.text
             }
+        }
 
-            STIconButton {
-                text: "\uf0b0"
+        STIconButton {
+            text: "\uf0b0"
 
-                onClicked: filter_popup.open()
+            onClicked: filter_popup.open()
 
-                STPopup {
-                    id: filter_popup
+            STPopup {
+                id: filter_popup
 
-                    GridLayout {
-                        columns: 3
+                GridLayout {
+                    columns: 3
 
-                        Label {
-                            Layout.fillWidth: true
-                            Layout.columnSpan: 3
+                    Label {
+                        Layout.fillWidth: true
+                        Layout.columnSpan: 3
 
-                            text: "Filter entities by:"
-                        }
-
-                        Label {
-                            text: "Material:"
-                        }
-
-                        STClickableLabel {
-                            Layout.fillWidth: true
-                            property string mat_name: root.model.material_filter_name
-                            text: mat_name.length ? mat_name : "All"
-
-                            onClicked: mat_pop.open()
-
-                            SelectItemPopup {
-                                id: mat_pop
-                                source_model: AppData.materials.materials_list
-
-                                onSelectedEntity: (entity) =>
-                                                  root.model.material_filter = entity
-                            }
-                        }
-
-                        STIconButton {
-                            text: "\uf0e2"
-                            onClicked: root.model.clear_material()
-                        }
-
-                        Label {
-                            text: "Geometry:"
-                        }
-
-                        STClickableLabel {
-                            Layout.fillWidth: true
-                            property string geo_name: root.model.geometry_filter_name
-                            text: geo_name.length ? geo_name : "All"
-
-                            onClicked: geo_pop.open()
-
-                            SelectItemPopup {
-                                id: geo_pop
-                                source_model: AppData.materials.geometry_list
-
-                                onSelectedEntity: (entity) =>
-                                                  root.model.geometry_filter = entity
-                            }
-                        }
-
-                        STIconButton {
-                            text: "\uf0e2"
-                            onClicked: root.model.clear_geometry()
-                        }
-
-                        STButton {
-                            text: "Reset All"
-
-                            onClicked: root.model.clear_all_filters()
-                        }
-
+                        text: "Filter entities by:"
                     }
+
+                    Label {
+                        text: "Material:"
+                    }
+
+                    STClickableLabel {
+                        Layout.fillWidth: true
+                        property string mat_name: root.model.material_filter_name
+                        text: mat_name.length ? mat_name : "All"
+
+                        onClicked: mat_pop.open()
+
+                        SelectItemPopup {
+                            id: mat_pop
+                            source_model: AppData.materials.materials_list
+
+                            onSelectedEntity: (entity) =>
+                                              root.model.material_filter = entity
+                        }
+                    }
+
+                    STIconButton {
+                        text: "\uf0e2"
+                        onClicked: root.model.clear_material()
+                    }
+
+                    Label {
+                        text: "Geometry:"
+                    }
+
+                    STClickableLabel {
+                        Layout.fillWidth: true
+                        property string geo_name: root.model.geometry_filter_name
+                        text: geo_name.length ? geo_name : "All"
+
+                        onClicked: geo_pop.open()
+
+                        SelectItemPopup {
+                            id: geo_pop
+                            source_model: AppData.materials.geometry_list
+
+                            onSelectedEntity: (entity) =>
+                                              root.model.geometry_filter = entity
+                        }
+                    }
+
+                    STIconButton {
+                        text: "\uf0e2"
+                        onClicked: root.model.clear_geometry()
+                    }
+
+                    STButton {
+                        text: "Reset All"
+
+                        onClicked: root.model.clear_all_filters()
+                    }
+
                 }
             }
+        }
 
-            STIconButton {
-                id: clear_filter_button
+        STIconButton {
+            id: clear_filter_button
 
-                visible: root.model.has_filter
+            visible: root.model.has_filter
 
-                text: "\ue17b"
+            text: "\ue17b"
 
-                onClicked: root.model.clear_all_filters()
-            }
+            onClicked: root.model.clear_all_filters()
         }
     }
 

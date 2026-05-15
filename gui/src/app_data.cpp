@@ -93,7 +93,7 @@ AppData* AppData::create(QQmlEngine* qmlEngine, QJSEngine*) {
 AppData::AppData(QObject*       parent,
                  QQmlEngine*    engine,
                  const QString& documentation_directory)
-    : m_file_source(new FileSourceModule(this)),
+    : m_file_source(new DatabaseModule(this)),
       m_view(new ViewModule(this)),
       m_docs(new DocumentationModule(this)),
       m_sun(new SunModule(this)),
@@ -105,9 +105,12 @@ AppData::AppData(QObject*       parent,
       m_script(new Script::Script(this)) {
 
     connect(m_file_source,
-            &FileSourceModule::current_database_value_changed,
+            &DatabaseModule::current_database_value_changed,
             this,
             &AppData::set_current_database);
+
+    connect(
+        m_file_source, &DatabaseModule::notify, this, &AppData::notification);
 
     connect(this,
             &AppData::current_database_value_changed,
@@ -148,6 +151,16 @@ AppData::AppData(QObject*       parent,
             &IntersectionsModule::set_results);
 
     connect(this, &AppData::new_results, m_flux, &FluxModule::set_results);
+
+    connect(m_simulation,
+            &SimulationModule::edit_result_copy_requested,
+            this,
+            [this](db::SimulationResultPtr result) {
+                if (!m_file_source->append_clone(result)) return;
+
+                m_view->set_workflow_phase(0);
+                m_view->set_simulation_content_view(false);
+            });
 
     load_session();
 

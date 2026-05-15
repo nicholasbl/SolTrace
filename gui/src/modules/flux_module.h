@@ -27,7 +27,7 @@ class FluxModule : public QObject {
 
     db::SimulationResultPtr m_results;
 
-    QOBJECT_READONLY_PROPERTY(db::RootElementsModel, entity_model);
+    QOBJECT_READONLY_PROPERTY(db::AllElementsModel, entity_model);
     QOBJECT_READONLY_PROPERTY(db::PendingFluxMapModel, pending_flux_maps);
     QOBJECT_READONLY_PROPERTY(db::FluxMapWorldModel, flux_map_world_model);
 
@@ -35,6 +35,7 @@ class FluxModule : public QObject {
     QOBJECT_READONLY_PROPERTY(db::QMLMesh, ray_iso_volume);
 
     Q_WRITABLE_PROPERTY(db::Entity, current_entity, {});
+    Q_READONLY_PROPERTY(QString, current_entity_name);
 
     // Hack
     Q_WRITABLE_PROPERTY(QString, current_image, {});
@@ -51,6 +52,7 @@ public:
 
 public slots:
     void set_results(db::SimulationResultPtr);
+    void select_entity(db::Entity);
 
     void start_generate();
 

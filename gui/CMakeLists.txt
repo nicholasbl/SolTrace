@@ -12,9 +12,22 @@ set(QT_QML_GENERATE_QMLLS_INI ON)
 
 qt_standard_project_setup(REQUIRES 6.11)
 
-qt_add_executable(SolTrace
-    src/main.cpp
-)
+
+# Setup icons
+if(APPLE)
+    set(MACOSX_BUNDLE_ICON_FILE soltrace.icon)
+    set(app_icon_macos "${CMAKE_CURRENT_SOURCE_DIR}/appicon/soltrace.icon")
+        set_source_files_properties(${app_icon_macos} PROPERTIES
+               MACOSX_PACKAGE_LOCATION "Resources")
+
+    qt_add_executable(SolTrace MACOSX_BUNDLE src/main.cpp ${app_icon_macos})
+elseif()
+    qt_add_executable(SolTrace
+        src/main.cpp
+    )
+endif()
+
+
 
 # Add all QML files
 
@@ -101,6 +114,14 @@ CPMAddPackage(
 )
 
 target_link_libraries(SolTrace PRIVATE EnTT magic_enum)
+
+if(TARGET embree_runner)
+    target_compile_definitions(SolTrace PRIVATE SOLTRACE_HAS_EMBREE_RUNNER)
+endif()
+
+if(TARGET optix_runner)
+    target_compile_definitions(SolTrace PRIVATE SOLTRACE_HAS_OPTIX_RUNNER)
+endif()
 
 target_include_directories(SolTrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_include_directories(SolTrace PRIVATE ../coretrace/simulation_data)

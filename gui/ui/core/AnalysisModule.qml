@@ -20,9 +20,9 @@ ColumnLayout {
         fontFamily: App.view.left_panel.size === PanelData.Small ? "Font Awesome 7 Free" : ""
 
         model : App.view.left_panel.size === PanelData.Small ?
-                    ["\uf06a", "\uf06a"]
+                    ["\uf1da", "\uf06a", "\uf201"]
                   :
-                    ["Intersections", "Flux"]
+                    ["History", "Intersections", "Flux"]
 
     }
 
@@ -37,6 +37,10 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.fillHeight: true
         Layout.margins: 8
+
+        HistoryPanel {
+
+        }
 
         AnalyzeIntersections {
 

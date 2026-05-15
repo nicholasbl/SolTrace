@@ -7,7 +7,4 @@ import SolTrace
 Label {
     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
     elide: Label.ElideRight
-
-    
-    
 }

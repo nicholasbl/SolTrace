@@ -1,18 +1,24 @@
 #pragma once
 
 #include "database/database.h"
+#include "database/simulationresult.h"
+#include "database/worldgeometrymodel.h"
 #include "job_control/job_run.h"
 #include "utilities/notification.h"
 #include "utilities/qt_helpers.h"
+#include "utilities/structmodel.h"
 
 #include "module_common.h"
 
 #include <QObject>
 #include <QQmlEngine>
+#include <QString>
 
 namespace SolTrace::GUI::App {
 
 // TODO: Track added simulation results and allow deletion!
+
+class SimulationRunnerModel;
 
 /**
  * @class SimulationModule
@@ -31,16 +37,23 @@ class SimulationModule : public QObject {
 
     QPointer<RunningJob> m_running;
 
+    db::SimulationResultPtr m_current_result;
+
     QVector<std::shared_ptr<db::SimulationResult>> m_completed_sims;
 
 private slots:
     void job_done();
+    void update_result_world(db::SimulationResultPtr);
 
 public:
     explicit SimulationModule(QObject* parent = nullptr);
+    ~SimulationModule();
 
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
     QOBJECT_READONLY_PROPERTY(StatusComponent, status);
+    QOBJECT_READONLY_PROPERTY(SimulationRunnerModel, runners);
+    QOBJECT_READONLY_PROPERTY(db::SimulationResultModel, results);
+    QOBJECT_READONLY_PROPERTY(db::WorldGeometryModel, world_geometry_model);
 
     enum Runner { CPU = 0, Embree = 1, GPU = 2 };
 
@@ -57,6 +70,10 @@ public:
     Q_WRITABLE_PROPERTY(bool, sun_shape, false)
     Q_WRITABLE_PROPERTY(bool, optical_errors, false)
     Q_WRITABLE_PROPERTY(bool, point_focus_system, false)
+
+    Q_WRITABLE_PROPERTY(QString,
+                        current_simulation_result_name,
+                        "No Simulation Result")
 
 
     /// Is a simulation being run?
@@ -75,11 +92,34 @@ public slots:
     // void pause(); // no executor support for pause or resume
     // void resume();
     void cancel();
+    void select_result(int index);
+    void duplicate_current_result_for_edit();
 
 signals:
     void new_results(db::SimulationResultPtr);
+    void edit_result_copy_requested(db::SimulationResultPtr);
     void notify(ANotification);
 };
 
+struct SimulationRunnerRecord {
+    QString                  name;
+    SimulationModule::Runner runner;
+
+    RECORD_META(SimulationRunnerRecord,
+                SM_EXPOSE_RO(name),
+                SM_EXPOSE_RO(runner), );
+};
+
+class SimulationRunnerModel
+    : public StructModelAdapter<SimulationRunnerRecord> {
+    Q_OBJECT
+
+public:
+    explicit SimulationRunnerModel(QObject* parent = nullptr);
+
+public slots:
+    SimulationModule::Runner runner_at(int index) const;
+    int                      index_of(SimulationModule::Runner runner) const;
+};
 
 } // namespace SolTrace::GUI::App

@@ -1,6 +1,7 @@
 #include "database_models.h"
 
 #include "components.h"
+#include "conversion.h"
 #include "database/database.h"
 #include "database/database_notification.h"
 #include "utilities/math_utility.h"
@@ -79,8 +80,7 @@ void BreadcrumbModel::recompute() {
     this->store_reset(ret);
 }
 
-BreadcrumbModel::BreadcrumbModel(QObject* parent)
-    : StructModelAdapter(parent) {
+BreadcrumbModel::BreadcrumbModel(QObject* parent) : StructModelAdapter(parent) {
     connect(this,
             &BreadcrumbModel::node_changed,
             this,
@@ -125,9 +125,9 @@ QVector<EntityNamePair> ChildModel::rebuild_lists() {
     QVector<EntityNamePair> new_recs;
     m_reverse.clear();
 
-    if (!m_host) return { };
+    if (!m_host) return {};
 
-    if (!m_host->valid(m_node)) return { };
+    if (!m_host->valid(m_node)) return {};
 
     auto children = m_host->children_of(m_node);
 
@@ -202,7 +202,7 @@ QVector<EntityNamePair> MaterialGroupsModel::rebuild_lists() {
     QVector<EntityNamePair> new_recs;
     m_reverse.clear();
 
-    if (!m_host) return { };
+    if (!m_host) return {};
 
     auto view = m_host->as_registry().view<MaterialGroupComponent>();
 
@@ -248,7 +248,8 @@ MaterialGroupsModel::MaterialGroupsModel(QObject* parent)
 void MaterialGroupsModel::reset(Database* database) {
     if (m_host) {
         QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
-        QObject::disconnect(m_host->material_root.self(), nullptr, this, nullptr);
+        QObject::disconnect(
+            m_host->material_root.self(), nullptr, this, nullptr);
     }
     qDebug() << Q_FUNC_INFO << database;
     m_host = database;
@@ -274,7 +275,7 @@ void MaterialGroupsModel::reset(Database* database) {
 
 QVariant MaterialGroupsModel::get(int index) {
     auto rec = get_at(index);
-    if (!rec) return { };
+    if (!rec) return {};
     return QVariant::fromValue(rec->entity);
 }
 
@@ -284,7 +285,7 @@ QVector<EntityNamePair> GeometryGroupsModel::rebuild_lists() {
     QVector<EntityNamePair> new_recs;
     m_reverse.clear();
 
-    if (!m_host) return { };
+    if (!m_host) return {};
 
     auto view = m_host->as_registry().view<GeometryGroupComponent>();
 
@@ -329,7 +330,8 @@ GeometryGroupsModel::GeometryGroupsModel(QObject* parent)
 void GeometryGroupsModel::reset(Database* database) {
     if (m_host) {
         QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
-        QObject::disconnect(m_host->geometry_root.self(), nullptr, this, nullptr);
+        QObject::disconnect(
+            m_host->geometry_root.self(), nullptr, this, nullptr);
     }
     qDebug() << Q_FUNC_INFO << database;
     m_host = database;
@@ -355,7 +357,7 @@ void GeometryGroupsModel::reset(Database* database) {
 
 QVariant GeometryGroupsModel::get(int index) {
     auto rec = get_at(index);
-    if (!rec) return { };
+    if (!rec) return {};
     return QVariant::fromValue(rec->entity);
 }
 
@@ -365,7 +367,7 @@ QVector<EntityNamePair> TagsModel::rebuild_lists() {
     QVector<EntityNamePair> new_recs;
     m_reverse.clear();
 
-    if (!m_host) return { };
+    if (!m_host) return {};
 
     auto view = m_host->as_registry().view<TagComponent>();
 
@@ -495,7 +497,8 @@ void AnInstanceEditor::reset(Database* database) {
             m_host->material_group_membership.self(), nullptr, this, nullptr);
         QObject::disconnect(
             m_host->geometry_group_membership.self(), nullptr, this, nullptr);
-        QObject::disconnect(m_host->tag_membership.self(), nullptr, this, nullptr);
+        QObject::disconnect(
+            m_host->tag_membership.self(), nullptr, this, nullptr);
         QObject::disconnect(m_host->parent.self(), nullptr, this, nullptr);
     }
 
@@ -577,7 +580,7 @@ QVector3D AnInstanceEditor::position() const {
         }
     }
 
-    return { };
+    return {};
 }
 
 
@@ -599,7 +602,7 @@ QQuaternion AnInstanceEditor::orientation() const {
             return convert(tf->rotation);
         }
     }
-    return { };
+    return {};
 }
 
 void AnInstanceEditor::set_orientation(const QQuaternion& newOrientation) {
@@ -629,7 +632,7 @@ void AnInstanceEditor::set_hidden(bool newHidden) {
     FIND(invisible);
 
     if (newHidden) {
-        component.set(m_entity, InvisibleComponent { });
+        component.set(m_entity, InvisibleComponent {});
     } else {
         component.remove(m_entity);
     }
@@ -793,7 +796,7 @@ QVector<db::Entity> AnInstanceEditor::tags() const {
         }
     }
 
-    return { };
+    return {};
 }
 
 void AnInstanceEditor::set_tags(QVector<db::Entity> const& newTags) {
@@ -828,7 +831,7 @@ QString AnInstanceEditor::entity_name() const {
         if (auto tf = m_host->identity.get(m_entity); tf) { return tf->name; }
     }
 
-    return { };
+    return {};
 }
 
 void AnInstanceEditor::set_entity_name(const QString& newEntity_name) {
@@ -843,6 +846,48 @@ void AnInstanceEditor::set_entity_name(const QString& newEntity_name) {
 
 void AnInstanceEditor::set_from_angles(QVector3D angles) {
     set_orientation(QQuaternion::fromEulerAngles(angles));
+}
+
+void AnInstanceEditor::look_at_world_position(QVector3D targetPosition) {
+    if (!m_host) return;
+    if (!m_host->valid(m_entity)) return;
+
+    auto* global = m_host->global_transform.get(m_entity);
+    if (!global) return;
+
+    auto target    = convert(targetPosition);
+    auto direction = target - global->position;
+
+    if (glm::length(direction) < 1e-8) {
+        emit notify(ANotification::error(
+            "Cannot point at the element's current position."));
+        return;
+    }
+
+    auto target_global_rotation = dir_roll_to_quat(direction, 0.0);
+
+    glm::dquat parent_global_rotation { 1.0, 0.0, 0.0, 0.0 };
+    if (auto* parent = m_host->parent.get(m_entity); parent) {
+        if (auto* parent_global = m_host->global_transform.get(parent->parent);
+            parent_global) {
+            parent_global_rotation = parent_global->rotation;
+        }
+    }
+
+    auto local_rotation =
+        glm::inverse(parent_global_rotation) * target_global_rotation;
+
+    set_orientation(convert(glm::normalize(local_rotation)));
+}
+
+void AnInstanceEditor::look_at_entity(Entity target) {
+    if (!m_host) return;
+    if (!target.is_valid() || !m_host->valid(target)) return;
+
+    auto* global = m_host->global_transform.get(target);
+    if (!global) return;
+
+    look_at_world_position(convert(global->position));
 }
 
 void AnInstanceEditor::clear_parent() {

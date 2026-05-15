@@ -54,6 +54,7 @@ SimulationResult::SimulationResult() = default;
 
 SimulationResult::~SimulationResult() = default;
 
+
 std::unique_ptr<SimulationResult>
 SimulationResult::convert(SimulationResultConversion const& opts) {
     qDebug() << Q_FUNC_INFO << "Converting results...";
@@ -111,6 +112,33 @@ SimulationResult::convert(SimulationResultConversion const& opts) {
     }
 
     return ret;
+}
+
+SimulationResultModel::SimulationResultModel(QObject* parent)
+    : StructModelAdapter { parent } { }
+
+void SimulationResultModel::append_result(SimulationResultPtr result) {
+    if (!result) return;
+
+    auto name = result->database->name();
+
+    store_push_append(SimulationResultRecord {
+        .name      = name,
+        .when      = QDateTime::currentDateTime(),
+        .ray_count = static_cast<quint64>(result->records.size()),
+        .result    = result,
+    });
+}
+
+SimulationResultPtr SimulationResultModel::result_at(int index) const {
+    auto record = get_at(index);
+    if (!record) return {};
+
+    return record->result;
+}
+
+void SimulationResultModel::clear() {
+    store_remove_all();
 }
 
 } // namespace db

@@ -17,12 +17,6 @@ AdaptiveFilteredEditor {
         App.view.editing_geometry = editing
     }
 
-    onCurrentIndexChanged: {
-        if (currentIndex >= 0) {
-            App.materials.current_geometry = model.get(currentIndex)
-        }
-    }
-
     Connections {
         target: App.view
         function onEditing_geometry_changed() {

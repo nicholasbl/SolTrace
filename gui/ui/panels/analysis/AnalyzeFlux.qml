@@ -65,6 +65,29 @@ Flickable {
                 model: ["Bins", "Points"]
             }
 
+            STPropertyLabel {
+                text: "Entity"
+            }
+
+            STButton {
+                Layout.fillWidth: true
+
+                text: AppData.flux.current_entity_name.length ?
+                          AppData.flux.current_entity_name : "Select Entity"
+                text_icon: "\uf245"
+
+                onClicked: entity_pop.open()
+
+                SelectItemPopup {
+                    id: entity_pop
+                    source_model: AppData.flux.entity_model
+
+                    onSelectedEntity: (entity) => {
+                        AppData.flux.select_entity(entity)
+                    }
+                }
+            }
+
             ListView {
                 visible: false
                 Layout.columnSpan: 2
@@ -85,7 +108,7 @@ Flickable {
                     //highlighted: isCurrent
 
                     onClicked: {
-                        AppData.flux.current_entity = delegate.entity
+                        AppData.flux.select_entity(delegate.entity)
                     }
                 }
             }

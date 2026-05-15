@@ -137,6 +137,7 @@ void SurfaceParameterModel::set_new_database_connections(Database* ptr) {
 }
 
 void SurfaceParameterModel::parameters_changed(entt::entity e) {
+    if (!this->database()) return;
     if (m_current_group != e) return;
 
     auto* params = database()->geometry_parameters.get(m_current_group);

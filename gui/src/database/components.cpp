@@ -50,8 +50,8 @@ glm::dmat4 GlobalTransformComponent::as_matrix() const {
 }
 
 GlobalTransformComponent
-GlobalTransformComponent::compute_for(entt::registry& reg,
-                                      entt::entity    entity) {
+GlobalTransformComponent::compute_for(entt::registry const& reg,
+                                      entt::entity          entity) {
 
     GlobalTransformComponent out;
     out.position = glm::dvec3 { 0.0 };
@@ -229,6 +229,12 @@ RaySourceResource RaySourceResource::clone() const {
     }
 
     throw std::runtime_error("Unsupported ray source type in clone()");
+}
+
+DatabaseNameResource DatabaseNameResource::clone() const {
+    return DatabaseNameResource {
+        .name = this->name,
+    };
 }
 
 GeometryComponent GeometryComponent::clone() const {

@@ -13,6 +13,7 @@ Rectangle {
     property alias label: label
     property real padding: 10
     property real iconSize: 16
+    readonly property alias containsMouse: mouse_area.containsMouse
 
     width: label.width + padding
     height: width
@@ -47,9 +48,9 @@ Rectangle {
     MouseArea {
         id: mouse_area
         anchors.fill: parent
+        hoverEnabled: true
         onClicked: control.clicked()
     }
 
 }
-
 

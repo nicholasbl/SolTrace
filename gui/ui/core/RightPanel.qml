@@ -51,7 +51,7 @@ ShadowedGlassRectangle {
             fontFamily: App.view.right_panel.size < 1 ? "Font Awesome 7 Free" : ""
 
             model: App.view.right_panel.size < 1 ?
-                        ["\uf06a", "\uf06a", "\uf06a"]
+                        ["\uf1c9", "\ue4e3", "\uf019"]
                       :
                         ["Scripting", "Help", "Export"]
         }

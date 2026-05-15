@@ -151,12 +151,20 @@ RowLayout {
                         MenuItem {
                             text: "New"
                             onClicked: App.file_source.load_new()
+
+                            enabled: !AppData.file_source.is_loading
                         }
                         MenuItem {
                             text: "Open"
                             onClicked: openFileDialog.open()
+
+                            enabled: !AppData.file_source.is_loading
                         }
-                        MenuItem { text: "Save" }
+                        MenuItem {
+                            text: "Save"
+
+                            enabled: !AppData.file_source.is_loading
+                        }
 
                         background: Rectangle {
                             implicitWidth: 150
@@ -211,7 +219,7 @@ RowLayout {
 
                 Layout.leftMargin: 20
 
-                text: "\uf07b"
+                text: "\uf1c0"
 
                 font.family: "Font Awesome 7 Free"
                 font.pointSize: 16
@@ -222,7 +230,15 @@ RowLayout {
                 Layout.fillWidth: true
                 verticalAlignment: Qt.AlignVCenter
                 horizontalAlignment: Qt.AlignHCenter
-                text: App.file_source.name
+                text: {
+                    if (App.view.simulation_content_view) {
+                        return AppData.simulation.current_simulation_result_name
+                    }
+
+                    return App.file_source.current_database ?
+                                App.file_source.current_database.name : "None"
+                }
+                elide: Label.ElideMiddle
                 font.family: "CMU Serif"
                 font.bold: true
                 font.pointSize: 18
@@ -232,19 +248,45 @@ RowLayout {
                 Layout.fillHeight: true
                 Layout.preferredWidth: 24
                 Layout.rightMargin: 20
+
+                STIconButton {
+                    id: duplicate_result_button
+                    anchors.centerIn: parent
+                    visible: App.view.simulation_content_view
+                    text: "\uf06a"
+                    iconSize: 14
+
+                    ToolTip.visible: containsMouse
+                    ToolTip.delay: 500
+                    ToolTip.text: "This is an immutable view of the results of this simulation. Click to make a duplicate of this database for editing."
+
+                    onClicked: AppData.simulation.duplicate_current_result_for_edit()
+                }
             }
         }
 
         MouseArea {
             id: data_mouse_area
             anchors.fill: parent
+            enabled: !App.view.simulation_content_view
 
             hoverEnabled: true
+
+            onClicked: data_pop.open()
         }
 
-        // DataPopup {
-        //     id: data_pop
-        // }
+        Item {
+            anchors.fill: parent
+
+            DataPopup {
+                id: data_pop
+
+                width: parent.width
+                height: Overlay.overlay.height * .66
+            }
+        }
+
+
     }
 
     RowLayout {
@@ -342,5 +384,3 @@ RowLayout {
         }
     }
 }
-
-

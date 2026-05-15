@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utilities/grid3d.h"
+#include "utilities/structmodel.h"
 
 #include <entt/entity/entity.hpp>
 #include <simulation_data.hpp>
@@ -11,8 +12,10 @@
 
 #include <vector>
 
+#include <QDateTime>
 #include <QObject>
 #include <QPointer>
+#include <QString>
 
 namespace db {
 
@@ -63,7 +66,7 @@ public:
 
     std::unordered_map<entt::entity, std::vector<uint64_t>> entity_to_ray_ids;
 
-    std::unique_ptr<Database> database;
+    std::unique_ptr<Database const> database;
 
     // TODO: Why is this fallible?
     static std::unique_ptr<SimulationResult>
@@ -71,5 +74,31 @@ public:
 };
 
 using SimulationResultPtr = std::shared_ptr<SimulationResult>;
+
+struct SimulationResultRecord {
+    QString             name;
+    QDateTime           when;
+    quint64             ray_count = 0;
+    SimulationResultPtr result;
+
+    RECORD_META(SimulationResultRecord,
+                SM_EXPOSE_RO(name),
+                SM_EXPOSE_RO(when),
+                SM_EXPOSE_RO(ray_count), );
+};
+
+class SimulationResultModel
+    : public StructModelAdapter<SimulationResultRecord> {
+    Q_OBJECT
+
+public:
+    explicit SimulationResultModel(QObject* parent = nullptr);
+
+    SimulationResultPtr result_at(int index) const;
+
+public slots:
+    void append_result(SimulationResultPtr result);
+    void clear();
+};
 
 } // namespace db

@@ -294,6 +294,8 @@ public:
 
 public slots:
     void set_from_angles(QVector3D angles);
+    void look_at_world_position(QVector3D targetPosition);
+    void look_at_entity(Entity target);
     // void set_from_dir_up(QVector3D direction, QVector3D up);
 
     void clear_parent();

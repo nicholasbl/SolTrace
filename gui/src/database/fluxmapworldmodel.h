@@ -44,7 +44,7 @@ struct FluxMappedPendingItem {
 
 class PendingFluxMapModel : public StructModelAdapter<FluxMappedPendingItem> {
     Q_OBJECT
-    QPointer<Database>                  m_host;
+    QPointer<Database const>            m_host;
     QPointer<analysis::FluxMapComputer> m_compute;
 
 private slots:
@@ -69,7 +69,7 @@ public:
 
     void reset(db::SimulationResultPtr);
 
-    Database* database() { return m_host; }
+    Database const* database() { return m_host; }
 
     // Create a provider for flux map textures. This MUST be done at the start
     // of the app, and before any databases!
@@ -80,7 +80,7 @@ public slots:
     void cancel_for(db::Entity);
 
 signals:
-    void ready(db::Entity, analysis::BakedFluxMapPtr, db::Database*);
+    void ready(db::Entity, analysis::BakedFluxMapPtr, db::Database const*);
     void cleared();
 };
 
@@ -114,7 +114,7 @@ public:
 
 public slots:
     void on_reset();
-    void on_ready(Entity, analysis::BakedFluxMapPtr, Database*);
+    void on_ready(Entity, analysis::BakedFluxMapPtr, Database const*);
 };
 
 // ============================================================================
@@ -133,7 +133,7 @@ public:
                         QSize const&   requestedSize) override;
 
 public slots:
-    void on_ready(Entity, analysis::BakedFluxMapPtr, Database*);
+    void on_ready(Entity, analysis::BakedFluxMapPtr, Database const*);
     void clear();
 };
 
