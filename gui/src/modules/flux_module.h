@@ -35,6 +35,7 @@ class FluxModule : public QObject {
     QOBJECT_READONLY_PROPERTY(db::QMLMesh, ray_iso_volume);
 
     Q_WRITABLE_PROPERTY(db::Entity, current_entity, {});
+    Q_READONLY_PROPERTY(QString, current_entity_name);
 
     // Hack
     Q_WRITABLE_PROPERTY(QString, current_image, {});
@@ -51,6 +52,7 @@ public:
 
 public slots:
     void set_results(db::SimulationResultPtr);
+    void select_entity(db::Entity);
 
     void start_generate();
 

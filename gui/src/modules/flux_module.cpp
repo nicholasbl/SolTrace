@@ -36,6 +36,10 @@ FluxModule::FluxModule(QQmlEngine* engine, QObject* parent)
 
 void FluxModule::set_results(db::SimulationResultPtr p) {
     m_results = p;
+    set_current_entity({});
+    set_current_entity_name(QString());
+
+    if (!p) return;
 
     auto mptr = const_cast<db::Database*>(p->database.get());
 
@@ -55,7 +59,18 @@ void FluxModule::set_results(db::SimulationResultPtr p) {
         }
     }
 
-    set_current_entity(largest);
+    select_entity(largest);
+}
+
+void FluxModule::select_entity(db::Entity entity) {
+    set_current_entity(entity);
+
+    if (!m_results || !m_results->database || !entity.is_valid()) {
+        set_current_entity_name(QString());
+        return;
+    }
+
+    set_current_entity_name(m_results->database->name_of(entity));
 }
 
 void FluxModule::start_generate() {
