@@ -259,7 +259,12 @@ void pipelineManager::createSunProgram()
     desc.raygen.entryFunctionName = "__raygen__sun_source";
 
     // Create the program group
-    OPTIX_CHECK_LOG(optixProgramGroupCreate(
+    // Note: OPTIX_CHECK_LOG is not used here because the macro creates its own
+    // local LOG_ buffer (not the global LOG), causing it to always print 2048
+    // null bytes to stderr. Instead we use OPTIX_CHECK and manually print any
+    // non-empty log content when verbose mode is enabled.
+    LOG_SIZE = sizeof(LOG);
+    OPTIX_CHECK(optixProgramGroupCreate(
         m_state.context, // OptiX context.
         &desc,           // Descriptor defining the program group.
         1,               // Number of program groups to create (1 in this case).
@@ -267,6 +272,11 @@ void pipelineManager::createSunProgram()
         LOG, &LOG_SIZE,  // Logs to capture diagnostic information.
         &group           // Output: Handle for the created program group.
         ));
+    if (LOG_SIZE > 1 && LOG[0] != '\0')
+    {
+        std::cerr << "OptiX log for optixProgramGroupCreate (sun):\n"
+                  << std::string(LOG, LOG + LOG_SIZE) << std::endl;
+    }
 
     m_program_groups.push_back(group);
     m_state.raygen_prog_group = group;
