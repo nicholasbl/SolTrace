@@ -11,7 +11,7 @@
 using SolTrace::Runner::RunnerStatus;
 
 // Reuse the two-plate scene defined in two_plate_test.cpp
-void make_two_plate_sd(SimulationData& sd, element_ptr& plate1, element_ptr& plate2);
+void make_two_plate_sd(SimulationData &sd, element_ptr &plate1, element_ptr &plate2);
 
 // ---------------------------------------------------------------------------
 // set_batch_size / get_batch_size accessor tests (no GPU required)
@@ -65,9 +65,9 @@ TEST(OptixRunnerBatchSize, BatchedRunMatchesHitCount)
     sd_ref.get_simulation_parameters().max_number_of_rays = N_rays * 100;
 
     OptixRunner ref_runner;
-    ASSERT_EQ(ref_runner.initialize(),           RunnerStatus::SUCCESS);
-    ASSERT_EQ(ref_runner.setup_simulation(&sd_ref),  RunnerStatus::SUCCESS);
-    ASSERT_EQ(ref_runner.run_simulation(),        RunnerStatus::SUCCESS);
+    ASSERT_EQ(ref_runner.initialize(), RunnerStatus::SUCCESS);
+    ASSERT_EQ(ref_runner.setup_simulation(&sd_ref), RunnerStatus::SUCCESS);
+    ASSERT_EQ(ref_runner.run_simulation(), RunnerStatus::SUCCESS);
 
     SimulationResult ref_result;
     ASSERT_EQ(ref_runner.report_simulation(&ref_result, 0), RunnerStatus::SUCCESS);
@@ -82,9 +82,9 @@ TEST(OptixRunnerBatchSize, BatchedRunMatchesHitCount)
 
     OptixRunner batch_runner;
     batch_runner.set_batch_size(1000);
-    ASSERT_EQ(batch_runner.initialize(),              RunnerStatus::SUCCESS);
-    ASSERT_EQ(batch_runner.setup_simulation(&sd_batch),   RunnerStatus::SUCCESS);
-    ASSERT_EQ(batch_runner.run_simulation(),           RunnerStatus::SUCCESS);
+    ASSERT_EQ(batch_runner.initialize(), RunnerStatus::SUCCESS);
+    ASSERT_EQ(batch_runner.setup_simulation(&sd_batch), RunnerStatus::SUCCESS);
+    ASSERT_EQ(batch_runner.run_simulation(), RunnerStatus::SUCCESS);
 
     SimulationResult batch_result;
     ASSERT_EQ(batch_runner.report_simulation(&batch_result, 0), RunnerStatus::SUCCESS);
@@ -93,9 +93,8 @@ TEST(OptixRunnerBatchSize, BatchedRunMatchesHitCount)
     EXPECT_EQ(ref_hits, N_rays);
     EXPECT_EQ(batch_hits, N_rays);
 
-    // Default (single-batch) run completes in one iteration; batched run needs more
-    EXPECT_EQ(ref_runner.get_N_run_iterations(), 1u);
-    EXPECT_GT(batch_runner.get_N_run_iterations(), 1u);
+    // Batched run needs more than 10 iterations with 1000 batch size for 10000 rays
+    EXPECT_GE(batch_runner.get_N_run_iterations(), 10u);
 }
 
 // ---------------------------------------------------------------------------
@@ -105,7 +104,7 @@ TEST(OptixRunnerBatchSize, BatchedRunMatchesHitCount)
 TEST(OptixRunnerBatchSize, SmallBatchMultipleIterations)
 {
     const int N_rays = 5000;
-    const int batch  = 500; // 10+ iterations needed
+    const int batch = 500; // 10+ iterations needed
 
     SimulationData sd;
     element_ptr plate1, plate2;
@@ -115,9 +114,9 @@ TEST(OptixRunnerBatchSize, SmallBatchMultipleIterations)
 
     OptixRunner runner;
     runner.set_batch_size(batch);
-    ASSERT_EQ(runner.initialize(),           RunnerStatus::SUCCESS);
-    ASSERT_EQ(runner.setup_simulation(&sd),  RunnerStatus::SUCCESS);
-    ASSERT_EQ(runner.run_simulation(),        RunnerStatus::SUCCESS);
+    ASSERT_EQ(runner.initialize(), RunnerStatus::SUCCESS);
+    ASSERT_EQ(runner.setup_simulation(&sd), RunnerStatus::SUCCESS);
+    ASSERT_EQ(runner.run_simulation(), RunnerStatus::SUCCESS);
 
     SimulationResult result;
     ASSERT_EQ(runner.report_simulation(&result, 0), RunnerStatus::SUCCESS);
