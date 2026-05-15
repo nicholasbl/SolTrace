@@ -20,9 +20,9 @@ ColumnLayout {
         fontFamily: AppData.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
 
         model : AppData.view.left_panel.size == PanelData.Small ?
-                    ["\uf828", "\uf188", "\uf15c"]
+                    ["\uf828", "\uf1da", "\uf188"]
                   :
-                    ["Execution", "Diagnostics", "Logs"]
+                    ["Execution", "History", "Diagnostics"]
 
     }
 
@@ -42,8 +42,23 @@ ColumnLayout {
 
         }
 
-        // Diagnostics
+        HistoryPanel {
+
+        }
+
+        // Logs
         ColumnLayout {
+            InlineDocumentation {
+                key: "placeholder_small"
+                title: "Logs"
+                target: AppData.view.left_panel
+            }
+
+            STButton {
+                text: "View Logs"
+                text_icon: ""
+            }
+
             InlineDocumentation {
                 key: "placeholder_small"
                 title: "Bounding Boxes"
@@ -63,20 +78,6 @@ ColumnLayout {
 
             STButton {
                 text: "View Element Volumes"
-                text_icon: ""
-            }
-        }
-
-        // Logs
-        ColumnLayout {
-            InlineDocumentation {
-                key: "placeholder_small"
-                title: "Logs"
-                target: AppData.view.left_panel
-            }
-
-            STButton {
-                text: "View Logs"
                 text_icon: ""
             }
         }

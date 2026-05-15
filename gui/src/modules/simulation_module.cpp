@@ -4,6 +4,44 @@
 
 namespace SolTrace::GUI::App {
 
+SimulationRunnerModel::SimulationRunnerModel(QObject* parent)
+    : StructModelAdapter { parent } {
+    store_push_append(SimulationRunnerRecord {
+        .name   = "CPU Runner",
+        .runner = SimulationModule::CPU,
+    });
+
+#ifdef SOLTRACE_HAS_EMBREE_RUNNER
+    store_push_append(SimulationRunnerRecord {
+        .name   = "Embree Runner",
+        .runner = SimulationModule::Embree,
+    });
+#endif
+
+#ifdef SOLTRACE_HAS_OPTIX_RUNNER
+    store_push_append(SimulationRunnerRecord {
+        .name   = "GPU Runner",
+        .runner = SimulationModule::GPU,
+    });
+#endif
+}
+
+SimulationModule::Runner SimulationRunnerModel::runner_at(int index) const {
+    auto record = get_at(index);
+    if (!record) return SimulationModule::CPU;
+
+    return record->runner;
+}
+
+int SimulationRunnerModel::index_of(SimulationModule::Runner runner) const {
+    int index = 0;
+    for (auto const& record : *this) {
+        if (record.runner == runner) return index;
+        ++index;
+    }
+
+    return 0;
+}
 
 void SimulationModule::job_done() {
     qDebug() << Q_FUNC_INFO;
@@ -32,7 +70,9 @@ void SimulationModule::job_done() {
 }
 
 SimulationModule::SimulationModule(QObject* parent)
-    : QObject { parent }, m_status(new StatusComponent(this)) {
+    : QObject { parent },
+      m_status(new StatusComponent(this)),
+      m_runners(new SimulationRunnerModel(this)) {
 
     auto thread_count = std::thread::hardware_concurrency();
     set_max_threads(thread_count <= 0 ? 1 : thread_count);

@@ -33,9 +33,15 @@ ScrollView {
             STComboBox {
                 Layout.fillWidth: true
                 Layout.columnSpan: 2
-                model: ["CPU Runner", "Embree Runner", "GPU Runner"]
-                currentIndex: App.simulation.runner
-                onCurrentIndexChanged: App.simulation.runner = currentIndex
+                model: App.simulation.runners
+                textRole: "name"
+                valueRole: "runner"
+                currentIndex: App.simulation.runners.index_of(
+                                  App.simulation.runner)
+                onActivated: (index) => {
+                    App.simulation.runner =
+                            App.simulation.runners.runner_at(index)
+                }
             }
 
             STPropertyLabel {

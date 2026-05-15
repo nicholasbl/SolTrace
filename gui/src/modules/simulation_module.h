@@ -4,15 +4,19 @@
 #include "job_control/job_run.h"
 #include "utilities/notification.h"
 #include "utilities/qt_helpers.h"
+#include "utilities/structmodel.h"
 
 #include "module_common.h"
 
 #include <QObject>
 #include <QQmlEngine>
+#include <QString>
 
 namespace SolTrace::GUI::App {
 
 // TODO: Track added simulation results and allow deletion!
+
+class SimulationRunnerModel;
 
 /**
  * @class SimulationModule
@@ -41,6 +45,7 @@ public:
 
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
     QOBJECT_READONLY_PROPERTY(StatusComponent, status);
+    QOBJECT_READONLY_PROPERTY(SimulationRunnerModel, runners);
 
     enum Runner { CPU = 0, Embree = 1, GPU = 2 };
 
@@ -81,5 +86,25 @@ signals:
     void notify(ANotification);
 };
 
+struct SimulationRunnerRecord {
+    QString                  name;
+    SimulationModule::Runner runner;
+
+    RECORD_META(SimulationRunnerRecord,
+                SM_EXPOSE_RO(name),
+                SM_EXPOSE_RO(runner), );
+};
+
+class SimulationRunnerModel
+    : public StructModelAdapter<SimulationRunnerRecord> {
+    Q_OBJECT
+
+public:
+    explicit SimulationRunnerModel(QObject* parent = nullptr);
+
+public slots:
+    SimulationModule::Runner runner_at(int index) const;
+    int                      index_of(SimulationModule::Runner runner) const;
+};
 
 } // namespace SolTrace::GUI::App
