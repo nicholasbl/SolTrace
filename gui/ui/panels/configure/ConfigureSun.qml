@@ -39,7 +39,7 @@ Flickable {
             fontFamily: App.view.left_panel.size < 1 ? "Font Awesome 7 Free" : ""
 
             model: App.view.left_panel.size < 1 ?
-                        ["\uf0eb", "\uf06a"]
+                        ["\uf0eb", "\uf1fe"]
                       :
                         ["Type & Position", "Shape"]
         }
@@ -60,7 +60,7 @@ Flickable {
                     fontFamily: App.view.left_panel.size < 1 ? "Font Awesome 7 Free" : ""
 
                     model: App.view.left_panel.size < 1 ?
-                                ["\uf06a", "\uf06a"]
+                                ["\uf185", "\uf06a"]
                               :
                                 ["Directional Sun", "Point Source"]
                 }

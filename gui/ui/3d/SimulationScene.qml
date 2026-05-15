@@ -181,6 +181,7 @@ Item {
         }
 
         Node {
+            id: world_node
             rotation: Quaternion.fromEulerAngles(-90, 0, 0)
 
             Repeater3D {

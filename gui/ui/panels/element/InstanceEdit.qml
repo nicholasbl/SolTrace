@@ -22,9 +22,8 @@ STPropertyPanel {
 
         onClicked: parent_pop.open()
 
-        SelectItemPopup {
+        SelectEntityPopup {
             id: parent_pop
-            source_model: AppData.layout.all_elements_model
 
             exclude: [root.module.entity]
 
@@ -188,6 +187,110 @@ STPropertyPanel {
             root.module.set_from_angles(
                         Qt.vector3d(x_euler.text, y_euler.text, z_euler.text)
                         )
+        }
+
+        STButton {
+            id: look_at_button
+
+            Layout.columnSpan: 2
+            Layout.fillWidth: true
+
+            text: "Point at..."
+
+            onClicked: look_at_pop.open()
+
+            STPopup {
+                id: look_at_pop
+
+                function accept_position() {
+                    root.module.look_at_world_position(
+                                Qt.vector3d(Number(look_at_x.text),
+                                            Number(look_at_y.text),
+                                            Number(look_at_z.text)))
+                    close()
+                }
+
+                ColumnLayout {
+                    spacing: 8
+
+                    STComboBar {
+                        id: look_at_mode
+                        Layout.fillWidth: true
+                        model: ["Position", "Entity"]
+                    }
+
+                    GridLayout {
+                        visible: look_at_mode.currentIndex === 0
+                        Layout.fillWidth: true
+                        columns: 2
+
+                        STPropertyLabel {
+                            text: "X"
+                        }
+
+                        STTextField {
+                            id: look_at_x
+                            Layout.fillWidth: true
+                            text: "0"
+                            validator: DoubleValidator {}
+
+                            onAccepted: look_at_pop.accept_position()
+                        }
+
+                        STPropertyLabel {
+                            text: "Y"
+                        }
+
+                        STTextField {
+                            id: look_at_y
+                            Layout.fillWidth: true
+                            text: "0"
+                            validator: DoubleValidator {}
+
+                            onAccepted: look_at_pop.accept_position()
+                        }
+
+                        STPropertyLabel {
+                            text: "Z"
+                        }
+
+                        STTextField {
+                            id: look_at_z
+                            Layout.fillWidth: true
+                            text: "0"
+                            validator: DoubleValidator {}
+
+                            onAccepted: look_at_pop.accept_position()
+                        }
+                    }
+
+                    STButton {
+                        visible: look_at_mode.currentIndex === 0
+                        Layout.fillWidth: true
+                        text: "Point at Position"
+
+                        onClicked: look_at_pop.accept_position()
+                    }
+
+                    STButton {
+                        visible: look_at_mode.currentIndex === 1
+                        Layout.fillWidth: true
+                        text: "Choose Entity"
+
+                        onClicked: look_at_entity_pop.open()
+
+                        SelectEntityPopup {
+                            id: look_at_entity_pop
+                            exclude: [root.module.entity]
+
+                            onSelectedEntity: (entity) => {
+                                root.module.look_at_entity(entity)
+                                look_at_pop.close()
+                            }
+                        }
+                    }
+                }
+            }
         }
 
     }
