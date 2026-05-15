@@ -14,6 +14,7 @@
 #define GLM_ENABLE_EXPERIMENTAL 1
 #include <glm/gtx/io.hpp>
 
+#include <QDateTime>
 #include <QDebug>
 
 template <class T>
@@ -282,7 +283,7 @@ static void tf_destroy_callback(entt::registry& reg, entt::entity entity) {
         reg, entity, compute_global_without_local_transform(reg, entity));
 }
 
-Database::Database(QObject* p)
+Database::Database(QString database_name, QObject* p)
     : QObject(p),
       m_registry(),
       identity(m_registry),
@@ -310,6 +311,8 @@ Database::Database(QObject* p)
         .template connect<&tf_change_callback>();
     m_registry.on_destroy<TransformComponent>()
         .template connect<&tf_destroy_callback>();
+
+    m_registry.ctx().emplace<DatabaseNameResource>(database_name);
 
     qDebug() << Q_FUNC_INFO;
 }
@@ -376,9 +379,11 @@ struct DatabaseCloneResult {
     std::unordered_map<entt::entity, entt::entity> old_to_new_map;
 };
 
-static DatabaseCloneResult clone_database_with_entity_map(Database const& from,
-                                                          QObject*        p) {
-    auto ret = std::make_unique<Database>(p);
+static DatabaseCloneResult
+clone_database_with_entity_map(Database const& from,
+                               QString         new_database_name,
+                               QObject*        p) {
+    auto  ret           = std::make_unique<Database>(new_database_name, p);
     auto& from_registry = from.as_registry();
     auto& to_registry   = ret->as_registry();
 
@@ -494,8 +499,9 @@ static DatabaseCloneResult clone_database_with_entity_map(Database const& from,
     };
 }
 
-Database* Database::clone(QObject* p) const {
-    return clone_database_with_entity_map(*this, p).database.release();
+Database* Database::clone(QString new_database_name, QObject* p) const {
+    return clone_database_with_entity_map(*this, new_database_name, p)
+        .database.release();
 }
 
 // =============================================================================
@@ -978,7 +984,11 @@ std::shared_ptr<DatabaseExport> Database::export_to_simdata() {
         entity_rev_map[iter->second->get_id()] = iter->first;
     }
 
-    auto clone_result = clone_database_with_entity_map(*this, nullptr);
+    auto new_name = QString("%1 @ %2").arg(
+        this->name(), QDateTime::currentDateTime().toString());
+
+    auto clone_result =
+        clone_database_with_entity_map(*this, new_name, nullptr);
 
     for (auto& [element_id, entity] : entity_rev_map) {
         auto iter = clone_result.old_to_new_map.find(entity);
@@ -995,6 +1005,24 @@ std::shared_ptr<DatabaseExport> Database::export_to_simdata() {
     export_ret.source_database = std::move(clone_result.database);
 
     return std::make_shared<DatabaseExport>(std::move(export_ret));
+}
+
+QString Database::name() {
+    auto ptr = m_registry.ctx().find<DatabaseNameResource>();
+
+    if (ptr) { return ptr->name; }
+
+    return "Untitled";
+}
+
+void Database::set_name(QString s) {
+
+    if (s == name()) { return; }
+
+    m_registry.ctx().insert_or_assign<DatabaseNameResource>(
+        DatabaseNameResource { .name = s });
+
+    emit name_changed();
 }
 
 entt::entity Database::create() {

@@ -62,21 +62,27 @@ class Database : public QObject {
     Q_OBJECT
     entt::registry m_registry;
 
+    Q_PROPERTY(QString name READ name WRITE set_name NOTIFY name_changed FINAL)
+
 public:
     /// Create a new simulation database
-    explicit Database(QObject* p = nullptr);
+    explicit Database(QString database_name, QObject* p = nullptr);
 
     virtual ~Database();
 
-    Database* clone(QObject* p = nullptr) const;
+    Database* clone(QString new_database_name, QObject* p = nullptr) const;
 
     /// Merge in simulation data. Note, this should be called closely after
     /// the database constructor. We have this split here so that we can
     /// allocate a database on one thread and fill it in another.
+    /// Thus: DO NOT DO QObject THINGS IN THIS FUNCTION, only fill the reg.
     void import(SD::SimulationData&);
 
     /// Convert a database back into a Soltrace dataset
     std::shared_ptr<DatabaseExport> export_to_simdata();
+
+    QString name();
+    void    set_name(QString);
 
 public:
     operator entt::registry&();
@@ -238,6 +244,7 @@ public slots:
 
 signals:
     void bulk_selection_changed();
+    void name_changed();
 };
 
 class DatabaseObserver {

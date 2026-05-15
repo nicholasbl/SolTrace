@@ -89,6 +89,12 @@ struct RaySourceResource {
     RaySourceResource clone() const;
 };
 
+struct DatabaseNameResource {
+    QString name;
+
+    DatabaseNameResource clone() const;
+};
+
 /// A set of material properties.
 struct MaterialComponent {
     SD::OpticalProperties optics_front;

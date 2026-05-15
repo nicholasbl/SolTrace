@@ -51,10 +51,7 @@ void Backend::install(db::Database* db) {
     // m_world_geometry_model->reset(db);
 }
 
-void Backend::reset() {
-    qDebug() << Q_FUNC_INFO;
-    this->install(new db::Database());
-}
+void Backend::reset() { }
 
 void Backend::start_load_file(QUrl file) { }
 

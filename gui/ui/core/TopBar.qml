@@ -151,12 +151,20 @@ RowLayout {
                         MenuItem {
                             text: "New"
                             onClicked: App.file_source.load_new()
+
+                            enabled: !AppData.file_source.is_loading
                         }
                         MenuItem {
                             text: "Open"
                             onClicked: openFileDialog.open()
+
+                            enabled: !AppData.file_source.is_loading
                         }
-                        MenuItem { text: "Save" }
+                        MenuItem {
+                            text: "Save"
+
+                            enabled: !AppData.file_source.is_loading
+                        }
 
                         background: Rectangle {
                             implicitWidth: 150
@@ -211,7 +219,7 @@ RowLayout {
 
                 Layout.leftMargin: 20
 
-                text: "\uf07b"
+                text: "\uf1c0"
 
                 font.family: "Font Awesome 7 Free"
                 font.pointSize: 16
@@ -240,11 +248,22 @@ RowLayout {
             anchors.fill: parent
 
             hoverEnabled: true
+
+            onClicked: data_pop.open()
         }
 
-        // DataPopup {
-        //     id: data_pop
-        // }
+        Item {
+            anchors.fill: parent
+
+            DataPopup {
+                id: data_pop
+
+                width: parent.width
+                height: Overlay.overlay.height * .66
+            }
+        }
+
+
     }
 
     RowLayout {

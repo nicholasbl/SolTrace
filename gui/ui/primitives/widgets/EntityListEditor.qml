@@ -144,7 +144,6 @@ Item {
 
             Loader {
                 Layout.fillWidth: true
-                Layout.maximumWidth: root.listWidth
                 Layout.margins: 8
 
                 sourceComponent: root.listHeader
@@ -199,6 +198,19 @@ Item {
                 Layout.fillHeight: true
                 Layout.margins: 8
                 spacing: 0
+
+                Breadcrumb {
+                    Layout.fillWidth: true
+                    Layout.margins: 3
+
+                    onItemSelected: {
+                        root.editing = true
+                    }
+
+                    onItemDeselected: {
+                        root.editing = false
+                    }
+                }
 
                 Loader {
                     Layout.fillWidth: true

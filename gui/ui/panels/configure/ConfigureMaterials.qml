@@ -14,12 +14,6 @@ AdaptiveFilteredEditor {
     wideThreshold: 500
     listWidth: 250
 
-    onCurrentIndexChanged: {
-        if (currentIndex >= 0) {
-            App.materials.current_material = model.get(currentIndex)
-        }
-    }
-
     onEditingChanged: {
         App.view.editing_material = editing
     }

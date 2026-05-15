@@ -141,7 +141,7 @@ static SimDataPtr worker_start_flow(QByteArray work_dir) {
         return nullptr;
     }
 
-    auto database = db::Database();
+    auto database = db::Database("Temporary");
 
     database.import(*dataset);
 

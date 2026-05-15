@@ -15,16 +15,20 @@ ItemDelegate {
     background: Rectangle {
         implicitHeight: 24
         implicitWidth: 100
-        opacity: enabled ? 1 : 0.3
-        color: parent.hovered
+        opacity: control.enabled ? 1 : 0.3
+        color: control.down
                ?
-                   Material.highlightedRippleColor
+                   Material.rippleColor
                  :
-                   parent.down
+                   control.highlighted
                    ?
-                       Material.rippleColor
+                       Material.highlightedRippleColor
                      :
-                       "transparent"
+                       control.hovered
+                       ?
+                           Qt.alpha(Material.highlightedRippleColor, 0.35)
+                         :
+                           "transparent"
         radius: 14
     }
 }

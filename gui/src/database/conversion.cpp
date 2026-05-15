@@ -113,115 +113,119 @@ void quat_to_dir_roll(glm::dquat const& qIn,
 }
 
 
-static inline glm::dvec3 random_unit_vec(std::mt19937& rng) {
-    std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
-    glm::dvec3                            v;
-    do {
-        v = glm::dvec3(dist(rng), dist(rng), dist(rng));
-    } while (glm::length2(v) < 1e-8f);
-    return glm::normalize(v);
-}
+// static inline glm::dvec3 random_unit_vec(std::mt19937& rng) {
+//     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
+//     glm::dvec3                            v;
+//     do {
+//         v = glm::dvec3(dist(rng), dist(rng), dist(rng));
+//     } while (glm::length2(v) < 1e-8f);
+//     return glm::normalize(v);
+// }
 
-static inline void runRoundTripTests(std::uint32_t seed  = 12345,
-                                     int           iters = 10000) {
-    std::mt19937                          rng(seed);
-    std::uniform_real_distribution<float> rollDist(-PI, PI);
+// static inline void runRoundTripTests(std::uint32_t seed  = 12345,
+//                                      int           iters = 10000) {
+//     std::mt19937                          rng(seed);
+//     std::uniform_real_distribution<float> rollDist(-PI, PI);
 
-    float maxDirErr    = 0.0f;
-    float maxRollErr   = 0.0f;
-    int   quatFailures = 0;
+//     float maxDirErr    = 0.0f;
+//     float maxRollErr   = 0.0f;
+//     int   quatFailures = 0;
 
-    for (int i = 0; i < iters; ++i) {
-        glm::dvec3 dir0  = random_unit_vec(rng);
-        float     roll0 = rollDist(rng);
+//     for (int i = 0; i < iters; ++i) {
+//         glm::dvec3 dir0  = random_unit_vec(rng);
+//         float     roll0 = rollDist(rng);
 
-        auto q0 = dir_roll_to_quat(dir0, roll0);
+//         auto q0 = dir_roll_to_quat(dir0, roll0);
 
-        glm::dvec3 dir1;
-        double    roll1;
-        quat_to_dir_roll(q0, dir1, roll1);
+//         glm::dvec3 dir1;
+//         double    roll1;
+//         quat_to_dir_roll(q0, dir1, roll1);
 
-        auto q1 = dir_roll_to_quat(dir1, roll1);
+//         auto q1 = dir_roll_to_quat(dir1, roll1);
 
-        float dirErr  = glm::length(dir0 - dir1);
-        float rollErr = angle_diff(roll0, roll1);
+//         float dirErr  = glm::length(dir0 - dir1);
+//         float rollErr = angle_diff(roll0, roll1);
 
-        maxDirErr  = std::max(maxDirErr, dirErr);
-        maxRollErr = std::max(maxRollErr, rollErr);
+//         maxDirErr  = std::max(maxDirErr, dirErr);
+//         maxRollErr = std::max(maxRollErr, rollErr);
 
-        if (!approx_equal_quat(q0, q1, 1e-4f)) { ++quatFailures; }
-    }
+//         if (!approx_equal_quat(q0, q1, 1e-4f)) { ++quatFailures; }
+//     }
 
-    qDebug() << "Round-trip tests: " << iters;
-    qDebug() << "Max direction error: " << maxDirErr;
-    qDebug() << "Max roll error (rad): " << maxRollErr;
-    qDebug() << "Quaternion re-encode mismatches (tolerant): " << quatFailures;
-}
+//     qDebug() << "Round-trip tests: " << iters;
+//     qDebug() << "Max direction error: " << maxDirErr;
+//     qDebug() << "Max roll error (rad): " << maxRollErr;
+//     qDebug() << "Quaternion re-encode mismatches (tolerant): " <<
+//     quatFailures;
+// }
 
-int test() {
-    auto  dir  = glm::normalize(glm::dvec3(1, 2, 3));
-    float roll = 0.7f;
+// int test() {
+//     auto  dir  = glm::normalize(glm::dvec3(1, 2, 3));
+//     float roll = 0.7f;
 
-    auto q = dir_roll_to_quat(dir, roll);
+//     auto q = dir_roll_to_quat(dir, roll);
 
-    glm::dvec3 dir2;
-    double    roll2;
-    quat_to_dir_roll(q, dir2, roll2);
+//     glm::dvec3 dir2;
+//     double    roll2;
+//     quat_to_dir_roll(q, dir2, roll2);
 
-    qDebug() << "Original dir: (" << dir.x << "," << dir.y << "," << dir.z
-             << ")";
-    qDebug() << "Decoded  dir: (" << dir2.x << "," << dir2.y << "," << dir2.z
-             << ")";
-    qDebug() << "Original roll: " << roll;
-    qDebug() << "Decoded  roll: " << roll2;
+//     qDebug() << "Original dir: (" << dir.x << "," << dir.y << "," << dir.z
+//              << ")";
+//     qDebug() << "Decoded  dir: (" << dir2.x << "," << dir2.y << "," << dir2.z
+//              << ")";
+//     qDebug() << "Original roll: " << roll;
+//     qDebug() << "Decoded  roll: " << roll2;
 
-    runRoundTripTests(12345, 20000);
-    return 0;
-}
+//     runRoundTripTests(12345, 20000);
+//     return 0;
+// }
 
-int test2() {
+// int test2() {
 
-    std::vector<glm::dvec3> positions = {
-        { 300.4760, 670.9580, 3.6927 },    { 300.0650, 669.9370, 2.6376 },
-        { 299.6530, 668.9150, 1.5826 },    { 293.9950, 671.1970, 1.5826 },
-        { -1214.6600, 163.1450, -0.5042 }, { -1082.3500, 360.9840, -3.5815 },
-        { 209.9780, -847.9350, 2.9950 },   { -1003.4800, -476.8940, 3.2507 },
-    };
-    std::vector<glm::dvec3> aims = {
-        { 38.8543, 27.7015, 723.2590 },    { 38.7178, 27.3632, 722.9140 },
-        { 38.5817, 27.0256, 722.5680 },    { 36.7186, 27.7769, 722.5680 },
-        { -591.0470, -55.8965, 749.9110 }, { -501.2880, 28.8448, 739.4200 },
-        { 14.6201, -319.2480, 829.0250 },  { -413.4470, -318.4600, 794.9350 },
-    };
-    std::vector<float> rots = { 29.184700,  29.184700,  29.184700,  29.184700,
-                                -75.322200, -67.126400, -23.855000, 77.872600 };
+//     std::vector<glm::dvec3> positions = {
+//         { 300.4760, 670.9580, 3.6927 },    { 300.0650, 669.9370, 2.6376 },
+//         { 299.6530, 668.9150, 1.5826 },    { 293.9950, 671.1970, 1.5826 },
+//         { -1214.6600, 163.1450, -0.5042 }, { -1082.3500, 360.9840, -3.5815 },
+//         { 209.9780, -847.9350, 2.9950 },   { -1003.4800, -476.8940, 3.2507 },
+//     };
+//     std::vector<glm::dvec3> aims = {
+//         { 38.8543, 27.7015, 723.2590 },    { 38.7178, 27.3632, 722.9140 },
+//         { 38.5817, 27.0256, 722.5680 },    { 36.7186, 27.7769, 722.5680 },
+//         { -591.0470, -55.8965, 749.9110 }, { -501.2880, 28.8448, 739.4200 },
+//         { 14.6201, -319.2480, 829.0250 },  { -413.4470, -318.4600, 794.9350
+//         },
+//     };
+//     std::vector<float> rots =
+//     { 29.184700,  29.184700,  29.184700,  29.184700,
+//                                 -75.322200, -67.126400, -23.855000, 77.872600
+//                                 };
 
-    for (int i = 0; i < positions.size(); i++) {
-        auto p = positions.at(i);
-        auto a = aims.at(i);
-        auto r = qDegreesToRadians(rots.at(i));
+//     for (int i = 0; i < positions.size(); i++) {
+//         auto p = positions.at(i);
+//         auto a = aims.at(i);
+//         auto r = qDegreesToRadians(rots.at(i));
 
-        a = glm::normalize(a - p);
+//         a = glm::normalize(a - p);
 
-        auto q = dir_roll_to_quat(a, r);
+//         auto q = dir_roll_to_quat(a, r);
 
-        glm::dvec3 dir2;
-        double    roll2;
-        quat_to_dir_roll(q, dir2, roll2);
+//         glm::dvec3 dir2;
+//         double    roll2;
+//         quat_to_dir_roll(q, dir2, roll2);
 
-        qDebug() << "-----";
-        qDebug() << "Original dir: (" << a.x << "," << a.y << "," << a.z << ")";
-        qDebug() << "Decoded  dir: (" << dir2.x << "," << dir2.y << ","
-                 << dir2.z << ")";
-        qDebug() << "Original roll: " << r;
-        qDebug() << "Decoded  roll: " << roll2;
-        qDebug() << glm::length(a - p);
-    }
-    return 0;
-}
+//         qDebug() << "-----";
+//         qDebug() << "Original dir: (" << a.x << "," << a.y << "," << a.z <<
+//         ")"; qDebug() << "Decoded  dir: (" << dir2.x << "," << dir2.y << ","
+//                  << dir2.z << ")";
+//         qDebug() << "Original roll: " << r;
+//         qDebug() << "Decoded  roll: " << roll2;
+//         qDebug() << glm::length(a - p);
+//     }
+//     return 0;
+// }
 
 
-static int VT = test();
-static int VT2 = test2();
+// static int VT = test();
+// static int VT2 = test2();
 
 } // namespace db

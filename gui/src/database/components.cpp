@@ -231,6 +231,12 @@ RaySourceResource RaySourceResource::clone() const {
     throw std::runtime_error("Unsupported ray source type in clone()");
 }
 
+DatabaseNameResource DatabaseNameResource::clone() const {
+    return DatabaseNameResource {
+        .name = this->name,
+    };
+}
+
 GeometryComponent GeometryComponent::clone() const {
     GeometryComponent copy;
 
