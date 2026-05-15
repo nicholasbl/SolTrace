@@ -20,9 +20,9 @@ ColumnLayout {
         fontFamily: AppData.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
 
         model : AppData.view.left_panel.size == PanelData.Small ?
-                    ["\uf828", "\uf1da", "\uf188"]
+                    ["\uf828", "\uf188"]
                   :
-                    ["Execution", "History", "Diagnostics"]
+                    ["Execution", "Diagnostics"]
 
     }
 
@@ -39,10 +39,6 @@ ColumnLayout {
         Layout.fillHeight: true
 
         TracePanel {
-
-        }
-
-        HistoryPanel {
 
         }
 
