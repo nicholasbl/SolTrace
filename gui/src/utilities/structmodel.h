@@ -2,6 +2,7 @@
 
 #include <QAbstractTableModel>
 #include <QDebug>
+#include <QPointer>
 
 #include <span>
 
@@ -39,6 +40,11 @@ QVariant _sm_to_variant(std::shared_ptr<T> const& t) {
 template <class T>
 QVariant _sm_to_variant(std::unique_ptr<T> const& t) {
     return QVariant::fromValue(t.get());
+}
+
+template <class T>
+QVariant _sm_to_variant(QPointer<T> const& t) {
+    return QVariant::fromValue(t.data());
 }
 
 #define SM_EXPOSE_RW(MEM)                                                      \

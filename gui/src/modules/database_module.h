@@ -18,7 +18,6 @@ struct DatabaseRecord {
     RECORD_META(DatabaseRecord, SM_EXPOSE_RO(database), );
 };
 
-
 struct LoadedFile {
     // TODO: Store this in the DB
     QString       provenance = {};
@@ -47,13 +46,15 @@ class DatabaseModule : public StructModelAdapter<DatabaseRecord> {
 
 public:
     DatabaseModule(QObject* parent = nullptr);
-    Q_WRITABLE_PROPERTY(QString, name, "Untitled")
 
 public slots:
-    void load_url(QUrl);
+    void load_url(QUrl, QString name_override = "");
     void load_new();
 
     bool set_current(int);
+
+    void delete_current();
+    void append_new(QString);
 
 signals:
     void notify(ANotification);

@@ -89,7 +89,7 @@ void DatabaseModule::file_failed(QUrl, QString reason) {
     set_is_loading(false);
 }
 
-void DatabaseModule::load_url(QUrl url) {
+void DatabaseModule::load_url(QUrl url, QString name_override) {
     if (is_loading()) {
         return;
         // emit cancel_current_load(QPrivateSignal {});
@@ -102,8 +102,10 @@ void DatabaseModule::load_url(QUrl url) {
     if (new_source.isEmpty()) {
         qDebug() << Q_FUNC_INFO << "new database";
 
+        if (name_override.isEmpty()) name_override = "Untitled";
+
         this->store_push_append(DatabaseRecord {
-            .database = new db::Database("Untitled", this),
+            .database = new db::Database(name_override, this),
         });
 
         return;
@@ -114,6 +116,10 @@ void DatabaseModule::load_url(QUrl url) {
     set_is_loading(true);
 
     auto fname = url.fileName();
+
+    if (!name_override.isEmpty()) { fname = name_override; }
+
+    if (fname.isEmpty()) { fname = "Untitled"; }
 
     // Now we have to do this in this round about way. If we have the thread
     // create the the database, there is no clean way to migrate it to our
@@ -149,10 +155,6 @@ void DatabaseModule::load_new() {
 DatabaseModule::DatabaseModule(QObject* parent)
     : StructModelAdapter { parent } {
 
-    connect(this, &DatabaseModule::current_database_changed, this, [this]() {
-        if (current_database()) { this->set_name(current_database()->name()); }
-    });
-
     connect(this,
             &DatabaseModule::rowsInserted,
             this,
@@ -169,6 +171,38 @@ bool DatabaseModule::set_current(int index) {
     set_current_database(db->database);
 
     return true;
+}
+
+void DatabaseModule::delete_current() {
+    auto const& v = this->vector();
+    auto        iter =
+        std::find_if(v.begin(), v.end(), [this](DatabaseRecord const& record) {
+            return record.database == m_current_database;
+        });
+
+    if (iter == v.end()) return;
+
+    auto index = std::distance(v.begin(), iter);
+
+    db::Database* curr_cache = m_current_database;
+
+    if (rowCount() == 1) {
+        // this should mean that index == 0.
+        load_new();
+        set_current(1);
+    } else {
+        auto replacement_index = index;
+        if (replacement_index > 0) { replacement_index--; }
+        set_current(replacement_index);
+    }
+
+    this->store_push_remove(index, 1);
+
+    if (curr_cache) curr_cache->deleteLater();
+}
+
+void DatabaseModule::append_new(QString new_name) {
+    load_url({}, new_name);
 }
 
 } // namespace SolTrace::GUI::App

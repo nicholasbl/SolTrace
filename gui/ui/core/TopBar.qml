@@ -230,7 +230,7 @@ RowLayout {
                 Layout.fillWidth: true
                 verticalAlignment: Qt.AlignVCenter
                 horizontalAlignment: Qt.AlignHCenter
-                text: App.file_source.name
+                text: App.file_source.current_database ? App.file_source.current_database.name : "None"
                 font.family: "CMU Serif"
                 font.bold: true
                 font.pointSize: 18
