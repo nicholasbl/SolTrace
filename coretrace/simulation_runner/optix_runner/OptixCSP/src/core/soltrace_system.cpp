@@ -25,10 +25,6 @@
 #include <iostream>
 #include <iomanip>
 
-#ifdef NVTX_ENABLED
-#include <nvtx3/nvtx3.hpp>
-#endif
-
 #include <optix_function_table_definition.h>
 #include <optix_stubs.h>
 
@@ -268,10 +264,6 @@ void SolTraceSystem::initialize()
 
 void SolTraceSystem::run()
 {
-#ifdef NVTX_ENABLED
-    NVTX3_FUNC_RANGE();
-#endif
-
     // Initialize results
     m_hit_records.clear();
     m_n_hit_rays = 0;
@@ -300,9 +292,6 @@ void SolTraceSystem::run()
         // Allocate buffer (sets data_manager->launch_params_H buffer)
         m_timer_setup_buffer.start();
         {
-#ifdef NVTX_ENABLED
-            nvtx3::scoped_range nvtx_setup{"setup_device_buffer"};
-#endif
             setup_device_buffer();
         }
         m_timer_setup_buffer.stop();
@@ -320,9 +309,6 @@ void SolTraceSystem::run()
         // Launch the simulation.
         m_timer_optix_launch.start();
         {
-#ifdef NVTX_ENABLED
-            nvtx3::scoped_range nvtx_launch{"optixLaunch"};
-#endif
             OPTIX_CHECK(optixLaunch(
                 m_state.pipeline,
                 m_state.stream, // Assume this stream is properly created.
@@ -333,15 +319,12 @@ void SolTraceSystem::run()
                 height,
                 1));
             CUDA_SYNC_CHECK();
-        } // nvtx_launch
+        }
         m_timer_optix_launch.stop();
 
         // Collect results
         m_timer_collect_results.start();
         {
-#ifdef NVTX_ENABLED
-            nvtx3::scoped_range nvtx_collect{"get_buffer_results"};
-#endif
             get_buffer_results();
         }
         m_timer_collect_results.stop();
@@ -667,9 +650,6 @@ void SolTraceSystem::setup_device_buffer()
 // m_hit_records and m_n_hit_rays is incremented by the number of newly collected hit rays.
 void SolTraceSystem::get_buffer_results()
 {
-#ifdef NVTX_ENABLED
-    NVTX3_FUNC_RANGE();
-#endif
     const uint32_t num_rays = static_cast<uint32_t>(data_manager->launch_params_H.width *
                                                     data_manager->launch_params_H.height);
     const uint32_t max_depth = static_cast<uint32_t>(data_manager->launch_params_H.max_depth);

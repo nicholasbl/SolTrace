@@ -64,15 +64,6 @@ target_link_libraries(OptixCSP_core
     PRIVATE CUDA::cuda_driver
             CUDA::cudart)
 
-# NVTX3 profiling support (header-only, ships with CUDA Toolkit >= 10.0)
-if(TARGET CUDA::nvtx3)
-    target_link_libraries(OptixCSP_core PRIVATE CUDA::nvtx3)
-    target_compile_definitions(OptixCSP_core PRIVATE NVTX_ENABLED)
-    message(STATUS "NVTX3 profiling enabled for OptixCSP_core")
-else()
-    message(STATUS "CUDA::nvtx3 not found; NVTX profiling annotations disabled")
-endif()
-
 # have to specify the Optix_INCLUDE directory for the CUDA compiler 
 target_compile_options(OptixCSP_core PRIVATE
     $<$<COMPILE_LANGUAGE:CUDA>:--use_fast_math -lineinfo -I"${OptiX_INCLUDE}">
