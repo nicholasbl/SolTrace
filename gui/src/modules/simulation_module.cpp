@@ -98,6 +98,12 @@ SimulationModule::SimulationModule(QObject* parent)
             &SimulationModule::new_results,
             this,
             &SimulationModule::update_result_world);
+
+    qDebug() << Q_FUNC_INFO;
+}
+
+SimulationModule::~SimulationModule() {
+    qDebug() << Q_FUNC_INFO;
 }
 
 void SimulationModule::run() {
@@ -135,7 +141,8 @@ void SimulationModule::run() {
 
     connect(
         m_running, &RunningJob::finished, this, &SimulationModule::job_done);
-    connect(m_running, &RunningJob::finished, this, &RunningJob::deleteLater);
+    connect(
+        m_running, &RunningJob::finished, m_running, &RunningJob::deleteLater);
     connect(this, &QObject::destroyed, m_running, &RunningJob::cancel);
 
     set_is_running(true);

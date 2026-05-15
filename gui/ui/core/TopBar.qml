@@ -238,6 +238,7 @@ RowLayout {
                     return App.file_source.current_database ?
                                 App.file_source.current_database.name : "None"
                 }
+                elide: Label.ElideMiddle
                 font.family: "CMU Serif"
                 font.bold: true
                 font.pointSize: 18

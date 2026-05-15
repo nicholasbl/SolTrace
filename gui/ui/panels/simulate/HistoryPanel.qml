@@ -8,6 +8,7 @@ import SolTrace
 
 ColumnLayout {
     id: root
+    readonly property var simulation: AppData.simulation
 
     Layout.fillHeight: true
     Layout.fillWidth: true
@@ -18,7 +19,7 @@ ColumnLayout {
         Layout.fillHeight: true
         Layout.fillWidth: true
         clip: true
-        model: AppData.simulation.results
+        model: root.simulation ? root.simulation.results : null
 
         onCountChanged: {
             if (count > 0) currentIndex = count - 1
@@ -35,7 +36,7 @@ ColumnLayout {
 
             onClicked: {
                 history_list.currentIndex = index
-                AppData.simulation.select_result(index)
+                root.simulation.select_result(index)
             }
 
         }
