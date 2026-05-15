@@ -37,6 +37,8 @@ class SimulationModule : public QObject {
 
     QPointer<RunningJob> m_running;
 
+    db::SimulationResultPtr m_current_result;
+
     QVector<std::shared_ptr<db::SimulationResult>> m_completed_sims;
 
 private slots:
@@ -90,9 +92,11 @@ public slots:
     // void resume();
     void cancel();
     void select_result(int index);
+    void duplicate_current_result_for_edit();
 
 signals:
     void new_results(db::SimulationResultPtr);
+    void edit_result_copy_requested(db::SimulationResultPtr);
     void notify(ANotification);
 };
 

@@ -13,7 +13,7 @@ Node {
 
     Repeater3D {
         visible: flux_repeater.count === 0
-        model: App.simulation.world_geometry_model
+        model: AppData.simulation.world_geometry_model
 
         delegate: Model {
             id: geometry_model
@@ -43,7 +43,7 @@ Node {
     Connections {
         target: App.view.sim
         function onGeometry_color_changed() {
-            App.simulation.world_geometry_model.set_all_color(App.view.sim.geometry_color)
+            AppData.simulation.world_geometry_model.set_all_color(App.view.sim.geometry_color)
         }
     }
 

@@ -205,4 +205,19 @@ void DatabaseModule::append_new(QString new_name) {
     load_url({}, new_name);
 }
 
+bool DatabaseModule::append_clone(db::SimulationResultPtr result) {
+    if (!result) return false;
+    if (!result->database) return false;
+
+    auto clone_name = result->database->name() + " Copy";
+    auto clone      = result->database->clone(clone_name, this);
+    if (!clone) return false;
+
+    this->store_push_append(DatabaseRecord {
+        .database = clone,
+    });
+
+    return true;
+}
+
 } // namespace SolTrace::GUI::App

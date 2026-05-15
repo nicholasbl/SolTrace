@@ -18,7 +18,7 @@ ColumnLayout {
         Layout.fillHeight: true
         Layout.fillWidth: true
         clip: true
-        model: App.simulation.results
+        model: AppData.simulation.results
 
         onCountChanged: {
             if (count > 0) currentIndex = count - 1
@@ -35,7 +35,7 @@ ColumnLayout {
 
             onClicked: {
                 history_list.currentIndex = index
-                App.simulation.select_result(index)
+                AppData.simulation.select_result(index)
             }
 
         }

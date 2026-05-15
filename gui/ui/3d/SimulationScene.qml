@@ -101,7 +101,7 @@ Item {
             lightProbe: Texture {
                 textureData: {
                     if (App.view.sim.blueprint_mode) return blueprintSky
-                    let elevation = App.sun.type === SunModule.Directional ? sunDirectionRayGroup.z : pointSource.z
+                    let elevation = edit_node.elevation
                     let index = 0
 
                     if (elevation > 30) return daySky
@@ -181,6 +181,7 @@ Item {
         }
 
         EditContentNode {
+            id: edit_node
             visible: !App.view.simulation_content_view
         }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "database/database.h"
+#include "database/simulationresult.h"
 #include "utilities/notification.h"
 #include "utilities/qt_helpers.h"
 #include "utilities/structmodel.h"
@@ -55,6 +56,7 @@ public slots:
 
     void delete_current();
     void append_new(QString);
+    bool append_clone(db::SimulationResultPtr);
 
 signals:
     void notify(ANotification);

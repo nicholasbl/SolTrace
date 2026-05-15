@@ -33,14 +33,14 @@ ScrollView {
             STComboBox {
                 Layout.fillWidth: true
                 Layout.columnSpan: 2
-                model: App.simulation.runners
+                model: AppData.simulation.runners
                 textRole: "name"
                 valueRole: "runner"
-                currentIndex: App.simulation.runners.index_of(
-                                  App.simulation.runner)
+                currentIndex: AppData.simulation.runners.index_of(
+                                  AppData.simulation.runner)
                 onActivated: (index) => {
-                    App.simulation.runner =
-                            App.simulation.runners.runner_at(index)
+                    AppData.simulation.runner =
+                            AppData.simulation.runners.runner_at(index)
                 }
             }
 
@@ -72,7 +72,7 @@ ScrollView {
 
             STPropertyLabel {
                 text: "# of CPU Cores"
-                visible: App.simulation.runner < 2
+                visible: AppData.simulation.runner < 2
             }
 
             STSpinBox {
@@ -81,7 +81,7 @@ ScrollView {
                 value: AppData.simulation.cpu_cores
                 to: 64
 
-                visible: App.simulation.runner < 2
+                visible: AppData.simulation.runner < 2
                 onValueModified: AppData.simulation.cpu_cores = value
             }
 
@@ -107,20 +107,20 @@ ScrollView {
 
             STSwitch {
                 text: "Sun Error"
-                checked: App.simulation.sun_error
-                onToggled: App.simulation.sun_error = checked
+                checked: AppData.simulation.sun_error
+                onToggled: AppData.simulation.sun_error = checked
             }
 
             STSwitch {
                 text: "Sun Shape"
-                checked: App.simulation.sun_shape
-                onToggled: App.simulation.sun_shape = checked
+                checked: AppData.simulation.sun_shape
+                onToggled: AppData.simulation.sun_shape = checked
             }
 
             STSwitch {
                 text: "Optical Errors"
-                checked: App.simulation.optical_errors
-                onToggled: App.simulation.optical_errors = checked
+                checked: AppData.simulation.optical_errors
+                onToggled: AppData.simulation.optical_errors = checked
             }
 
             STButton {

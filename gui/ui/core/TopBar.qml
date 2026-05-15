@@ -232,7 +232,7 @@ RowLayout {
                 horizontalAlignment: Qt.AlignHCenter
                 text: {
                     if (App.view.simulation_content_view) {
-                        return App.simulation.current_simulation_result_name
+                        return AppData.simulation.current_simulation_result_name
                     }
 
                     return App.file_source.current_database ?
@@ -247,12 +247,27 @@ RowLayout {
                 Layout.fillHeight: true
                 Layout.preferredWidth: 24
                 Layout.rightMargin: 20
+
+                STIconButton {
+                    id: duplicate_result_button
+                    anchors.centerIn: parent
+                    visible: App.view.simulation_content_view
+                    text: "\uf06a"
+                    iconSize: 14
+
+                    ToolTip.visible: containsMouse
+                    ToolTip.delay: 500
+                    ToolTip.text: "This is an immutable view of the results of this simulation. Click to make a duplicate of this database for editing."
+
+                    onClicked: AppData.simulation.duplicate_current_result_for_edit()
+                }
             }
         }
 
         MouseArea {
             id: data_mouse_area
             anchors.fill: parent
+            enabled: !App.view.simulation_content_view
 
             hoverEnabled: true
 
@@ -368,4 +383,3 @@ RowLayout {
         }
     }
 }
-

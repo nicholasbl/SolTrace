@@ -77,6 +77,7 @@ void SimulationModule::job_done() {
 
     m_completed_sims.push_back(results);
     m_results->append_result(results);
+    m_current_result = results;
     set_current_simulation_result_name(results->database->name());
 
     qDebug() << Q_FUNC_INFO << "publish";
@@ -153,8 +154,15 @@ void SimulationModule::select_result(int index) {
     auto result = m_results->result_at(index);
     if (!result) return;
 
+    m_current_result = result;
     set_current_simulation_result_name(result->database->name());
     emit new_results(result);
+}
+
+void SimulationModule::duplicate_current_result_for_edit() {
+    if (!m_current_result) return;
+
+    emit edit_result_copy_requested(m_current_result);
 }
 
 } // namespace SolTrace::GUI::App

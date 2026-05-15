@@ -10,6 +10,8 @@ Node {
     id: world_node
     rotation: Quaternion.fromEulerAngles(-90, 0, 0)
 
+    property real elevation: App.sun.type === SunModule.Directional ? sunDirectionRayGroup.z : pointSource.z
+
     Repeater3D {
         model: App.layout.world_geometry_model
 
