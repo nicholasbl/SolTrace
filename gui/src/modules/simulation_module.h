@@ -1,6 +1,8 @@
 #pragma once
 
 #include "database/database.h"
+#include "database/simulationresult.h"
+#include "database/worldgeometrymodel.h"
 #include "job_control/job_run.h"
 #include "utilities/notification.h"
 #include "utilities/qt_helpers.h"
@@ -39,6 +41,7 @@ class SimulationModule : public QObject {
 
 private slots:
     void job_done();
+    void update_result_world(db::SimulationResultPtr);
 
 public:
     explicit SimulationModule(QObject* parent = nullptr);
@@ -46,6 +49,8 @@ public:
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
     QOBJECT_READONLY_PROPERTY(StatusComponent, status);
     QOBJECT_READONLY_PROPERTY(SimulationRunnerModel, runners);
+    QOBJECT_READONLY_PROPERTY(db::SimulationResultModel, results);
+    QOBJECT_READONLY_PROPERTY(db::WorldGeometryModel, world_geometry_model);
 
     enum Runner { CPU = 0, Embree = 1, GPU = 2 };
 
@@ -62,6 +67,10 @@ public:
     Q_WRITABLE_PROPERTY(bool, sun_shape, false)
     Q_WRITABLE_PROPERTY(bool, optical_errors, false)
     Q_WRITABLE_PROPERTY(bool, point_focus_system, false)
+
+    Q_WRITABLE_PROPERTY(QString,
+                        current_simulation_result_name,
+                        "No Simulation Result")
 
 
     /// Is a simulation being run?
@@ -80,6 +89,7 @@ public slots:
     // void pause(); // no executor support for pause or resume
     // void resume();
     void cancel();
+    void select_result(int index);
 
 signals:
     void new_results(db::SimulationResultPtr);

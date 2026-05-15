@@ -27,7 +27,7 @@ class FluxModule : public QObject {
 
     db::SimulationResultPtr m_results;
 
-    QOBJECT_READONLY_PROPERTY(db::RootElementsModel, entity_model);
+    QOBJECT_READONLY_PROPERTY(db::AllElementsModel, entity_model);
     QOBJECT_READONLY_PROPERTY(db::PendingFluxMapModel, pending_flux_maps);
     QOBJECT_READONLY_PROPERTY(db::FluxMapWorldModel, flux_map_world_model);
 

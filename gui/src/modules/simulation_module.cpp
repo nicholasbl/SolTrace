@@ -43,6 +43,12 @@ int SimulationRunnerModel::index_of(SimulationModule::Runner runner) const {
     return 0;
 }
 
+void SimulationModule::update_result_world(db::SimulationResultPtr results) {
+    auto* database =
+        results ? const_cast<db::Database*>(results->database.get()) : nullptr;
+    m_world_geometry_model->reset(database);
+}
+
 void SimulationModule::job_done() {
     qDebug() << Q_FUNC_INFO;
 
@@ -63,7 +69,15 @@ void SimulationModule::job_done() {
 
     auto results = from->take();
 
+    if (!results) {
+        emit notify(
+            ANotification::error("Simulation finished without results."));
+        return;
+    }
+
     m_completed_sims.push_back(results);
+    m_results->append_result(results);
+    set_current_simulation_result_name(results->database->name());
 
     qDebug() << Q_FUNC_INFO << "publish";
     emit new_results(results);
@@ -72,10 +86,17 @@ void SimulationModule::job_done() {
 SimulationModule::SimulationModule(QObject* parent)
     : QObject { parent },
       m_status(new StatusComponent(this)),
-      m_runners(new SimulationRunnerModel(this)) {
+      m_runners(new SimulationRunnerModel(this)),
+      m_results(new db::SimulationResultModel(this)),
+      m_world_geometry_model(new db::WorldGeometryModel(this)) {
 
     auto thread_count = std::thread::hardware_concurrency();
     set_max_threads(thread_count <= 0 ? 1 : thread_count);
+
+    connect(this,
+            &SimulationModule::new_results,
+            this,
+            &SimulationModule::update_result_world);
 }
 
 void SimulationModule::run() {
@@ -126,6 +147,14 @@ void SimulationModule::run() {
 // }
 void SimulationModule::cancel() {
     if (m_running) { m_running->cancel(); }
+}
+
+void SimulationModule::select_result(int index) {
+    auto result = m_results->result_at(index);
+    if (!result) return;
+
+    set_current_simulation_result_name(result->database->name());
+    emit new_results(result);
 }
 
 } // namespace SolTrace::GUI::App

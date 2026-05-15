@@ -12,6 +12,12 @@ Item {
 
     onWidthChanged: App.view.fit_panels(width, false, true)
 
+    Binding {
+        target: App.view
+        property: "simulation_content_view"
+        value: App.view.workflow_phase === 2
+    }
+
     // C++ -> QML (consume width from ViewModule)
     Binding {
         target: left_panel

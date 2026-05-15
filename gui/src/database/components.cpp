@@ -50,8 +50,8 @@ glm::dmat4 GlobalTransformComponent::as_matrix() const {
 }
 
 GlobalTransformComponent
-GlobalTransformComponent::compute_for(entt::registry& reg,
-                                      entt::entity    entity) {
+GlobalTransformComponent::compute_for(entt::registry const& reg,
+                                      entt::entity          entity) {
 
     GlobalTransformComponent out;
     out.position = glm::dvec3 { 0.0 };

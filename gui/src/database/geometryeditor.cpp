@@ -20,14 +20,18 @@ SurfaceGeometry::SurfaceGeometry() {
     rebuild_geometry();
 }
 
-void SurfaceGeometry::set_new_database_connections(Database* ptr) {
-    add_connection(connect(ptr->geometry_parameters.self(),
+void SurfaceGeometry::set_new_database_connections(Database const* ptr) {
+
+    // careful here
+    auto* mptr = const_cast<Database*>(ptr);
+
+    add_connection(connect(mptr->geometry_parameters.self(),
                            &ComponentAPIBase::changed,
                            this,
                            &SurfaceGeometry::parameters_changed));
 }
 
-void SurfaceGeometry::set(Database* ptr, entt::entity group) {
+void SurfaceGeometry::set(Database const* ptr, entt::entity group) {
     observe(ptr);
     m_current_group = group;
 

@@ -78,8 +78,8 @@ struct GlobalTransformComponent {
 
     glm::dmat4 as_matrix() const;
 
-    static GlobalTransformComponent compute_for(entt::registry& reg,
-                                                entt::entity    entity);
+    static GlobalTransformComponent compute_for(entt::registry const& reg,
+                                                entt::entity          entity);
 };
 
 /// A Global describing the ray source.

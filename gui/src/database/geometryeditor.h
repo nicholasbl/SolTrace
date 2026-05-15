@@ -37,12 +37,12 @@ public:
 
 /// Surface geometry visualization. Creates geometry for Quick3D for a given
 /// group
-class SurfaceGeometry : public QQuick3DGeometry, public DatabaseObserver {
+class SurfaceGeometry : public QQuick3DGeometry, public ConstDatabaseObserver {
     Q_OBJECT
 
     entt::entity m_current_group = entt::null;
 
-    void set_new_database_connections(Database* ptr) override;
+    void set_new_database_connections(Database const* ptr) override;
     SurfaceGenerationOptions surface_generation_options() const;
 
 private slots:
@@ -60,7 +60,7 @@ public:
     Q_WRITABLE_PROPERTY(Quality, quality, Quality::Normal)
     Q_READONLY_PROPERTY(BoundingBox, bounding_box)
 
-    void set(Database*, entt::entity group);
+    void set(Database const*, entt::entity group);
 
 public:
     void debug();

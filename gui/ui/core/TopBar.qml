@@ -230,7 +230,14 @@ RowLayout {
                 Layout.fillWidth: true
                 verticalAlignment: Qt.AlignVCenter
                 horizontalAlignment: Qt.AlignHCenter
-                text: App.file_source.current_database ? App.file_source.current_database.name : "None"
+                text: {
+                    if (App.view.simulation_content_view) {
+                        return App.simulation.current_simulation_result_name
+                    }
+
+                    return App.file_source.current_database ?
+                                App.file_source.current_database.name : "None"
+                }
                 font.family: "CMU Serif"
                 font.bold: true
                 font.pointSize: 18
@@ -361,5 +368,4 @@ RowLayout {
         }
     }
 }
-
 

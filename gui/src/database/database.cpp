@@ -1007,7 +1007,7 @@ std::shared_ptr<DatabaseExport> Database::export_to_simdata() {
     return std::make_shared<DatabaseExport>(std::move(export_ret));
 }
 
-QString Database::name() {
+QString Database::name() const {
     auto ptr = m_registry.ctx().find<DatabaseNameResource>();
 
     if (ptr) { return ptr->name; }

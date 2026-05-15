@@ -81,7 +81,7 @@ public:
     /// Convert a database back into a Soltrace dataset
     std::shared_ptr<DatabaseExport> export_to_simdata();
 
-    QString name();
+    QString name() const;
     void    set_name(QString);
 
 public:
@@ -248,7 +248,6 @@ signals:
 };
 
 class DatabaseObserver {
-
     QPointer<Database>               m_database;
     QVector<QMetaObject::Connection> m_database_conns;
 
@@ -287,6 +286,46 @@ public:
     DatabaseObserver& operator=(DatabaseObserver const&) = delete;
     DatabaseObserver(DatabaseObserver&&)                 = delete;
     DatabaseObserver& operator=(DatabaseObserver&&)      = delete;
+};
+
+class ConstDatabaseObserver {
+    QPointer<Database const>         m_database;
+    QVector<QMetaObject::Connection> m_database_conns;
+
+protected:
+    void observe(Database const* ptr) {
+        if (ptr == m_database) return;
+        if (m_database) {
+            for (auto const& c : std::as_const(m_database_conns)) {
+                QObject::disconnect(c);
+            }
+            m_database_conns.clear();
+        }
+        m_database = ptr;
+        if (ptr) set_new_database_connections(ptr);
+    }
+
+    void add_connection(QMetaObject::Connection c) {
+        m_database_conns.push_back(c);
+    }
+
+    Database const* database() const { return m_database; }
+
+    virtual void set_new_database_connections(Database const* ptr) = 0;
+
+    template <class F>
+    void with_db(F&& f) {
+        if (m_database) { f(m_database); }
+    }
+
+public:
+    ConstDatabaseObserver()          = default;
+    virtual ~ConstDatabaseObserver() = default;
+
+    ConstDatabaseObserver(ConstDatabaseObserver const&)            = delete;
+    ConstDatabaseObserver& operator=(ConstDatabaseObserver const&) = delete;
+    ConstDatabaseObserver(ConstDatabaseObserver&&)                 = delete;
+    ConstDatabaseObserver& operator=(ConstDatabaseObserver&&)      = delete;
 };
 
 } // namespace db
