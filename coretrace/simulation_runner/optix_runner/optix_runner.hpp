@@ -30,9 +30,11 @@ public:
     SolTrace::Runner::RunnerStatus get_hp_output(std::vector<float4>& hp_vec,
         std::vector<uint_fast64_t>& raynumber_vec, std::vector<int32_t>& element_id_vec);
 
-    double get_sun_plane_area() { return m_sys.get_sun_plane_area(); }
+    double get_sun_plane_area() const { return m_sys.get_sun_plane_area(); }
 
-    uint_fast64_t get_N_sun_rays() { return m_sys.get_N_sun_rays(); }
+    uint_fast64_t get_N_sun_rays() const { return m_sys.get_N_sun_rays(); }
+    inline uint_fast64_t get_number_rays_launched() const override {return get_N_sun_rays(); }
+    inline uint_fast64_t get_number_rays_traced() const override {return m_sys.get_N_hit_rays(); }
 
     uint64_t get_N_run_iterations() const;
 

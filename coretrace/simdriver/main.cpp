@@ -13,6 +13,8 @@
  *   --rays <n>      Override the number of rays from the JSON file
  *   --no-output     Skip result retrieval and CSV output (output file not
  *                   required when this flag is set)
+ *   --no-csv        Retrieve results but skip writing the CSV file (output
+ *                   file argument not required when this flag is set)
  *   --embree        Use the Embree runner (only available if built with
  *                   SOLTRACE_BUILD_EMBREE_SUPPORT=ON; falls back to native
  *                   runner with a warning if Embree support is absent)
@@ -57,6 +59,8 @@ static void print_usage(const char *prog)
         << "  --rays <n>      Override number of rays specified in the JSON file\n"
         << "  --no-output     Skip result retrieval and CSV output\n"
         << "                  (output file argument not required with this flag)\n"
+        << "  --no-csv        Retrieve results but skip writing the CSV file\n"
+        << "                  (output file argument not required with this flag)\n"
 #ifdef SOLTRACE_EMBREE_SUPPORT
         << "  --embree        Use Embree runner instead of the native runner\n"
         << "                  (requires SOLTRACE_BUILD_EMBREE_SUPPORT=ON at build time)\n"
@@ -77,27 +81,27 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    // Pre-scan for --no-output so we know whether output_file is required
+    // Pre-scan for --no-output and --no-csv so we know whether output_file is required
     bool skip_output = false;
+    bool skip_csv = false;
     for (int i = 2; i < argc; ++i)
     {
-        if (std::string(argv[i]) == "--no-output")
-        {
-            skip_output = true;
-            break;
-        }
+        const std::string a = argv[i];
+        if (a == "--no-output") skip_output = true;
+        else if (a == "--no-csv") skip_csv = true;
     }
 
-    if (!skip_output && argc < 3)
+    const bool file_optional = skip_output || skip_csv;
+    if (!file_optional && argc < 3)
     {
-        std::cerr << "Error: output file is required unless --no-output is specified\n";
+        std::cerr << "Error: output file is required unless --no-output or --no-csv is specified\n";
         print_usage(argv[0]);
         return EXIT_FAILURE;
     }
 
     const std::string input_file = argv[1];
-    // output_file is only meaningful when skip_output is false
-    const std::string output_file = (!skip_output && argc >= 3) ? argv[2] : "";
+    // output_file is only meaningful when neither skip_output nor skip_csv is set
+    const std::string output_file = (!file_optional && argc >= 3) ? argv[2] : "";
 
     int num_threads = 1;
     long long num_rays_override = -1; // -1 means use what the JSON specifies
@@ -105,8 +109,8 @@ int main(int argc, char *argv[])
     bool use_optix = false;
     bool verbose = false;
 
-    // Start parsing options from argv[2] if skip_output, else from argv[3]
-    const int opts_start = skip_output ? 2 : 3;
+    // Start parsing options from argv[2] if output file is omitted, else from argv[3]
+    const int opts_start = file_optional ? 2 : 3;
     for (int i = opts_start; i < argc; ++i)
     {
         const std::string arg = argv[i];
@@ -154,7 +158,7 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
         }
-        else if (arg == "--no-output")
+        else if (arg == "--no-output" || arg == "--no-csv")
         {
             // already handled in pre-scan; skip here
         }
@@ -285,6 +289,8 @@ int main(int argc, char *argv[])
         std::cout << "  Completed in "
                   << std::chrono::duration<double>(t_run_end - t_run_start).count()
                   << " s\n";
+        std::cout << "  Rays launched: " << runner.get_number_rays_launched() << "\n";
+        std::cout << "  Rays traced:   " << runner.get_number_rays_traced() << "\n";
 
         if (!skip_output)
         {
@@ -349,6 +355,8 @@ int main(int argc, char *argv[])
         std::cout << "  Completed in "
                   << std::chrono::duration<double>(t_run_end - t_run_start).count()
                   << " s\n";
+        std::cout << "  Rays launched: " << runner.get_number_rays_launched() << "\n";
+        std::cout << "  Rays traced:   " << runner.get_number_rays_traced() << "\n";
 
         if (!skip_output)
         {
@@ -430,6 +438,8 @@ int main(int argc, char *argv[])
         std::cout << "  Completed in "
                   << std::chrono::duration<double>(t_run_end - t_run_start).count()
                   << " s\n";
+        std::cout << "  Rays launched: " << runner.get_number_rays_launched() << "\n";
+        std::cout << "  Rays traced:   " << runner.get_number_rays_traced() << "\n";
 
         if (!skip_output)
         {
@@ -455,7 +465,7 @@ int main(int argc, char *argv[])
     // -------------------------------------------------------------------------
     // Write results to CSV
     // -------------------------------------------------------------------------
-    if (!skip_output)
+    if (!skip_output && !skip_csv)
     {
         std::cout << "Writing " << result.get_number_of_records()
                   << " ray records to: " << output_file << "...\n";
@@ -473,6 +483,10 @@ int main(int argc, char *argv[])
             std::cerr << "Error writing CSV file: " << e.what() << "\n";
             return EXIT_FAILURE;
         }
+    }
+    else if (skip_csv)
+    {
+        std::cout << "Skipping CSV output (--no-csv).\n";
     }
     else
     {
