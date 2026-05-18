@@ -2,7 +2,7 @@
 
 #include <magic_enum/magic_enum.hpp>
 
-#include <cmath>
+#include <QtMath>
 
 namespace db {
 

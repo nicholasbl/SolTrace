@@ -2,6 +2,8 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#include <QtMath>
+
 namespace db {
 
 namespace {

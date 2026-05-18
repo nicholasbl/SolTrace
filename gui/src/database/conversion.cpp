@@ -6,7 +6,6 @@
 #include <QDebug>
 #include <QtMath>
 
-#include <cmath>
 #include <random>
 
 namespace db {
