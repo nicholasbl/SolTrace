@@ -17,7 +17,10 @@ void make_two_plate_sd(SimulationData &sd, element_ptr &plate1, element_ptr &pla
 // set_batch_size / get_batch_size accessor tests (no GPU required)
 // ---------------------------------------------------------------------------
 
-TEST(OptixRunnerBatchSize, DefaultIsZero)
+// Default value of 0 means automatic batch sizing: determine_batch_size() will
+// call automatic_batch_size() to compute a GPU-memory-safe batch size at run
+// time. It does NOT mean "launch all rays in a single batch".
+TEST(OptixRunnerBatchSize, DefaultIsZeroMeansAutoSize)
 {
     OptixRunner runner;
     EXPECT_EQ(runner.get_batch_size(), 0u);
@@ -30,7 +33,8 @@ TEST(OptixRunnerBatchSize, SetAndGet)
     EXPECT_EQ(runner.get_batch_size(), 500u);
 }
 
-TEST(OptixRunnerBatchSize, SetZeroRestoresDefault)
+// Setting back to 0 restores automatic GPU-memory-based sizing.
+TEST(OptixRunnerBatchSize, SetZeroRestoresAutoSize)
 {
     OptixRunner runner;
     runner.set_batch_size(1000);
@@ -48,6 +52,27 @@ TEST(OptixRunnerBatchSize, ThrowsOnOverflow)
     EXPECT_EQ(runner.get_batch_size(), 0u);
 }
 
+// INT_MAX itself is the largest valid batch size; it must not throw.
+TEST(OptixRunnerBatchSize, MaxIntBoundaryDoesNotThrow)
+{
+    OptixRunner runner;
+    const uint_fast64_t max_valid =
+        static_cast<uint_fast64_t>(std::numeric_limits<int>::max());
+    EXPECT_NO_THROW(runner.set_batch_size(max_valid));
+    EXPECT_EQ(runner.get_batch_size(), max_valid);
+}
+
+// A failed set_batch_size must not corrupt a previously stored non-zero value.
+TEST(OptixRunnerBatchSize, ThrowPreservesExistingValue)
+{
+    OptixRunner runner;
+    runner.set_batch_size(999);
+    const uint_fast64_t too_large =
+        static_cast<uint_fast64_t>(std::numeric_limits<int>::max()) + 1ULL;
+    EXPECT_THROW(runner.set_batch_size(too_large), std::out_of_range);
+    EXPECT_EQ(runner.get_batch_size(), 999u);
+}
+
 // ---------------------------------------------------------------------------
 // Simulation correctness: batched run should yield the same hit count as the
 // default single-batch run.
@@ -57,7 +82,8 @@ TEST(OptixRunnerBatchSize, BatchedRunMatchesHitCount)
 {
     const int N_rays = 10000;
 
-    // --- reference run (default single batch) ---
+    // --- reference run (default auto-sized batch: m_batch_size == 0 defers to
+    //     determine_batch_size() / automatic_batch_size()) ---
     SimulationData sd_ref;
     element_ptr p1_ref, p2_ref;
     make_two_plate_sd(sd_ref, p1_ref, p2_ref);
@@ -73,7 +99,7 @@ TEST(OptixRunnerBatchSize, BatchedRunMatchesHitCount)
     ASSERT_EQ(ref_runner.report_simulation(&ref_result, 0), RunnerStatus::SUCCESS);
     const int ref_hits = ref_result.get_number_of_records();
 
-    // --- batched run (batch_size = 1000, i.e. 10 iterations) ---
+    // --- explicit batched run (user-supplied batch_size = 1000, ~10 iterations) ---
     SimulationData sd_batch;
     element_ptr p1_batch, p2_batch;
     make_two_plate_sd(sd_batch, p1_batch, p2_batch);
@@ -93,7 +119,8 @@ TEST(OptixRunnerBatchSize, BatchedRunMatchesHitCount)
     EXPECT_EQ(ref_hits, N_rays);
     EXPECT_EQ(batch_hits, N_rays);
 
-    // Batched run needs more than 10 iterations with 1000 batch size for 10000 rays
+    // With a user-supplied batch of 1000 and 10000 rays, at least 10 iterations
+    // are required regardless of available GPU memory.
     EXPECT_GE(batch_runner.get_N_run_iterations(), 10u);
 }
 
@@ -128,4 +155,31 @@ TEST(OptixRunnerBatchSize, SmallBatchMultipleIterations)
 
     // Multiple iterations must have been needed
     EXPECT_GE(runner.get_N_run_iterations(), 10u);
+}
+
+// ---------------------------------------------------------------------------
+// Batch size >= N_rays: should complete in exactly one iteration.
+// ---------------------------------------------------------------------------
+
+TEST(OptixRunnerBatchSize, BatchSizeExceedingRaysCompletesInOneIteration)
+{
+    const int N_rays = 1000;
+
+    SimulationData sd;
+    element_ptr plate1, plate2;
+    make_two_plate_sd(sd, plate1, plate2);
+    sd.get_simulation_parameters().number_of_rays = N_rays;
+    sd.get_simulation_parameters().max_number_of_rays = N_rays * 100;
+
+    OptixRunner runner;
+    runner.set_batch_size(N_rays * 2); // larger than N_rays
+    ASSERT_EQ(runner.initialize(), RunnerStatus::SUCCESS);
+    ASSERT_EQ(runner.setup_simulation(&sd), RunnerStatus::SUCCESS);
+    ASSERT_EQ(runner.run_simulation(), RunnerStatus::SUCCESS);
+
+    SimulationResult result;
+    ASSERT_EQ(runner.report_simulation(&result, 0), RunnerStatus::SUCCESS);
+
+    EXPECT_EQ(result.get_number_of_records(), N_rays);
+    EXPECT_EQ(runner.get_N_run_iterations(), 1u);
 }

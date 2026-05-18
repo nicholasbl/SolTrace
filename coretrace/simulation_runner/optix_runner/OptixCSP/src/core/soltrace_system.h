@@ -71,8 +71,9 @@ namespace OptixCSP
             m_max_number_of_rays = maxrays;
         }
 
-        /// Set the number of rays launched per iteration. Use 0 (default) to
-        /// launch all rays in a single batch (previous behaviour).
+        /// Set the number of rays launched per iteration.
+        /// Use 0 (default) to let determine_batch_size() automatically compute a
+        /// batch size that fits the ray-data buffers in available GPU memory.
         /// Throws std::out_of_range if batch_size exceeds the maximum int value.
         void set_batch_size(uint_fast64_t batch_size)
         {
@@ -130,7 +131,7 @@ namespace OptixCSP
 
         uint_fast64_t m_number_of_rays;
         uint_fast64_t m_max_number_of_rays;
-        uint_fast64_t m_batch_size = 0; // 0 means single batch (= m_number_of_rays)
+        uint_fast64_t m_batch_size = 0; // 0 means auto-size: determine_batch_size() calls automatic_batch_size()
 
         bool m_verbose;
 
@@ -150,11 +151,11 @@ namespace OptixCSP
         // Compacted hit records: one contiguous array of HitRecord.
         // Each ray group starts with a HIT_CREATE record followed by its hits.
         // Rays that produced no hits (CREATE-only) are excluded.
-        std::vector<HitRecord>  m_hit_records;
+        std::vector<HitRecord> m_hit_records;
 
         // Global ray index (ray_offset + local_index) for each logical hit ray in m_hit_records.
         // Parallel to the logical rays (not records): m_hit_ray_ids.size() == m_n_hit_rays.
-        std::vector<uint32_t>   m_hit_ray_ids;
+        std::vector<uint32_t> m_hit_ray_ids;
 
         // Count of rays that produced at least one non-CREATE hit.
         uint_fast64_t m_n_hit_rays = 0;
@@ -167,8 +168,8 @@ namespace OptixCSP
         size_t m_sun_dir_buffer_size_allocated = 0;
 
         // Pre-allocated device scratch buffers for GPU stream compaction.
-        CompactionScratch   m_compaction_scratch;
-        CompactionTimings   m_compaction_timings;
+        CompactionScratch m_compaction_scratch;
+        CompactionTimings m_compaction_timings;
 
         std::vector<std::shared_ptr<CspElement>> m_element_list;
         void create_shader_binding_table();
@@ -177,6 +178,15 @@ namespace OptixCSP
         // GPU-side compaction: count hits, compact buffer on device, copy result to m_hit_records.
         // Increments m_n_hit_rays by the number of newly collected hit rays.
         void get_buffer_results();
+        /// Computes the maximum rays-per-batch that fit in 80 % of current free
+        /// GPU memory, accounting for all per-ray device buffers and compaction
+        /// scratch. Returns 0 if memory cannot be queried.
+        uint_fast64_t automatic_batch_size() const;
+        /// Returns the effective batch size for a run() call.
+        /// If m_batch_size > 0 the user-supplied value is used as-is.
+        /// Otherwise automatic_batch_size() is called and the result is capped
+        /// at m_number_of_rays.
+        uint_fast64_t determine_batch_size() const;
 
         Timer m_timer_setup;
         Timer m_timer_trace;

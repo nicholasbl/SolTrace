@@ -159,7 +159,8 @@ void SolTraceSystem::initialize()
     sun_vec_norm = glm::normalize(sun_vec_norm);
 
     data_manager->launch_params_H.sun_vector = make_float3(static_cast<float>(sun_vec_norm[0]),
-                                                           static_cast<float>(sun_vec_norm[1]), static_cast<float>(sun_vec_norm[2]));
+                                                           static_cast<float>(sun_vec_norm[1]),
+                                                           static_cast<float>(sun_vec_norm[2]));
 
     // Set generation type
     switch (m_sun->get_gen_type())
@@ -591,9 +592,7 @@ void SolTraceSystem::create_shader_binding_table()
 void SolTraceSystem::allocate_device_buffers()
 {
     // Set constant launch params (unchanged across the while loop).
-    const uint_fast64_t effective_batch_raw = (m_batch_size > 0) ? m_batch_size : m_number_of_rays;
-    const uint_fast64_t effective_batch = std::min(effective_batch_raw,
-        static_cast<uint_fast64_t>(std::numeric_limits<int>::max()));
+    const uint_fast64_t effective_batch = determine_batch_size();
     data_manager->launch_params_H.width = static_cast<int>(effective_batch);
     data_manager->launch_params_H.height = 1;
     data_manager->launch_params_H.max_depth = MAX_TRACE_DEPTH;
@@ -757,4 +756,77 @@ double SolTraceSystem::get_sun_plane_area() const
         a.z * b.x - a.x * b.z,
         a.x * b.y - a.y * b.x);
     return static_cast<double>(sqrtf(cross.x * cross.x + cross.y * cross.y + cross.z * cross.z));
+}
+
+uint_fast64_t SolTraceSystem::automatic_batch_size() const
+{
+    // Query free GPU memory *after* the BVH and pipeline have been built so
+    // that only the ray-data buffers need to fit in the remaining space.
+    size_t mem_free, mem_total;
+    CUDA_CHECK(cudaMemGetInfo(&mem_free, &mem_total));
+
+    // Reserve 20 % headroom for OptiX internal allocations, memory
+    // fragmentation, and any other transient allocations during launch.
+    constexpr double kUsableFraction = 0.80;
+    const size_t usable_bytes = static_cast<size_t>(
+        static_cast<double>(mem_free) * kUsableFraction);
+
+    // Per-ray device memory charged by allocate_device_buffers() and
+    // allocate_compaction_scratch():
+    //   hit_buffer      MAX_TRACE_DEPTH * sizeof(HitRecord)  -- trace output
+    //   d_compacted     MAX_TRACE_DEPTH * sizeof(HitRecord)  -- worst-case compacted copy
+    //   sun_dir_buffer  sizeof(float3)                       -- sun ray direction
+    //   curand states   sizeof(curandState)                  -- RNG state
+    //   d_count         sizeof(uint32_t)                     -- compaction hit count
+    //   d_offsets       sizeof(uint32_t)                     -- compaction prefix sum
+    //   d_has_hit       sizeof(uint32_t)                     -- per-ray hit flag
+    const size_t bytes_per_ray =
+        2u * MAX_TRACE_DEPTH * sizeof(HitRecord) + sizeof(float3) + sizeof(curandState) + 3u * sizeof(uint32_t);
+
+    const uint_fast64_t computed =
+        (bytes_per_ray > 0) ? static_cast<uint_fast64_t>(usable_bytes / bytes_per_ray) : 0u;
+
+    // Cap at int max (OptiX launch width is signed int).
+    uint_fast64_t batch_size = std::min(
+        computed,
+        static_cast<uint_fast64_t>(std::numeric_limits<int>::max()));
+
+    if (m_verbose)
+    {
+        std::cout << "automatic_batch_size:"
+                  << " free=" << mem_free / (1024.0 * 1024.0) << " MB"
+                  << ", usable=" << usable_bytes / (1024.0 * 1024.0) << " MB"
+                  << ", bytes_per_ray=" << bytes_per_ray
+                  << ", batch_size=" << batch_size << "\n";
+    }
+
+    return batch_size;
+}
+
+uint_fast64_t SolTraceSystem::determine_batch_size() const
+{
+    // Estimates number of rays that can be traced in a single batch based on
+    // available GPU memory.
+    uint_fast64_t batch_size = automatic_batch_size();
+
+    if (m_batch_size > 0)
+    {
+        if (m_batch_size > batch_size && batch_size > 0)
+        {
+            std::cerr << "[SolTraceSystem] WARNING: user-supplied batch_size ("
+                      << m_batch_size
+                      << ") exceeds the GPU-memory-safe automatic batch size ("
+                      << batch_size
+                      << "). This may cause device out-of-memory errors or "
+                         "degraded GPU performance.\n";
+        }
+        batch_size = m_batch_size;
+    }
+    else
+    {
+        // Take the smaller of the automatic batch_size and number of rays?
+        batch_size = batch_size > 0 ? std::min(batch_size, m_number_of_rays) : m_number_of_rays;
+    }
+
+    return batch_size;
 }
