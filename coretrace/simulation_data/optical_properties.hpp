@@ -39,13 +39,13 @@ namespace SolTrace::Data
         DistributionType error_distribution_type;
         double transmitivity;
         double reflectivity;
-        double slope_error;
-        double specularity_error;
+        double slope_error;                 // [mrad]
+        double specularity_error;           // [mrad]
         double refraction_index_front;
         double refraction_index_back;
 
         OpticalProperties() : my_type(InteractionType::REFLECTION),
-                              error_distribution_type(DistributionType::GAUSSIAN),
+                              error_distribution_type(DistributionType::UNKNOWN),
                               transmitivity(0.0),
                               reflectivity(0.0),
                               slope_error(0.0),
@@ -75,8 +75,17 @@ namespace SolTrace::Data
 
         // TODO: What should the error settings be with the below?
 
+        void set_ideal_material()
+        {
+            this->error_distribution_type = DistributionType::NONE;
+            this->specularity_error = 0.0;
+            this->slope_error = 0.0;
+            return;
+        }
+
         void set_ideal_absorption()
         {
+            this->set_ideal_material();
             this->my_type = InteractionType::REFLECTION;
             this->transmitivity = 0.0;
             this->reflectivity = 0.0;
@@ -84,6 +93,7 @@ namespace SolTrace::Data
         }
         void set_ideal_reflection()
         {
+            this->set_ideal_material();
             this->my_type = InteractionType::REFLECTION;
             this->transmitivity = 0.0;
             this->reflectivity = 1.0;
@@ -91,6 +101,7 @@ namespace SolTrace::Data
         }
         void set_ideal_transmission()
         {
+            this->set_ideal_material();
             this->my_type = InteractionType::REFRACTION;
             this->transmitivity = 1.0;
             this->reflectivity = 0.0;

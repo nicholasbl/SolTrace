@@ -381,10 +381,10 @@ namespace SolTrace::Data
         triangulation() const override;
     };
 
-    struct EqualateralTriangle : public Aperture
+    struct EquilateralTriangle : public Aperture
     {
         double circumscribe_diameter;
-        // EqualateralTriangle() : Aperture(EQUILATERAL_TRIANGLE),
+        // EquilateralTriangle() : Aperture(EQUILATERAL_TRIANGLE),
         //                         circumscribe_diameter(0.0)
         // {
         // }
@@ -403,7 +403,7 @@ namespace SolTrace::Data
          * @brief Json-based constructor for equilateral triangle aperture
          * @param jnode contains diameter of circumscribed circle
          */
-        EqualateralTriangle(const nlohmann::ordered_json &jnode);
+        EquilateralTriangle(const nlohmann::ordered_json &jnode);
 
         virtual ~EqualateralTriangle() {}
 

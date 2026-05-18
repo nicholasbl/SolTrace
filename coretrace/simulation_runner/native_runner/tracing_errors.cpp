@@ -78,7 +78,6 @@ void SurfaceNormalErrors(MTRand &myrng,
 		// gaussian distribution
 		thetax = myrng.randNorm(0., delop);
 		thetay = myrng.randNorm(0., delop);
-
 		theta2 = thetax * thetax + thetay * thetay;
 		break;
 	case DistributionType::PILLBOX:			// case 'p':
@@ -256,6 +255,7 @@ void Errors(
 			} while ((myrng() > (stest / Sun->MaxIntensity)) || (theta2 > (Sun->MaxAngle * Sun->MaxAngle)));
 			break;
 		default:
+			// TODO: This shouldn't throw here...
 			throw std::invalid_argument("Unsupported sun shape in Errors function.");
 		}
 	}

@@ -14,7 +14,12 @@ include_directories(
 # Add test files for optix_runner
 set(OPTIX_RUNNER_TEST_SRC
     ../../common/common.cpp
+    vector_error_test.cpp
+    geometry_intersection_test.cpp
     gpu_tower_demo.cpp
+    flat_optical_test.cpp
+    two_plate_test.cpp
+    sun_test.cpp
 )
 
 add_executable(OptixRunnerUnitTests
@@ -27,6 +32,7 @@ target_link_libraries(
     simresult
     native_runner
     optix_runner
+    OptixCSP_core
     GTest::gtest_main
 )
 

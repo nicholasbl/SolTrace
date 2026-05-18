@@ -119,6 +119,7 @@ namespace SolTrace::EmbreeRunner
         for (unsigned k = 0; k < nthreads; ++k)
         {
             nrays = k < rem ? nrays_per_thread + 1 : nrays_per_thread;
+            const uint_fast64_t ray_index_offset = k * nrays_per_thread + std::min(static_cast<uint_fast64_t>(k), rem);
             ThreadManager::future my_future = std::async(
                 std::launch::async,
                 trace_embree_single_thread,
@@ -129,6 +130,7 @@ namespace SolTrace::EmbreeRunner
                 seeds[k],
                 nrays,
                 MaxNumberOfRays / nthreads + 1,
+                ray_index_offset,
                 IncludeSunShape,
                 IncludeErrors,
                 PosSunStage,
@@ -139,17 +141,19 @@ namespace SolTrace::EmbreeRunner
         return manager->monitor_until_completion();
     }
 
-    RunnerStatus trace_embree_single_thread(unsigned thread_id,
-                                            thread_manager_ptr manager,
-                                            trace_logger_ptr logger,
-                                            TSystem *System,
-                                            unsigned seed,
-                                            uint_fast64_t NumberOfRays,
-                                            uint_fast64_t MaxNumberOfRays,
-                                            bool IncludeSunShape,
-                                            bool IncludeErrors,
-                                            const glm::dvec3 &PosSunStage,
-                                            const RTCScene &embree_scene)
+    RunnerStatus trace_embree_single_thread(
+        unsigned thread_id,
+        thread_manager_ptr manager,
+        trace_logger_ptr logger,
+        TSystem *System,
+        unsigned seed,
+        uint_fast64_t NumberOfRays,
+        uint_fast64_t MaxNumberOfRays,
+        uint_fast64_t ray_index_offset,
+        bool IncludeSunShape,
+        bool IncludeErrors,
+        const glm::dvec3 &PosSunStage,
+        const RTCScene &embree_scene)
     {
         // std::cout << "Thread " << thread_id << " with seed " << seed
         //           << std::endl;
@@ -192,6 +196,7 @@ namespace SolTrace::EmbreeRunner
             // Initialize stage variables
             StageDataArrayIndex = 0;
             PreviousStageDataArrayIndex = 0;
+            int ErrorFlag = 0;
 
             // Loop through rays
             while (StageHasRays)
@@ -208,17 +213,24 @@ namespace SolTrace::EmbreeRunner
                 // Get Ray
                 if (i == 0)
                 {
+                    const uint_fast64_t sample_index = ray_index_offset + sun_ray_count_local + 1;
+
                     // Make ray (if first stage)
                     glm::dvec3 PosRaySun;
-                    SolTrace::NativeRunner::GenerateRay(myrng,
-                                                        PosSunStage,
-                                                        Stage->Origin,
-                                                        Stage->RLocToRef,
-                                                        &System->Sun,
-                                                        PosRayGlob,
-                                                        CosRayGlob,
-                                                        PosRaySun);
-                    System->SunRayCount++;
+                    SolTrace::NativeRunner::GenerateRay(
+                        myrng, PosSunStage, Stage->Origin,
+                        Stage->RLocToRef, &System->Sun,
+                        sample_index,
+                        PosRayGlob, CosRayGlob, PosRaySun,
+                        ErrorFlag);
+
+                    if (ErrorFlag != 0)
+                    {
+                        return RunnerStatus::ERROR;
+                    }
+
+                    sun_ray_count_local++;
+                    
                 }
                 else
                 {
@@ -246,8 +258,6 @@ namespace SolTrace::EmbreeRunner
 
                 uint_fast64_t LastElementNumber = 0;
                 uint_fast64_t LastRayNumber = 0;
-
-                int ErrorFlag;
                 int LastHitBackSide;
                 bool StageHit;
                 int MultipleHitCount = 0;

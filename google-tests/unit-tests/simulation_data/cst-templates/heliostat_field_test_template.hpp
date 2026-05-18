@@ -1,15 +1,13 @@
-#include <iomanip>
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <vector> 
-#include <numeric> 
+#pragma once
 
 #include <gtest/gtest.h>
 
-#include <embree_runner.hpp>
-#include <native_runner.hpp>
-#include <native_runner_types.hpp>
+#include <cmath>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <sstream>
+
 #include <simulation_data.hpp>
 #include <simulation_result_export.hpp>
 #include <stage_element.hpp>
@@ -24,22 +22,41 @@
 #include "count_absorbed_native.h"
 
 using Heliostat = SolTrace::Data::Heliostat;
-
-using SolTrace::EmbreeRunner::EmbreeRunner;
-using SolTrace::NativeRunner::NativeRunner;
 using SolTrace::Runner::RunnerStatus;
 
-using SolTrace::NativeRunner::TRayData;
-using SolTrace::NativeRunner::TSystem;
-using SolTrace::NativeRunner::TSun;
+static void save_hit_pos_to_file(const SimulationResult& result, std::string filename)
+{
+    std::ofstream outputFile(filename, std::ios::out | std::ios::trunc);
+    if (!outputFile.is_open()) {
+        std::cerr << "Error: Could not open the file " << filename << std::endl;
+    }
+    for (size_t i = 0; i < result.get_number_of_records(); i++) {
+        const ray_record_ptr rr = result[i];
+        for (size_t j = 0; j < rr->interactions.size(); j++) {
+            SolTrace::Result::RayEvent rev = rr->get_event(j);
+            if (j == 1)
+            {
+                glm::dvec3 pos;
+                rr->get_position(j, pos);
+                outputFile << pos[0] << "," << pos[1] << "," << pos[2];
+                outputFile << std::endl;
+            }
+        }
+    }
+}
 
-
-class HeliostatFieldSimulation : public ::testing::Test {
+template <typename RunnerT>
+class HeliostatFieldSimulationHelper {
 public:
     bool high_accuracy = false;     // Runs 20 Million rays and tighter tolerance on checks
     bool print_info = false;        // Prints information on from simulation results (sun calculations, ray counts, flux calculations)
     bool save_results = false;      // Saves flux map results to CSV files
     bool save_raydata = false;      // Saves ray data to CSV file
+
+    int seed = 123;
+    SolTrace::Data::GenType sun_gen_type = SolTrace::Data::GenType::HALTON;
+    bool use_optical_errors = true;
+    bool use_sunshape_errors = true;
 
     const glm::dvec3 zero = {0.0, 0.0, 0.0}; // Global origin
     const glm::dvec3 khat = {0.0, 0.0, 1.0}; // Global z-axis
@@ -59,13 +76,8 @@ public:
     std::shared_ptr<SolTrace::Data::SingleElement> receiver;
     std::shared_ptr<SolTrace::Data::SingleElement> bottom_heat_shield;
 
-    // Tolerances
-    // TODO: we could bring these into the class provide defaults and modify per test (if needed)
-
-protected:
     SimulationData simData;
-
-    EmbreeRunner runner;
+    RunnerT runner;
 
     // Sun outputs
     double sun_width;
@@ -82,6 +94,10 @@ protected:
     uint_fast64_t rec_absorb_count;
     uint_fast64_t heat_shield_absorb_count;
     uint_fast64_t miss_count;
+    uint_fast64_t tot_rec_hits;
+    uint_fast64_t rec_direct_count;
+    uint_fast64_t rec_via_helio_count;
+    uint_fast64_t rec_via_rec_count;        // These are rays that reflect inside the cylinder
 
     // Flux map
     HPM2D fluxGrid;
@@ -93,6 +109,16 @@ protected:
     glm::dvec3 Centroid;
     double zScale;
     size_t NumberOfRays;
+    int NotBinned;
+    double max_neg_x_flux_err = 0;
+    double max_pos_x_flux_err = 0;
+
+    // Results
+    double absorption_efficiency;
+    double blocking_efficiency;
+    double spillage_efficiency;
+    double cosine_efficiency;
+    double total_power;
 
     // Expected results
     double expected_power;
@@ -107,17 +133,14 @@ protected:
 
     HPM2D expected_fluxGrid;
 
-    void SetUp() override {
+    // Helper initialization (what used to be in SetUp)
+    void initialize() {
         // Set parameters
         set_default_params();
 
         // Initialize runner
         RunnerStatus sts = runner.initialize();
         EXPECT_EQ(sts, RunnerStatus::SUCCESS);
-        // Native runner speedups
-        //runner.enable_power_tower();
-        //runner.enable_point_focus();
-        runner.set_number_of_threads(14);
 
         // Initial setup of receiver
         receiver = SolTrace::Data::make_element<SingleElement>();
@@ -125,7 +148,7 @@ protected:
         receiver->get_back_optical_properties()->set_ideal_reflection();
         receiver->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_height));
         receiver->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(rec_radius));
-        glm::dvec3 offset = {0.0, rec_radius, 0.0}; // Cylinder origin is on the edge
+        glm::dvec3 offset = {0.0, 0.0, 0.0};
         glm::dvec3 rec_origin_offset = rec_origin + offset;
         glm::dvec3 v1 = {0.0, -1.0, 0.0};
         glm::dvec3 aim_point = rec_origin_offset + v1;
@@ -138,7 +161,7 @@ protected:
         top_heat_shield->get_back_optical_properties()->set_ideal_reflection();
         top_heat_shield->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_heat_shield_height));
         top_heat_shield->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(rec_radius));
-        offset = { 0.0, rec_radius, (rec_height + rec_heat_shield_height)/2.};    // Cylinder origin is on the edge
+        offset = { 0.0, 0.0, (rec_height + rec_heat_shield_height)/2.};
         rec_origin_offset = rec_origin + offset;
         aim_point = rec_origin_offset + v1;
         top_heat_shield->set_reference_frame_geometry(rec_origin_offset, aim_point, 0.0);
@@ -150,7 +173,7 @@ protected:
         bottom_heat_shield->get_back_optical_properties()->set_ideal_reflection();
         bottom_heat_shield->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_heat_shield_height));
         bottom_heat_shield->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Cylinder>(rec_radius));
-        offset = { 0.0, rec_radius, -(rec_height + rec_heat_shield_height) / 2. };    // Cylinder origin is on the edge
+        offset = { 0.0, 0.0, -(rec_height + rec_heat_shield_height) / 2. };
         rec_origin_offset = rec_origin + offset;
         aim_point = rec_origin_offset + v1;
         bottom_heat_shield->set_reference_frame_geometry(rec_origin_offset, aim_point, 0.0);
@@ -162,15 +185,17 @@ protected:
         SimulationParameters& params = simData.get_simulation_parameters();
         params.number_of_rays = 20.e6;
         params.max_number_of_rays = params.number_of_rays * 100;
+        params.include_optical_errors = use_optical_errors;
+        params.include_sun_shape_errors = use_sunshape_errors;
     }
 
     void set_default_params() {
         SimulationParameters& params = simData.get_simulation_parameters();
         params.number_of_rays = 5.e5;
         params.max_number_of_rays = params.number_of_rays * 100;
-        params.include_optical_errors = true;
-        params.include_sun_shape_errors = true;
-        params.seed = 123;
+        params.include_optical_errors = use_optical_errors;
+        params.include_sun_shape_errors = use_sunshape_errors;
+        params.seed = seed;
     }
 
     void create_heliostat_field() {
@@ -347,11 +372,13 @@ protected:
         sun = SolTrace::Data::make_ray_source<Sun>();
         sun->set_position(sun_pos);
         sun->set_shape(SolTrace::Data::SunShape::PILLBOX, 0.0, 4.65, 0.0);
+        sun->set_gen_type(sun_gen_type);
         simData.add_ray_source(sun);
 
         // Set up stages
         stage_ptr st1 = SolTrace::Data::make_stage(1);
         st1->set_reference_frame_geometry(zero, khat, 0.0);
+
         for (const auto& heliostat : heliostat_field) {
             auto ret = st1->add_element(heliostat);
             EXPECT_TRUE(SolTrace::Data::Element::is_success(ret));
@@ -381,9 +408,16 @@ protected:
         }
     }
 
-    void simulate(SimulationResult* result) {
+    void simulate(SimulationResult* result, int N_rays = -1) {
         if (high_accuracy) set_high_accuracy_params();
         else set_default_params();
+
+        if (N_rays != -1)
+        {
+            auto& params = simData.get_simulation_parameters();
+            params.number_of_rays = N_rays;
+            params.max_number_of_rays = static_cast<std::uint_fast64_t>(N_rays) * 10000ULL;
+        }
 
         RunnerStatus sts = runner.setup_simulation(&simData);
         EXPECT_EQ(sts, RunnerStatus::SUCCESS);
@@ -393,14 +427,12 @@ protected:
         EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     }
 
-    void calculate_sun_size() {
+    void calculate_sun_size(SimulationResult& result) {
         double dni = 1000.0; // W/m2 (constant for all tests)
-        const TSystem* sys = runner.get_system();
-        const TSun* sun = &(sys->Sun);
-        sun_width = (sun->MaxXSun - sun->MinXSun);
-        sun_height = (sun->MaxYSun - sun->MinYSun);
-        A_sun_box = sun_width * sun_height;
-        nsun_rays = sys->SunRayCount;
+
+        result.get_sun_dimensions(this->sun_width, this->sun_height);
+        nsun_rays = result.get_sun_ray_count();
+        A_sun_box = result.get_sun_A_box();
         power_per_ray = A_sun_box / nsun_rays * dni;
 
         if (print_info) {
@@ -410,7 +442,7 @@ protected:
         }
     }
 
-    void calculate_ray_counts(const SimulationResult &result) {
+    void calculate_ray_counts(const SimulationResult& result) {
         tot_helio_hits = 0;
         tot_reflect_count = 0;
         tot_helio_absorb_count = 0;
@@ -419,6 +451,11 @@ protected:
         rec_absorb_count = 0;
         heat_shield_absorb_count = 0;
         miss_count = 0;
+
+        tot_rec_hits = 0;
+        rec_direct_count = 0;
+        rec_via_helio_count = 0;
+        rec_via_rec_count = 0;
 
         for (size_t i = 0; i < result.get_number_of_records(); i++) {
             const ray_record_ptr rr = result[i];
@@ -436,7 +473,18 @@ protected:
 
                 // Check receiver element
                 if (hit_element == receiver->get_id()) {
+                    tot_rec_hits++;
                     if (rev == RayEvent::ABSORB) rec_absorb_count++;
+                    if (j == 1) rec_direct_count++;
+                    else if (j == 2)
+                    {
+                        rec_via_helio_count++;
+                    }
+                    else
+                    {
+                        rec_via_rec_count++;
+                    }
+                        
                     continue;
                 }
 
@@ -472,6 +520,23 @@ protected:
             std::cout << "Heat Shield Absorbed Rays: " << heat_shield_absorb_count << std::endl;
             std::cout << "Miss Rays: " << miss_count << std::endl;
         }
+    }
+
+    void calculate_outputs(const SimulationResult& result, bool ignore_direct = false) {
+        
+        absorption_efficiency = (double)tot_reflect_count / (double)tot_helio_hits;
+        blocking_efficiency = 1.0 - (double)tot_helio_block_count / (double)tot_reflect_count;
+        spillage_efficiency = (double)rec_absorb_count / (double)(tot_reflect_count - tot_helio_block_count);
+
+        double field_area = 0.0;
+        for (const auto& heliostat : heliostat_field) {
+            field_area += heliostat->get_area();
+        }
+        cosine_efficiency = ((double)tot_helio_hits / (double)nsun_rays) * (A_sun_box / field_area);
+
+        total_power = rec_absorb_count * power_per_ray / 1.e3;   // W to kW
+
+        calculate_receiver_flux_map(result, 60, 23, true, ignore_direct);
     }
 
     void read_expected_summary_results(std::string filepath) {
@@ -589,7 +654,9 @@ protected:
         NumberOfRays = 0;
     }
 
-    bool calculate_receiver_flux_map(const SimulationResult &result, int nbinsx, int nbinsy, bool is_cylinder) {
+    bool calculate_receiver_flux_map(const SimulationResult& result, int nbinsx, int nbinsy, 
+        bool is_cylinder, bool ignore_direct) 
+    {
         reset_flux_map();
 
         double minx = -rec_width / 2.0;
@@ -639,7 +706,7 @@ protected:
         if (is_cylinder) {
             minx = -PI * rec_radius;
             maxx = PI * rec_radius;
-            gridszx = 2.0 * PI * rec_radius;
+            gridszx = maxx - minx;
         }
 
         binszx = gridszx / (double)nbinsx;
@@ -654,7 +721,9 @@ protected:
         int GridIncrementX, GridIncrementY;
 
         size_t RayCount = 0;
-        size_t NotBinned = 0;
+        NotBinned = 0;
+        max_neg_x_flux_err = 0;
+        max_pos_x_flux_err = 0;
         size_t npoints = 0;
         Centroid.x = Centroid.y = Centroid.z = 0.0;
         fluxGrid.fill(0.0);
@@ -667,50 +736,74 @@ protected:
             for (size_t j = 0; j < rr->interactions.size(); j++) {
                 if (receiver->get_id() == rr->get_element(j)) {
                     if (rr->get_event(j) == RayEvent::ABSORB) {
-                        rr->get_position(j, global_position);
+                        if (j > 1 || !ignore_direct)
+                        {
+                            rr->get_position(j, global_position);
 
-                        receiver->convert_global_to_local(local_position, global_position);
+                            receiver->convert_global_to_local(local_position, global_position);
 
-                        x = local_position.x;
-                        y = local_position.y;
-                        z = local_position.z;
+                            x = local_position.x;
+                            y = local_position.y;
+                            z = local_position.z;
 
-                        Centroid += local_position;
+                            Centroid += local_position;
 
-                        npoints++;
+                            npoints++;
 
-                        if (is_cylinder) {
-                            if (z <= rec_radius)
-                                x = rec_radius * asin(x / rec_radius);
-                            else if (z > rec_radius) {
-                                if (x < 0) x = -(PI * rec_radius / 2.0 + rec_radius * acos(fabs(x) / rec_radius));
-                                if (x >= 0) x = PI * rec_radius / 2.0 + rec_radius * acos(x / rec_radius);
+                            Centroid[0] += x;
+                            Centroid[1] += y;
+                            Centroid[2] += z;
+                            npoints++;
+
+                            if (is_cylinder) {
+                                //if (z <= 0.0)
+                                //    x = rec_radius * asin(x / rec_radius);
+                                //else if (z > 0.0) {
+                                //    if (x < 0) x = -(PI * rec_radius / 2.0 + rec_radius * acos(fabs(x) / rec_radius));
+                                //    if (x >= 0) x = PI * rec_radius / 2.0 + rec_radius * acos(x / rec_radius);
+                                //}
+
+                                double rho = std::hypot(x, z);
+                                if (rho <= 0.0)
+                                {
+                                    NotBinned++;
+                                    continue;
+                                }
+
+                                // Project to cylinder surface
+                                double xp = rec_radius * x / rho;
+                                double zp = rec_radius * z / rho;
+
+                                // Unwrap angle in [-pi, pi], with 0 at the front center (z < 0)
+                                double theta = std::atan2(xp, -zp);
+
+                                x = rec_radius * theta;
                             }
-                        }
 
-                        GridIncrementX = -1; //initialize grid increment counters
-                        GridIncrementY = -1;
+                            GridIncrementX = -1; //initialize grid increment counters
+                            GridIncrementY = -1;
 
-                        //determine which bin the ray falls into
-                        while ((minx + (GridIncrementX + 1) * binszx) < x)
-                            GridIncrementX++;
+                            //determine which bin the ray falls into
+                            while ((minx + (GridIncrementX + 1) * binszx) < x)
+                                GridIncrementX++;
 
-                        while ((miny + (GridIncrementY + 1) * binszy) < y)
-                            GridIncrementY++;
+                            while ((miny + (GridIncrementY + 1) * binszy) < y)
+                                GridIncrementY++;
 
-                        GridIncrementX = nbinsx - GridIncrementX - 1;
-                        GridIncrementY = nbinsy - GridIncrementY - 1;
+                            GridIncrementX = nbinsx - GridIncrementX - 1;
+                            GridIncrementY = nbinsy - GridIncrementY - 1;
 
-                        if (GridIncrementX >= 0 && GridIncrementX < (int)fluxGrid.ncols()
-                            && GridIncrementY >= 0 && GridIncrementY < (int)fluxGrid.nrows())
-                        {
-                            fluxGrid.at(GridIncrementY, GridIncrementX) += 1;//if ray falls inside a bin, increment count for that bin
-                            RayCount++;  //increment ray intersection counter
-                        }
-                        else
-                        {
-                            NotBinned++;
-                            //	qDebug("Not binned: [%d %d],  x=%lg, y=%lg", GridIncrementX, GridIncrementY, x, y);
+                            if (GridIncrementX >= 0 && GridIncrementX < (int)fluxGrid.ncols()
+                                && GridIncrementY >= 0 && GridIncrementY < (int)fluxGrid.nrows())
+                            {
+                                fluxGrid.at(GridIncrementY, GridIncrementX) += 1;//if ray falls inside a bin, increment count for that bin
+                                RayCount++;  //increment ray intersection counter
+                            }
+                            else
+                            {
+                                NotBinned++;
+                                //	qDebug("Not binned: [%d %d],  x=%lg, y=%lg", GridIncrementX, GridIncrementY, x, y);
+                            }
                         }
                     }
                 }
@@ -760,7 +853,7 @@ protected:
         SigmaFlux = sqrt((nbinsx * nbinsy * SumFlux2 - SumFlux * SumFlux) / (nbinsx * nbinsy * nbinsx * nbinsy));
         Uniformity = SigmaFlux / AveFlux;
         PeakFluxUncertainty = 100 / sqrt((double)NRaysInPeakFluxBin);
-        AveFluxUncertainty = 100 / sqrt((double)result.get_number_of_records());     
+        AveFluxUncertainty = 100 / sqrt((double)result.get_number_of_records());
         // TODO: Should the be number of rays hitting the surface, not total rays traced?
 
         if (print_info) {
@@ -783,7 +876,7 @@ protected:
 
     }
 
-    void check_outputs(const SimulationResult &result) {
+    void check_outputs(const SimulationResult& result) {
         SimulationParameters& params = simData.get_simulation_parameters();
         EXPECT_EQ(tot_helio_hits, params.number_of_rays);
         EXPECT_EQ(tot_helio_absorb_count + tot_reflect_count, tot_helio_hits);
@@ -791,32 +884,18 @@ protected:
 
         double tol = high_accuracy ? 1.e-3 : 5.e-3;
         // Check efficiencies
-        double absorption_efficiency = (double)tot_reflect_count / (double)tot_helio_hits;
         EXPECT_NEAR(absorption_efficiency, expected_absorption_efficiency, tol);
-        double blocking_efficiency = 1.0 - (double)tot_helio_block_count / (double)tot_reflect_count;
-        EXPECT_NEAR(blocking_efficiency, expected_blocking_efficiency, tol * 2.0);  
-        double spillage_efficiency = (double) rec_absorb_count / (double)(tot_reflect_count - tot_helio_block_count);
+        EXPECT_NEAR(blocking_efficiency, expected_blocking_efficiency, tol * 2.0);
         EXPECT_NEAR(spillage_efficiency, expected_spillage_efficiency, tol);
-
-        double field_area = 0.0;
-        for (const auto& heliostat : heliostat_field) {
-            field_area += heliostat->get_area();
-        }
-        double cosine_efficiency = ((double)tot_helio_hits / (double)nsun_rays) * (A_sun_box / field_area);
         EXPECT_NEAR(cosine_efficiency, expected_cosine_efficiency, tol);
 
         // Total power absorbed
-        double total_power = rec_absorb_count * power_per_ray / 1.e3;   // W to kW
         EXPECT_NEAR(total_power, expected_power, tol * expected_power);
 
         // Peak flux value
         double peak_tol = high_accuracy ? 2.e-2 : 0.25;
-        calculate_receiver_flux_map(result, 60, 23, true);
         EXPECT_NEAR(PeakFlux / 1.e3, expected_peak_flux, peak_tol * expected_peak_flux);
 
-        // RMS of flux values
-        EXPECT_EQ(fluxGrid.nrows(), expected_fluxGrid.nrows());
-        EXPECT_EQ(fluxGrid.ncols(), expected_fluxGrid.ncols());
         double rmse = 0.0;
         for (size_t r = 0; r < fluxGrid.nrows(); r++) {
             for (size_t c = 0; c < fluxGrid.ncols(); c++) {
@@ -826,6 +905,10 @@ protected:
             }
         }
         rmse = sqrt(rmse / (fluxGrid.nrows() * fluxGrid.ncols()));
+
+        // RMS of flux values
+        EXPECT_EQ(fluxGrid.nrows(), expected_fluxGrid.nrows());
+        EXPECT_EQ(fluxGrid.ncols(), expected_fluxGrid.ncols());
 
         //EXPECT_LE(rmse, 25.0); // expected_flux_RMS
         double rmse_tol = high_accuracy ? 0.02 : 0.08;  // 2% of peak flux // 0.04
@@ -871,25 +954,50 @@ protected:
         }
     }
 
+    void save_outputs(std::string filename, const std::map<std::string, double>& results)
+    {
+        std::ofstream outputFile(filename, std::ios::out | std::ios::trunc);
+        if (!outputFile.is_open())
+        {
+            std::cerr << "Error: Could not open the file " << filename << std::endl;
+            return;
+        }
+
+        for (const auto& kv : results)
+        {
+            outputFile << kv.first << "," << kv.second << std::endl;
+        }
+
+        outputFile.close();
+    }
+
+    void update_from_hour(std::string hour)
+    {
+        // Update simulation geometry based on hour
+        if (hour == "8")
+            update_simulation_geometry(74.95, 26.26);  // Solar position at 8 AM
+        else if (hour == "12")
+            update_simulation_geometry(0.0, 61.97); // Solar Noon
+        else
+            throw std::invalid_argument("Hour not supported for simulate_check_outputs.");
+    }
+
     void simulate_check_outputs(std::string task_number, std::string aim_strategy, std::string hour) {
-        
+
         if (print_info) {
             std::cout << "\n\nTask: " << task_number << ", Aim: " << aim_strategy << ", Hour: " << hour << std::endl;
         }
 
         // Update simulation geometry based on hour
-        if (hour == "8") 
-            update_simulation_geometry(74.95, 26.26);  // Solar position at 8 AM
-        else if (hour == "12") 
-            update_simulation_geometry(0.0, 61.97); // Solar Noon
-        else
-            throw std::invalid_argument("Hour not supported for simulate_check_outputs.");        
-        
+        update_from_hour(hour);
+
         SimulationResult result;
         simulate(&result);
-        calculate_sun_size();
+        calculate_sun_size(result);
         calculate_ray_counts(result);
         read_expected_all_results(task_number, aim_strategy, hour);
+
+        calculate_outputs(result);
         check_outputs(result);
 
         // Save results to file
@@ -905,104 +1013,17 @@ protected:
         result.write_csv_file(full_field_filename);
     }
 
-    void TearDown() override {
-        // Code here will be called immediately after each test (right
-        // before the destructor).
-    }
-
 };
 
+// GTest fixture that reuses the helper logic
+// This keeps existing TEST_F-based tests working
 
-TEST_F(HeliostatFieldSimulation, singleFacet_SlantFocused)
-{
-    // Centerline aimpoints
-    create_heliostat_field();
-    setup_simData();
-    simulate_check_outputs("1a", "1", "8");
-    simulate_check_outputs("1a", "1", "12");
+template <typename RunnerT>
+class HeliostatFieldSimulation : public ::testing::Test, public HeliostatFieldSimulationHelper<RunnerT> {
+protected:
+    void SetUp() override {
+        this->initialize();
+    }
 
-    // Scatter aimpoints
-    set_scatter_aimpoints();
-    simulate_check_outputs("1a", "2", "8");
-    simulate_check_outputs("1a", "2", "12");
-}
-
-TEST_F(HeliostatFieldSimulation, singleFacet_BandFocused)
-{
-    // Centerline aimpoints
-    create_heliostat_field();
-    assign_focal_lengths_canting_banded();
-    setup_simData();
-    simulate_check_outputs("1b", "1", "8");
-    simulate_check_outputs("1b", "1", "12");
-
-    // Scatter aimpoints
-    set_scatter_aimpoints();
-    simulate_check_outputs("1b", "2", "8");
-    simulate_check_outputs("1b", "2", "12");
-}
-
-TEST_F(HeliostatFieldSimulation, multiFacet_SlantCanted)
-{
-    // Centerline aimpoints
-    create_heliostat_field();
-    assign_canted_slant(true);      // Flat facets
-
-    setup_simData();
-    simulate_check_outputs("2a", "1", "8");
-    simulate_check_outputs("2a", "1", "12");
-
-    // Scatter aimpoints
-    set_scatter_aimpoints();
-    simulate_check_outputs("2a", "2", "8");
-    simulate_check_outputs("2a", "2", "12");
-}
-
-TEST_F(HeliostatFieldSimulation, multiFacet_BandCanted)
-{
-    // Centerline aimpoints
-    create_heliostat_field();
-    assign_canted_banded(true);     // Flat facets
-
-    setup_simData();
-    simulate_check_outputs("2b", "1", "8");
-    simulate_check_outputs("2b", "1", "12");
-
-    // Scatter aimpoints
-    set_scatter_aimpoints();
-    simulate_check_outputs("2b", "2", "8");
-    simulate_check_outputs("2b", "2", "12");
-}
-
-TEST_F(HeliostatFieldSimulation, multiFacet_SlantFocused_SlantCanted)
-{
-    // Center aimpoints;
-    create_heliostat_field();
-    assign_canted_slant(false);     // Slant focused (default)
-
-    setup_simData();
-    simulate_check_outputs("3a", "1", "8");
-    simulate_check_outputs("3a", "1", "12");
-
-    // Scatter aimpoints
-    set_scatter_aimpoints();
-    simulate_check_outputs("3a", "2", "8");
-    simulate_check_outputs("3a", "2", "12");
-}
-
-TEST_F(HeliostatFieldSimulation, multiFacet_BandFocused_BandCanted)
-{
-    // Center aimpoints
-    create_heliostat_field();
-    assign_canted_banded(false);    // Canted by band
-    assign_focal_lengths_banded();  // Focused by band
-
-    setup_simData();
-    simulate_check_outputs("3b", "1", "8");
-    simulate_check_outputs("3b", "1", "12");
-
-    // Scatter aimpoints
-    set_scatter_aimpoints();
-    simulate_check_outputs("3b", "2", "8");
-    simulate_check_outputs("3b", "2", "12");
-}
+    void TearDown() override { }
+};

@@ -345,6 +345,7 @@ TEST(EmbreeRunner, ValidationTest2)
     // Constants
     const uint_fast64_t NRAYS = 50000;
     const double TOL = 1e-4;
+    element_id absorber_id = 6285;
 
     // Read Input File
     bool success = sd.import_from_file(sample_path);
@@ -353,6 +354,22 @@ TEST(EmbreeRunner, ValidationTest2)
     EXPECT_TRUE(sd.get_number_of_ray_sources() > 0);
 
     std::cout << "Num Elements: " << sd.get_number_of_elements() << std::endl;
+
+    // Change the location of the absorber to account for difference in origin
+    // of cylinder in new and legacy. Local z-axis of the absorber is aligned
+    // with the global y-axis so the offset to add the radius of the cylinder
+    // in the positive y-axis direction.
+    auto absorb = sd.get_element(absorber_id);
+    ASSERT_TRUE(absorb->get_surface()->get_type() == SurfaceType::CYLINDER);
+    auto surf = std::dynamic_pointer_cast<Cylinder>(absorb->get_surface());
+    ASSERT_TRUE(surf != nullptr);
+    double r = surf->radius;
+    glm::dvec3 offset(0.0, r, 0.0);
+    glm::dvec3 oref = absorb->get_origin_ref();
+    oref = oref + offset;
+    glm::dvec3 aref = absorb->get_aim_vector_ref();
+    aref = aref + offset;
+    absorb->set_reference_frame_geometry(oref, aref, 0.0);
 
     // Parameters
     SimulationParameters &params = sd.get_simulation_parameters();
@@ -454,7 +471,6 @@ TEST(EmbreeRunner, ValidationTest2)
     EXPECT_EQ(sts, RunnerStatus::SUCCESS);
     EXPECT_EQ(result.get_number_of_records(), NRAYS);
 
-    element_id absorber_id = 6285;
     int_fast64_t nabsorbed = count_element_event(result, absorber_id, RayEvent::ABSORB);
     int_fast64_t nreflect = count_element_event(result, absorber_id, RayEvent::REFLECT);
     int_fast64_t nevents = nabsorbed + nreflect;
