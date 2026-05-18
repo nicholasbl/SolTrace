@@ -30,9 +30,9 @@ namespace SolTrace::EmbreeRunner
         EmbreeRunner(const EmbreeRunner &) = delete;
         EmbreeRunner(EmbreeRunner &&) = delete;
 
-        virtual RunnerStatus setup_simulation(const SolTrace::Data::SimulationData *data);
-        virtual RunnerStatus run_simulation();
-        virtual RunnerStatus update_simulation(const SolTrace::Data::SimulationData *data);
+        virtual RunnerStatus setup_simulation(const SolTrace::Data::SimulationData *data) override;
+        virtual RunnerStatus run_simulation() override;
+        virtual RunnerStatus update_simulation(const SolTrace::Data::SimulationData *data) override;
 
         // TODO: Do we want loud errors when a user calls these?
         void disable_power_tower() = delete;

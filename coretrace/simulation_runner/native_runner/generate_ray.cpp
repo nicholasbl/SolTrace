@@ -1,9 +1,21 @@
-
 #include "generate_ray.hpp"
 
 #include "simulation_data_export.hpp"
 
 namespace SolTrace::NativeRunner {
+
+double halton(uint_fast64_t index, uint_fast64_t base)
+{
+	double f = 1.0;
+	double result = 0;
+	while (index > 0)
+	{
+		f = f / base;
+		result = result + f * (index % base);
+		index = index / base;
+	}
+	return result;
+}
 
 void GenerateRay(
     MTRand& myrng,
@@ -11,9 +23,11 @@ void GenerateRay(
     glm::dvec3& Origin,
     glm::dmat3& RLocToRef,
     TSun* Sun,
+	uint_fast64_t sample_index,
     glm::dvec3& PosRayGlobal,
     glm::dvec3& CosRayGlobal,
-    glm::dvec3& PosRaySun)
+    glm::dvec3& PosRaySun,
+	int& ErrorFlag)
 {
 	/*{This procedure generates a randomly located ray in the x-y plane of the sun coordinate system in
 	 the z direction of the sun coord. system, checks to see that the ray is within the region of interest
@@ -35,6 +49,7 @@ void GenerateRay(
     glm::dvec3 PosRayStage(0.0, 0.0, 0.0);
     glm::dvec3 CosRayStage(0.0, 0.0, 0.0);
 	int NegPosSign = 0;
+	ErrorFlag = 0;
     PosRaySun = glm::dvec3(0.0);
 
     // ZRaySun := 0.0;  //Origin of rays in xy plane of sun coord system.
@@ -71,32 +86,59 @@ void GenerateRay(
 
         double CosRayGMag = glm::length(CosRayGlobal);
 
-        CosRayGlobal /= CosRayGMag;
-    }
-    else
-    {
-        // following changed on 09/26/05 to more efficiently generate rays relative to element center of mass in primary stage
-		/*{XRaySun := 2.0*MaxRad*ran3(Seed) - MaxRad;  //ran3 produces results independent of platform.
-		YRaySun := 2.0*MaxRad*ran3(Seed) - MaxRad;
-		if (XRaySun*XRaySun + YRaySun*YRaySun) > MaxRad*MaxRad then goto GENRAY;
-		XRaySun := Xcm + XRaySun;  //adjust location of generated rays about element center of mass
-        YRaySun := Ycm + YRaySun;}*/
-        XRaySun = Sun->MinXSun + (Sun->MaxXSun - Sun->MinXSun) * myrng(); // uses a rectangular region of interest about the primary
-		YRaySun = Sun->MinYSun + (Sun->MaxYSun - Sun->MinYSun) * myrng(); // stage. Added 09/26/05
+		CosRayGlobal /= CosRayGMag;
+	}
+	else
+	{
+		switch (Sun->GenTypeIndex)
+		{
+			case(SolTrace::Data::GenType::RANDOM):
+			{
+				// following changed on 09/26/05 to more efficiently generate rays relative to element center of mass in primary stage
+				/*{XRaySun := 2.0*MaxRad*ran3(Seed) - MaxRad;  //ran3 produces results independent of platform.
+				YRaySun := 2.0*MaxRad*ran3(Seed) - MaxRad;
+				if (XRaySun*XRaySun + YRaySun*YRaySun) > MaxRad*MaxRad then goto GENRAY;
+				XRaySun := Xcm + XRaySun;  //adjust location of generated rays about element center of mass
+				YRaySun := Ycm + YRaySun;}*/
 
-		// std::cout << "MinXSun: " << Sun->MinXSun
-		// 		  << "\nMaxXSun: " << Sun->MaxXSun
-		// 		  << "\nMinYSun: " << Sun->MinYSun
-		// 		  << "\nMaxYSun: " << Sun->MaxYSun
-		// 		  << "\nXRaySun: " << XRaySun
-		// 		  << "\nYRaySun:" << YRaySun
-		// 		  << "\nR1: " << (XRaySun - Sun->MinXSun) / (Sun->MaxXSun - Sun->MinXSun)
-		// 		  << "\nR2: " << (YRaySun - Sun->MinYSun) / (Sun->MaxYSun - Sun->MinXSun)
-		// 		  << std::endl;
+				XRaySun = Sun->MinXSun + (Sun->MaxXSun - Sun->MinXSun) * myrng(); // uses a rectangular region of interest about the primary
+				YRaySun = Sun->MinYSun + (Sun->MaxYSun - Sun->MinYSun) * myrng(); // stage. Added 09/26/05
 
-		//{Offload ray location and direction cosines into sun array}
-        PosRaySun = {XRaySun, YRaySun, ZRaySun};
-        CosRaySun = {0.0, 0.0, 1.0};
+				// std::cout << "MinXSun: " << Sun->MinXSun
+				// 		  << "\nMaxXSun: " << Sun->MaxXSun
+				// 		  << "\nMinYSun: " << Sun->MinYSun
+				// 		  << "\nMaxYSun: " << Sun->MaxYSun
+				// 		  << "\nXRaySun: " << XRaySun
+				// 		  << "\nYRaySun:" << YRaySun
+				// 		  << "\nR1: " << (XRaySun - Sun->MinXSun) / (Sun->MaxXSun - Sun->MinXSun)
+				// 		  << "\nR2: " << (YRaySun - Sun->MinYSun) / (Sun->MaxYSun - Sun->MinXSun)
+				// 		  << std::endl;
+
+				//{Offload ray location and direction cosines into sun array}
+				PosRaySun = {XRaySun, YRaySun, ZRaySun};
+				CosRaySun = {0.0, 0.0, 1.0};
+				break;
+			}
+			case(SolTrace::Data::GenType::HALTON):
+			{
+				const double u = halton(sample_index, 2);
+				const double v = halton(sample_index, 3);
+
+				XRaySun = Sun->MinXSun + (Sun->MaxXSun - Sun->MinXSun) * u;
+				YRaySun = Sun->MinYSun + (Sun->MaxYSun - Sun->MinYSun) * v;
+
+				//{Offload ray location and direction cosines into sun array}
+				PosRaySun = {XRaySun, YRaySun, ZRaySun};
+				CosRaySun = {0.0, 0.0, 1.0};
+				break;
+			}
+			default:
+			{
+				ErrorFlag = -1;	// TODO: Assign specific int to errorflag?
+			}
+		}
+
+		
 
         //{Transform ray locations and dir cosines into Stage system}
         Data::TransformToReference(PosRaySun,

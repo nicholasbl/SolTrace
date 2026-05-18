@@ -95,14 +95,59 @@ set_target_properties(simdata
     PREFIX ""
 )
 
-# Link dependencies
-target_link_libraries(simdata
+target_include_directories(simdata
     PUBLIC
-    nlohmann_json::nlohmann_json
-    glm::glm
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cst_templates>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/solar_position_calculators>
+        $<BUILD_INTERFACE:${nlohmann_json_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${glm_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/simulation_data>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/simulation_data/cst_templates>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/simulation_data/solar_position_calculators>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+# Link dependencies via BUILD_INTERFACE: nlohmann_json and glm are header-only;
+# their include directories are propagated above via target_include_directories,
+# and consumers find them through find_dependency() in SolTraceConfig.cmake.
+# Wrapping in $<BUILD_INTERFACE:...> excludes these CPM-fetched (non-IMPORTED)
+# targets from the install interface, avoiding the CMake export error:
+#   install(EXPORT "SolTraceTargets") includes target "simdata" which requires
+#   target "nlohmann_json"/"glm" that is not in any export set.
+target_link_libraries(simdata
+    PRIVATE
+    $<BUILD_INTERFACE:nlohmann_json::nlohmann_json>
+    $<BUILD_INTERFACE:glm::glm>
 )
 
 if (NOT APPLE AND ENABLE_COVERAGE)
     # SET(CMAKE_CXX_FLAGS "-O0 -coverage -fkeep-inline-functions")
     SET(CMAKE_CXX_FLAGS "-O0 -coverage")
 endif()
+
+install(TARGETS simdata
+    EXPORT SolTraceTargets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/SolTrace/simulation_data
+    FILES_MATCHING
+        PATTERN "*.hpp"
+        PATTERN "*.h"
+        PATTERN "CMakeLists.txt" EXCLUDE
+)
+
+# Install nlohmann_json headers for consumers of simdata
+install(DIRECTORY "${nlohmann_json_SOURCE_DIR}/include/"
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+# Install glm headers for consumers of simdata
+install(DIRECTORY "${glm_SOURCE_DIR}/glm"
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)

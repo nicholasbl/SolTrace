@@ -696,6 +696,8 @@ bool load_stinput_file(SimulationData &sd, std::string filename)
     // Read in simulation parameters (if any)
     process_sim_par(fp, sd);
 
+    fclose(fp);
+
     return true;
 }
 
@@ -741,21 +743,7 @@ void write_json_file(SimulationData& sd, std::string filename)
             // Check source type
             if (auto sun_ptr = std::dynamic_pointer_cast<SolTrace::Data::Sun>(ray_source))
             {
-                jsrc["source_type"] = "Sun";
-
-                SolTrace::Data::SunShape shape = sun_ptr->get_shape();
-                std::string shape_string = SolTrace::Data::SunShapeMap.at(shape);
-                jsrc["my_shape"] = shape_string;                // string
-                jsrc["sigma"] = sun_ptr->get_sigma();           // double
-                jsrc["half_width"] = sun_ptr->get_half_width(); // double
-                jsrc["csr"] = sun_ptr->get_circumsolar_ratio(); // double
-                std::vector<double> user_angle, user_intensity;
-                sun_ptr->get_user_data(user_angle, user_intensity);
-                jsrc["user_angle"] = user_angle;                // vector<double>
-                jsrc["user_intensity"] = user_intensity;        // vector<double>
-
-                glm::dvec3 pos = sun_ptr->get_position();
-                jsrc["pos"] = to_array(pos);
+                sun_ptr->write_json(jsrc);
             }
             else
             {
@@ -845,27 +833,8 @@ void load_json_file(SimulationData& sd, std::string filename)
             throw std::runtime_error("Unsupported ray source type");
         }
 
-        std::string shape_string = jsrc.at("my_shape");
-        SunShape shape = get_enum_from_string(shape_string, SunShapeMap, SunShape::UNKNOWN);
-        if (shape == SunShape::UNKNOWN)
-        {
-            // Error reading sunshape
-            throw std::runtime_error("Error reading sun shape");
-        }
-        double sigma = json_get_double(jsrc, "sigma");
-        double half_width = json_get_double(jsrc, "half_width");
-        double csr = json_get_double(jsrc, "csr");
-
-        std::vector<double> user_angle = jsrc.at("user_angle");
-        std::vector<double> user_intensity = jsrc.at("user_intensity");
-
-        std::array<double, 3> pos_arr = jsrc.at("pos").get<std::array<double, 3>>();
-        glm::dvec3 pos_vec = from_array(pos_arr);
-
         // Make sun for simulation data
-        auto sun = make_ray_source<Sun>();
-        sun->set_position(pos_vec);
-        sun->set_shape(shape, sigma, half_width, csr, user_angle, user_intensity);
+        auto sun = make_ray_source<Sun>(jsrc);
         sd.add_ray_source(sun);
     }
 

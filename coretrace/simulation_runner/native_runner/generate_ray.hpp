@@ -11,9 +11,11 @@ void GenerateRay(MTRand& myrng,
                  glm::dvec3& Origin,
                  glm::dmat3& RLocToRef,
                  TSun* Sun,
+                 uint_fast64_t sample_index,
                  glm::dvec3& PosRayGlobal,
                  glm::dvec3& CosRayGlobal,
-                 glm::dvec3& PosRaySun);
+                 glm::dvec3& PosRaySun,
+                 int& ErrorFlag);
 
 
 } // namespace SolTrace::NativeRunner
