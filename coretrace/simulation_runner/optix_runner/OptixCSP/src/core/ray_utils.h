@@ -16,7 +16,7 @@ namespace OptixCSP
     {
         uint32_t *d_count = nullptr;   // per-ray output record count
         uint32_t *d_offsets = nullptr; // exclusive prefix-sum of d_count
-        uint32_t *d_has_hit = nullptr; // 1 if ray contributes records, else 0
+        uint8_t  *d_has_hit = nullptr; // 1 if ray contributes records, else 0
         uint32_t *d_n_hit = nullptr;   // scalar: total hit rays
         void *d_scan_tmp = nullptr;    // CUB DeviceScan temp storage
         size_t scan_bytes = 0;

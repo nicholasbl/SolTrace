@@ -28,7 +28,7 @@ namespace OptixCSP
         uint32_t num_rays,
         uint32_t max_depth,
         uint32_t *__restrict__ out_record_count,
-        uint32_t *__restrict__ out_has_hit)
+        uint8_t  *__restrict__ out_has_hit)
     {
         const uint32_t ray = blockIdx.x * blockDim.x + threadIdx.x;
         if (ray >= num_rays)
@@ -47,7 +47,7 @@ namespace OptixCSP
 
         const uint32_t has_hit = (raw_count > 1) ? 1u : 0u;
         out_record_count[ray] = has_hit ? raw_count : 0u;
-        out_has_hit[ray] = has_hit;
+        out_has_hit[ray] = static_cast<uint8_t>(has_hit);
 
         return;
     }
@@ -65,7 +65,7 @@ namespace OptixCSP
         uint32_t num_rays,
         uint32_t max_depth,
         const uint32_t *__restrict__ offsets,
-        const uint32_t *__restrict__ has_hit,
+        const uint8_t  *__restrict__ has_hit,
         HitRecord *__restrict__ out_buffer)
     {
         const uint32_t ray = blockIdx.x * blockDim.x + threadIdx.x;
@@ -103,18 +103,19 @@ namespace OptixCSP
 
         CUDA_CHECK(cudaMalloc(&scratch.d_count, num_rays * sizeof(uint32_t)));
         CUDA_CHECK(cudaMalloc(&scratch.d_offsets, num_rays * sizeof(uint32_t)));
-        CUDA_CHECK(cudaMalloc(&scratch.d_has_hit, num_rays * sizeof(uint32_t)));
+        CUDA_CHECK(cudaMalloc(&scratch.d_has_hit, num_rays * sizeof(uint8_t)));
         CUDA_CHECK(cudaMalloc(&scratch.d_n_hit, sizeof(uint32_t)));
 
         // Query CUB temp-storage sizes using typed null pointers (size query only).
         // scan_bytes must cover both ExclusiveSum and DeviceSelect::Flagged (d_scan_tmp is reused).
         uint32_t *null_u32 = nullptr;
+        uint8_t  *null_u8  = nullptr;
         cub::DeviceScan::ExclusiveSum(scratch.d_scan_tmp, scratch.scan_bytes, null_u32, null_u32, num_rays);
-        cub::DeviceReduce::Sum(scratch.d_red_tmp, scratch.red_bytes, null_u32, null_u32, num_rays);
+        cub::DeviceReduce::Sum(scratch.d_red_tmp, scratch.red_bytes, null_u8, null_u32, num_rays);
 
         size_t select_bytes = 0;
         thrust::counting_iterator<uint32_t> count_iter(0u);
-        cub::DeviceSelect::Flagged(nullptr, select_bytes, count_iter, null_u32, null_u32, null_u32, num_rays);
+        cub::DeviceSelect::Flagged(nullptr, select_bytes, count_iter, null_u8, null_u32, null_u32, num_rays);
         if (select_bytes > scratch.scan_bytes)
             scratch.scan_bytes = select_bytes;
 
