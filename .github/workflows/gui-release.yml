@@ -59,6 +59,15 @@ jobs:
           --config "${{ env.BUILD_TYPE }}"
           --verbose
 
+      - name: Build installable support tools
+        # The top-level install includes coretrace/simdriver install rules even
+        # for GUI release packaging, so build simdriver before cmake --install.
+        run: >
+          cmake --build "${{ steps.paths.outputs.build-dir }}"
+          --target simdriver
+          --config "${{ env.BUILD_TYPE }}"
+          --verbose
+
       - name: Install bundle
         run: >
           cmake --install "${{ steps.paths.outputs.build-dir }}"
