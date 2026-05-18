@@ -186,7 +186,7 @@ project_point_to_triangle(db::Mesh const& mesh, glm::vec3 p) {
     // Scan all triangles, and find the closest point on each. Best wins.
     // TODO: add cutoff so really far away points don't match.
 
-    ssize_t closest_triangle = -1;
+    ptrdiff_t closest_triangle = -1;
 
     ClosestPointResult best;
 

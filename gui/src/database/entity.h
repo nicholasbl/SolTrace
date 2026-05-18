@@ -20,7 +20,7 @@ public:
 
     entt::entity value = entt::null;
 
-    bool operator<=>(Entity const& other) const = default;
+    std::strong_ordering operator<=>(Entity const& other) const = default;
 
     operator entt::entity() const { return value; }
 
