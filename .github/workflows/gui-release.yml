@@ -57,6 +57,7 @@ jobs:
           --target "${{ env.APP_NAME }}"
           --config "${{ env.BUILD_TYPE }}"
           --parallel
+          --verbose
 
       - name: Install bundle
         run: >
