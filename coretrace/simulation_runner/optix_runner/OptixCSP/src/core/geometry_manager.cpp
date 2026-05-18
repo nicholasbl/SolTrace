@@ -3,7 +3,6 @@
 #include "sun_utils.h"
 #include "soltrace_state.h"
 #include "utils/util_check.hpp"
-#include "data_manager.h"
 
 #include <optix_stubs.h>
 

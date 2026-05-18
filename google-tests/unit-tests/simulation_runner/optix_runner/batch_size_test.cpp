@@ -172,7 +172,7 @@ TEST(OptixRunnerBatchSize, BatchSizeExceedingRaysCompletesInOneIteration)
     sd.get_simulation_parameters().max_number_of_rays = N_rays * 100;
 
     OptixRunner runner;
-    runner.set_batch_size(N_rays * 2); // larger than N_rays
+    runner.set_batch_size(N_rays * 8); // larger than N_rays
     ASSERT_EQ(runner.initialize(), RunnerStatus::SUCCESS);
     ASSERT_EQ(runner.setup_simulation(&sd), RunnerStatus::SUCCESS);
     ASSERT_EQ(runner.run_simulation(), RunnerStatus::SUCCESS);

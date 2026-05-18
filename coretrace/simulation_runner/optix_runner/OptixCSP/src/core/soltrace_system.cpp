@@ -9,9 +9,6 @@
 #include "soltrace_type.h"
 #include "timer.h"
 
-#include "../../../../../simulation_data/simdata_io.hpp"
-#include "../../../../../simulation_data/solar_position_calculators/basic_sun_position.hpp"
-
 #include "shaders/Soltrace.h"
 
 #include "utils/util_record.hpp"
@@ -19,11 +16,10 @@
 #include "utils/math_util.h"
 
 #include <algorithm>
-#include <limits>
-#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <limits>
 
 #include <optix_function_table_definition.h>
 #include <optix_stubs.h>
