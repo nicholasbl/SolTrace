@@ -6,7 +6,9 @@ include(cmake/CPM.cmake)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.11 REQUIRED COMPONENTS Core Gui Quick Quick3D Widgets Graphs)
+find_package(Qt6 6.11 REQUIRED COMPONENTS
+    Core Gui Qml Quick Quick3D Widgets Graphs Concurrent
+)
 
 set(QT_QML_GENERATE_QMLLS_INI ON)
 
@@ -15,13 +17,13 @@ qt_standard_project_setup(REQUIRES 6.11)
 
 # Setup icons
 if(APPLE)
-    set(MACOSX_BUNDLE_ICON_FILE soltrace.icon)
-    set(app_icon_macos "${CMAKE_CURRENT_SOURCE_DIR}/appicon/soltrace.icon")
+    set(MACOSX_BUNDLE_ICON_FILE SolTrace.icns)
+    set(app_icon_macos "${CMAKE_CURRENT_SOURCE_DIR}/appicon/SolTrace.icns")
         set_source_files_properties(${app_icon_macos} PROPERTIES
                MACOSX_PACKAGE_LOCATION "Resources")
 
     qt_add_executable(SolTrace MACOSX_BUNDLE src/main.cpp ${app_icon_macos})
-elseif()
+else()
     qt_add_executable(SolTrace
         src/main.cpp
     )
@@ -142,34 +144,17 @@ set_target_properties(SolTrace PROPERTIES
 target_link_libraries(SolTrace
     PRIVATE
         Qt6::Core
+        Qt6::Qml
         Qt6::Gui
         Qt6::Quick
         Qt6::Quick3D
         Qt6::Widgets
         Qt6::Graphs
+        Qt6::Concurrent
         simdata
         simresult
         native_runner
 )
-
-set_target_properties(simdata PROPERTIES
-    MACOSX_RPATH ON
-    INSTALL_NAME_DIR "@rpath"
-)
-
-if(APPLE)
-    install(TARGETS simdata simresult native_runner
-        LIBRARY DESTINATION "SolTrace.app/Contents/Frameworks"
-    )
-elseif(WIN32)
-    install(TARGETS simdata simresult native_runner
-        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-    )
-else()
-    install(TARGETS simdata simresult native_runner
-        LIBRARY DESTINATION "${CMAKE_INSTALL_BINDIR}"
-    )
-endif()
 
 include(GNUInstallDirs)
 install(TARGETS SolTrace

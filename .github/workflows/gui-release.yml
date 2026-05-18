@@ -1,0 +1,96 @@
+name: GUI Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+env:
+  BUILD_TYPE: Release
+  QT_VERSION: "6.11.1"
+  APP_NAME: SolTrace
+
+jobs:
+  macos:
+    name: macOS ARM64 bundle
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          aqtversion: "==3.3.*"
+          version: ${{ env.QT_VERSION }}
+          host: "mac"
+          target: "desktop"
+          arch: "clang_64"
+          modules: "qtgraphs qtquick3d"
+
+      - name: Set paths
+        id: paths
+        shell: bash
+        run: |
+          echo "build-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+          echo "install-dir=${{ github.workspace }}/dist" >> "$GITHUB_OUTPUT"
+          echo "asset=${{ github.workspace }}/SolTrace-macOS-arm64.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Configure
+        run: >
+          cmake -S "${{ github.workspace }}"
+          -B "${{ steps.paths.outputs.build-dir }}"
+          -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}"
+          -DSOLTRACE_BUILD_GUI=ON
+          -DSOLTRACE_BUILD_EMBREE_SUPPORT=OFF
+          -DSOLTRACE_BUILD_OPTIX_SUPPORT=OFF
+          -DCMAKE_OSX_ARCHITECTURES=arm64
+
+      - name: Build
+        run: >
+          cmake --build "${{ steps.paths.outputs.build-dir }}"
+          --target "${{ env.APP_NAME }}"
+          --config "${{ env.BUILD_TYPE }}"
+          --parallel
+
+      - name: Install bundle
+        run: >
+          cmake --install "${{ steps.paths.outputs.build-dir }}"
+          --config "${{ env.BUILD_TYPE }}"
+          --prefix "${{ steps.paths.outputs.install-dir }}"
+
+      - name: Package bundle
+        shell: bash
+        run: |
+          test -d "${{ steps.paths.outputs.install-dir }}/${{ env.APP_NAME }}.app"
+          ditto -c -k --sequesterRsrc --keepParent \
+            "${{ steps.paths.outputs.install-dir }}/${{ env.APP_NAME }}.app" \
+            "${{ steps.paths.outputs.asset }}"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SolTrace-macOS-ARM64
+          path: ${{ steps.paths.outputs.asset }}
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release upload "$TAG_NAME" "${{ steps.paths.outputs.asset }}" --clobber
+          else
+            gh release create "$TAG_NAME" \
+              "${{ steps.paths.outputs.asset }}" \
+              --draft \
+              --generate-notes \
+              --title "$TAG_NAME"
+          fi
