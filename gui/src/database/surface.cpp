@@ -407,7 +407,7 @@ generate_aperture_mesh(SD::aperture_ptr const&         aperture,
     }
     case SD::EQUILATERAL_TRIANGLE: {
         auto tri =
-            std::dynamic_pointer_cast<SD::EqualateralTriangle const>(aperture);
+            std::dynamic_pointer_cast<SD::EquilateralTriangle const>(aperture);
         if (!tri || tri->circumscribe_diameter <= 0.0) {
             qDebug() << Q_FUNC_INFO << "Bad eq triangle";
             return std::nullopt;

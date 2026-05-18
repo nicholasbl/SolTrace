@@ -342,7 +342,7 @@ void ApertureParameterModel::set_from(SD::Aperture const& aperture) {
     }
     case SolTrace::Data::EQUILATERAL_TRIANGLE: {
         auto const* ptr =
-            dynamic_cast<SD::EqualateralTriangle const*>(&aperture);
+            dynamic_cast<SD::EquilateralTriangle const*>(&aperture);
         if (!ptr) break;
         ret[0].content = ptr->circumscribe_diameter;
         break;
@@ -420,7 +420,7 @@ void ApertureParameterModel::write_back(SD::Aperture& aperture) const {
         break;
     }
     case SolTrace::Data::EQUILATERAL_TRIANGLE: {
-        auto* ptr = dynamic_cast<SD::EqualateralTriangle*>(&aperture);
+        auto* ptr = dynamic_cast<SD::EquilateralTriangle*>(&aperture);
         if (!ptr || m_records.isEmpty()) break;
         ptr->circumscribe_diameter = m_records[0].content;
         break;

@@ -99,8 +99,8 @@ static bool operator==(SD::Rectangle const& a, SD::Rectangle const& b) {
     return a.x_length() == b.x_length() && a.y_length() == b.y_length() &&
            a.x_coord() == b.x_coord() && a.y_coord() == b.y_coord();
 }
-static bool operator==(SD::EqualateralTriangle const& a,
-                       SD::EqualateralTriangle const& b) {
+static bool operator==(SD::EquilateralTriangle const& a,
+                       SD::EquilateralTriangle const& b) {
     return a.circumscribe_diameter == b.circumscribe_diameter;
 }
 static bool operator==(SD::IrregularTriangle const& a,
@@ -132,8 +132,8 @@ static bool is_equal(SD::Aperture const& a, SD::Aperture const& b) {
         return *dynamic_cast<SD::Rectangle const*>(&a) ==
                *dynamic_cast<SD::Rectangle const*>(&b);
     case SolTrace::Data::EQUILATERAL_TRIANGLE:
-        return *dynamic_cast<SD::EqualateralTriangle const*>(&a) ==
-               *dynamic_cast<SD::EqualateralTriangle const*>(&b);
+        return *dynamic_cast<SD::EquilateralTriangle const*>(&a) ==
+               *dynamic_cast<SD::EquilateralTriangle const*>(&b);
     case SolTrace::Data::SINGLE_AXIS_CURVATURE_SECTION:
         // TODO: When that class is implemented, we can implement this
         return false;

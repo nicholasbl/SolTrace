@@ -393,11 +393,9 @@ namespace SolTrace::Data
          * @brief Constructor for equilateral triangle aperture
          * @param cd Diameter of circumscribed circle
          */
-        EqualateralTriangle(double cd)
+        EquilateralTriangle(double cd)
             : Aperture(ApertureType::EQUILATERAL_TRIANGLE),
-              circumscribe_diameter(cd)
-        {
-        }
+              circumscribe_diameter(cd) { }
 
         /**
          * @brief Json-based constructor for equilateral triangle aperture
@@ -405,7 +403,7 @@ namespace SolTrace::Data
          */
         EquilateralTriangle(const nlohmann::ordered_json &jnode);
 
-        virtual ~EqualateralTriangle() {}
+        virtual ~EquilateralTriangle() { }
 
         /**
          * @brief Calculate equilateral triangle aperture area

@@ -65,7 +65,7 @@ SimulationResult::convert(SimulationResultConversion const& opts) {
 
     uint64_t id = 0;
 
-    for (auto iter = opts.result.get_ray_record_iteratior();
+    for (auto iter = opts.result.get_ray_record_iterator();
          !opts.result.is_at_end(iter);
          ++iter) {
 

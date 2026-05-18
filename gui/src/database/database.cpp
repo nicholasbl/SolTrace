@@ -127,7 +127,7 @@ static size_t hash_aperture(SD::Aperture const& a) {
         break;
     }
     case SolTrace::Data::EQUILATERAL_TRIANGLE: {
-        auto* aa = dynamic_cast<SD::EqualateralTriangle const*>(&a);
+        auto* aa = dynamic_cast<SD::EquilateralTriangle const*>(&a);
         if (!aa) break;
         hash_combine(seed, aa->circumscribe_diameter);
         break;
