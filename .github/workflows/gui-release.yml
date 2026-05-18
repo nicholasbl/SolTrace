@@ -31,7 +31,7 @@ jobs:
           host: "mac"
           target: "desktop"
           arch: "clang_64"
-          modules: "qtgraphs qtquick3d"
+          modules: "qtgraphs qtquick3d qtshadertools"
 
       - name: Set paths
         id: paths
