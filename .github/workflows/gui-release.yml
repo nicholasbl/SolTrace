@@ -50,13 +50,13 @@ jobs:
           -DSOLTRACE_BUILD_EMBREE_SUPPORT=OFF
           -DSOLTRACE_BUILD_OPTIX_SUPPORT=OFF
           -DCMAKE_OSX_ARCHITECTURES=arm64
+          -DQT_QML_NO_CACHEGEN=ON
 
       - name: Build
         run: >
           cmake --build "${{ steps.paths.outputs.build-dir }}"
           --target "${{ env.APP_NAME }}"
           --config "${{ env.BUILD_TYPE }}"
-          --parallel
           --verbose
 
       - name: Install bundle
