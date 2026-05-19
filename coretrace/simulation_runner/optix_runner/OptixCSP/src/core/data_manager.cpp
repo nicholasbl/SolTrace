@@ -71,6 +71,11 @@ OptixCSP::LaunchParams *dataManager::getDeviceLaunchParams() const { return laun
 
 void dataManager::allocateLaunchParams()
 {
+	if (launch_params_D)
+	{
+		CUDA_CHECK(cudaFree(launch_params_D));
+		launch_params_D = nullptr;
+	}
 	CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&launch_params_D), sizeof(LaunchParams)));
 }
 
@@ -109,6 +114,11 @@ void dataManager::ensureCurandStates(
 
 void dataManager::allocateGeometryDataArray(std::vector<GeometryDataST> geometry_data_array_H)
 {
+	if (geometry_data_array_D)
+	{
+		CUDA_CHECK(cudaFree(geometry_data_array_D));
+		geometry_data_array_D = nullptr;
+	}
 
 	CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&geometry_data_array_D),
 						  geometry_data_array_H.size() * sizeof(GeometryDataST)));
@@ -136,6 +146,16 @@ void dataManager::updateGeometryDataArray(std::vector<GeometryDataST> geometry_d
 void dataManager::allocateMaterialDataArray(std::vector<MaterialData> material_data_array_front_H,
 											std::vector<MaterialData> material_data_array_back_H)
 {
+	if (material_data_array_front_D)
+	{
+		CUDA_CHECK(cudaFree(material_data_array_front_D));
+		material_data_array_front_D = nullptr;
+	}
+	if (material_data_array_back_D)
+	{
+		CUDA_CHECK(cudaFree(material_data_array_back_D));
+		material_data_array_back_D = nullptr;
+	}
 
 	CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&material_data_array_front_D),
 						  material_data_array_front_H.size() * sizeof(MaterialData)));

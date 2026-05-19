@@ -86,6 +86,7 @@ SolTraceSystem::SolTraceSystem()
 
 SolTraceSystem::~SolTraceSystem()
 {
+    clean_up();
 }
 
 void SolTraceSystem::set_verbose(bool verbose)
@@ -250,8 +251,9 @@ void SolTraceSystem::initialize()
     data_manager->launch_params_H.sun_dir_seed = m_seed;
     data_manager->launch_params_H.optical_errors = m_optical_errors;
 
-    // Create a CUDA stream for asynchronous operations.
-    CUDA_CHECK(cudaStreamCreate(&m_state.stream));
+    // Create a CUDA stream for asynchronous operations (once; guard against re-init leak).
+    if (!m_state.stream)
+        CUDA_CHECK(cudaStreamCreate(&m_state.stream));
 
     // Link the GAS handle.
     data_manager->launch_params_H.handle = m_state.gas_handle;
@@ -511,6 +513,11 @@ void SolTraceSystem::reset()
 // with their corresponding programs (ray generation, miss, and hit group).
 void SolTraceSystem::create_shader_binding_table()
 {
+    // Free any previously allocated SBT records to avoid leaks on re-initialization.
+    CUDA_CHECK(cudaFree(reinterpret_cast<void *>(m_state.sbt.raygenRecord)));
+    CUDA_CHECK(cudaFree(reinterpret_cast<void *>(m_state.sbt.missRecordBase)));
+    CUDA_CHECK(cudaFree(reinterpret_cast<void *>(m_state.sbt.hitgroupRecordBase)));
+    m_state.sbt = {};
 
     // Ray generation program record
     {
