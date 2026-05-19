@@ -122,7 +122,7 @@ jobs:
           host: "windows"
           target: "desktop"
           arch: "win64_msvc2022_64"
-          modules: "qtgraphs qtquick3d qtshadertools"
+          modules: "all"
 
       - name: Set paths
         id: paths
