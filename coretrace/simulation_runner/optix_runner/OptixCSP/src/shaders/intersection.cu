@@ -669,7 +669,7 @@ extern "C" __global__ void __intersection__hexagon_flat()
             // Left side
             float y1 = sqrtf(3.0f) * (p.x + s);
             float y2 = -y1;
-            if (y1 <= p.y && p.y <= y2)
+            if (y2 <= p.y && p.y <= y1)
             {
                 is_in = true;
             }
@@ -679,7 +679,7 @@ extern "C" __global__ void __intersection__hexagon_flat()
             // Right side
             float y1 = sqrtf(3.0f) * (p.x - s);
             float y2 = -y1;
-            if (y2 <= p.y && p.y <= y1)
+            if (y1 <= p.y && p.y <= y2)
             {
                 is_in = true;
             }
