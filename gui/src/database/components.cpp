@@ -145,6 +145,8 @@ static bool is_equal(SD::Aperture const& a, SD::Aperture const& b) {
                *dynamic_cast<SD::IrregularQuadrilateral const*>(&b);
     case SolTrace::Data::APERTURE_UNKNOWN: return false;
     }
+
+    return false;
 }
 
 static bool is_equal(SD::aperture_ptr const& a, SD::aperture_ptr const& b) {
@@ -195,6 +197,8 @@ static bool is_equal(SD::Surface const& a, SD::Surface const& b) {
     case SolTrace::Data::TORUS:
     case SolTrace::Data::SURFACE_UNKNOWN: return false;
     }
+
+    return false;
 }
 
 static bool is_equal(SD::surface_ptr const& a, SD::surface_ptr const& b) {

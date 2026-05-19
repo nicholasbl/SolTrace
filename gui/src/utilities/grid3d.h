@@ -2,6 +2,7 @@
 
 #include <array>
 #include <span>
+#include <stdexcept>
 
 #include <QHash>
 #include <QVector>
