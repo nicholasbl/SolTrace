@@ -26,7 +26,6 @@ namespace OptixCSP{
         float4 hit_point;
         int32_t element_id;
         uint8_t hit_type;
-        uint8_t _pad[3]; // TODO: Is this necessary?
     };
 
     enum RayType

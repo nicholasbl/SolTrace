@@ -86,6 +86,17 @@ RunnerStatus OptixRunner::setup_parameters(const SimulationData *data)
 {
     // Get Parameter data
     const SimulationParameters &sim_params = data->get_simulation_parameters();
+
+    // ray_offset and per-ray ids are stored as uint32_t in the compaction path.
+    // Reject runs that would overflow before they start rather than silently
+    // wrapping and corrupting trimming or reported launched-ray counts.
+    if (sim_params.max_number_of_rays > static_cast<uint_fast64_t>(std::numeric_limits<uint32_t>::max()))
+    {
+        throw std::overflow_error(
+            "max_number_of_rays exceeds UINT32_MAX; the OptiX runner stores "
+            "ray offsets and ids as uint32_t and cannot represent this run.");
+    }
+
     m_sys.set_number_of_rays(sim_params.number_of_rays, sim_params.max_number_of_rays);
     m_sys.set_seed(static_cast<uint64_t>(sim_params.seed));
 

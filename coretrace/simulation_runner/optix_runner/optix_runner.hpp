@@ -42,6 +42,10 @@ public:
 
     void set_verbose(bool verbose);
 
+    // Set the number of rays to launch for a trace in each optixLaunch call.
+    // WARNING: The runner is forced to use this batch size regardless of available GPU memory!!!!
+    // Setting a large batch size can cause device out of memory errors or degraded GPU performance.
+    // Setting a small batch size can cause long run times. Care is required when using this function.
     void set_batch_size(uint_fast64_t batch_size);
     uint_fast64_t get_batch_size() const;
 

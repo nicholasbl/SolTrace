@@ -8,10 +8,11 @@
 
 #if defined(__SSE__) || defined(_M_X64) || defined(_M_IX86)
 #  include <xmmintrin.h>
-#  include <pmmintrin.h>
+// Set FTZ (bit 15, 0x8000) and DAZ (bit 6, 0x0040) via MXCSR.
+// <xmmintrin.h> is sufficient; <pmmintrin.h> (SSE3) is intentionally avoided
+// so this compiles on SSE-only targets (-msse without -msse3).
 #  define SOLTRACE_SET_FTZ_DAZ() \
-     _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON); \
-     _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON)
+     _mm_setcsr(_mm_getcsr() | 0x8040u)
 #elif defined(__aarch64__) || defined(__arm64__) || defined(_M_ARM64)
 #  if defined(_MSC_VER)
 #    include <intrin.h>

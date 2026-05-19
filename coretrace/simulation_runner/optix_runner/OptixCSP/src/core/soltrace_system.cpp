@@ -277,6 +277,7 @@ void SolTraceSystem::run()
 {
     // Initialize results
     m_hit_records.clear();
+    m_hit_ray_ids.clear();
     m_n_hit_rays = 0;
     m_n_sun_rays = 0;
     uint_fast64_t N_ray_hit = 0;
@@ -345,6 +346,7 @@ void SolTraceSystem::run()
         m_n_sun_rays = N_ray_gen;
     }
 
+    // TODO: Add option to turn on/off trimming rays...
     // Trim excess rays: remove ray groups from the tail until m_n_hit_rays == m_number_of_rays.
     // Each group starts at the last HIT_CREATE record in m_hit_records.
     while (m_n_hit_rays > m_number_of_rays && !m_hit_records.empty())

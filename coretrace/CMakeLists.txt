@@ -161,7 +161,7 @@ if(SOLTRACE_BUILD_CORETRACE)
 		PRIVATE
 			${embree_INCLUDE_DIRS}
 	)
-	target_link_libraries(coretrace PRIVATE simdata native_runner simresult embree_runner ${embree_LIBRARIES})
+	target_link_libraries(coretrace PRIVATE simdata native_runner optix_runner simresult embree_runner ${embree_LIBRARIES})
 
 #####################################################################################################################
 #

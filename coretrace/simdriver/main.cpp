@@ -92,16 +92,23 @@ int main(int argc, char *argv[])
     }
 
     const bool file_optional = skip_output || skip_csv;
-    if (!file_optional && argc < 3)
+
+    const std::string input_file = argv[1];
+
+    // argv[2], if present and not a flag (does not start with --), is treated as
+    // the output file path.  This allows the user to supply an output path even
+    // when --no-output or --no-csv is also present without it being mis-parsed
+    // as an unknown option.
+    const bool has_output_arg = (argc >= 3) && (std::string(argv[2]).rfind("--", 0) != 0);
+    const std::string output_file = has_output_arg ? argv[2] : "";
+    const int opts_start = has_output_arg ? 3 : 2;
+
+    if (!file_optional && !has_output_arg)
     {
         std::cerr << "Error: output file is required unless --no-output or --no-csv is specified\n";
         print_usage(argv[0]);
         return EXIT_FAILURE;
     }
-
-    const std::string input_file = argv[1];
-    // output_file is only meaningful when neither skip_output nor skip_csv is set
-    const std::string output_file = (!file_optional && argc >= 3) ? argv[2] : "";
 
     int num_threads = 1;
     long long num_rays_override = -1; // -1 means use what the JSON specifies
@@ -109,8 +116,6 @@ int main(int argc, char *argv[])
     bool use_optix = false;
     bool verbose = false;
 
-    // Start parsing options from argv[2] if output file is omitted, else from argv[3]
-    const int opts_start = file_optional ? 2 : 3;
     for (int i = opts_start; i < argc; ++i)
     {
         const std::string arg = argv[i];
