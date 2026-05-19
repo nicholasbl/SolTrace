@@ -41,7 +41,7 @@ element_id set_default_sd(SimulationData &sd,
 
     // Back stop element that is bigger than the created element so that the
     // testing element casts a shadow on this big thing.
-    stop = make_element<SingleElement>();
+    element_ptr stop = make_element<SingleElement>();
     double xlb, xub, ylb, yub;
     ap->bounding_box(xlb, xub, ylb, yub);
     const double sx = std::max(fabs(xlb), fabs(xub)) + 1.0;
