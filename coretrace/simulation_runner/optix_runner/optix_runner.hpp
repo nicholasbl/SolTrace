@@ -49,6 +49,11 @@ public:
     void set_batch_size(uint_fast64_t batch_size);
     uint_fast64_t get_batch_size() const;
 
+    /// Enable or disable trimming of excess rays at the end of run() so that
+    /// exactly the requested number of hit rays is returned.  Enabled by default.
+    void set_trim_excess_rays(bool trim);
+    bool get_trim_excess_rays() const;
+
     // Runner options
     // void disable_sun_shape_errors() { this->include_sun_shape_errors = false; }
     // void enable_sun_shape_errors() { this->include_sun_shape_errors = true; }

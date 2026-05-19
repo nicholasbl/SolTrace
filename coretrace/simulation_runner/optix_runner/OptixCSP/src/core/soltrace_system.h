@@ -126,6 +126,11 @@ namespace OptixCSP
         uint_fast64_t get_N_hit_rays() const { return m_n_hit_rays; }
         void set_sun_shape_errors(bool flag) { this->m_include_sun_shape_errors = flag; }
 
+        /// Enable or disable trimming excess rays at the end of run() so that
+        /// exactly m_number_of_rays hit rays are returned.  Enabled by default.
+        void set_trim_excess_rays(bool trim) { m_trim_excess_rays = trim; }
+        bool get_trim_excess_rays() const { return m_trim_excess_rays; }
+
     private:
         std::shared_ptr<GeometryManager> geometry_manager;
         std::shared_ptr<pipelineManager> pipeline_manager;
@@ -143,6 +148,7 @@ namespace OptixCSP
 
         SolTrace::Data::Sun *m_sun;
         bool m_include_sun_shape_errors = false;
+        bool m_trim_excess_rays = true;
 
         uint64_t m_seed = 123456ULL;
         bool m_optical_errors;

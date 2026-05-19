@@ -246,3 +246,40 @@ TEST(TwoPlateOptix, SimResults)
 	}
 	
 }
+
+TEST(TwoPlateOptix, TrimExcessRaysOption)
+{
+	SimulationData sd;
+	element_ptr plate1, plate2;
+	make_two_plate_sd(sd, plate1, plate2);
+	const int n_rays = sd.get_simulation_parameters().number_of_rays;
+
+	// Default: trim enabled — result has exactly n_rays records
+	{
+		OptixRunner runner;
+		EXPECT_TRUE(runner.get_trim_excess_rays());  // default is true
+
+		ASSERT_EQ(runner.initialize(), RunnerStatus::SUCCESS);
+		ASSERT_EQ(runner.setup_simulation(&sd), RunnerStatus::SUCCESS);
+		ASSERT_EQ(runner.run_simulation(), RunnerStatus::SUCCESS);
+
+		SimulationResult result;
+		ASSERT_EQ(runner.report_simulation(&result, 0), RunnerStatus::SUCCESS);
+		EXPECT_EQ(result.get_number_of_records(), n_rays);
+	}
+
+	// Trim disabled — result has at least n_rays records (batch overshoot is not removed)
+	{
+		OptixRunner runner;
+		runner.set_trim_excess_rays(false);
+		EXPECT_FALSE(runner.get_trim_excess_rays());
+
+		ASSERT_EQ(runner.initialize(), RunnerStatus::SUCCESS);
+		ASSERT_EQ(runner.setup_simulation(&sd), RunnerStatus::SUCCESS);
+		ASSERT_EQ(runner.run_simulation(), RunnerStatus::SUCCESS);
+
+		SimulationResult result;
+		ASSERT_EQ(runner.report_simulation(&result, 0), RunnerStatus::SUCCESS);
+		EXPECT_GE(result.get_number_of_records(), n_rays);
+	}
+}

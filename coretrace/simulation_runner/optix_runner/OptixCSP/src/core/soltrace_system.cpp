@@ -346,10 +346,9 @@ void SolTraceSystem::run()
         m_n_sun_rays = N_ray_gen;
     }
 
-    // TODO: Add option to turn on/off trimming rays...
     // Trim excess rays: remove ray groups from the tail until m_n_hit_rays == m_number_of_rays.
     // Each group starts at the last HIT_CREATE record in m_hit_records.
-    while (m_n_hit_rays > m_number_of_rays && !m_hit_records.empty())
+    while (m_trim_excess_rays && m_n_hit_rays > m_number_of_rays && !m_hit_records.empty())
     {
         // Walk backwards to find the last CREATE record
         auto rit = std::find_if(m_hit_records.rbegin(), m_hit_records.rend(),

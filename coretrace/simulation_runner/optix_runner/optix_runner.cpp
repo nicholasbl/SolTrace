@@ -40,6 +40,16 @@ uint_fast64_t OptixRunner::get_batch_size() const
     return m_sys.get_batch_size();
 }
 
+void OptixRunner::set_trim_excess_rays(bool trim)
+{
+    m_sys.set_trim_excess_rays(trim);
+}
+
+bool OptixRunner::get_trim_excess_rays() const
+{
+    return m_sys.get_trim_excess_rays();
+}
+
 uint64_t OptixRunner::get_N_run_iterations() const
 {
     return m_sys.get_N_run_iterations();
