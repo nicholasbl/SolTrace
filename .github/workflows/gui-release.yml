@@ -99,6 +99,7 @@ jobs:
             libtiff5 \
             libxkbcommon-x11-0 \
             libxcb-cursor0 \
+            imagemagick \
             patchelf
 
       - name: Set POSIX paths
@@ -190,7 +191,8 @@ jobs:
             "$tools"
 
           cp "${{ steps.paths.outputs.install_dir }}/bin/${{ env.APP_NAME }}" "$appdir/usr/bin/${{ env.APP_NAME }}"
-          cp "${{ github.workspace }}/gui/appicon/soltrace_icon.png" \
+          magick "${{ github.workspace }}/gui/appicon/soltrace_icon.png" \
+            -resize 256x256 \
             "$appdir/usr/share/icons/hicolor/256x256/apps/${{ env.APP_NAME }}.png"
 
           cat > "$appdir/usr/share/applications/${{ env.APP_NAME }}.desktop" <<EOF
