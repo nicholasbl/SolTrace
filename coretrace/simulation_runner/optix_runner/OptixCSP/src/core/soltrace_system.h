@@ -212,7 +212,10 @@ namespace OptixCSP
         uint64_t m_n_run_iterations;
 
         // memory usage
-        size_t m_mem_free_before;
-        size_t m_mem_free_after;
+        size_t m_mem_free_before;      ///< Free GPU memory at the start of initialize(), before any setup allocations.
+        size_t m_mem_free_post_setup;  ///< Free GPU memory at the end of initialize(), after all setup allocations (BVH,
+                                       ///  pipeline, SBT, geometry/material arrays). Used as the baseline in
+                                       ///  automatic_batch_size() so batch sizing is stable across run() calls.
+        size_t m_mem_free_after;       ///< Free GPU memory sampled during run() for per-launch memory reporting.
     };
 }

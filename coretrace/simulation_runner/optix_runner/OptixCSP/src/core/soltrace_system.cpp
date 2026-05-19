@@ -53,6 +53,7 @@ SolTraceSystem::SolTraceSystem()
       m_timer_optix_launch(),
       m_timer_collect_results(),
       m_n_run_iterations(0),
+      m_mem_free_post_setup(0),
       geometry_manager(std::make_shared<GeometryManager>(m_state, m_verbose)),
       data_manager(std::make_shared<dataManager>()),
       pipeline_manager(std::make_shared<pipelineManager>(m_state)),
@@ -146,8 +147,10 @@ void SolTraceSystem::initialize()
         OPTIX_CHECK(optixDeviceContextCreate(cuCtx, &options, &m_state.context));
     }
 
-    size_t mem_total;
-    cudaMemGetInfo(&m_mem_free_before, &mem_total);
+    {
+        size_t mem_total;
+        CUDA_CHECK(cudaMemGetInfo(&m_mem_free_before, &mem_total));
+    }
     m_timer_setup.start();
 
     // set up input related to sun
@@ -272,6 +275,17 @@ void SolTraceSystem::initialize()
     }
 
     data_manager->allocateLaunchParams();
+
+    // Snapshot free GPU memory now that all setup allocations (BVH, pipeline,
+    // SBT, geometry/material arrays, launch params) are complete but before any
+    // ray buffers exist.  automatic_batch_size() uses this as a stable baseline
+    // so that batch sizing is consistent across every run() call.
+    // Memory used by setup = m_mem_free_before - m_mem_free_post_setup.
+    {
+        size_t mem_total;
+        CUDA_CHECK(cudaMemGetInfo(&m_mem_free_post_setup, &mem_total));
+    }
+
     m_timer_setup.stop();
 }
 
@@ -313,7 +327,6 @@ void SolTraceSystem::run()
         int width = data_manager->launch_params_H.width;
         int height = data_manager->launch_params_H.height;
 
-        size_t m_mem_free_after;
         size_t mem_total;
         cudaMemGetInfo(&m_mem_free_after, &mem_total);
 
@@ -491,6 +504,10 @@ void SolTraceSystem::clean_up()
     m_state.gas_handle = 0;
     m_state.sbt = {};
     m_state.d_gas_output_buffer = 0;
+
+    m_mem_free_before     = 0;
+    m_mem_free_post_setup = 0;
+    m_mem_free_after      = 0;
 }
 
 void SolTraceSystem::reset()
@@ -760,6 +777,25 @@ void SolTraceSystem::print_timing() const
 
     std::cout << "\n--- Grand Total ---\n";
     std::cout << "  Setup + Trace       : " << (t_setup + t_trace) << " s\n";
+
+    std::cout << "\n--- GPU Memory Usage ---\n";
+    constexpr double kMB = 1.0 / (1024.0 * 1024.0);
+    if (m_mem_free_before > 0)
+    {
+        std::cout << std::fixed << std::setprecision(2);
+        std::cout << "  Free before setup   : " << m_mem_free_before   * kMB << " MB\n";
+        if (m_mem_free_post_setup > 0)
+        {
+            std::cout << "  Free after setup    : " << m_mem_free_post_setup * kMB << " MB\n";
+            std::cout << "  Setup structures    : " << (m_mem_free_before - m_mem_free_post_setup) * kMB << " MB\n";
+            if (m_mem_free_after > 0)
+            {
+                std::cout << "  Ray buffers         : " << (m_mem_free_post_setup - m_mem_free_after) * kMB << " MB\n";
+                std::cout << "  Total used          : " << (m_mem_free_before - m_mem_free_after) * kMB << " MB\n";
+            }
+        }
+        std::cout << std::fixed << std::setprecision(6);
+    }
     std::cout << "=====================================\n";
 }
 
@@ -778,10 +814,11 @@ double SolTraceSystem::get_sun_plane_area() const
 
 uint_fast64_t SolTraceSystem::automatic_batch_size() const
 {
-    // Query free GPU memory *after* the BVH and pipeline have been built so
-    // that only the ray-data buffers need to fit in the remaining space.
-    size_t mem_free, mem_total;
-    CUDA_CHECK(cudaMemGetInfo(&mem_free, &mem_total));
+    // Use the free-memory snapshot taken at the end of initialize(), after all
+    // setup allocations (BVH, pipeline, SBT, etc.) but before any ray buffers.
+    // This gives a stable baseline that does not shrink on subsequent run() calls
+    // due to the already-allocated (and reused) ray buffers being counted as used.
+    const size_t mem_free = m_mem_free_post_setup;
 
     // Reserve 20 % headroom for OptiX internal allocations, memory
     // fragmentation, and any other transient allocations during launch.
