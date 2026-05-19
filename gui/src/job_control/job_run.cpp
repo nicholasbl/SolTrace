@@ -23,6 +23,7 @@
 RunningJob::RunningJob(SimDataPtr data,
                        RunType    type,
                        uint32_t   thread_count,
+                       ThreadRunnerBackend backend,
                        QObject*   parent)
     : QObject(parent) {
 
@@ -42,7 +43,8 @@ RunningJob::RunningJob(SimDataPtr data,
     // TEMPORARY HACK WHILE WE FIX PROCESS STUFF
     f_ptr = execute_thread_runner;
 
-    auto config = ThreadRunnerConfig { .thread_count = thread_count };
+    auto config = ThreadRunnerConfig { .thread_count = thread_count,
+                                       .backend      = backend };
 
     auto future = QtConcurrent::run(f_ptr, data, config);
 

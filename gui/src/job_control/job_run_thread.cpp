@@ -5,7 +5,13 @@
 #include "simulation_runner.hpp"
 #include "utilities/math_utility.h"
 
+#ifdef SOLTRACE_HAS_EMBREE_RUNNER
+#include "embree_runner/embree_runner.hpp"
+#endif
+
 #include <QtConcurrentRun>
+
+#include <memory>
 
 // Qconcurrent will auto call start and finish on the promise
 
@@ -36,6 +42,19 @@ static SolTrace::Runner::RunnerStatus
 execute_solve_with(SolTrace::Runner::SimulationRunner* ptr) {
     qDebug() << "execute runner";
     return ptr->run_simulation();
+}
+
+static std::unique_ptr<SolTrace::Runner::SimulationRunner>
+make_runner(ThreadRunnerBackend backend) {
+#ifdef SOLTRACE_HAS_EMBREE_RUNNER
+    if (backend == ThreadRunnerBackend::Embree) {
+        return std::make_unique<SolTrace::EmbreeRunner::EmbreeRunner>();
+    }
+#else
+    Q_UNUSED(backend);
+#endif
+
+    return std::make_unique<SolTrace::NativeRunner::NativeRunner>();
 }
 
 
@@ -72,8 +91,7 @@ void execute_thread_runner(QPromise<SimResult>&      promise,
 
         promise.setProgressRange(0, 100);
 
-        auto current_runner =
-            std::make_unique<SolTrace::NativeRunner::NativeRunner>();
+        auto current_runner = make_runner(config.backend);
 
         SolTrace::Runner::RunnerStatus result;
 
@@ -82,7 +100,12 @@ void execute_thread_runner(QPromise<SimResult>&      promise,
             thread_count = std::thread::hardware_concurrency();
         }
 
-        current_runner->set_number_of_threads(thread_count);
+        if (auto ptr = dynamic_cast<SolTrace::NativeRunner::NativeRunner*>(
+                current_runner.get());
+            ptr) {
+            ptr->set_number_of_threads(thread_count);
+        }
+
 
         qDebug() << "Starting simulation with"
                  << data->data->get_number_of_rays()

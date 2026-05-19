@@ -5,6 +5,7 @@
 #include <QtQuick3D/QQuick3DInstancing>
 
 #include "job_run_common.h"
+#include "job_run_thread.h"
 #include "utilities/qt_helpers.h"
 #include "simulation_data_api.hpp"
 #include "simulation_result.hpp"
@@ -39,6 +40,7 @@ public:
     explicit RunningJob(SimDataPtr data,
                         RunType    type,
                         uint32_t   thread_count,
+                        ThreadRunnerBackend backend = ThreadRunnerBackend::Native,
                         QObject*   parent = nullptr);
     virtual ~RunningJob();
 

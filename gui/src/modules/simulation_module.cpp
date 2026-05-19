@@ -128,7 +128,13 @@ void SimulationModule::run() {
     sim_data->data->set_number_of_rays(m_ray_count);
     sim_data->data->set_max_rays_traced(m_max_ray_count);
 
-    m_running = new RunningJob(sim_data, RunType::Thread, m_max_threads, this);
+    auto backend = ThreadRunnerBackend::Native;
+#ifdef SOLTRACE_HAS_EMBREE_RUNNER
+    if (m_runner == Runner::Embree) { backend = ThreadRunnerBackend::Embree; }
+#endif
+
+    m_running =
+        new RunningJob(sim_data, RunType::Thread, m_max_threads, backend, this);
 
     connect(m_running,
             &RunningJob::progress_update,

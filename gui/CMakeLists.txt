@@ -119,6 +119,7 @@ target_link_libraries(SolTrace PRIVATE EnTT magic_enum)
 
 if(TARGET embree_runner)
     target_compile_definitions(SolTrace PRIVATE SOLTRACE_HAS_EMBREE_RUNNER)
+    target_link_libraries(SolTrace PRIVATE embree_runner)
 endif()
 
 if(TARGET optix_runner)
