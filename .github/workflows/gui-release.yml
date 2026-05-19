@@ -15,47 +15,101 @@ env:
   APP_NAME: SolTrace
 
 jobs:
-  macos:
-    name: macOS ARM64 bundle
-    runs-on: macos-26
+  bundle:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS ARM64 bundle
+            id: macos-arm64
+            runner: macos-26
+            shell: bash
+            qt_host: mac
+            qt_arch: clang_64
+            qt_modules: qtgraphs qtquick3d qtshadertools
+            aqt_version: "==3.3.*"
+            aqt_source: ""
+            cmake_extra: -DCMAKE_OSX_ARCHITECTURES=arm64
+            artifact_name: SolTrace-macOS-ARM64
+            asset_name: SolTrace-macOS-arm64.zip
+
+          - name: Windows x64 bundle
+            id: windows-x64
+            runner: windows-latest
+            shell: pwsh
+            qt_host: windows
+            qt_arch: win64_msvc2022_64
+            qt_modules: all
+            aqt_version: ""
+            aqt_source: git+https://github.com/miurahr/aqtinstall.git@master
+            cmake_extra: ""
+            artifact_name: SolTrace-Windows-x64
+            asset_name: SolTrace-Windows-x64.zip
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install Qt
+        if: matrix.aqt_version != ''
         uses: jurplel/install-qt-action@v4
         with:
-          aqtversion: "==3.3.*"
+          aqtversion: ${{ matrix.aqt_version }}
           version: ${{ env.QT_VERSION }}
-          host: "mac"
-          target: "desktop"
-          arch: "clang_64"
-          modules: "qtgraphs qtquick3d qtshadertools"
+          host: ${{ matrix.qt_host }}
+          target: desktop
+          arch: ${{ matrix.qt_arch }}
+          modules: ${{ matrix.qt_modules }}
 
-      - name: Set paths
+      - name: Install Qt
+        if: matrix.aqt_source != ''
+        uses: jurplel/install-qt-action@v4
+        with:
+          aqtsource: ${{ matrix.aqt_source }}
+          version: ${{ env.QT_VERSION }}
+          host: ${{ matrix.qt_host }}
+          target: desktop
+          arch: ${{ matrix.qt_arch }}
+          modules: ${{ matrix.qt_modules }}
+
+      - name: Set macOS paths
+        if: matrix.id == 'macos-arm64'
         id: paths
         shell: bash
         run: |
-          echo "build-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-          echo "install-dir=${{ github.workspace }}/dist" >> "$GITHUB_OUTPUT"
-          echo "asset=${{ github.workspace }}/SolTrace-macOS-arm64.zip" >> "$GITHUB_OUTPUT"
+          echo "build_dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+          echo "install_dir=${{ github.workspace }}/dist" >> "$GITHUB_OUTPUT"
+          echo "asset=${{ github.workspace }}/${{ matrix.asset_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set Windows paths
+        if: matrix.id == 'windows-x64'
+        id: paths_windows
+        shell: pwsh
+        run: |
+          "build_dir=${{ github.workspace }}/build" >> $env:GITHUB_OUTPUT
+          "install_dir=${{ github.workspace }}/dist" >> $env:GITHUB_OUTPUT
+          "asset=${{ github.workspace }}/${{ matrix.asset_name }}" >> $env:GITHUB_OUTPUT
 
       - name: Configure
+        shell: ${{ matrix.shell }}
         run: >
           cmake -S "${{ github.workspace }}"
-          -B "${{ steps.paths.outputs.build-dir }}"
+          -B "${{ steps.paths.outputs.build_dir || steps.paths_windows.outputs.build_dir }}"
           -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}"
           -DSOLTRACE_BUILD_GUI=ON
           -DSOLTRACE_BUILD_TESTS=OFF
           -DSOLTRACE_BUILD_EMBREE_SUPPORT=OFF
           -DSOLTRACE_BUILD_OPTIX_SUPPORT=OFF
-          -DCMAKE_OSX_ARCHITECTURES=arm64
           -DQT_QML_NO_CACHEGEN=ON
+          ${{ matrix.cmake_extra }}
 
       - name: Build
+        shell: ${{ matrix.shell }}
         run: >
-          cmake --build "${{ steps.paths.outputs.build-dir }}"
+          cmake --build "${{ steps.paths.outputs.build_dir || steps.paths_windows.outputs.build_dir }}"
           --target "${{ env.APP_NAME }}"
           --config "${{ env.BUILD_TYPE }}"
           --verbose
@@ -63,144 +117,81 @@ jobs:
       - name: Build installable support tools
         # The top-level install includes coretrace/simdriver install rules even
         # for GUI release packaging, so build simdriver before cmake --install.
+        shell: ${{ matrix.shell }}
         run: >
-          cmake --build "${{ steps.paths.outputs.build-dir }}"
+          cmake --build "${{ steps.paths.outputs.build_dir || steps.paths_windows.outputs.build_dir }}"
           --target simdriver
           --config "${{ env.BUILD_TYPE }}"
           --verbose
 
       - name: Install bundle
+        shell: ${{ matrix.shell }}
         run: >
-          cmake --install "${{ steps.paths.outputs.build-dir }}"
+          cmake --install "${{ steps.paths.outputs.build_dir || steps.paths_windows.outputs.build_dir }}"
           --config "${{ env.BUILD_TYPE }}"
-          --prefix "${{ steps.paths.outputs.install-dir }}"
+          --prefix "${{ steps.paths.outputs.install_dir || steps.paths_windows.outputs.install_dir }}"
 
-      - name: Package bundle
+      - name: Package macOS bundle
+        if: matrix.id == 'macos-arm64'
         shell: bash
         run: |
-          test -d "${{ steps.paths.outputs.install-dir }}/${{ env.APP_NAME }}.app"
+          test -d "${{ steps.paths.outputs.install_dir || steps.paths_windows.outputs.install_dir }}/${{ env.APP_NAME }}.app"
           ditto -c -k --sequesterRsrc --keepParent \
-            "${{ steps.paths.outputs.install-dir }}/${{ env.APP_NAME }}.app" \
-            "${{ steps.paths.outputs.asset }}"
+            "${{ steps.paths.outputs.install_dir || steps.paths_windows.outputs.install_dir }}/${{ env.APP_NAME }}.app" \
+            "${{ steps.paths.outputs.asset || steps.paths_windows.outputs.asset }}"
 
-      - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: SolTrace-macOS-ARM64
-          path: ${{ steps.paths.outputs.asset }}
-          if-no-files-found: error
-
-      - name: Publish GitHub release
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG_NAME: ${{ github.ref_name }}
-        run: |
-          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
-            gh release upload "$TAG_NAME" "${{ steps.paths.outputs.asset }}" --clobber
-          else
-            gh release create "$TAG_NAME" \
-              "${{ steps.paths.outputs.asset }}" \
-              --draft \
-              --generate-notes \
-              --title "$TAG_NAME"
-          fi
-
-  windows:
-    name: Windows x64 bundle
-    runs-on: windows-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v4
-        with:
-          aqtsource: git+https://github.com/miurahr/aqtinstall.git@master
-          version: ${{ env.QT_VERSION }}
-          host: "windows"
-          target: "desktop"
-          arch: "win64_msvc2022_64"
-          modules: "all"
-
-      - name: Set paths
-        id: paths
+      - name: Package Windows bundle
+        if: matrix.id == 'windows-x64'
         shell: pwsh
         run: |
-          "build-dir=${{ github.workspace }}\build" >> $env:GITHUB_OUTPUT
-          "install-dir=${{ github.workspace }}\dist" >> $env:GITHUB_OUTPUT
-          "asset=${{ github.workspace }}\SolTrace-Windows-x64.zip" >> $env:GITHUB_OUTPUT
-
-      - name: Configure
-        shell: pwsh
-        run: >
-          cmake -S "${{ github.workspace }}"
-          -B "${{ steps.paths.outputs.build-dir }}"
-          -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}"
-          -DSOLTRACE_BUILD_GUI=ON
-          -DSOLTRACE_BUILD_TESTS=OFF
-          -DSOLTRACE_BUILD_EMBREE_SUPPORT=OFF
-          -DSOLTRACE_BUILD_OPTIX_SUPPORT=OFF
-          -DQT_QML_NO_CACHEGEN=ON
-
-      - name: Build
-        shell: pwsh
-        run: >
-          cmake --build "${{ steps.paths.outputs.build-dir }}"
-          --target "${{ env.APP_NAME }}"
-          --config "${{ env.BUILD_TYPE }}"
-          --verbose
-
-      - name: Build installable support tools
-        # The top-level install includes coretrace/simdriver install rules even
-        # for GUI release packaging, so build simdriver before cmake --install.
-        shell: pwsh
-        run: >
-          cmake --build "${{ steps.paths.outputs.build-dir }}"
-          --target simdriver
-          --config "${{ env.BUILD_TYPE }}"
-          --verbose
-
-      - name: Install bundle
-        shell: pwsh
-        run: >
-          cmake --install "${{ steps.paths.outputs.build-dir }}"
-          --config "${{ env.BUILD_TYPE }}"
-          --prefix "${{ steps.paths.outputs.install-dir }}"
-
-      - name: Package bundle
-        shell: pwsh
-        run: |
-          if (-not (Test-Path "${{ steps.paths.outputs.install-dir }}\bin\${{ env.APP_NAME }}.exe")) {
+          if (-not (Test-Path "${{ steps.paths.outputs.install_dir || steps.paths_windows.outputs.install_dir }}/bin/${{ env.APP_NAME }}.exe")) {
             throw "Expected installed executable was not found."
           }
           Compress-Archive `
-            -Path "${{ steps.paths.outputs.install-dir }}\*" `
-            -DestinationPath "${{ steps.paths.outputs.asset }}" `
+            -Path "${{ steps.paths.outputs.install_dir || steps.paths_windows.outputs.install_dir }}/*" `
+            -DestinationPath "${{ steps.paths.outputs.asset || steps.paths_windows.outputs.asset }}" `
             -Force
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SolTrace-Windows-x64
-          path: ${{ steps.paths.outputs.asset }}
+          name: ${{ matrix.artifact_name }}
+          path: ${{ steps.paths.outputs.asset || steps.paths_windows.outputs.asset }}
           if-no-files-found: error
 
-      - name: Publish GitHub release
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Publish macOS GitHub release
+        if: matrix.id == 'macos-arm64' && startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          if ! gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release create "$TAG_NAME" \
+              --draft \
+              --generate-notes \
+              --title "$TAG_NAME" || gh release view "$TAG_NAME" >/dev/null
+          fi
+          gh release upload "$TAG_NAME" "${{ steps.paths.outputs.asset || steps.paths_windows.outputs.asset }}" --clobber
+
+      - name: Publish Windows GitHub release
+        if: matrix.id == 'windows-x64' && startsWith(github.ref, 'refs/tags/')
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.ref_name }}
         run: |
           gh release view "$env:TAG_NAME" *> $null
-          if ($LASTEXITCODE -eq 0) {
-            gh release upload "$env:TAG_NAME" "${{ steps.paths.outputs.asset }}" --clobber
-          } else {
+          if ($LASTEXITCODE -ne 0) {
             gh release create "$env:TAG_NAME" `
-              "${{ steps.paths.outputs.asset }}" `
               --draft `
               --generate-notes `
               --title "$env:TAG_NAME"
+            if ($LASTEXITCODE -ne 0) {
+              gh release view "$env:TAG_NAME"
+              if ($LASTEXITCODE -ne 0) {
+                exit $LASTEXITCODE
+              }
+            }
           }
+          gh release upload "$env:TAG_NAME" "${{ steps.paths.outputs.asset || steps.paths_windows.outputs.asset }}" --clobber
