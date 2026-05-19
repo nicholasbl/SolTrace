@@ -141,6 +141,13 @@ set_target_properties(SolTrace PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
+if(UNIX AND NOT APPLE)
+    # Avoid colliding with the build-tree QML module directory for URI SolTrace.
+    set_target_properties(SolTrace PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
+    )
+endif()
+
 target_link_libraries(SolTrace
     PRIVATE
         Qt6::Core
