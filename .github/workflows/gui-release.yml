@@ -49,6 +49,19 @@ jobs:
             artifact_name: SolTrace-Windows-x64
             asset_name: SolTrace-Windows-x64.zip
 
+          - name: Linux x64 AppImage
+            id: linux-x64
+            runner: ubuntu-24.04
+            shell: bash
+            qt_host: linux
+            qt_arch: linux_gcc_64
+            qt_modules: all
+            aqt_version: "==3.3.*"
+            aqt_source: ""
+            cmake_extra: ""
+            artifact_name: SolTrace-Linux-x64
+            asset_name: SolTrace-Linux-x86_64.AppImage
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -75,8 +88,20 @@ jobs:
           arch: ${{ matrix.qt_arch }}
           modules: ${{ matrix.qt_modules }}
 
-      - name: Set macOS paths
-        if: matrix.id == 'macos-arm64'
+      - name: Install Linux packaging dependencies
+        if: matrix.id == 'linux-x64'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            file \
+            libgl1-mesa-dev \
+            libxkbcommon-x11-0 \
+            libxcb-cursor0 \
+            patchelf
+
+      - name: Set POSIX paths
+        if: matrix.shell == 'bash'
         id: paths
         shell: bash
         run: |
@@ -152,6 +177,53 @@ jobs:
             -DestinationPath "${{ steps.paths.outputs.asset || steps.paths_windows.outputs.asset }}" `
             -Force
 
+      - name: Package Linux AppImage
+        if: matrix.id == 'linux-x64'
+        shell: bash
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: 1
+          QML_SOURCES_PATHS: ${{ github.workspace }}/gui/ui
+        run: |
+          appdir="${{ github.workspace }}/AppDir"
+          tools="${{ github.workspace }}/appimage-tools"
+          mkdir -p \
+            "$appdir/usr/bin" \
+            "$appdir/usr/share/applications" \
+            "$appdir/usr/share/icons/hicolor/256x256/apps" \
+            "$tools"
+
+          cp "${{ steps.paths.outputs.install_dir }}/bin/${{ env.APP_NAME }}" "$appdir/usr/bin/${{ env.APP_NAME }}"
+          cp "${{ github.workspace }}/gui/appicon/soltrace_icon.png" \
+            "$appdir/usr/share/icons/hicolor/256x256/apps/${{ env.APP_NAME }}.png"
+
+          cat > "$appdir/usr/share/applications/${{ env.APP_NAME }}.desktop" <<EOF
+          [Desktop Entry]
+          Type=Application
+          Name=${{ env.APP_NAME }}
+          Exec=${{ env.APP_NAME }}
+          Icon=${{ env.APP_NAME }}
+          Categories=Science;Engineering;
+          Terminal=false
+          EOF
+
+          curl -L \
+            -o "$tools/linuxdeploy-x86_64.AppImage" \
+            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          curl -L \
+            -o "$tools/linuxdeploy-plugin-qt-x86_64.AppImage" \
+            https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x "$tools/"*.AppImage
+
+          "$tools/linuxdeploy-x86_64.AppImage" \
+            --appdir "$appdir" \
+            --executable "$appdir/usr/bin/${{ env.APP_NAME }}" \
+            --desktop-file "$appdir/usr/share/applications/${{ env.APP_NAME }}.desktop" \
+            --icon-file "$appdir/usr/share/icons/hicolor/256x256/apps/${{ env.APP_NAME }}.png" \
+            --plugin qt \
+            --output appimage
+
+          mv ./*.AppImage "${{ steps.paths.outputs.asset }}"
+
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
@@ -159,8 +231,8 @@ jobs:
           path: ${{ steps.paths.outputs.asset || steps.paths_windows.outputs.asset }}
           if-no-files-found: error
 
-      - name: Publish macOS GitHub release
-        if: matrix.id == 'macos-arm64' && startsWith(github.ref, 'refs/tags/')
+      - name: Publish POSIX GitHub release
+        if: matrix.shell == 'bash' && startsWith(github.ref, 'refs/tags/')
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
