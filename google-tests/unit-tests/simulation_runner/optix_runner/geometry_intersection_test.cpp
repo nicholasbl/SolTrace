@@ -50,6 +50,7 @@ element_id set_default_sd(SimulationData &sd,
     stop->set_aim_vector(0, 0, 100);
     stop->set_surface(make_surface<Flat>());
     stop->set_aperture(make_aperture<Rectangle>(sx, sy));
+    sd.add_element(stop);
 
     // Set parameters
     SimulationParameters &params = sd.get_simulation_parameters();
@@ -70,7 +71,7 @@ TEST(OptixRunner, FlatRectangle)
     auto aper = make_aperture<Rectangle>(XL, YL);
 
     SimulationData sd;
-    element_id test_elid = (sd, surf, aper);
+    element_id test_elid = set_default_sd(sd, surf, aper);
     SimulationResult result;
 
     OptixRunner runner;
