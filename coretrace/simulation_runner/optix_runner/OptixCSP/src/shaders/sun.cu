@@ -2,8 +2,6 @@
 #include <curand_kernel.h>
 #include <vector_types.h>
 
-// todo: move curand initializatin to global function
-
 //#include <cuda/helpers.h>
 //#include <cuda/random.h>
 #include "Soltrace.h"
@@ -366,10 +364,6 @@ extern "C" __global__ void __raygen__sun_source()
     prd.ray_path_index = ray_number;
     prd.depth = 0;
 
-    // TODO make this a launch parameter
-    // params.hit_point_buffer[params.max_depth * prd.ray_path_index] = make_float4(0.0f, ray_gen_pos);
-    // params.element_id_buffer[params.max_depth * prd.ray_path_index] = OptixCSP::kElementIdRayGen;
-    // params.hit_type_buffer[params.max_depth * prd.ray_path_index] = OptixCSP::HitType::HIT_CREATE;
     params.hit_buffer[params.max_depth * prd.ray_path_index].hit_point = make_float4(0.0f, ray_gen_pos);
     params.hit_buffer[params.max_depth * prd.ray_path_index].element_id = OptixCSP::kElementIdRayGen;
     params.hit_buffer[params.max_depth * prd.ray_path_index].hit_type = OptixCSP::HitType::HIT_CREATE;

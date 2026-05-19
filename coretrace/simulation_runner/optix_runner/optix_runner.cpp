@@ -182,8 +182,6 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             }
             optix_el->set_id(static_cast<int32_t>(id));
 
-            // TODO: check zrot, radiance or degree here?
-
             // Add optical properties
             OpticalProperties *opt_front = el->get_front_optical_properties();
             OptixCSP::OpticalDistribution od = this->to_optical_distribution(opt_front->error_distribution_type);
@@ -260,7 +258,6 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 }
 
                 auto surface = std::make_shared<OptixCSP::SurfaceCylinder>();
-                // surface->set_half_height(2.); // TODO this needs to come from the aperture
                 surface->set_half_height(0.5 * el_aperture->y_length());
                 surface->set_radius(el_surface->radius);
                 optix_el->set_surface(surface);
@@ -391,8 +388,6 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
 RunnerStatus OptixRunner::update_simulation(const SimulationData *data)
 {
-    // TODO: Need this call?
-    // this->m_sys.clean_up();
     return this->setup_simulation(data);
     // TODO: Implement this in a less lazy manner...
 }
