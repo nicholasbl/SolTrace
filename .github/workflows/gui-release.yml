@@ -249,7 +249,10 @@ jobs:
           esac
 
           # CMake needs this exact package directory for find_package(embree 4).
-          embree_cmake_dir="$(find "$install_dir" -type d -path "*/lib/cmake/embree-${{ env.EMBREE_VERSION }}" | head -n 1)"
+          embree_cmake_dir="$(find "$install_dir" -type d \( \
+            -path "*/lib/cmake/embree-${{ env.EMBREE_VERSION }}" -o \
+            -path "*/lib64/cmake/embree-${{ env.EMBREE_VERSION }}" \
+          \) | head -n 1)"
           if [ -z "$embree_cmake_dir" ]; then
             echo "Could not find Embree CMake package directory after extraction." >&2
             find "$install_dir" -maxdepth 5 -type d | sort
@@ -309,7 +312,10 @@ jobs:
 
           # Feed Embree's bundled CMake config to find_package(embree 4).
           $embreeCMakeDir = Get-ChildItem -Path $installDir -Directory -Recurse |
-            Where-Object { $_.FullName -like "*\lib\cmake\embree-${{ env.EMBREE_VERSION }}" } |
+            Where-Object {
+              $_.FullName -like "*\lib\cmake\embree-${{ env.EMBREE_VERSION }}" -or
+              $_.FullName -like "*\lib64\cmake\embree-${{ env.EMBREE_VERSION }}"
+            } |
             Select-Object -First 1
           if (-not $embreeCMakeDir) {
             Get-ChildItem -Path $installDir -Directory -Recurse | Select-Object -ExpandProperty FullName
