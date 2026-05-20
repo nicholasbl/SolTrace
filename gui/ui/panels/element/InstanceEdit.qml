@@ -10,8 +10,8 @@ ColumnLayout {
     id: root
 
     property var module: App.layout.instance_edit
-    property bool singleCol: App.view.left_panel.size === PanelData.Small
-    property var labelAlignment: (singleCol ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
+    property bool singleColumn: App.view.left_panel.size === PanelData.Small
+    property var labelAlignment: (singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
 
     component PositionPanel : STPropertyPanel {
         id: posPanel
@@ -196,7 +196,7 @@ ColumnLayout {
     // 2 column
     STPropertyPanel {
         Layout.fillWidth: true
-        visible: !root.singleCol
+        visible: !root.singleColumn
 
         STPropertyLabel {
             text: "Parent"
@@ -272,7 +272,7 @@ ColumnLayout {
     // 1 column
     STPropertyPanel {
         Layout.fillWidth: true
-        visible: root.singleCol
+        visible: root.singleColumn
         columns: 1
 
         STPropertyLabel {

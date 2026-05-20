@@ -10,8 +10,8 @@ Flickable {
     id: root
     property var left_panel_size: App.view.left_panel.size
     property var intersections_module : AppData.intersections
-    property bool singleCol: App.view.left_panel.size === PanelData.Small
-    property var labelAlignment: (singleCol ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
+    property bool singleColumn: App.view.left_panel.size === PanelData.Small
+    property var labelAlignment: (singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
 
     contentWidth: width
     contentHeight: content_column.implicitHeight
@@ -29,7 +29,7 @@ Flickable {
 
         STPropertyPanel {
             Layout.fillWidth: true
-            columns: root.singleCol ? 1 : 2
+            columns: root.singleColumn ? 1 : 2
 
             collapsible: true
             title: "Ray Visibility"

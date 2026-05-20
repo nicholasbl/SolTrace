@@ -8,10 +8,10 @@ STPropertyPanel {
     property bool has_selection : false
     property var material_editor : App.materials.group_edit
     property var side_editor
-    property bool singleCol: App.view.left_panel.size === PanelData.Small
-    property var labelAlignment: (root.singleCol ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
+    property bool singleColumn: App.view.left_panel.size === PanelData.Small
+    property var labelAlignment: (root.singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
 
-    columns: root.singleCol ? 1 : 2
+    columns: root.singleColumn ? 1 : 2
 
     // =========================================================================
 

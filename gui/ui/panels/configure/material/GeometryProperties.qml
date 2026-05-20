@@ -8,8 +8,8 @@ ColumnLayout {
     id: root
 
     property var group_edit: App.materials.geometry_edit
-    property bool singleCol: App.view.left_panel.size === PanelData.Small
-    property var labelAlignment: (singleCol ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
+    property bool singleColumn: App.view.left_panel.size === PanelData.Small
+    property var labelAlignment: (singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
 
     spacing: 8
 
@@ -84,7 +84,7 @@ ColumnLayout {
     // Surface Properties (2 column)
     STPropertyPanel {
         Layout.fillWidth: true
-        visible: !root.singleCol
+        visible: !root.singleColumn
         title: "Surface Properties"
         collapsible: true
         columns: 2
@@ -122,7 +122,7 @@ ColumnLayout {
     // Surface Properties (1 column)
     STPropertyPanel {
         Layout.fillWidth: true
-        visible: root.singleCol
+        visible: root.singleColumn
         title: "Surface Properties"
         collapsible: true
         columns: 1
@@ -151,7 +151,7 @@ ColumnLayout {
     // Aperture Properties (2 column)
     STPropertyPanel {
         Layout.fillWidth: true
-        visible: !root.singleCol
+        visible: !root.singleColumn
         title: "Aperture Properties"
         collapsible: true
         columns: 2
@@ -188,7 +188,7 @@ ColumnLayout {
     // Aperture Properties (1 column)
     STPropertyPanel {
         Layout.fillWidth: true
-        visible: root.singleCol
+        visible: root.singleColumn
         title: "Aperture Properties"
         collapsible: true
         columns: 1
