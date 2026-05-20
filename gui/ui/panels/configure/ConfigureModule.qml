@@ -22,12 +22,10 @@ ColumnLayout {
 
         Layout.fillWidth: true
 
-        fontFamily: App.view.left_panel.size === PanelData.Small ? "Font Awesome 7 Free" : ""
+        collapseLabels: App.view.left_panel.size === PanelData.Small
 
-        model: App.view.left_panel.size === PanelData.Small ?
-            ["\uf185", "\uf53f", "\uf1b2", "\ue4e6", "\uf5c3"]
-          :
-            ["Sun", "Material", "Geometry", "Layout", "Appearance"]
+        iconModel: ["\uf185", "\uf53f", "\uf1b2", "\ue4e6", "\uf5c3"]
+        model: ["Sun", "Material", "Geometry", "Layout", "Appearance"]
         
     }
 

@@ -16,12 +16,10 @@ ColumnLayout {
         collapsible: false
 
         ColumnLayout {
-            CheckBoxField {
-                Layout.preferredWidth: 200
-
+            STSwitch {
                 text: "Visible"
-                value: App.view.sim.sun_viz
-                onValueChanged: App.view.sim.sun_viz = value
+                checked: App.view.sim.sun_viz
+                onToggled: App.view.sim.sun_viz = value
             }
 
             ColorPickerField {

@@ -6,20 +6,22 @@ namespace SolTrace::GUI::App {
 
 void AppData::load_session() {
     QSettings s;
+
     s.beginGroup("View");
     m_view->left_panel()->set_visible(
         s.value("show_left_panel", true).toBool());
     m_view->left_panel()->set_saved_visible(
-        s.value("show_left_panel_saved", true).toBool());
+        s.value("show_left_panel_saved", false).toBool());
     m_view->right_panel()->set_visible(
         s.value("show_right_panel", true).toBool());
     m_view->right_panel()->set_saved_visible(
-        s.value("show_right_panel_saved", true).toBool());
+        s.value("show_right_panel_saved", false).toBool());
     m_view->settings_panel()->set_visible(
-        s.value("show_settings_panel", true).toBool());
+        s.value("show_settings_panel", false).toBool());
 
     m_view->left_panel()->set_width(s.value("left_panel_width", 550).toUInt());
-    m_view->right_panel()->set_width(s.value("right_panel_width", 0).toUInt());
+    m_view->right_panel()->set_width(
+        s.value("right_panel_width", 100).toUInt());
 
     m_view->set_workflow_phase(s.value("workflow_phase", 0).toUInt());
 
@@ -84,6 +86,11 @@ void AppData::save_session() {
     auto* cdist = m_sun->shape()->custom_distribution();
     s.setValue("custom_shape", cdist->variant_data());
     s.endGroup();
+}
+
+void AppData::clear_session() {
+    QSettings s;
+    s.clear();
 }
 
 AppData* AppData::create(QQmlEngine* qmlEngine, QJSEngine*) {

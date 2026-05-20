@@ -11,19 +11,12 @@ ColumnLayout {
 
     STComboBar {
         id: bar
-
         currentIndex: AppData.view.simulate_section
-        onCurrentIndexChanged: AppData.view.simulate_section  = currentIndex
-
+        onCurrentIndexChanged: AppData.view.simulate_section = currentIndex
         Layout.fillWidth: true
-
-        fontFamily: AppData.view.left_panel.size == PanelData.Small ? "Font Awesome 7 Free" : ""
-
-        model : AppData.view.left_panel.size == PanelData.Small ?
-                    ["\uf828", "\uf188"]
-                  :
-                    ["Execution", "Diagnostics"]
-
+        collapseLabels: AppData.view.left_panel.size === PanelData.Small
+        model: ["Execution", "Diagnostics"]
+        iconModel: ["\uf828", "\uf188"]
     }
 
     Rectangle {

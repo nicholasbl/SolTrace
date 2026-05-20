@@ -29,10 +29,11 @@ ScrollView {
 
             collapsible: false
             title: "New Job"
+            columns: App.view.left_panel.size === PanelData.Small ? 1 : 2
 
             STComboBox {
                 Layout.fillWidth: true
-                Layout.columnSpan: 2
+                Layout.columnSpan: App.view.left_panel.size === PanelData.Small ? 1 : 2
                 model: AppData.simulation.runners
                 textRole: "name"
                 valueRole: "runner"
@@ -46,6 +47,7 @@ ScrollView {
 
             STPropertyLabel {
                 text: "# of Rays"
+                Layout.alignment: (App.view.left_panel.size === PanelData.Small ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
             }
 
             STSpinBox {
@@ -59,6 +61,7 @@ ScrollView {
 
             STPropertyLabel {
                 text: "Max # Rays Traced"
+                Layout.alignment: (App.view.left_panel.size === PanelData.Small ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
             }
 
             STSpinBox {
@@ -72,6 +75,7 @@ ScrollView {
 
             STPropertyLabel {
                 text: "# of CPU Cores"
+                Layout.alignment: (App.view.left_panel.size === PanelData.Small ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
                 visible: AppData.simulation.runner < 2
             }
 
@@ -87,6 +91,7 @@ ScrollView {
 
             STPropertyLabel {
                 text: "Seed Value"
+                Layout.alignment: (App.view.left_panel.size === PanelData.Small ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
             }
 
             STSpinBox {
@@ -100,9 +105,8 @@ ScrollView {
 
             STPropertyLabel {
                 text: "Options"
-                Layout.rowSpan: 3
-
-                Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                Layout.rowSpan: App.view.left_panel.size === PanelData.Small ? 1 : 3
+                Layout.alignment: (App.view.left_panel.size === PanelData.Small ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
             }
 
             STSwitch {
@@ -125,7 +129,7 @@ ScrollView {
 
             STButton {
                 Layout.fillWidth: true
-                Layout.columnSpan: 2
+                Layout.columnSpan: App.view.left_panel.size === PanelData.Small ? 1 : 2
 
                 text: "Enqueue Job"
                 text_icon: "\uf0da"

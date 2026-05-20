@@ -52,6 +52,8 @@ RowLayout {
                     Layout.rightMargin: 10
 
                     text: "\uf0c9"
+                    toolTip: (App.view.left_panel.visible ? "Close": "Open") + " Left Panel"
+
                     label.font.pointSize: 20
                     onClicked: {
                         if (App.view.settings_panel.visible) {
@@ -320,6 +322,7 @@ RowLayout {
                     Layout.leftMargin: 20
 
                     text: "\uf030"
+                    toolTip: "Navigation Settings"
 
                     onClicked: nav_settings_pop.open()
 
@@ -338,6 +341,7 @@ RowLayout {
                     label.font.pointSize: 20
 
                     text: "\uf013"
+                    toolTip: "Settings"
 
                     Connections {
                         target: App.view.settings_panel
@@ -369,6 +373,7 @@ RowLayout {
                     Layout.rightMargin: 20
 
                     text: "\uf0c9"
+                    toolTip: (App.view.right_panel.visible ? "Close": "Open") + " Right Panel"
                     label.font.pointSize: 20
                     onClicked: {
                         if (App.view.settings_panel.visible) {
