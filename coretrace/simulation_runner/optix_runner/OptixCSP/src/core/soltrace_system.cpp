@@ -832,11 +832,11 @@ uint_fast64_t SolTraceSystem::automatic_batch_size() const
     //   d_compacted     MAX_TRACE_DEPTH * sizeof(HitRecord)  -- worst-case compacted copy
     //   sun_dir_buffer  sizeof(float3)                       -- sun ray direction
     //   curand states   sizeof(curandState)                  -- RNG state
-    //   d_count         sizeof(uint32_t)                     -- compaction hit count
-    //   d_offsets       sizeof(uint32_t)                     -- compaction prefix sum
+    //   d_offsets       sizeof(uint64_t)                     -- compaction prefix sum / global ray IDs
+    //   d_count         sizeof(uint8_t)                      -- compaction hit count (bounded by MAX_TRACE_DEPTH <= 255)
     //   d_has_hit       sizeof(uint8_t)                      -- per-ray hit flag
     const size_t bytes_per_ray =
-        2u * MAX_TRACE_DEPTH * sizeof(HitRecord) + sizeof(float3) + sizeof(curandState) + 2u * sizeof(uint32_t) + sizeof(uint8_t);
+        2u * MAX_TRACE_DEPTH * sizeof(HitRecord) + sizeof(float3) + sizeof(curandState) + sizeof(uint64_t) + 2u * sizeof(uint8_t);
 
     const uint_fast64_t computed =
         (bytes_per_ray > 0) ? static_cast<uint_fast64_t>(usable_bytes / bytes_per_ray) : 0u;

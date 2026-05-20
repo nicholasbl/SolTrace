@@ -125,7 +125,7 @@ extern "C" __global__ void __closesthit__element()
     const float3 hit_point = ray_orig + ray_t * ray_dir;
 
     OptixCSP::PerRayData prd = OptixCSP::getPayload();
-    const int new_depth = prd.depth + 1; // Increment the ray depth for recursive tracing
+    const unsigned int new_depth = prd.depth + 1; // Increment the ray depth for recursive tracing
 
     // we have two scenarios here
     // if we use refraction, then we look at transmissivity to determine if the ray will refract
@@ -241,7 +241,7 @@ extern "C" __global__ void __closesthit__element()
     {
 
         // Get buffer slot
-        const int slot = params.max_depth * prd.ray_path_index + new_depth;
+        const unsigned int slot = params.max_depth * prd.ray_path_index + new_depth;
 
         // Store the hit point in the hit point buffer (used for visualization or further calculations)
         params.hit_buffer[slot].hit_point = make_float4(new_depth, hit_point);

@@ -27,7 +27,7 @@ namespace OptixCSP
         const HitRecord *__restrict__ hit_buffer,
         uint32_t num_rays,
         uint32_t max_depth,
-        uint32_t *__restrict__ out_record_count,
+        uint8_t  *__restrict__ out_record_count,
         uint8_t  *__restrict__ out_has_hit)
     {
         const uint32_t ray = blockIdx.x * blockDim.x + threadIdx.x;
@@ -46,7 +46,7 @@ namespace OptixCSP
         }
 
         const uint8_t has_hit = (raw_count > 1) ? 1u : 0u;
-        out_record_count[ray] = has_hit ? raw_count : 0u;
+        out_record_count[ray] = has_hit ? static_cast<uint8_t>(raw_count) : 0u;
         out_has_hit[ray] = has_hit;
 
         return;
@@ -101,7 +101,7 @@ namespace OptixCSP
     {
         free_compaction_scratch(scratch);
 
-        CUDA_CHECK(cudaMalloc(&scratch.d_count, num_rays * sizeof(uint32_t)));
+        CUDA_CHECK(cudaMalloc(&scratch.d_count, num_rays * sizeof(uint8_t)));
         CUDA_CHECK(cudaMalloc(&scratch.d_offsets, num_rays * sizeof(uint64_t)));
         CUDA_CHECK(cudaMalloc(&scratch.d_has_hit, num_rays * sizeof(uint8_t)));
         CUDA_CHECK(cudaMalloc(&scratch.d_n_hit, sizeof(uint32_t)));
@@ -111,7 +111,7 @@ namespace OptixCSP
         uint32_t *null_u32 = nullptr;
         uint8_t  *null_u8  = nullptr;
         uint64_t *null_u64 = nullptr;
-        cub::DeviceScan::ExclusiveSum(scratch.d_scan_tmp, scratch.scan_bytes, null_u32, null_u64, num_rays);
+        cub::DeviceScan::ExclusiveSum(scratch.d_scan_tmp, scratch.scan_bytes, null_u8, null_u64, num_rays);
         cub::DeviceReduce::Sum(scratch.d_red_tmp, scratch.red_bytes, null_u8, null_u32, num_rays);
 
         size_t select_bytes = 0;
@@ -200,9 +200,10 @@ namespace OptixCSP
         if (timings) t_scalar = std::chrono::high_resolution_clock::now();
 
         uint64_t last_offset = 0;
-        uint32_t last_count = 0, n_hit_rays = 0;
+        uint8_t  last_count = 0;
+        uint32_t n_hit_rays = 0;
         CUDA_CHECK(cudaMemcpy(&last_offset, scratch.d_offsets + (num_rays - 1), sizeof(uint64_t), cudaMemcpyDeviceToHost));
-        CUDA_CHECK(cudaMemcpy(&last_count, scratch.d_count + (num_rays - 1), sizeof(uint32_t), cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(&last_count, scratch.d_count + (num_rays - 1), sizeof(uint8_t), cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(&n_hit_rays, scratch.d_n_hit, sizeof(uint32_t), cudaMemcpyDeviceToHost));
 
         if (timings)

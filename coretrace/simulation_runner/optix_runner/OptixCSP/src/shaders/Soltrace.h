@@ -4,6 +4,7 @@
 #include "MaterialDataST.h"
 #include "soltrace_constants.h"
 
+#include <cstdint>
 #include <vector_types.h>
 #include <optix.h>
 #include <curand_kernel.h>
@@ -14,8 +15,8 @@ namespace OptixCSP{
     const unsigned int NUM_PAYLOAD_VALUES   = 2u;
     // NOTE: Maximum number of ray interactions in tracing with the geometry is
     // MAX_TRACE_DEPTH - 1 (so currently 4). See the end of the function
-    // __closesthit__element in materials.cu.
-    const unsigned int MAX_TRACE_DEPTH      = 5u;
+    // __closesthit__element in materials.cu. Note the type. Limited to 255.
+    const uint8_t MAX_TRACE_DEPTH = 5u;
 
     struct HitGroupData
     {
@@ -52,7 +53,7 @@ namespace OptixCSP{
 
         unsigned int                width;   // essentially number of rays launched and sun points 
         unsigned int                height;
-        int                         max_depth;
+        unsigned int                max_depth;
         unsigned long long          ray_offset; // Global offset for current branch
 
         // float4*                     hit_point_buffer;
