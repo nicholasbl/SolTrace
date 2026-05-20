@@ -133,6 +133,8 @@ void SimulationModule::run() {
     if (m_runner == Runner::Embree) { backend = ThreadRunnerBackend::Embree; }
 #endif
 
+    qDebug() << Q_FUNC_INFO << magic_enum::enum_name(backend);
+
     m_running =
         new RunningJob(sim_data, RunType::Thread, m_max_threads, backend, this);
 

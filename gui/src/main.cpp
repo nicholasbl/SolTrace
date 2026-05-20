@@ -2,6 +2,8 @@
 
 #include "app_data.h"
 #include "backend.h"
+#include "logging.h"
+
 #include <QApplication>
 #include <QFile>
 #include <QFontDatabase>
@@ -9,6 +11,7 @@
 #include <QQmlContext>
 #include <QQuickWindow>
 
+/// List of known fonts
 constexpr auto font_list = std::array {
     ":/assets/fonts/computer-modern/cmunrm.ttf",
     ":/assets/fonts/computer-modern/cmunbx.ttf",
@@ -19,7 +22,6 @@ constexpr auto font_list = std::array {
     ":/assets/fonts/roboto/Roboto-BoldItalic.ttf",
     ":/assets/fonts/roboto/Roboto-Bold.ttf",
     ":/assets/fonts/font-awesome/fa_solid_7.otf",
-    // ":/assets/fonts/font-awesome/fa_regular_7.otf"
 };
 
 int main(int argc, char* argv[]) {
@@ -30,6 +32,8 @@ int main(int argc, char* argv[]) {
     qputenv("QML_XHR_ALLOW_FILE_READ", "1");
 
     QApplication app(argc, argv);
+
+    SolTrace::GUI::App::initialize_logging_handler();
 
 
 #ifdef QT_QML_DEBUG

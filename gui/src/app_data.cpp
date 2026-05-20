@@ -94,6 +94,7 @@ AppData::AppData(QObject*       parent,
                  QQmlEngine*    engine,
                  const QString& documentation_directory)
     : m_file_source(new DatabaseModule(this)),
+      m_log_list(current_log_list()),
       m_view(new ViewModule(this)),
       m_docs(new DocumentationModule(this)),
       m_sun(new SunModule(this)),

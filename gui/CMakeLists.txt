@@ -133,6 +133,8 @@ target_include_directories(SolTrace PRIVATE ../coretrace/simulation_runner)
 
 set_target_properties(SolTrace PROPERTIES CXX_STANDARD 20)
 
+target_compile_definitions(SolTrace PRIVATE QT_MESSAGELOGCONTEXT)
+
 set_target_properties(SolTrace PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER "gov.nlr.SolTrace"
     MACOSX_BUNDLE_BUNDLE_NAME "SolTrace"

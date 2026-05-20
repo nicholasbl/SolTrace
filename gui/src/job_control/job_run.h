@@ -6,11 +6,8 @@
 
 #include "job_run_common.h"
 #include "job_run_thread.h"
-#include "utilities/qt_helpers.h"
-#include "simulation_data_api.hpp"
 #include "simulation_result.hpp"
-
-#include "utilities/grid3d.h"
+#include "utilities/qt_helpers.h"
 
 namespace SD = SolTrace::Data;
 namespace RD = SolTrace::Result;
@@ -19,7 +16,6 @@ enum class RunType {
     Thread,
     Process,
 };
-
 
 
 /// Models a running simulation.
@@ -37,11 +33,12 @@ class RunningJob : public QObject {
     std::shared_ptr<db::SimulationResult> m_result;
 
 public:
-    explicit RunningJob(SimDataPtr data,
-                        RunType    type,
-                        uint32_t   thread_count,
-                        ThreadRunnerBackend backend = ThreadRunnerBackend::Native,
-                        QObject*   parent = nullptr);
+    explicit RunningJob(
+        SimDataPtr          data,
+        RunType             type,
+        uint32_t            thread_count,
+        ThreadRunnerBackend backend = ThreadRunnerBackend::Native,
+        QObject*            parent  = nullptr);
     virtual ~RunningJob();
 
     std::shared_ptr<db::SimulationResult> take();
