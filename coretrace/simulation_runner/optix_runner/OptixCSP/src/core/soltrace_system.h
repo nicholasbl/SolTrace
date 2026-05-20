@@ -163,7 +163,7 @@ namespace OptixCSP
 
         // Global ray index (ray_offset + local_index) for each logical hit ray in m_hit_records.
         // Parallel to the logical rays (not records): m_hit_ray_ids.size() == m_n_hit_rays.
-        std::vector<uint32_t> m_hit_ray_ids;
+        std::vector<uint64_t> m_hit_ray_ids;
 
         // Count of rays that produced at least one non-CREATE hit.
         uint_fast64_t m_n_hit_rays = 0;

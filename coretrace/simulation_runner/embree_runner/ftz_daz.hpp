@@ -1,6 +1,8 @@
 #ifndef SOLTRACE_FTZ_DAZ_HPP
 #define SOLTRACE_FTZ_DAZ_HPP
 
+#include <cstdint>
+
 // Set Flush-to-Zero (FTZ) and Denormals-are-Zero (DAZ) floating-point flags
 // for the calling thread. These are thread-local CPU register settings that
 // avoid slow denormal handling in the FPU, as recommended by the Embree docs.

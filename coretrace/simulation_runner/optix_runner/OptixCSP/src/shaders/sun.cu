@@ -303,7 +303,7 @@ extern "C" __global__ void __raygen__sun_source()
     const uint3 launch_idx = optixGetLaunchIndex();         // Index of the current launch thread
     const uint3 launch_dims = optixGetLaunchDimensions();   // Dimensions of the launch grid
     const unsigned int ray_number = launch_idx.y * launch_dims.x + launch_idx.x;  // Unique ray ID
-    const unsigned int ray_number_global = ray_number + params.ray_offset;  // Global unique ray ID
+    const unsigned long long ray_number_global = ray_number + params.ray_offset;  // Global unique ray ID
 
     float3 sun_sample_pos;
     switch (params.sun_gen_type)

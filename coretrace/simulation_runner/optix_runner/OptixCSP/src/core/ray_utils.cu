@@ -45,9 +45,9 @@ namespace OptixCSP
                 break;
         }
 
-        const uint32_t has_hit = (raw_count > 1) ? 1u : 0u;
+        const uint8_t has_hit = (raw_count > 1) ? 1u : 0u;
         out_record_count[ray] = has_hit ? raw_count : 0u;
-        out_has_hit[ray] = static_cast<uint8_t>(has_hit);
+        out_has_hit[ray] = has_hit;
 
         return;
     }
@@ -64,7 +64,7 @@ namespace OptixCSP
         const HitRecord *__restrict__ hit_buffer,
         uint32_t num_rays,
         uint32_t max_depth,
-        const uint32_t *__restrict__ offsets,
+        const uint64_t *__restrict__ offsets,
         const uint8_t  *__restrict__ has_hit,
         HitRecord *__restrict__ out_buffer)
     {
@@ -73,7 +73,7 @@ namespace OptixCSP
             return;
 
         const HitRecord *ray_base = hit_buffer + max_depth * ray;
-        uint32_t out_idx = offsets[ray];
+        uint64_t out_idx = offsets[ray];
 
         // Depth 0 is always HIT_CREATE for qualifying rays
         out_buffer[out_idx++] = ray_base[0];
@@ -102,7 +102,7 @@ namespace OptixCSP
         free_compaction_scratch(scratch);
 
         CUDA_CHECK(cudaMalloc(&scratch.d_count, num_rays * sizeof(uint32_t)));
-        CUDA_CHECK(cudaMalloc(&scratch.d_offsets, num_rays * sizeof(uint32_t)));
+        CUDA_CHECK(cudaMalloc(&scratch.d_offsets, num_rays * sizeof(uint64_t)));
         CUDA_CHECK(cudaMalloc(&scratch.d_has_hit, num_rays * sizeof(uint8_t)));
         CUDA_CHECK(cudaMalloc(&scratch.d_n_hit, sizeof(uint32_t)));
 
@@ -110,12 +110,13 @@ namespace OptixCSP
         // scan_bytes must cover both ExclusiveSum and DeviceSelect::Flagged (d_scan_tmp is reused).
         uint32_t *null_u32 = nullptr;
         uint8_t  *null_u8  = nullptr;
-        cub::DeviceScan::ExclusiveSum(scratch.d_scan_tmp, scratch.scan_bytes, null_u32, null_u32, num_rays);
+        uint64_t *null_u64 = nullptr;
+        cub::DeviceScan::ExclusiveSum(scratch.d_scan_tmp, scratch.scan_bytes, null_u32, null_u64, num_rays);
         cub::DeviceReduce::Sum(scratch.d_red_tmp, scratch.red_bytes, null_u8, null_u32, num_rays);
 
         size_t select_bytes = 0;
-        thrust::counting_iterator<uint32_t> count_iter(0u);
-        cub::DeviceSelect::Flagged(nullptr, select_bytes, count_iter, null_u8, null_u32, null_u32, num_rays);
+        thrust::counting_iterator<uint64_t> count_iter(0ull);
+        cub::DeviceSelect::Flagged(nullptr, select_bytes, count_iter, null_u8, null_u64, null_u32, num_rays);
         if (select_bytes > scratch.scan_bytes)
             scratch.scan_bytes = select_bytes;
 
@@ -157,9 +158,9 @@ namespace OptixCSP
         const HitRecord *d_hit_buffer,
         uint32_t num_rays,
         uint32_t max_depth,
-        uint32_t ray_offset,
+        uint64_t ray_offset,
         std::vector<HitRecord> &host_out,
-        std::vector<uint32_t> &host_ray_ids,
+        std::vector<uint64_t> &host_ray_ids,
         cudaStream_t stream,
         CompactionScratch &scratch,
         CompactionTimings *timings)
@@ -198,8 +199,9 @@ namespace OptixCSP
         std::chrono::high_resolution_clock::time_point t_scalar;
         if (timings) t_scalar = std::chrono::high_resolution_clock::now();
 
-        uint32_t last_offset = 0, last_count = 0, n_hit_rays = 0;
-        CUDA_CHECK(cudaMemcpy(&last_offset, scratch.d_offsets + (num_rays - 1), sizeof(uint32_t), cudaMemcpyDeviceToHost));
+        uint64_t last_offset = 0;
+        uint32_t last_count = 0, n_hit_rays = 0;
+        CUDA_CHECK(cudaMemcpy(&last_offset, scratch.d_offsets + (num_rays - 1), sizeof(uint64_t), cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(&last_count, scratch.d_count + (num_rays - 1), sizeof(uint32_t), cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(&n_hit_rays, scratch.d_n_hit, sizeof(uint32_t), cudaMemcpyDeviceToHost));
 
@@ -207,7 +209,7 @@ namespace OptixCSP
             timings->scalar_dth_ms += std::chrono::duration<float, std::milli>(
                 std::chrono::high_resolution_clock::now() - t_scalar).count();
 
-        const uint32_t total_records = last_offset + last_count;
+        const uint64_t total_records = last_offset + last_count;
 
         if (total_records > 0)
         {
@@ -217,14 +219,14 @@ namespace OptixCSP
             compact_ray_outputs<<<grid_size, block_size, 0, stream>>>(
                 d_hit_buffer, num_rays, max_depth, scratch.d_offsets, scratch.d_has_hit, scratch.d_compacted);
 
-            // ---- After Pass 2 d_offsets is free; reuse it to compact global ray IDs ----
+            // ---- Compact global ray IDs into d_offsets (reused after pass 2) ----
             // DeviceSelect::Flagged selects (ray_offset + i) for each i where d_has_hit[i] == 1.
-            // d_scan_tmp is also free (ExclusiveSum already completed).
-            thrust::counting_iterator<uint32_t> ray_id_iter(ray_offset);
+            // d_scan_tmp and d_offsets are both free after compact_ray_outputs completes.
+            thrust::counting_iterator<uint64_t> ray_id_iter(ray_offset);
             cub::DeviceSelect::Flagged(
                 scratch.d_scan_tmp, scratch.scan_bytes,
                 ray_id_iter, scratch.d_has_hit,
-                scratch.d_offsets,   // output: global IDs of hit rays
+                scratch.d_offsets,   // output: global IDs of hit rays (uint64_t)
                 scratch.d_n_hit,     // output count (already read; safe to overwrite)
                 num_rays, stream);
 
@@ -258,7 +260,7 @@ namespace OptixCSP
             CUDA_CHECK(cudaMemcpy(
                 host_ray_ids.data() + prev_ids,
                 scratch.d_offsets,
-                n_hit_rays * sizeof(uint32_t),
+                n_hit_rays * sizeof(uint64_t),
                 cudaMemcpyDeviceToHost));
 
             if (timings)

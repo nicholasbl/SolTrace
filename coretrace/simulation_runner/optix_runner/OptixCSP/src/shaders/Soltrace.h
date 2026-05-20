@@ -53,7 +53,7 @@ namespace OptixCSP{
         unsigned int                width;   // essentially number of rays launched and sun points 
         unsigned int                height;
         int                         max_depth;
-        unsigned int                ray_offset; // Global offset for current branch
+        unsigned long long          ray_offset; // Global offset for current branch
 
         // float4*                     hit_point_buffer;
         HitRecord*                  hit_buffer;

@@ -377,7 +377,7 @@ void SolTraceSystem::run()
     }
     // m_n_sun_rays = rays generated up to and including the last retained hit ray.
     if (!m_hit_ray_ids.empty())
-        m_n_sun_rays = static_cast<uint_fast64_t>(m_hit_ray_ids.back()) + 1;
+        m_n_sun_rays = m_hit_ray_ids.back() + 1;
 
     m_timer_trace.stop();
 
@@ -409,7 +409,7 @@ void SolTraceSystem::run()
 void SolTraceSystem::update()
 {
 
-    const int N_slots = data_manager->launch_params_H.width * data_manager->launch_params_H.height * data_manager->launch_params_H.max_depth;
+    const size_t N_slots = static_cast<size_t>(data_manager->launch_params_H.width) * static_cast<size_t>(data_manager->launch_params_H.height) * static_cast<size_t>(data_manager->launch_params_H.max_depth);
     const size_t hit_buffer_size = N_slots * sizeof(HitRecord);
 
     // update aabb and sun plane accordingly
@@ -632,8 +632,8 @@ void SolTraceSystem::allocate_device_buffers()
     data_manager->launch_params_H.height = 1;
     data_manager->launch_params_H.max_depth = MAX_TRACE_DEPTH;
 
-    const size_t hit_buffer_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * data_manager->launch_params_H.max_depth * sizeof(HitRecord);
-    const size_t sun_dir_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * sizeof(float3);
+    const size_t hit_buffer_size = static_cast<size_t>(data_manager->launch_params_H.width) * static_cast<size_t>(data_manager->launch_params_H.height) * static_cast<size_t>(data_manager->launch_params_H.max_depth) * sizeof(HitRecord);
+    const size_t sun_dir_size = static_cast<size_t>(data_manager->launch_params_H.width) * static_cast<size_t>(data_manager->launch_params_H.height) * sizeof(float3);
 
     // NOTE: cudaFree is nullptr safe
 
@@ -669,8 +669,8 @@ void SolTraceSystem::allocate_device_buffers()
 
 void SolTraceSystem::setup_device_buffer()
 {
-    const size_t hit_buffer_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * data_manager->launch_params_H.max_depth * sizeof(HitRecord);
-    const size_t sun_dir_size = data_manager->launch_params_H.width * data_manager->launch_params_H.height * sizeof(float3);
+    const size_t hit_buffer_size = static_cast<size_t>(data_manager->launch_params_H.width) * static_cast<size_t>(data_manager->launch_params_H.height) * static_cast<size_t>(data_manager->launch_params_H.max_depth) * sizeof(HitRecord);
+    const size_t sun_dir_size = static_cast<size_t>(data_manager->launch_params_H.width) * static_cast<size_t>(data_manager->launch_params_H.height) * sizeof(float3);
 
     CUDA_CHECK(cudaMemset(data_manager->launch_params_H.hit_buffer, 0, hit_buffer_size));
     CUDA_CHECK(cudaMemset(data_manager->launch_params_H.sun_dir_buffer, 0, sun_dir_size));

@@ -15,7 +15,7 @@ namespace OptixCSP
     struct CompactionScratch
     {
         uint32_t *d_count = nullptr;   // per-ray output record count
-        uint32_t *d_offsets = nullptr; // exclusive prefix-sum of d_count
+        uint64_t *d_offsets = nullptr; // exclusive prefix-sum of d_count (pass 1); reused as global ray IDs (pass 2)
         uint8_t  *d_has_hit = nullptr; // 1 if ray contributes records, else 0
         uint32_t *d_n_hit = nullptr;   // scalar: total hit rays
         void *d_scan_tmp = nullptr;    // CUB DeviceScan temp storage
@@ -59,9 +59,9 @@ namespace OptixCSP
         const HitRecord *d_hit_buffer,
         uint32_t num_rays,
         uint32_t max_depth,
-        uint32_t ray_offset,
+        uint64_t ray_offset,
         std::vector<HitRecord> &host_out,
-        std::vector<uint32_t> &host_ray_ids,
+        std::vector<uint64_t> &host_ray_ids,
         cudaStream_t stream,
         CompactionScratch &scratch,
         CompactionTimings *timings = nullptr);
