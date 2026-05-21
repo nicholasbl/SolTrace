@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
+import QtQuick.Controls.Material
 
 import SolTrace
 
@@ -27,8 +27,6 @@ ListView {
             text: "Intensity"
             Layout.fillWidth: true
             font.bold: true
-
-            
         }
     }
 
@@ -70,8 +68,6 @@ ListView {
             Layout.fillWidth: true
             value: root.model.data(root.model.index(index, 1))
             onValueModified: root.model.setData(root.model.index(index, 1), value, Qt.EditRole)
-
-            
         }
 
         STIconButton {

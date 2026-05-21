@@ -210,6 +210,9 @@ Flickable {
                             label: "Circumsolar Ratio"
                             value: App.sun.shape.csr
                             decimals: 3
+                            from: 0
+                            to: 0.7999
+                            stepSize: 0.1
                             onValueChanged: { App.sun.shape.csr = value }
                         }
 

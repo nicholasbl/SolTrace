@@ -1,6 +1,5 @@
 import QtQuick
 import QtCore
-import QtQuick
 import QtQuick3D
 import QtQuick3D.Helpers
 import QtQuick3D.AssetUtils
@@ -13,7 +12,7 @@ QtObject {
     readonly property color shadedGlassColor: theme.glassColorA(glassColor.a + 0.05)
     readonly property color dividerColor: Qt.rgba(1, 1, 1, 0.2)
 
-    property  color fontColor: Qt.rgba(1, 1, 1)
+    property color fontColor: Qt.rgba(1, 1, 1)
 
     property int _headerSize: 17
     property int _subHeaderSize: 16
@@ -34,6 +33,9 @@ QtObject {
     readonly property int comboBarTextSize: calculateSize(_comboBarTextSize)
     readonly property int propertyPanelHeaderSize: calculateSize(_propertyPanelHeaderSize)
     readonly property int normalSize: calculateSize(_normalSize)
+
+    property color sunShapeGraphLineColor: "#E0D080"
+    property int sunShapeGraphLineWidth: 3
 
     readonly property ProceduralSkyTextureData daySky: ProceduralSkyTextureData {
         sunColor: Qt.rgba(0, 0, 0, 0)
@@ -60,7 +62,6 @@ QtObject {
     }
 
     readonly property ProceduralSkyTextureData nightSky: ProceduralSkyTextureData {
-        id: nightSky
         sunColor: Qt.rgba(0, 0, 0, 0)
         skyTopColor: Qt.rgba(0.02, 0.02, 0.08, 1.0)
         skyHorizonColor: Qt.rgba(0.05, 0.05, 0.15, 1.0)
@@ -69,14 +70,12 @@ QtObject {
     }
 
     readonly property ProceduralSkyTextureData blueprintSky: ProceduralSkyTextureData {
-        id: blueprintSky
         sunColor: Qt.rgba(0, 0, 0, 0)
         skyTopColor: "#818182"
         skyHorizonColor: "#818182"
         groundHorizonColor: "#4d4d4d"
         groundBottomColor: "#4d4d4d"
     }
-
 
     readonly property Settings settings: Settings {
         property alias glassColor: theme.glassColor
@@ -88,6 +87,8 @@ QtObject {
         property alias comboBarTextSize: theme._comboBarTextSize
         property alias propertyPanelHeaderSize: theme._propertyPanelHeaderSize
         property alias normalSize: theme._normalSize
+        property alias sunShapeGraphLineColor: theme.sunShapeGraphLineColor
+        property alias sunShapeGraphLineWidth: theme.sunShapeGraphLineWidth
     }
 
     function glassColorA(alpha) {

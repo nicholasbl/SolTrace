@@ -159,6 +159,12 @@ Item {
         activeAxis: root.activeAxis
         gizmoMode: root.gizmoMode
         enabled: root.showGizmo
+
+        Binding {
+            target: gizmoOverlay
+            property: "enabled"
+            value: App.view.workflow_phase == 0 && App.view.left_panel.visible && App.view.configure_section == 3 && App.view.editing_layout
+        }
     }
 
     CameraController {
