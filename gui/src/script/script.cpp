@@ -8,6 +8,7 @@ namespace {
 
 struct HeaderBlock {
     QString text;
+    qsizetype body_start = 0;
     QString error;
 };
 
@@ -20,25 +21,31 @@ QString normalize_header_line(QString line) {
 HeaderBlock first_comment_block(QString const& code) {
     if (code.startsWith("/*")) {
         auto end = code.indexOf("*/", 2);
-        if (end < 0) { return { {}, "Unterminated block comment header" }; }
-        return { code.mid(2, end - 2), {} };
+        if (end < 0) {
+            return { {}, 0, "Unterminated block comment header" };
+        }
+        return { code.mid(2, end - 2), end + 2, {} };
     }
 
     if (!code.startsWith("//")) {
-        return { {}, "Script must start with a comment header" };
+        return { {}, 0, "Script must start with a comment header" };
     }
 
     QStringList lines;
-    auto        all_lines = code.split('\n');
+    qsizetype   position = 0;
 
-    for (auto const& raw_line : std::as_const(all_lines)) {
-        auto line = raw_line;
+    while (position < code.size()) {
+        auto line_end = code.indexOf('\n', position);
+        if (line_end < 0) { line_end = code.size(); }
+
+        auto line = code.mid(position, line_end - position);
         if (line.endsWith('\r')) { line.chop(1); }
         if (!line.startsWith("//")) { break; }
         lines << line.mid(2);
+        position = line_end < code.size() ? line_end + 1 : line_end;
     }
 
-    return { lines.join('\n'), {} };
+    return { lines.join('\n'), position, {} };
 }
 
 bool parse_number(QString const& text, double& value) {
@@ -100,8 +107,18 @@ ScriptProperty parse_property(QString const& line) {
         return property;
     }
 
-    // Clean up name
-    auto name = parts[1].toLower();
+    static QRegularExpression const identifier_pattern {
+        QStringLiteral("^[A-Za-z_$][A-Za-z0-9_$]*$")
+    };
+
+    property.identifier = parts[1];
+    if (!identifier_pattern.match(property.identifier).hasMatch()) {
+        property.error =
+            "PROPERTY name must be a valid JavaScript identifier";
+        return property;
+    }
+
+    auto name = property.identifier.toLower();
     name.replace("_", " ");
     name[0] = name[0].toUpper();
 
@@ -137,6 +154,33 @@ ScriptProperty parse_property(QString const& line) {
 
     property.error = "Unsupported PROPERTY type";
     return property;
+}
+
+QString script_function(QString const& code,
+                        qsizetype      body_start,
+                        QVector<ScriptProperty> const& properties) {
+    QStringList arguments;
+    for (auto const& property : properties) {
+        arguments << property.identifier;
+    }
+
+    qsizetype body_start_line = 1;
+    for (qsizetype i = 0; i < body_start && i < code.size(); ++i) {
+        if (code.at(i) == QLatin1Char('\n')) { ++body_start_line; }
+    }
+
+    auto body = code.mid(body_start);
+    return QStringLiteral("(function(%1) {%2%3\n})")
+        .arg(arguments.join(QStringLiteral(", ")),
+             QString(body_start_line - 1, QLatin1Char('\n')),
+             body);
+}
+
+bool looks_like_legacy_function_script(QString const& code,
+                                       qsizetype      body_start) {
+    auto body = code.mid(body_start).trimmed();
+    return body.startsWith(QStringLiteral("(function")) ||
+           body.startsWith(QStringLiteral("function"));
 }
 
 } // namespace
@@ -249,7 +293,13 @@ void Script::run() {
 
     engine->globalObject().setProperty("db", js_api_obj);
 
-    auto object = engine->evaluate(code(), title(), 1, &stack_trace);
+    auto header = first_comment_block(code());
+    auto source = looks_like_legacy_function_script(code(), header.body_start)
+                      ? code()
+                      : script_function(code(), header.body_start,
+                                        m_properties->vector());
+
+    auto object = engine->evaluate(source, title(), 1, &stack_trace);
 
     if (!stack_trace.isEmpty()) {
         qDebug() << Q_FUNC_INFO << object.toString();
@@ -260,6 +310,12 @@ void Script::run() {
                 .arg(object.property("lineNumber").toInt())
                 .arg(object.toString()),
         });
+        return;
+    }
+
+    if (!object.isCallable()) {
+        set_run_errors(
+            { QStringLiteral("Script did not produce a callable function") });
         return;
     }
 
@@ -296,6 +352,7 @@ void Script::run() {
                 dest.setProperty(0, d);
                 dest.setProperty(1, d);
                 dest.setProperty(2, d);
+                list << dest;
                 break;
             }
             case 3: {
@@ -309,6 +366,7 @@ void Script::run() {
                 dest.setProperty(0, d1);
                 dest.setProperty(1, d2);
                 dest.setProperty(2, d3);
+                list << dest;
                 break;
             } break;
             default: break;
@@ -329,10 +387,10 @@ void Script::run() {
         qDebug() << Q_FUNC_INFO << "Bad call" << call_ret.toString();
         set_run_errors({
             QString("Script evaluation exception: %1")
-                .arg(object.property("name").toString()),
+                .arg(call_ret.property("name").toString()),
             QString("Line number %1: %2")
-                .arg(object.property("lineNumber").toInt())
-                .arg(object.toString()),
+                .arg(call_ret.property("lineNumber").toInt())
+                .arg(call_ret.toString()),
         });
     }
 }

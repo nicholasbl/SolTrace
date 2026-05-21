@@ -17,6 +17,7 @@ namespace SolTrace::GUI::Script {
 /// describe how the UI should present and validate that value.
 struct ScriptProperty {
     QString name;
+    QString identifier;
     QString type;
     QString extra;
     bool    min_bounded   = false;
@@ -31,6 +32,7 @@ struct ScriptProperty {
 
     RECORD_META(ScriptProperty,
                 SM_EXPOSE_RO(name),
+                SM_EXPOSE_RO(identifier),
                 SM_EXPOSE_RO(type),
                 SM_EXPOSE_RO(extra),
                 SM_EXPOSE_RO(min_bounded),
@@ -65,12 +67,13 @@ public:
 ///     PROPERTY label string Demo
 ///     PROPERTY direction vec3 [0,0,1] unit
 ///     *\/
-///     (function(mirror_count, radius, label, direction) { ... })
+///     const e = db.create()
+///     return e
 ///
 ///     // TITLE Example Script
 ///     // DESC Equivalent line-comment form.
 ///     // PROPERTY count integer 4 1..=10
-///     (function(count) { ... })
+///     return db.create()
 ///
 /// Header directives:
 /// - TITLE text
@@ -101,10 +104,11 @@ public:
 ///   scalar such as `1`, which expands to `[1, 1, 1]`. Header initial values
 ///   should be written without spaces, for example `[0,0,1]`.
 ///
-/// After the header, the script should evaluate to a callable JavaScript value.
-/// Script::run() evaluates the code, converts property values according to the
-/// declarations above, and calls the resulting function with those arguments.
-/// The database script API is intended to be available to JavaScript as `db`.
+/// After the header, the script body is wrapped in a generated JavaScript
+/// function. Script::run() converts property values according to the
+/// declarations above and calls the generated function with those arguments.
+/// PROPERTY identifiers are available as normal JavaScript parameters, and the
+/// database script API is available as `db`.
 class Script : public QObject {
     Q_OBJECT
 
