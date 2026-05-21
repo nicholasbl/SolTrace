@@ -18,6 +18,8 @@ void AppData::load_session() {
         s.value("show_right_panel_saved", false).toBool());
     m_view->settings_panel()->set_visible(
         s.value("show_settings_panel", false).toBool());
+    m_view->left_panel()->update_size();
+    m_view->right_panel()->update_size();
 
     m_view->left_panel()->set_width(s.value("left_panel_width", 550).toUInt());
     m_view->right_panel()->set_width(

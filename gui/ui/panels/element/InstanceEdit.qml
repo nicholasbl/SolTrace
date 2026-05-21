@@ -46,6 +46,18 @@ ColumnLayout {
             validator: DoubleValidator {}
             onAccepted: posPanel.module.position = Qt.vector3d(x_pos.text, y_pos.text, z_pos.text)
         }
+
+        STButton {
+            Layout.fillWidth: true
+            Layout.columnSpan: 2
+            text: "Reset"
+            onClicked: {
+                x_pos.text = 0
+                y_pos.text = 0
+                z_pos.text = -1
+                posPanel.module.position = Qt.vector3d(x_pos.text, y_pos.text, z_pos.text)
+            }
+        }
     }
 
     component RotationPanel : STPropertyPanel {
@@ -87,6 +99,18 @@ ColumnLayout {
             text: rotPanel.angles.z
             validator: DoubleValidator {}
             onAccepted: rotPanel.update_from_angles()
+        }
+
+        STButton {
+            Layout.fillWidth: true
+            Layout.columnSpan: 2
+            text: "Reset"
+            onClicked: {
+                x_euler.text = 0
+                y_euler.text = 0
+                z_euler.text = 0
+                rotPanel.update_from_angles()
+            }
         }
 
         STButton {

@@ -258,11 +258,12 @@ RowLayout {
                     text: "\uf06a"
                     iconSize: 14
 
-                    ToolTip.visible: containsMouse
-                    ToolTip.delay: 500
-                    ToolTip.text: "This is an immutable view of the results of this simulation. Click to make a duplicate of this database for editing."
-
                     onClicked: AppData.simulation.duplicate_current_result_for_edit()
+
+                    STToolTip {
+                        visible: parent.containsMouse
+                        text: "This is an immutable view of the results of this simulation. Click to make a duplicate of this database for editing."
+                    }
                 }
             }
         }

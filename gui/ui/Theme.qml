@@ -1,5 +1,9 @@
 import QtQuick
 import QtCore
+import QtQuick
+import QtQuick3D
+import QtQuick3D.Helpers
+import QtQuick3D.AssetUtils
 
 QtObject {
     id: theme
@@ -30,6 +34,48 @@ QtObject {
     readonly property int comboBarTextSize: calculateSize(_comboBarTextSize)
     readonly property int propertyPanelHeaderSize: calculateSize(_propertyPanelHeaderSize)
     readonly property int normalSize: calculateSize(_normalSize)
+
+    readonly property ProceduralSkyTextureData daySky: ProceduralSkyTextureData {
+        sunColor: Qt.rgba(0, 0, 0, 0)
+        skyTopColor: Qt.rgba(0.2, 0.35, 0.6, 1.0)
+        skyHorizonColor: Qt.rgba(0.55, 0.65, 0.75, 1.0)
+        groundHorizonColor: Qt.rgba(0.55, 0.65, 0.75, 1.0)
+        groundBottomColor: Qt.rgba(0.275, 0.325, 0.375, 1.0)
+    }
+
+    readonly property ProceduralSkyTextureData lateAfternoonSky: ProceduralSkyTextureData {
+        sunColor: Qt.rgba(0, 0, 0, 0)
+        skyTopColor: Qt.rgba(0.3, 0.3, 0.5, 1.0)
+        skyHorizonColor: Qt.rgba(0.75, 0.6, 0.5, 1.0)
+        groundHorizonColor: Qt.rgba(0.45, 0.45, 0.55, 1.0)
+        groundBottomColor: Qt.rgba(0.2, 0.2, 0.3, 1.0)
+    }
+
+    readonly property ProceduralSkyTextureData sunsetSky: ProceduralSkyTextureData {
+        sunColor: Qt.rgba(0, 0, 0, 0)
+        skyTopColor: Qt.rgba(0.15, 0.15, 0.35, 1.0)
+        skyHorizonColor: Qt.rgba(0.9, 0.5, 0.3, 1.0)
+        groundHorizonColor: Qt.rgba(0.5, 0.35, 0.3, 1.0)
+        groundBottomColor: Qt.rgba(0.15, 0.1, 0.15, 1.0)
+    }
+
+    readonly property ProceduralSkyTextureData nightSky: ProceduralSkyTextureData {
+        id: nightSky
+        sunColor: Qt.rgba(0, 0, 0, 0)
+        skyTopColor: Qt.rgba(0.02, 0.02, 0.08, 1.0)
+        skyHorizonColor: Qt.rgba(0.05, 0.05, 0.15, 1.0)
+        groundHorizonColor: Qt.rgba(0.05, 0.05, 0.1, 1.0)
+        groundBottomColor: Qt.rgba(0.02, 0.02, 0.05, 1.0)
+    }
+
+    readonly property ProceduralSkyTextureData blueprintSky: ProceduralSkyTextureData {
+        id: blueprintSky
+        sunColor: Qt.rgba(0, 0, 0, 0)
+        skyTopColor: "#818182"
+        skyHorizonColor: "#818182"
+        groundHorizonColor: "#4d4d4d"
+        groundBottomColor: "#4d4d4d"
+    }
 
 
     readonly property Settings settings: Settings {
