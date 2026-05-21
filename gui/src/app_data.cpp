@@ -25,6 +25,11 @@ void AppData::load_session() {
     m_view->right_panel()->set_width(
         s.value("right_panel_width", 100).toUInt());
 
+    m_view->left_panel()->set_inline_docs(
+        s.value("left_panel_inline_docs", false).toBool());
+    m_view->right_panel()->set_inline_docs(
+        s.value("right_panel_inline_docs", false).toBool());
+
     m_view->set_workflow_phase(s.value("workflow_phase", 0).toUInt());
 
     m_view->set_configure_section(s.value("configure_section", 0).toUInt());
@@ -32,9 +37,24 @@ void AppData::load_session() {
     m_view->set_analyze_section(s.value("analyze_section", 0).toUInt());
 
     m_view->set_sun_section(s.value("sun_section", 0).toUInt());
+    m_view->set_right_panel_section(s.value("right_panel_section", 0).toUInt());
 
     m_view->set_documentation_section(
         s.value("documentation_section", 0).toUInt());
+
+    // Viewport
+    auto* sim = m_view->sim();
+    sim->set_camera(static_cast<SimulationViewState::Camera>(
+        s.value("sim_camera", 1).toInt()));
+    sim->set_perspective(static_cast<SimulationViewState::Perspective>(
+        s.value("sim_perspective", 0).toInt()));
+    sim->set_sun_viz(s.value("sim_sun_viz", true).toBool());
+    sim->set_blueprint_mode(s.value("sim_blueprint_mode", false).toBool());
+    sim->set_sun_viz_scale(s.value("sim_sun_viz_scale", 50.0).toDouble());
+    sim->set_sun_color(
+        s.value("sim_sun_color", QColor("yellow")).value<QColor>());
+    sim->set_geometry_color(
+        s.value("sim_geometry_color", QColor("white")).value<QColor>());
 
     s.endGroup();
 
@@ -91,6 +111,9 @@ void AppData::save_session() {
     s.setValue("left_panel_width", m_view->left_panel()->width());
     s.setValue("right_panel_width", m_view->right_panel()->width());
 
+    s.setValue("left_panel_inline_docs", m_view->left_panel()->inline_docs());
+    s.setValue("right_panel_inline_docs", m_view->right_panel()->inline_docs());
+
     s.setValue("workflow_phase", m_view->workflow_phase());
 
     s.setValue("configure_section", m_view->configure_section());
@@ -98,8 +121,19 @@ void AppData::save_session() {
     s.setValue("analyze_section", m_view->analyze_section());
 
     s.setValue("sun_section", m_view->sun_section());
+    s.setValue("right_panel_section", m_view->right_panel_section());
 
     s.setValue("documentation_section", m_view->documentation_section());
+
+    // Viewport
+    auto* sim = m_view->sim();
+    s.setValue("sim_camera", static_cast<int>(sim->camera()));
+    s.setValue("sim_perspective", static_cast<int>(sim->perspective()));
+    s.setValue("sim_sun_viz", sim->sun_viz());
+    s.setValue("sim_blueprint_mode", sim->blueprint_mode());
+    s.setValue("sim_sun_viz_scale", sim->sun_viz_scale());
+    s.setValue("sim_sun_color", sim->sun_color());
+    s.setValue("sim_geometry_color", sim->geometry_color());
 
     s.endGroup();
 
@@ -218,6 +252,7 @@ AppData::AppData(QObject*       parent,
                 m_view->set_simulation_content_view(false);
             });
 
+    clear_session();
     load_session();
 
     m_file_source->load_new();

@@ -5,13 +5,13 @@ import QtQuick.Layouts
 import SolTrace
 
 ScrollView {
-    id: docScroll
+    id: root
     Layout.fillWidth: true
     Layout.fillHeight: true
     contentWidth: availableWidth
 
     ColumnLayout {
-        width: docScroll.availableWidth
+        width: root.availableWidth
         spacing: 12
 
         Header {

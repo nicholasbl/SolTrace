@@ -1,125 +1,60 @@
 import QtQuick
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-
 import SolTrace
 
 ScrollView {
-    id: teamScroll
+    id: root
     Layout.fillWidth: true
     Layout.fillHeight: true
     contentWidth: availableWidth
 
+    function member(key) {
+        return {
+            name: App.docs.get("team." + key, "name"),
+            role: App.docs.get("team." + key, "role"),
+            description: App.docs.get("team." + key),
+            website: App.docs.get("team." + key, "website"),
+            email: App.docs.get("team." + key, "email")
+        }
+    }
+
+    function addMembers(model, keys) {
+        for (let key of keys) model.append(member(key))
+    }
+
     ColumnLayout {
-        width: teamScroll.availableWidth
+        width: root.availableWidth
         spacing: 12
 
         Header {
             text: "SolTrace Team"
         }
 
-        ListModel {
-            id: frontendTeamModel
-
-            ListElement {
-                name: "Nicholas Brunhart-Lupo"
-                role: "Lorem Ipsum"
-                description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit"
-                url: "Test"
-                email: "@nrel.gov"
-            }
-
-            ListElement {
-                name: "Rianna Shantivong"
-                role: "Lorem Ipsum"
-                description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit"
-                url: "Test"
-                email: "@nrel.gov"
-            }
-
-            ListElement {
-                name: "Kenny Gruchalla"
-                role: "Lorem Ipsum"
-                description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit"
-                url: "Test"
-                email: "@nrel.gov"
-            }
-
-        }
-
-        ListModel {
-            id: backendTeamModel
-            ListElement {
-                name: "Michael Wagner"
-                role: "Lorem Ipsum"
-                description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit"
-                website: "Test"
-                email: "@nrel.gov"
-            }
-
-            ListElement {
-                name: "Taylor Brown"
-                role: "Lorem Ipsum"
-                description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit"
-                website: "Test"
-                email: "@nrel.gov"
-            }
-
-            ListElement {
-                name: "Jonathan Maack"
-                role: "Lorem Ipsum"
-                description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit"
-                website: "Test"
-                email: "@nrel.gov"
-            }
-
-            ListElement {
-                name: "Luning Fang"
-                role: "Lorem Ipsum"
-                description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit"
-                website: "Test"
-                email: "@nrel.gov"
-            }
-
-            ListElement {
-                name: "Nick Edwards"
-                role: "Lorem Ipsum"
-                description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit"
-                website: "Test"
-                email: "@nrel.gov"
-            }
-        }
-
         TeamGallery {
             title: "Principal Investigator"
             Layout.fillWidth: true
-            Layout.columnSpan: 2
-
             model: ListModel {
-                ListElement {
-                    name: "William Hamilton"
-                    role: "Principal Investigator"
-                    description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
-                    website: "Test"
-                    email: "@nrel.gov"
-                }
+                Component.onCompleted: root.addMembers(this, ["w_hamilton"])
             }
         }
 
         TeamGallery {
             title: "Backend Team"
             Layout.fillWidth: true
-            Layout.columnSpan: 2
-
-            model: backendTeamModel
+            model: ListModel {
+                Component.onCompleted: root.addMembers(this,
+                    ["m_wagner", "t_brown", "j_maack", "l_fang", "n_edwards"])
+            }
         }
 
         TeamGallery {
             title: "Frontend Team"
             Layout.fillWidth: true
-            Layout.columnSpan: 2
-
-            model: frontendTeamModel
+            model: ListModel {
+                Component.onCompleted: root.addMembers(this,
+                    ["n_brunhart_lupo", "r_shantivong", "k_gruchalla"])
+            }
         }
 
         Item { Layout.fillHeight: true }

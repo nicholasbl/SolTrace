@@ -5,7 +5,7 @@ import QtQuick.Layouts
 import SolTrace
 
 ScrollView {
-    id: themeScroll
+    id: root
 
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -13,7 +13,7 @@ ScrollView {
     clip: true
 
     ColumnLayout {
-        width: themeScroll.availableWidth
+        width: root.availableWidth
         spacing: 12
 
         Header {
