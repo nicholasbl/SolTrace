@@ -14,7 +14,10 @@ Rectangle {
     property string fontFamily
     property int fontWeight: Font.Normal
 
+    property var iconModel: []
     property var model: []
+
+    property bool collapseLabels: false
 
     property real padding: 10
     property Item selectedItem: null
@@ -79,24 +82,6 @@ Rectangle {
             spread: 2
             color: Material.dropShadowColor
         }
-
-        // Behavior on y {
-        //     NumberAnimation {
-        //         duration: 100
-        //     }
-        // }
-
-        // Behavior on width {
-        //     NumberAnimation {
-        //         duration: 100
-        //     }
-        // }
-
-        // Behavior on height {
-        //     NumberAnimation {
-        //         duration: 100
-        //     }
-        // }
     }
 
     function select(index) {
@@ -175,17 +160,15 @@ Rectangle {
 
                     anchors.fill: parent
 
-                    font.family: bar.fontFamily.length ?
-                                bar.fontFamily
-                                   :
-                                default_label.font.family
-
+                    font.family: bar.collapseLabels
+                        ? "Font Awesome 7 Free"
+                        : (bar.fontFamily.length ? bar.fontFamily : default_label.font.family)
 
                     font.pointSize: App.theme.comboBarTextSize
 
-                    
-
-                    text: modelData
+                    text: bar.collapseLabels
+                        ? (bar.iconModel.length > index ? bar.iconModel[index] : "")
+                        : modelData
 
                     font.weight: bar.fontWeight
 
@@ -223,10 +206,13 @@ Rectangle {
                     hoverEnabled: true
 
                     onClicked: bar.select(index)
+
+                    STToolTip {
+                        visible: item_mouse.containsMouse && bar.collapseLabels
+                        text: modelData
+                    }
                 }
             }
         }
     }
-
-
 }

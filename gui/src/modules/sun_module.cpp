@@ -156,7 +156,47 @@ void SunShape::sample_pillbox() {
 }
 
 void SunShape::sample_buie() {
-    // TODO
+    if (m_csr <= 0.0 || m_csr > 0.8) return;
+
+    auto& model = m_generated_distribution;
+
+    model->clear();
+
+    double csr = m_csr;
+    double chi;
+    if (csr > 0.145)
+        chi = -0.04419909985804843 +
+              csr * (1.401323894233574 +
+                     csr * (-0.3639746714505299 +
+                            csr * (-0.9579768560161194 +
+                                   1.1550475450828657 * csr)));
+    else if (csr > 0.035)
+        chi = 0.022652077593662934 +
+              csr * (0.5252380349996234 +
+                     (2.5484334534423887 - 0.8763755326550412 * csr) * csr);
+    else
+        chi = 0.004733749294807862 +
+              csr * (4.716738065192151 +
+                     csr * (-463.506669149804 +
+                            csr * (24745.88727411664 +
+                                   csr * (-606122.7511711778 +
+                                          5521693.445014727 * csr))));
+
+    double kappa         = 0.9 * log(13.5 * chi) * pow(chi, -0.3);
+    double gamma         = 2.2 * log(0.52 * chi) * pow(chi, 0.43) - 0.1;
+    double diskEdgeValue = cos(0.326 * 4.65) / cos(0.308 * 4.65);
+
+    for (double theta = -43.6; theta <= 43.6; theta += 0.01) {
+        double absTheta = std::abs(theta);
+        double intensity;
+        if (absTheta <= 4.65)
+            intensity = cos(0.326 * absTheta) / cos(0.308 * absTheta);
+        else {
+            intensity = exp(kappa) * pow(absTheta, gamma);
+            intensity = std::min(intensity, diskEdgeValue);
+        }
+        model->append(theta, intensity);
+    }
 }
 
 void SunShape::update_x_axis() {
@@ -173,7 +213,8 @@ void SunShape::update_x_axis() {
         gdist->set_x_axis_to(3.3 * m_half_width);
         break;
     case Shape::Buie_CSR:
-        // TODO: bounding logic
+        gdist->set_x_axis_from(-20.0);
+        gdist->set_x_axis_to(20.0);
         break;
     case Shape::Custom:
         // Code referenced from app/src/sunshape (SunShapeForm::UpdatePlot())

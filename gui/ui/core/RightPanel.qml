@@ -44,16 +44,11 @@ ShadowedGlassRectangle {
         STComboBar {
             id: section
             Layout.fillWidth: true
-
             currentIndex: App.view.right_panel_section
             onCurrentIndexChanged: App.view.right_panel_section = currentIndex
-
-            fontFamily: App.view.right_panel.size < 1 ? "Font Awesome 7 Free" : ""
-
-            model: App.view.right_panel.size < 1 ?
-                        ["\uf1c9", "\ue4e3", "\uf019"]
-                      :
-                        ["Scripting", "Help", "Export"]
+            collapseLabels: App.view.right_panel.size === PanelData.Small
+            model: ["Scripting", "Help", "Export"]
+            iconModel: ["\uf1c9", "\ue4e3", "\uf019"]
         }
 
         // need this?

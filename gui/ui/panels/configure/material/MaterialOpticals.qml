@@ -8,11 +8,16 @@ STPropertyPanel {
     property bool has_selection : false
     property var material_editor : App.materials.group_edit
     property var side_editor
+    property bool singleColumn: App.view.left_panel.size === PanelData.Small
+    property var labelAlignment: (root.singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
+
+    columns: root.singleColumn ? 1 : 2
 
     // =========================================================================
 
     STPropertyLabel {
         text: "Preset"
+        Layout.alignment: root.labelAlignment
     }
 
     STButton {
@@ -70,6 +75,7 @@ STPropertyPanel {
 
     STPropertyLabel {
         text: "Interaction"
+        Layout.alignment: root.labelAlignment
     }
 
     STComboBox {
@@ -96,6 +102,7 @@ STPropertyPanel {
 
     STPropertyLabel {
         text: "Distribution"
+        Layout.alignment: root.labelAlignment
     }
 
     STComboBox {
@@ -121,6 +128,7 @@ STPropertyPanel {
 
     STPropertyLabel {
         text: "Reflectance (ρ)"
+        Layout.alignment: root.labelAlignment
     }
 
     STDoubleSpinBox {
@@ -141,6 +149,7 @@ STPropertyPanel {
 
     STPropertyLabel {
         text: "Transmittance (τ)"
+        Layout.alignment: root.labelAlignment
     }
 
     STDoubleSpinBox {
@@ -162,6 +171,7 @@ STPropertyPanel {
     STPropertyLabel {
         text: "<em>n</em> Front"
         textFormat: Label.RichText
+        Layout.alignment: root.labelAlignment
     }
 
     STDoubleSpinBox {
@@ -183,6 +193,7 @@ STPropertyPanel {
     STPropertyLabel {
         text: "<em>n</em> Back"
         textFormat: Label.RichText
+        Layout.alignment: root.labelAlignment
     }
 
     STDoubleSpinBox {
@@ -204,6 +215,7 @@ STPropertyPanel {
     STPropertyLabel {
         text: "Slope Error (σ<sub>slope</sub>)"
         textFormat: Label.RichText
+        Layout.alignment: root.labelAlignment
     }
 
     STDoubleSpinBox {
@@ -226,6 +238,7 @@ STPropertyPanel {
     STPropertyLabel {
         text: "Specularity Error (σ<sub>spec</sub>)"
         textFormat: Label.RichText
+        Layout.alignment: root.labelAlignment
     }
 
     STDoubleSpinBox {
@@ -248,6 +261,7 @@ STPropertyPanel {
     STPropertyLabel {
         text: "Error Type"
         visible: false
+        Layout.alignment: root.labelAlignment
     }
 
     STComboBox {

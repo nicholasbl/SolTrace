@@ -9,6 +9,20 @@ import SolTrace
 Item {
     id: root
 
+    property int activeAxis: -1
+    property int gizmoMode: 0
+    property bool showGizmo: App.view.editing_layout && App.layout.instance_edit
+    property bool isDragging: false
+    property point lastMousePos: Qt.point(0, 0)
+    property real initialAngle: 0.0
+    property vector3d initialRotation: Qt.vector3d(0, 0, 0)
+
+    readonly property var axisDirs: [
+        Qt.vector3d(1, 0, 0),
+        Qt.vector3d(0, 1, 0),
+        Qt.vector3d(0, 0, 1)
+    ]
+
     function align_to_axis(axis, invert) {
         controller.align_to_axis(axis, invert)
     }
@@ -19,17 +33,12 @@ Item {
         property int index: -1
         property bool reopening: false
 
-        enter: null   // disable open animation
-        exit: null    // disable close animation
+        enter: null
+        exit: null
 
         onClosed: {
-            if (reopening) {
-                // Skip case to prevent valid state from being reset
-                return
-            }
-
+            if (reopening) return
             if (focused_group) {
-                // focused_group.is_focused = false
                 focused_group = null
                 index = -1
             }
@@ -49,7 +58,6 @@ Item {
         }
         MenuItem {
             text: "View/Edit Geometry"
-
             onClicked: {
                 if (geometryInstanceContextMenu.focused_group) {
                     App.view.workflow_phase = 0
@@ -102,8 +110,6 @@ Item {
                 textureData: {
                     if (App.view.sim.blueprint_mode) return blueprintSky
                     let elevation = edit_node.elevation
-                    let index = 0
-
                     if (elevation > 30) return daySky
                     if (elevation > 10) return lateAfternoonSky
                     if (elevation > -10) return sunsetSky
@@ -165,12 +171,12 @@ Item {
         }
 
         PerspectiveCamera {
-            id: main_perspective_camera
+            id: mainPerspectiveCamera
             z: 100
         }
 
         OrthographicCamera {
-            id: main_ortho_camera
+            id: mainOrthoCamera
             z: 500
             clipNear: 0.01
         }
@@ -190,61 +196,42 @@ Item {
         }
     }
 
+    GizmoOverlay {
+        id: gizmoOverlay
+        anchors.fill: parent
+        sourceCamera: controller.active_camera
+        gizmoPosition: App.layout.instance_edit ? App.layout.instance_edit.position : Qt.vector3d(0, 0, 0)
+        activeAxis: root.activeAxis
+        gizmoMode: root.gizmoMode
+        enabled: root.showGizmo
+
+        Binding {
+            target: gizmoOverlay
+            property: "enabled"
+            value: App.view.workflow_phase == 0 && App.view.left_panel.visible && App.view.configure_section == 3 && App.view.editing_layout
+        }
+    }
+
     CameraController {
         id: controller
 
-        perspective_camera: main_perspective_camera
-        orthographic_camera: main_ortho_camera
+        enabled: !root.isDragging
+
+        perspective_camera: mainPerspectiveCamera
+        orthographic_camera: mainOrthoCamera
 
         use_wasd: App.view.sim.camera === SimulationViewState.WASD
-
         use_orthographic: App.view.sim.perspective === SimulationViewState.Orthographic
 
         anchors.fill: parent
+
     }
 
-    MouseArea {
-        anchors.fill: parent
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
-
-        onClicked: (mouse) => {
-           if (App.view.simulation_content_view) return
-
-           const result = view.pick(mouse.x, mouse.y)
-           var object = result.objectHit
-           if (!object) return
-
-           // Left-button picking with non-instanced geometry
-           if (!object.instancing && mouse.button === Qt.LeftButton) {
-               // stub
-           }
-           // Right-button picking with non-instanced geometry
-           else if (!object.instancing && mouse.button === Qt.RightButton) {
-               // stub
-           }
-           // Left-button picking with instanced geometry
-           else if (object.instancing && mouse.button === Qt.LeftButton) {
-               const index = result.instanceIndex
-               if (index < 0) return
-               object.instancing.toggle_selection(index)
-           }
-           // Right-button picking with instanced geometry
-           else if (object.instancing && mouse.button === Qt.RightButton) {
-               const index = result.instanceIndex
-               if (index < 0) return
-
-               if (geometryInstanceContextMenu.focused_group) {
-                   // stub - release focus on previous state
-               }
-
-               if (geometryInstanceContextMenu.visible) {
-                   geometryInstanceContextMenu.reopening = true
-               }
-
-               geometryInstanceContextMenu.focused_group = object
-               geometryInstanceContextMenu.index = index
-               geometryInstanceContextMenu.popup()
-           }
-       }
+    SimulationMouseArea {
+        view: view
+        controller: controller
+        gizmoOverlay: gizmoOverlay
+        geometryInstanceContextMenu: geometryInstanceContextMenu
+        root: root
     }
 }

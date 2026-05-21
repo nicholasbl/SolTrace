@@ -14,8 +14,6 @@ class PanelData : public QObject {
     const inline static QVector<int> m_sizes      = { 250, 550, 750, 9999 };
     const inline static QVector<int> m_thresholds = { 400, 600, 850 };
 
-    void update_size();
-
 public:
     explicit PanelData(QObject* parent = nullptr);
 
@@ -46,6 +44,7 @@ public slots:
     bool is_small();
     bool is_normal();
     bool is_wide();
+    void update_size();
 };
 class SimulationViewState : public QObject {
     Q_OBJECT

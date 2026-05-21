@@ -33,15 +33,10 @@ Flickable {
             id: bar
             currentIndex: App.view.sun_section
             onCurrentIndexChanged: App.view.sun_section = currentIndex
-
             Layout.fillWidth: true
-
-            fontFamily: App.view.left_panel.size < 1 ? "Font Awesome 7 Free" : ""
-
-            model: App.view.left_panel.size < 1 ?
-                        ["\uf0eb", "\uf1fe"]
-                      :
-                        ["Type & Position", "Shape"]
+            collapseLabels: App.view.left_panel.size === PanelData.Small
+            model: ["Type & Position", "Shape"]
+            iconModel: ["\uf0eb", "\uf1fe"]
         }
 
         StackLayout {
@@ -53,16 +48,11 @@ Flickable {
 
                 STComboBar {
                     Layout.fillWidth: true
-
                     currentIndex: App.sun.type
                     onCurrentIndexChanged: App.sun.type = currentIndex
-
-                    fontFamily: App.view.left_panel.size < 1 ? "Font Awesome 7 Free" : ""
-
-                    model: App.view.left_panel.size < 1 ?
-                                ["\uf185", "\uf06a"]
-                              :
-                                ["Directional Sun", "Point Source"]
+                    collapseLabels: App.view.left_panel.size === PanelData.Small
+                    model: ["Directional Sun", "Point Source"]
+                    iconModel: ["\uf185", "\uf06a"]
                 }
 
                 InlineDocumentation {
@@ -88,6 +78,8 @@ Flickable {
                     LocationField {
                         id: location
                         Layout.fillWidth: true
+                        latitude: App.sun.calc_data.latitude
+                        longitude: App.sun.calc_data.longitude
                         onModified: {
                             App.sun.calc_data.latitude = latitude
                             App.sun.calc_data.longitude = longitude
@@ -97,6 +89,10 @@ Flickable {
                     DateTimeField {
                         id: date
                         Layout.fillWidth: true
+                        month: App.sun.calc_data.month
+                        day: App.sun.calc_data.day
+                        hour: App.sun.calc_data.hour
+                        minute: App.sun.calc_data.minute
                         onModified: {
                             App.sun.calc_data.month = month
                             App.sun.calc_data.day = day
@@ -175,11 +171,9 @@ Flickable {
                     Layout.fillWidth: true
                     currentIndex: App.sun.shape.shape
                     onCurrentIndexChanged: App.sun.shape.shape = currentIndex
-                    fontFamily: App.view.left_panel.size < 1 ? "Font Awesome 7 Free" : ""
-                    model: App.view.left_panel.size < 1 ?
-                                ["\uf06a", "\uf06a", "\uf06a", "\uf06a"]
-                              :
-                                ["Gaussian", "Pillbox", "CSR", "Custom"]
+                    collapseLabels: App.view.left_panel.size === PanelData.Small
+                    model: ["Gaussian", "Pillbox", "CSR", "Custom"]
+                    iconModel: ["\uf1fe", "\uf0c8", "\uf192", "\uf55b"]
                 }
 
                 InlineDocumentation {
@@ -222,6 +216,9 @@ Flickable {
                             label: "Circumsolar Ratio"
                             value: App.sun.shape.csr
                             decimals: 3
+                            from: 0
+                            to: 0.7999
+                            stepSize: 0.1
                             onValueChanged: { App.sun.shape.csr = value }
                         }
 

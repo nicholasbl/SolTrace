@@ -10,6 +10,8 @@ Flickable {
     id: root
     property var left_panel_size: App.view.left_panel.size
     property var intersections_module : AppData.intersections
+    property bool singleColumn: App.view.left_panel.size === PanelData.Small
+    property var labelAlignment: (singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
 
     contentWidth: width
     contentHeight: content_column.implicitHeight
@@ -27,12 +29,14 @@ Flickable {
 
         STPropertyPanel {
             Layout.fillWidth: true
+            columns: root.singleColumn ? 1 : 2
 
             collapsible: true
             title: "Ray Visibility"
 
             STPropertyLabel {
                 text: "Event types"
+                Layout.alignment: root.labelAlignment
             }
 
             STButton {
@@ -55,6 +59,7 @@ Flickable {
 
             STPropertyLabel {
                 text: "Show percent"
+                Layout.alignment: root.labelAlignment
             }
 
             STSpinBox {

@@ -14,6 +14,9 @@ ScrollView {
 
     contentWidth: availableWidth
 
+    property bool singleColumn: App.view.left_panel.size === PanelData.Small
+    property var labelAlignment: (singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
+
     ColumnLayout {
         width: root.availableWidth
 
@@ -23,16 +26,16 @@ ScrollView {
             title: "Simulation Runner"
         }
 
-
         STPropertyPanel {
             Layout.fillWidth: true
 
             collapsible: false
             title: "New Job"
+            columns: root.singleColumn ? 1 : 2
 
             STComboBox {
                 Layout.fillWidth: true
-                Layout.columnSpan: 2
+                Layout.columnSpan: root.singleColumn ? 1 : 2
                 model: AppData.simulation.runners
                 textRole: "name"
                 valueRole: "runner"
@@ -46,6 +49,7 @@ ScrollView {
 
             STPropertyLabel {
                 text: "# of Rays"
+                Layout.alignment: root.labelAlignment
             }
 
             STSpinBox {
@@ -53,12 +57,12 @@ ScrollView {
                 from: 0
                 value: AppData.simulation.ray_count
                 to: 1000000000
-
                 onValueModified: AppData.simulation.ray_count = value
             }
 
             STPropertyLabel {
                 text: "Max # Rays Traced"
+                Layout.alignment: root.labelAlignment
             }
 
             STSpinBox {
@@ -66,12 +70,12 @@ ScrollView {
                 from: 0
                 value: AppData.simulation.max_ray_count
                 to: 1000000000
-
                 onValueModified: AppData.simulation.ray_count = value
             }
 
             STPropertyLabel {
                 text: "# of CPU Cores"
+                Layout.alignment: root.labelAlignment
                 visible: AppData.simulation.runner < 2
             }
 
@@ -80,13 +84,13 @@ ScrollView {
                 from: 1
                 value: AppData.simulation.cpu_cores
                 to: 64
-
                 visible: AppData.simulation.runner < 2
                 onValueModified: AppData.simulation.cpu_cores = value
             }
 
             STPropertyLabel {
                 text: "Seed Value"
+                Layout.alignment: root.labelAlignment
             }
 
             STSpinBox {
@@ -94,15 +98,13 @@ ScrollView {
                 from: 1
                 value: AppData.simulation.seed_value
                 to: 10000000
-
                 onValueModified: AppData.simulation.seed_value = value
             }
 
             STPropertyLabel {
                 text: "Options"
-                Layout.rowSpan: 3
-
-                Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                Layout.rowSpan: root.singleColumn ? 1 : 3
+                Layout.alignment: root.labelAlignment
             }
 
             STSwitch {
@@ -125,11 +127,9 @@ ScrollView {
 
             STButton {
                 Layout.fillWidth: true
-                Layout.columnSpan: 2
-
+                Layout.columnSpan: root.singleColumn ? 1 : 2
                 text: "Enqueue Job"
                 text_icon: "\uf0da"
-
                 onClicked: {
                     AppData.simulation.run()
                 }

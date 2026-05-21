@@ -1,6 +1,8 @@
 import QtQuick 2.15
 import QtQuick.Layouts
+import QtQuick.Controls.Material
 import QtGraphs
+import SolTrace
 
 Rectangle {
     id: root
@@ -50,24 +52,57 @@ Rectangle {
     color: "transparent"
     radius: 8
 
-    Column {
+    ColumnLayout {
         anchors.fill: parent
         anchors.margins: 10
         spacing: 0
 
-        Text {
-            id: graphTitle
-            text: root.title
-            color: "white"
-            font.bold: true
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.horizontalCenterOffset: yAxisLabel.height + yAxisLabel.anchors.leftMargin
-            height: implicitHeight
+        Item {
+            id: graphHeader
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.max(graphTitle.implicitHeight, graphButtons.implicitHeight)
+
+            Label {
+                id: graphTitle
+                anchors.centerIn: parent
+                text: root.title
+                font.bold: true
+            }
+
+            STIconButton {
+                id: graphButtons
+                anchors.right: parent.right
+                text: "\uf1de"
+                onClicked: graphSettings.open()
+
+                STPopup {
+                    id: graphSettings
+
+                    ColumnLayout {
+                        width: parent.width
+
+                        STSpinBoxField {
+                            label: "Line Width"
+                            Layout.fillWidth: true
+                            value: App.theme.sunShapeGraphLineWidth
+                            onValueChanged: App.theme.sunShapeGraphLineWidth = value
+                            from: 1
+                            to: 10
+                        }
+                        ColorPickerField {
+                            label: "Color"
+                            Layout.fillWidth: true
+                            color: App.theme.sunShapeGraphLineColor
+                            onColorChanged: App.theme.sunShapeGraphLineColor = color
+                        }
+                    }
+                }
+            }
         }
 
         Item {
-            width: parent.width
-            height: parent.height - graphTitle.height - parent.spacing
+            Layout.fillWidth: true
+            Layout.preferredHeight: parent.height - graphHeader.height - parent.spacing
 
             GraphsView {
                 id: graphView
@@ -80,23 +115,23 @@ Rectangle {
                     colorScheme: GraphsTheme.ColorScheme.Dark
                     backgroundVisible: false
                     plotAreaBackgroundVisible: false
-                    seriesColors: ["#E0D080", "#B0A060"]
-                    borderColors: ["#e3e3e3", "#e3e3e3"]
-                    grid.mainColor: "#e3e3e3"
-                    grid.subColor: "#e3e3e3"
+                    seriesColors: [App.theme.sunShapeGraphLineColor]
+                    borderColors: [App.theme.fontColor, App.theme.fontColor]
+                    grid.mainColor: Qt.rgba(App.theme.fontColor.r, App.theme.fontColor.g, App.theme.fontColor.b, 0.6)
+                    grid.subColor: Qt.rgba(App.theme.fontColor.r, App.theme.fontColor.g, App.theme.fontColor.b, 0.6)
                     grid.mainWidth: 1
                     grid.subWidth: 1
-                    axisX.mainColor: "#e3e3e3"
-                    axisX.subColor: "#e3e3e3"
-                    axisX.labelTextColor: "#e3e3e3"
+                    axisX.mainColor:  App.theme.fontColor
+                    axisX.subColor:  Qt.rgba(App.theme.fontColor.r, App.theme.fontColor.g, App.theme.fontColor.b, 0.6)
+                    axisX.labelTextColor: App.theme.fontColor
                     axisX.mainWidth: 1
                     axisX.subWidth: 1
-                    axisY.mainColor: "#e3e3e3"
-                    axisY.subColor: "#e3e3e3"
-                    axisY.labelTextColor: "#e3e3e3"
+                    axisY.mainColor: App.theme.fontColor
+                    axisY.subColor:  Qt.rgba(App.theme.fontColor.r, App.theme.fontColor.g, App.theme.fontColor.b, 0.6)
+                    axisY.labelTextColor: App.theme.fontColor
                     axisY.mainWidth: 1
                     axisY.subWidth: 1
-                    labelTextColor: "#e3e3e3"
+                    labelTextColor: App.theme.fontColor
                 }
 
                 axisX: ValueAxis {
@@ -115,14 +150,14 @@ Rectangle {
 
                 LineSeries {
                     id: lineSeries
+                    width: App.theme.sunShapeGraphLineWidth
                     name: ""
                 }
             }
 
-            Text {
+            Label {
                 id: yAxisLabel
                 text: root.yAxisTitle
-                color: "white"
                 rotation: -90
                 anchors.left: parent.left
                 anchors.leftMargin: 0
@@ -130,10 +165,9 @@ Rectangle {
                 anchors.verticalCenterOffset: -(xAxisLabel.height + xAxisLabel.anchors.bottomMargin)
             }
 
-            Text {
+            Label {
                 id: xAxisLabel
                 text: root.xAxisTitle
-                color: "white"
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 0
                 anchors.horizontalCenter: graphView.horizontalCenter

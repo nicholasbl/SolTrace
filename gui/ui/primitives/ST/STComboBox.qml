@@ -8,9 +8,16 @@ import QtQuick.Layouts
 
 ComboBox {
     id: root
+    property int lastIndex: currentIndex < 0 ? 0 : currentIndex
+
     Layout.fillWidth: true
     Material.foreground: App.theme.fontColor
     font.pointSize: App.theme.labelSize
+
+    onCurrentIndexChanged: {
+        if (currentIndex < 0) currentIndex = lastIndex
+        else lastIndex = currentIndex
+    }
 
     background: WellRectangle {
         implicitWidth: 80

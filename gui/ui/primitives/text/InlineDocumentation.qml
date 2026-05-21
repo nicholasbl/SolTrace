@@ -40,5 +40,6 @@ ColumnLayout {
         wrapMode: Text.WordWrap
 
         font.pointSize: App.theme.normalSize
+        color: App.theme.fontColor
     }
 }
