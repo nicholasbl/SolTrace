@@ -8,64 +8,69 @@ ColumnLayout {
     id: root
 
     property var group_edit: App.materials.geometry_edit
+    property bool singleColumn: App.view.left_panel.size === PanelData.Small
+    property var labelAlignment: (singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
 
     spacing: 8
 
-    STPropertyPanel {
-        Layout.fillWidth: true
+    component PropertySection : STPropertyPanel {
+        id: section
+        required property var parameterModel
+        required property string typeLabel
+        required property var typeModel
+        required property string currentKind
+        signal kindChanged(string kind)
 
-        title: "Surface Properties"
+        Layout.fillWidth: true
         collapsible: true
+        columns: 2
 
         STPropertyLabel {
-            text: "Surface Type"
-
+            text: section.typeLabel
             Layout.row: 0
             Layout.column: 0
+            Layout.columnSpan: root.singleColumn ? 2 : 1
+            Layout.alignment: root.labelAlignment
         }
 
         STComboBox {
-            id: surfaceTypeCombo
             Layout.fillWidth: true
-            Layout.row: 0
-            Layout.column: 1
-            model: root.group_edit.surface_parameter_model.surface_type_model
+            Layout.preferredHeight: implicitHeight
+            Layout.row: root.singleColumn ? 1 : 0
+            Layout.column: root.singleColumn ? 0 : 1
+            Layout.columnSpan: root.singleColumn ? 2 : 1
+            model: section.typeModel
             textRole: "display"
             valueRole: "display"
-
-            currentValue: root.group_edit.surface_parameter_model.surface_kind
-
-            onActivated: {
-                root.group_edit.surface_parameter_model.surface_kind = currentText
-            }
+            currentValue: section.currentKind
+            onActivated: section.kindChanged(currentText)
         }
 
         Repeater {
-            model: root.group_edit.surface_parameter_model
+            model: section.parameterModel
             delegate: STPropertyLabel {
                 required property int index
                 required property string name
-
                 text: name
-
-                Layout.row: index + 1
+                Layout.row: root.singleColumn ? (index * 2 + 2) : (index + 1)
                 Layout.column: 0
+                Layout.columnSpan: root.singleColumn ? 2 : 1
+                Layout.alignment: root.labelAlignment
             }
         }
 
         Repeater {
-            model: root.group_edit.surface_parameter_model
+            model: section.parameterModel
             delegate: STDoubleSpinBox {
                 required property int index
                 required property var model
                 required property real content
                 required property real min
                 required property real max
-
                 Layout.fillWidth: true
-                Layout.row: index + 1
-                Layout.column: 1
-
+                Layout.row: root.singleColumn ? (index * 2 + 3) : (index + 1)
+                Layout.column: root.singleColumn ? 0 : 1
+                Layout.columnSpan: root.singleColumn ? 2 : 1
                 value: content
                 from: min
                 to: max
@@ -75,67 +80,21 @@ ColumnLayout {
         }
     }
 
-    STPropertyPanel {
-        Layout.fillWidth: true
+    PropertySection {
+        title: "Surface Properties"
+        typeLabel: "Surface Type"
+        parameterModel: root.group_edit.surface_parameter_model
+        typeModel: root.group_edit.surface_parameter_model.surface_type_model
+        currentKind: root.group_edit.surface_parameter_model.surface_kind
+        onKindChanged: (kind) => root.group_edit.surface_parameter_model.surface_kind = kind
+    }
 
+    PropertySection {
         title: "Aperture Properties"
-        collapsible: true
-
-        STPropertyLabel {
-            text: "Aperture Type"
-
-            Layout.row: 0
-            Layout.column: 0
-        }
-
-        STComboBox {
-            id: apertureTypeCombo
-            Layout.fillWidth: true
-            Layout.row: 0
-            Layout.column: 1
-            model: root.group_edit.aperture_parameter_model.aperture_type_model
-            textRole: "display"
-            valueRole: "display"
-
-            currentValue: root.group_edit.aperture_parameter_model.aperture_kind
-
-            onActivated: {
-                root.group_edit.aperture_parameter_model.aperture_kind = currentText
-            }
-        }
-
-        Repeater {
-            model: root.group_edit.aperture_parameter_model
-            delegate: STPropertyLabel {
-                required property int index
-                required property string name
-
-                text: name
-
-                Layout.row: index + 1
-                Layout.column: 0
-            }
-        }
-
-        Repeater {
-            model: root.group_edit.aperture_parameter_model
-            delegate: STDoubleSpinBox {
-                required property int index
-                required property var model
-                required property real content
-                required property real min
-                required property real max
-
-                Layout.fillWidth: true
-                Layout.row: index + 1
-                Layout.column: 1
-
-                value: content
-                from: min
-                to: max
-                stepSize: 0.01
-                onValueModified: model.content = value
-            }
-        }
+        typeLabel: "Aperture Type"
+        parameterModel: root.group_edit.aperture_parameter_model
+        typeModel: root.group_edit.aperture_parameter_model.aperture_type_model
+        currentKind: root.group_edit.aperture_parameter_model.aperture_kind
+        onKindChanged: (kind) => root.group_edit.aperture_parameter_model.aperture_kind = kind
     }
 }

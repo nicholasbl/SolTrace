@@ -53,6 +53,7 @@ ShadowedGlassRectangle {
                 model: ["Configure", "Simulate", "Analyze"]
 
                 RowLayout {
+                    id: labelRow
                     required property int index
                     required property string modelData
                     property var icons: ["\uf0ad", "\uf085", "\uf201"]
@@ -69,6 +70,11 @@ ShadowedGlassRectangle {
                         font.pointSize: App.view.left_panel.is_small() ? 16 : 12
 
                         onClicked: App.view.workflow_phase = parent.index
+
+                        STToolTip {
+                            visible: parent.containsMouse && App.view.left_panel.size == PanelData.Small
+                            text: labelRow.modelData
+                        }
                     }
 
                     STClickableLabel {

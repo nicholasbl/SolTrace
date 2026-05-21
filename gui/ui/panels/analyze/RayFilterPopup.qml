@@ -57,38 +57,18 @@ STPopup {
     GridLayout {
         columns: 2
 
-        Repeater {
-            id: ray_name_repeater
-
-            model: ray_type_model
-
-            delegate: STPropertyLabel {
-                Layout.column: 0
-                Layout.row: index
-
-                Layout.fillWidth: true
-                text: modelData.label
-            }
-        }
-
-        Repeater {
-            id: ray_type_repeater
-
-            model: ray_type_model
-
-            delegate: Switch {
-
-                Layout.column: 1
-                Layout.row: index
-
-                Layout.fillWidth: true
-
-                id: ray_type_switch
-                property string ray_type: modelData.ray_type
-
-                onToggled: {
-                    if (!root.updating) {
-                        root.modified(root.current_filter())
+        ColumnLayout {
+            Repeater {
+                id: ray_type_repeater
+                model: ray_type_model
+                delegate: STSwitch {
+                    Layout.fillWidth: true
+                    property string ray_type: modelData.ray_type
+                    text: modelData.label
+                    onToggled: {
+                        if (!root.updating) {
+                            root.modified(root.current_filter())
+                        }
                     }
                 }
             }

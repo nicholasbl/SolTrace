@@ -13,6 +13,7 @@ Rectangle {
     property alias label: label
     property real padding: 10
     property real iconSize: 16
+    property string toolTip: ""
     readonly property alias containsMouse: mouse_area.containsMouse
 
     width: label.width + padding
@@ -52,5 +53,9 @@ Rectangle {
         onClicked: control.clicked()
     }
 
+    STToolTip {
+        visible: control.containsMouse && control.toolTip.length > 0
+        text: control.toolTip
+    }
 }
 

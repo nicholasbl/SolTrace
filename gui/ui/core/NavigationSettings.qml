@@ -22,16 +22,11 @@ STPopup {
 
         STComboBar {
             currentIndex: AppData.view.sim.camera
-            onCurrentIndexChanged: AppData.view.sim.camera  = currentIndex
-
+            onCurrentIndexChanged: AppData.view.sim.camera = currentIndex
             Layout.fillWidth: true
-
-            fontFamily: AppData.view.left_panel.size === PanelData.Small ? "Font Awesome 7 Free" : ""
-
-            model : AppData.view.left_panel.size === PanelData.Small ?
-                        ["\uf828", "\uf03d"]
-                      :
-                        ["FPS Camera", "Orbital Camera"]
+            collapseLabels: AppData.view.left_panel.size === PanelData.Small
+            model: ["FPS Camera", "Orbital Camera"]
+            iconModel: ["\uf828", "\uf03d"]
         }
 
         InlineDocumentation {
@@ -42,16 +37,11 @@ STPopup {
 
         STComboBar {
             currentIndex: AppData.view.sim.perspective
-            onCurrentIndexChanged: AppData.view.sim.perspective  = currentIndex
-
+            onCurrentIndexChanged: AppData.view.sim.perspective = currentIndex
             Layout.fillWidth: true
-
-            fontFamily: AppData.view.left_panel.size === PanelData.Small ? "Font Awesome 7 Free" : ""
-
-            model : AppData.view.left_panel.size === PanelData.Small ?
-                        ["\uf06a", "\uf06a"]
-                      :
-                        ["Perspective", "Orthographic"]
+            collapseLabels: AppData.view.left_panel.size === PanelData.Small
+            model: ["Perspective", "Orthographic"]
+            iconModel: ["\uf1b2", "\uf0c8"]
         }
 
         GridLayout {
@@ -98,13 +88,13 @@ STPopup {
             }
         }
 
-        CheckBoxField {
+        STSwitch {
             Layout.fillWidth: true
 
             text: "Blueprint Mode"
-            value: App.view.sim.blueprint_mode
+            checked: App.view.sim.blueprint_mode
 
-            onClicked: {
+            onToggled: {
                 App.view.sim.blueprint_mode = !App.view.sim.blueprint_mode
             }
         }

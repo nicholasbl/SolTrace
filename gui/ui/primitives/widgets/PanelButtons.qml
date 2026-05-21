@@ -19,6 +19,7 @@ RowLayout {
         Layout.preferredHeight: implicitWidth
 
         text: "\uf05a"
+        toolTip: (root.target.inline_docs ? "Disable" : "Enable") + " Inline Docs"
         visible: root.target.size >= PanelData.Normal
         onClicked: root.target.inline_docs = !root.target.inline_docs
     }
@@ -30,6 +31,7 @@ RowLayout {
         Layout.preferredHeight: implicitWidth
 
         text: "\uf2d2"
+        toolTip: "Resize Panel"
         onClicked: window_opts_pop.open()
 
         STPopup {
@@ -44,11 +46,13 @@ RowLayout {
                     Layout.preferredHeight: implicitWidth
 
                     text: "\uf422"
+                    toolTip: "Smaller"
+                    visible: root.target.size != PanelData.Small
                     onClicked: {
                         if (root.target.size === PanelData.Full)
                             root.otherTarget.visible = true
 
-                        if (root.target.size > 1){
+                        if (root.target.size >= 1){
                             root.target.width = root.target.sizes[root.target.size - 1]
                         }
                         App.view.fit_panels(root.available_width, root.is_right_panel, false)
@@ -63,6 +67,8 @@ RowLayout {
                     Layout.preferredHeight: implicitWidth
 
                     text: "\uf424"
+                    toolTip: "Larger"
+                    visible: root.target.size != PanelData.Full
                     onClicked: {
                         root.target.width = root.target.sizes[root.target.size + 1]
                         App.view.fit_panels(root.available_width, root.is_right_panel, false)
@@ -77,6 +83,8 @@ RowLayout {
                     Layout.preferredHeight: implicitWidth
 
                     text: "\uf065"
+                    toolTip: "Full Size"
+                    visible: root.target.size != PanelData.Full
                     onClicked: {
                         root.target.width = root.target.sizes[PanelData.Full]
                         App.view.fit_panels(root.available_width, root.is_right_panel, false)
@@ -91,6 +99,7 @@ RowLayout {
                     Layout.preferredHeight: implicitWidth
 
                     text: "\uf00d"
+                    toolTip: "Close Panel"
                     onClicked: {
                         root.target.visible = false
                         window_opts_pop.close()
@@ -99,6 +108,4 @@ RowLayout {
             }
         }
     }
-
-
 }

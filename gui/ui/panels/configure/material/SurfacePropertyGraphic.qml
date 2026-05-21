@@ -507,12 +507,12 @@ Item {
 
             ColumnLayout {
                 anchors.fill: parent
-                CheckBoxField {
+                STSwitch {
                     id: ex_angles
                     text: "Exaggerate angles"
-                    value: root.exaggerateAngle
+                    checked: root.exaggerateAngle
 
-                    onClicked: {
+                    onToggled: {
                         root.exaggerateAngle = !root.exaggerateAngle
                     }
                 }

@@ -57,11 +57,11 @@ Flickable {
 
             STComboBar {
                 id: map_selector
-
                 visible: AppData.flux.current_image.length
-
                 Layout.columnSpan: 2
                 Layout.fillWidth: true
+                collapseLabels: AppData.view.left_panel.size === PanelData.Small
+                iconModel: ["\uf00a", "\uf141"]
                 model: ["Bins", "Points"]
             }
 

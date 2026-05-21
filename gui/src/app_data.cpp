@@ -6,20 +6,29 @@ namespace SolTrace::GUI::App {
 
 void AppData::load_session() {
     QSettings s;
+
     s.beginGroup("View");
     m_view->left_panel()->set_visible(
         s.value("show_left_panel", true).toBool());
     m_view->left_panel()->set_saved_visible(
-        s.value("show_left_panel_saved", true).toBool());
+        s.value("show_left_panel_saved", false).toBool());
     m_view->right_panel()->set_visible(
         s.value("show_right_panel", true).toBool());
     m_view->right_panel()->set_saved_visible(
-        s.value("show_right_panel_saved", true).toBool());
+        s.value("show_right_panel_saved", false).toBool());
     m_view->settings_panel()->set_visible(
-        s.value("show_settings_panel", true).toBool());
+        s.value("show_settings_panel", false).toBool());
+    m_view->left_panel()->update_size();
+    m_view->right_panel()->update_size();
 
     m_view->left_panel()->set_width(s.value("left_panel_width", 550).toUInt());
-    m_view->right_panel()->set_width(s.value("right_panel_width", 0).toUInt());
+    m_view->right_panel()->set_width(
+        s.value("right_panel_width", 100).toUInt());
+
+    m_view->left_panel()->set_inline_docs(
+        s.value("left_panel_inline_docs", false).toBool());
+    m_view->right_panel()->set_inline_docs(
+        s.value("right_panel_inline_docs", false).toBool());
 
     m_view->set_workflow_phase(s.value("workflow_phase", 0).toUInt());
 
@@ -28,13 +37,53 @@ void AppData::load_session() {
     m_view->set_analyze_section(s.value("analyze_section", 0).toUInt());
 
     m_view->set_sun_section(s.value("sun_section", 0).toUInt());
+    m_view->set_right_panel_section(s.value("right_panel_section", 0).toUInt());
 
     m_view->set_documentation_section(
         s.value("documentation_section", 0).toUInt());
 
+    // Viewport
+    auto* sim = m_view->sim();
+    sim->set_camera(static_cast<SimulationViewState::Camera>(
+        s.value("sim_camera", 1).toInt()));
+    sim->set_perspective(static_cast<SimulationViewState::Perspective>(
+        s.value("sim_perspective", 0).toInt()));
+    sim->set_sun_viz(s.value("sim_sun_viz", true).toBool());
+    sim->set_blueprint_mode(s.value("sim_blueprint_mode", false).toBool());
+    sim->set_sun_viz_scale(s.value("sim_sun_viz_scale", 50.0).toDouble());
+    sim->set_sun_color(
+        s.value("sim_sun_color", QColor("yellow")).value<QColor>());
+    sim->set_geometry_color(
+        s.value("sim_geometry_color", QColor("white")).value<QColor>());
+
     s.endGroup();
 
     s.beginGroup("Sun");
+
+    // Position
+    m_sun->position()->set_from_calculator(
+        s.value("position_from_calculator", true).toBool());
+    m_sun->position()->set_x(s.value("position_x", 1000.0).toDouble());
+    m_sun->position()->set_y(s.value("position_y", 1000.0).toDouble());
+    m_sun->position()->set_z(s.value("position_z", 1000.0).toDouble());
+
+    m_sun->set_type(static_cast<SunModule::Type>(s.value("type", 0).toInt()));
+
+    // Calculator
+    auto* calc = m_sun->calc_data();
+    calc->set_calculator(static_cast<SolarCalculatorData::Calculator>(
+        s.value("calculator", 0).toInt()));
+    calc->set_latitude(s.value("latitude", 35.04).toDouble());
+    calc->set_longitude(s.value("longitude", -105.10).toDouble());
+    calc->set_year(s.value("year", 2026).toInt());
+    calc->set_month(s.value("month", 3).toInt());
+    calc->set_day(s.value("day", 20).toInt());
+    calc->set_hour(s.value("hour", 12).toInt());
+    calc->set_minute(s.value("minute", 0).toInt());
+    calc->set_second(s.value("second", 0).toInt());
+    calc->set_timezone_offset(s.value("timezone_offset", -7).toInt());
+
+    // Sun Shape
     m_sun->shape()->set_shape(
         static_cast<SunShape::Shape>(s.value("shape", 0).toDouble()));
     m_sun->shape()->set_sigma(s.value("sigma", 1.551).toDouble());
@@ -62,6 +111,9 @@ void AppData::save_session() {
     s.setValue("left_panel_width", m_view->left_panel()->width());
     s.setValue("right_panel_width", m_view->right_panel()->width());
 
+    s.setValue("left_panel_inline_docs", m_view->left_panel()->inline_docs());
+    s.setValue("right_panel_inline_docs", m_view->right_panel()->inline_docs());
+
     s.setValue("workflow_phase", m_view->workflow_phase());
 
     s.setValue("configure_section", m_view->configure_section());
@@ -69,13 +121,46 @@ void AppData::save_session() {
     s.setValue("analyze_section", m_view->analyze_section());
 
     s.setValue("sun_section", m_view->sun_section());
+    s.setValue("right_panel_section", m_view->right_panel_section());
 
     s.setValue("documentation_section", m_view->documentation_section());
 
+    // Viewport
+    auto* sim = m_view->sim();
+    s.setValue("sim_camera", static_cast<int>(sim->camera()));
+    s.setValue("sim_perspective", static_cast<int>(sim->perspective()));
+    s.setValue("sim_sun_viz", sim->sun_viz());
+    s.setValue("sim_blueprint_mode", sim->blueprint_mode());
+    s.setValue("sim_sun_viz_scale", sim->sun_viz_scale());
+    s.setValue("sim_sun_color", sim->sun_color());
+    s.setValue("sim_geometry_color", sim->geometry_color());
+
     s.endGroup();
 
-
     s.beginGroup("Sun");
+    // Position
+    s.setValue("position_from_calculator",
+               m_sun->position()->from_calculator());
+    s.setValue("position_x", m_sun->position()->x());
+    s.setValue("position_y", m_sun->position()->y());
+    s.setValue("position_z", m_sun->position()->z());
+
+    s.setValue("type", static_cast<int>(m_sun->type()));
+
+    // Calculator
+    auto* calc = m_sun->calc_data();
+    s.setValue("calculator", static_cast<int>(calc->calculator()));
+    s.setValue("latitude", calc->latitude());
+    s.setValue("longitude", calc->longitude());
+    s.setValue("year", calc->year());
+    s.setValue("month", calc->month());
+    s.setValue("day", calc->day());
+    s.setValue("hour", calc->hour());
+    s.setValue("minute", calc->minute());
+    s.setValue("second", calc->second());
+    s.setValue("timezone_offset", calc->timezone_offset());
+
+    // Sun Shape
     s.setValue("shape", static_cast<int>(m_sun->shape()->shape()));
     s.setValue("sigma", m_sun->shape()->sigma());
     s.setValue("half_width", m_sun->shape()->half_width());
@@ -84,6 +169,11 @@ void AppData::save_session() {
     auto* cdist = m_sun->shape()->custom_distribution();
     s.setValue("custom_shape", cdist->variant_data());
     s.endGroup();
+}
+
+void AppData::clear_session() {
+    QSettings s;
+    s.clear();
 }
 
 AppData* AppData::create(QQmlEngine* qmlEngine, QJSEngine*) {
@@ -163,6 +253,7 @@ AppData::AppData(QObject*       parent,
                 m_view->set_simulation_content_view(false);
             });
 
+    clear_session();
     load_session();
 
     m_file_source->load_new();

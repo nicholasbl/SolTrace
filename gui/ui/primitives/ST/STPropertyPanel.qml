@@ -13,6 +13,8 @@ Rectangle {
     property bool collapsed: false
     property alias checked: check_box.checked
 
+    property int columns: 2
+
     Behavior on implicitHeight {
         NumberAnimation {
             duration: 50
@@ -85,7 +87,7 @@ Rectangle {
             id: layout
             Layout.fillWidth: true
 
-            columns: 2
+            columns: root.columns
 
             visible: !root.collapsed
         }

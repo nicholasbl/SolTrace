@@ -75,6 +75,7 @@ class AppData : public QObject {
 
     void load_session();
     void save_session();
+    void clear_session();
 
 public:
     static AppData* create(QQmlEngine* qmlEngine, QJSEngine*);
