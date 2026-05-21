@@ -16,7 +16,7 @@ ColumnLayout {
         Layout.fillWidth: true
         collapseLabels: AppData.view.left_panel.size === PanelData.Small
         model: ["Execution", "Diagnostics"]
-        iconModel: ["\uf828", "\uf188"]
+        iconModel: ["\uf04b", "\uf188"]
     }
 
     Rectangle {

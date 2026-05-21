@@ -41,7 +41,7 @@ STPopup {
             Layout.fillWidth: true
             collapseLabels: AppData.view.left_panel.size === PanelData.Small
             model: ["Perspective", "Orthographic"]
-            iconModel: ["\uf06a", "\uf06a"]
+            iconModel: ["\uf1b2", "\uf0c8"]
         }
 
         GridLayout {
@@ -88,13 +88,13 @@ STPopup {
             }
         }
 
-        CheckBoxField {
+        STSwitch {
             Layout.fillWidth: true
 
             text: "Blueprint Mode"
-            value: App.view.sim.blueprint_mode
+            checked: App.view.sim.blueprint_mode
 
-            onClicked: {
+            onToggled: {
                 App.view.sim.blueprint_mode = !App.view.sim.blueprint_mode
             }
         }
