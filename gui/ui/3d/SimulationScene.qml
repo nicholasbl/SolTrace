@@ -108,14 +108,59 @@ Item {
 
             lightProbe: Texture {
                 textureData: {
-                    if (App.view.sim.blueprint_mode) return App.theme.blueprintSky
+                    if (App.view.sim.blueprint_mode) return blueprintSky
                     let elevation = edit_node.elevation
-                    if (elevation > 30) return App.theme.daySky
-                    if (elevation > 10) return App.theme.lateAfternoonSky
-                    if (elevation > -10) return App.theme.sunsetSky
-                    return App.theme.nightSky
+                    if (elevation > 30) return daySky
+                    if (elevation > 10) return lateAfternoonSky
+                    if (elevation > -10) return sunsetSky
+                    return nightSky
                 }
                 mappingMode: Texture.LightProbe
+            }
+
+            ProceduralSkyTextureData {
+                id: daySky
+                sunColor: Qt.rgba(0, 0, 0, 0)
+                skyTopColor: Qt.rgba(0.2, 0.35, 0.6, 1.0)
+                skyHorizonColor: Qt.rgba(0.55, 0.65, 0.75, 1.0)
+                groundHorizonColor: Qt.rgba(0.55, 0.65, 0.75, 1.0)
+                groundBottomColor: Qt.rgba(0.275, 0.325, 0.375, 1.0)
+            }
+
+            ProceduralSkyTextureData {
+                id: lateAfternoonSky
+                sunColor: Qt.rgba(0, 0, 0, 0)
+                skyTopColor: Qt.rgba(0.3, 0.3, 0.5, 1.0)
+                skyHorizonColor: Qt.rgba(0.75, 0.6, 0.5, 1.0)
+                groundHorizonColor: Qt.rgba(0.45, 0.45, 0.55, 1.0)
+                groundBottomColor: Qt.rgba(0.2, 0.2, 0.3, 1.0)
+            }
+
+            ProceduralSkyTextureData {
+                id: sunsetSky
+                sunColor: Qt.rgba(0, 0, 0, 0)
+                skyTopColor: Qt.rgba(0.15, 0.15, 0.35, 1.0)
+                skyHorizonColor: Qt.rgba(0.9, 0.5, 0.3, 1.0)
+                groundHorizonColor: Qt.rgba(0.5, 0.35, 0.3, 1.0)
+                groundBottomColor: Qt.rgba(0.15, 0.1, 0.15, 1.0)
+            }
+
+            ProceduralSkyTextureData {
+                id: nightSky
+                sunColor: Qt.rgba(0, 0, 0, 0)
+                skyTopColor: Qt.rgba(0.02, 0.02, 0.08, 1.0)
+                skyHorizonColor: Qt.rgba(0.05, 0.05, 0.15, 1.0)
+                groundHorizonColor: Qt.rgba(0.05, 0.05, 0.1, 1.0)
+                groundBottomColor: Qt.rgba(0.02, 0.02, 0.05, 1.0)
+            }
+
+            ProceduralSkyTextureData {
+                id: blueprintSky
+                sunColor: Qt.rgba(0, 0, 0, 0)
+                skyTopColor: "#818182"
+                skyHorizonColor: "#818182"
+                groundHorizonColor: "#4d4d4d"
+                groundBottomColor: "#4d4d4d"
             }
 
             InfiniteGrid {

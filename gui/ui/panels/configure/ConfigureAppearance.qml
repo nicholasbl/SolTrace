@@ -19,7 +19,7 @@ ColumnLayout {
             STSwitch {
                 text: "Visible"
                 checked: App.view.sim.sun_viz
-                onToggled: App.view.sim.sun_viz = value
+                onToggled: App.view.sim.sun_viz = checked
             }
 
             ColorPickerField {

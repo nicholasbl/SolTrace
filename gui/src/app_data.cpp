@@ -39,6 +39,31 @@ void AppData::load_session() {
     s.endGroup();
 
     s.beginGroup("Sun");
+
+    // Position
+    m_sun->position()->set_from_calculator(
+        s.value("position_from_calculator", true).toBool());
+    m_sun->position()->set_x(s.value("position_x", 1000.0).toDouble());
+    m_sun->position()->set_y(s.value("position_y", 1000.0).toDouble());
+    m_sun->position()->set_z(s.value("position_z", 1000.0).toDouble());
+
+    m_sun->set_type(static_cast<SunModule::Type>(s.value("type", 0).toInt()));
+
+    // Calculator
+    auto* calc = m_sun->calc_data();
+    calc->set_calculator(static_cast<SolarCalculatorData::Calculator>(
+        s.value("calculator", 0).toInt()));
+    calc->set_latitude(s.value("latitude", 35.04).toDouble());
+    calc->set_longitude(s.value("longitude", -105.10).toDouble());
+    calc->set_year(s.value("year", 2026).toInt());
+    calc->set_month(s.value("month", 3).toInt());
+    calc->set_day(s.value("day", 20).toInt());
+    calc->set_hour(s.value("hour", 12).toInt());
+    calc->set_minute(s.value("minute", 0).toInt());
+    calc->set_second(s.value("second", 0).toInt());
+    calc->set_timezone_offset(s.value("timezone_offset", -7).toInt());
+
+    // Sun Shape
     m_sun->shape()->set_shape(
         static_cast<SunShape::Shape>(s.value("shape", 0).toDouble()));
     m_sun->shape()->set_sigma(s.value("sigma", 1.551).toDouble());
@@ -78,8 +103,30 @@ void AppData::save_session() {
 
     s.endGroup();
 
-
     s.beginGroup("Sun");
+    // Position
+    s.setValue("position_from_calculator",
+               m_sun->position()->from_calculator());
+    s.setValue("position_x", m_sun->position()->x());
+    s.setValue("position_y", m_sun->position()->y());
+    s.setValue("position_z", m_sun->position()->z());
+
+    s.setValue("type", static_cast<int>(m_sun->type()));
+
+    // Calculator
+    auto* calc = m_sun->calc_data();
+    s.setValue("calculator", static_cast<int>(calc->calculator()));
+    s.setValue("latitude", calc->latitude());
+    s.setValue("longitude", calc->longitude());
+    s.setValue("year", calc->year());
+    s.setValue("month", calc->month());
+    s.setValue("day", calc->day());
+    s.setValue("hour", calc->hour());
+    s.setValue("minute", calc->minute());
+    s.setValue("second", calc->second());
+    s.setValue("timezone_offset", calc->timezone_offset());
+
+    // Sun Shape
     s.setValue("shape", static_cast<int>(m_sun->shape()->shape()));
     s.setValue("sigma", m_sun->shape()->sigma());
     s.setValue("half_width", m_sun->shape()->half_width());

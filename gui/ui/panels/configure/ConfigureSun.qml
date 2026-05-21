@@ -78,6 +78,8 @@ Flickable {
                     LocationField {
                         id: location
                         Layout.fillWidth: true
+                        latitude: App.sun.calc_data.latitude
+                        longitude: App.sun.calc_data.longitude
                         onModified: {
                             App.sun.calc_data.latitude = latitude
                             App.sun.calc_data.longitude = longitude
@@ -87,6 +89,10 @@ Flickable {
                     DateTimeField {
                         id: date
                         Layout.fillWidth: true
+                        month: App.sun.calc_data.month
+                        day: App.sun.calc_data.day
+                        hour: App.sun.calc_data.hour
+                        minute: App.sun.calc_data.minute
                         onModified: {
                             App.sun.calc_data.month = month
                             App.sun.calc_data.day = day
@@ -167,7 +173,7 @@ Flickable {
                     onCurrentIndexChanged: App.sun.shape.shape = currentIndex
                     collapseLabels: App.view.left_panel.size === PanelData.Small
                     model: ["Gaussian", "Pillbox", "CSR", "Custom"]
-                    iconModel: ["\uf06a", "\uf06a", "\uf06a", "\uf06a"]
+                    iconModel: ["\uf1fe", "\uf0c8", "\uf192", "\uf55b"]
                 }
 
                 InlineDocumentation {
