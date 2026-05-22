@@ -173,6 +173,8 @@ Item {
         PerspectiveCamera {
             id: mainPerspectiveCamera
             z: 100
+            // TODO: Allow user customization
+            clipNear: 1
         }
 
         OrthographicCamera {
