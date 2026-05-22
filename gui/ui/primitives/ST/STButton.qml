@@ -36,9 +36,6 @@ Button {
 
             font.family: "Font Awesome 7 Free"
 
-
-            
-
             //Layout.fillWidth: true
             Layout.fillHeight: true
         }
