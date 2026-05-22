@@ -9,9 +9,9 @@ import SolTrace
 STPopup {
     id: root
 
-    property bool has_new_notifications: false
+    property int new_notification_count: 0
 
-    onOpened: has_new_notifications = false
+    onOpened: new_notification_count = 0
 
     ListModel {
         id: notification_model
@@ -22,7 +22,8 @@ STPopup {
 
         function onNotification(new_note) {
 
-            if (!root.visible) root.has_new_notifications = true
+            if (!root.visible)
+                root.new_notification_count = root.new_notification_count + 1
 
             console.log("Adding note: ", new_note.message)
 
@@ -48,12 +49,26 @@ STPopup {
             Layout.preferredWidth: 250
             Layout.fillWidth: true
 
+            clip: true
+
             model: notification_model
 
+            spacing: 8
+
             delegate: RowLayout {
+                id: note_delegate
                 required property string message
                 required property int type
                 width: ListView.view.width
+
+                property color message_color: {
+                    switch (type) {
+                    case 0: return Material.foreground
+                    case 1: return Material.color(Material.Yellow)
+                    case 2: return Material.color(Material.Red)
+                    default: return Material.foreground
+                    }
+                }
 
                 spacing: 8
 
@@ -66,6 +81,8 @@ STPopup {
                     verticalAlignment: Qt.AlignVCenter
 
                     font.family: "Font Awesome 7 Free"
+
+                    Material.foreground: note_delegate.message_color
 
                     text: {
                         switch (type) {
@@ -82,14 +99,24 @@ STPopup {
                     wrapMode: Label.WrapAtWordBoundaryOrAnywhere
                     elide: Label.ElideRight
 
+                    Material.foreground: note_delegate.message_color
+
                     text: message
+
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.bottom
+                        height: 1
+                        color: Material.dividerColor
+
+                        visible: notification_model.count !== 1
+                    }
                 }
             }
 
             Label {
                 anchors.centerIn: parent
-
-
 
                 enabled: false
 

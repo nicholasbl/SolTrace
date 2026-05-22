@@ -507,14 +507,35 @@ RowLayout {
                     onClicked: notification_settings.open()
 
                     Rectangle {
+                        id: notification_pill
                         width: 8
-                        height: 8
-                        radius: 4
+                        height: width
+                        radius: width / 2
 
-                        anchors.top: parent.top
-                        anchors.left: parent.left
+                        anchors.horizontalCenter: parent.left
+                        anchors.verticalCenter: parent.top
 
-                        visible: notification_settings.has_new_notifications
+                        opacity: notification_settings.new_notification_count > 0
+
+                        Connections {
+                            target: notification_settings
+                            function onNew_notification_countChanged() {
+                                pulse_animation.restart()
+                            }
+                        }
+
+                        NumberAnimation {
+                            id: pulse_animation
+
+                            target: notification_pill
+                            property: "width"
+                            from: 16
+                            to: 8
+
+                            duration: 1000
+
+                            easing: Easing.OutElastic
+                        }
 
                         color: Material.color(Material.Red)
                     }
