@@ -46,10 +46,31 @@ Item {
     property bool input_enabled: true
     property bool use_wasd: false
 
+    // Reset targets are scene-owned defaults. The main scene uses a farther
+    // orthographic start than the perspective start, while previews can provide
+    // their own values if they expose reset controls later.
+    property vector3d default_perspective_position: Qt.vector3d(0, 0, 100)
+    property vector3d default_orthographic_position: Qt.vector3d(0, 0, 500)
+    property quaternion default_camera_rotation: Quaternion.fromEulerAngles(0, 0, 0)
+
     // Public entry point used by axis buttons/gizmos. The active navigation
     // mode gets to decide how axis alignment should behave.
     function align_to_axis(axis, invert) {
         internal.current_controller.align_to_axis(axis, invert)
+    }
+
+    function reset_view() {
+        rotation_target_offset = Qt.vector3d(0, 0, 0)
+
+        perspective_camera.position = default_perspective_position
+        perspective_camera.rotation = default_camera_rotation
+
+        if (orthographic_camera) {
+            orthographic_camera.position = default_orthographic_position
+            orthographic_camera.rotation = default_camera_rotation
+        }
+
+        internal.current_controller.reset()
     }
 
     // Converts an enum axis plus an inversion flag into the world-space
@@ -410,6 +431,15 @@ Item {
 
             is_animating = true
             wasd_camera_animation.start()
+        }
+
+        function reset() {
+            is_animating = false
+            velocity = Qt.vector3d(0, 0, 0)
+            kb_state = Qt.vector3d(0, 0, 0)
+            kb_shift = false
+            speed_multiplier = 1.0
+            wasd_camera_animation.stop()
         }
 
         function handleKeyPress(event) {
@@ -785,6 +815,12 @@ Item {
 
             animation_time = 0.0
             is_animating = true
+        }
+
+        function reset() {
+            is_animating = false
+            animation_time = 0.0
+            initialize_from_camera()
         }
 
         function handleKeyPress(event) {
