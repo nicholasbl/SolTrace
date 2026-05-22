@@ -14,8 +14,10 @@ Item {
     property alias placeholderText: tf.placeholderText
 
     property alias validator: tf.validator
+    property alias acceptableInput: tf.acceptableInput
 
     signal accepted()
+    signal textEdited(string text)
 
     property string leftIcon
     property string rightIcon
@@ -66,6 +68,7 @@ Item {
             
 
             onAccepted: root.accepted()
+            onTextEdited: root.textEdited(text)
 
             // Rectangle {
             //     color: "red"
