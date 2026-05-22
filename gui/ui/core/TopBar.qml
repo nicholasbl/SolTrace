@@ -273,10 +273,64 @@ RowLayout {
         Layout.fillHeight: true
         Layout.fillWidth: true
 
-        glassColor: data_mouse_area.containsMouse ?
-                        App.theme.shadedGlassColor : App.theme.glassColor
+        property int last_db_count: AppData.file_source.rowCount()
+        property bool highlighted: false
+
+        glassColor: highlighted ? Qt.alpha(Material.accentColor, 0.35) :
+                    data_mouse_area.containsMouse ? App.theme.shadedGlassColor :
+                                                     App.theme.glassColor
+
+        function flash_added_data() {
+            flash_highlight_animation.restart()
+        }
+
+        Behavior on glassColor {
+            ColorAnimation {
+                duration: 200
+            }
+        }
 
         RowLayout {
+
+            Connections {
+                target: AppData.file_source
+
+                function onRowsInserted(parent, first, last) {
+                    middle_pane.last_db_count = AppData.file_source.rowCount()
+                    if (last >= first) {
+                        middle_pane.flash_added_data()
+                    }
+                }
+
+                function onRowsRemoved(parent, first, last) {
+                    middle_pane.last_db_count = AppData.file_source.rowCount()
+                    flash_highlight_animation.stop()
+                    middle_pane.highlighted = false
+                }
+            }
+
+            SequentialAnimation {
+                id: flash_highlight_animation
+
+                loops: 3
+
+                ScriptAction {
+                    script: middle_pane.highlighted = true
+                }
+
+                PauseAnimation {
+                    duration: 400
+                }
+
+                ScriptAction {
+                    script: middle_pane.highlighted = false
+                }
+
+                PauseAnimation {
+                    duration: 400
+                }
+            }
+
             anchors.fill: parent
             Label {
                 Layout.fillHeight: true
