@@ -108,12 +108,6 @@ ScrollView {
             }
 
             STSwitch {
-                text: "Sun Error"
-                checked: AppData.simulation.sun_error
-                onToggled: AppData.simulation.sun_error = checked
-            }
-
-            STSwitch {
                 text: "Sun Shape"
                 checked: AppData.simulation.sun_shape
                 onToggled: AppData.simulation.sun_shape = checked

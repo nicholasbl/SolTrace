@@ -125,8 +125,13 @@ void SimulationModule::run() {
         return;
     }
 
+    sim_data->data->set_seed(m_seed_value);
     sim_data->data->set_number_of_rays(m_ray_count);
     sim_data->data->set_max_rays_traced(m_max_ray_count);
+
+    auto& sim_params = sim_data->data->get_simulation_parameters();
+    sim_params.include_sun_shape_errors = m_sun_shape;
+    sim_params.include_optical_errors   = m_optical_errors;
 
     auto backend = ThreadRunnerBackend::Native;
 #ifdef SOLTRACE_HAS_EMBREE_RUNNER
