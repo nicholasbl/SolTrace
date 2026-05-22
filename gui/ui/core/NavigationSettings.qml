@@ -58,6 +58,13 @@ STPopup {
             }
 
             STButton {
+                text: "Reset"
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
+                onClicked: simulation_scene.reset_camera_view()
+            }
+
+            STButton {
                 text: "-X"
                 onClicked: simulation_scene.align_to_axis(CameraController.Axis.X, true)
             }

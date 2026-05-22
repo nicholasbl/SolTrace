@@ -77,10 +77,21 @@ ColumnLayout {
         }
 
         STPropertyPanel {
+            id: positionPanel
             Layout.columnSpan: 2
             Layout.fillWidth: true
             title: "Parent-relative Position"
             collapsible: true
+
+            function update_position_if_valid() {
+                if (!(x_pos.acceptableInput && y_pos.acceptableInput && z_pos.acceptableInput)) {
+                    return
+                }
+
+                root.module.position = Qt.vector3d(Number(x_pos.text),
+                                                   Number(y_pos.text),
+                                                   Number(z_pos.text))
+            }
 
             STPropertyLabel { text: "X" }
             STTextField {
@@ -88,7 +99,8 @@ ColumnLayout {
                 Layout.fillWidth: true
                 text: root.module.position.x
                 validator: DoubleValidator {}
-                onAccepted: root.module.position = Qt.vector3d(x_pos.text, y_pos.text, z_pos.text)
+                onAccepted: positionPanel.update_position_if_valid()
+                onTextEdited: positionPanel.update_position_if_valid()
             }
 
             STPropertyLabel { text: "Y" }
@@ -97,7 +109,8 @@ ColumnLayout {
                 Layout.fillWidth: true
                 text: root.module.position.y
                 validator: DoubleValidator {}
-                onAccepted: root.module.position = Qt.vector3d(x_pos.text, y_pos.text, z_pos.text)
+                onAccepted: positionPanel.update_position_if_valid()
+                onTextEdited: positionPanel.update_position_if_valid()
             }
 
             STPropertyLabel { text: "Z" }
@@ -106,7 +119,8 @@ ColumnLayout {
                 Layout.fillWidth: true
                 text: root.module.position.z
                 validator: DoubleValidator {}
-                onAccepted: root.module.position = Qt.vector3d(x_pos.text, y_pos.text, z_pos.text)
+                onAccepted: positionPanel.update_position_if_valid()
+                onTextEdited: positionPanel.update_position_if_valid()
             }
 
             STButton {
@@ -117,7 +131,7 @@ ColumnLayout {
                     x_pos.text = 0
                     y_pos.text = 0
                     z_pos.text = -1
-                    root.module.position = Qt.vector3d(x_pos.text, y_pos.text, z_pos.text)
+                    positionPanel.update_position_if_valid()
                 }
             }
         }
@@ -132,8 +146,14 @@ ColumnLayout {
             property vector3d angles: root.module.orientation.toEulerAngles()
 
             function update_from_angles() {
+                if (!(x_euler.acceptableInput && y_euler.acceptableInput && z_euler.acceptableInput)) {
+                    return
+                }
+
                 root.module.set_from_angles(
-                    Qt.vector3d(x_euler.text, y_euler.text, z_euler.text))
+                    Qt.vector3d(Number(x_euler.text),
+                                Number(y_euler.text),
+                                Number(z_euler.text)))
             }
 
             STPropertyLabel { text: "X Angle" }
@@ -143,6 +163,7 @@ ColumnLayout {
                 text: rotPanel.angles.x
                 validator: DoubleValidator {}
                 onAccepted: rotPanel.update_from_angles()
+                onTextEdited: rotPanel.update_from_angles()
             }
 
             STPropertyLabel { text: "Y Angle" }
@@ -152,6 +173,7 @@ ColumnLayout {
                 text: rotPanel.angles.y
                 validator: DoubleValidator {}
                 onAccepted: rotPanel.update_from_angles()
+                onTextEdited: rotPanel.update_from_angles()
             }
 
             STPropertyLabel { text: "Z Angle" }
@@ -161,6 +183,7 @@ ColumnLayout {
                 text: rotPanel.angles.z
                 validator: DoubleValidator {}
                 onAccepted: rotPanel.update_from_angles()
+                onTextEdited: rotPanel.update_from_angles()
             }
 
             STButton {

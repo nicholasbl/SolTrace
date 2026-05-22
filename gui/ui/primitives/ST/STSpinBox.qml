@@ -5,6 +5,7 @@ import SolTrace
 SpinBox {
     id: control
     editable: true
+    live: true
 
     property string suffix
 

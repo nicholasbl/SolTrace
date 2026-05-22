@@ -117,6 +117,11 @@ LayoutModule::LayoutModule(QObject* parent)
             m_instance_edit,
             &db::AnInstanceEditor::reset);
 
+    connect(m_instance_edit,
+            &db::AnInstanceEditor::notify,
+            this,
+            &LayoutModule::notify);
+
     connect(this,
             &LayoutModule::current_database_value_changed,
             m_world_geometry_model,

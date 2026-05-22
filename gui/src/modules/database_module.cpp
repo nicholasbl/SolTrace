@@ -6,6 +6,8 @@
 #include <QtCore/qfileinfo.h>
 #include <QtCore/qfuturewatcher.h>
 
+#include <exception>
+
 namespace SolTrace::GUI::App {
 
 
@@ -16,50 +18,67 @@ load_file(QPromise<LoadResult>& result, QString fname, db::Database* new_db) {
 
     // Take control of that free pointer...
     std::unique_ptr<db::Database> destination(new_db);
+    QString                       stage = "starting";
 
-    result.setProgressRange(0, 100);
-    qDebug() << Q_FUNC_INFO << fname;
+    try {
+        result.setProgressRange(0, 100);
+        qDebug() << Q_FUNC_INFO << fname;
 
-    result.setProgressValueAndText(0, "Reading file...");
+        stage = "reading file";
+        result.setProgressValueAndText(0, "Reading file...");
 
-    auto file = QFileInfo(fname);
+        auto file = QFileInfo(fname);
 
-    if (!(file.isFile() && file.isReadable())) {
-        result.emplaceResult(LoadFileFailed("Unable to open file for reading"));
-        return;
+        if (!(file.isFile() && file.isReadable())) {
+            result.emplaceResult(LoadFileFailed(
+                QString("Unable to open file for reading: %1").arg(fname)));
+            return;
+        }
+
+        auto new_data = std::make_shared<SD::SimulationData>();
+
+        auto str = fname.toStdString();
+
+        stage = "parsing file";
+        if (!new_data->import_from_file(str)) {
+            result.emplaceResult(
+                LoadFileFailed(QString("Unable to import file: %1").arg(fname)));
+            return;
+        }
+
+        if (result.isCanceled()) {
+            result.emplaceResult(LoadedFile {});
+            return;
+        }
+
+        stage = "importing content";
+        result.setProgressValueAndText(50, "Importing content...");
+
+        destination->import(*new_data);
+
+        stage = "finalizing";
+        result.setProgressValueAndText(100, "Done");
+
+        // We cannot store non-copy types into Qt types, sigh.
+
+        if (result.isCanceled()) {
+            result.emplaceResult(LoadedFile {});
+            return;
+        }
+
+        result.emplaceResult(LoadedFile {
+            .provenance = fname,
+            .ptr        = destination.release(),
+        });
+    } catch (std::exception const& e) {
+        result.emplaceResult(LoadFileFailed(
+            QString("Exception while loading %1 during %2: %3")
+                .arg(fname, stage, QString::fromUtf8(e.what()))));
+    } catch (...) {
+        result.emplaceResult(LoadFileFailed(
+            QString("Unknown exception while loading %1 during %2")
+                .arg(fname, stage)));
     }
-
-    auto new_data = std::make_shared<SD::SimulationData>();
-
-    auto str = fname.toStdString();
-
-    if (!new_data->import_from_file(str)) {
-        result.emplaceResult(LoadFileFailed("Unable to import file"));
-        return;
-    }
-
-    if (result.isCanceled()) {
-        result.emplaceResult(LoadedFile {});
-        return;
-    }
-
-    result.setProgressValueAndText(50, "Importing content...");
-
-    destination->import(*new_data);
-
-    result.setProgressValueAndText(100, "Done");
-
-    // We cannot store non-copy types into Qt types, sigh.
-
-    if (result.isCanceled()) {
-        result.emplaceResult(LoadedFile {});
-        return;
-    }
-
-    result.emplaceResult(LoadedFile {
-        .provenance = fname,
-        .ptr        = destination.release(),
-    });
 }
 
 void DatabaseModule::file_ready(QUrl, LoadResult result) {

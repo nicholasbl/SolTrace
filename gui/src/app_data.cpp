@@ -184,6 +184,7 @@ AppData::AppData(QObject*       parent,
                  QQmlEngine*    engine,
                  const QString& documentation_directory)
     : m_file_source(new DatabaseModule(this)),
+      m_log_list(current_log_list()),
       m_view(new ViewModule(this)),
       m_docs(new DocumentationModule(this)),
       m_sun(new SunModule(this)),
@@ -201,6 +202,13 @@ AppData::AppData(QObject*       parent,
 
     connect(
         m_file_source, &DatabaseModule::notify, this, &AppData::notification);
+
+    connect(m_simulation,
+            &SimulationModule::notify,
+            this,
+            &AppData::notification);
+
+    connect(m_layout, &LayoutModule::notify, this, &AppData::notification);
 
     connect(this,
             &AppData::current_database_value_changed,
@@ -252,7 +260,6 @@ AppData::AppData(QObject*       parent,
                 m_view->set_simulation_content_view(false);
             });
 
-    clear_session();
     load_session();
 
     m_file_source->load_new();

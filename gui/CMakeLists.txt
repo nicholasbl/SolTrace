@@ -6,6 +6,74 @@ include(cmake/CPM.cmake)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_package(Git QUIET)
+
+set(SOLTRACE_GIT_COMMIT "unknown")
+set(SOLTRACE_GIT_BRANCH "unknown")
+set(SOLTRACE_GIT_TAG "")
+set(SOLTRACE_GIT_DESCRIBE "unknown")
+set(SOLTRACE_GIT_DIRTY "unknown")
+
+if(Git_FOUND)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --short=12 HEAD
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        OUTPUT_VARIABLE SOLTRACE_GIT_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        OUTPUT_VARIABLE SOLTRACE_GIT_BRANCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} describe --tags --exact-match HEAD
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        OUTPUT_VARIABLE SOLTRACE_GIT_TAG
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} describe --tags --always --dirty
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        OUTPUT_VARIABLE SOLTRACE_GIT_DESCRIBE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} status --porcelain
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        OUTPUT_VARIABLE SOLTRACE_GIT_STATUS
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+
+    if(SOLTRACE_GIT_STATUS STREQUAL "")
+        set(SOLTRACE_GIT_DIRTY "false")
+    else()
+        set(SOLTRACE_GIT_DIRTY "true")
+    endif()
+endif()
+
+if(SOLTRACE_GIT_COMMIT STREQUAL "")
+    set(SOLTRACE_GIT_COMMIT "unknown")
+endif()
+if(SOLTRACE_GIT_BRANCH STREQUAL "")
+    set(SOLTRACE_GIT_BRANCH "unknown")
+endif()
+if(SOLTRACE_GIT_DESCRIBE STREQUAL "")
+    set(SOLTRACE_GIT_DESCRIBE "unknown")
+endif()
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/app_build_info.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/app_build_info.h"
+    @ONLY
+)
+
 find_package(Qt6 6.11 REQUIRED COMPONENTS
     Core Gui Qml Quick Quick3D Widgets Graphs Concurrent
 )
@@ -127,11 +195,14 @@ if(TARGET optix_runner)
 endif()
 
 target_include_directories(SolTrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(SolTrace PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 target_include_directories(SolTrace PRIVATE ../coretrace/simulation_data)
 target_include_directories(SolTrace PRIVATE ../coretrace/simulation_results)
 target_include_directories(SolTrace PRIVATE ../coretrace/simulation_runner)
 
 set_target_properties(SolTrace PROPERTIES CXX_STANDARD 20)
+
+target_compile_definitions(SolTrace PRIVATE QT_MESSAGELOGCONTEXT)
 
 set_target_properties(SolTrace PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER "gov.nlr.SolTrace"

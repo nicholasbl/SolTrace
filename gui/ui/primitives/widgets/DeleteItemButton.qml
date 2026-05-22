@@ -59,13 +59,10 @@ STIconButton {
                 DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
             }
 
-            STButton {
+            STDangerousButton {
                 visible: root.isDangerous
                 text: qsTr("Reassign & Delete")
-                Material.foreground: Material.Red
                 DialogButtonBox.buttonRole: DialogButtonBox.DestructiveRole
-                idle_color: App.theme.destructiveGlassColor
-                down_color: Material.color(Material.Red)
 
                 onClicked: select_replacement.open()
 

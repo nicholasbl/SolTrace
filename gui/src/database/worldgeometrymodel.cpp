@@ -52,8 +52,8 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
         m_member_cache.push_back(member);
     }
 
-    qDebug() << Q_FUNC_INFO << "group" << entt::to_integral(group) << "->"
-             << m_member_cache.size();
+    // qDebug() << Q_FUNC_INFO << "group" << entt::to_integral(group) << "->"
+    //          << m_member_cache.size();
 
     markDirty();
 }
@@ -183,8 +183,8 @@ QByteArray InstancedElements::getInstanceBuffer(int* instanceCount) {
 
     if (instanceCount) { *instanceCount = m_member_cache.size(); }
 
-    qDebug() << Q_FUNC_INFO << m_target_group << m_member_cache.size()
-             << m_instance_data.size();
+    // qDebug() << Q_FUNC_INFO << m_target_group << m_member_cache.size()
+    //          << m_instance_data.size();
 
     return m_instance_data;
 }

@@ -51,6 +51,18 @@ ScrollView {
 
                     text: "Glass Translucency"
                 }
+
+                STDangerousButton {
+                    Layout.preferredWidth: 250
+                    text: "Reset"
+
+                    onClicked: {
+                        App.theme.glassColor.r = 0
+                        App.theme.glassColor.g = 0
+                        App.theme.glassColor.b = 0
+                        App.theme.glassColor.a = 0.15
+                    }
+                }
             }
         }
 
@@ -128,6 +140,22 @@ ScrollView {
                     }
 
                     text: "Zoom Level"
+                }
+
+                STDangerousButton {
+                    Layout.preferredWidth: 250
+                    text: "Reset"
+
+                    onClicked: {
+                        App.theme.fontColor.r = 1
+                        App.theme.fontColor.g = 1
+                        App.theme.fontColor.b = 1
+                        App.theme._headerSize = 17
+                        App.theme._subHeaderSize = 16
+                        App.theme._labelSize = 13
+                        App.theme._normalSize = 15
+                        App.theme.zoomLevel = 1
+                    }
                 }
             }
         }

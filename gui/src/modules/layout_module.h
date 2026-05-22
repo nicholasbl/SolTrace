@@ -3,6 +3,7 @@
 #include "backend.h"
 #include "database/rootelementsmodel.h"
 #include "module_common.h"
+#include "utilities/notification.h"
 #include "utilities/qt_helpers.h"
 #include <QObject>
 
@@ -59,6 +60,9 @@ public slots:
     void clear_viewed_element() { set_viewed_element({}); }
     void clear_edited_element() { set_edited_element({}); }
     void delete_edited_element();
+
+signals:
+    void notify(ANotification);
 };
 
 

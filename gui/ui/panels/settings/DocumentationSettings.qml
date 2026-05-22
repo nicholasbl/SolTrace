@@ -63,26 +63,37 @@ ScrollView {
 
                     Repeater {
                         model: [
-                            { emoji: "📣", label: "Announcements", slug: "announcements" },
-                            { emoji: "💬", label: "General", slug: "general" },
-                            { emoji: "💡", label: "Ideas", slug: "ideas" },
-                            { emoji: "🙏", label: "Q&A", slug: "q-a" },
-                            { emoji: "🙌", label: "Show and tell", slug: "show-and-tell" }
+                            { emoji: "\uf0a1", label: "Announcements", slug: "announcements" },
+                            { emoji: "\uf4ad", label: "General", slug: "general" },
+                            { emoji: "\uf0eb", label: "Ideas", slug: "ideas" },
+                            { emoji: "\uf059", label: "Q&A", slug: "q-a" },
+                            { emoji: "\ue209", label: "Show and tell", slug: "show-and-tell" }
                         ]
 
                         Rectangle {
                             required property var modelData
-                            width: pillLabel.implicitWidth + 16
-                            height: pillLabel.implicitHeight + 8
+
                             radius: height / 2
                             color: pillMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.2) : Qt.rgba(1, 1, 1, 0.1)
                             border.color: Qt.rgba(1, 1, 1, 0.25)
 
-                            Label {
-                                id: pillLabel
-                                anchors.centerIn: parent
-                                text: modelData.emoji + " " + modelData.label
-                                color: "white"
+                            width: pill_layout.implicitWidth + 16
+                            height: pill_layout.implicitHeight + 8
+
+                            RowLayout {
+                                id: pill_layout
+                                anchors.fill: parent
+                                Label {
+                                    id: pillLabel
+                                    font.family: "Font Awesome 7 Free"
+                                    text: modelData.emoji
+                                    color: "white"
+                                }
+
+                                Label {
+                                    text: modelData.label
+                                    color: "white"
+                                }
                             }
 
                             MouseArea {
@@ -94,6 +105,8 @@ ScrollView {
                                     "https://github.com/NatLabRockies/SolTrace/discussions/categories/" + modelData.slug)
                             }
                         }
+
+
                     }
                 }
             }

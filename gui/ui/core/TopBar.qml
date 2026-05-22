@@ -148,7 +148,7 @@ RowLayout {
 
                     onClicked: file_menu.open()
 
-                    Menu {
+                    STMenu {
                         id: file_menu
                         MenuItem {
                             text: "New"
@@ -162,28 +162,139 @@ RowLayout {
 
                             enabled: !AppData.file_source.is_loading
                         }
+
+                        STMenu {
+                            id: recents_menu
+                            title: qsTr("Recent Files")
+                            enabled: recent_instantiator.count > 0
+
+                            Instantiator {
+                                id: recent_instantiator
+                                model: file_settings.recent_files
+
+                                delegate: MenuItem {
+                                    // Show file name only. Settings may restore
+                                    // entries as strings or QUrl-like values, so
+                                    // normalize before doing string operations.
+                                    text: file_settings.file_name(modelData)
+                                    onTriggered: {
+                                        var file_url = file_settings.file_url_text(modelData)
+                                        file_settings.add_files(file_url)
+                                        App.file_source.load_url(Qt.url(file_url))
+                                    }
+                                }
+
+                                onObjectAdded: (index, object) => recents_menu.insertItem(index, object)
+                                onObjectRemoved: (index, object) => recents_menu.removeItem(object)
+
+                            }
+
+                            MenuSeparator {
+                                visible: recent_instantiator.count > 0
+                            }
+
+                            MenuItem {
+                                text: qsTr("Clear Menu")
+                                onTriggered: file_settings.clear_recent_files()
+                            }
+                        }
+
                         MenuItem {
                             text: "Save"
 
                             enabled: !AppData.file_source.is_loading
                         }
+                    }
 
-                        background: Rectangle {
-                            implicitWidth: 150
-                                    implicitHeight: 40
+                    QtObject {
+                        id: file_settings
 
-                            radius: 14
+                        property var recent_files: []
+                        property url last_selected_file: ""
+                        property url last_selected_folder: StandardPaths.standardLocations(
+                                                               StandardPaths.DocumentsLocation)[0]
 
-                            color: Qt.alpha(Material.backgroundColor, .90)
+                        function file_url_text(file_path) {
+                            return String(file_path)
                         }
+
+                        function file_name(file_path) {
+                            var file_url = file_url_text(file_path)
+                            return decodeURIComponent(file_url.split('/').pop())
+                        }
+
+                        function recent_files_array() {
+                            var files = []
+
+                            if (!recent_files) {
+                                return files
+                            }
+
+                            for (var i = 0; i < recent_files.length; ++i) {
+                                files.push(file_url_text(recent_files[i]))
+                            }
+
+                            return files
+                        }
+
+                        function set_recent_files(files) {
+                            recent_files = files
+                        }
+
+                        function clear_recent_files() {
+                            set_recent_files([])
+                        }
+
+                        function add_files(file_path) {
+                            var normalized_file_path = file_url_text(file_path)
+                            var files = recent_files_array()
+                            var index = files.indexOf(normalized_file_path)
+
+                            // If it already exists:
+                            // remove it and add to top
+                            if (index !== -1) {
+                                files.splice(index, 1)
+                            }
+
+                            // Add to the top of the list
+                            files.unshift(normalized_file_path)
+
+                            // Limit to a maximum of 5 recent files
+                            if (files.length > 5) {
+                                files.pop()
+                            }
+
+                            // Assign a fresh array so the Instantiator model
+                            // receives a change notification.
+                            set_recent_files(files)
+                        }
+                    }
+
+                    Settings {
+                        id: file_settings_storage
+
+                        category: "file_history"
+
+                        property alias recent_files: file_settings.recent_files
+                        property alias last_selected_file: file_settings.last_selected_file
+                        property alias last_selected_folder: file_settings.last_selected_folder
+
                     }
 
                     FileDialog {
                         id: openFileDialog
-                        currentFolder: StandardPaths.standardLocations(
-                                           StandardPaths.DocumentsLocation
-                                           )[0]
-                        onAccepted: App.file_source.load_url(selectedFile)
+
+                        currentFolder: file_settings.last_selected_folder
+                        selectedFile: file_settings.last_selected_file
+
+                        onAccepted: {
+                            var str_file = String(selectedFile)
+
+                            file_settings.last_selected_file = selectedFile
+                            file_settings.last_selected_folder = str_file.substring(0, str_file.lastIndexOf("/"))
+                            file_settings.add_files(selectedFile.toString())
+                            App.file_source.load_url(selectedFile)
+                        }
                     }
                 }
 
@@ -208,10 +319,64 @@ RowLayout {
         Layout.fillHeight: true
         Layout.fillWidth: true
 
-        glassColor: data_mouse_area.containsMouse ?
-                        App.theme.shadedGlassColor : App.theme.glassColor
+        property int last_db_count: AppData.file_source.rowCount()
+        property bool highlighted: false
+
+        glassColor: highlighted ? Qt.alpha(Material.accentColor, 0.35) :
+                                  data_mouse_area.containsMouse ? App.theme.shadedGlassColor :
+                                                                  App.theme.glassColor
+
+        function flash_added_data() {
+            flash_highlight_animation.restart()
+        }
+
+        Behavior on glassColor {
+            ColorAnimation {
+                duration: 200
+            }
+        }
 
         RowLayout {
+
+            Connections {
+                target: AppData.file_source
+
+                function onRowsInserted(parent, first, last) {
+                    middle_pane.last_db_count = AppData.file_source.rowCount()
+                    if (last >= first) {
+                        middle_pane.flash_added_data()
+                    }
+                }
+
+                function onRowsRemoved(parent, first, last) {
+                    middle_pane.last_db_count = AppData.file_source.rowCount()
+                    flash_highlight_animation.stop()
+                    middle_pane.highlighted = false
+                }
+            }
+
+            SequentialAnimation {
+                id: flash_highlight_animation
+
+                loops: 3
+
+                ScriptAction {
+                    script: middle_pane.highlighted = true
+                }
+
+                PauseAnimation {
+                    duration: 400
+                }
+
+                ScriptAction {
+                    script: middle_pane.highlighted = false
+                }
+
+                PauseAnimation {
+                    duration: 400
+                }
+            }
+
             anchors.fill: parent
             Label {
                 Layout.fillHeight: true
@@ -258,11 +423,26 @@ RowLayout {
                     text: "\uf06a"
                     iconSize: 14
 
-                    onClicked: AppData.simulation.duplicate_current_result_for_edit()
+                    onClicked: unfreeze_pop.open()
 
-                    STToolTip {
-                        visible: parent.containsMouse
-                        text: "This is an immutable view of the results of this simulation. Click to make a duplicate of this database for editing."
+                    STPopup {
+                        id: unfreeze_pop
+
+                        width: 600
+
+                        ColumnLayout {
+                            anchors.fill: parent
+
+                            Label {
+                                text: "This is an immutable view of the results of this simulation. Click to make a duplicate of this database for editing."
+                            }
+
+                            STButton {
+                                text: "Unfreeze"
+
+                                onClicked: AppData.simulation.duplicate_current_result_for_edit()
+                            }
+                        }
                     }
                 }
             }
@@ -315,12 +495,61 @@ RowLayout {
                 id: settings_row
                 anchors.fill: parent
 
-
                 STIconButton {
                     Layout.preferredWidth: implicitWidth
                     Layout.preferredHeight: implicitHeight
                     label.font.pointSize: 20
                     Layout.leftMargin: 20
+
+                    text: "\uf0f3"
+                    toolTip: "Notifications"
+
+                    onClicked: notification_settings.open()
+
+                    Rectangle {
+                        id: notification_pill
+                        width: 8
+                        height: width
+                        radius: width / 2
+
+                        anchors.horizontalCenter: parent.left
+                        anchors.verticalCenter: parent.top
+
+                        opacity: notification_settings.new_notification_count > 0
+
+                        Connections {
+                            target: notification_settings
+                            function onNew_notification_countChanged() {
+                                pulse_animation.restart()
+                            }
+                        }
+
+                        NumberAnimation {
+                            id: pulse_animation
+
+                            target: notification_pill
+                            property: "width"
+                            from: 16
+                            to: 8
+
+                            duration: 1000
+
+                            easing: Easing.OutElastic
+                        }
+
+                        color: Material.color(Material.Red)
+                    }
+
+                    NotificationArea {
+                        id: notification_settings
+                    }
+                }
+
+
+                STIconButton {
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitHeight
+                    label.font.pointSize: 20
 
                     text: "\uf030"
                     toolTip: "Navigation Settings"
@@ -337,8 +566,6 @@ RowLayout {
 
                     Layout.preferredWidth: implicitWidth
                     Layout.preferredHeight: implicitHeight
-                    //Layout.leftMargin: 20
-
                     label.font.pointSize: 20
 
                     text: "\uf013"

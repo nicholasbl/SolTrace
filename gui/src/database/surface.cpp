@@ -281,7 +281,7 @@ Mesh2D generate_annulus_aperture(SD::Annulus const&              annulus,
     uint32_t angle_steps =
         std::max<uint32_t>(3, options.perimeter_subdivisions);
 
-    double sweep       = annulus.arc_angle;
+    double sweep       = std::clamp(annulus.arc_angle, 0.0, 2.0 * M_PI);
     double start_angle = -0.5 * sweep;
     bool   closed      = std::abs(sweep - 2.0 * PI) < 1e-6;
 

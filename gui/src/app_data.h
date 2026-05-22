@@ -6,6 +6,7 @@
 #include <QQmlEngine>
 #include <QSharedPointer>
 
+#include "logging.h"
 #include "utilities/qt_helpers.h"
 
 #include <backend.h>
@@ -86,6 +87,8 @@ public:
     ~AppData();
 
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
+
+    QOBJECT_WRITABLE_PROPERTY(LogList, log_list)
 
     QOBJECT_READONLY_PROPERTY(DatabaseModule, file_source)
 

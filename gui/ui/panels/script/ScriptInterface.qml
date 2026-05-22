@@ -123,6 +123,7 @@ ScrollView {
                 delegate: STTextField {
                     required property string value
                     required property int index
+                    required property var model
 
                     Layout.column: 1
                     Layout.row: index + 2
@@ -130,7 +131,7 @@ ScrollView {
 
                     text: value
 
-                    onAccepted: value = text
+                    onAccepted: model.value = text
                 }
             }
 

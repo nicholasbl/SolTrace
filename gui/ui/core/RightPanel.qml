@@ -61,7 +61,7 @@ ShadowedGlassRectangle {
 
             ScriptInterface {}
 
-            Item {}
+            HelpInterface {}
             Item {}
         }
     }

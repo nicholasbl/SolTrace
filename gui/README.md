@@ -10,7 +10,7 @@ panel is the best place to start once the application is running.
 
 ## Requirements
 
-- Qt 6.11 or newer, including these components:
+- Qt 6.11 or newer, including these additional components:
   - Qt Core
   - Qt Gui
   - Qt Quick

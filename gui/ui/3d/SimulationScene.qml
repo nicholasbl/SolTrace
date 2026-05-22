@@ -27,6 +27,10 @@ Item {
         controller.align_to_axis(axis, invert)
     }
 
+    function reset_camera_view() {
+        controller.reset_view()
+    }
+
     Menu {
         id: geometryInstanceContextMenu
         property var focused_group: null
@@ -173,6 +177,8 @@ Item {
         PerspectiveCamera {
             id: mainPerspectiveCamera
             z: 100
+            // TODO: Allow user customization
+            clipNear: 1
         }
 
         OrthographicCamera {
@@ -219,6 +225,8 @@ Item {
 
         perspective_camera: mainPerspectiveCamera
         orthographic_camera: mainOrthoCamera
+        default_perspective_position: Qt.vector3d(0, 0, 100)
+        default_orthographic_position: Qt.vector3d(0, 0, 500)
 
         use_wasd: App.view.sim.camera === SimulationViewState.WASD
         use_orthographic: App.view.sim.perspective === SimulationViewState.Orthographic

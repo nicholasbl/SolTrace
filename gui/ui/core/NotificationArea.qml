@@ -1,0 +1,130 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtQuick.Effects
+import QtQuick.Layouts
+
+import SolTrace
+
+STPopup {
+    id: root
+
+    property int new_notification_count: 0
+
+    onOpened: new_notification_count = 0
+
+    ListModel {
+        id: notification_model
+    }
+
+    Connections {
+        target: AppData
+
+        function onNotification(new_note) {
+
+            if (!root.visible)
+                root.new_notification_count = root.new_notification_count + 1
+
+            console.log("Adding note: ", new_note.message)
+
+            notification_model.insert(
+                0,
+                {
+                    "message": new_note.message,
+                    "type" : new_note.type
+                }
+            )
+
+            while (notification_model.count > 50) {
+                notification_model.remove(notification_model.count - 1)
+            }
+        }
+    }
+
+    ColumnLayout {
+        anchors.fill: parent
+
+        ListView {
+            Layout.preferredHeight: 300
+            Layout.preferredWidth: 250
+            Layout.fillWidth: true
+
+            clip: true
+
+            model: notification_model
+
+            spacing: 8
+
+            delegate: RowLayout {
+                id: note_delegate
+                required property string message
+                required property int type
+                width: ListView.view.width
+
+                property color message_color: {
+                    switch (type) {
+                    case 0: return Material.foreground
+                    case 1: return Material.color(Material.Yellow)
+                    case 2: return Material.color(Material.Red)
+                    default: return Material.foreground
+                    }
+                }
+
+                spacing: 8
+
+                Label {
+                    fontSizeMode: Label.Fit
+                    font.pointSize: 18
+                    Layout.preferredWidth: 24
+
+                    horizontalAlignment: Qt.AlignHCenter
+                    verticalAlignment: Qt.AlignVCenter
+
+                    font.family: "Font Awesome 7 Free"
+
+                    Material.foreground: note_delegate.message_color
+
+                    text: {
+                        switch (type) {
+                        case 0: return "\uf05a"
+                        case 1: return "\uf071"
+                        case 2: return "\uf057"
+                        default: return "\uf05a"
+                        }
+                    }
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    wrapMode: Label.WrapAtWordBoundaryOrAnywhere
+                    elide: Label.ElideRight
+
+                    Material.foreground: note_delegate.message_color
+
+                    text: message
+
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.bottom
+                        height: 1
+                        color: Material.dividerColor
+
+                        visible: notification_model.count !== 1
+                    }
+                }
+            }
+
+            Label {
+                anchors.centerIn: parent
+
+                enabled: false
+
+                text: "No notifications"
+
+                visible: parent.count === 0
+            }
+        }
+    }
+
+}
