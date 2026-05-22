@@ -1,6 +1,17 @@
 import QtQuick
 import QtQuick3D
 
+// CameraController owns the user-facing camera navigation modes used by the
+// 3D views. It intentionally contains both navigation models in one place so
+// the scene can swap between them without changing the cameras themselves:
+//
+//   - Orbit mode: drag to orbit around a target point, Shift-drag to pan, and
+//     wheel to dolly toward/away from the target.
+//   - WASD mode: drag to look around, keyboard to fly, and wheel to adjust
+//     movement speed.
+//
+// The controller does not render anything. It is an invisible input surface
+// that mutates the camera nodes passed in by the owning scene.
 Item {
     id: root
 
@@ -10,22 +21,39 @@ Item {
         Z
     }
 
+    // Perspective camera is required because every controller instance needs at
+    // least one concrete camera to drive.
     required property PerspectiveCamera perspective_camera
+
+    // Orthographic camera is optional. When present, use_orthographic selects
+    // it as active_camera. Orthographic mode is kept orbit-only because WASD
+    // translation semantics are confusing without perspective depth.
     property OrthographicCamera orthographic_camera
 
     readonly property Camera active_camera : use_orthographic ? orthographic_camera : perspective_camera
 
+    // Orbit mode uses rotation_target as the base point of interest. If no
+    // target is supplied, the world origin is used.
     property Node rotation_target
+
+    // Panning does not move rotation_target itself. Instead, it accumulates an
+    // offset so pan can be layered on top of whatever scene node is currently
+    // acting as the target. This matters for previews where rotation_target is
+    // a stable helper Node owned elsewhere.
     property vector3d rotation_target_offset: Qt.vector3d(0,0,0)
 
     property bool use_orthographic: false
     property bool input_enabled: true
     property bool use_wasd: false
 
+    // Public entry point used by axis buttons/gizmos. The active navigation
+    // mode gets to decide how axis alignment should behave.
     function align_to_axis(axis, invert) {
         internal.current_controller.align_to_axis(axis, invert)
     }
 
+    // Converts an enum axis plus an inversion flag into the world-space
+    // direction the camera should look from/to for alignment commands.
     function build_align_vector(axis, invert) {
         var axis_setup = Qt.vector3d(0,0,0)
 
@@ -50,14 +78,14 @@ Item {
         return axis_setup
     }
 
-    // internal functions
-
     onUse_orthographicChanged: {
         if (use_orthographic) {
             use_wasd = false
         }
     }
 
+    // The controller needs focus for keyboard-driven WASD movement. Pointer
+    // press below calls forceActiveFocus() so clicking the viewport arms this.
     focus: true
 
     Keys.onPressed: (event)=> { if (input_enabled && !event.isAutoRepeat) handleKeyPress(event) }
@@ -75,14 +103,41 @@ Item {
         id: dragHandler
         target: null
         enabled: root.input_enabled
-        //acceptedModifiers: Qt.NoModifier
+
+        // Plain drag means "rotate/look". Keeping this handler NoModifier lets
+        // the Shift-specific handler below own panning without mode checks in
+        // the gesture recognizer itself.
+        acceptedModifiers: Qt.NoModifier
+
         onCentroidChanged: {
             root.mouseMoved(Qt.vector2d(centroid.position.x, centroid.position.y), false);
         }
 
         onActiveChanged: {
             if (active)
-                root.mousePressed(Qt.vector2d(centroid.position.x, centroid.position.y));
+                root.mousePressed(Qt.vector2d(centroid.position.x, centroid.position.y), false);
+            else
+                root.mouseReleased(Qt.vector2d(centroid.position.x, centroid.position.y));
+        }
+    }
+
+    DragHandler {
+        id: panDragHandler
+        target: null
+        enabled: root.input_enabled && !root.use_wasd
+
+        // Orbit panning is intentionally tied to Shift-drag. In WASD mode Shift
+        // already means "run", so pan is disabled there to avoid overloading
+        // the same gesture.
+        acceptedModifiers: Qt.ShiftModifier
+
+        onCentroidChanged: {
+            root.mouseMoved(Qt.vector2d(centroid.position.x, centroid.position.y), true);
+        }
+
+        onActiveChanged: {
+            if (active)
+                root.mousePressed(Qt.vector2d(centroid.position.x, centroid.position.y), true);
             else
                 root.mouseReleased(Qt.vector2d(centroid.position.x, centroid.position.y));
         }
@@ -95,12 +150,24 @@ Item {
     QtObject {
         id: internal
 
-        // Needed to guard moves against press and release ordering
+        // Needed to guard moves against press and release ordering. DragHandler
+        // can emit centroid changes around active-state transitions, so we keep
+        // explicit state instead of assuming every move belongs to an active
+        // drag.
         property bool is_mouse_down: false
 
+        // Latched at mouse press. This prevents mid-drag modifier changes from
+        // switching an orbit gesture into a pan gesture halfway through.
+        property bool is_panning: false
+
+        // last_pos and mouse_delta_pos are screen-space coordinates in pixels.
+        // Individual controllers decide how to convert pixels into angles or
+        // world-space movement.
         property vector2d last_pos: Qt.vector2d(0, 0)
         property vector2d mouse_delta_pos: Qt.vector2d(0, 0)
 
+        // All shared input plumbing routes to current_controller, except the
+        // Shift-pan branch which is orbit-only.
         property QtObject current_controller : root.use_wasd
                                                ? wasd_control
                                                :
@@ -109,30 +176,45 @@ Item {
 
 
 
-    function mousePressed(coord) {
+    function mousePressed(coord, pan) {
         forceActiveFocus()
+
+        // The gesture mode is captured here and preserved until release. That
+        // keeps the drag stable if the user presses/releases Shift while moving.
         internal.is_mouse_down = true
+        internal.is_panning = pan
         internal.mouse_delta_pos = Qt.vector2d(0,0)
         internal.last_pos = coord
 
         if (!root.use_wasd) {
+            // Orbit math is stateful. Rebuild yaw/pitch from the camera at the
+            // beginning of each gesture so external camera changes, axis-align
+            // animations, or prior pans are reflected before the next drag.
             orbit_control.initialize_from_camera()
         }
     }
 
     function mouseReleased(coord) {
-        //console.log("RELEASE")
         internal.is_mouse_down = false
+        internal.is_panning = false
         internal.mouse_delta_pos = Qt.vector2d(0,0)
         internal.last_pos = coord
     }
 
     function mouseMoved(coord) {
-        //console.log("MOVED")
         if (!internal.is_mouse_down) return
+
         internal.mouse_delta_pos = coord.minus(internal.last_pos)
         internal.last_pos = coord
-        internal.current_controller.apply_mouse_delta(coord)
+
+        // Pan is handled outside current_controller because it is not a general
+        // navigation mode. It is an orbit gesture modifier that translates the
+        // orbit center and camera together.
+        if (internal.is_panning && !root.use_wasd)
+            orbit_control.apply_pan_delta(coord)
+        else
+            internal.current_controller.apply_mouse_delta(coord)
+
         internal.mouse_delta_pos = Qt.vector2d(0,0)
     }
 
@@ -147,6 +229,9 @@ Item {
 
         onWheel: function(event) {
             if (root.use_wasd) {
+                // In fly mode, scroll changes movement speed instead of moving
+                // the camera immediately. This mirrors common 3D editor camera
+                // controls and keeps fine/coarse navigation accessible.
                 wasd_control.speed_multiplier *=
                         Math.exp(wasd_control.scroll_factor * event.angleDelta.y)
 
@@ -162,10 +247,16 @@ Item {
     FrameAnimation {
         running: true
         onTriggered: {
+            // Continuous controllers advance here. Orbit mostly reacts to
+            // discrete pointer/wheel events, but axis alignment uses this frame
+            // callback for smooth animation.
             internal.current_controller.processInput(frameTime)
         }
     }
 
+    // Shared animation object for WASD axis alignment. Orbit alignment uses its
+    // own scalar interpolation because the orbit state is yaw/pitch/distance
+    // rather than raw camera position.
     ParallelAnimation {
         id: wasd_camera_animation
 
@@ -202,11 +293,23 @@ Item {
     QtObject {
         id: wasd_control
 
+        // WASD mode is camera-relative free flight:
+        //   W/S move forward/back along the camera forward vector.
+        //   A/D strafe along the camera right vector.
+        //   Q/E move down/up in world Y.
+        //   Shift increases speed.
+        //
+        // This mode intentionally ignores rotation_target.
         property real sensitivity: 0.2
         property real walk_speed: 5.0
         property real run_speed: 15.0
+
+        // Multiplicative scroll scale. The constant produces gentle exponential
+        // changes from wheel deltas without needing frame-rate dependent input.
         property real scroll_factor: 0.04879016 / 4.0
-        //property real friction: 40.0
+
+        // Applied only when no movement keys are active, so the camera eases to
+        // a stop instead of snapping instantly.
         property real friction: 1.5
         property real mouse_sensitivity_deg: 0.3
 
@@ -230,7 +333,6 @@ Item {
                 return;
             }
 
-            //console.log(velocity)
             var is_moving = !kb_state.fuzzyEquals(Qt.vector3d(0,0,0))
 
             if (is_moving) {
@@ -248,6 +350,9 @@ Item {
             is_moving = !velocity.fuzzyEquals(Qt.vector3d(0,0,0))
 
             if (is_moving) {
+                // Qt exposes camera basis vectors as QVector3D-like values. We
+                // copy them into QML vector3d values before using arithmetic
+                // helpers such as times()/plus().
                 let forward = root.active_camera.forward
                 let right = root.active_camera.right
 
@@ -260,8 +365,6 @@ Item {
                 var yp = Qt.vector3d(0,1,0).times(mlt.y)
                 var zp = forward.times(mlt.z)
 
-                //console.log("X", xp, yp, zp)
-
                 let delta = xp.plus(yp).plus(zp)
 
                 let current_pos = root.active_camera.position
@@ -270,12 +373,12 @@ Item {
 
                 root.active_camera.position = Qt.vector3d(new_pos.x, new_pos.y, new_pos.z)
             }
-
-            //console.log(root.active_camera.position, kb_state)
-
         }
 
         function apply_mouse_delta(coord) {
+            // Free-look changes camera Euler angles directly. This is separate
+            // from orbit mode, which recomputes camera position from yaw/pitch
+            // around a target point.
             var rotationVector = root.active_camera.eulerRotation;
             let pitch = rotationVector.x
             let yaw = rotationVector.y
@@ -292,6 +395,9 @@ Item {
         function align_to_axis(axis, invert) {
             var axis_setup = root.build_align_vector(axis, invert)
 
+            // WASD alignment rotates in place. Position is animated from/to the
+            // same value so the shared ParallelAnimation can drive both
+            // position and rotation targets without a special case.
             var rotation = Quaternion.lookAt(
                         Qt.vector3d(0, 0, 0),
                         axis_setup)
@@ -307,7 +413,6 @@ Item {
         }
 
         function handleKeyPress(event) {
-            //console.log("Press", event)
             switch (event.key) {
             case Qt.Key_W:
                 kb_state.z = 1.0
@@ -334,7 +439,6 @@ Item {
         }
 
         function handleKeyRelease(event) {
-            //console.log("Release", event)
             switch (event.key) {
             case Qt.Key_W:
             case Qt.Key_S:
@@ -362,16 +466,28 @@ Item {
     QtObject {
         id: orbit_control
 
+        // Orbit mode stores camera orientation as yaw/pitch plus a distance to
+        // rotation_point. Every orbit/zoom/axis operation reconstructs camera
+        // position from that state. This avoids accumulating small transform
+        // errors from repeated relative rotations.
         property real sensitivity: 0.2
         property real mouse_sensitivity_deg: 0.6
 
+        // yaw_deg rotates around world Y. pitch_deg tilts above/below the
+        // target; positive pitch means the camera is above the target.
         property real yaw_deg: 0
         property real pitch_deg: 0
 
+        // Avoid the singularity where the camera is exactly above/below the
+        // target and the right axis becomes unstable.
         property real min_pitch_deg: -89
         property real max_pitch_deg: 89
 
+        // Wheel zoom is exponential, so it feels similar at small and large
+        // distances. Pan sensitivity is applied after converting pixels to
+        // world units.
         property real zoom_factor: 0.0005
+        property real pan_sensitivity: 1.0
 
         property real min_distance: 0.01
         property real max_distance: 1000000.0
@@ -389,6 +505,9 @@ Item {
         property real animation_to_pitch_deg: 0
         property real animation_to_distance: 1
 
+        // The effective center of orbit. If a scene target exists, start from
+        // its scene position; otherwise, use world origin. Panning contributes
+        // the accumulated offset without mutating the target node.
         property vector3d rotation_point: {
             let base = root.rotation_target
                 ? root.rotation_target.scenePosition
@@ -429,6 +548,9 @@ Item {
             if (!is_animating)
                 return
 
+            // Axis alignment is animated in orbit-space coordinates so the
+            // camera stays on the same orbit radius while yaw/pitch ease to the
+            // requested axis direction.
             animation_time += frameDelta
 
             var t = animation_time / animation_duration
@@ -463,6 +585,9 @@ Item {
             var cam = root.active_camera
             var target = rotation_point
 
+            // Convert current camera position into orbit state. This is called
+            // before user gestures and animations because other code may have
+            // moved the camera since the last orbit update.
             var offset = cam.position.minus(target)
 
             var horizontal_distance = Math.sqrt(
@@ -476,6 +601,9 @@ Item {
         }
 
         function orbit_rotation() {
+            // Build the camera rotation that corresponds to the stored orbit
+            // yaw/pitch. Yaw rotates around world up first. The pitch axis then
+            // becomes the yawed camera-right vector.
             var yaw_q = Quaternion.fromAxisAndAngle(
                         Qt.vector3d(0,1,0),
                         yaw_deg)
@@ -498,6 +626,10 @@ Item {
 
             var q = orbit_rotation()
 
+            // In this convention the camera sits on the local +Z axis at the
+            // requested distance, then the orbit rotation moves that offset into
+            // world space. The camera rotation is the same quaternion so it
+            // looks back toward the target.
             var local_orbit_offset = Qt.vector3d(0, 0, distance)
             var new_offset = q.times(local_orbit_offset)
 
@@ -510,6 +642,7 @@ Item {
             var cam = root.active_camera
             var target = rotation_point
 
+            // Preserve the current radius while changing angular state.
             var offset = cam.position.minus(target)
             var distance = offset.length()
 
@@ -529,11 +662,47 @@ Item {
             apply_orbit_transform(distance)
         }
 
+        function apply_pan_delta(coord) {
+            var cam = root.active_camera
+            var target = rotation_point
+
+            // Pan is a screen-space translation mapped to camera-right and
+            // camera-up. The orbit center and the camera move together, which
+            // keeps the apparent view direction unchanged while sliding the
+            // scene under the cursor.
+            var offset = cam.position.minus(target)
+            var distance = offset.length()
+
+            if (distance < 0.000001)
+                distance = 1.0
+
+            var view_size = Math.max(1, Math.min(root.width, root.height))
+
+            // Scale by distance so panning feels similar regardless of zoom.
+            // Near the target, small pixel moves become fine world-space moves;
+            // far away, the same gesture covers more world space.
+            var world_units_per_pixel = distance / view_size * pan_sensitivity
+
+            // Dragging right should move the scene right on screen, which means
+            // the camera/target move left in world camera-right space. Dragging
+            // down should move the scene down, so camera/target move up.
+            var right = Qt.vector3d(cam.right.x, cam.right.y, cam.right.z).normalized()
+            var up = Qt.vector3d(cam.up.x, cam.up.y, cam.up.z).normalized()
+
+            var delta = right.times(-internal.mouse_delta_pos.x * world_units_per_pixel)
+                .plus(up.times(internal.mouse_delta_pos.y * world_units_per_pixel))
+
+            root.rotation_target_offset = root.rotation_target_offset.plus(delta)
+            cam.position = cam.position.plus(delta)
+        }
+
 
         function apply_wheel_delta(delta_y) {
             var cam = root.active_camera
             var target = rotation_point
 
+            // Refresh yaw/pitch before zooming so wheel input after external
+            // camera movement keeps orbit state synchronized.
             initialize_from_camera()
 
             var offset = cam.position.minus(target)
@@ -551,6 +720,8 @@ Item {
         }
 
         function yaw_pitch_from_offset(offset) {
+            // Helper for axis alignment: given a desired camera offset from the
+            // target, calculate the orbit angles needed to reach it.
             var horizontal_distance = Math.sqrt(
                         offset.x * offset.x +
                         offset.z * offset.z)
@@ -567,6 +738,7 @@ Item {
             var cam = root.active_camera
             var target = rotation_point
 
+            // Keep the current distance and animate only the angular state.
             initialize_from_camera()
 
             var current_offset = cam.position.minus(target)
@@ -594,6 +766,7 @@ Item {
             var cam = root.active_camera
             var target = rotation_point
 
+            // Capture the current orbit state as the animation start point.
             initialize_from_camera()
 
             var offset = cam.position.minus(target)
@@ -615,51 +788,12 @@ Item {
         }
 
         function handleKeyPress(event) {
-            //console.log("Press", event)
-            // switch (event.key) {
-            // case Qt.Key_W:
-            //     kb_state.z = 1.0
-            //     break;
-            // case Qt.Key_S:
-            //     kb_state.z = -1.0
-            //     break;
-            // case Qt.Key_A:
-            //     kb_state.x = -1.0
-            //     break;
-            // case Qt.Key_D:
-            //     kb_state.x = 1.0
-            //     break;
-            // case Qt.Key_Q:
-            //     kb_state.y = -1.0
-            //     break;
-            // case Qt.Key_E:
-            //     kb_state.y = 1.0
-            //     break;
-            // case Qt.Key_Shift:
-            //     kb_shift = true
-            //     break;
-            // }
+            // Orbit mode does not consume keyboard movement. Shift is handled
+            // by panDragHandler as a pointer modifier rather than here.
         }
 
         function handleKeyRelease(event) {
-            //console.log("Release", event)
-            // switch (event.key) {
-            // case Qt.Key_W:
-            // case Qt.Key_S:
-            //     kb_state.z = 0.0
-            //     break;
-            // case Qt.Key_A:
-            // case Qt.Key_D:
-            //     kb_state.x = 0.0
-            //     break;
-            // case Qt.Key_Q:
-            // case Qt.Key_E:
-            //     kb_state.y = 0.0
-            //     break;
-            // case Qt.Key_Shift:
-            //     kb_shift = false
-            //     break;
-            // }
+            // Orbit mode has no key-release state to clear.
         }
     }
 }
