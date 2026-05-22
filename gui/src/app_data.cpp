@@ -203,6 +203,13 @@ AppData::AppData(QObject*       parent,
     connect(
         m_file_source, &DatabaseModule::notify, this, &AppData::notification);
 
+    connect(m_simulation,
+            &SimulationModule::notify,
+            this,
+            &AppData::notification);
+
+    connect(m_layout, &LayoutModule::notify, this, &AppData::notification);
+
     connect(this,
             &AppData::current_database_value_changed,
             this,

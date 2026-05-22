@@ -495,12 +495,40 @@ RowLayout {
                 id: settings_row
                 anchors.fill: parent
 
-
                 STIconButton {
                     Layout.preferredWidth: implicitWidth
                     Layout.preferredHeight: implicitHeight
                     label.font.pointSize: 20
                     Layout.leftMargin: 20
+
+                    text: "\uf0f3"
+                    toolTip: "Notifications"
+
+                    onClicked: notification_settings.open()
+
+                    Rectangle {
+                        width: 8
+                        height: 8
+                        radius: 4
+
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+
+                        visible: notification_settings.has_new_notifications
+
+                        color: Material.color(Material.Red)
+                    }
+
+                    NotificationArea {
+                        id: notification_settings
+                    }
+                }
+
+
+                STIconButton {
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitHeight
+                    label.font.pointSize: 20
 
                     text: "\uf030"
                     toolTip: "Navigation Settings"
@@ -517,8 +545,6 @@ RowLayout {
 
                     Layout.preferredWidth: implicitWidth
                     Layout.preferredHeight: implicitHeight
-                    //Layout.leftMargin: 20
-
                     label.font.pointSize: 20
 
                     text: "\uf013"

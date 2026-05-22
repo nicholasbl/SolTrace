@@ -1,9 +1,13 @@
 #pragma once
 
 #include <QObject>
+#include <utility>
 
 struct ANotification {
     Q_GADGET
+    Q_PROPERTY(QString message MEMBER message)
+    Q_PROPERTY(Type type MEMBER type)
+
 public:
     enum Type { INFO, WARNING, ERROR };
 
@@ -29,3 +33,5 @@ public:
         return ANotification(std::move(msg), ERROR);
     }
 };
+
+Q_DECLARE_METATYPE(ANotification)
