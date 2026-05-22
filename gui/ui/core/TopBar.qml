@@ -207,6 +207,9 @@ RowLayout {
                         id: file_settings
 
                         property var recent_files: []
+                        property url last_selected_file: ""
+                        property url last_selected_folder: StandardPaths.standardLocations(
+                                                               StandardPaths.DocumentsLocation)[0]
 
                         function add_files(file_path) {
                             var files = recent_files.slice()
@@ -234,10 +237,15 @@ RowLayout {
 
                     FileDialog {
                         id: openFileDialog
-                        currentFolder: StandardPaths.standardLocations(
-                                           StandardPaths.DocumentsLocation
-                                           )[0]
+
+                        currentFolder: file_settings.last_selected_folder
+                        selectedFile: file_settings.last_selected_file
+
                         onAccepted: {
+                            var str_file = String(selectedFile)
+
+                            file_settings.last_selected_file = selectedFile
+                            file_settings.last_selected_folder = str_file.substring(0, str_file.lastIndexOf("/"))
                             file_settings.add_files(selectedFile.toString())
                             App.file_source.load_url(selectedFile)
                         }
