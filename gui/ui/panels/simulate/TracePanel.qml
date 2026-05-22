@@ -70,7 +70,7 @@ ScrollView {
                 from: 0
                 value: AppData.simulation.max_ray_count
                 to: 1000000000
-                onValueModified: AppData.simulation.ray_count = value
+                onValueModified: AppData.simulation.max_ray_count = value
             }
 
             STPropertyLabel {
@@ -82,10 +82,10 @@ ScrollView {
             STSpinBox {
                 Layout.fillWidth: true
                 from: 1
-                value: AppData.simulation.cpu_cores
+                value: AppData.simulation.max_threads
                 to: 64
                 visible: AppData.simulation.runner < 2
-                onValueModified: AppData.simulation.cpu_cores = value
+                onValueModified: AppData.simulation.max_threads = value
             }
 
             STPropertyLabel {

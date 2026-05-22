@@ -63,7 +63,6 @@ public:
     Q_WRITABLE_PROPERTY(uint32_t, ray_count, 10000);
     Q_WRITABLE_PROPERTY(uint32_t, max_ray_count, 100000);
     Q_WRITABLE_PROPERTY(uint32_t, max_threads, 10);
-    Q_WRITABLE_PROPERTY(uint32_t, cpu_cores, 8)
     Q_WRITABLE_PROPERTY(uint32_t, seed_value, 1234)
 
     Q_WRITABLE_PROPERTY(bool, sun_shape, false)

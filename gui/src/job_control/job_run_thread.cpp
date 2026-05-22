@@ -132,7 +132,10 @@ void execute_thread_runner(QPromise<SimResult>&      promise,
 
             // Normally polling would be The Wrong Thing, but the progress stuff
             // requires active checking
-            QThread::sleep(500);
+
+            // Docs say sleep is in nsecs
+            // we want milliseconds
+            QThread::msleep(500);
 
             double progress = -1;
 

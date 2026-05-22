@@ -22,6 +22,7 @@ ApplicationWindow {
 
     font.pointSize: App.theme.labelSize
     font.family: "Roboto"
+    font.features: {"liga" : 0, "clig" : 0}
 
     SimulationScene {
         id: simulation_scene

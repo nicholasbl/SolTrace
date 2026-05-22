@@ -7,7 +7,7 @@ namespace SolTrace::GUI::App {
 SimulationRunnerModel::SimulationRunnerModel(QObject* parent)
     : StructModelAdapter { parent } {
     store_push_append(SimulationRunnerRecord {
-        .name   = "CPU Runner",
+        .name   = "Legacy Runner",
         .runner = SimulationModule::CPU,
     });
 
@@ -160,12 +160,7 @@ void SimulationModule::run() {
 
     set_is_running(true);
 }
-// void SimulationModule::pause() {
 
-// }
-// void SimulationModule::resume() {
-
-// }
 void SimulationModule::cancel() {
     if (m_running) { m_running->cancel(); }
 }
