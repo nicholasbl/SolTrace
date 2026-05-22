@@ -148,7 +148,7 @@ RowLayout {
 
                     onClicked: file_menu.open()
 
-                    Menu {
+                    STMenu {
                         id: file_menu
                         MenuItem {
                             text: "New"
@@ -162,20 +162,74 @@ RowLayout {
 
                             enabled: !AppData.file_source.is_loading
                         }
+
+                        Menu {
+                            id: recents_menu
+                            title: qsTr("Recent Files")
+                            enabled: recent_instantiator.count > 0
+
+                            Instantiator {
+                                id: recent_instantiator
+                                model: file_settings.recent_files
+
+                                delegate: MenuItem {
+                                    // Show file name only
+                                    text: modelData.split('/').pop()
+                                    onTriggered: {
+                                        file_settings.add_files(String(modelData))
+                                        App.file_source.load_url(modelData)
+                                    }
+                                }
+
+                                onObjectAdded: (index, object) => recents_menu.insertItem(index, object)
+                                onObjectRemoved: (index, object) => recents_menu.removeItem(object)
+
+                            }
+
+                            MenuSeparator {
+                                visible: recent_instantiator.count > 0
+                            }
+
+                            MenuItem {
+                                text: qsTr("Clear Menu")
+                                onTriggered: file_settings.recent_files = []
+                            }
+                        }
+
                         MenuItem {
                             text: "Save"
 
                             enabled: !AppData.file_source.is_loading
                         }
+                    }
 
-                        background: Rectangle {
-                            implicitWidth: 150
-                                    implicitHeight: 40
+                    Settings {
+                        id: file_settings
 
-                            radius: 14
+                        property var recent_files: []
 
-                            color: Qt.alpha(Material.backgroundColor, .90)
+                        function add_files(file_path) {
+                            var files = recent_files.slice()
+                            var index = files.indexOf(file_path)
+
+                            // If it already exists:
+                            // remove it and add to top
+                            if (index !== -1) {
+                                files.splice(index, 1)
+                            }
+
+                            // Add to the top of the list
+                            files.unshift(file_path)
+
+                            // Limit to a maximum of 5 recent files
+                            if (files.length > 5) {
+                                files.pop()
+                            }
+
+                            // Trigger binding update
+                            recent_files = files
                         }
+
                     }
 
                     FileDialog {
@@ -183,7 +237,10 @@ RowLayout {
                         currentFolder: StandardPaths.standardLocations(
                                            StandardPaths.DocumentsLocation
                                            )[0]
-                        onAccepted: App.file_source.load_url(selectedFile)
+                        onAccepted: {
+                            file_settings.add_files(selectedFile.toString())
+                            App.file_source.load_url(selectedFile)
+                        }
                     }
                 }
 
@@ -258,11 +315,26 @@ RowLayout {
                     text: "\uf06a"
                     iconSize: 14
 
-                    onClicked: AppData.simulation.duplicate_current_result_for_edit()
+                    onClicked: unfreeze_pop.open()
 
-                    STToolTip {
-                        visible: parent.containsMouse
-                        text: "This is an immutable view of the results of this simulation. Click to make a duplicate of this database for editing."
+                    STPopup {
+                        id: unfreeze_pop
+
+                        width: 600
+
+                        ColumnLayout {
+                            anchors.fill: parent
+
+                            Label {
+                                text: "This is an immutable view of the results of this simulation. Click to make a duplicate of this database for editing."
+                            }
+
+                            STButton {
+                                text: "Unfreeze"
+
+                                onClicked: AppData.simulation.duplicate_current_result_for_edit()
+                            }
+                        }
                     }
                 }
             }
