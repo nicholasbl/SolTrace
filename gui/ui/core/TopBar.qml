@@ -163,7 +163,7 @@ RowLayout {
                             enabled: !AppData.file_source.is_loading
                         }
 
-                        Menu {
+                        STMenu {
                             id: recents_menu
                             title: qsTr("Recent Files")
                             enabled: recent_instantiator.count > 0
@@ -173,11 +173,14 @@ RowLayout {
                                 model: file_settings.recent_files
 
                                 delegate: MenuItem {
-                                    // Show file name only
-                                    text: modelData.split('/').pop()
+                                    // Show file name only. Settings may restore
+                                    // entries as strings or QUrl-like values, so
+                                    // normalize before doing string operations.
+                                    text: file_settings.file_name(modelData)
                                     onTriggered: {
-                                        file_settings.add_files(String(modelData))
-                                        App.file_source.load_url(modelData)
+                                        var file_url = file_settings.file_url_text(modelData)
+                                        file_settings.add_files(file_url)
+                                        App.file_source.load_url(Qt.url(file_url))
                                     }
                                 }
 
@@ -192,7 +195,7 @@ RowLayout {
 
                             MenuItem {
                                 text: qsTr("Clear Menu")
-                                onTriggered: file_settings.recent_files = []
+                                onTriggered: file_settings.clear_recent_files()
                             }
                         }
 
@@ -203,7 +206,7 @@ RowLayout {
                         }
                     }
 
-                    Settings {
+                    QtObject {
                         id: file_settings
 
                         property var recent_files: []
@@ -211,9 +214,41 @@ RowLayout {
                         property url last_selected_folder: StandardPaths.standardLocations(
                                                                StandardPaths.DocumentsLocation)[0]
 
+                        function file_url_text(file_path) {
+                            return String(file_path)
+                        }
+
+                        function file_name(file_path) {
+                            var file_url = file_url_text(file_path)
+                            return decodeURIComponent(file_url.split('/').pop())
+                        }
+
+                        function recent_files_array() {
+                            var files = []
+
+                            if (!recent_files) {
+                                return files
+                            }
+
+                            for (var i = 0; i < recent_files.length; ++i) {
+                                files.push(file_url_text(recent_files[i]))
+                            }
+
+                            return files
+                        }
+
+                        function set_recent_files(files) {
+                            recent_files = files
+                        }
+
+                        function clear_recent_files() {
+                            set_recent_files([])
+                        }
+
                         function add_files(file_path) {
-                            var files = recent_files.slice()
-                            var index = files.indexOf(file_path)
+                            var normalized_file_path = file_url_text(file_path)
+                            var files = recent_files_array()
+                            var index = files.indexOf(normalized_file_path)
 
                             // If it already exists:
                             // remove it and add to top
@@ -222,16 +257,27 @@ RowLayout {
                             }
 
                             // Add to the top of the list
-                            files.unshift(file_path)
+                            files.unshift(normalized_file_path)
 
                             // Limit to a maximum of 5 recent files
                             if (files.length > 5) {
                                 files.pop()
                             }
 
-                            // Trigger binding update
-                            recent_files = files
+                            // Assign a fresh array so the Instantiator model
+                            // receives a change notification.
+                            set_recent_files(files)
                         }
+                    }
+
+                    Settings {
+                        id: file_settings_storage
+
+                        category: "file_history"
+
+                        property alias recent_files: file_settings.recent_files
+                        property alias last_selected_file: file_settings.last_selected_file
+                        property alias last_selected_folder: file_settings.last_selected_folder
 
                     }
 
@@ -277,8 +323,8 @@ RowLayout {
         property bool highlighted: false
 
         glassColor: highlighted ? Qt.alpha(Material.accentColor, 0.35) :
-                    data_mouse_area.containsMouse ? App.theme.shadedGlassColor :
-                                                     App.theme.glassColor
+                                  data_mouse_area.containsMouse ? App.theme.shadedGlassColor :
+                                                                  App.theme.glassColor
 
         function flash_added_data() {
             flash_highlight_animation.restart()

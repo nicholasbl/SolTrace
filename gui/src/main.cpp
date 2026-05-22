@@ -32,6 +32,9 @@ int main(int argc, char* argv[]) {
     qputenv("QML_XHR_ALLOW_FILE_READ", "1");
 
     QApplication app(argc, argv);
+    app.setOrganizationName("NLR");
+    app.setOrganizationDomain("nlr.gov");
+    app.setApplicationName("SolTrace");
 
     SolTrace::GUI::App::initialize_logging_handler();
 

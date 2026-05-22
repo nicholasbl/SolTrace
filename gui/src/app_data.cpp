@@ -253,7 +253,6 @@ AppData::AppData(QObject*       parent,
                 m_view->set_simulation_content_view(false);
             });
 
-    clear_session();
     load_session();
 
     m_file_source->load_new();
