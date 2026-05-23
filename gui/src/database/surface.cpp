@@ -10,6 +10,9 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <map>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 #include <QDebug>
@@ -72,6 +75,149 @@ Vertex make_vertex(double    x,
         .normal   = normal,
         .uv       = saturate({ u, v }),
     };
+}
+
+glm::vec3 safe_normal(glm::vec3 normal,
+                      glm::vec3 fallback = glm::vec3(0.0f, 0.0f, 1.0f)) {
+    float length = glm::length(normal);
+    if (length <= std::numeric_limits<float>::epsilon()) return fallback;
+    return normal / length;
+}
+
+bool front_winding_matches_vertex_normals(Mesh const& mesh) {
+    glm::vec3 geometric_normal_sum(0.0f);
+    glm::vec3 vertex_normal_sum(0.0f);
+
+    for (auto const& triangle : mesh.triangles) {
+        auto const& a = mesh.vertex[triangle.x];
+        auto const& b = mesh.vertex[triangle.y];
+        auto const& c = mesh.vertex[triangle.z];
+
+        geometric_normal_sum += glm::cross(b.position - a.position,
+                                           c.position - a.position);
+        vertex_normal_sum += a.normal + b.normal + c.normal;
+    }
+
+    if (glm::length(geometric_normal_sum) <=
+            std::numeric_limits<float>::epsilon() ||
+        glm::length(vertex_normal_sum) <= std::numeric_limits<float>::epsilon()) {
+        return true;
+    }
+
+    return glm::dot(geometric_normal_sum, vertex_normal_sum) >= 0.0f;
+}
+
+Mesh add_height_field_thickness(Mesh mesh, double thickness) {
+    if (thickness <= 0.0 || mesh.vertex.empty() || mesh.triangles.empty()) {
+        return mesh;
+    }
+
+    struct BoundaryEdge {
+        uint32_t a     = 0;
+        uint32_t b     = 0;
+        uint32_t count = 0;
+    };
+
+    std::map<std::pair<uint32_t, uint32_t>, BoundaryEdge> edges;
+
+    auto add_edge = [&edges](uint32_t a, uint32_t b) {
+        auto key = std::make_pair(std::min(a, b), std::max(a, b));
+        auto& edge = edges[key];
+        if (edge.count == 0) {
+            edge.a = a;
+            edge.b = b;
+        }
+        ++edge.count;
+    };
+
+    for (auto const& triangle : mesh.triangles) {
+        add_edge(triangle.x, triangle.y);
+        add_edge(triangle.y, triangle.z);
+        add_edge(triangle.z, triangle.x);
+    }
+
+    bool winding_matches_normals = front_winding_matches_vertex_normals(mesh);
+
+    uint32_t original_vertex_count =
+        static_cast<uint32_t>(mesh.vertex.size());
+    uint32_t original_triangle_count =
+        static_cast<uint32_t>(mesh.triangles.size());
+
+    mesh.vertex.reserve(mesh.vertex.size() * 2 + edges.size() * 4);
+    mesh.triangles.reserve(mesh.triangles.size() * 2 + edges.size() * 2);
+
+    for (uint32_t i = 0; i < original_vertex_count; ++i) {
+        auto const& front_vertex = mesh.vertex[i];
+        auto        front_normal = safe_normal(front_vertex.normal);
+
+        mesh.vertex.push_back(Vertex {
+            .position = front_vertex.position -
+                        front_normal * static_cast<float>(thickness),
+            .normal = -front_normal,
+            .uv     = front_vertex.uv,
+        });
+    }
+
+    for (uint32_t i = 0; i < original_triangle_count; ++i) {
+        auto triangle = mesh.triangles[i];
+
+        if (winding_matches_normals) {
+            mesh.triangles.push_back({ triangle.x + original_vertex_count,
+                                       triangle.z + original_vertex_count,
+                                       triangle.y + original_vertex_count });
+        } else {
+            mesh.triangles.push_back({ triangle.x + original_vertex_count,
+                                       triangle.y + original_vertex_count,
+                                       triangle.z + original_vertex_count });
+        }
+    }
+
+    for (auto const& [_, boundary_edge] : edges) {
+        if (boundary_edge.count != 1) continue;
+
+        uint32_t a = boundary_edge.a;
+        uint32_t b = boundary_edge.b;
+
+        if (!winding_matches_normals) std::swap(a, b);
+
+        auto const& front_a = mesh.vertex[a];
+        auto const& front_b = mesh.vertex[b];
+        auto const& back_a  = mesh.vertex[a + original_vertex_count];
+        auto const& back_b  = mesh.vertex[b + original_vertex_count];
+
+        auto edge_vector      = front_b.position - front_a.position;
+        auto thickness_vector = front_a.position - back_a.position;
+        auto side_normal =
+            safe_normal(glm::cross(edge_vector, thickness_vector),
+                        safe_normal(front_a.normal));
+
+        uint32_t base = static_cast<uint32_t>(mesh.vertex.size());
+        mesh.vertex.push_back(Vertex {
+            .position = front_a.position,
+            .normal   = side_normal,
+            .uv       = front_a.uv,
+        });
+        mesh.vertex.push_back(Vertex {
+            .position = front_b.position,
+            .normal   = side_normal,
+            .uv       = front_b.uv,
+        });
+        mesh.vertex.push_back(Vertex {
+            .position = back_a.position,
+            .normal   = side_normal,
+            .uv       = back_a.uv,
+        });
+        mesh.vertex.push_back(Vertex {
+            .position = back_b.position,
+            .normal   = side_normal,
+            .uv       = back_b.uv,
+        });
+
+        mesh.triangles.push_back({ base, base + 2, base + 1 });
+        mesh.triangles.push_back({ base + 1, base + 2, base + 3 });
+    }
+
+    return mesh;
 }
 
 // TODO: check all UVs and see if we can do better
@@ -527,6 +673,10 @@ generate_height_field_surface(SD::surface_ptr const&          surface,
     default: break;
     }
 
+    if (ret && options.add_thickness) {
+        return add_height_field_thickness(std::move(*ret), options.thickness);
+    }
+
     return ret;
 }
 
@@ -553,8 +703,19 @@ generate_cylinder_surface(SD::surface_ptr const&          surface,
     double y0     = rect->y_coord();
     double y1     = rect->y_coord() + rect->y_length();
 
-    mesh.vertex.reserve((angular_steps + 1) * (length_steps + 1));
-    mesh.triangles.reserve(angular_steps * length_steps * 2);
+    bool thick = options.add_thickness && options.thickness > 0.0;
+
+    double inner_radius = radius;
+    if (thick) {
+        inner_radius = std::max(radius - options.thickness, radius * 1.0e-4);
+    }
+
+    uint32_t outer_vertex_count = (angular_steps + 1) * (length_steps + 1);
+    mesh.vertex.reserve(thick ? outer_vertex_count * 2 + angular_steps * 8
+                              : outer_vertex_count);
+    mesh.triangles.reserve(thick ? angular_steps * length_steps * 4 +
+                                      angular_steps * 4
+                                : angular_steps * length_steps * 2);
 
     for (uint32_t iy = 0; iy <= length_steps; ++iy) {
         double v = static_cast<double>(iy) / length_steps;
@@ -582,6 +743,88 @@ generate_cylinder_surface(SD::surface_ptr const&          surface,
             mesh.triangles.push_back({ a, c, b });
             mesh.triangles.push_back({ b, c, d });
         }
+    }
+
+    if (!thick) return mesh;
+
+    uint32_t inner_vertex_offset = static_cast<uint32_t>(mesh.vertex.size());
+
+    for (uint32_t iy = 0; iy <= length_steps; ++iy) {
+        double v = static_cast<double>(iy) / length_steps;
+        double y = y0 + (y1 - y0) * v;
+
+        for (uint32_t ia = 0; ia <= angular_steps; ++ia) {
+            double u      = static_cast<double>(ia) / angular_steps;
+            double theta  = u * 2.0 * PI;
+            double x      = inner_radius * std::cos(theta);
+            double z      = radius + inner_radius * std::sin(theta);
+            auto   normal = -glm::normalize(glm::vec3(x, 0.0, z - radius));
+
+            mesh.vertex.push_back(make_vertex(x, y, z, normal, u, v));
+        }
+    }
+
+    for (uint32_t iy = 0; iy < length_steps; ++iy) {
+        for (uint32_t ia = 0; ia < angular_steps; ++ia) {
+            uint32_t a = inner_vertex_offset + iy * stride + ia;
+            uint32_t b = a + 1;
+            uint32_t c = inner_vertex_offset + (iy + 1) * stride + ia;
+            uint32_t d = c + 1;
+
+            mesh.triangles.push_back({ a, b, c });
+            mesh.triangles.push_back({ b, d, c });
+        }
+    }
+
+    auto add_cylinder_cap_quad = [&mesh](Vertex outer_a,
+                                         Vertex outer_b,
+                                         Vertex inner_a,
+                                         Vertex inner_b,
+                                         glm::vec3 normal,
+                                         bool top_cap) {
+        outer_a.normal = normal;
+        outer_b.normal = normal;
+        inner_a.normal = normal;
+        inner_b.normal = normal;
+
+        uint32_t base = static_cast<uint32_t>(mesh.vertex.size());
+        mesh.vertex.push_back(outer_a);
+        mesh.vertex.push_back(outer_b);
+        mesh.vertex.push_back(inner_a);
+        mesh.vertex.push_back(inner_b);
+
+        if (top_cap) {
+            mesh.triangles.push_back({ base, base + 2, base + 1 });
+            mesh.triangles.push_back({ base + 1, base + 2, base + 3 });
+        } else {
+            mesh.triangles.push_back({ base, base + 1, base + 2 });
+            mesh.triangles.push_back({ base + 1, base + 3, base + 2 });
+        }
+    };
+
+    for (uint32_t ia = 0; ia < angular_steps; ++ia) {
+        uint32_t bottom_outer_a = ia;
+        uint32_t bottom_outer_b = ia + 1;
+        uint32_t bottom_inner_a = inner_vertex_offset + ia;
+        uint32_t bottom_inner_b = inner_vertex_offset + ia + 1;
+
+        uint32_t top_outer_a = length_steps * stride + ia;
+        uint32_t top_outer_b = top_outer_a + 1;
+        uint32_t top_inner_a = inner_vertex_offset + length_steps * stride + ia;
+        uint32_t top_inner_b = top_inner_a + 1;
+
+        add_cylinder_cap_quad(mesh.vertex[bottom_outer_a],
+                              mesh.vertex[bottom_outer_b],
+                              mesh.vertex[bottom_inner_a],
+                              mesh.vertex[bottom_inner_b],
+                              { 0.0f, -1.0f, 0.0f },
+                              false);
+        add_cylinder_cap_quad(mesh.vertex[top_outer_a],
+                              mesh.vertex[top_outer_b],
+                              mesh.vertex[top_inner_a],
+                              mesh.vertex[top_inner_b],
+                              { 0.0f, 1.0f, 0.0f },
+                              true);
     }
 
     return mesh;

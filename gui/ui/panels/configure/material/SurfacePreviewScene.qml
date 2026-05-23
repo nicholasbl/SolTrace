@@ -77,7 +77,6 @@ View3D {
                     metalness: 1
                     roughness: 0.1
                     baseColor: "white"
-                    cullMode: Material.NoCulling
                 }
             ]
         }
