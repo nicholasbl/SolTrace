@@ -143,6 +143,12 @@ Mesh add_height_field_thickness(Mesh mesh, double thickness) {
     uint32_t original_triangle_count =
         static_cast<uint32_t>(mesh.triangles.size());
 
+    if (!winding_matches_normals) {
+        for (uint32_t i = 0; i < original_triangle_count; ++i) {
+            std::swap(mesh.triangles[i].y, mesh.triangles[i].z);
+        }
+    }
+
     mesh.vertex.reserve(mesh.vertex.size() * 2 + edges.size() * 4);
     mesh.triangles.reserve(mesh.triangles.size() * 2 + edges.size() * 2);
 
@@ -161,15 +167,9 @@ Mesh add_height_field_thickness(Mesh mesh, double thickness) {
     for (uint32_t i = 0; i < original_triangle_count; ++i) {
         auto triangle = mesh.triangles[i];
 
-        if (winding_matches_normals) {
-            mesh.triangles.push_back({ triangle.x + original_vertex_count,
-                                       triangle.z + original_vertex_count,
-                                       triangle.y + original_vertex_count });
-        } else {
-            mesh.triangles.push_back({ triangle.x + original_vertex_count,
-                                       triangle.y + original_vertex_count,
-                                       triangle.z + original_vertex_count });
-        }
+        mesh.triangles.push_back({ triangle.x + original_vertex_count,
+                                   triangle.z + original_vertex_count,
+                                   triangle.y + original_vertex_count });
     }
 
     for (auto const& [_, boundary_edge] : edges) {

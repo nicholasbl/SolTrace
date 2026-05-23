@@ -50,7 +50,8 @@ View3D {
         clipNear: 0.1
         clipFar: 100
 
-        rotation: Quaternion.lookAt(position, Qt.vector3d(0, 0, 0))
+        eulerRotation.x: -45
+        eulerRotation.y: 45
     }
 
 
