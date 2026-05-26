@@ -140,6 +140,13 @@ namespace OptixCSP
         bool get_trim_excess_rays() const { return m_trim_excess_rays; }
 
     private:
+        // m_verbose and m_state must be declared before the shared_ptr managers so
+        // that they are initialized first (C++ initializes members in declaration order).
+        // GeometryManager and pipelineManager store references/copies of these at
+        // construction time, so they must be valid when the shared_ptrs are built.
+        bool m_verbose = false;
+        OptixCSP::SoltraceState m_state;
+
         std::shared_ptr<GeometryManager> geometry_manager;
         std::shared_ptr<pipelineManager> pipeline_manager;
         std::shared_ptr<dataManager> data_manager;
@@ -150,8 +157,6 @@ namespace OptixCSP
         uint8_t m_max_ray_depth = DEFAULT_MAX_TRACE_DEPTH;
         uint_fast64_t m_n_depth_exceeded_rays = 0; // rays stopped by max depth, not absorption
 
-        bool m_verbose;
-
         // Sun
         // OptixCSP::Vec3d m_sun_vector;
         // double m_sun_angle;
@@ -161,8 +166,7 @@ namespace OptixCSP
         bool m_trim_excess_rays = true;
 
         uint64_t m_seed = 123456ULL;
-        bool m_optical_errors;
-        OptixCSP::SoltraceState m_state;
+        bool m_optical_errors = false;
 
         // Results
 

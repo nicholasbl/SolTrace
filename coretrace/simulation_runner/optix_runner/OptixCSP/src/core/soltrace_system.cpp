@@ -149,6 +149,14 @@ void SolTraceSystem::initialize()
         OPTIX_CHECK(optixDeviceContextCreate(cuCtx, &options, &m_state.context));
     }
 
+    // Create the CUDA stream immediately after the context so that all subsequent
+    // GPU work (GAS build, kernel launches, optixLaunch) uses the same named stream.
+    // Doing this before create_geometries() ensures optixAccelBuild and optixLaunch
+    // share a single stream, giving explicit serial ordering without relying solely
+    // on legacy null-stream synchronization semantics.
+    if (!m_state.stream)
+        CUDA_CHECK(cudaStreamCreate(&m_state.stream));
+
     {
         size_t mem_total;
         CUDA_CHECK(cudaMemGetInfo(&m_mem_free_before, &mem_total));
@@ -256,10 +264,6 @@ void SolTraceSystem::initialize()
     // seed for randomization
     data_manager->launch_params_H.sun_dir_seed = m_seed;
     data_manager->launch_params_H.optical_errors = m_optical_errors;
-
-    // Create a CUDA stream for asynchronous operations (once; guard against re-init leak).
-    if (!m_state.stream)
-        CUDA_CHECK(cudaStreamCreate(&m_state.stream));
 
     // Link the GAS handle.
     data_manager->launch_params_H.handle = m_state.gas_handle;

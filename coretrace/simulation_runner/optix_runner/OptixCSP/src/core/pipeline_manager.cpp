@@ -118,6 +118,7 @@ void pipelineManager::loadModules()
     // Geometry module.
     {
         std::string ptx = loadPtxFromFile("intersection");
+        LOG_SIZE = sizeof(LOG);
         OPTIX_CHECK(optixModuleCreate(
             m_state.context,
             &moduleCompileOptions,
@@ -130,6 +131,7 @@ void pipelineManager::loadModules()
     // Shading/materials module.
     {
         std::string ptx = loadPtxFromFile("materials");
+        LOG_SIZE = sizeof(LOG);
         OPTIX_CHECK(optixModuleCreate(
             m_state.context,
             &moduleCompileOptions,
@@ -142,6 +144,7 @@ void pipelineManager::loadModules()
     // Sun module.
     {
         std::string ptx = loadPtxFromFile("sun");
+        LOG_SIZE = sizeof(LOG);
         OPTIX_CHECK(optixModuleCreate(
             m_state.context,
             &moduleCompileOptions,
@@ -175,6 +178,7 @@ void pipelineManager::createPipeline()
     pipeline_link_options.maxTraceDepth = m_max_trace_depth; // Maximum recursion depth for ray tracing.
 
     // Create the OptiX pipeline by linking the program groups.
+    LOG_SIZE = sizeof(LOG);
     OPTIX_CHECK(optixPipelineCreate(
         m_state.context,                                    // OptiX context.
         &m_state.pipeline_compile_options,                  // Compile options for the pipeline.
@@ -235,6 +239,7 @@ void pipelineManager::createHitGroupProgram(OptixProgramGroup &group,
     desc.hitgroup.moduleAH = nullptr;
     desc.hitgroup.entryFunctionNameAH = nullptr;
 
+    LOG_SIZE = sizeof(LOG);
     OPTIX_CHECK(optixProgramGroupCreate(
         m_state.context,
         &desc,
@@ -345,6 +350,7 @@ void pipelineManager::createMissProgram()
     desc.miss.entryFunctionName = "__miss__ms";
 
     // Create the program grou
+    LOG_SIZE = sizeof(LOG);
     OPTIX_CHECK(optixProgramGroupCreate(
         m_state.context,
         &desc,
