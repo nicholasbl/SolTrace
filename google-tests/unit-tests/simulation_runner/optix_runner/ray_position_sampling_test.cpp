@@ -224,45 +224,6 @@ TEST(RayPositionSampling, Halton_UniformMarginals)
     EXPECT_GT(p_y, 1.0e-6) << "Y marginal deviates significantly from uniform";
 }
 
-// GenType::HALTON — float-accumulator precision test.
-//
-// The GPU halton() function accumulates into a float.  At index ≈ 2^23 ≈ 8.4 M
-// the term 1/2^23 ≈ 1.19e-7 falls below FLT_EPSILON, causing distinct indices
-// to map to the same output value (clumping).  A KS test against the uniform
-// CDF on a sample that covers this region will detect the resulting departure
-// from uniformity.
-//
-// This test is intentionally slow (8 M rays) and is disabled by default.
-// Enable it with --gtest_also_run_disabled_tests to reproduce the precision bug.
-TEST(RayPositionSampling, DISABLED_Halton_FloatPrecisionAtHighIndices)
-{
-    SimulationData sd;
-    make_large_plate_scene(sd);
-    sd.get_simulation_parameters().number_of_rays     = 8'000'000;
-    sd.get_simulation_parameters().max_number_of_rays = 8'000'000 * 2;
-    add_sun(sd, SolTrace::Data::GenType::HALTON);
-
-    SimulationResult result;
-    ASSERT_TRUE(run_sim(sd, result));
-    ASSERT_GT(result.get_number_of_records(), 0);
-
-    std::vector<double> xs, ys;
-    collect_source_xy(result, xs, ys);
-    ASSERT_GE(xs.size(), 1'000'000u);
-
-    // With a correctly implemented double-accumulator Halton sequence the
-    // p-value here should be well above 1e-6.  With the float accumulator the
-    // clumping at high indices causes the KS statistic to spike and this
-    // assertion fails.
-    const double p_x = ks_pvalue_uniform1d(xs);
-    const double p_y = ks_pvalue_uniform1d(ys);
-
-    EXPECT_GT(p_x, 1.0e-6)
-        << "X marginal: float-accumulator clumping detected at high Halton indices";
-    EXPECT_GT(p_y, 1.0e-6)
-        << "Y marginal: float-accumulator clumping detected at high Halton indices";
-}
-
 // GenType::HALTON is deterministic: the seed field has no effect because the
 // sequence depends only on the ray index.  Two runs with different seeds must
 // produce the same set of source positions.

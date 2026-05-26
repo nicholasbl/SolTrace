@@ -140,6 +140,17 @@ RunnerStatus OptixRunner::setup_sun(const SimulationData *data)
         }
     }
 
+    // Warn if Halton sampling is used with more rays than uint32_t can index,
+    // since the Halton sequence index is truncated to 32 bits causing repeated positions.
+    if (sun->get_gen_type() == SolTrace::Data::GenType::HALTON &&
+        data->get_simulation_parameters().max_number_of_rays > static_cast<uint_fast64_t>(std::numeric_limits<uint32_t>::max()))
+    {
+        std::cerr << "Warning: max_number_of_rays exceeds 32-bit unsigned int maximum ("
+                  << std::numeric_limits<uint32_t>::max()
+                  << ") with Halton ray generation. Halton sequence positions will repeat after index "
+                  << std::numeric_limits<uint32_t>::max() << "." << std::endl;
+    }
+
     return RunnerStatus::SUCCESS;
 }
 
