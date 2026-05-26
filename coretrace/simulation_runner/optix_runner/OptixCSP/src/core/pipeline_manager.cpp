@@ -172,8 +172,7 @@ void pipelineManager::createPipeline()
 
     // Link program groups to pipeline
     OptixPipelineLinkOptions pipeline_link_options = {};
-    // TODO max trace belong to who?
-    pipeline_link_options.maxTraceDepth = MAX_TRACE_DEPTH; // Maximum recursion depth for ray tracing.
+    pipeline_link_options.maxTraceDepth = m_max_trace_depth; // Maximum recursion depth for ray tracing.
 
     // Create the OptiX pipeline by linking the program groups.
     OPTIX_CHECK(optixPipelineCreate(
@@ -200,7 +199,7 @@ void pipelineManager::createPipeline()
     // Compute stack sizes based on the maximum trace depth and other settings.
     OPTIX_CHECK(optixUtilComputeStackSizes(
         &stack_sizes,                               // Input stack sizes.
-        MAX_TRACE_DEPTH,                            // Maximum trace depth.
+        m_max_trace_depth,                          // Maximum trace depth.
         0,                                          // maxCCDepth: Maximum depth of continuation callables (none in this case).
         0,                                          // maxDCDepth: Maximum depth of direct callables (none in this case).
         &direct_callable_stack_size_from_traversal, // Output: Stack size for callable traversal.

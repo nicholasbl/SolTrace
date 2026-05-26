@@ -49,6 +49,11 @@ public:
     void set_batch_size(uint_fast64_t batch_size);
     uint_fast64_t get_batch_size() const;
 
+    /// Set the maximum ray interaction depth. Must be called before initialize().
+    /// Depth is clamped to [2, 255] with a warning if either bound is exceeded. Defaults to DEFAULT_MAX_TRACE_DEPTH.
+    void set_max_ray_depth(uint_fast64_t depth);
+    uint8_t get_max_ray_depth() const { return m_sys.get_max_ray_depth(); }
+
     /// Enable or disable trimming of excess rays at the end of run() so that
     /// exactly the requested number of hit rays is returned.  Enabled by default.
     void set_trim_excess_rays(bool trim);

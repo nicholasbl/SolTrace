@@ -36,6 +36,7 @@ SolTraceSystem::SolTraceSystem()
     : m_number_of_rays(0),
       m_max_number_of_rays(0),
       m_batch_size(0),
+      m_max_ray_depth(DEFAULT_MAX_TRACE_DEPTH),
       m_verbose(false),
       m_mem_free_before(0),
       m_mem_free_after(0),
@@ -242,6 +243,7 @@ void SolTraceSystem::initialize()
     // Pipeline setup.
     m_timer_pipeline.reset();
     m_timer_pipeline.start();
+    pipeline_manager->set_max_trace_depth(m_max_ray_depth);
     pipeline_manager->createPipeline();
     m_timer_pipeline.stop();
 
@@ -630,7 +632,7 @@ void SolTraceSystem::allocate_device_buffers()
     const uint_fast64_t effective_batch = determine_batch_size();
     data_manager->launch_params_H.width = static_cast<int>(effective_batch);
     data_manager->launch_params_H.height = 1;
-    data_manager->launch_params_H.max_depth = MAX_TRACE_DEPTH;
+    data_manager->launch_params_H.max_depth = m_max_ray_depth;
 
     const size_t hit_buffer_size = static_cast<size_t>(data_manager->launch_params_H.width) * static_cast<size_t>(data_manager->launch_params_H.height) * static_cast<size_t>(data_manager->launch_params_H.max_depth) * sizeof(HitRecord);
     const size_t sun_dir_size = static_cast<size_t>(data_manager->launch_params_H.width) * static_cast<size_t>(data_manager->launch_params_H.height) * sizeof(float3);
@@ -828,15 +830,15 @@ uint_fast64_t SolTraceSystem::automatic_batch_size() const
 
     // Per-ray device memory charged by allocate_device_buffers() and
     // allocate_compaction_scratch():
-    //   hit_buffer      MAX_TRACE_DEPTH * sizeof(HitRecord)  -- trace output
-    //   d_compacted     MAX_TRACE_DEPTH * sizeof(HitRecord)  -- worst-case compacted copy
+    //   hit_buffer      DEFAULT_MAX_TRACE_DEPTH * sizeof(HitRecord)  -- trace output
+    //   d_compacted     DEFAULT_MAX_TRACE_DEPTH * sizeof(HitRecord)  -- worst-case compacted copy
     //   sun_dir_buffer  sizeof(float3)                       -- sun ray direction
     //   curand states   sizeof(curandState)                  -- RNG state
     //   d_offsets       sizeof(uint64_t)                     -- compaction prefix sum / global ray IDs
-    //   d_count         sizeof(uint8_t)                      -- compaction hit count (bounded by MAX_TRACE_DEPTH <= 255)
+    //   d_count         sizeof(uint8_t)                      -- compaction hit count (bounded by DEFAULT_MAX_TRACE_DEPTH <= 255)
     //   d_has_hit       sizeof(uint8_t)                      -- per-ray hit flag
     const size_t bytes_per_ray =
-        2u * MAX_TRACE_DEPTH * sizeof(HitRecord) + sizeof(float3) + sizeof(curandState) + sizeof(uint64_t) + 2u * sizeof(uint8_t);
+        2u * m_max_ray_depth * sizeof(HitRecord) + sizeof(float3) + sizeof(curandState) + sizeof(uint64_t) + 2u * sizeof(uint8_t);
 
     const uint_fast64_t computed =
         (bytes_per_ray > 0) ? static_cast<uint_fast64_t>(usable_bytes / bytes_per_ray) : 0u;

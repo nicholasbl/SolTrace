@@ -34,6 +34,8 @@ namespace OptixCSP
 
         void set_verbose(bool verbose) { m_verbose = verbose; }
 
+        void set_max_trace_depth(uint8_t depth) { m_max_trace_depth = depth; }
+
         /**
          * @brief Loads PTX code from a file.
          * @param kernelName The name of the PTX kernel file to load.
@@ -112,6 +114,7 @@ namespace OptixCSP
         std::vector<OptixProgramGroup> m_program_groups;                      ///< Stores all created OptiX program groups.
         std::map<OpticalEntityType, size_t> m_intersection_program_group_map; ///< Map surface-aperture combinations to index in m_program_groups
         bool m_verbose = false;
+        uint8_t m_max_trace_depth = DEFAULT_MAX_TRACE_DEPTH;
 
         // // Number of program groups categorized by type.
         // int num_raygen_programs = 1; ///< Number of ray generation programs.

@@ -85,6 +85,11 @@ namespace OptixCSP
         }
         uint_fast64_t get_batch_size() const { return m_batch_size; }
 
+        /// Set the maximum ray interaction depth. Must be called before initialize().
+        /// Values are clamped to [1, 255]. Defaults to DEFAULT_MAX_TRACE_DEPTH.
+        void set_max_ray_depth(uint8_t depth) { m_max_ray_depth = depth; }
+        uint8_t get_max_ray_depth() const { return m_max_ray_depth; }
+
         void set_sun(SolTrace::Data::Sun *sun) { m_sun = sun; }
 
         void set_seed(uint64_t seed) { m_seed = seed; } // Set sun seed
@@ -139,6 +144,7 @@ namespace OptixCSP
         uint_fast64_t m_number_of_rays;
         uint_fast64_t m_max_number_of_rays;
         uint_fast64_t m_batch_size = 0; // 0 means auto-size: determine_batch_size() calls automatic_batch_size()
+        uint8_t m_max_ray_depth = DEFAULT_MAX_TRACE_DEPTH;
 
         bool m_verbose;
 
