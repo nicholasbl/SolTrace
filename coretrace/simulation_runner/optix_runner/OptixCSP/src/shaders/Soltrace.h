@@ -63,6 +63,7 @@ namespace OptixCSP{
         OptixTraversableHandle      handle;
         // int32_t*                    element_id_buffer;
         // uint8_t*                    hit_type_buffer;
+        uint64_t*                   d_depth_exceeded_count; // Atomic counter: rays stopped by max depth, not absorption
 
 
         float3                      sun_vector;

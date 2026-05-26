@@ -17,7 +17,8 @@ dataManager::dataManager()
 	  sun_user_intensity_D(nullptr),
 	  sun_user_capacity(0),
 	  rng_states_D(nullptr),
-	  rng_states_capacity(0)
+	  rng_states_capacity(0),
+	  depth_exceeded_count_D(nullptr)
 {
 
 	// Initialize launch parameters with default values
@@ -55,6 +56,8 @@ dataManager::dataManager()
 	launch_params_H.material_data_array_front = nullptr;
 	launch_params_H.material_data_array_back = nullptr;
 	launch_params_H.sun_dir_seed = 0ULL;
+
+	launch_params_H.d_depth_exceeded_count = nullptr;
 
 	launch_params_H.geometry_data_array = nullptr;
 	launch_params_H.handle = OptixTraversableHandle{};
@@ -110,6 +113,16 @@ void dataManager::ensureCurandStates(
 
 	initialize_curand_states_on_gpu(rng_states_D, num_states, seed, sequence_offset, stream);
 	launch_params_H.rng_states = rng_states_D;
+}
+
+void dataManager::ensureDepthExceededCounter()
+{
+	if (depth_exceeded_count_D == nullptr)
+	{
+		CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&depth_exceeded_count_D), sizeof(uint64_t)));
+		CUDA_CHECK(cudaMemset(depth_exceeded_count_D, 0, sizeof(uint64_t)));
+		launch_params_H.d_depth_exceeded_count = depth_exceeded_count_D;
+	}
 }
 
 void dataManager::allocateGeometryDataArray(std::vector<GeometryDataST> geometry_data_array_H)
@@ -277,6 +290,12 @@ void dataManager::cleanup() {
 		rng_states_capacity = 0;
 	}
 	launch_params_H.rng_states = nullptr;
+
+	if (depth_exceeded_count_D != nullptr) {
+		CUDA_CHECK(cudaFree(depth_exceeded_count_D));
+		depth_exceeded_count_D = nullptr;
+	}
+	launch_params_H.d_depth_exceeded_count = nullptr;
 
 	launch_params_H.handle = OptixTraversableHandle{};
 }

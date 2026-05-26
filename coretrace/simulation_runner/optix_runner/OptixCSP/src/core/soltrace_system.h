@@ -129,6 +129,9 @@ namespace OptixCSP
 
         /// Returns the number of rays that hit at least one element.
         uint_fast64_t get_N_hit_rays() const { return m_n_hit_rays; }
+
+        /// Returns the number of rays terminated by max depth (excludes absorption at max depth).
+        uint_fast64_t get_N_depth_exceeded_rays() const { return m_n_depth_exceeded_rays; }
         void set_sun_shape_errors(bool flag) { this->m_include_sun_shape_errors = flag; }
 
         /// Enable or disable trimming excess rays at the end of run() so that
@@ -145,6 +148,7 @@ namespace OptixCSP
         uint_fast64_t m_max_number_of_rays;
         uint_fast64_t m_batch_size = 0; // 0 means auto-size: determine_batch_size() calls automatic_batch_size()
         uint8_t m_max_ray_depth = DEFAULT_MAX_TRACE_DEPTH;
+        uint_fast64_t m_n_depth_exceeded_rays = 0; // rays stopped by max depth, not absorption
 
         bool m_verbose;
 

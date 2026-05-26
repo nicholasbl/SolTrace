@@ -43,6 +43,7 @@ SolTraceSystem::SolTraceSystem()
       m_optical_errors(false),
       m_n_hit_rays(0),
       m_n_sun_rays(0),
+      m_n_depth_exceeded_rays(0),
       m_include_sun_shape_errors(false),
       m_timer_setup(),
       m_timer_trace(),
@@ -298,6 +299,7 @@ void SolTraceSystem::run()
     m_hit_ray_ids.clear();
     m_n_hit_rays = 0;
     m_n_sun_rays = 0;
+    m_n_depth_exceeded_rays = 0;
     uint_fast64_t N_ray_hit = 0;
     uint_fast64_t N_ray_gen = 0;
 
@@ -358,6 +360,13 @@ void SolTraceSystem::run()
         }
         m_timer_collect_results.stop();
 
+        // Read back depth-exceeded count for this batch
+        uint64_t iter_depth_exceeded = 0;
+        CUDA_CHECK(cudaMemcpy(&iter_depth_exceeded,
+                              data_manager->launch_params_H.d_depth_exceeded_count,
+                              sizeof(uint64_t), cudaMemcpyDeviceToHost));
+        m_n_depth_exceeded_rays += iter_depth_exceeded;
+
         N_ray_hit = m_n_hit_rays;
         N_ray_gen += width;
         m_n_sun_rays = N_ray_gen;
@@ -382,6 +391,11 @@ void SolTraceSystem::run()
         m_n_sun_rays = m_hit_ray_ids.back() + 1;
 
     m_timer_trace.stop();
+
+    if (m_n_depth_exceeded_rays > 0)
+        std::cout << "[SolTraceSystem] " << m_n_depth_exceeded_rays
+                  << " ray(s) were terminated due to reaching max_depth ("
+                  << static_cast<unsigned>(data_manager->launch_params_H.max_depth) << ").\n";
 
     if (m_verbose)
     {
@@ -521,6 +535,7 @@ void SolTraceSystem::reset()
     m_hit_ray_ids.clear();
     m_n_hit_rays = 0;
     m_n_sun_rays = 0;
+    m_n_depth_exceeded_rays = 0;
 
     m_sun = nullptr;
     m_number_of_rays = 0;
@@ -667,6 +682,8 @@ void SolTraceSystem::allocate_device_buffers()
         data_manager->launch_params_H.sun_dir_seed,
         0,
         m_state.stream);
+
+    data_manager->ensureDepthExceededCounter();
 }
 
 void SolTraceSystem::setup_device_buffer()
@@ -676,6 +693,7 @@ void SolTraceSystem::setup_device_buffer()
 
     CUDA_CHECK(cudaMemset(data_manager->launch_params_H.hit_buffer, 0, hit_buffer_size));
     CUDA_CHECK(cudaMemset(data_manager->launch_params_H.sun_dir_buffer, 0, sun_dir_size));
+    CUDA_CHECK(cudaMemset(data_manager->launch_params_H.d_depth_exceeded_count, 0, sizeof(uint64_t)));
 
     data_manager->updateLaunchParams();
 }

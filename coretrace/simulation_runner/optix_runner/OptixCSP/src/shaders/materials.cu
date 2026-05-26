@@ -285,6 +285,11 @@ extern "C" __global__ void __closesthit__element()
             prd.depth = params.max_depth; // terminate the ray by setting depth to max depth
         }
     }
+    else if (!absorbed)
+    {
+        // Ray hit an element but max depth was reached; count it (absorption at this depth does not count).
+        atomicAdd(reinterpret_cast<unsigned long long*>(params.d_depth_exceeded_count), 1ULL);
+    }
 
     setPayload(prd);
 }
