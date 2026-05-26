@@ -54,6 +54,10 @@ public:
     void set_max_ray_depth(uint_fast64_t depth);
     uint8_t get_max_ray_depth() const { return m_sys.get_max_ray_depth(); }
 
+    /// Returns the number of rays terminated by reaching max_depth without being absorbed.
+    /// Valid after run_simulation() completes; resets to 0 at the start of each run.
+    uint_fast64_t get_N_depth_exceeded_rays() const { return m_sys.get_N_depth_exceeded_rays(); }
+
     /// Enable or disable trimming of excess rays at the end of run() so that
     /// exactly the requested number of hit rays is returned.  Enabled by default.
     void set_trim_excess_rays(bool trim);

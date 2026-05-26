@@ -172,3 +172,62 @@ TEST(OptixRunnerMaxRayDepth, TraceDepthNotExceeded)
         }
     }
 }
+
+// ---------------------------------------------------------------------------
+// GPU trace tests: verify the depth-exceeded counter behaves correctly.
+// ---------------------------------------------------------------------------
+
+// With max_depth at the default (5), the two-plate scene (reflect→absorb) uses
+// only 2 depth slots per ray — well within the limit.  The counter must stay 0.
+TEST(OptixRunnerMaxRayDepth, DepthExceededCounterIsZeroWhenDepthNotExceeded)
+{
+    SimulationData sd;
+    element_ptr plate1, plate2;
+    make_two_plate_sd(sd, plate1, plate2);
+
+    OptixRunner runner;
+    // Leave max_ray_depth at the default (5); the scene only needs depth 2.
+    RunnerStatus sts = runner.initialize();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+
+    EXPECT_EQ(runner.get_N_depth_exceeded_rays(), 0u);
+}
+
+// With max_depth=2, the two-plate scene where BOTH plates are reflective forces
+// every ray to exceed the depth limit on its second hit (plate 2).
+// Each ray that hit plate 1 (and reflected toward plate 2) must increment the
+// counter exactly once, so the counter must equal the number of hit rays.
+TEST(OptixRunnerMaxRayDepth, DepthExceededCounterCountsTerminatedReflectedRays)
+{
+    SimulationData sd;
+    element_ptr plate1, plate2;
+    make_two_plate_sd(sd, plate1, plate2);
+
+    // Override plate 2 to be reflective so hitting it at max_depth triggers the counter.
+    plate2->get_front_optical_properties()->set_ideal_reflection();
+    plate2->get_back_optical_properties()->set_ideal_reflection();
+
+    OptixRunner runner;
+    runner.set_max_ray_depth(2); // max interactions per ray = 1 (plate 1 only)
+    ASSERT_EQ(runner.get_max_ray_depth(), 2u);
+
+    RunnerStatus sts = runner.initialize();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+
+    const uint_fast64_t counter   = runner.get_N_depth_exceeded_rays();
+    const uint_fast64_t n_hit     = runner.get_number_rays_traced();
+
+    // Every ray that hit plate 1 (and was therefore included in hit output)
+    // also headed toward plate 2, where it would have been cut off.
+    EXPECT_GT(counter, 0u) << "Expected depth-exceeded counter to be non-zero";
+    EXPECT_EQ(counter, n_hit)
+        << "Each hit ray should have triggered exactly one depth-exceeded event on plate 2";
+}
