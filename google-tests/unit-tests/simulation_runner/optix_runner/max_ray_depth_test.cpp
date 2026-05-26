@@ -1,7 +1,20 @@
 #include <gtest/gtest.h>
 
 #include <optix_runner.hpp>
-#include <shaders/Soltrace.h>  // OptixCSP::DEFAULT_MAX_TRACE_DEPTH
+#include <simulation_data.hpp>
+#include <simulation_data_export.hpp>
+#include <simulation_result_export.hpp>
+#include <shaders/Soltrace.h>        // OptixCSP::DEFAULT_MAX_TRACE_DEPTH
+#include <core/soltrace_constants.h> // OptixCSP::HitType
+
+using SolTrace::Runner::RunnerStatus;
+
+// Reuse the two-plate scene defined in two_plate_test.cpp.
+// Plate 1 is ideal-reflective; plate 2 is ideal-absorptive.
+// Each ray that hits the scene makes exactly 2 element interactions:
+//   1. reflect off plate 1
+//   2. absorb on plate 2
+void make_two_plate_sd(SimulationData &sd, element_ptr &plate1, element_ptr &plate2);
 
 // ---------------------------------------------------------------------------
 // set_max_ray_depth / get_max_ray_depth accessor tests (no GPU required)
@@ -104,4 +117,58 @@ TEST(OptixRunnerMaxRayDepth, ValidSetAfterClamp)
 
     runner.set_max_ray_depth(8);
     EXPECT_EQ(runner.get_max_ray_depth(), 8u);
+}
+
+// ---------------------------------------------------------------------------
+// GPU trace test: verify the depth limit is actually enforced during tracing.
+//
+// The two-plate scene produces exactly 2 element interactions per ray under
+// normal conditions (reflect off plate 1, absorb on plate 2).  Setting
+// max_ray_depth = 2 reduces the maximum interactions per ray to 1, so the
+// second interaction is cut off.  We verify that no ray in the hit buffer
+// carries more than (max_ray_depth - 1) element interactions.
+// ---------------------------------------------------------------------------
+TEST(OptixRunnerMaxRayDepth, TraceDepthNotExceeded)
+{
+    SimulationData sd;
+    element_ptr plate1, plate2;
+    make_two_plate_sd(sd, plate1, plate2);
+
+    const uint_fast64_t test_max_depth = 2; // allows at most 1 interaction per ray
+    OptixRunner runner;
+    runner.set_max_ray_depth(test_max_depth);
+    ASSERT_EQ(runner.get_max_ray_depth(), static_cast<uint8_t>(test_max_depth));
+
+    RunnerStatus sts = runner.initialize();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+
+    OptixCSP::SolTraceSystem *sys = runner.get_optix_system();
+    std::vector<float4>        hp_vec;
+    std::vector<uint_fast64_t> raynumber_vec;
+    std::vector<int32_t>       element_id_vec;
+    std::vector<uint8_t>       hit_type_vec;
+    sys->get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);
+
+    // Walk through every record.  HIT_CREATE marks the start of a new ray;
+    // all other types are element interactions.  No ray may accumulate more
+    // than (max_ray_depth - 1) interactions.
+    const uint_fast64_t max_interactions = test_max_depth - 1;
+    uint_fast64_t current_interactions = 0;
+    for (uint8_t ht : hit_type_vec)
+    {
+        if (ht == OptixCSP::HitType::HIT_CREATE)
+        {
+            current_interactions = 0;
+        }
+        else
+        {
+            ++current_interactions;
+            EXPECT_LE(current_interactions, max_interactions)
+                << "A ray exceeded max_ray_depth - 1 element interactions";
+        }
+    }
 }
