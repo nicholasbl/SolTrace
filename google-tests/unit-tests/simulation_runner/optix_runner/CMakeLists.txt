@@ -22,6 +22,7 @@ set(OPTIX_RUNNER_TEST_SRC
     sun_test.cpp
     ray_position_sampling_test.cpp
     batch_size_test.cpp
+    max_ray_depth_test.cpp
 )
 
 add_executable(OptixRunnerUnitTests
