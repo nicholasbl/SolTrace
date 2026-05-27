@@ -203,7 +203,7 @@ void SolTraceSystem::initialize()
 
     // Assign sun shape parameters (if necessary)
     data_manager->launch_params_H.include_sun_shape_errors = this->m_include_sun_shape_errors;
-    data_manager->allocateSunUserData({}, {});  // Clear sun user data
+    data_manager->allocateSunUserData({}, {}); // Clear sun user data
     if (this->m_include_sun_shape_errors)
     {
         // Map SolTrace::Data::SunShape to OptixCSP::SunShape for device code
@@ -541,9 +541,9 @@ void SolTraceSystem::clean_up()
     m_state.sbt = {};
     m_state.d_gas_output_buffer = 0;
 
-    m_mem_free_before     = 0;
+    m_mem_free_before = 0;
     m_mem_free_post_setup = 0;
-    m_mem_free_after      = 0;
+    m_mem_free_after = 0;
 }
 
 void SolTraceSystem::reset()
@@ -823,7 +823,7 @@ void SolTraceSystem::print_timing() const
     if (m_mem_free_before > 0)
     {
         std::cout << std::fixed << std::setprecision(2);
-        std::cout << "  Free before setup   : " << m_mem_free_before   * kMB << " MB\n";
+        std::cout << "  Free before setup   : " << m_mem_free_before * kMB << " MB\n";
         if (m_mem_free_post_setup > 0)
         {
             std::cout << "  Free after setup    : " << m_mem_free_post_setup * kMB << " MB\n";
@@ -881,10 +881,10 @@ uint_fast64_t SolTraceSystem::automatic_batch_size() const
     const uint_fast64_t computed =
         (bytes_per_ray > 0) ? static_cast<uint_fast64_t>(usable_bytes / bytes_per_ray) : 0u;
 
-    // Cap at int max (OptiX launch width is signed int).
+    // Cap at int max / m_max_ray_depth (OptiX launch width is signed int).
     uint_fast64_t batch_size = std::min(
         computed,
-        static_cast<uint_fast64_t>(std::numeric_limits<int>::max()));
+        static_cast<uint_fast64_t>(std::numeric_limits<int>::max() / m_max_ray_depth));
 
     if (m_verbose)
     {
