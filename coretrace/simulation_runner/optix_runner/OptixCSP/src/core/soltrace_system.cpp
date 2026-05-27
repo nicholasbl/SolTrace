@@ -16,7 +16,6 @@
 #include "utils/math_util.h"
 
 #include <algorithm>
-#include <fstream>
 #include <iostream>
 #include <iomanip>
 #include <limits>
@@ -90,6 +89,23 @@ SolTraceSystem::SolTraceSystem()
 SolTraceSystem::~SolTraceSystem()
 {
     clean_up();
+}
+
+void SolTraceSystem::set_max_ray_depth(uint64_t depth)
+{
+    if (depth < 2)
+    {
+        std::cerr << "[OptixRunner] WARNING: max_ray_depth (" << depth
+                  << ") is below the minimum of 2. Clamping to 2.\n";
+        depth = 2;
+    }
+    else if (depth > 255)
+    {
+        std::cerr << "[OptixRunner] WARNING: max_ray_depth (" << depth
+                  << ") exceeds the maximum of 255. Clamping to 255.\n";
+        depth = 255;
+    }
+    m_max_ray_depth = depth;
 }
 
 void SolTraceSystem::set_verbose(bool verbose)
@@ -665,8 +681,8 @@ void SolTraceSystem::allocate_device_buffers()
         m_hit_buffer_size_allocated = hit_buffer_size;
 
         // Reallocate compaction scratch whenever ray-buffer dimensions change
-        const uint32_t num_rays = data_manager->launch_params_H.width * data_manager->launch_params_H.height;
-        const uint32_t max_depth = static_cast<uint32_t>(data_manager->launch_params_H.max_depth);
+        const uint64_t num_rays = data_manager->launch_params_H.width * data_manager->launch_params_H.height;
+        const uint64_t max_depth = static_cast<uint64_t>(data_manager->launch_params_H.max_depth);
         allocate_compaction_scratch(m_compaction_scratch, num_rays, max_depth);
     }
 

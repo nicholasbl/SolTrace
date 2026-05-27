@@ -97,7 +97,7 @@ namespace OptixCSP
     // ---------------------------------------------------------------------------
     // Host-callable scratch management
     // ---------------------------------------------------------------------------
-    void allocate_compaction_scratch(CompactionScratch &scratch, uint32_t num_rays, uint32_t max_depth)
+    void allocate_compaction_scratch(CompactionScratch &scratch, uint64_t num_rays, uint64_t max_depth)
     {
         free_compaction_scratch(scratch);
 

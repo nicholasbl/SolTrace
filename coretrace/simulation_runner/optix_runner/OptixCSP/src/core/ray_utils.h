@@ -44,7 +44,7 @@ namespace OptixCSP
 
     /// Allocate all device scratch buffers for the given ray-buffer dimensions.
     /// Frees any previous allocation before reallocating.
-    void allocate_compaction_scratch(CompactionScratch &scratch, uint32_t num_rays, uint32_t max_depth);
+    void allocate_compaction_scratch(CompactionScratch &scratch, uint64_t num_rays, uint64_t max_depth);
 
     /// Free all device scratch buffers and reset the struct to its default state.
     void free_compaction_scratch(CompactionScratch &scratch);

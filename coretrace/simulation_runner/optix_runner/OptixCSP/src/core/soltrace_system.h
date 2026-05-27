@@ -86,8 +86,8 @@ namespace OptixCSP
         uint_fast64_t get_batch_size() const { return m_batch_size; }
 
         /// Set the maximum ray interaction depth. Must be called before initialize().
-        /// Values are clamped to [1, 255]. Defaults to DEFAULT_MAX_TRACE_DEPTH.
-        void set_max_ray_depth(uint8_t depth) { m_max_ray_depth = depth; }
+        /// Values are clamped to [2, 255]. Defaults to DEFAULT_MAX_TRACE_DEPTH = 5.
+        void set_max_ray_depth(uint64_t depth);
         uint8_t get_max_ray_depth() const { return m_max_ray_depth; }
 
         void set_sun(SolTrace::Data::Sun *sun) { m_sun = sun; }
@@ -226,10 +226,10 @@ namespace OptixCSP
         uint64_t m_n_run_iterations;
 
         // memory usage
-        size_t m_mem_free_before;      ///< Free GPU memory at the start of initialize(), before any setup allocations.
-        size_t m_mem_free_post_setup;  ///< Free GPU memory at the end of initialize(), after all setup allocations (BVH,
-                                       ///  pipeline, SBT, geometry/material arrays). Used as the baseline in
-                                       ///  automatic_batch_size() so batch sizing is stable across run() calls.
-        size_t m_mem_free_after;       ///< Free GPU memory sampled during run() for per-launch memory reporting.
+        size_t m_mem_free_before;     ///< Free GPU memory at the start of initialize(), before any setup allocations.
+        size_t m_mem_free_post_setup; ///< Free GPU memory at the end of initialize(), after all setup allocations (BVH,
+                                      ///  pipeline, SBT, geometry/material arrays). Used as the baseline in
+                                      ///  automatic_batch_size() so batch sizing is stable across run() calls.
+        size_t m_mem_free_after;      ///< Free GPU memory sampled during run() for per-launch memory reporting.
     };
 }

@@ -1,6 +1,4 @@
 #include "simulation_runner/optix_runner/optix_runner.hpp"
-#include "simulation_data/simulation_parameters.hpp"
-#include "simulation_data/simulation_data.hpp"
 #include "simulation_data/simulation_data_export.hpp"
 
 #include <iostream>
@@ -33,19 +31,7 @@ void OptixRunner::print_timing() const
 
 void OptixRunner::set_max_ray_depth(uint_fast64_t depth)
 {
-    if (depth < 2)
-    {
-        std::cerr << "[OptixRunner] WARNING: max_ray_depth (" << depth
-                  << ") is below the minimum of 2. Clamping to 2.\n";
-        depth = 2;
-    }
-    else if (depth > 255)
-    {
-        std::cerr << "[OptixRunner] WARNING: max_ray_depth (" << depth
-                  << ") exceeds the maximum of 255. Clamping to 255.\n";
-        depth = 255;
-    }
-    m_sys.set_max_ray_depth(static_cast<uint8_t>(depth));
+    m_sys.set_max_ray_depth(depth);
 }
 
 void OptixRunner::set_batch_size(uint_fast64_t batch_size)

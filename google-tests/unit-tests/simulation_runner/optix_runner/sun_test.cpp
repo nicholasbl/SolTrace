@@ -825,10 +825,10 @@ TEST(Sun, HaltonWarningWhenExceedingUInt32Max)
 
     OptixRunner runner;
     testing::internal::CaptureStderr();
-    runner.setup_simulation(&sd);
+    ASSERT_EQ(runner.setup_simulation(&sd), RunnerStatus::SUCCESS);
     const std::string output = testing::internal::GetCapturedStderr();
 
-    EXPECT_NE(output.find("Warning"), std::string::npos)
+    EXPECT_NE(output.find("Halton"), std::string::npos)
         << "Expected a warning about Halton index overflow in stderr, but got: " << output;
 }
 
@@ -851,9 +851,11 @@ TEST(Sun, NoHaltonWarningWithinUInt32Range)
 
     OptixRunner runner;
     testing::internal::CaptureStderr();
-    runner.setup_simulation(&sd);
+    ASSERT_EQ(runner.setup_simulation(&sd), RunnerStatus::SUCCESS);
     const std::string output = testing::internal::GetCapturedStderr();
 
+    // Checking for "Warning" may result in failure due to other warning. Since
+    // this should be clean, I consider that to be a good thing.
     EXPECT_EQ(output.find("Warning"), std::string::npos)
         << "Unexpected Halton warning in stderr: " << output;
 }
