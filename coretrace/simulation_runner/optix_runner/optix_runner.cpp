@@ -1,8 +1,7 @@
 #include "simulation_runner/optix_runner/optix_runner.hpp"
-#include "simulation_data/simulation_parameters.hpp"
-#include "simulation_data/simulation_data.hpp"
 #include "simulation_data/simulation_data_export.hpp"
 
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 
@@ -18,6 +17,46 @@ OptixRunner::OptixRunner() : SimulationRunner(),
 OptixRunner::~OptixRunner()
 {
     this->m_sys.clean_up();
+}
+
+void OptixRunner::set_verbose(bool verbose)
+{
+    m_sys.set_verbose(verbose);
+}
+
+void OptixRunner::print_timing() const
+{
+    m_sys.print_timing();
+}
+
+void OptixRunner::set_max_ray_depth(uint_fast64_t depth)
+{
+    m_sys.set_max_ray_depth(depth);
+}
+
+void OptixRunner::set_batch_size(uint_fast64_t batch_size)
+{
+    m_sys.set_batch_size(batch_size);
+}
+
+uint_fast64_t OptixRunner::get_batch_size() const
+{
+    return m_sys.get_batch_size();
+}
+
+void OptixRunner::set_trim_excess_rays(bool trim)
+{
+    m_sys.set_trim_excess_rays(trim);
+}
+
+bool OptixRunner::get_trim_excess_rays() const
+{
+    return m_sys.get_trim_excess_rays();
+}
+
+uint64_t OptixRunner::get_N_run_iterations() const
+{
+    return m_sys.get_N_run_iterations();
 }
 
 RunnerStatus OptixRunner::initialize()
@@ -51,8 +90,6 @@ RunnerStatus OptixRunner::setup_simulation(const SimulationData *data)
 
     m_sys.initialize();
 
-    
-
     // std::cout << "Number of stages: " << this->tsys.StageList.size()
     //           << std::endl;
 
@@ -63,6 +100,7 @@ RunnerStatus OptixRunner::setup_parameters(const SimulationData *data)
 {
     // Get Parameter data
     const SimulationParameters &sim_params = data->get_simulation_parameters();
+
     m_sys.set_number_of_rays(sim_params.number_of_rays, sim_params.max_number_of_rays);
     m_sys.set_seed(static_cast<uint64_t>(sim_params.seed));
 
@@ -106,6 +144,17 @@ RunnerStatus OptixRunner::setup_sun(const SimulationData *data)
         }
     }
 
+    // Warn if Halton sampling is used with more rays than uint32_t can index,
+    // since the Halton sequence index is truncated to 32 bits causing repeated positions.
+    if (sun->get_gen_type() == SolTrace::Data::GenType::HALTON &&
+        data->get_simulation_parameters().max_number_of_rays > static_cast<uint_fast64_t>(std::numeric_limits<uint32_t>::max()))
+    {
+        std::cerr << "Warning: max_number_of_rays exceeds 32-bit unsigned int maximum ("
+                  << std::numeric_limits<uint32_t>::max()
+                  << ") with Halton ray generation. Halton sequence positions will repeat after index "
+                  << std::numeric_limits<uint32_t>::max() << "." << std::endl;
+    }
+
     return RunnerStatus::SUCCESS;
 }
 
@@ -124,8 +173,10 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
             auto optix_el = std::make_shared<OptixCSP::CspElement>();
             auto origin = el->get_origin_global();
-            OptixCSP::Vec3d origin_vec(origin.x, origin.y, origin.z);
+            auto ap = el->get_aim_vector_global();
+            // OptixCSP::Vec3d origin_vec(origin.x, origin.y, origin.z);
             optix_el->set_origin(ToVec3d(origin));
+            optix_el->set_aim_point(ToVec3d(ap));
             optix_el->set_rotation_matrix(ToMatrix33d(el->get_local_to_global()));
 
             // Safely narrow element id to int32_t
@@ -135,8 +186,6 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 throw std::overflow_error("Element id out of int32_t range");
             }
             optix_el->set_id(static_cast<int32_t>(id));
-
-            // TODO: check zrot, radiance or degree here?
 
             // Add optical properties
             OpticalProperties *opt_front = el->get_front_optical_properties();
@@ -214,7 +263,6 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 }
 
                 auto surface = std::make_shared<OptixCSP::SurfaceCylinder>();
-                // surface->set_half_height(2.); // TODO this needs to come from the aperture
                 surface->set_half_height(0.5 * el_aperture->y_length());
                 surface->set_radius(el_surface->radius);
                 optix_el->set_surface(surface);
@@ -228,22 +276,39 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             }
 
             auto soltrace_aperture_type = el->get_aperture()->get_type();
-            
+
             switch (soltrace_aperture_type)
             {
-
             case ApertureType::RECTANGLE:
             {
-
                 auto el_aperture = std::dynamic_pointer_cast<Rectangle>(el->get_aperture());
                 assert(el_aperture != nullptr);
                 // TODO: account for x and y coord?
-                auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length(), el_aperture->y_length(),
-                    el_aperture->x_coord(), el_aperture->y_coord());
+                // auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length(),
+                // 							      el_aperture->y_length());
+                auto aperture = std::make_shared<OptixCSP::ApertureRectangle>(el_aperture->x_length(),
+                                                                              el_aperture->y_length(),
+                                                                              el_aperture->x_coord(),
+                                                                              el_aperture->y_coord());
                 optix_el->set_aperture(aperture);
                 break;
             }
-
+            case ApertureType::ANNULUS:
+            {
+                auto el_aperture = std::dynamic_pointer_cast<Annulus>(el->get_aperture());
+                assert(el_aperture != nullptr);
+                auto aperture = std::make_shared<OptixCSP::ApertureAnnulus>(el_aperture->inner_radius, el_aperture->outer_radius, el_aperture->arc_angle * D2R);
+                optix_el->set_aperture(aperture);
+                break;
+            }
+            case ApertureType::CIRCLE:
+            {
+                auto el_aperture = std::dynamic_pointer_cast<Circle>(el->get_aperture());
+                assert(el_aperture != nullptr);
+                auto aperture = std::make_shared<OptixCSP::ApertureCircle>(0.5 * el_aperture->diameter);
+                optix_el->set_aperture(aperture);
+                break;
+            }
             case ApertureType::EQUILATERAL_TRIANGLE:
             {
                 auto el_aperture = std::dynamic_pointer_cast<EquilateralTriangle>(el->get_aperture());
@@ -259,7 +324,6 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
                 break;
             }
-
             case ApertureType::IRREGULAR_TRIANGLE:
             {
                 auto el_aperture = std::dynamic_pointer_cast<IrregularTriangle>(el->get_aperture());
@@ -274,7 +338,6 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
                 break;
             }
-
             case ApertureType::IRREGULAR_QUADRILATERAL:
             {
                 auto el_aperture = std::dynamic_pointer_cast<IrregularQuadrilateral>(el->get_aperture());
@@ -290,11 +353,18 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
                 break;
             }
-
+            case ApertureType::HEXAGON:
+            {
+                auto el_aperture = std::dynamic_pointer_cast<Hexagon>(el->get_aperture());
+                assert(el_aperture != nullptr);
+                auto aperture = std::make_shared<OptixCSP::ApertureHexagon>(el_aperture->radius_circumscribed_circle());
+                optix_el->set_aperture(aperture);
+                break;
+            }
             default:
                 // std::cerr << "Unsupported aperture type in OptixCSP" << std::endl;
-	      throw std::runtime_error("Unsupported aperture type in OptixRunner");
-	      break;
+                throw std::runtime_error("Unsupported aperture type in OptixRunner");
+                break;
             }
 
             double xmin, xmax, ymin, ymax, zmin, zmax;
@@ -323,9 +393,8 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
 
 RunnerStatus OptixRunner::update_simulation(const SimulationData *data)
 {
-    this->setup_simulation(data);
-    // TODO: Implement this
-    return RunnerStatus::SUCCESS;
+    return this->setup_simulation(data);
+    // TODO: Implement this in a less lazy manner...
 }
 
 RunnerStatus OptixRunner::run_simulation()
@@ -374,6 +443,8 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     std::map<unsigned int, SolTrace::Result::ray_record_ptr> ray_records;
     std::map<unsigned int, SolTrace::Result::ray_record_ptr>::iterator iter;
 
+    // TODO: This should be redone without using these vectors and just using the
+    // internal hit record vector
     // Get results from optixcsp
     std::vector<float4> hp_vec;
     std::vector<uint_fast64_t> raynumber_vec;
@@ -390,7 +461,7 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
     // Loop through data, populating ray records
     // Assumes ray data is grouped serially
     size_t ndata = hp_vec.size();
-    uint_fast64_t raynum_prev = -1;
+    // uint_fast64_t raynum_prev = -1;
     uint_fast64_t raynum = 0;
     SolTrace::Result::ray_record_ptr rec = nullptr;
     SolTrace::Result::interaction_ptr intr = nullptr;
@@ -399,7 +470,7 @@ RunnerStatus OptixRunner::report_simulation(SimulationResult *result,
         // Collect results for record
         raynum = raynumber_vec[ii];
         glm::dvec3 pos(hp_vec[ii].y, hp_vec[ii].z, hp_vec[ii].w); // x is depth
-        glm::dvec3 cos(0.0);                                  // TODO: calculate directions
+        glm::dvec3 cos(0.0);                                      // TODO: calculate directions
         int32_t element_id = element_id_vec[ii];
         uint8_t hit_type = hit_type_vec[ii];
         SolTrace::Result::RayEvent rev = hit_type_to_ray_event(static_cast<OptixCSP::HitType>(hit_type));
@@ -446,7 +517,7 @@ OptixCSP::Vec3d OptixRunner::ToVec3d(glm::dvec3 v)
     return vec;
 }
 
-OptixCSP::Matrix33d OptixRunner::ToMatrix33d(const glm::dmat3& mat)
+OptixCSP::Matrix33d OptixRunner::ToMatrix33d(const glm::dmat3 &mat)
 {
     return OptixCSP::Matrix33d(
         mat[0][0], mat[1][0], mat[2][0],

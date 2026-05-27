@@ -42,7 +42,10 @@ const std::map<OpticalEntityType, std::string> IntersectionKernelMap = {
     {OpticalEntityType::RECTANGLE_FLAT, "__intersection__rectangle_flat"},
     {OpticalEntityType::TRIANGLE_FLAT, "__intersection__triangle_flat"},
     {OpticalEntityType::CYLINDRICAL, "__intersection__cylinder_y"},
-    {OpticalEntityType::QUADRILATERAL_FLAT, "__intersection__quadrilateral_flat"}};
+    {OpticalEntityType::QUADRILATERAL_FLAT, "__intersection__quadrilateral_flat"},
+    {OpticalEntityType::CIRCLE_FLAT, "__intersection__circle_flat"},
+    {OpticalEntityType::HEXAGON_FLAT, "__intersection__hexagon_flat"},
+    {OpticalEntityType::ANNULUS_FLAT, "__intersection__annulus_flat"}};
 
 pipelineManager::pipelineManager(SoltraceState &state) : m_state(state) {}
 
@@ -115,6 +118,7 @@ void pipelineManager::loadModules()
     // Geometry module.
     {
         std::string ptx = loadPtxFromFile("intersection");
+        LOG_SIZE = sizeof(LOG);
         OPTIX_CHECK(optixModuleCreate(
             m_state.context,
             &moduleCompileOptions,
@@ -127,6 +131,7 @@ void pipelineManager::loadModules()
     // Shading/materials module.
     {
         std::string ptx = loadPtxFromFile("materials");
+        LOG_SIZE = sizeof(LOG);
         OPTIX_CHECK(optixModuleCreate(
             m_state.context,
             &moduleCompileOptions,
@@ -139,6 +144,7 @@ void pipelineManager::loadModules()
     // Sun module.
     {
         std::string ptx = loadPtxFromFile("sun");
+        LOG_SIZE = sizeof(LOG);
         OPTIX_CHECK(optixModuleCreate(
             m_state.context,
             &moduleCompileOptions,
@@ -169,10 +175,10 @@ void pipelineManager::createPipeline()
 
     // Link program groups to pipeline
     OptixPipelineLinkOptions pipeline_link_options = {};
-    // TODO max trace belong to who?
-    pipeline_link_options.maxTraceDepth = MAX_TRACE_DEPTH; // Maximum recursion depth for ray tracing.
+    pipeline_link_options.maxTraceDepth = m_max_trace_depth; // Maximum recursion depth for ray tracing.
 
     // Create the OptiX pipeline by linking the program groups.
+    LOG_SIZE = sizeof(LOG);
     OPTIX_CHECK(optixPipelineCreate(
         m_state.context,                                    // OptiX context.
         &m_state.pipeline_compile_options,                  // Compile options for the pipeline.
@@ -197,7 +203,7 @@ void pipelineManager::createPipeline()
     // Compute stack sizes based on the maximum trace depth and other settings.
     OPTIX_CHECK(optixUtilComputeStackSizes(
         &stack_sizes,                               // Input stack sizes.
-        MAX_TRACE_DEPTH,                            // Maximum trace depth.
+        m_max_trace_depth,                          // Maximum trace depth.
         0,                                          // maxCCDepth: Maximum depth of continuation callables (none in this case).
         0,                                          // maxDCDepth: Maximum depth of direct callables (none in this case).
         &direct_callable_stack_size_from_traversal, // Output: Stack size for callable traversal.
@@ -233,6 +239,7 @@ void pipelineManager::createHitGroupProgram(OptixProgramGroup &group,
     desc.hitgroup.moduleAH = nullptr;
     desc.hitgroup.entryFunctionNameAH = nullptr;
 
+    LOG_SIZE = sizeof(LOG);
     OPTIX_CHECK(optixProgramGroupCreate(
         m_state.context,
         &desc,
@@ -256,7 +263,12 @@ void pipelineManager::createSunProgram()
     desc.raygen.entryFunctionName = "__raygen__sun_source";
 
     // Create the program group
-    OPTIX_CHECK_LOG(optixProgramGroupCreate(
+    // Note: OPTIX_CHECK_LOG is not used here because the macro creates its own
+    // local LOG_ buffer (not the global LOG), causing it to always print 2048
+    // null bytes to stderr. Instead we use OPTIX_CHECK and manually print any
+    // non-empty log content when verbose mode is enabled.
+    LOG_SIZE = sizeof(LOG);
+    OPTIX_CHECK(optixProgramGroupCreate(
         m_state.context, // OptiX context.
         &desc,           // Descriptor defining the program group.
         1,               // Number of program groups to create (1 in this case).
@@ -264,6 +276,11 @@ void pipelineManager::createSunProgram()
         LOG, &LOG_SIZE,  // Logs to capture diagnostic information.
         &group           // Output: Handle for the created program group.
         ));
+    if (LOG_SIZE > 1 && LOG[0] != '\0')
+    {
+        std::cerr << "OptiX log for optixProgramGroupCreate (sun):\n"
+                  << std::string(LOG, LOG + LOG_SIZE) << std::endl;
+    }
 
     m_program_groups.push_back(group);
     m_state.raygen_prog_group = group;
@@ -333,6 +350,7 @@ void pipelineManager::createMissProgram()
     desc.miss.entryFunctionName = "__miss__ms";
 
     // Create the program grou
+    LOG_SIZE = sizeof(LOG);
     OPTIX_CHECK(optixProgramGroupCreate(
         m_state.context,
         &desc,

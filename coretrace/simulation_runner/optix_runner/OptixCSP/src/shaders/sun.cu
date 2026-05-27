@@ -2,27 +2,29 @@
 #include <curand_kernel.h>
 #include <vector_types.h>
 
-// todo: move curand initializatin to global function
-
-//#include <cuda/helpers.h>
-//#include <cuda/random.h>
+// #include <cuda/helpers.h>
+// #include <cuda/random.h>
 #include "Soltrace.h"
 #include "soltrace_constants.h"
 
 #include <cstdio>
 
 // Launch parameters for soltrace
-extern "C" {
+extern "C"
+{
     __constant__ OptixCSP::LaunchParams params;
 }
 
-namespace OptixCSP {
+namespace OptixCSP
+{
 
     // Halton sequence generator, used for quasi-random sampling
     // Generates a Halton sequence value for a given index and base
-    __device__ float halton(int index, int base) {
+    __device__ float halton(unsigned int index, unsigned int base)
+    {
         float f = 1.0f, result = 0.0f;
-        while (index > 0) {
+        while (index > 0)
+        {
             f = f / base;
             result = result + f * (index % base);
             index = index / base;
@@ -32,7 +34,8 @@ namespace OptixCSP {
 
     // Generate a sample point within a parallelogram defined by the AABB (Axis-Aligned Bounding Box)
     // Uses the Halton sequence for sampling
-    __device__ float3 haltonSampleInParallelogram(unsigned int sample_index) {
+    __device__ float3 haltonSampleInParallelogram(unsigned int sample_index)
+    {
         // Generate Halton sequence values
         float u = halton(sample_index, 2); // Base 2 for x
         float v = halton(sample_index, 3); // Base 3 for y
@@ -60,7 +63,8 @@ namespace OptixCSP {
     }
 
     // Sample a random ray direction within a cone defined by a maximum angle
-    __device__ float3 sampleRayDirectionInCone_Pillbox(float3 dir, float half_angle, unsigned int ray_number) {
+    __device__ float3 sampleRayDirectionInCone_Pillbox(float3 dir, float half_angle, unsigned int ray_number)
+    {
         curandState rng_state = params.rng_states[ray_number];
 
         const float half_angle_mrad = half_angle;
@@ -91,10 +95,11 @@ namespace OptixCSP {
         return normalize(sin_t * (cosf(phi) * u + sinf(phi) * v) + cos_t * w);
     }
 
-    __device__ float3 sampleRayDirectionInCone_Gaussian(float3 dir, float sigma, unsigned int ray_number) {
+    __device__ float3 sampleRayDirectionInCone_Gaussian(float3 dir, float sigma, unsigned int ray_number)
+    {
         curandState rng = params.rng_states[ray_number];
 
-        const float sigma_rad = sigma * 0.001f;   // Convert to rad
+        const float sigma_rad = sigma * 0.001f; // Convert to rad
 
         // Build an orthonormal basis
         float3 w = normalize(dir);
@@ -119,7 +124,7 @@ namespace OptixCSP {
     {
         curandState rng = params.rng_states[ray_number];
 
-        const float max_angle_mrad = params.sun_max_angle;      // [mrad]
+        const float max_angle_mrad = params.sun_max_angle; // [mrad]
 
         // Orthonormal basis about dir
         float3 w = normalize(dir);
@@ -141,7 +146,7 @@ namespace OptixCSP {
             theta2 = thetax * thetax + thetay * thetay;
             theta = sqrtf(theta2);
 
-            if (theta <= 4.65f)  // within solar disc (mrad, as in CPU code)
+            if (theta <= 4.65f) // within solar disc (mrad, as in CPU code)
             {
                 // stest = cos(0.326 * theta) / cos(0.308 * theta);
                 float t = theta;
@@ -168,8 +173,7 @@ namespace OptixCSP {
         float3 local_dir = make_float3(
             sin_t * cosf(phi),
             sin_t * sinf(phi),
-            cos_t
-        );
+            cos_t);
 
         params.rng_states[ray_number] = rng;
 
@@ -216,8 +220,7 @@ namespace OptixCSP {
         float3 local_dir = make_float3(
             sin_t * cosf(phi),
             sin_t * sinf(phi),
-            cos_t
-        );
+            cos_t);
 
         params.rng_states[ray_number] = rng;
 
@@ -226,8 +229,8 @@ namespace OptixCSP {
         return world_dir;
     }
 
-    __device__ float3 sampleRayDirectionInCone_UserDefined(float3 dir, int user_capacity, float* user_angle, 
-        float* user_intensity, unsigned int ray_number)
+    __device__ float3 sampleRayDirectionInCone_UserDefined(float3 dir, int user_capacity, float *user_angle,
+                                                           float *user_intensity, unsigned int ray_number)
     {
         curandState rng = params.rng_states[ray_number];
 
@@ -236,7 +239,7 @@ namespace OptixCSP {
             return normalize(dir);
         }
 
-        const float max_angle_mrad = params.sun_max_angle;  // [mrad]
+        const float max_angle_mrad = params.sun_max_angle; // [mrad]
         const float max_int = params.sun_max_intensity;
 
         // Orthonormal basis about dir
@@ -268,8 +271,7 @@ namespace OptixCSP {
                     stest = user_intensity[i];
                 else
                 {
-                    stest = user_intensity[i - 1] + (user_intensity[i] - user_intensity[i - 1]) * (theta - user_angle[i - 1])
-                        / denom;
+                    stest = user_intensity[i - 1] + (user_intensity[i] - user_intensity[i - 1]) * (theta - user_angle[i - 1]) / denom;
                 }
             }
 
@@ -287,8 +289,7 @@ namespace OptixCSP {
         float3 local_dir = make_float3(
             sin_t * cosf(phi),
             sin_t * sinf(phi),
-            cos_t
-        );
+            cos_t);
 
         params.rng_states[ray_number] = rng;
 
@@ -302,22 +303,22 @@ namespace OptixCSP {
 extern "C" __global__ void __raygen__sun_source()
 {
     // Lookup location in launch grid
-    const uint3 launch_idx = optixGetLaunchIndex();         // Index of the current launch thread
-    const uint3 launch_dims = optixGetLaunchDimensions();   // Dimensions of the launch grid
-    const unsigned int ray_number = launch_idx.y * launch_dims.x + launch_idx.x;  // Unique ray ID
-    const unsigned int ray_number_global = ray_number + params.ray_offset;  // Global unique ray ID
+    const uint3 launch_idx = optixGetLaunchIndex();                              // Index of the current launch thread
+    const uint3 launch_dims = optixGetLaunchDimensions();                        // Dimensions of the launch grid
+    const unsigned int ray_number = launch_idx.y * launch_dims.x + launch_idx.x; // Unique ray ID
+    const unsigned long long ray_number_global = ray_number + params.ray_offset; // Global unique ray ID
 
     float3 sun_sample_pos;
     switch (params.sun_gen_type)
     {
-        case(OptixCSP::GenType::RANDOM):
-            sun_sample_pos = OptixCSP::randomSampleInParallelogram(ray_number);
-            break;
-        case(OptixCSP::GenType::HALTON):
-            sun_sample_pos = OptixCSP::haltonSampleInParallelogram(ray_number_global);
-            break;
-        default:          
-            return;
+    case (OptixCSP::GenType::RANDOM):
+        sun_sample_pos = OptixCSP::randomSampleInParallelogram(ray_number);
+        break;
+    case (OptixCSP::GenType::HALTON):
+        sun_sample_pos = OptixCSP::haltonSampleInParallelogram(ray_number_global);
+        break;
+    default:
+        return;
     }
 
     // Sample emission angle here - capturing sun distribution
@@ -331,47 +332,44 @@ extern "C" __global__ void __raygen__sun_source()
     {
         switch (params.sun_shape)
         {
-            case(OptixCSP::SunShape::PILLBOX):
-                ray_dir = OptixCSP::sampleRayDirectionInCone_Pillbox(init_ray_dir, params.half_width, ray_number);
-                break;
-            case(OptixCSP::SunShape::GAUSSIAN):
-                ray_dir = OptixCSP::sampleRayDirectionInCone_Gaussian(init_ray_dir, params.sigma, ray_number);
-                break;
-            case(OptixCSP::SunShape::BUIE_CSR):
-                ray_dir = OptixCSP::sampleRayDirectionInCone_BuieCSR(init_ray_dir, params.buie_kappa, params.buie_gamma, ray_number);
-                break;
-            case(OptixCSP::SunShape::LIMBDARKENED):
-                ray_dir = OptixCSP::sampleRayDirectionInCone_LimbDarkened(init_ray_dir, ray_number);
-                break;
-            case(OptixCSP::SunShape::USER_DEFINED):
-                ray_dir = OptixCSP::sampleRayDirectionInCone_UserDefined(init_ray_dir, params.sun_user_capacity, 
-                    params.sun_user_angle, params.sun_user_intensity, ray_number);
-                break;
-            default:
-                assert(false);
-                // Just return since the sun shape is not supported
-                return;
+        case (OptixCSP::SunShape::PILLBOX):
+            ray_dir = OptixCSP::sampleRayDirectionInCone_Pillbox(init_ray_dir, params.half_width, ray_number);
+            break;
+        case (OptixCSP::SunShape::GAUSSIAN):
+            ray_dir = OptixCSP::sampleRayDirectionInCone_Gaussian(init_ray_dir, params.sigma, ray_number);
+            break;
+        case (OptixCSP::SunShape::BUIE_CSR):
+            ray_dir = OptixCSP::sampleRayDirectionInCone_BuieCSR(init_ray_dir, params.buie_kappa, params.buie_gamma, ray_number);
+            break;
+        case (OptixCSP::SunShape::LIMBDARKENED):
+            ray_dir = OptixCSP::sampleRayDirectionInCone_LimbDarkened(init_ray_dir, ray_number);
+            break;
+        case (OptixCSP::SunShape::USER_DEFINED):
+            ray_dir = OptixCSP::sampleRayDirectionInCone_UserDefined(init_ray_dir, params.sun_user_capacity,
+                                                                     params.sun_user_angle, params.sun_user_intensity, ray_number);
+            break;
+        default:
+            assert(false);
+            // Just return since the sun shape is not supported
+            return;
         }
     }
     else
     {
         ray_dir = init_ray_dir;
     }
-    
-    
-    //float3 ray_dir = OptixCSP::sampleRayDirectionInCone_Gaussian(init_ray_dir, params.max_sun_angle, ray_number);
+
+    // float3 ray_dir = OptixCSP::sampleRayDirectionInCone_Gaussian(init_ray_dir, params.max_sun_angle, ray_number);
 
     // Create the PerRayData structure to track ray state (e.g., path index and recursion depth)
     OptixCSP::PerRayData prd;
     prd.ray_path_index = ray_number;
     prd.depth = 0;
 
-    // TODO make this a launch parameter
-    params.hit_point_buffer[params.max_depth * prd.ray_path_index] = make_float4(0.0f, ray_gen_pos);
-    params.element_id_buffer[params.max_depth * prd.ray_path_index] = OptixCSP::kElementIdRayGen;
-    params.hit_type_buffer[params.max_depth * prd.ray_path_index] = OptixCSP::HitType::HIT_CREATE;
+    params.hit_buffer[params.max_depth * prd.ray_path_index].hit_point = make_float4(0.0f, ray_gen_pos);
+    params.hit_buffer[params.max_depth * prd.ray_path_index].element_id = OptixCSP::kElementIdRayGen;
+    params.hit_buffer[params.max_depth * prd.ray_path_index].hit_type = OptixCSP::HitType::HIT_CREATE;
     params.sun_dir_buffer[prd.ray_path_index] = ray_dir;
-    
 
     // Cast and trace the ray through the scene
     optixTrace(
@@ -386,7 +384,6 @@ extern "C" __global__ void __raygen__sun_source()
         OptixCSP::RAY_TYPE_RADIANCE, // Ray type (radiance for sunlight)
         OptixCSP::RAY_TYPE_COUNT,    // Number of ray types
         OptixCSP::RAY_TYPE_RADIANCE, // SBT offset (ray type to launch)
-        reinterpret_cast<unsigned int&>(prd.ray_path_index),
-        reinterpret_cast<unsigned int&>(prd.depth)  
-    );
+        reinterpret_cast<unsigned int &>(prd.ray_path_index),
+        reinterpret_cast<unsigned int &>(prd.depth));
 }

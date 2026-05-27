@@ -804,3 +804,58 @@ TEST(Sun, UserDefinedSunAngleDistribution)
     EXPECT_GT(frac_beyond_disc, 0.0);
     EXPECT_LT(frac_beyond_disc, 0.05);
 }
+
+// Verify that a warning is printed to stderr when Halton ray generation is used
+// with max_number_of_rays exceeding UINT32_MAX, since the Halton index is truncated
+// to 32 bits and positions will repeat.
+TEST(Sun, HaltonWarningWhenExceedingUInt32Max)
+{
+    SimulationData sd;
+    element_ptr plate;
+    make_default_sd_sun(sd, plate);
+
+    auto sun = make_ray_source<Sun>();
+    sun->set_position(0, 0, 100);
+    sun->set_gen_type(SolTrace::Data::GenType::HALTON);
+    sd.add_ray_source(sun);
+
+    SimulationParameters& params = sd.get_simulation_parameters();
+    params.number_of_rays = 1000;
+    params.max_number_of_rays = static_cast<uint_fast64_t>(std::numeric_limits<uint32_t>::max()) + 1;
+
+    OptixRunner runner;
+    testing::internal::CaptureStderr();
+    ASSERT_EQ(runner.setup_simulation(&sd), RunnerStatus::SUCCESS);
+    const std::string output = testing::internal::GetCapturedStderr();
+
+    EXPECT_NE(output.find("Halton"), std::string::npos)
+        << "Expected a warning about Halton index overflow in stderr, but got: " << output;
+}
+
+// Verify that no warning is printed when Halton is used with max_number_of_rays
+// within the 32-bit range.
+TEST(Sun, NoHaltonWarningWithinUInt32Range)
+{
+    SimulationData sd;
+    element_ptr plate;
+    make_default_sd_sun(sd, plate);
+
+    auto sun = make_ray_source<Sun>();
+    sun->set_position(0, 0, 100);
+    sun->set_gen_type(SolTrace::Data::GenType::HALTON);
+    sd.add_ray_source(sun);
+
+    SimulationParameters& params = sd.get_simulation_parameters();
+    params.number_of_rays = 1000;
+    params.max_number_of_rays = static_cast<uint_fast64_t>(std::numeric_limits<uint32_t>::max());
+
+    OptixRunner runner;
+    testing::internal::CaptureStderr();
+    ASSERT_EQ(runner.setup_simulation(&sd), RunnerStatus::SUCCESS);
+    const std::string output = testing::internal::GetCapturedStderr();
+
+    // Checking for "Warning" may result in failure due to other warning. Since
+    // this should be clean, I consider that to be a good thing.
+    EXPECT_EQ(output.find("Warning"), std::string::npos)
+        << "Unexpected Halton warning in stderr: " << output;
+}

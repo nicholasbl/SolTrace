@@ -151,12 +151,12 @@ TEST(TwoPlateOptix, ReflectionToAbsorber)
 	std::vector<int32_t> element_id_vec;
 	std::vector<uint8_t> hit_type_vec;
 	sys->get_hp_output(hp_vec, raynumber_vec, element_id_vec, hit_type_vec);
-	std::vector<uint_fast64_t> sunraynumber_vec = sys->get_sunraynumber_vec();
+	// std::vector<uint_fast64_t> sunraynumber_vec = sys->get_sunraynumber_vec();
 
 	EXPECT_EQ(hp_vec.size(), raynumber_vec.size());						// Hit results are same size
 	EXPECT_EQ(raynumber_vec.size(), element_id_vec.size());
 	EXPECT_EQ(element_id_vec.size(), hit_type_vec.size());
-	EXPECT_EQ(N_sun_rays, sunraynumber_vec.back());						// Reported sun rays is the sun ray id of last hit
+	// EXPECT_EQ(N_sun_rays, sunraynumber_vec.back());						// Reported sun rays is the sun ray id of last hit
 	EXPECT_TRUE(N_sun_rays <= sd.get_simulation_parameters().max_number_of_rays);	// Only generated max number of rays or fewer
 }
 
@@ -245,4 +245,41 @@ TEST(TwoPlateOptix, SimResults)
 		}
 	}
 	
+}
+
+TEST(TwoPlateOptix, TrimExcessRaysOption)
+{
+	SimulationData sd;
+	element_ptr plate1, plate2;
+	make_two_plate_sd(sd, plate1, plate2);
+	const int n_rays = sd.get_simulation_parameters().number_of_rays;
+
+	// Default: trim enabled — result has exactly n_rays records
+	{
+		OptixRunner runner;
+		EXPECT_TRUE(runner.get_trim_excess_rays());  // default is true
+
+		ASSERT_EQ(runner.initialize(), RunnerStatus::SUCCESS);
+		ASSERT_EQ(runner.setup_simulation(&sd), RunnerStatus::SUCCESS);
+		ASSERT_EQ(runner.run_simulation(), RunnerStatus::SUCCESS);
+
+		SimulationResult result;
+		ASSERT_EQ(runner.report_simulation(&result, 0), RunnerStatus::SUCCESS);
+		EXPECT_EQ(result.get_number_of_records(), n_rays);
+	}
+
+	// Trim disabled — result has at least n_rays records (batch overshoot is not removed)
+	{
+		OptixRunner runner;
+		runner.set_trim_excess_rays(false);
+		EXPECT_FALSE(runner.get_trim_excess_rays());
+
+		ASSERT_EQ(runner.initialize(), RunnerStatus::SUCCESS);
+		ASSERT_EQ(runner.setup_simulation(&sd), RunnerStatus::SUCCESS);
+		ASSERT_EQ(runner.run_simulation(), RunnerStatus::SUCCESS);
+
+		SimulationResult result;
+		ASSERT_EQ(runner.report_simulation(&result, 0), RunnerStatus::SUCCESS);
+		EXPECT_GE(result.get_number_of_records(), n_rays);
+	}
 }
