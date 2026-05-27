@@ -1,3 +1,7 @@
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include "soltrace_system.h"
 #include "ray_utils.h"
 
