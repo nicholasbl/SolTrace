@@ -113,21 +113,25 @@ public:
         //runner.disable_point_focus();
 
         // Define mirror optical properties
-        OpticalProperties mirror;
+        OpticalPropertiesFace mirror;
         mirror.set_ideal_reflection();
         mirror.reflectivity = 0.9;
         mirror.slope_error = this->slope_error;       // mrad
         mirror.specularity_error = this->spec_error; // mrad
         mirror.error_distribution_type = this->error_dist;
         // Backside is absorbing
-        OpticalProperties mirror_back;
+        OpticalPropertiesFace mirror_back;
         mirror_back.set_ideal_absorption();
 
         // Initial setup of heliostat
         glm::dvec3 heliostat_origin(0.0, 500.0, 5.65);
         glm::dvec3 rec_origin(0.0, 0.0, 169.0);
         heliostat = SolTrace::Data::make_element<Heliostat>();
-        heliostat->set_optics(mirror, mirror_back);
+
+        OpticalPropertySet mirror_opt_set(mirror, mirror_back, 
+            InteractionType::REFLECTION, 0, 0);
+        optics_id mirror_id = simData.add_optical_property_set(mirror_opt_set);
+        heliostat->set_optical_property_set_id(mirror_id);
         heliostat->set_reference_frame_geometry(heliostat_origin, khat, 0.0);
         heliostat->set_aperture_size(11.415, 10.42);   // Width, Height
         heliostat->set_number_panels(1, 1);
@@ -140,9 +144,16 @@ public:
         heliostat->enable();
 
         // Initial setup of receiver
+        OpticalPropertiesFace opt_rec_front_face;
+        opt_rec_front_face.set_ideal_absorption();
+        OpticalPropertiesFace opt_rec_back_face;
+        opt_rec_back_face.set_ideal_absorption();
+        OpticalPropertySet rec_opt_set(opt_rec_front_face, opt_rec_back_face, 
+            InteractionType::REFLECTION, 0, 0);
+        optics_id rec_id = simData.add_optical_property_set(rec_opt_set);
+
         receiver = SolTrace::Data::make_element<SingleElement>();
-        receiver->get_front_optical_properties()->set_ideal_absorption();
-        receiver->get_back_optical_properties()->set_ideal_reflection();
+        receiver->set_optical_property_set_id(rec_id);
         receiver->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_width, rec_height));
         receiver->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Flat>());
         glm::dvec3 v1 = {0.0, 1.0, 0.0}; // Pointing North TODO: change to point towards heliostat

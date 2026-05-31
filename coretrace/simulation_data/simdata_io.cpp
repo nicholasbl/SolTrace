@@ -277,8 +277,9 @@ bool process_sun(FILE *fp, SimulationData &sd)
 }
 
 bool read_optic_surface(FILE *fp,
-                        OpticalProperties &optics,
-                        int &OpticalSurfaceNumber)
+                        OpticalPropertiesFace &optics,
+                        int &OpticalSurfaceNumber,
+                        double &refraction)
 {
     if (!fp)
         return false;
@@ -303,7 +304,7 @@ bool read_optic_surface(FILE *fp,
     double Transmissivity = atof(parts[6].c_str());
     double RMSSlope = atof(parts[7].c_str());
     double RMSSpecularity = atof(parts[8].c_str());
-    double RefractionIndexReal = atof(parts[9].c_str());
+    refraction = atof(parts[9].c_str());
     double RefractionIndexImag = atof(parts[10].c_str());
     double GratingCoeffs[4];
     GratingCoeffs[0] = atof(parts[11].c_str());
@@ -356,11 +357,8 @@ bool read_optic_surface(FILE *fp,
     }
 
     // Define optical properties
-    InteractionType interaction = InteractionType::REFLECTION;
     DistributionType dist = char_to_distribution(ErrorDistribution);
-    optics = OpticalProperties(interaction, dist, Transmissivity,
-                               Reflectivity, RMSSlope, RMSSpecularity,
-                               RefractionIndexReal, RefractionIndexImag);
+    optics = OpticalPropertiesFace(dist, Transmissivity, Reflectivity, RMSSlope, RMSSpecularity);
 
     if (refl_angles != 0)
         delete[] refl_angles;
@@ -375,7 +373,7 @@ bool read_optic_surface(FILE *fp,
 
 bool process_optics(
     FILE *fp,
-    std::map<std::string, std::array<OpticalProperties, 2>> &optics_map)
+    std::map<std::string, OpticalPropertySet> &optics_map)
 {
     char buf[1024];
 
@@ -394,13 +392,16 @@ bool process_optics(
         {
             // int iopt = st_add_optic(cxt, (const char*)(buf + 13));
             std::string optics_name = std::string(buf + 13);
-            OpticalProperties optics_front, optics_back;
+            OpticalPropertiesFace optics_front, optics_back;
+            double refrac_front, refrac_back;
             int OpticalSurfaceNumber = 0;
-            read_optic_surface(fp, optics_front, OpticalSurfaceNumber);
-            read_optic_surface(fp, optics_back, OpticalSurfaceNumber);
+            read_optic_surface(fp, optics_front, OpticalSurfaceNumber, refrac_front);
+            read_optic_surface(fp, optics_back, OpticalSurfaceNumber, refrac_back);
+            
+            OpticalPropertySet optics_set(optics_front, optics_back, InteractionType::REFLECTION, 
+                refrac_front, refrac_back, optics_name);
 
-            optics_map[optics_name][0] = optics_front;
-            optics_map[optics_name][1] = optics_back;
+            optics_map[optics_name] = optics_set;
         }
         else
             return false;
@@ -411,8 +412,9 @@ bool process_optics(
 
 bool read_element(
     FILE *fp,
-    std::map<std::string, std::array<OpticalProperties, 2>> &optics_map,
-    element_ptr &el)
+    std::map<std::string, OpticalPropertySet> &optics_map,
+    element_ptr &el,
+    SimulationData &sd)
 {
     char buf[1024];
     read_line(buf, 1023, fp);
@@ -479,6 +481,9 @@ bool read_element(
 
     // Create element
     el = make_element<SingleElement>();
+    
+    if (!enabled)
+        el->disable();
 
     // Make aperture
     ApertureType aperture_type = char_to_aperture(ShapeIndex);
@@ -539,14 +544,14 @@ bool read_element(
                                      zrot);
 
     // Set optical properties
-    OpticalProperties optics_front = optics_map[optics_name][0];
-    OpticalProperties optics_back = optics_map[optics_name][1];
-    el->set_front_optical_properties(optics_front);
-    el->set_back_optical_properties(optics_back);
+    OpticalPropertySet& optics_set = optics_map[optics_name];
+    optics_set.my_type = interaction;
 
-    // Set optical interaction type
-    el->get_front_optical_properties()->my_type = interaction;
-    el->get_back_optical_properties()->my_type = interaction;
+    // TODO: This adds a new optical property set for every element
+    // even if they are shared
+    // Need to add logic to account for interaction type if want to share
+    optics_id id = sd.add_optical_property_set(optics_set);
+    el->set_optical_property_set_id(id);
 
     return true;
 }
@@ -554,7 +559,7 @@ bool read_element(
 bool process_stages(
     FILE *fp,
     SimulationData &sd,
-    std::map<std::string, std::array<OpticalProperties, 2>> &optics_map)
+    std::map<std::string, OpticalPropertySet> &optics_map)
 {
     char buf[1024];
 
@@ -599,7 +604,7 @@ bool process_stages(
         for (int i_element = 0; i_element < count_element; i_element++)
         {
             element_ptr el;
-            read_element(fp, optics_map, el);
+            read_element(fp, optics_map, el, sd);
             el->set_name(std::to_string(i_element));
             // TODO make virtual if stage is virtual?
 
@@ -687,7 +692,7 @@ bool load_stinput_file(SimulationData &sd, std::string filename)
     process_sun(fp, sd);
 
     // Read in Optics
-    std::map<std::string, std::array<OpticalProperties, 2>> optics_map;
+    std::map<std::string, OpticalPropertySet> optics_map;
     process_optics(fp, optics_map);
 
     // Read in Stages
@@ -717,16 +722,7 @@ void write_json_file(SimulationData& sd, std::string filename)
     // Write parameters
     {
         json jpar;
-        SolTrace::Data::SimulationParameters sim_par = sd.get_simulation_parameters();
-        jpar["include_sun_shape_errors"] = sim_par.include_sun_shape_errors;   // bool
-        jpar["include_optical_errors"] = sim_par.include_optical_errors;       // bool
-        jpar["number_of_rays"] = sim_par.number_of_rays;                       // int
-        jpar["max_number_of_rays"] = sim_par.max_number_of_rays;               // int
-        jpar["tolerance"] = sim_par.tolerance;                                 // double
-        jpar["latitude"] = sim_par.latitude;                                   // double
-        jpar["longitude"] = sim_par.longitude;                                 // double
-        jpar["seed"] = sim_par.seed;                                           // int
-
+        sd.get_simulation_parameters().write_json(jpar);
         root["simulation_parameters"] = jpar;
     }
 

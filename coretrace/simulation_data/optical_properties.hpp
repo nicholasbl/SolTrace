@@ -18,6 +18,11 @@
 
 namespace SolTrace::Data
 {
+    using optics_id = std::int_fast64_t;
+    constexpr optics_id OPTICS_ID_UNASSIGNED = -2;
+    constexpr optics_id OPTICS_ID_VIRTUAL = -3;
+    class OpticalPropertySet;
+    using OpticalPropertySetContainer = Container<optics_id, OpticalPropertySet>;
 
     enum class InteractionType
     {
@@ -33,45 +38,34 @@ namespace SolTrace::Data
         {InteractionType::UNKNOWN, "UNKNOWN"}
     };
 
-    struct OpticalProperties
+    struct OpticalPropertiesFace
     {
-        InteractionType my_type;
         DistributionType error_distribution_type;
-        double transmitivity;
+        double transmissivity;
         double reflectivity;
         double slope_error;                 // [mrad]
         double specularity_error;           // [mrad]
-        double refraction_index_front;
-        double refraction_index_back;
 
-        OpticalProperties() : my_type(InteractionType::REFLECTION),
-                              error_distribution_type(DistributionType::UNKNOWN),
-                              transmitivity(0.0),
-                              reflectivity(0.0),
-                              slope_error(0.0),
-                              specularity_error(0.0),
-                              refraction_index_front(0.0),
-                              refraction_index_back(0.0)
+        OpticalPropertiesFace() : error_distribution_type(DistributionType::UNKNOWN),
+                                  transmissivity(0.0),
+                                  reflectivity(0.0),
+                                  slope_error(0.0),
+                                  specularity_error(0.0)
         {
         }
 
-        OpticalProperties(InteractionType itype,
-                          DistributionType dtype,
+        OpticalPropertiesFace(DistributionType dtype,
                           double trans, double refl,
-                          double slope_err, double spec_err,
-                          double ri_front, double ri_back)
-            : my_type(itype),
-              error_distribution_type(dtype),
-              transmitivity(trans),
+                          double slope_err, double spec_err)
+            : error_distribution_type(dtype),
+              transmissivity(trans),
               reflectivity(refl),
               slope_error(slope_err),
-              specularity_error(spec_err),
-              refraction_index_front(ri_front),
-              refraction_index_back(ri_back)
+              specularity_error(spec_err)
         {
         }
 
-        OpticalProperties(const nlohmann::ordered_json& jnode);
+        OpticalPropertiesFace(const nlohmann::ordered_json& jnode);
 
         // TODO: What should the error settings be with the below?
 
@@ -83,55 +77,103 @@ namespace SolTrace::Data
             return;
         }
 
+        // Warning: this does not check if set is REFLECTION type
         void set_ideal_absorption()
         {
             this->set_ideal_material();
-            this->my_type = InteractionType::REFLECTION;
-            this->transmitivity = 0.0;
+            this->transmissivity = 0.0;
             this->reflectivity = 0.0;
             return;
         }
+
+        // Warning: this does not check if set is REFLECTION type
         void set_ideal_reflection()
         {
             this->set_ideal_material();
-            this->my_type = InteractionType::REFLECTION;
-            this->transmitivity = 0.0;
+            this->transmissivity = 0.0;
             this->reflectivity = 1.0;
             return;
         }
+
+        void write_json(nlohmann::ordered_json& jnode) const;
+
+        friend std::ostream &operator<<(std::ostream &os,
+                                        const OpticalPropertiesFace& op);
+    };
+
+    struct OpticalPropertySet
+    {
+        OpticalPropertiesFace front;
+        OpticalPropertiesFace back;
+
+        InteractionType my_type;
+
+        double refraction_index_front;
+        double refraction_index_back;
+
+        std::string my_name;
+
+        OpticalPropertySet(OpticalPropertiesFace front_prop, OpticalPropertiesFace back_prop,
+            InteractionType interaction_type, double refrac_front, double refrac_back, 
+            std::string name = "")
+            : front(front_prop), back(back_prop),
+            my_type(interaction_type), refraction_index_front(refrac_front),
+            refraction_index_back(refrac_back),
+            my_name(name)
+        {
+        };
+
+        OpticalPropertySet()
+            : my_type(InteractionType::UNKNOWN),
+            refraction_index_front(0.0),
+            refraction_index_back(0.0),
+            my_name("")
+        {
+        };
+
+        OpticalPropertySet(const nlohmann::ordered_json& jnode);
+
         void set_ideal_transmission()
         {
-            this->set_ideal_material();
             this->my_type = InteractionType::REFRACTION;
-            this->transmitivity = 1.0;
-            this->reflectivity = 0.0;
+
+            this->front.set_ideal_material();
+            this->back.set_ideal_material();
+
+            this->front.transmissivity = 1.0;
+            this->front.reflectivity = 0.0;
+
+            this->back.transmissivity = 1.0;
+            this->back.reflectivity = 0.0;
+
             return;
         }
         void set_ideal_transmission(double refraction_index_front,
-                                    double refraction_index_back)
+            double refraction_index_back)
         {
             this->set_ideal_transmission();
             this->refraction_index_front = refraction_index_front;
             this->refraction_index_back = refraction_index_back;
             return;
         }
+        void set_ideal_one_sided_reflector()
+        {
+            this->my_type = InteractionType::REFLECTION;
+
+            this->front.set_ideal_material();
+            this->back.set_ideal_material();
+
+            this->front.reflectivity = 1.0;
+            this->front.transmissivity = 0.0;
+
+            this->back.reflectivity = 0.0;
+            this->back.transmissivity = 0.0;
+        }
 
         void write_json(nlohmann::ordered_json& jnode) const;
 
-        // OpticalProperties &operator=(const OpticalProperties &rhs)
-        // {
-        //     this->my_type = rhs.my_type;
-        //     this->transmitivity = rhs.transmitivity;
-        //     this->reflectivity = rhs.reflectivity;
-        //     this->slope_error = rhs.slope_error;
-        //     this->specularity_error = rhs.specularity_error;
-        //     this->refraction_index_front = rhs.refraction_index_front;
-        //     this->refraction_index_back = rhs.refraction_index_back;
-        //     return *this;
-        // }
-
-        friend std::ostream &operator<<(std::ostream &os,
-                                        const OpticalProperties &op);
+        friend std::ostream& operator<<(std::ostream& os,
+            const OpticalPropertySet& op);
     };
 
 } // namespace SolTrace::Data

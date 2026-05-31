@@ -2,6 +2,7 @@
 
 #include <native_runner.hpp>
 #include <native_runner_types.hpp>
+#include <optical_properties.hpp>
 #include <simulation_data.hpp>
 #include <sun.hpp>
 #include <utilities.hpp>
@@ -40,14 +41,14 @@ TEST(ParabolicDish, ArcLength)
 
 TEST(ParabolicDish, Build)
 {
-    OpticalProperties mirror;
-    mirror.set_ideal_reflection();
-
-    OpticalProperties absorber;
-    absorber.set_ideal_absorption();
+    //OpticalProperties mirror;
+    //mirror.set_ideal_reflection();
+    //
+    //OpticalProperties absorber;
+    //absorber.set_ideal_absorption();
 
     auto dish = SolTrace::Data::make_element<ParabolicDish>();
-    dish->set_optics(mirror, absorber);
+    //dish->set_optics(mirror, absorber);
     dish->set_origin(20.0, -20.0, 30.0);
     dish->set_aperture_size(10.0);
     dish->set_number_of_panels(2, 2);
@@ -57,7 +58,7 @@ TEST(ParabolicDish, Build)
     dish->create_geometry();
 
     dish = SolTrace::Data::make_element<ParabolicDish>();
-    dish->set_optics(mirror, absorber);
+    //dish->set_optics(mirror, absorber);
     dish->set_origin(20.0, -20.0, 30.0);
     dish->set_aperture_size(10.0);
     dish->set_number_of_panels(1, 1);
@@ -86,18 +87,38 @@ TEST(ParabolicDish, Tracing)
     my_runner.disable_power_tower();
     my_runner.disable_point_focus();
 
-    OpticalProperties mirror;
-    mirror.set_ideal_reflection();
-    mirror.slope_error = 1.5;
-    mirror.specularity_error = 0.5;
+    SolTrace::Data::OpticalPropertiesFace mirror_front;
+    mirror_front.set_ideal_reflection();
+    mirror_front.slope_error = 1.5;
+    mirror_front.specularity_error = 0.5;
 
-    OpticalProperties absorber;
-    absorber.set_ideal_absorption();
-    absorber.slope_error = 1e-5;
-    absorber.specularity_error = 1e-5;
+    SolTrace::Data::OpticalPropertiesFace mirror_back;
+    mirror_back.set_ideal_absorption();
+    mirror_back.slope_error = 1e-5;
+    mirror_back.specularity_error = 1e-5;
+
+    auto mirror_optics = SolTrace::Data::OpticalPropertySet(
+        mirror_front,
+        mirror_back,
+        SolTrace::Data::InteractionType::REFLECTION,
+        0.0,
+        0.0,
+        "Mirror");
+    SolTrace::Data::optics_id mirror_opt_id = my_sim.add_optical_property_set(mirror_optics);
+
+    auto absorber_optics = SolTrace::Data::OpticalPropertySet();
+    absorber_optics.front.set_ideal_absorption();
+    absorber_optics.back.set_ideal_absorption();
+    absorber_optics.front.slope_error = 1e-5;
+    absorber_optics.front.specularity_error = 1e-5;
+    absorber_optics.back.slope_error = 1e-5;
+    absorber_optics.back.specularity_error = 1e-5;
+    absorber_optics.my_type = SolTrace::Data::InteractionType::REFLECTION;
+    absorber_optics.my_name = "Absorber";
+    SolTrace::Data::optics_id abs_opt_id = my_sim.add_optical_property_set(absorber_optics);
 
     auto dish = SolTrace::Data::make_element<ParabolicDish>();
-    dish->set_optics(mirror, absorber);
+    dish->set_optics(mirror_opt_id, abs_opt_id);
     dish->set_origin(2.0, -2.0, 0.0);
     dish->set_aperture_size(10.0);
     dish->set_number_of_panels(2, 2);
@@ -187,18 +208,38 @@ TEST(ParabolicDish, UpdateGeometry)
     my_runner.disable_power_tower();
     my_runner.disable_point_focus();
 
-    OpticalProperties mirror;
-    mirror.set_ideal_reflection();
-    mirror.slope_error = 1.5;
-    mirror.specularity_error = 0.5;
+    SolTrace::Data::OpticalPropertiesFace mirror_front;
+    mirror_front.set_ideal_reflection();
+    mirror_front.slope_error = 1.5;
+    mirror_front.specularity_error = 0.5;
 
-    OpticalProperties absorber;
-    absorber.set_ideal_absorption();
-    absorber.slope_error = 1e-5;
-    absorber.specularity_error = 1e-5;
+    SolTrace::Data::OpticalPropertiesFace mirror_back;
+    mirror_back.set_ideal_absorption();
+    mirror_back.slope_error = 1e-5;
+    mirror_back.specularity_error = 1e-5;
+
+    auto mirror_optics = SolTrace::Data::OpticalPropertySet(
+        mirror_front,
+        mirror_back,
+        SolTrace::Data::InteractionType::REFLECTION,
+        0.0,
+        0.0,
+        "Mirror");
+    SolTrace::Data::optics_id mirror_opt_id = my_sim.add_optical_property_set(mirror_optics);
+
+    auto absorber_optics = SolTrace::Data::OpticalPropertySet();
+    absorber_optics.front.set_ideal_absorption();
+    absorber_optics.back.set_ideal_absorption();
+    absorber_optics.front.slope_error = 1e-5;
+    absorber_optics.front.specularity_error = 1e-5;
+    absorber_optics.back.slope_error = 1e-5;
+    absorber_optics.back.specularity_error = 1e-5;
+    absorber_optics.my_type = SolTrace::Data::InteractionType::REFLECTION;
+    absorber_optics.my_name = "Absorber";
+    SolTrace::Data::optics_id abs_opt_id = my_sim.add_optical_property_set(absorber_optics);
 
     auto dish = SolTrace::Data::make_element<ParabolicDish>();
-    dish->set_optics(mirror, absorber);
+    dish->set_optics(mirror_opt_id, abs_opt_id);
     dish->set_origin(10.0, 2.0, 0.0);
     dish->set_aperture_size(10.0);
     dish->set_number_of_panels(2, 2);

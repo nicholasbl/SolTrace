@@ -12,7 +12,7 @@ TEST(OpticalProperties, OutputOperator)
 {
     std::stringstream ss;
 
-    OpticalProperties op;
+    OpticalPropertiesFace op;
     op.set_ideal_reflection();
     ss << op;
     EXPECT_GE(ss.str().length(), 0);
@@ -87,29 +87,6 @@ TEST(Element, SingleElementAccessors)
     auto rsp = std::dynamic_pointer_cast<SolTrace::Data::Cone>(ref.get_surface());
     EXPECT_NE(rsp, nullptr);
     EXPECT_EQ(rsp->half_angle, HA);
-
-    auto opf = ref.get_front_optical_properties();
-    auto opb = ref.get_back_optical_properties();
-    EXPECT_EQ(opf->transmitivity, opb->transmitivity);
-    EXPECT_EQ(opf->reflectivity, opb->reflectivity);
-    EXPECT_EQ(opf->slope_error, opb->slope_error);
-    EXPECT_EQ(opf->specularity_error, opb->specularity_error);
-
-    OpticalProperties op(InteractionType::REFLECTION,
-                         DistributionType::GAUSSIAN,
-                         0.75, 0.25, 0.1, 0.001, 1.0, 1.0);
-    ref.set_front_optical_properties(op);
-    // EXPECT_EQ(*opf, op);
-    EXPECT_EQ(opf->transmitivity, op.transmitivity);
-    EXPECT_EQ(opf->reflectivity, op.reflectivity);
-    EXPECT_EQ(opf->slope_error, op.slope_error);
-    EXPECT_EQ(opf->specularity_error, op.specularity_error);
-
-    ref.set_back_optical_properties(op);
-    EXPECT_EQ(opb->transmitivity, op.transmitivity);
-    EXPECT_EQ(opb->reflectivity, op.reflectivity);
-    EXPECT_EQ(opb->slope_error, op.slope_error);
-    EXPECT_EQ(opb->specularity_error, op.specularity_error);
 }
 
 TEST(Element, VirtualElement)
@@ -140,23 +117,6 @@ TEST(Element, VirtualElement)
     EXPECT_TRUE(ve.is_virtual());
     EXPECT_TRUE(ve.is_single());
     EXPECT_FALSE(ve.is_composite());
-
-    // These functions should have no effects
-    OpticalProperties op(InteractionType::REFLECTION,
-                         DistributionType::GAUSSIAN,
-                         0.75, 0.25, 0.1, 0.001, 1.0, 1.0);
-    ve.set_front_optical_properties(op);
-    auto opf = ve.get_front_optical_properties();
-    EXPECT_EQ(opf->reflectivity, 0.0);
-    EXPECT_EQ(opf->slope_error, 0.0);
-    EXPECT_EQ(opf->specularity_error, 0.0);
-    EXPECT_EQ(opf->transmitivity, 1.0);
-    ve.set_back_optical_properties(op);
-    auto opb = ve.get_back_optical_properties();
-    EXPECT_EQ(opb->reflectivity, 0.0);
-    EXPECT_EQ(opb->slope_error, 0.0);
-    EXPECT_EQ(opb->specularity_error, 0.0);
-    EXPECT_EQ(opb->transmitivity, 1.0);
 
     return;
 }
@@ -196,20 +156,14 @@ TEST(Element, CompositeElementAccessors)
     // Things that should be empty...
     EXPECT_EQ(cmp->get_aperture(), nullptr);
     EXPECT_EQ(cmp->get_surface(), nullptr);
-    EXPECT_EQ(cmp->get_front_optical_properties(), nullptr);
-    EXPECT_EQ(cmp->get_back_optical_properties(), nullptr);
+    EXPECT_EQ(cmp->get_optical_property_set_id(), SolTrace::Data::OPTICS_ID_UNASSIGNED);
     const aperture_ptr ap = cmp->get_aperture();
     EXPECT_EQ(ap, nullptr);
     const surface_ptr sp = cmp->get_surface();
     EXPECT_EQ(sp, nullptr);
-    const OpticalProperties *op = cmp->get_back_optical_properties();
-    EXPECT_EQ(op, nullptr);
-    op = cmp->get_front_optical_properties();
-    EXPECT_EQ(op, nullptr);
 
     // These should do nothing...
-    cmp->set_front_optical_properties(OpticalProperties());
-    cmp->set_back_optical_properties(OpticalProperties());
+    EXPECT_DEBUG_DEATH(cmp->set_optical_property_set_id(-1), "CompositeElement does not support optical property sets");
 
     // Add/remove/change elements
     const int NUM_ELEMENTS = 4;
@@ -880,11 +834,13 @@ TEST(Element, SingleElementEnforceUserFieldsSet)
     EXPECT_NO_THROW(elem->enforce_user_fields_set());
 
     // Test with optical properties set as well
-    OpticalProperties op(InteractionType::REFLECTION,
-                         DistributionType::GAUSSIAN,
-                         0.75, 0.25, 0.1, 0.001, 1.0, 1.0);
-    elem->set_front_optical_properties(op);
-    elem->set_back_optical_properties(op);
+    OpticalPropertiesFace opt_face(DistributionType::GAUSSIAN,
+        0.75, 0.25, 0.1, 0.001);
+    OpticalPropertySet opt_set(opt_face, opt_face, InteractionType::REFLECTION,
+        1, 1);
+    SimulationData sd;
+    optics_id id = sd.add_optical_property_set(opt_set);
+    elem->set_optical_property_set_id(id);
 
     // Should still not throw
     EXPECT_NO_THROW(elem->enforce_user_fields_set());

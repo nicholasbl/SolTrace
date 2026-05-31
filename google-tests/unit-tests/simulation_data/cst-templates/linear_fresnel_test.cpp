@@ -2,6 +2,7 @@
 
 #include <native_runner.hpp>
 #include <native_runner_types.hpp>
+#include <optical_properties.hpp>
 #include <simulation_data.hpp>
 #include <simulation_result_export.hpp>
 #include <sun.hpp>
@@ -149,24 +150,42 @@ TEST(LinearFresnel, ErrorChecking_CreateGeometryWithoutParameters)
 
 TEST(LinearFresnel, Build)
 {
-    OpticalProperties mirror;
-    mirror.set_ideal_reflection();
+    SimulationData my_sim;
 
-    OpticalProperties absorber;
-    absorber.set_ideal_absorption();
+    SolTrace::Data::OpticalPropertiesFace mirror_front;
+    mirror_front.set_ideal_reflection();
 
-    OpticalProperties envelop_out;
-    envelop_out.set_ideal_transmission();
-    envelop_out.refraction_index_front = 1.46;
-    envelop_out.refraction_index_back = 1.0;
+    SolTrace::Data::OpticalPropertiesFace mirror_back;
+    mirror_back.set_ideal_absorption();
 
-    OpticalProperties envelop_in;
-    envelop_in.set_ideal_transmission();
-    envelop_in.refraction_index_front = 1.0;
-    envelop_in.refraction_index_back = 1.46;
+    auto mirror_optics = SolTrace::Data::OpticalPropertySet(
+        mirror_front,
+        mirror_back,
+        SolTrace::Data::InteractionType::REFLECTION,
+        0.0,
+        0.0,
+        "Mirror");
+    SolTrace::Data::optics_id mirror_opt_id = my_sim.add_optical_property_set(mirror_optics);
+
+    auto absorber_optics = SolTrace::Data::OpticalPropertySet();
+    absorber_optics.front.set_ideal_absorption();
+    absorber_optics.back.set_ideal_absorption();
+    absorber_optics.my_type = SolTrace::Data::InteractionType::REFLECTION;
+    absorber_optics.my_name = "Absorber";
+    SolTrace::Data::optics_id abs_opt_id = my_sim.add_optical_property_set(absorber_optics);
+
+    auto envelop_outer_optics = SolTrace::Data::OpticalPropertySet();
+    envelop_outer_optics.set_ideal_transmission(1.46, 1.0);
+    envelop_outer_optics.my_name = "EnvelopeOuter";
+    SolTrace::Data::optics_id env_out_opt_id = my_sim.add_optical_property_set(envelop_outer_optics);
+
+    auto envelop_inner_optics = SolTrace::Data::OpticalPropertySet();
+    envelop_inner_optics.set_ideal_transmission(1.0, 1.46);
+    envelop_inner_optics.my_name = "EnvelopeInner";
+    SolTrace::Data::optics_id env_in_opt_id = my_sim.add_optical_property_set(envelop_inner_optics);
 
     auto lf = SolTrace::Data::make_element<LinearFresnel>();
-    lf->set_optics(mirror, absorber, envelop_out, envelop_in);
+    lf->set_optics(mirror_opt_id, abs_opt_id, env_out_opt_id, env_in_opt_id);
     lf->set_origin(10.0, -10.0, 0.0);
     lf->set_aperture_size(6.0, 12.0);
     lf->set_number_panels(10, 4);
@@ -178,7 +197,7 @@ TEST(LinearFresnel, Build)
     lf->create_geometry();
 
     lf = SolTrace::Data::make_element<LinearFresnel>();
-    lf->set_optics(mirror, absorber, envelop_out, envelop_in);
+    lf->set_optics(mirror_opt_id, abs_opt_id, env_out_opt_id, env_in_opt_id);
     lf->set_origin(10.0, -10.0, 0.0);
     lf->set_aperture_size(6.0, 12.0);
     lf->set_number_panels(1, 1);
@@ -210,34 +229,56 @@ TEST(LinearFresnel, Tracing)
     my_runner.disable_power_tower();
     my_runner.disable_point_focus();
 
-    OpticalProperties mirror;
-    mirror.set_ideal_reflection();
-    mirror.slope_error = 1.5;
-    mirror.specularity_error = 0.5;
+    SolTrace::Data::OpticalPropertiesFace mirror_front;
+    mirror_front.set_ideal_reflection();
+    mirror_front.slope_error = 1.5;
+    mirror_front.specularity_error = 0.5;
 
-    OpticalProperties absorber;
-    absorber.set_ideal_absorption();
-    absorber.slope_error = 1e-5;
-    absorber.specularity_error = 1e-5;
+    SolTrace::Data::OpticalPropertiesFace mirror_back;
+    mirror_back.set_ideal_absorption();
+    mirror_back.slope_error = 1e-5;
+    mirror_back.specularity_error = 1e-5;
 
-    OpticalProperties envelop_out;
-    envelop_out.set_ideal_transmission();
-    // envelop_out.refraction_index_front = 1.46;
-    envelop_out.refraction_index_front = 1.0;
-    envelop_out.refraction_index_back = 1.0;
-    envelop_out.slope_error = 1e-4;
-    envelop_out.specularity_error = 1e-4;
+    auto mirror_optics = SolTrace::Data::OpticalPropertySet(
+        mirror_front,
+        mirror_back,
+        SolTrace::Data::InteractionType::REFLECTION,
+        0.0,
+        0.0,
+        "Mirror");
+    SolTrace::Data::optics_id mirror_opt_id = my_sim.add_optical_property_set(mirror_optics);
 
-    OpticalProperties envelop_in;
-    envelop_in.set_ideal_transmission();
-    envelop_in.refraction_index_front = 1.0;
-    // envelop_in.refraction_index_back = 1.46;
-    envelop_in.refraction_index_back = 1.0;
-    envelop_in.slope_error = 1e-4;
-    envelop_in.specularity_error = 1e-4;
+    auto absorber_optics = SolTrace::Data::OpticalPropertySet();
+    absorber_optics.front.set_ideal_absorption();
+    absorber_optics.back.set_ideal_absorption();
+    absorber_optics.front.slope_error = 1e-5;
+    absorber_optics.front.specularity_error = 1e-5;
+    absorber_optics.back.slope_error = 1e-5;
+    absorber_optics.back.specularity_error = 1e-5;
+    absorber_optics.my_type = SolTrace::Data::InteractionType::REFLECTION;
+    absorber_optics.my_name = "Absorber";
+    SolTrace::Data::optics_id abs_opt_id = my_sim.add_optical_property_set(absorber_optics);
+
+    auto envelop_outer_optics = SolTrace::Data::OpticalPropertySet();
+    envelop_outer_optics.set_ideal_transmission(1.0, 1.0);
+    envelop_outer_optics.front.slope_error = 1e-4;
+    envelop_outer_optics.front.specularity_error = 1e-4;
+    envelop_outer_optics.back.slope_error = 1e-4;
+    envelop_outer_optics.back.specularity_error = 1e-4;
+    envelop_outer_optics.my_name = "EnvelopeOuter";
+    SolTrace::Data::optics_id env_out_opt_id = my_sim.add_optical_property_set(envelop_outer_optics);
+
+    auto envelop_inner_optics = SolTrace::Data::OpticalPropertySet();
+    envelop_inner_optics.set_ideal_transmission(1.0, 1.0);
+    envelop_inner_optics.front.slope_error = 1e-4;
+    envelop_inner_optics.front.specularity_error = 1e-4;
+    envelop_inner_optics.back.slope_error = 1e-4;
+    envelop_inner_optics.back.specularity_error = 1e-4;
+    envelop_inner_optics.my_name = "EnvelopeInner";
+    SolTrace::Data::optics_id env_in_opt_id = my_sim.add_optical_property_set(envelop_inner_optics);
 
     auto lf = SolTrace::Data::make_element<LinearFresnel>();
-    lf->set_optics(mirror, absorber, envelop_out, envelop_in);
+    lf->set_optics(mirror_opt_id, abs_opt_id, env_out_opt_id, env_in_opt_id);
     lf->set_origin(0.0, 0.0, 0.0);
     lf->set_aperture_size(6.0, 12.0);
     lf->set_number_panels(2, 2);
@@ -358,29 +399,53 @@ TEST(LinearFresnel, UpdateGeometry)
     my_runner.disable_power_tower();
     my_runner.disable_point_focus();
 
-    OpticalProperties mirror;
-    mirror.set_ideal_reflection();
-    mirror.slope_error = 1.5;
-    mirror.specularity_error = 0.5;
+    SolTrace::Data::OpticalPropertiesFace mirror_front;
+    mirror_front.set_ideal_reflection();
+    mirror_front.slope_error = 1.5;
+    mirror_front.specularity_error = 0.5;
 
-    OpticalProperties absorber;
-    absorber.set_ideal_absorption();
-    absorber.slope_error = 1e-5;
-    absorber.specularity_error = 1e-5;
+    SolTrace::Data::OpticalPropertiesFace mirror_back;
+    mirror_back.set_ideal_absorption();
+    mirror_back.slope_error = 1e-5;
+    mirror_back.specularity_error = 1e-5;
 
-    OpticalProperties envelop_out;
-    envelop_out.set_ideal_transmission();
-    envelop_out.refraction_index_front = 1.46;
-    envelop_out.refraction_index_back = 1.0;
-    envelop_out.slope_error = 1e-4;
-    envelop_out.specularity_error = 1e-4;
+    auto mirror_optics = SolTrace::Data::OpticalPropertySet(
+        mirror_front,
+        mirror_back,
+        SolTrace::Data::InteractionType::REFLECTION,
+        0.0,
+        0.0,
+        "Mirror");
+    SolTrace::Data::optics_id mirror_opt_id = my_sim.add_optical_property_set(mirror_optics);
 
-    OpticalProperties envelop_in;
-    envelop_in.set_ideal_transmission();
-    envelop_in.refraction_index_front = 1.0;
-    envelop_in.refraction_index_back = 1.46;
-    envelop_in.slope_error = 1e-4;
-    envelop_in.specularity_error = 1e-4;
+    auto absorber_optics = SolTrace::Data::OpticalPropertySet();
+    absorber_optics.front.set_ideal_absorption();
+    absorber_optics.back.set_ideal_absorption();
+    absorber_optics.front.slope_error = 1e-5;
+    absorber_optics.front.specularity_error = 1e-5;
+    absorber_optics.back.slope_error = 1e-5;
+    absorber_optics.back.specularity_error = 1e-5;
+    absorber_optics.my_type = SolTrace::Data::InteractionType::REFLECTION;
+    absorber_optics.my_name = "Absorber";
+    SolTrace::Data::optics_id abs_opt_id = my_sim.add_optical_property_set(absorber_optics);
+
+    auto envelop_outer_optics = SolTrace::Data::OpticalPropertySet();
+    envelop_outer_optics.set_ideal_transmission(1.46, 1.0);
+    envelop_outer_optics.front.slope_error = 1e-4;
+    envelop_outer_optics.front.specularity_error = 1e-4;
+    envelop_outer_optics.back.slope_error = 1e-4;
+    envelop_outer_optics.back.specularity_error = 1e-4;
+    envelop_outer_optics.my_name = "EnvelopeOuter";
+    SolTrace::Data::optics_id env_out_opt_id = my_sim.add_optical_property_set(envelop_outer_optics);
+
+    auto envelop_inner_optics = SolTrace::Data::OpticalPropertySet();
+    envelop_inner_optics.set_ideal_transmission(1.0, 1.46);
+    envelop_inner_optics.front.slope_error = 1e-4;
+    envelop_inner_optics.front.specularity_error = 1e-4;
+    envelop_inner_optics.back.slope_error = 1e-4;
+    envelop_inner_optics.back.specularity_error = 1e-4;
+    envelop_inner_optics.my_name = "EnvelopeInner";
+    SolTrace::Data::optics_id env_in_opt_id = my_sim.add_optical_property_set(envelop_inner_optics);
 
     auto sun = SolTrace::Data::make_ray_source<Sun>();
     glm::dvec3 sun_pos;
@@ -391,7 +456,7 @@ TEST(LinearFresnel, UpdateGeometry)
     my_sim.add_ray_source(sun);
 
     auto lf = SolTrace::Data::make_element<LinearFresnel>();
-    lf->set_optics(mirror, absorber, envelop_out, envelop_in);
+    lf->set_optics(mirror_opt_id, abs_opt_id, env_out_opt_id, env_in_opt_id);
     lf->set_origin(10.0, 0.0, 0.0);
     // lf->set_origin(0.0, 0.0, 0.0);
     lf->set_aperture_size(6.0, 12.0);

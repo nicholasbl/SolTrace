@@ -3,22 +3,11 @@
 
 namespace SolTrace::Data {
 
-void VirtualElement::set_virtual_optics(OpticalProperties &op)
-{
-    op.my_type = InteractionType::REFRACTION;
-    op.reflectivity = 0.0;
-    op.slope_error = 0.0;
-    op.specularity_error = 0.0;
-    op.transmitivity = 1.0;
-    op.refraction_index_front = 1.0;
-    op.refraction_index_back = 1.0;
-    return;
-}
 
-VirtualElement::VirtualElement() : SingleElement()
+VirtualElement::VirtualElement() 
+    : SingleElement()
 {
-    set_virtual_optics(this->optics_front);
-    set_virtual_optics(this->optics_back);
+    this->opt_id = OPTICS_ID_VIRTUAL;
 }
 
 VirtualElement::~VirtualElement()

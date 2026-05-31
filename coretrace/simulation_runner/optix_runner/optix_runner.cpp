@@ -2,6 +2,7 @@
 #include "simulation_data/simulation_data_export.hpp"
 
 #include <iostream>
+#include <optical_properties.hpp>
 #include <sstream>
 #include <stdexcept>
 
@@ -9,6 +10,8 @@ using SolTrace::Runner::RunnerStatus;
 using SolTrace::Runner::SimulationRunner;
 
 using SolTrace::Result::SimulationResult;
+
+using SolTrace::Data::optics_id;
 
 OptixRunner::OptixRunner() : SimulationRunner(),
                              m_simdata(nullptr),
@@ -188,15 +191,15 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             optix_el->set_id(static_cast<int32_t>(id));
 
             // Add optical properties
-            OpticalProperties *opt_front = el->get_front_optical_properties();
-            OptixCSP::OpticalDistribution od = this->to_optical_distribution(opt_front->error_distribution_type);
-            optix_el->set_optics_front(opt_front->my_type == InteractionType::REFRACTION, opt_front->reflectivity,
-                                       opt_front->transmitivity, opt_front->slope_error, opt_front->specularity_error, od);
+            optics_id opt_id = el->get_optical_property_set_id();
+            auto opt_set = data->get_optical_property_set(opt_id);
+            OptixCSP::OpticalDistribution od_front = this->to_optical_distribution(opt_set->front.error_distribution_type);
+            optix_el->set_optics_front(opt_set->my_type == InteractionType::REFRACTION, opt_set->front.reflectivity,
+                opt_set->front.transmissivity, opt_set->front.slope_error, opt_set->front.specularity_error, od_front);
 
-            OpticalProperties *opt_back = el->get_back_optical_properties();
-            od = this->to_optical_distribution(opt_back->error_distribution_type);
-            optix_el->set_optics_back(opt_back->my_type == InteractionType::REFRACTION, opt_back->reflectivity,
-                                      opt_back->transmitivity, opt_back->slope_error, opt_back->specularity_error, od);
+            OptixCSP::OpticalDistribution od_back = this->to_optical_distribution(opt_set->back.error_distribution_type);
+            optix_el->set_optics_back(opt_set->my_type == InteractionType::REFRACTION, opt_set->back.reflectivity,
+                opt_set->back.transmissivity, opt_set->back.slope_error, opt_set->back.specularity_error, od_back);
 
             if (m_sys.is_verbose())
             {

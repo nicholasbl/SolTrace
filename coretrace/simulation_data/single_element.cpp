@@ -13,19 +13,15 @@ namespace SolTrace::Data {
 SingleElement::SingleElement() : ElementBase(),
                                  aperture(nullptr),
                                  surface(nullptr),
-                                 optics_front(),
-                                 optics_back()
+                                 opt_id(OPTICS_ID_UNASSIGNED)
 {
-    this->optics_front.set_ideal_absorption();
-    this->optics_back.set_ideal_absorption();
     return;
 }
 
 SingleElement::SingleElement(const nlohmann::ordered_json& jnode) : ElementBase(jnode),
                                                                     aperture(nullptr),
                                                                     surface(nullptr),
-                                                                    optics_front(),
-                                                                    optics_back()
+                                                                    opt_id(OPTICS_ID_UNASSIGNED)
 {
     this->set_aperture(Aperture::make_aperture_from_json(jnode.at("aperture")));
     this->set_surface(make_surface_from_json(jnode.at("surface")));

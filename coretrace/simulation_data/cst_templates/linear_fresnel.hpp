@@ -35,10 +35,10 @@ public:
     void set_focused_panels(bool focused);
     void set_gaps(double gap_x, double gap_y, double gap_center);
     void set_number_panels(int_fast64_t num_x, int_fast64_t num_y);
-    void set_optics(const OpticalProperties &mirror,
-                    const OpticalProperties &absorber,
-                    const OpticalProperties &envelop_outer,
-                    const OpticalProperties &envelop_inner);
+    void set_optics(const optics_id mirror,
+                    const optics_id absorber,
+                    const optics_id envelop_outer,
+                    const optics_id envelop_inner);
     void set_receiver_height(double height);
     void set_receiver_dimensions(double absorber_diameter,
                                  double envelop_diameter,
@@ -90,16 +90,16 @@ private:
     double gap_x;
     double gap_y;
     double gap_center;
-    OpticalProperties optics_mirror;
+    optics_id optics_mirror;
 
     // Receiver Characteristics
     double abs_diameter;
     double env_diameter;
     double env_thickness;
     // double receiver_length;
-    OpticalProperties optics_absorber;
-    OpticalProperties optics_env_out;
-    OpticalProperties optics_env_in;
+    optics_id optics_absorber;
+    optics_id optics_env_out;
+    optics_id optics_env_in;
 
     // Solar Tracking
     // double tracking_angle;

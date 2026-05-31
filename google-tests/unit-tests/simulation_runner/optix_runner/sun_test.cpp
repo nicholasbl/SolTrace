@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <optix_runner.hpp>
+#include <optical_properties.hpp>
 #include <simulation_data.hpp>
 #include <simulation_data_export.hpp>
 #include <simulation_result_export.hpp>
@@ -9,6 +10,8 @@
 #include <functional>
 
 using SolTrace::Runner::RunnerStatus;
+using SolTrace::Data::OpticalPropertiesFace;
+using SolTrace::Data::OpticalPropertySet;
 
 namespace
 {
@@ -329,10 +332,14 @@ namespace
         double spec_err = 0;
         double ri_front = 0;   // Refraction not supported
         double ri_back = 0;
-        OpticalProperties plate_optics(itype, dtype, transmissivity,
-            reflectivity, slope_err, spec_err, ri_front, ri_back);
-        plate->set_front_optical_properties(plate_optics);
-        plate->set_back_optical_properties(plate_optics);
+
+        OpticalPropertiesFace plate_optics_face(dtype, transmissivity,
+            reflectivity, slope_err, spec_err);
+        OpticalPropertySet plate_optics(plate_optics_face, plate_optics_face,
+            itype, ri_front, ri_back, "PlateOptics");
+        auto optics_id = sd.add_optical_property_set(plate_optics);
+        plate->set_optical_property_set_id(optics_id);
+
         plate->set_name("plate");
 
         // Add element to stage

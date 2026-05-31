@@ -16,10 +16,10 @@ namespace SolTrace::NativeRunner
                                     int_fast64_t stage,
                                     unsigned thread_id,
                                     MTRand &myrng,
-                                    const OpticalProperties *optics,
+                                    const OpticalPropertySet *optics,
                                     const glm::dvec3 &LastDFXYZ,
                                     const glm::dvec3 &LastCosRaySurfElement,
-                                    // bool LastHitBackSide,
+                                    bool LastHitBackSide,
                                     RayEvent &rev)
     {
         bool good = true;
@@ -28,6 +28,9 @@ namespace SolTrace::NativeRunner
         double TestValue;
         auto UnitLastDFXYZ = glm::dvec3{0.0};
         double IncidentAngle = 0;
+
+        const OpticalPropertiesFace& optics_face = LastHitBackSide == false ? optics->front : optics->back;
+
         // TODO: Implement tables...
         switch (optics->my_type)
         {
@@ -61,7 +64,7 @@ namespace SolTrace::NativeRunner
             //     TestValue = optics->transmitivity;
             //     rev = RayEvent::TRANSMIT;
             // }
-            TestValue = optics->transmitivity;
+            TestValue = optics_face.transmissivity;
             rev = RayEvent::TRANSMIT;
             break;
         case InteractionType::REFLECTION:
@@ -93,7 +96,7 @@ namespace SolTrace::NativeRunner
             //     TestValue = optics->reflectivity;
             //     rev = RayEvent::REFLECT;
             // }
-            TestValue = optics->reflectivity;
+            TestValue = optics_face.reflectivity;
             rev = RayEvent::REFLECT;
             break;
         default:

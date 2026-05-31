@@ -42,8 +42,14 @@ namespace
         mirror->set_reference_frame_geometry(glm::dvec3(0.0, 0.0, 0.0),
             glm::dvec3(0.0, 0.0, 1.0),
             0.0);
-        mirror->get_front_optical_properties()->set_ideal_reflection();
-        mirror->get_back_optical_properties()->set_ideal_reflection();
+
+        OpticalPropertySet mirror_optics_set;
+        mirror_optics_set.front.set_ideal_reflection();
+        mirror_optics_set.back.set_ideal_reflection();
+        mirror_optics_set.my_type = InteractionType::REFLECTION;
+        optics_id id = sd.add_optical_property_set(mirror_optics_set);
+        mirror->set_optical_property_set_id(id);
+
         stage->add_element(mirror);
 
         sd.add_stage(stage);

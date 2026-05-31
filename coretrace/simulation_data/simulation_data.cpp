@@ -9,8 +9,10 @@ namespace SolTrace::Data {
 
 SimulationData::SimulationData() : number_of_elements(0),
                                    my_elements(1),
-                                   my_sources(0)
+                                   my_sources(0),
+                                   my_optical_property_sets(0)
 {
+    initialize_builtin_optical_property_sets();
     return;
 }
 
@@ -232,6 +234,50 @@ uint_fast64_t SimulationData::remove_subelements(element_ptr el)
     return retval;
 }
 
+optics_id SimulationData::add_optical_property_set(const OpticalPropertySet& opt_set)
+{
+    std::shared_ptr<OpticalPropertySet> ptr = std::make_shared<OpticalPropertySet>(opt_set);
+    return this->my_optical_property_sets.add_item(ptr);
+}
+
+const OpticalPropertySet* SimulationData::get_optical_property_set(optics_id id) const
+{
+    auto ptr = this->my_optical_property_sets.get_item(id);
+    return ptr == nullptr ? nullptr : ptr.get();
+}
+
+OpticalPropertySet* SimulationData::get_optical_property_set(optics_id id)
+{
+    auto ptr = this->my_optical_property_sets.get_item(id);
+    return ptr == nullptr ? nullptr : ptr.get();
+}
+
+OpticalPropertySet* SimulationData::get_optical_property_set(const Element& el)
+{
+    return this->get_optical_property_set(el.get_optical_property_set_id());
+}
+
+void SimulationData::initialize_builtin_optical_property_sets()
+{
+    if (this->my_optical_property_sets.get_number_of_items() > 0)
+    {
+        throw std::logic_error(
+            "initialize_builtin_optical_property_sets requires an empty optics registry");
+    }
+     
+    // Add permanent optical property sets to collection
+    OpticalPropertiesFace virtual_face(DistributionType::NONE, 1, 0, 0, 0);
+    OpticalPropertySet virtual_set(virtual_face, virtual_face, InteractionType::REFRACTION, 1.0, 1.0, "VirtualProp");
+    
+    std::shared_ptr<OpticalPropertySet> virtual_ptr = std::make_shared<OpticalPropertySet>(virtual_set);
+    bool flag = this->my_optical_property_sets.insert_item(OPTICS_ID_VIRTUAL, virtual_ptr);
+    if (!flag)
+    {
+        throw std::logic_error("Error initializing built in optical properties");
+    }
+
+}
+
 int SimulationData::update_simulation_positions()
 {
     int sts = 0;
@@ -282,6 +328,9 @@ void SimulationData::clear(bool reset_parameters)
     this->my_elements.clear();
     this->my_sources.clear();
     this->number_of_elements = 0;
+
+    this->my_optical_property_sets.reset(0);
+    this->initialize_builtin_optical_property_sets();   // Add back in built in optical property sets
 
     if (reset_parameters)
         this->my_parameters = SimulationParameters();   // Reset

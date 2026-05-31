@@ -140,15 +140,6 @@ namespace SolTrace::NativeRunner
 		uint_fast64_t newton_max_iters;
 	};
 
-	struct TOpticalPropertySet
-	{
-		std::string Name;
-		// TOpticalProperties Front;
-		// TOpticalProperties Back;
-		SolTrace::Data::OpticalProperties Front;
-		SolTrace::Data::OpticalProperties Back;
-	};
-
 	// Forward declaration so TElement can have a stage pointer
 	struct TStage;
 	using tstage_ptr = typename std::shared_ptr<TStage>;
@@ -186,7 +177,7 @@ namespace SolTrace::NativeRunner
 		// double CurvOfRev;
 
 		/////////// OPTICAL PARAMETERS ///////////////
-		TOpticalPropertySet Optics;
+		SolTrace::Data::OpticalPropertySet Optics;
 
 		std::string Comment;
 		// mjw element number in the stage - unique ID in order
@@ -199,7 +190,8 @@ namespace SolTrace::NativeRunner
 	using telement_ptr = typename std::shared_ptr<TElement>;
 	telement_ptr make_telement(SolTrace::Data::element_ptr el,
 							   tstage_ptr my_stage,
-							   const ElementParameters &eparams);
+							   const ElementParameters &eparams,
+							   const SolTrace::Data::OpticalPropertySet& optics);
 
 	struct TSun
 	{

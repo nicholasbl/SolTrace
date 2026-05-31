@@ -60,21 +60,23 @@ public:
         return;
     }
 
-    const OpticalProperties *get_front_optical_properties() const override
+
+
+    optics_id get_optical_property_set_id() const override
+    {
+        return this->opt_id;
+    }
+    /*OpticalProperties *get_front_optical_properties() override
     {
         return &(this->optics_front);
-    }
-    OpticalProperties *get_front_optical_properties() override
+    }*/
+    void set_optical_property_set_id(optics_id op) override
     {
-        return &(this->optics_front);
-    }
-    void set_front_optical_properties(const OpticalProperties &op) override
-    {
-        this->optics_front = op;
+        this->opt_id = op;
         return;
     }
 
-    const OpticalProperties *get_back_optical_properties() const override
+    /*const OpticalProperties *get_back_optical_properties() const override
     {
         return &(this->optics_back);
     }
@@ -85,7 +87,7 @@ public:
     void set_back_optical_properties(const OpticalProperties &op) override
     {
         this->optics_back = op;
-    }
+    }*/
 
     virtual void enforce_user_fields_set() const override;
 
@@ -95,8 +97,7 @@ protected:
     aperture_ptr aperture;
     surface_ptr surface;
 
-    OpticalProperties optics_front;
-    OpticalProperties optics_back;
+    optics_id opt_id = OPTICS_ID_UNASSIGNED;
 };
 
 using single_element_ptr = typename std::shared_ptr<SingleElement>;

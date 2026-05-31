@@ -18,17 +18,16 @@ namespace SolTrace::Data {
 class VirtualElement : public SingleElement
 {
 public:
-    static void set_virtual_optics(OpticalProperties &op);
-
     VirtualElement();
     virtual ~VirtualElement();
 
     virtual bool is_virtual() const override { return true; }
 
-    void set_front_optical_properties(const OpticalProperties &op) override {}
-    void set_back_optical_properties(const OpticalProperties &op) override {}
-
-private:
+    virtual void set_optical_property_set_id(optics_id) override {}
+    virtual optics_id get_optical_property_set_id() const override 
+    {
+        return opt_id;
+    }
 };
 
 class VirtualPlane : public VirtualElement

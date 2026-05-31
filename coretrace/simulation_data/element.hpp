@@ -187,13 +187,8 @@ public:
   // virtual const OpticalProperties &get_optical_properties() const = 0;
   // virtual void set_optical_properties(const OpticalProperties &) = 0;
 
-  virtual const OpticalProperties *get_front_optical_properties() const = 0;
-  virtual OpticalProperties *get_front_optical_properties() = 0;
-  virtual void set_front_optical_properties(const OpticalProperties &) = 0;
-
-  virtual const OpticalProperties *get_back_optical_properties() const = 0;
-  virtual OpticalProperties *get_back_optical_properties() = 0;
-  virtual void set_back_optical_properties(const OpticalProperties &) = 0;
+  virtual optics_id get_optical_property_set_id() const = 0;
+  virtual void set_optical_property_set_id(optics_id) = 0;
 
   // Accessors for CompositeElements
   virtual uint_fast64_t get_number_of_elements() const = 0;

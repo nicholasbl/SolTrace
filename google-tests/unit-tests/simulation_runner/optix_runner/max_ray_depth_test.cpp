@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <optical_properties.hpp>
 #include <optix_runner.hpp>
 #include <simulation_data.hpp>
 #include <simulation_data_export.hpp>
@@ -209,8 +210,19 @@ TEST(OptixRunnerMaxRayDepth, DepthExceededCounterCountsTerminatedReflectedRays)
     make_two_plate_sd(sd, plate1, plate2);
 
     // Override plate 2 to be reflective so hitting it at max_depth triggers the counter.
-    plate2->get_front_optical_properties()->set_ideal_reflection();
-    plate2->get_back_optical_properties()->set_ideal_reflection();
+    SolTrace::Data::OpticalPropertiesFace reflective_front;
+    reflective_front.set_ideal_reflection();
+    SolTrace::Data::OpticalPropertiesFace reflective_back;
+    reflective_back.set_ideal_reflection();
+    SolTrace::Data::OpticalPropertySet reflective_optics(
+        reflective_front,
+        reflective_back,
+        SolTrace::Data::InteractionType::REFLECTION,
+        0.0,
+        0.0,
+        "max_depth_reflective_override");
+    auto reflective_optics_id = sd.add_optical_property_set(reflective_optics);
+    plate2->set_optical_property_set_id(reflective_optics_id);
 
     OptixRunner runner;
     runner.set_max_ray_depth(2); // max interactions per ray = 1 (plate 1 only)

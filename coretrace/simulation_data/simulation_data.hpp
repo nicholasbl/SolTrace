@@ -159,6 +159,12 @@ public:
         // return citer == this->my_elements.end();
     }
 
+    optics_id add_optical_property_set(const OpticalPropertySet& opt_set);
+
+    const OpticalPropertySet* get_optical_property_set(optics_id id) const;
+    OpticalPropertySet* get_optical_property_set(optics_id id);
+    OpticalPropertySet* get_optical_property_set(const Element& el);
+
     /// @brief Set the number of rays to trace
     /// @param nrays number of rays to trace
     void set_number_of_rays(uint_fast64_t nrays)
@@ -301,6 +307,7 @@ private:
     ElementContainer my_elements;
     RaySourceContainer my_sources;
     SimulationParameters my_parameters;
+    OpticalPropertySetContainer my_optical_property_sets;
 
     // void add_single_element(element_id key, element_ptr el);
     // void add_composite_element(element_id key, element_ptr el);
@@ -308,6 +315,8 @@ private:
     // uint_fast64_t remove_composite_element(element_ptr el);
     uint_fast64_t add_subelements(element_ptr el);
     uint_fast64_t remove_subelements(element_ptr el);
+
+    void initialize_builtin_optical_property_sets();
 };
 
 } // namespace SolTrace::Data

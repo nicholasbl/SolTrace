@@ -12,6 +12,7 @@
 #define SOLTRACE_SIMULATION_PARAMETERS_H
 
 #include <cstdint>
+#include <nlohmann/json.hpp>
 
 namespace SolTrace::Data {
 
@@ -44,6 +45,18 @@ public:
     {
     }
     ~SimulationParameters() {}
+
+    void write_json(nlohmann::ordered_json& jnode) const
+    {
+        jnode["include_sun_shape_errors"] = this->include_sun_shape_errors;   // bool
+        jnode["include_optical_errors"] = this->include_optical_errors;       // bool
+        jnode["number_of_rays"] = this->number_of_rays;                       // int
+        jnode["max_number_of_rays"] = this->max_number_of_rays;               // int
+        jnode["tolerance"] = this->tolerance;                                 // double
+        jnode["latitude"] = this->latitude;                                   // double
+        jnode["longitude"] = this->longitude;                                 // double
+        jnode["seed"] = this->seed;                                           // int
+    }
 };
 
 // TODO: Implement the output stream operator.

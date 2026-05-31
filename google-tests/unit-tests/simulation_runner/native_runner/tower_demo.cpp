@@ -40,9 +40,14 @@ SimulationData create_tower_demo_simulation_data(bool create_stages)
     absorber->compute_coordinate_rotations();
     absorber->set_surface(make_surface<Flat>()); // surface(nullptr)
     absorber->set_aperture(make_aperture<Rectangle>(2.0, 2.0));
-    OpticalProperties *foptics = absorber->get_front_optical_properties();
-    foptics->my_type = InteractionType::REFLECTION;
-    foptics->reflectivity = 0.0;
+
+    OpticalPropertySet abs_optics;
+    abs_optics.front.set_ideal_absorption();
+    abs_optics.back.set_ideal_absorption();
+    abs_optics.my_type = InteractionType::REFLECTION;
+    optics_id abs_id = sd.add_optical_property_set(abs_optics);
+    absorber->set_optical_property_set_id(abs_id);
+
     absorber->set_name("Absorber");
 
     stage_ptr st0, st1;
@@ -76,11 +81,16 @@ SimulationData create_tower_demo_simulation_data(bool create_stages)
     glm::dvec3 rvec, svec, avec;
     glm::dvec3 aim, pos;
 
+    OpticalPropertySet mirror_optics_set;
+    mirror_optics_set.front.set_ideal_reflection();
+    mirror_optics_set.back.set_ideal_reflection();
+    mirror_optics_set.my_type = InteractionType::REFLECTION;
+    optics_id mirror_optics_id = sd.add_optical_property_set(mirror_optics_set);
+
     for (int i = -1; i < 2; ++i)
     {
         auto el = make_element<SingleElement>();
-        foptics = el->get_front_optical_properties();
-        foptics->reflectivity = 1.0;
+        el->set_optical_property_set_id(mirror_optics_id);
 
         pos = {5 * sin(i * PI / 2.0), 5 * cos(i * PI / 2.0), 0.0};
         el->set_origin(pos);

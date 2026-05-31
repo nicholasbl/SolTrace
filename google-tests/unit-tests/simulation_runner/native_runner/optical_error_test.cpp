@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <optical_properties.hpp>
 #include <simulation_data_export.hpp>
 #include <simulation_result_export.hpp>
 
@@ -36,13 +37,22 @@ TEST(OpticalErrors, Gaussian)
     plate->set_aperture(make_aperture<Rectangle>(5, 5));
     plate->set_name("plate");
 
-    auto foptics = plate->get_front_optical_properties();
-    foptics->set_ideal_reflection();
-    foptics->slope_error = 1.0;
-    foptics->specularity_error = 1e-3;
-    foptics->error_distribution_type = DistributionType::GAUSSIAN;
-
-    plate->get_back_optical_properties()->set_ideal_reflection();
+    SolTrace::Data::OpticalPropertiesFace front_face;
+    front_face.set_ideal_reflection();
+    front_face.slope_error = 1.0;
+    front_face.specularity_error = 1e-3;
+    front_face.error_distribution_type = SolTrace::Data::DistributionType::GAUSSIAN;
+    SolTrace::Data::OpticalPropertiesFace back_face;
+    back_face.set_ideal_reflection();
+    SolTrace::Data::OpticalPropertySet plate_optics(
+        front_face,
+        back_face,
+        SolTrace::Data::InteractionType::REFLECTION,
+        0.0,
+        0.0,
+        "plate_optics_gaussian");
+    auto plate_optics_id = sd.add_optical_property_set(plate_optics);
+    plate->set_optical_property_set_id(plate_optics_id);
 
     // Add element to stage
     stage->add_element(plate);
@@ -139,13 +149,22 @@ TEST(OpticalErrors, Uniform)
     plate->set_aperture(make_aperture<Rectangle>(5, 5));
     plate->set_name("plate");
 
-    auto foptics = plate->get_front_optical_properties();
-    foptics->set_ideal_reflection();
-    foptics->slope_error = 1.0;
-    foptics->specularity_error = 1e-3;
-    foptics->error_distribution_type = DistributionType::PILLBOX;
-
-    plate->get_back_optical_properties()->set_ideal_reflection();
+    SolTrace::Data::OpticalPropertiesFace front_face;
+    front_face.set_ideal_reflection();
+    front_face.slope_error = 1.0;
+    front_face.specularity_error = 1e-3;
+    front_face.error_distribution_type = SolTrace::Data::DistributionType::PILLBOX;
+    SolTrace::Data::OpticalPropertiesFace back_face;
+    back_face.set_ideal_reflection();
+    SolTrace::Data::OpticalPropertySet plate_optics(
+        front_face,
+        back_face,
+        SolTrace::Data::InteractionType::REFLECTION,
+        0.0,
+        0.0,
+        "plate_optics_uniform");
+    auto plate_optics_id = sd.add_optical_property_set(plate_optics);
+    plate->set_optical_property_set_id(plate_optics_id);
 
     // Add element to stage
     stage->add_element(plate);
