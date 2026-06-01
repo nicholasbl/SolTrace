@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <string>
 
 #include "container.hpp"
 #include "element.hpp"
@@ -27,6 +28,8 @@ namespace SolTrace::Data {
 
 class SimulationData
 {
+    friend void load_json_file(SimulationData& sd, std::string filename);
+
 public:
     SimulationData();
     virtual ~SimulationData();
@@ -160,10 +163,27 @@ public:
     }
 
     optics_id add_optical_property_set(const OpticalPropertySet& opt_set);
+    optics_id find_or_add_optical_property_set(const OpticalPropertySet& opt_set);
 
     const OpticalPropertySet* get_optical_property_set(optics_id id) const;
     OpticalPropertySet* get_optical_property_set(optics_id id);
     OpticalPropertySet* get_optical_property_set(const Element& el);
+
+    /// @brief Get an iterator that can be used to access all 
+    ///  optical property sets owned by this SimulationData object.
+    /// @return iterator
+    OpticalPropertySetContainer::iterator get_optics_iterator()
+    {
+        return this->my_optical_property_sets.get_iterator();
+    }
+
+    /// @brief Tests whether the given iterator is at the end
+    /// @param iter iterator to test
+    /// @return true if at end, false otherwise
+    bool is_optics_at_end(OpticalPropertySetContainer::iterator it)
+    {
+        return this->my_optical_property_sets.is_at_end(it);
+    }
 
     /// @brief Set the number of rays to trace
     /// @param nrays number of rays to trace

@@ -820,6 +820,7 @@ TEST(Element, VectorCoordinateComputations)
 TEST(Element, SingleElementEnforceUserFieldsSet)
 {
     auto elem = SolTrace::Data::make_element<SingleElement>();
+    elem->set_optical_property_set_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
 
     // SingleElement requires aperture and surface to be set
     // Test that it throws when aperture is missing
@@ -860,6 +861,7 @@ TEST(Element, CompositeElementEnforceUserFieldsSet)
 
     // Add properly configured child elements
     auto elem2 = SolTrace::Data::make_element<SingleElement>();
+    elem2->set_optical_property_set_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
     elem2->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(2.0, 3.0));
     elem2->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Parabola>(1.0, 2.0));
     EXPECT_NO_THROW(comp->add_element(elem2));

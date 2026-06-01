@@ -4,9 +4,11 @@
 #include <array>
 #include <cstring>
 #include <exception>
+#include <fstream>
+#include <memory>
 #include <sstream>
 #include <string>
-#include <fstream>
+
 #include <nlohmann/json.hpp>
 
 #include "constants.hpp"
@@ -414,7 +416,8 @@ bool read_element(
     FILE *fp,
     std::map<std::string, OpticalPropertySet> &optics_map,
     element_ptr &el,
-    SimulationData &sd)
+    SimulationData &sd,
+    bool virt)
 {
     char buf[1024];
     read_line(buf, 1023, fp);
@@ -544,14 +547,27 @@ bool read_element(
                                      zrot);
 
     // Set optical properties
-    OpticalPropertySet& optics_set = optics_map[optics_name];
-    optics_set.my_type = interaction;
+    if (virt)
+    {
+        el->set_optical_property_set_id(OPTICS_ID_VIRTUAL);
+    }
+    else
+    {
+        auto optics_iter = optics_map.find(optics_name);
+        if (optics_iter == optics_map.end())
+        {
+            std::stringstream ss;
+            ss << "Element references unknown optical property set: " << optics_name;
+            throw std::runtime_error(ss.str());
+        }
 
-    // TODO: This adds a new optical property set for every element
-    // even if they are shared
-    // Need to add logic to account for interaction type if want to share
-    optics_id id = sd.add_optical_property_set(optics_set);
-    el->set_optical_property_set_id(id);
+        OpticalPropertySet optics_set = optics_iter->second;
+        optics_set.my_type = interaction;
+
+        optics_id id = sd.find_or_add_optical_property_set(optics_set);
+        el->set_optical_property_set_id(id);
+    }
+    
 
     return true;
 }
@@ -604,7 +620,7 @@ bool process_stages(
         for (int i_element = 0; i_element < count_element; i_element++)
         {
             element_ptr el;
-            read_element(fp, optics_map, el, sd);
+            read_element(fp, optics_map, el, sd, virt);
             el->set_name(std::to_string(i_element));
             // TODO make virtual if stage is virtual?
 
@@ -753,6 +769,23 @@ void write_json_file(SimulationData& sd, std::string filename)
         root["ray_sources"] = jsources;
     }
 
+    // Write optical properties
+    {
+        json joptics_top;
+        for (auto it = sd.get_optics_iterator(); !sd.is_optics_at_end(it); ++it)
+        {
+            json joptics;
+
+            SolTrace::Data::optics_id id = it->first;
+            auto optics_set = it->second;
+
+            optics_set->write_json(joptics);
+
+            joptics_top[std::to_string(id)] = joptics;
+        }
+        root["optical_properties"] = joptics_top;
+    }
+
     // Write Elements
     {
         json jelements_top;
@@ -809,14 +842,7 @@ void load_json_file(SimulationData& sd, std::string filename)
     // Simulation parameters
     SolTrace::Data::SimulationParameters& sim_par = sd.get_simulation_parameters();
     json jpar = root["simulation_parameters"];
-    sim_par.include_sun_shape_errors = jpar.at("include_sun_shape_errors");
-    sim_par.include_optical_errors = jpar.at("include_optical_errors");
-    sim_par.number_of_rays = jpar.at("number_of_rays");
-    sim_par.max_number_of_rays = jpar.at("max_number_of_rays");
-    sim_par.tolerance = jpar.at("tolerance");
-    sim_par.latitude = jpar.at("latitude");
-    sim_par.longitude = jpar.at("longitude");
-    sim_par.seed = jpar.at("seed");
+    sim_par = SolTrace::Data::SimulationParameters(jpar);
 
     // Ray sources
     json jsources = root["ray_sources"];
@@ -833,6 +859,44 @@ void load_json_file(SimulationData& sd, std::string filename)
         auto sun = make_ray_source<Sun>(jsrc);
         sd.add_ray_source(sun);
     }
+
+    // Optical properties
+    json joptics = root.at("optical_properties");
+    for (auto& [key, joptic] : joptics.items())
+    {
+        optics_id opt_id = static_cast<optics_id>(std::stoll(key));
+        OpticalPropertySet opt_set(joptic);
+
+        // Check for pre-existing optical property sets
+        const OpticalPropertySet* existing = sd.get_optical_property_set(opt_id);
+        if (existing != nullptr)
+        {
+            // This should be a built in optical property set
+            if (opt_id >= 0)
+                throw std::runtime_error("Custom optical property set already exists");
+
+            // Ensure loaded built in matches
+            if (*existing != opt_set)
+            {
+                std::stringstream ss;
+                ss << "Built-in optical property set mismatch for id " << opt_id;
+                throw std::runtime_error(ss.str());
+            }
+        }
+        else // Insert new optical property set
+        {
+            auto ptr = std::make_shared<OpticalPropertySet>(opt_set);
+            bool flag = sd.my_optical_property_sets.insert_item(opt_id, ptr);
+            if (!flag)
+            {
+                std::stringstream ss;
+                ss << "Failed to insert optical property set id from JSON: " << opt_id;
+                throw std::runtime_error(ss.str());
+            }
+        }
+    }
+    // Set optical property set next id
+    sd.my_optical_property_sets.recompute_next_id(0);
 
     // Elements
     json jelements = root["elements"];

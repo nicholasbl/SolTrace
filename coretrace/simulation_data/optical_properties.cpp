@@ -44,6 +44,20 @@ void OpticalPropertiesFace::write_json(nlohmann::ordered_json& jnode) const
     jnode["specularity_error"] = this->specularity_error;
 }
 
+bool OpticalPropertiesFace::operator==(const OpticalPropertiesFace& other) const
+{
+    return this->error_distribution_type == other.error_distribution_type &&
+        this->transmissivity == other.transmissivity &&
+        this->reflectivity == other.reflectivity &&
+        this->slope_error == other.slope_error &&
+        this->specularity_error == other.specularity_error;
+}
+
+bool OpticalPropertiesFace::operator!=(const OpticalPropertiesFace& other) const
+{
+    return !(*this == other);
+}
+
 std::ostream &operator<<(std::ostream &os,
     const OpticalPropertiesFace& op)
 {
@@ -75,6 +89,21 @@ void OpticalPropertySet::write_json(nlohmann::ordered_json& jnode) const
 
     front.write_json(jnode["front"]);
     back.write_json(jnode["back"]);
+}
+
+bool OpticalPropertySet::operator==(const OpticalPropertySet& other) const
+{
+    return this->front == other.front &&
+        this->back == other.back &&
+        this->my_type == other.my_type &&
+        this->refraction_index_front == other.refraction_index_front &&
+        this->refraction_index_back == other.refraction_index_back &&
+        this->my_name == other.my_name;
+}
+
+bool OpticalPropertySet::operator!=(const OpticalPropertySet& other) const
+{
+    return !(*this == other);
 }
 
 std::ostream& operator<<(std::ostream& os,

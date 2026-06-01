@@ -53,6 +53,7 @@ element_id set_default_sd(SimulationData &sd,
     stop->set_aim_vector(0, 0, 100);
     stop->set_surface(make_surface<Flat>());
     stop->set_aperture(make_aperture<Rectangle>(sx, sy));
+    stop->set_optical_property_set_id(opt_id);
     sd.add_element(stop);
 
     // Set parameters

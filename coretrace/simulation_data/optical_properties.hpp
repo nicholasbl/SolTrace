@@ -10,6 +10,7 @@
 #ifndef SOLTRACE_OPTICAL_PROPERTIES_H
 #define SOLTRACE_OPTICAL_PROPERTIES_H
 
+#include <container.hpp>
 #include <iostream>
 #include <map>
 #include <nlohmann/json.hpp>
@@ -97,6 +98,9 @@ namespace SolTrace::Data
 
         void write_json(nlohmann::ordered_json& jnode) const;
 
+        bool operator==(const OpticalPropertiesFace& other) const;
+        bool operator!=(const OpticalPropertiesFace& other) const;
+
         friend std::ostream &operator<<(std::ostream &os,
                                         const OpticalPropertiesFace& op);
     };
@@ -171,6 +175,9 @@ namespace SolTrace::Data
         }
 
         void write_json(nlohmann::ordered_json& jnode) const;
+
+        bool operator==(const OpticalPropertySet& other) const;
+        bool operator!=(const OpticalPropertySet& other) const;
 
         friend std::ostream& operator<<(std::ostream& os,
             const OpticalPropertySet& op);

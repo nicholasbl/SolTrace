@@ -25,8 +25,7 @@ SingleElement::SingleElement(const nlohmann::ordered_json& jnode) : ElementBase(
 {
     this->set_aperture(Aperture::make_aperture_from_json(jnode.at("aperture")));
     this->set_surface(make_surface_from_json(jnode.at("surface")));
-    this->set_front_optical_properties(OpticalProperties(jnode.at("optics_front")));
-    this->set_back_optical_properties(OpticalProperties(jnode.at("optics_back")));
+    this->set_optical_property_set_id(jnode.at("opt_id"));
 }
 
 SingleElement::~SingleElement()
@@ -58,6 +57,15 @@ void SingleElement::enforce_user_fields_set() const
         throw std::invalid_argument(ss.str());
     }
 
+    if (this->opt_id == OPTICS_ID_UNASSIGNED)
+    {
+        std::stringstream ss;
+        ss << "Element (Name: " << this->get_name()
+            << ", UUID: " << this->get_id()
+            << ") has no optical property id assigned.";
+        throw std::invalid_argument(ss.str());
+    }
+
     return;
 }
 
@@ -69,11 +77,7 @@ void SingleElement::write_json(nlohmann::ordered_json& jnode) const
     this->write_common_json(jnode);
     
     // Optical Properties
-    json joptics_front, joptics_back;
-    this->optics_front.write_json(joptics_front);
-    this->optics_back.write_json(joptics_back);
-    jnode["optics_front"] = joptics_front;
-    jnode["optics_back"] = joptics_back;
+    jnode["opt_id"] = this->opt_id;
 
     // Aperture
     json japerture;

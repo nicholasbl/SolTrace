@@ -44,6 +44,17 @@ public:
                              include_optical_errors(false)
     {
     }
+    SimulationParameters(const nlohmann::ordered_json& jnode)
+    {
+        this->include_sun_shape_errors = jnode.at("include_sun_shape_errors");
+        this->include_optical_errors = jnode.at("include_optical_errors");
+        this->number_of_rays = jnode.at("number_of_rays");
+        this->max_number_of_rays = jnode.at("max_number_of_rays");
+        this->tolerance = jnode.at("tolerance");
+        this->latitude = jnode.at("latitude");
+        this->longitude = jnode.at("longitude");
+        this->seed = jnode.at("seed");
+    }
     ~SimulationParameters() {}
 
     void write_json(nlohmann::ordered_json& jnode) const

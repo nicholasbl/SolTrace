@@ -240,6 +240,20 @@ optics_id SimulationData::add_optical_property_set(const OpticalPropertySet& opt
     return this->my_optical_property_sets.add_item(ptr);
 }
 
+optics_id SimulationData::find_or_add_optical_property_set(const OpticalPropertySet& opt_set)
+{
+    // Check if set already exists
+    for (auto it = this->get_optics_iterator(); !this->is_optics_at_end(it); ++it)
+    {
+        const OpticalPropertySet& existing = *it->second;
+        if (existing == opt_set)
+            return it->first;
+    }
+
+    // Add if it doesn't exist
+    return add_optical_property_set(opt_set);
+}
+
 const OpticalPropertySet* SimulationData::get_optical_property_set(optics_id id) const
 {
     auto ptr = this->my_optical_property_sets.get_item(id);

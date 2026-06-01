@@ -70,6 +70,7 @@ TEST(SimulationData, AddProperlyConfiguredElementsSucceeds)
     auto surface = SolTrace::Data::make_surface<SolTrace::Data::Flat>();
     configured_single->set_aperture(aperture);
     configured_single->set_surface(surface);
+    configured_single->set_optical_property_set_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
 
     // Adding a properly configured element should succeed
     EXPECT_NO_THROW(my_sim.add_element(configured_single));
@@ -83,6 +84,7 @@ TEST(SimulationData, AddProperlyConfiguredElementsSucceeds)
     auto surface2 = SolTrace::Data::make_surface<SolTrace::Data::Flat>();
     configured_sub1->set_aperture(aperture2);
     configured_sub1->set_surface(surface2);
+    configured_sub1->set_optical_property_set_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
     configured_composite->add_element(configured_sub1);
 
     // Adding a properly configured composite should succeed

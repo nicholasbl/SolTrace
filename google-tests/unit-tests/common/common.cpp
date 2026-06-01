@@ -55,6 +55,7 @@ element_ptr make_configured_element()
     element_ptr el = SolTrace::Data::make_element<SolTrace::Data::SingleElement>();
     el->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Circle>(2.0));
     el->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Flat>());
+    el->set_optical_property_set_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
     return el;
 }
 
