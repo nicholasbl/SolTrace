@@ -108,7 +108,7 @@ namespace SolTrace::NativeRunner
                << " Thread: " << thread_id
                << "\n";
             logger->error_log(ss.str());
-            break;
+            return false;
         }
 
         // Apply MonteCarlo probability of absorption. Limited

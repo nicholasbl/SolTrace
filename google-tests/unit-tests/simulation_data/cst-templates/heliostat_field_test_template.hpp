@@ -288,7 +288,7 @@ public:
         for (size_t i = 0; i < x_coords.size(); i++) {
             glm::dvec3 heliostat_origin(x_coords[i], y_coords[i], 4.49);
             auto heliostat = SolTrace::Data::make_element<Heliostat>();
-            heliostat->set_optical_property_set_id(mirror_id);
+            heliostat->set_optics_id(mirror_id);
             heliostat->set_reference_frame_geometry(heliostat_origin, khat, 0.0);
             heliostat->set_aperture_size(10.38, 9.73);   // Width, Height
             heliostat->set_number_panels(1, 1);

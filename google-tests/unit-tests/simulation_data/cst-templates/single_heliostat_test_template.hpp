@@ -131,7 +131,7 @@ public:
         OpticalPropertySet mirror_opt_set(mirror, mirror_back, 
             InteractionType::REFLECTION, 0, 0);
         optics_id mirror_id = simData.add_optical_property_set(mirror_opt_set);
-        heliostat->set_optical_property_set_id(mirror_id);
+        heliostat->set_optics_id(mirror_id);
         heliostat->set_reference_frame_geometry(heliostat_origin, khat, 0.0);
         heliostat->set_aperture_size(11.415, 10.42);   // Width, Height
         heliostat->set_number_panels(1, 1);

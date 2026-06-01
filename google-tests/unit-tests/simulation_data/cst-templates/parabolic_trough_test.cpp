@@ -385,6 +385,7 @@ TEST(ParabolicTrough, UpdateGeometry)
     auto absorber_optics = SolTrace::Data::OpticalPropertySet();
     absorber_optics.front.set_ideal_absorption();
     absorber_optics.back.set_ideal_absorption();
+    absorber_optics.my_type = SolTrace::Data::InteractionType::REFLECTION;
     absorber_optics.my_name = "Absorber";
 
     SolTrace::Data::optics_id abs_opt_id = my_sim.add_optical_property_set(absorber_optics);

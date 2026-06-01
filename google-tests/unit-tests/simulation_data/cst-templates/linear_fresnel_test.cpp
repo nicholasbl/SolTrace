@@ -127,6 +127,8 @@ TEST(LinearFresnel, ErrorChecking_SetReceiverDimensions)
 TEST(LinearFresnel, ErrorChecking_CreateGeometryWithoutParameters)
 {
     auto lf = SolTrace::Data::make_element<LinearFresnel>();
+    auto virtual_optics = SolTrace::Data::OPTICS_ID_VIRTUAL;
+    lf->set_optics(virtual_optics, virtual_optics, virtual_optics, virtual_optics);
 
     // Test create_geometry without setting required parameters
     EXPECT_THROW(lf->create_geometry(), std::invalid_argument);
@@ -559,6 +561,8 @@ TEST(LinearFresnel, UpdateGeometry_TrackingLimits)
     const double TOL = 1e-12;
 
     auto lf = SolTrace::Data::make_element<LinearFresnel>();
+    auto virtual_optics = SolTrace::Data::OPTICS_ID_VIRTUAL;
+    lf->set_optics(virtual_optics, virtual_optics, virtual_optics, virtual_optics);
     lf->set_origin(0.0, 0.0, 0.0);
     lf->set_aperture_size(4.0, 8.0);
     lf->set_number_panels(2, 1);
@@ -625,6 +629,9 @@ TEST(LinearFresnel, ErrorChecking_SetTrackingLimits)
 TEST(LinearFresnel, ErrorChecking_UpdateGeometryInvalidArgs)
 {
     auto lf = SolTrace::Data::make_element<LinearFresnel>();
+    auto virtual_optics = SolTrace::Data::OPTICS_ID_VIRTUAL;
+    lf->set_optics(virtual_optics, virtual_optics, virtual_optics, virtual_optics);
+
     lf->set_aperture_size(5.0, 10.0);
     lf->set_number_panels(2, 2);
     lf->set_receiver_height(3.0);
