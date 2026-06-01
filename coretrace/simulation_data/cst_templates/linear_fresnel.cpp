@@ -32,8 +32,8 @@ namespace SolTrace::Data
           // tracking_angle(0.0),
           tracking_limit_lower(-180.0),
           tracking_limit_upper(180.0),
-          optics_absorber(OPTICS_ID_UNASSIGNED),
           optics_mirror(OPTICS_ID_UNASSIGNED),
+          optics_absorber(OPTICS_ID_UNASSIGNED),
           optics_env_out(OPTICS_ID_UNASSIGNED),
           optics_env_in(OPTICS_ID_UNASSIGNED)
     {
