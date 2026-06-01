@@ -55,8 +55,27 @@ TEST(NativeRunner, PerformanceTest)
     my_runner.enable_power_tower();
     my_runner.enable_point_focus();
 
-    OpticalProperties mirror;
-    mirror.set_ideal_reflection();
+    OpticalPropertiesFace mirror_front;
+    mirror_front.set_ideal_reflection();
+
+    OpticalPropertiesFace mirror_back;
+    mirror_back.set_ideal_absorption();
+
+    OpticalPropertySet mirror_optics(
+        mirror_front,
+        mirror_back,
+        InteractionType::REFLECTION,
+        0.0,
+        0.0,
+        "Mirror");
+    optics_id mirror_optics_id = sdata.add_optical_property_set(mirror_optics);
+
+    OpticalPropertySet absorber_optics;
+    absorber_optics.front.set_ideal_absorption();
+    absorber_optics.back.set_ideal_absorption();
+    absorber_optics.my_type = InteractionType::REFLECTION;
+    absorber_optics.my_name = "Absorber";
+    optics_id absorber_optics_id = sdata.add_optical_property_set(absorber_optics);
 
     stage_ptr st1 = make_stage(1);
     st1->set_reference_frame_geometry(zero, khat, 0.0);
@@ -90,7 +109,7 @@ TEST(NativeRunner, PerformanceTest)
             // vector_add(1.0, hs_origin, 1.0, aim, aim_point);
 
             auto hs = make_element<Heliostat>();
-            hs->set_mirror_optics(mirror);
+            hs->set_optics_id(mirror_optics_id);
             // hs->set_reference_frame_geometry(hs_origin, aim, 0.0);
             hs->set_origin(hs_origin);
             hs->set_aperture_size(2.0 * dx, 2.0 * dy);
@@ -119,8 +138,7 @@ TEST(NativeRunner, PerformanceTest)
     }
 
     auto absorb = make_element<SingleElement>();
-    absorb->get_front_optical_properties()->set_ideal_absorption();
-    absorb->get_back_optical_properties()->set_ideal_absorption();
+    absorb->set_optical_property_set_id(absorber_optics_id);
     absorb->set_aperture(make_aperture<Circle>(2.0 * ABS_RADIUS));
     absorb->set_surface(make_surface<Sphere>(1.0 / ABS_RADIUS));
     // absorb->set_surface(make_surface<Flat>());

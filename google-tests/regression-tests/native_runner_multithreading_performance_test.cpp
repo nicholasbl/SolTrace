@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <iostream>
 #include <string>
 
@@ -9,6 +10,8 @@
 #include <simulation_runner.hpp>
 
 #include "common.hpp"
+
+using SolTrace::Result::RayEvent;
 
 TEST(NativeRunner, Multithreading)
 {
