@@ -2,8 +2,56 @@
 #include <QClipboard>
 #include <QGuiApplication>
 #include <QRegularExpression>
+#include <algorithm>
+#include <cmath>
 
 namespace SolTrace::GUI::App {
+
+namespace {
+
+QVector<SunShapePoint> normalized_radial_points(QVector<SunShapePoint> points) {
+    for (auto& point : points) {
+        point.angle = std::abs(point.angle);
+    }
+
+    std::sort(points.begin(), points.end(), [](auto const& a, auto const& b) {
+        return a.angle < b.angle;
+    });
+
+    QVector<SunShapePoint> merged;
+    for (auto const& point : points) {
+        if (!merged.empty() &&
+            std::abs(merged.back().angle - point.angle) < 1.0e-9) {
+            merged.back().intensity =
+                std::max(merged.back().intensity, point.intensity);
+        } else {
+            merged.push_back(point);
+        }
+    }
+
+    return merged;
+}
+
+QVector<SunShapePoint> mirrored_radial_points(QVector<SunShapePoint> points) {
+    auto radial_points = normalized_radial_points(std::move(points));
+    if (radial_points.empty()) return {};
+
+    QVector<SunShapePoint> mirrored;
+    mirrored.reserve(radial_points.size() * 2 - 1);
+
+    for (auto it = radial_points.crbegin(); it != radial_points.crend(); ++it) {
+        if (it->angle <= 1.0e-9) continue;
+        mirrored.push_back({
+            .angle     = -it->angle,
+            .intensity = it->intensity,
+        });
+    }
+
+    mirrored.append(radial_points);
+    return mirrored;
+}
+
+} // namespace
 
 SunModule::SunModule(QObject* parent)
     : QObject(parent),
@@ -111,9 +159,9 @@ SunShape::SunShape(QObject* parent)
 
 void SunShape::reset_current_distribution() {
     custom_distribution()->clear();
-    custom_distribution()->append(-1, 0);
-    custom_distribution()->append(0, 0.6);
-    custom_distribution()->append(1, 0);
+    custom_distribution()->append(0, 1);
+    custom_distribution()->append(1, 0.9);
+    custom_distribution()->append(2, 0);
 }
 
 void SunShape::regenerate() {
@@ -133,8 +181,8 @@ void SunShape::sample_gaussian() {
 
     auto&  model      = m_generated_distribution;
     int    num_points = 100;
-    double theta_x    = -m_sigma * 3;
-    double theta_inc  = 6 * m_sigma / num_points;
+    double theta_x    = 0;
+    double theta_inc  = 3 * m_sigma / num_points;
 
     for (int i = 0; i < num_points; i++) {
         model->append(theta_x,
@@ -149,8 +197,7 @@ void SunShape::sample_pillbox() {
 
     auto& model = m_generated_distribution;
 
-    model->append(-m_half_width, 0);
-    model->append(-m_half_width, 1);
+    model->append(0, 1);
     model->append(m_half_width, 1);
     model->append(m_half_width, 0);
 }
@@ -186,8 +233,8 @@ void SunShape::sample_buie() {
     double gamma         = 2.2 * log(0.52 * chi) * pow(chi, 0.43) - 0.1;
     double diskEdgeValue = cos(0.326 * 4.65) / cos(0.308 * 4.65);
 
-    for (double theta = -43.6; theta <= 43.6; theta += 0.01) {
-        double absTheta = std::abs(theta);
+    for (double theta = 0.0; theta <= 43.6; theta += 0.01) {
+        double absTheta = theta;
         double intensity;
         if (absTheta <= 4.65)
             intensity = cos(0.326 * absTheta) / cos(0.308 * absTheta);
@@ -219,21 +266,18 @@ void SunShape::update_x_axis() {
     case Shape::Custom:
         // Code referenced from app/src/sunshape (SunShapeForm::UpdatePlot())
         if (cdist->count() >= 2) {
-            double min_x = 0;
             double max_x = 0;
             for (int i = 0; i < cdist->count(); i++) {
-                double angle = cdist->get_at(i)->angle;
+                double angle = std::abs(cdist->get_at(i)->angle);
                 if (angle > max_x) max_x = angle;
-                if (angle < min_x) min_x = angle;
             }
 
-            if (min_x == 0 && max_x == 0) {
+            if (max_x == 0) {
                 cdist->set_x_axis_from(-1.3);
                 cdist->set_x_axis_to(1.3);
             } else {
-                double extent = std::max(std::abs(min_x), std::abs(max_x));
-                cdist->set_x_axis_from(-1.3 * extent);
-                cdist->set_x_axis_to(1.3 * extent);
+                cdist->set_x_axis_from(-1.3 * max_x);
+                cdist->set_x_axis_to(1.3 * max_x);
             }
         }
         break;
@@ -330,37 +374,51 @@ SunShapeModel::SunShapeModel(QObject* parent) : StructTableModel(parent) {
 }
 
 std::vector<double> SunShapeModel::get_angle_data() {
+    auto points = mirrored_radial_points(m_records);
+
     std::vector<double> result;
-    for (const auto& point : m_records) {
+    for (const auto& point : points) {
         result.push_back(point.angle);
     }
     return result;
 }
 
 std::vector<double> SunShapeModel::get_intensity_data() {
+    auto points = mirrored_radial_points(m_records);
+
     std::vector<double> result;
-    for (const auto& point : m_records) {
+    for (const auto& point : points) {
         result.push_back(point.intensity);
     }
     return result;
 }
 
 QVariantList SunShapeModel::variant_data() {
+    auto points = normalized_radial_points(m_records);
+
     QVariantList custom_shape;
-    for (int i = 0; i < count(); i++) {
+    for (auto const& source : points) {
         QVariantMap point;
-        point["angle"]     = get_at(i)->angle;
-        point["intensity"] = get_at(i)->intensity;
+        point["angle"]     = source.angle;
+        point["intensity"] = source.intensity;
         custom_shape.append(point);
     }
     return custom_shape;
 }
 
 void SunShapeModel::set_variant_data(QVariantList data) {
+    clear();
+    QVector<SunShapePoint> points;
     for (const auto& item : data) {
         QVariantMap point = item.toMap();
-        append(point["angle"].toDouble(), point["intensity"].toDouble());
+        points.push_back({
+            .angle     = std::abs(point["angle"].toDouble()),
+            .intensity = point["intensity"].toDouble(),
+        });
     }
+    points = normalized_radial_points(points);
+    StructTableModel<SunShapePoint>::append(points);
+    emit countChanged();
 }
 
 int SunShapeModel::count() const {
@@ -368,7 +426,7 @@ int SunShapeModel::count() const {
 }
 
 void SunShapeModel::append(double angle, double intensity) {
-    StructTableModel::append({ angle, intensity });
+    StructTableModel::append({ std::abs(angle), intensity });
     emit countChanged();
 }
 
@@ -386,9 +444,11 @@ void SunShapeModel::clear() {
 
 void SunShapeModel::copy_to_clipboard() {
     QString text = "Angle (mrad)\tIntensity\n";
-    for (int i = 0; i < m_records.count(); i++) {
-        text += QString::number(m_records[i].angle) + "\t" +
-                QString::number(m_records[i].intensity) + "\n";
+    auto points = normalized_radial_points(m_records);
+
+    for (auto const& point : points) {
+        text += QString::number(point.angle) + "\t" +
+                QString::number(point.intensity) + "\n";
     }
     QGuiApplication::clipboard()->setText(text);
 }
@@ -406,7 +466,7 @@ void SunShapeModel::paste_from_clipboard() {
             rows.append(row);
         }
     }
-    // setData(rows);
+    set_variant_data(rows);
 }
 
 Data::SunShape SunShape::get_sunshape_data() const {

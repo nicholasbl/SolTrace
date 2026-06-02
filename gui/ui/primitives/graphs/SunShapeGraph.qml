@@ -37,12 +37,40 @@ Rectangle {
             return;
         }
 
+        const points = []
         for (let i = 0; i < model.rowCount(); i++) {
-            const angle = model.data(model.index(i, 0))
+            const angle = Math.abs(model.data(model.index(i, 0)))
             const intensity = model.data(model.index(i, 1))
-            lineSeries.append(angle, intensity)
+            points.push({
+                            "angle": angle,
+                            "intensity": intensity
+                        })
         }
 
+        points.sort(function(a, b) {
+            return a.angle - b.angle
+        })
+
+        const mergedPoints = []
+        for (let j = 0; j < points.length; ++j) {
+            const previous = mergedPoints[mergedPoints.length - 1]
+            if (previous && Math.abs(previous.angle - points[j].angle) < 1.0e-6) {
+                previous.intensity = Math.max(previous.intensity, points[j].intensity)
+            } else {
+                mergedPoints.push(points[j])
+            }
+        }
+
+        for (let k = mergedPoints.length - 1; k >= 0; --k) {
+            if (mergedPoints[k].angle <= 1.0e-9) {
+                continue
+            }
+            lineSeries.append(-mergedPoints[k].angle, mergedPoints[k].intensity)
+        }
+
+        for (let m = 0; m < mergedPoints.length; ++m) {
+            lineSeries.append(mergedPoints[m].angle, mergedPoints[m].intensity)
+        }
     }
 
     onModelChanged: {

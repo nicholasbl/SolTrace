@@ -26,9 +26,9 @@ Item {
         var maxAngle = 0.0
 
         for (let i = 0; i < model.rowCount(); i++) {
-            const angle = model.data(model.index(i, 0))
+            const angle = Math.max(0.0, model.data(model.index(i, 0)))
 
-            maxAngle = Math.max(maxAngle, Math.abs(angle))
+            maxAngle = Math.max(maxAngle, angle)
         }
 
         return Math.max(maxAngle, 1.0e-9)
@@ -171,7 +171,7 @@ Item {
         const samples = []
         var maxIntensity = 0.0
         for (let i = 0; i < model.rowCount(); ++i) {
-            const angle = Math.abs(model.data(model.index(i, 0)))
+            const angle = Math.max(0.0, model.data(model.index(i, 0)))
             const intensity = Math.max(0.0, model.data(model.index(i, 1)))
 
             maxIntensity = Math.max(maxIntensity, intensity)
