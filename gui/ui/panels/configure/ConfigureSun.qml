@@ -190,7 +190,7 @@ Flickable {
                         currentIndex: App.sun.shape.shape
                         onCurrentIndexChanged: App.sun.shape.shape = currentIndex
                         //collapseLabels: App.view.left_panel.size === PanelData.Small
-                        model: ["Gaussian", "Pillbox", "CSR", "Custom"]
+                        model: ["Gaussian", "Pillbox", "CSR", "Custom", "Limb Darkened"]
                         //iconModel: ["\uf1fe", "\uf0c8", "\uf192", "\uf55b"]
                     }
                 }
@@ -198,7 +198,7 @@ Flickable {
                 InlineDocumentation {
                     Layout.fillWidth: true
                     Layout.margins: 8
-                    key: "configure.sun.shape." + ["gaussian", "pillbox", "csr", "custom"][App.sun.shape.shape]
+                    key: "configure.sun.shape." + ["gaussian", "pillbox", "csr", "custom", "limb_darkened"][App.sun.shape.shape]
                     target: App.view.left_panel
                 }
 
@@ -242,6 +242,13 @@ Flickable {
                         }
 
                         CustomSunShapeTable { }
+
+                        Label {
+                            Layout.fillWidth: true
+                            text: "No parameters"
+                            horizontalAlignment: Text.AlignHCenter
+                            opacity: 0.7
+                        }
                     }
 
                     SunShapeGraph {

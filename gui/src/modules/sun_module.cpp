@@ -171,6 +171,7 @@ void SunShape::regenerate() {
     case Shape::Pillbox: sample_pillbox(); break;
     case Shape::Buie_CSR: sample_buie(); break;
     case Shape::Custom: break;
+    case Shape::LimbDarkened: sample_limb_darkened(); break;
     }
     update_x_axis();
 }
@@ -246,6 +247,20 @@ void SunShape::sample_buie() {
     }
 }
 
+void SunShape::sample_limb_darkened() {
+    auto& model = m_generated_distribution;
+
+    constexpr double disk_edge = 4.65;
+    constexpr int    num_points = 100;
+    double           theta = 0.0;
+    double           theta_inc = disk_edge / num_points;
+
+    for (int i = 0; i <= num_points; ++i) {
+        model->append(theta, std::cos(0.326 * theta) / std::cos(0.308 * theta));
+        theta += theta_inc;
+    }
+}
+
 void SunShape::update_x_axis() {
     QPointer<SunShapeModel> gdist = m_generated_distribution;
     QPointer<SunShapeModel> cdist = m_custom_distribution;
@@ -262,6 +277,10 @@ void SunShape::update_x_axis() {
     case Shape::Buie_CSR:
         gdist->set_x_axis_from(-20.0);
         gdist->set_x_axis_to(20.0);
+        break;
+    case Shape::LimbDarkened:
+        gdist->set_x_axis_from(-1.3 * 4.65);
+        gdist->set_x_axis_to(1.3 * 4.65);
         break;
     case Shape::Custom:
         // Code referenced from app/src/sunshape (SunShapeForm::UpdatePlot())
@@ -475,6 +494,7 @@ Data::SunShape SunShape::get_sunshape_data() const {
     case Shape::Pillbox: return Data::SunShape::PILLBOX;
     case Shape::Buie_CSR: return Data::SunShape::BUIE_CSR;
     case Shape::Custom: return Data::SunShape::USER_DEFINED;
+    case Shape::LimbDarkened: return Data::SunShape::LIMBDARKENED;
     default: return Data::SunShape::UNKNOWN;
     }
 }

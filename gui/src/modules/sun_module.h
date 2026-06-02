@@ -57,6 +57,7 @@ class SunShape : public QObject {
     void sample_gaussian();
     void sample_pillbox();
     void sample_buie();
+    void sample_limb_darkened();
     void update_x_axis();
 
     void update_current_distribution();
@@ -68,7 +69,7 @@ public:
 
     // Note that this is separate from SolTrace's SunShape enum to maintain
     // independence from backend modifications
-    enum class Shape { Gaussian, Pillbox, Buie_CSR, Custom };
+    enum class Shape { Gaussian, Pillbox, Buie_CSR, Custom, LimbDarkened };
     Q_ENUM(Shape)
     Q_WRITABLE_PROPERTY(Shape, shape, Shape::Gaussian)
 
