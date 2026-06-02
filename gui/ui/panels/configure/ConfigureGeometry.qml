@@ -84,10 +84,35 @@ AdaptiveFilteredEditor {
         }
 
         SurfacePreviewScene {
+            id: preview_scene
             Layout.fillWidth: true
-            Layout.preferredHeight: 148
+
+            property bool show_expand: false
+
+            Layout.preferredHeight: show_expand ? 300 : 148
 
             property bool no_geometry: App.materials.geometry_edit.surface_geometry.vertex_count === 0
+
+
+            STIconButton {
+                anchors.top: parent.top
+                anchors.left: parent.left
+
+                text: "\uf424"
+
+                onClicked: preview_scene.show_expand = !preview_scene.show_expand
+            }
+
+            // STIconButton {
+            //     anchors.top: parent.top
+            //     anchors.right: parent.right
+
+            //     text: "\ue80b"
+
+            //     onClicked: {
+
+            //     }
+            // }
 
             RowLayout {
                 visible: parent.no_geometry
