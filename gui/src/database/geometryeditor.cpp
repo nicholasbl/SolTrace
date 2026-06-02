@@ -195,7 +195,7 @@ GeometryEditor::GeometryEditor(QObject* parent)
     m_surface_geometry->setParent(this);
     m_surface_geometry->set_quality(SurfaceGeometry::Quality::High);
     m_surface_geometry->set_add_thickness(true);
-    m_surface_geometry->set_thickness(.05);
+    m_surface_geometry->set_thickness(.01);
 
     connect(m_surface_parameter_model,
             &SurfaceParameterModel::updated,

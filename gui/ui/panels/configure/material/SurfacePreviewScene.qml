@@ -10,6 +10,8 @@ import SolTrace
 View3D {
     id: root
 
+    property real light_scale: 0.001
+
     environment: SceneEnvironment {
         antialiasingMode: SceneEnvironment.MSAA
         antialiasingQuality: SceneEnvironment.VeryHigh
@@ -58,39 +60,33 @@ View3D {
         ambientColor: "#50545A"
         eulerRotation: Qt.vector3d(-35, 35, 0)
 
-        color: "#FFF2E0"
-        castsShadow: true
-        shadowFactor: 20
-        shadowBias: 8
+        color: "#FFAAAA"
 
-        brightness: 120
+        brightness: 120 * light_scale
     }
 
     DirectionalLight {
         eulerRotation: Qt.vector3d(-20, -55, 0)
 
-        color: "#DDEBFF"
-        castsShadow: false
+        color: "#AAAAFF"
 
-        brightness: 55
+        brightness: 55 * light_scale
     }
 
     DirectionalLight {
         eulerRotation: Qt.vector3d(-15, 160, 0)
 
-        color: "#FFFFFF"
-        castsShadow: false
+        color: "#AAFFAA"
 
-        brightness: 35
+        brightness: 35 * light_scale
     }
 
     PointLight {
         position: Qt.vector3d(0, 3.5, 3)
 
         color: "#FFFFFF"
-        castsShadow: false
 
-        brightness: 120
+        brightness: 120 * light_scale
         quadraticFade: 0.35
     }
 
@@ -98,9 +94,8 @@ View3D {
         position: Qt.vector3d(-3, -2, 2)
 
         color: "#E7F0FF"
-        castsShadow: false
 
-        brightness: 65
+        brightness: 65 * light_scale
         quadraticFade: 0.45
     }
 
@@ -121,8 +116,8 @@ View3D {
 
             materials : [
                 PrincipledMaterial {
-                    metalness: 0.15
-                    roughness: 0.35
+                    metalness: 0.0
+                    roughness: 0.0
                     baseColor: "white"
                 }
             ]
