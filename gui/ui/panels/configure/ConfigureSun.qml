@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick
 import QtQuick.Controls.Material
 import QtQuick.Effects
 import QtQuick.Layouts
@@ -20,6 +19,13 @@ Flickable {
     ColumnLayout {
         id: content_column
         width: root.width
+
+        SunPreview {
+            id: sun_preview
+            Layout.fillWidth: true
+            Layout.preferredHeight: 148
+
+        }
 
         InlineDocumentation {
             key: "configure.sun"
@@ -46,13 +52,19 @@ Flickable {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                STComboBar {
+                RowLayout {
                     Layout.fillWidth: true
-                    currentIndex: App.sun.type
-                    onCurrentIndexChanged: App.sun.type = currentIndex
-                    collapseLabels: App.view.left_panel.size === PanelData.Small
-                    model: ["Directional Sun", "Point Source"]
-                    iconModel: ["\uf185", "\uf06a"]
+
+                    Label {
+                        text: "Type:"
+                    }
+
+                    STComboBox {
+                        Layout.fillWidth: true
+                        currentIndex: App.sun.type
+                        onCurrentIndexChanged: App.sun.type = currentIndex
+                        model: ["Directional Sun", "Point Source"]
+                    }
                 }
 
                 InlineDocumentation {
@@ -66,7 +78,7 @@ Flickable {
 
                 ColumnLayout {
                     Layout.fillWidth: true
-                    visible: App.sun.type == SunModule.Directional
+                    visible: App.sun.type === SunModule.Directional
 
                     InlineDocumentation {
                         Layout.fillWidth: true
@@ -107,7 +119,7 @@ Flickable {
 
                     title: "Manual Position"
                     collapsible: false
-                    visible: App.sun.type == SunModule.PointSource
+                    visible: App.sun.type === SunModule.PointSource
 
                     GridLayout {
                         width: parent.width
@@ -167,13 +179,20 @@ Flickable {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                STComboBar {
+                RowLayout {
                     Layout.fillWidth: true
-                    currentIndex: App.sun.shape.shape
-                    onCurrentIndexChanged: App.sun.shape.shape = currentIndex
-                    collapseLabels: App.view.left_panel.size === PanelData.Small
-                    model: ["Gaussian", "Pillbox", "CSR", "Custom"]
-                    iconModel: ["\uf1fe", "\uf0c8", "\uf192", "\uf55b"]
+                    Label {
+                        text: "Shape Type:"
+                    }
+
+                    STComboBox {
+                        Layout.fillWidth: true
+                        currentIndex: App.sun.shape.shape
+                        onCurrentIndexChanged: App.sun.shape.shape = currentIndex
+                        //collapseLabels: App.view.left_panel.size === PanelData.Small
+                        model: ["Gaussian", "Pillbox", "CSR", "Custom"]
+                        //iconModel: ["\uf1fe", "\uf0c8", "\uf192", "\uf55b"]
+                    }
                 }
 
                 InlineDocumentation {
