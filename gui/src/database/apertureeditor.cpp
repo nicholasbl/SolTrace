@@ -207,7 +207,7 @@ ApertureParameterModel::valid_apertures_for_surf(SD::SurfaceType st) {
     switch (st) {
     case SolTrace::Data::CYLINDER: {
         static constexpr std::array<SD::ApertureType, 1> valid = {
-            SolTrace::Data::SINGLE_AXIS_CURVATURE_SECTION,
+            SolTrace::Data::RECTANGLE,
         };
         return valid;
     }

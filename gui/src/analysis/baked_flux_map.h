@@ -3,13 +3,32 @@
 #include "utilities/grid2d.h"
 
 #include <QImage>
+#include <QMetaType>
+#include <QObject>
 #include <QtGlobal>
 #include <QVector3D>
+#include <qqmlintegration.h>
 
 namespace analysis {
 
 /// Summary statistics computed with the baked flux map.
 struct BakedFluxMapStats {
+    Q_GADGET
+    QML_VALUE_TYPE(baked_flux_map_stats);
+    Q_PROPERTY(quint64 source_ray_count MEMBER source_ray_count)
+    Q_PROPERTY(quint64 plotted_ray_count MEMBER plotted_ray_count)
+    Q_PROPERTY(double power_per_ray MEMBER power_per_ray)
+    Q_PROPERTY(double plotted_power MEMBER plotted_power)
+    Q_PROPERTY(double peak_flux MEMBER peak_flux)
+    Q_PROPERTY(double min_flux MEMBER min_flux)
+    Q_PROPERTY(double average_flux MEMBER average_flux)
+    Q_PROPERTY(double sigma_flux MEMBER sigma_flux)
+    Q_PROPERTY(double uniformity MEMBER uniformity)
+    Q_PROPERTY(double peak_flux_uncertainty MEMBER peak_flux_uncertainty)
+    Q_PROPERTY(double average_flux_uncertainty MEMBER average_flux_uncertainty)
+    Q_PROPERTY(QVector3D centroid MEMBER centroid)
+
+public:
     /// Total rays in the simulation result used for this map.
     quint64 source_ray_count = 0;
 
@@ -35,6 +54,8 @@ struct BakedFluxMapStats {
 
     /// Average world-space location of plotted interactions.
     QVector3D centroid;
+
+    bool operator==(BakedFluxMapStats const&) const = default;
 };
 
 /// A computed flux map
@@ -55,3 +76,5 @@ struct BakedFluxMap {
 using BakedFluxMapPtr = std::shared_ptr<BakedFluxMap const>;
 
 } // namespace analysis
+
+Q_DECLARE_METATYPE(analysis::BakedFluxMapStats)
