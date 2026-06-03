@@ -31,7 +31,8 @@ STPopup {
                 0,
                 {
                     "message": new_note.message,
-                    "type" : new_note.type
+                    "type" : new_note.type,
+                    "date" : Qt.formatDateTime(new Date(), "MMM d h:mm:ss AP"),
                 }
             )
 
@@ -55,10 +56,11 @@ STPopup {
 
             spacing: 8
 
-            delegate: RowLayout {
+            delegate: GridLayout {
                 id: note_delegate
                 required property string message
                 required property int type
+                required property string date
                 width: ListView.view.width
 
                 property color message_color: {
@@ -70,12 +72,15 @@ STPopup {
                     }
                 }
 
-                spacing: 8
+                rowSpacing: 8
+                columnSpacing: 8
+                columns: 2
 
                 Label {
                     fontSizeMode: Label.Fit
                     font.pointSize: 18
                     Layout.preferredWidth: 24
+                    Layout.rowSpan: 2
 
                     horizontalAlignment: Qt.AlignHCenter
                     verticalAlignment: Qt.AlignVCenter
@@ -102,15 +107,21 @@ STPopup {
                     Material.foreground: note_delegate.message_color
 
                     text: message
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    opacity: .75
+                    text: note_delegate.date
 
                     Rectangle {
+                        height: 1
+                        color: Material.dividerColor
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.bottom
-                        height: 1
-                        color: Material.dividerColor
-
-                        visible: notification_model.count !== 1
+                        visible: notification_model.count > 1
+                        anchors.verticalCenterOffset: 5
                     }
                 }
             }

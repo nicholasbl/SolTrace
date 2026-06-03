@@ -32,7 +32,7 @@ class NameModel : public QObject {
 
     Entity m_target;
 
-    Q_WRITABLE_PROPERTY(Entity, node, { });
+    Q_WRITABLE_PROPERTY(Entity, node, {});
     Q_READONLY_PROPERTY(QString, name);
 
 private slots:
@@ -59,7 +59,7 @@ class BreadcrumbModel : public StructModelAdapter<EntityNamePair> {
 
     QVector<Entity> m_path;
 
-    Q_WRITABLE_PROPERTY(Entity, node, { });
+    Q_WRITABLE_PROPERTY(Entity, node, {});
 
 private slots:
     void recompute();
@@ -78,7 +78,7 @@ class ChildModel : public StructModelAdapter<EntityNamePair> {
     Q_OBJECT
     QPointer<Database> m_host;
 
-    Q_WRITABLE_PROPERTY(Entity, node, { });
+    Q_WRITABLE_PROPERTY(Entity, node, {});
 
     // QVector<Entity>                 m_list;
     std::unordered_map<Entity, int> m_reverse;
@@ -206,13 +206,15 @@ class AnInstanceEditor : public QObject {
     Q_OBJECT
     QPointer<Database> m_host;
 
-    Q_WRITABLE_PROPERTY(Entity, entity, { });
+    Q_WRITABLE_PROPERTY(Entity, entity, {});
 
     Q_PROPERTY(QString entity_name READ entity_name WRITE set_entity_name NOTIFY
                    entity_name_changed FINAL)
 
     Q_PROPERTY(QVector3D position READ position WRITE set_position NOTIFY
                    position_changed FINAL)
+    Q_PROPERTY(QVector3D global_position READ global_position WRITE
+                   set_global_position NOTIFY global_position_changed FINAL)
     Q_PROPERTY(QQuaternion orientation READ orientation WRITE set_orientation
                    NOTIFY orientation_changed FINAL)
     Q_PROPERTY(
@@ -262,6 +264,8 @@ public:
 
     QVector3D position() const;
     void      set_position(const QVector3D& newPosition);
+    QVector3D global_position() const;
+    void      set_global_position(const QVector3D& newPosition);
 
     QQuaternion orientation() const;
     void        set_orientation(const QQuaternion& newOrientation);
@@ -302,6 +306,7 @@ public slots:
 
 signals:
     void position_changed();
+    void global_position_changed();
     void orientation_changed();
     void hidden_changed();
     void disabled_changed();

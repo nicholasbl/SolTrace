@@ -442,6 +442,7 @@ void TagsModel::reset(Database* database) {
 
 void AnInstanceEditor::recompute() {
     emit position_changed();
+    emit global_position_changed();
     emit orientation_changed();
     emit hidden_changed();
     emit disabled_changed();
@@ -491,6 +492,8 @@ void AnInstanceEditor::reset(Database* database) {
     if (m_host) {
         QObject::disconnect(m_host->identity.self(), nullptr, this, nullptr);
         QObject::disconnect(m_host->transform.self(), nullptr, this, nullptr);
+        QObject::disconnect(
+            m_host->global_transform.self(), nullptr, this, nullptr);
         QObject::disconnect(m_host->invisible.self(), nullptr, this, nullptr);
         QObject::disconnect(m_host->disabled.self(), nullptr, this, nullptr);
         QObject::disconnect(
@@ -518,6 +521,13 @@ void AnInstanceEditor::reset(Database* database) {
             &ComponentAPIBase::changed,
             this,
             &AnInstanceEditor::an_entity_changed);
+
+    connect(database->global_transform.self(),
+            &ComponentAPIBase::changed,
+            this,
+            [this](db::Entity e) {
+                if (m_entity == e) { emit global_position_changed(); }
+            });
 
     connect(database->invisible.self(),
             &ComponentAPIBase::changed,
@@ -594,6 +604,36 @@ void AnInstanceEditor::set_position(const QVector3D& newPosition) {
     });
 
     emit position_changed();
+    emit global_position_changed();
+}
+
+QVector3D AnInstanceEditor::global_position() const {
+    if (m_host and m_host->valid(m_entity)) {
+        if (auto tf = m_host->global_transform.get(m_entity); tf) {
+            return convert(tf->position);
+        }
+    }
+
+    return {};
+}
+
+void AnInstanceEditor::set_global_position(const QVector3D& newPosition) {
+    if (global_position() == newPosition) return;
+    if (!m_host) return;
+    if (!m_host->valid(m_entity)) return;
+
+    auto local_position = convert(newPosition);
+    if (auto parent_component = m_host->parent.get(m_entity);
+        parent_component && m_host->valid(parent_component->parent)) {
+        if (auto parent_global =
+                m_host->global_transform.get(parent_component->parent);
+            parent_global) {
+            local_position = glm::inverse(parent_global->rotation) *
+                             (local_position - parent_global->position);
+        }
+    }
+
+    set_position(convert(local_position));
 }
 
 QQuaternion AnInstanceEditor::orientation() const {
@@ -779,6 +819,7 @@ void AnInstanceEditor::set_parent(db::Entity newParent) {
 
     emit parent_changed();
     emit parent_name_changed();
+    emit global_position_changed();
 }
 
 QString AnInstanceEditor::parent_name() const {
@@ -895,6 +936,7 @@ void AnInstanceEditor::clear_parent() {
         m_host->unset_parent(m_entity);
         emit parent_changed();
         emit parent_name_changed();
+        emit global_position_changed();
     }
 }
 

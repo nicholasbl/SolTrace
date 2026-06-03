@@ -43,6 +43,7 @@ int main(int argc, char* argv[]) {
     QQmlDebuggingEnabler::startTcpDebugServer(
         3768,
         QQmlDebuggingEnabler::DoNotWaitForClient,
+        // QQmlDebuggingEnabler::WaitForClient,
         QStringLiteral("127.0.0.1"));
 #endif
 

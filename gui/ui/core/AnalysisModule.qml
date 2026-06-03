@@ -20,7 +20,7 @@ ColumnLayout {
         collapseLabels: App.view.left_panel.size === PanelData.Small
 
         iconModel: ["\uf1da", "\uf601", "\uf201"]
-        model: ["History", "Intersections", "Flux"]
+        model: ["Results", "Intersections", "Flux"]
 
     }
 

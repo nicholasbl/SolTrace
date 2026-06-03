@@ -78,8 +78,6 @@ ColumnLayout {
         collapsible: false
         title: "Status"
 
-        enabled: AppData.simulation.is_running
-
         STPropertyLabel {
             text: "Progress"
         }
@@ -89,6 +87,8 @@ ColumnLayout {
             from: 0
             to: 100
             value: AppData.simulation.progress
+
+            enabled: AppData.simulation.is_running
         }
 
         STPropertyLabel {
@@ -97,7 +97,23 @@ ColumnLayout {
 
         Label {
             Layout.fillWidth: true
-            text: AppData.simulation.current_stage
+            text: AppData.simulation.is_running ?
+                      AppData.simulation.current_stage : "Idle"
+        }
+
+        STButton {
+            Layout.columnSpan: 2
+            Layout.fillWidth: true
+            text: "View Results"
+            text_icon: "\uf1da"
+            onClicked: {
+                App.view.left_panel.visible = true
+                // Select the lightweight Results tab before entering Analyze.
+                // Otherwise a stale Intersections/Flux tab can briefly enable
+                // SimulationResultNode and eagerly load heavy result geometry.
+                App.view.analyze_section = 0
+                App.view.workflow_phase = 2
+            }
         }
     }
 

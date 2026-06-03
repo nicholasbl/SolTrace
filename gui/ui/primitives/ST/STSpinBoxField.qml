@@ -21,6 +21,7 @@ Column {
         to: root.to
         decimals: root.decimals
         stepSize: root.stepSize
+        suffix: root.suffix
         onValueModified: {
             root.value = value
             root.valueModified()
