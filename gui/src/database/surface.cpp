@@ -725,8 +725,8 @@ generate_cylinder_surface(SD::surface_ptr const&          surface,
             double u      = static_cast<double>(ia) / angular_steps;
             double theta  = u * 2.0 * PI;
             double x      = radius * std::cos(theta);
-            double z      = radius + radius * std::sin(theta);
-            auto   normal = glm::normalize(glm::vec3(x, 0.0, z - radius));
+            double z      = radius * std::sin(theta);
+            auto   normal = glm::normalize(glm::vec3(x, 0.0, z));
 
             mesh.vertex.push_back(make_vertex(x, y, z, normal, u, v));
         }
@@ -757,8 +757,8 @@ generate_cylinder_surface(SD::surface_ptr const&          surface,
             double u      = static_cast<double>(ia) / angular_steps;
             double theta  = u * 2.0 * PI;
             double x      = inner_radius * std::cos(theta);
-            double z      = radius + inner_radius * std::sin(theta);
-            auto   normal = -glm::normalize(glm::vec3(x, 0.0, z - radius));
+            double z      = inner_radius * std::sin(theta);
+            auto   normal = -glm::normalize(glm::vec3(x, 0.0, z));
 
             mesh.vertex.push_back(make_vertex(x, y, z, normal, u, v));
         }
