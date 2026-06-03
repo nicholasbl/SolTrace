@@ -2,6 +2,10 @@
 
 #include "components.h"
 
+#include <type_traits>
+#include <utility>
+
+#include <QDebug>
 #include <QObject>
 #include <QTimer>
 
@@ -144,6 +148,145 @@ public:
 
     void remove(entt::entity entity) {
         this->m_host.template remove<Component>(entity);
+    }
+};
+
+template <class Component>
+class SingletonComponentAPI : public ComponentAPIBase {
+    entt::entity m_entity = entt::null;
+    bool         m_owns_entity = false;
+
+    void verify_singleton() const {
+        auto view = this->m_host.template view<Component const>();
+        auto it   = view.begin();
+
+        if (it == view.end()) return;
+
+        const auto first = *it;
+        ++it;
+
+        if (it != view.end()) {
+            qFatal("Singleton component exists on more than one entity");
+        }
+
+        if (m_entity != entt::null && m_entity != first) {
+            qFatal("Singleton component entity tracking is inconsistent");
+        }
+    }
+
+    void change_callback(entt::registry& reg, entt::entity entity) {
+        if (m_entity != entt::null && m_entity != entity) {
+            qFatal("Singleton component exists on more than one entity");
+        }
+
+        m_entity = entity;
+        emit changed(entity);
+    }
+
+    void remove_callback(entt::registry& reg, entt::entity entity) {
+        if (m_entity == entity) {
+            m_entity      = entt::null;
+            m_owns_entity = false;
+        }
+
+        QTimer::singleShot(
+            0, this, [this, entity]() { emit this->removed(entity); });
+    }
+
+public:
+    explicit SingletonComponentAPI(entt::registry& p) : ComponentAPIBase(p) {
+        auto view = p.template view<Component const>();
+        for (auto entity : view) {
+            if (m_entity != entt::null) {
+                qFatal("Singleton component exists on more than one entity");
+            }
+            m_entity = entity;
+            m_owns_entity = false;
+        }
+
+        p.on_construct<Component>()
+            .template connect<&SingletonComponentAPI::change_callback>(this);
+        p.on_update<Component>()
+            .template connect<&SingletonComponentAPI::change_callback>(this);
+        p.on_destroy<Component>()
+            .template connect<&SingletonComponentAPI::remove_callback>(this);
+
+        verify_singleton();
+    }
+
+    ~SingletonComponentAPI() override {
+        this->m_host.template on_construct<Component>()
+            .template disconnect<&SingletonComponentAPI::change_callback>(this);
+        this->m_host.template on_update<Component>()
+            .template disconnect<&SingletonComponentAPI::change_callback>(this);
+        this->m_host.template on_destroy<Component>()
+            .template disconnect<&SingletonComponentAPI::remove_callback>(this);
+    }
+
+    auto* self() { return this; }
+
+    entt::entity entity() const { return m_entity; }
+    bool         exists() const { return m_entity != entt::null; }
+
+    Component const* get() const {
+        if (m_entity == entt::null) return nullptr;
+        if (!this->m_host.valid(m_entity)) return nullptr;
+        return this->m_host.template try_get<Component>(m_entity);
+    }
+
+    Component* get() {
+        if (m_entity == entt::null) return nullptr;
+        if (!this->m_host.valid(m_entity)) return nullptr;
+        return this->m_host.template try_get<Component>(m_entity);
+    }
+
+    Component const& require() const {
+        auto ptr = get();
+        if (!ptr) qFatal("Required singleton component is missing");
+        return *ptr;
+    }
+
+    Component& require() {
+        auto ptr = get();
+        if (!ptr) qFatal("Required singleton component is missing");
+        return *ptr;
+    }
+
+    void set(Component const& component) {
+        if (m_entity == entt::null) {
+            m_entity      = this->m_host.create();
+            m_owns_entity = true;
+        }
+
+        if constexpr (std::is_empty_v<Component>) {
+            this->m_host.template emplace_or_replace<Component>(m_entity);
+        } else {
+            this->m_host.template emplace_or_replace<Component>(
+                m_entity, component);
+        }
+    }
+
+    template <class Function>
+    void patch(Function&& f) {
+        if (m_entity == entt::null) {
+            m_entity      = this->m_host.create();
+            m_owns_entity = true;
+        }
+        db::emplace_patch<Component>(
+            this->m_host, m_entity, std::forward<Function>(f));
+    }
+
+    void remove() {
+        if (m_entity == entt::null) return;
+
+        const auto entity = m_entity;
+        const bool owns_entity = m_owns_entity;
+        if (this->m_host.valid(entity)) {
+            this->m_host.template remove<Component>(entity);
+            if (owns_entity) { this->m_host.destroy(entity); }
+        }
+        m_entity      = entt::null;
+        m_owns_entity = false;
     }
 };
 

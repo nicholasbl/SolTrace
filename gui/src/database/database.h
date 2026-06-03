@@ -118,6 +118,11 @@ public:
 
     ComponentAPIUpdate<ColorComponent> color;
 
+    SingletonComponentAPI<DatabaseNameResource> database_name_resource;
+    SingletonComponentAPI<RaySourceResource>    ray_source_resource;
+    SingletonComponentAPI<SD::SimulationParameters>
+        simulation_parameters_resource;
+
 public:
     /// Helper function: patch a component, creating it if it does not exist.
     template <class Component, class Function>

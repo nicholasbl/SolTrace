@@ -4,8 +4,10 @@
 #include "utilities/qt_helpers.h"
 #include "utilities/structmodel.h"
 #include <QDateTime>
+#include <QMetaObject>
 #include <QObject>
 #include <QTimeZone>
+#include <QVector>
 
 namespace SolTrace::GUI::App {
 
@@ -166,8 +168,17 @@ private:
     void update_shape();
     void update_type();
     void update_position();
+    void update_database_connections();
+    void load_from_database();
+    void load_from_ray_source(SD::ray_source_ptr const& ray_source);
+    void write_shape_to_database();
+    void write_position_to_database();
 
     Data::SolarPositionCalculator m_calculator;
+    QVector<QMetaObject::Connection> m_database_connections;
+    bool m_loading_from_database = false;
+    bool m_writing_to_database = false;
+    bool m_updating_calculated_position = false;
 
 public:
     explicit SunModule(QObject* parent = nullptr);

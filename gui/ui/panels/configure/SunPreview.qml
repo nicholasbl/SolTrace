@@ -17,6 +17,7 @@ Item {
     property real half_max_angle: 0.0
     property bool has_distribution: false
     property var current_gradient: null
+    readonly property int max_gradient_stops: 100
 
     function computeMaxAngle() {
         if (!model) {
@@ -180,6 +181,19 @@ Item {
         destroyRadialGradient(oldGradient)
     }
 
+    function sampledGradientSamples(samples) {
+        if (samples.length <= max_gradient_stops) {
+            return samples
+        }
+
+        const sampled = []
+        const scale = (samples.length - 1) / (max_gradient_stops - 1)
+        for (let i = 0; i < max_gradient_stops; ++i) {
+            sampled.push(samples[Math.round(i * scale)])
+        }
+        return sampled
+    }
+
     function rebuildGradientStops() {
         max_angle = computeMaxAngle()
 
@@ -227,10 +241,11 @@ Item {
         half_max_angle = computeHalfMaxAngle(mergedSamples, maxIntensity)
 
         const scale = maxIntensity > 0.0 ? maxIntensity : 1.0
-        for (let k = 0; k < mergedSamples.length; ++k) {
+        const gradientSamples = sampledGradientSamples(mergedSamples)
+        for (let k = 0; k < gradientSamples.length; ++k) {
             addGradientStop(stops,
-                            mergedSamples[k].position,
-                            sample_color_mapCss(mergedSamples[k].intensity / scale))
+                            gradientSamples[k].position,
+                            sample_color_mapCss(gradientSamples[k].intensity / scale))
         }
 
         if (stops[0].position > 0.0) {
