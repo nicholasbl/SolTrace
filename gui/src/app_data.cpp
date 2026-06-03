@@ -89,9 +89,9 @@ void AppData::load_session() {
     // Sun Shape
     m_sun->shape()->set_shape(
         static_cast<SunShape::Shape>(s.value("shape", 0).toDouble()));
-    m_sun->shape()->set_sigma(s.value("sigma", 1.551).toDouble());
-    m_sun->shape()->set_half_width(s.value("half_width", 2.023).toDouble());
-    m_sun->shape()->set_csr(s.value("buie_csr", 0.596).toDouble());
+    m_sun->shape()->set_sigma(s.value("sigma", 4.65).toDouble());
+    m_sun->shape()->set_half_width(s.value("half_width", 4.65).toDouble());
+    m_sun->shape()->set_csr(s.value("buie_csr", 0.1).toDouble());
 
     auto* cdist = m_sun->shape()->custom_distribution();
     if (s.contains("custom_shape"))
