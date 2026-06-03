@@ -1,9 +1,89 @@
 #include "sun_module.h"
 #include <QClipboard>
+#include <QDebug>
 #include <QGuiApplication>
 #include <QRegularExpression>
+#include <QScopedValueRollback>
+#include <algorithm>
+#include <cmath>
+#include <exception>
+#include <optional>
+#include <vector>
 
 namespace SolTrace::GUI::App {
+
+namespace {
+
+QVector<SunShapePoint> normalized_radial_points(QVector<SunShapePoint> points) {
+    for (auto& point : points) {
+        point.angle = std::abs(point.angle);
+    }
+
+    std::sort(points.begin(), points.end(), [](auto const& a, auto const& b) {
+        return a.angle < b.angle;
+    });
+
+    QVector<SunShapePoint> merged;
+    for (auto const& point : points) {
+        if (!merged.empty() &&
+            std::abs(merged.back().angle - point.angle) < 1.0e-9) {
+            merged.back().intensity =
+                std::max(merged.back().intensity, point.intensity);
+        } else {
+            merged.push_back(point);
+        }
+    }
+
+    return merged;
+}
+
+QVector<SunShapePoint> mirrored_radial_points(QVector<SunShapePoint> points) {
+    auto radial_points = normalized_radial_points(std::move(points));
+    if (radial_points.empty()) return {};
+
+    QVector<SunShapePoint> mirrored;
+    mirrored.reserve(radial_points.size() * 2 - 1);
+
+    for (auto it = radial_points.crbegin(); it != radial_points.crend(); ++it) {
+        if (it->angle <= 1.0e-9) continue;
+        mirrored.push_back({
+            .angle     = -it->angle,
+            .intensity = it->intensity,
+        });
+    }
+
+    mirrored.append(radial_points);
+    return mirrored;
+}
+
+std::optional<SunShape::Shape> gui_shape_for_data_shape(Data::SunShape shape) {
+    switch (shape) {
+    case Data::SunShape::GAUSSIAN: return SunShape::Shape::Gaussian;
+    case Data::SunShape::PILLBOX: return SunShape::Shape::Pillbox;
+    case Data::SunShape::BUIE_CSR: return SunShape::Shape::Buie_CSR;
+    case Data::SunShape::USER_DEFINED: return SunShape::Shape::Custom;
+    case Data::SunShape::LIMBDARKENED: return SunShape::Shape::LimbDarkened;
+    default: return std::nullopt;
+    }
+}
+
+QVector<SunShapePoint> points_from_user_data(std::vector<double> const& angles,
+                                             std::vector<double> const& intensities) {
+    QVector<SunShapePoint> points;
+    const auto             count = std::min(angles.size(), intensities.size());
+    points.reserve(static_cast<qsizetype>(count));
+
+    for (std::size_t i = 0; i < count; ++i) {
+        points.push_back({
+            .angle     = angles[i],
+            .intensity = intensities[i],
+        });
+    }
+
+    return normalized_radial_points(points);
+}
+
+} // namespace
 
 SunModule::SunModule(QObject* parent)
     : QObject(parent),
@@ -21,6 +101,18 @@ SunModule::SunModule(QObject* parent)
             &SunModule::update_position);
 
     connect(this, &SunModule::type_changed, this, &SunModule::update_type);
+    connect(this,
+            &SunModule::current_database_changed,
+            this,
+            &SunModule::update_database_connections);
+    connect(m_ps_position,
+            &SolarPositionData::changed,
+            this,
+            &SunModule::write_position_to_database);
+    connect(m_ds_position,
+            &SolarPositionData::changed,
+            this,
+            &SunModule::write_position_to_database);
 
     update_type();
     update_position();
@@ -28,33 +120,46 @@ SunModule::SunModule(QObject* parent)
 
 
 void SunModule::update_shape() {
-    /* SD::ray_source_ptr ray_source = m_current_database->get_ray_source();
-    if (!ray_source) return;
+    write_shape_to_database();
+}
 
-    ray_source->set_shape(m_shape->get_sunshape_data(),
-                          m_shape->sigma(),
-                          m_shape->half_width(),
-                          m_shape->csr(),
-                          m_shape->custom_distribution()->get_angle_data(),
-                          m_shape->custom_distribution()->get_intensity_data());
-    */
+void SunModule::write_shape_to_database() {
+    if (m_loading_from_database || m_writing_to_database) return;
+    if (!m_current_database) return;
+
+    QScopedValueRollback<bool> guard(m_writing_to_database, true);
+
+    try {
+        m_current_database->ray_source_resource.patch([this](auto& resource) {
+            if (!resource.source) {
+                resource.source = SD::make_ray_source<SD::Sun>();
+            }
+
+            resource.source->set_shape(
+                m_shape->get_sunshape_data(),
+                m_shape->sigma(),
+                m_shape->half_width(),
+                m_shape->csr(),
+                m_shape->custom_distribution()->get_angle_data(),
+                m_shape->custom_distribution()->get_intensity_data());
+        });
+    } catch (std::exception const& e) {
+        qWarning() << "Unable to update sun shape:" << e.what();
+    }
 }
 
 void SunModule::update_type() {
     if (m_type == Type::Directional) set_position(m_ds_position);
     else
         set_position(m_ps_position);
+
+    write_position_to_database();
 }
 
 void SunModule::update_position() {
+    if (m_loading_from_database) return;
     if (!m_position->from_calculator()) return;
 
-    /*SD::ray_source_ptr ray_source = m_current_database->get_ray_source();
-    if (!ray_source) return;
-
-    ray_source->set_position(
-    m_dpos->get_datetime_data(), m_dpos->latitude(), m_dpos->longitude());
-*/
     m_calculator.set_method(Data::SolarPositionCalculationMethod::LEGACY);
 
     m_calculator.set_location(m_calc_data->latitude(),
@@ -68,9 +173,119 @@ void SunModule::update_position() {
 
     double x, y, z;
     m_calculator.get_sun_vector(&x, &y, &z);
-    m_position->set_x(x);
-    m_position->set_y(y);
-    m_position->set_z(z);
+    {
+        QScopedValueRollback<bool> guard(m_updating_calculated_position, true);
+        m_position->set_x(x);
+        m_position->set_y(y);
+        m_position->set_z(z);
+    }
+    write_position_to_database();
+}
+
+void SunModule::write_position_to_database() {
+    if (m_loading_from_database || m_writing_to_database ||
+        m_updating_calculated_position) {
+        return;
+    }
+    if (!m_current_database || !m_position) return;
+
+    QScopedValueRollback<bool> guard(m_writing_to_database, true);
+
+    try {
+        m_current_database->ray_source_resource.patch([this](auto& resource) {
+            const bool created = !resource.source;
+            if (created) { resource.source = SD::make_ray_source<SD::Sun>(); }
+
+            if (created) {
+                resource.source->set_shape(
+                    m_shape->get_sunshape_data(),
+                    m_shape->sigma(),
+                    m_shape->half_width(),
+                    m_shape->csr(),
+                    m_shape->custom_distribution()->get_angle_data(),
+                    m_shape->custom_distribution()->get_intensity_data());
+            }
+
+            resource.source->set_position(
+                m_position->x(), m_position->y(), m_position->z());
+        });
+    } catch (std::exception const& e) {
+        qWarning() << "Unable to update sun position:" << e.what();
+    }
+}
+
+void SunModule::update_database_connections() {
+    for (auto const& connection : m_database_connections) {
+        QObject::disconnect(connection);
+    }
+    m_database_connections.clear();
+
+    if (!m_current_database) return;
+
+    m_database_connections.push_back(connect(
+        m_current_database->ray_source_resource.self(),
+        &db::ComponentAPIBase::changed,
+        this,
+        [this](entt::entity) {
+            if (m_writing_to_database) return;
+            load_from_database();
+        }));
+
+    m_database_connections.push_back(connect(
+        m_current_database->ray_source_resource.self(),
+        &db::ComponentAPIBase::removed,
+        this,
+        [this](entt::entity) {
+            if (m_writing_to_database) return;
+            load_from_database();
+        }));
+
+    load_from_database();
+}
+
+void SunModule::load_from_database() {
+    if (!m_current_database) return;
+    load_from_ray_source(m_current_database->get_ray_source());
+}
+
+void SunModule::load_from_ray_source(SD::ray_source_ptr const& ray_source) {
+    if (!ray_source) return;
+
+    auto gui_shape = gui_shape_for_data_shape(ray_source->get_shape());
+    if (!gui_shape) return;
+
+    QScopedValueRollback<bool> guard(m_loading_from_database, true);
+
+    if (!std::isnan(ray_source->get_sigma())) {
+        m_shape->set_sigma(ray_source->get_sigma());
+    }
+    if (!std::isnan(ray_source->get_half_width())) {
+        m_shape->set_half_width(ray_source->get_half_width());
+    }
+    if (!std::isnan(ray_source->get_circumsolar_ratio())) {
+        m_shape->set_csr(ray_source->get_circumsolar_ratio());
+    }
+
+    std::vector<double> user_angles;
+    std::vector<double> user_intensities;
+    ray_source->get_user_data(user_angles, user_intensities);
+    if (!user_angles.empty() && user_angles.size() == user_intensities.size()) {
+        m_shape->custom_distribution()->reset(
+            points_from_user_data(user_angles, user_intensities));
+    }
+
+    m_shape->set_shape(*gui_shape);
+
+    const auto& position = ray_source->get_position();
+    m_ds_position->set_from_calculator(false);
+    m_ds_position->set_x(position.x);
+    m_ds_position->set_y(position.y);
+    m_ds_position->set_z(position.z);
+
+    m_ps_position->set_from_calculator(false);
+    m_ps_position->set_x(position.x);
+    m_ps_position->set_y(position.y);
+    m_ps_position->set_z(position.z);
 }
 
 SunShape::SunShape(QObject* parent)
@@ -110,19 +325,20 @@ SunShape::SunShape(QObject* parent)
 }
 
 void SunShape::reset_current_distribution() {
-    custom_distribution()->clear();
-    custom_distribution()->append(-1, 0);
-    custom_distribution()->append(0, 0.6);
-    custom_distribution()->append(1, 0);
+    custom_distribution()->reset({
+        { .angle = 0, .intensity = 1 },
+        { .angle = 1, .intensity = 0.9 },
+        { .angle = 2, .intensity = 0 },
+    });
 }
 
 void SunShape::regenerate() {
-    m_generated_distribution->clear();
     switch (m_shape) {
     case Shape::Gaussian: sample_gaussian(); break;
     case Shape::Pillbox: sample_pillbox(); break;
     case Shape::Buie_CSR: sample_buie(); break;
-    case Shape::Custom: break;
+    case Shape::Custom: m_generated_distribution->clear(); break;
+    case Shape::LimbDarkened: sample_limb_darkened(); break;
     }
     update_x_axis();
 }
@@ -131,36 +347,41 @@ void SunShape::sample_gaussian() {
     // Point generation code referenced from app/src/sunshape
     // (SunShapeForm::UpdatePlot())
 
-    auto&  model      = m_generated_distribution;
     int    num_points = 100;
-    double theta_x    = -m_sigma * 3;
-    double theta_inc  = 6 * m_sigma / num_points;
+    double theta_x    = 0;
+    double theta_inc  = 3 * m_sigma / num_points;
+
+    QVector<SunShapePoint> points;
+    points.reserve(num_points);
 
     for (int i = 0; i < num_points; i++) {
-        model->append(theta_x,
-                      1.0 / exp(theta_x * theta_x / (2 * m_sigma * m_sigma)));
+        points.push_back({
+            .angle = theta_x,
+            .intensity =
+                1.0 / exp(theta_x * theta_x / (2 * m_sigma * m_sigma)),
+        });
         theta_x += theta_inc;
     }
+
+    m_generated_distribution->reset(points);
 }
 
 void SunShape::sample_pillbox() {
     // Point generation code referenced from app/src/sunshape
     // (SunShapeForm::UpdatePlot())
 
-    auto& model = m_generated_distribution;
-
-    model->append(-m_half_width, 0);
-    model->append(-m_half_width, 1);
-    model->append(m_half_width, 1);
-    model->append(m_half_width, 0);
+    m_generated_distribution->reset({
+        { .angle = 0, .intensity = 1 },
+        { .angle = m_half_width, .intensity = 1 },
+        { .angle = m_half_width, .intensity = 0 },
+    });
 }
 
 void SunShape::sample_buie() {
-    if (m_csr <= 0.0 || m_csr > 0.8) return;
-
-    auto& model = m_generated_distribution;
-
-    model->clear();
+    if (m_csr <= 0.0 || m_csr > 0.8) {
+        m_generated_distribution->reset();
+        return;
+    }
 
     double csr = m_csr;
     double chi;
@@ -186,8 +407,11 @@ void SunShape::sample_buie() {
     double gamma         = 2.2 * log(0.52 * chi) * pow(chi, 0.43) - 0.1;
     double diskEdgeValue = cos(0.326 * 4.65) / cos(0.308 * 4.65);
 
-    for (double theta = -43.6; theta <= 43.6; theta += 0.01) {
-        double absTheta = std::abs(theta);
+    QVector<SunShapePoint> points;
+    points.reserve(4361);
+
+    for (double theta = 0.0; theta <= 43.6; theta += 0.01) {
+        double absTheta = theta;
         double intensity;
         if (absTheta <= 4.65)
             intensity = cos(0.326 * absTheta) / cos(0.308 * absTheta);
@@ -195,8 +419,33 @@ void SunShape::sample_buie() {
             intensity = exp(kappa) * pow(absTheta, gamma);
             intensity = std::min(intensity, diskEdgeValue);
         }
-        model->append(theta, intensity);
+        points.push_back({
+            .angle     = theta,
+            .intensity = intensity,
+        });
     }
+
+    m_generated_distribution->reset(points);
+}
+
+void SunShape::sample_limb_darkened() {
+    constexpr double disk_edge = 4.65;
+    constexpr int    num_points = 100;
+    double           theta = 0.0;
+    double           theta_inc = disk_edge / num_points;
+
+    QVector<SunShapePoint> points;
+    points.reserve(num_points + 1);
+
+    for (int i = 0; i <= num_points; ++i) {
+        points.push_back({
+            .angle     = theta,
+            .intensity = std::cos(0.326 * theta) / std::cos(0.308 * theta),
+        });
+        theta += theta_inc;
+    }
+
+    m_generated_distribution->reset(points);
 }
 
 void SunShape::update_x_axis() {
@@ -216,24 +465,25 @@ void SunShape::update_x_axis() {
         gdist->set_x_axis_from(-20.0);
         gdist->set_x_axis_to(20.0);
         break;
+    case Shape::LimbDarkened:
+        gdist->set_x_axis_from(-1.3 * 4.65);
+        gdist->set_x_axis_to(1.3 * 4.65);
+        break;
     case Shape::Custom:
         // Code referenced from app/src/sunshape (SunShapeForm::UpdatePlot())
         if (cdist->count() >= 2) {
-            double min_x = 0;
             double max_x = 0;
             for (int i = 0; i < cdist->count(); i++) {
-                double angle = cdist->get_at(i)->angle;
+                double angle = std::abs(cdist->get_at(i)->angle);
                 if (angle > max_x) max_x = angle;
-                if (angle < min_x) min_x = angle;
             }
 
-            if (min_x == 0 && max_x == 0) {
+            if (max_x == 0) {
                 cdist->set_x_axis_from(-1.3);
                 cdist->set_x_axis_to(1.3);
             } else {
-                double extent = std::max(std::abs(min_x), std::abs(max_x));
-                cdist->set_x_axis_from(-1.3 * extent);
-                cdist->set_x_axis_to(1.3 * extent);
+                cdist->set_x_axis_from(-1.3 * max_x);
+                cdist->set_x_axis_to(1.3 * max_x);
             }
         }
         break;
@@ -330,37 +580,48 @@ SunShapeModel::SunShapeModel(QObject* parent) : StructTableModel(parent) {
 }
 
 std::vector<double> SunShapeModel::get_angle_data() {
+    auto points = mirrored_radial_points(m_records);
+
     std::vector<double> result;
-    for (const auto& point : m_records) {
+    for (const auto& point : points) {
         result.push_back(point.angle);
     }
     return result;
 }
 
 std::vector<double> SunShapeModel::get_intensity_data() {
+    auto points = mirrored_radial_points(m_records);
+
     std::vector<double> result;
-    for (const auto& point : m_records) {
+    for (const auto& point : points) {
         result.push_back(point.intensity);
     }
     return result;
 }
 
 QVariantList SunShapeModel::variant_data() {
+    auto points = normalized_radial_points(m_records);
+
     QVariantList custom_shape;
-    for (int i = 0; i < count(); i++) {
+    for (auto const& source : points) {
         QVariantMap point;
-        point["angle"]     = get_at(i)->angle;
-        point["intensity"] = get_at(i)->intensity;
+        point["angle"]     = source.angle;
+        point["intensity"] = source.intensity;
         custom_shape.append(point);
     }
     return custom_shape;
 }
 
 void SunShapeModel::set_variant_data(QVariantList data) {
+    QVector<SunShapePoint> points;
     for (const auto& item : data) {
         QVariantMap point = item.toMap();
-        append(point["angle"].toDouble(), point["intensity"].toDouble());
+        points.push_back({
+            .angle     = std::abs(point["angle"].toDouble()),
+            .intensity = point["intensity"].toDouble(),
+        });
     }
+    reset(normalized_radial_points(points));
 }
 
 int SunShapeModel::count() const {
@@ -368,7 +629,12 @@ int SunShapeModel::count() const {
 }
 
 void SunShapeModel::append(double angle, double intensity) {
-    StructTableModel::append({ angle, intensity });
+    StructTableModel::append({ std::abs(angle), intensity });
+    emit countChanged();
+}
+
+void SunShapeModel::reset(QVector<SunShapePoint> points) {
+    StructTableModel<SunShapePoint>::reset(points);
     emit countChanged();
 }
 
@@ -379,16 +645,16 @@ void SunShapeModel::remove(int index) {
 }
 
 void SunShapeModel::clear() {
-    if (m_records.isEmpty()) return;
     reset();
-    emit countChanged();
 }
 
 void SunShapeModel::copy_to_clipboard() {
     QString text = "Angle (mrad)\tIntensity\n";
-    for (int i = 0; i < m_records.count(); i++) {
-        text += QString::number(m_records[i].angle) + "\t" +
-                QString::number(m_records[i].intensity) + "\n";
+    auto points = normalized_radial_points(m_records);
+
+    for (auto const& point : points) {
+        text += QString::number(point.angle) + "\t" +
+                QString::number(point.intensity) + "\n";
     }
     QGuiApplication::clipboard()->setText(text);
 }
@@ -406,7 +672,7 @@ void SunShapeModel::paste_from_clipboard() {
             rows.append(row);
         }
     }
-    // setData(rows);
+    set_variant_data(rows);
 }
 
 Data::SunShape SunShape::get_sunshape_data() const {
@@ -415,6 +681,7 @@ Data::SunShape SunShape::get_sunshape_data() const {
     case Shape::Pillbox: return Data::SunShape::PILLBOX;
     case Shape::Buie_CSR: return Data::SunShape::BUIE_CSR;
     case Shape::Custom: return Data::SunShape::USER_DEFINED;
+    case Shape::LimbDarkened: return Data::SunShape::LIMBDARKENED;
     default: return Data::SunShape::UNKNOWN;
     }
 }

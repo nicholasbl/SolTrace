@@ -44,6 +44,7 @@ ColumnLayout {
             valueRole: "display"
             currentValue: section.currentKind
             onActivated: section.kindChanged(currentText)
+            displayText: currentText.charAt(0).toUpperCase() + currentText.slice(1).toLowerCase();
         }
 
         Repeater {

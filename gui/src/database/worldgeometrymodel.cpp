@@ -206,6 +206,8 @@ static VisibleGroup vis_assets_for_entity(Database& db, entt::entity e) {
     }
 
     vg.group_geometry->set(&db, e);
+    vg.group_geometry->set_add_thickness(true);
+    vg.group_geometry->set_thickness(.05);
 
     return vg;
 }

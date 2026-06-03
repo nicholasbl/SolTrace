@@ -4,8 +4,10 @@
 #include "utilities/qt_helpers.h"
 #include "utilities/structmodel.h"
 #include <QDateTime>
+#include <QMetaObject>
 #include <QObject>
 #include <QTimeZone>
+#include <QVector>
 
 namespace SolTrace::GUI::App {
 
@@ -33,6 +35,7 @@ public:
     void         set_variant_data(QVariantList data);
 
 public slots:
+    void reset(QVector<SunShapePoint> points = {});
     void append(double angle = 0.0, double intensity = 0.0);
     void remove(int index);
     void clear();
@@ -57,6 +60,7 @@ class SunShape : public QObject {
     void sample_gaussian();
     void sample_pillbox();
     void sample_buie();
+    void sample_limb_darkened();
     void update_x_axis();
 
     void update_current_distribution();
@@ -68,7 +72,7 @@ public:
 
     // Note that this is separate from SolTrace's SunShape enum to maintain
     // independence from backend modifications
-    enum class Shape { Gaussian, Pillbox, Buie_CSR, Custom };
+    enum class Shape { Gaussian, Pillbox, Buie_CSR, Custom, LimbDarkened };
     Q_ENUM(Shape)
     Q_WRITABLE_PROPERTY(Shape, shape, Shape::Gaussian)
 
@@ -164,8 +168,17 @@ private:
     void update_shape();
     void update_type();
     void update_position();
+    void update_database_connections();
+    void load_from_database();
+    void load_from_ray_source(SD::ray_source_ptr const& ray_source);
+    void write_shape_to_database();
+    void write_position_to_database();
 
     Data::SolarPositionCalculator m_calculator;
+    QVector<QMetaObject::Connection> m_database_connections;
+    bool m_loading_from_database = false;
+    bool m_writing_to_database = false;
+    bool m_updating_calculated_position = false;
 
 public:
     explicit SunModule(QObject* parent = nullptr);

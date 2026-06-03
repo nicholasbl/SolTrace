@@ -303,7 +303,10 @@ Database::Database(QString database_name, QObject* p)
       children(m_registry),
       tag_membership(m_registry),
       selected(m_registry),
-      color(m_registry) {
+      color(m_registry),
+      database_name_resource(m_registry),
+      ray_source_resource(m_registry),
+      simulation_parameters_resource(m_registry) {
 
     m_registry.on_construct<TransformComponent>()
         .template connect<&tf_change_callback>();
@@ -312,7 +315,7 @@ Database::Database(QString database_name, QObject* p)
     m_registry.on_destroy<TransformComponent>()
         .template connect<&tf_destroy_callback>();
 
-    m_registry.ctx().emplace<DatabaseNameResource>(database_name);
+    database_name_resource.set(DatabaseNameResource { .name = database_name });
 
     qDebug() << Q_FUNC_INFO;
 }
@@ -369,11 +372,6 @@ void copy_nested_component(entt::registry const& from,
     }
 }
 
-template <class T>
-void copy_resource(entt::registry const& from, entt::registry& to) {
-    to.ctx().emplace<T>(from.ctx().get<T>().clone());
-}
-
 struct DatabaseCloneResult {
     std::unique_ptr<Database>                        database;
     std::unordered_map<entt::entity, entt::entity> old_to_new_map;
@@ -420,10 +418,9 @@ clone_database_with_entity_map(Database const& from,
         from_registry, mapper, to_registry);
 
 
-    copy_resource<RaySourceResource>(from_registry, to_registry);
-
-    to_registry.ctx().emplace<SD::SimulationParameters>(
-        from_registry.ctx().get<SD::SimulationParameters>());
+    ret->ray_source_resource.set(from.ray_source_resource.require().clone());
+    ret->simulation_parameters_resource.set(
+        from.simulation_parameters_resource.require());
 
 
     copy_plain_component<MaterialComponent>(
@@ -753,11 +750,11 @@ void Database::import(SD::SimulationData& data) {
         m_registry.clear<StageComponent>();
     }
 
-    m_registry.ctx().emplace<RaySourceResource>(RaySourceResource {
+    ray_source_resource.set(RaySourceResource {
         .source = data.get_ray_source(),
     });
 
-    m_registry.ctx().emplace<SD::SimulationParameters>(
+    simulation_parameters_resource.set(
         data.get_simulation_parameters());
 
     qInfo() << "Imported" << this->m_registry.view<ElementComponent>()->size()
@@ -818,12 +815,12 @@ static void install_group(SD::element_ptr          ptr,
 std::shared_ptr<DatabaseExport> Database::export_to_simdata() {
     SD::SimulationData ret;
 
-    auto param_ptr = m_registry.ctx().find<SD::SimulationParameters>();
+    auto param_ptr = simulation_parameters_resource.get();
     if (!param_ptr) return nullptr;
 
     ret.get_simulation_parameters() = *param_ptr;
 
-    auto ray_source_ptr = m_registry.ctx().find<RaySourceResource>();
+    auto ray_source_ptr = ray_source_resource.get();
     if (!ray_source_ptr) return nullptr;
 
     ret.add_ray_source(ray_source_ptr->source);
@@ -1008,7 +1005,7 @@ std::shared_ptr<DatabaseExport> Database::export_to_simdata() {
 }
 
 QString Database::name() const {
-    auto ptr = m_registry.ctx().find<DatabaseNameResource>();
+    auto ptr = database_name_resource.get();
 
     if (ptr) { return ptr->name; }
 
@@ -1019,8 +1016,7 @@ void Database::set_name(QString s) {
 
     if (s == name()) { return; }
 
-    m_registry.ctx().insert_or_assign<DatabaseNameResource>(
-        DatabaseNameResource { .name = s });
+    database_name_resource.set(DatabaseNameResource { .name = s });
 
     emit name_changed();
 }
@@ -1184,7 +1180,7 @@ void Database::assign_geometry(entt::entity child, entt::entity group) {
 }
 
 SD::ray_source_ptr Database::get_ray_source() const {
-    if (auto ptr = m_registry.ctx().find<RaySourceResource>(); ptr) {
+    if (auto ptr = ray_source_resource.get(); ptr) {
         return ptr->source;
     }
 
@@ -1192,7 +1188,7 @@ SD::ray_source_ptr Database::get_ray_source() const {
 }
 
 SD::SimulationParameters const& Database::get_sim_params() const {
-    if (auto ptr = m_registry.ctx().find<SD::SimulationParameters>(); ptr) {
+    if (auto ptr = simulation_parameters_resource.get(); ptr) {
         return *ptr;
     }
 

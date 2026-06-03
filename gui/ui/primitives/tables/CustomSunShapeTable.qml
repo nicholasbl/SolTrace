@@ -12,6 +12,16 @@ ListView {
 
     model: App.sun.shape.custom_distribution
 
+    function nextAngle() {
+        const count = root.model.count()
+        if (count <= 0) {
+            return 0
+        }
+
+        const lastAngle = root.model.data(root.model.index(count - 1, 0))
+        return Math.min(20, lastAngle + 1)
+    }
+
     header: RowLayout {
         width: root.width
 
@@ -48,7 +58,7 @@ ListView {
         STDoubleSpinBox {
             id: angle
 
-            from: -20
+            from: 0
             to: 20
             decimals: 3
             Layout.fillWidth: true
@@ -85,6 +95,6 @@ ListView {
         width: root.width
 
         text: "+ Add row"
-        onClicked: App.sun.shape.custom_distribution.append(0, 0)
+        onClicked: App.sun.shape.custom_distribution.append(root.nextAngle(), 0)
     }
 }

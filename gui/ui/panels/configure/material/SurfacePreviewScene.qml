@@ -10,29 +10,30 @@ import SolTrace
 View3D {
     id: root
 
+    property real light_scale: 0.001
+
     environment: SceneEnvironment {
         antialiasingMode: SceneEnvironment.MSAA
         antialiasingQuality: SceneEnvironment.VeryHigh
 
-        aoStrength: 50
+        aoStrength: 20
         aoDistance: 10
-        aoSoftness: 75
+        aoSoftness: 90
         aoBias: 0.01
         aoSampleRate: 4
 
-        probeExposure: 1.2
+        probeExposure: 0.8
 
         tonemapMode: SceneEnvironment.TonemapModeAces
 
-        backgroundMode: SceneEnvironment.SkyBox
+        backgroundMode: SceneEnvironment.Transparent
         lightProbe: Texture {
             textureData: ProceduralSkyTextureData {
                 sunColor: Qt.rgba(0, 0, 0, 0)
-                skyTopColor: Qt.rgba(0.2, 0.35, 0.6, 1.0)
-                skyHorizonColor: Qt.rgba(0.55, 0.65, 0.75, 1.0)
-                groundHorizonColor: Qt.rgba(0.55, 0.65, 0.75, 1.0)
-                groundBottomColor: Qt.rgba(0.45, 0.55, 0.65, 1.0)
-
+                skyTopColor: Qt.rgba(0.55, 0.58, 0.62, 1.0)
+                skyHorizonColor: Qt.rgba(0.78, 0.80, 0.84, 1.0)
+                groundHorizonColor: Qt.rgba(0.52, 0.54, 0.58, 1.0)
+                groundBottomColor: Qt.rgba(0.30, 0.31, 0.34, 1.0)
             }
             mappingMode: Texture.LightProbe
         }
@@ -50,13 +51,52 @@ View3D {
         clipNear: 0.1
         clipFar: 100
 
-        rotation: Quaternion.lookAt(position, Qt.vector3d(0, 0, 0))
+        eulerRotation.x: -45
+        eulerRotation.y: 45
     }
 
 
     DirectionalLight {
-        eulerRotation.x: -45
-        eulerRotation.y: 45
+        ambientColor: "#50545A"
+        eulerRotation: Qt.vector3d(-35, 35, 0)
+
+        color: "#FFAAAA"
+
+        brightness: 120 * light_scale
+    }
+
+    DirectionalLight {
+        eulerRotation: Qt.vector3d(-20, -55, 0)
+
+        color: "#AAAAFF"
+
+        brightness: 55 * light_scale
+    }
+
+    DirectionalLight {
+        eulerRotation: Qt.vector3d(-15, 160, 0)
+
+        color: "#AAFFAA"
+
+        brightness: 35 * light_scale
+    }
+
+    PointLight {
+        position: Qt.vector3d(0, 3.5, 3)
+
+        color: "#FFFFFF"
+
+        brightness: 120 * light_scale
+        quadraticFade: 0.35
+    }
+
+    PointLight {
+        position: Qt.vector3d(-3, -2, 2)
+
+        color: "#E7F0FF"
+
+        brightness: 65 * light_scale
+        quadraticFade: 0.45
     }
 
     CameraController {
@@ -72,12 +112,13 @@ View3D {
         Model {
             geometry: App.materials.geometry_edit.surface_geometry
 
+            castsShadows: true
+
             materials : [
                 PrincipledMaterial {
-                    metalness: 1
-                    roughness: 0.1
+                    metalness: 0.0
+                    roughness: 0.0
                     baseColor: "white"
-                    cullMode: Material.NoCulling
                 }
             ]
         }

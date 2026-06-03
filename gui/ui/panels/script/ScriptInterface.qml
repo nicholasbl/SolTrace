@@ -132,6 +132,7 @@ ScrollView {
                     text: value
 
                     onAccepted: model.value = text
+                    onTextEdited: model.value = text
                 }
             }
 

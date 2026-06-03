@@ -16,6 +16,14 @@ SurfaceGeometry::SurfaceGeometry() {
             &SurfaceGeometry::quality_changed,
             this,
             &SurfaceGeometry::rebuild_geometry);
+    connect(this,
+            &SurfaceGeometry::add_thickness_changed,
+            this,
+            &SurfaceGeometry::rebuild_geometry);
+    connect(this,
+            &SurfaceGeometry::thickness_changed,
+            this,
+            &SurfaceGeometry::rebuild_geometry);
 
     rebuild_geometry();
 }
@@ -66,6 +74,8 @@ SurfaceGenerationOptions SurfaceGeometry::surface_generation_options() const {
     options.perimeter_subdivisions        = scale(options.perimeter_subdivisions);
     options.cylinder_angular_subdivisions = scale(options.cylinder_angular_subdivisions);
     options.cylinder_length_subdivisions  = scale(options.cylinder_length_subdivisions);
+    options.add_thickness                 = add_thickness();
+    options.thickness                     = thickness();
 
     return options;
 }
@@ -184,6 +194,8 @@ GeometryEditor::GeometryEditor(QObject* parent)
 {
     m_surface_geometry->setParent(this);
     m_surface_geometry->set_quality(SurfaceGeometry::Quality::High);
+    m_surface_geometry->set_add_thickness(true);
+    m_surface_geometry->set_thickness(.01);
 
     connect(m_surface_parameter_model,
             &SurfaceParameterModel::updated,

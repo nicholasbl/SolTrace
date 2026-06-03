@@ -33,8 +33,6 @@ Node {
                     baseColor: App.view.sim.geometry_color
 
                     lighting: App.view.sim.blueprint_mode ? PrincipledMaterial.NoLighting : PrincipledMaterial.FragmentLighting
-
-                    cullMode: PrincipledMaterial.NoCulling
                 }
             ]
         }
