@@ -59,6 +59,12 @@ STPopup {
                                               altitude,
                                               pressure,
                                               temperature)
+
+        if (root.error_string.length > 0) {
+            return;
+        }
+
+        root.close()
     }
 
     contentItem: ColumnLayout {

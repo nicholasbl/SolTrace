@@ -37,25 +37,6 @@ QVector<SunShapePoint> normalized_radial_points(QVector<SunShapePoint> points) {
     return merged;
 }
 
-QVector<SunShapePoint> mirrored_radial_points(QVector<SunShapePoint> points) {
-    auto radial_points = normalized_radial_points(std::move(points));
-    if (radial_points.empty()) return {};
-
-    QVector<SunShapePoint> mirrored;
-    mirrored.reserve(radial_points.size() * 2 - 1);
-
-    for (auto it = radial_points.crbegin(); it != radial_points.crend(); ++it) {
-        if (it->angle <= 1.0e-9) continue;
-        mirrored.push_back({
-            .angle     = -it->angle,
-            .intensity = it->intensity,
-        });
-    }
-
-    mirrored.append(radial_points);
-    return mirrored;
-}
-
 std::optional<SunShape::Shape> gui_shape_for_data_shape(Data::SunShape shape) {
     switch (shape) {
     case Data::SunShape::GAUSSIAN: return SunShape::Shape::Gaussian;
@@ -679,7 +660,9 @@ SunShapeModel::SunShapeModel(QObject* parent) : StructTableModel(parent) {
 }
 
 std::vector<double> SunShapeModel::get_angle_data() {
-    auto points = mirrored_radial_points(m_records);
+    // Backend sun-shape data is radial-only. Views that need a symmetric curve
+    // should mirror these non-negative points at presentation time.
+    auto points = normalized_radial_points(m_records);
 
     std::vector<double> result;
     for (auto const& point : std::as_const(points)) {
@@ -689,7 +672,9 @@ std::vector<double> SunShapeModel::get_angle_data() {
 }
 
 std::vector<double> SunShapeModel::get_intensity_data() {
-    auto points = mirrored_radial_points(m_records);
+    // Keep this paired with get_angle_data(): both export the same normalized,
+    // non-negative radial profile to the backend.
+    auto points = normalized_radial_points(m_records);
 
     std::vector<double> result;
     for (auto const& point : std::as_const(points)) {
