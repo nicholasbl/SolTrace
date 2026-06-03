@@ -112,19 +112,12 @@ namespace
         plate->set_aim_vector(0, 0, 100);
         plate->set_surface(make_surface<Flat>());
         plate->set_aperture(make_aperture<Rectangle>(200, 200));
-        SolTrace::Data::OpticalPropertiesFace front_face;
-        front_face.set_ideal_reflection();
-        front_face.error_distribution_type = SolTrace::Data::DistributionType::NONE;
-        SolTrace::Data::OpticalPropertiesFace back_face;
-        back_face.set_ideal_reflection();
-        back_face.error_distribution_type = SolTrace::Data::DistributionType::NONE;
         SolTrace::Data::OpticalPropertySet plate_optics(
-            front_face,
-            back_face,
             SolTrace::Data::InteractionType::REFLECTION,
             0.0,
             0.0,
             "ray_position_sampling_plate_optics");
+        plate_optics.set_ideal_reflection(OpticalSide::Both);
         auto plate_optics_id = sd.add_optical_property_set(plate_optics);
         plate->set_optical_property_set_id(plate_optics_id);
         plate->set_name("plate");

@@ -144,17 +144,9 @@ public:
 
         // Initial setup of receiver
         receiver = SolTrace::Data::make_element<SingleElement>();
-        SolTrace::Data::OpticalPropertiesFace receiver_front_face;
-        receiver_front_face.set_ideal_absorption();
-        SolTrace::Data::OpticalPropertiesFace receiver_back_face;
-        receiver_back_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertySet receiver_opt_set(
-            receiver_front_face,
-            receiver_back_face,
-            SolTrace::Data::InteractionType::REFLECTION,
-            0.0,
-            0.0,
-            "ReceiverOptics");
+        SolTrace::Data::OpticalPropertySet receiver_opt_set(SolTrace::Data::InteractionType::REFLECTION, "ReceiverOptics");
+        receiver_opt_set.set_ideal_absorption(SolTrace::Data::OpticalSide::Front);
+        receiver_opt_set.set_ideal_reflection(SolTrace::Data::OpticalSide::Back);
         SolTrace::Data::optics_id receiver_id = simData.add_optical_property_set(receiver_opt_set);
         receiver->set_optical_property_set_id(receiver_id);
         receiver->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_height));
@@ -168,17 +160,9 @@ public:
         receiver->enable();
 
         top_heat_shield = SolTrace::Data::make_element<SingleElement>();
-        SolTrace::Data::OpticalPropertiesFace top_heat_shield_front_face;
-        top_heat_shield_front_face.set_ideal_absorption();
-        SolTrace::Data::OpticalPropertiesFace top_heat_shield_back_face;
-        top_heat_shield_back_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertySet top_heat_shield_opt_set(
-            top_heat_shield_front_face,
-            top_heat_shield_back_face,
-            SolTrace::Data::InteractionType::REFLECTION,
-            0.0,
-            0.0,
-            "TopHeatShieldOptics");
+        SolTrace::Data::OpticalPropertySet top_heat_shield_opt_set(SolTrace::Data::InteractionType::REFLECTION, "TopHeatShieldOptics");
+        top_heat_shield_opt_set.set_ideal_absorption(SolTrace::Data::OpticalSide::Front);
+        top_heat_shield_opt_set.set_ideal_reflection(SolTrace::Data::OpticalSide::Back);
         SolTrace::Data::optics_id top_heat_shield_id = simData.add_optical_property_set(top_heat_shield_opt_set);
         top_heat_shield->set_optical_property_set_id(top_heat_shield_id);
         top_heat_shield->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_heat_shield_height));
@@ -191,17 +175,9 @@ public:
         top_heat_shield->enable();
 
         bottom_heat_shield = SolTrace::Data::make_element<SingleElement>();
-        SolTrace::Data::OpticalPropertiesFace bottom_heat_shield_front_face;
-        bottom_heat_shield_front_face.set_ideal_absorption();
-        SolTrace::Data::OpticalPropertiesFace bottom_heat_shield_back_face;
-        bottom_heat_shield_back_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertySet bottom_heat_shield_opt_set(
-            bottom_heat_shield_front_face,
-            bottom_heat_shield_back_face,
-            SolTrace::Data::InteractionType::REFLECTION,
-            0.0,
-            0.0,
-            "BottomHeatShieldOptics");
+        SolTrace::Data::OpticalPropertySet bottom_heat_shield_opt_set(SolTrace::Data::InteractionType::REFLECTION, "BottomHeatShieldOptics");
+        bottom_heat_shield_opt_set.set_ideal_absorption(SolTrace::Data::OpticalSide::Front);
+        bottom_heat_shield_opt_set.set_ideal_reflection(SolTrace::Data::OpticalSide::Back);
         SolTrace::Data::optics_id bottom_heat_shield_id = simData.add_optical_property_set(bottom_heat_shield_opt_set);
         bottom_heat_shield->set_optical_property_set_id(bottom_heat_shield_id);
         bottom_heat_shield->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(rec_radius * 2.0, rec_heat_shield_height));
@@ -233,23 +209,11 @@ public:
 
     void create_heliostat_field() {
         // Define mirror optical properties
-        SolTrace::Data::OpticalPropertiesFace mirror;
-        mirror.set_ideal_reflection();
-        mirror.reflectivity = 0.9;
-        mirror.slope_error = 2.0;       // mrad
-        mirror.specularity_error = 0.0; // mrad
-        mirror.error_distribution_type = SolTrace::Data::DistributionType::GAUSSIAN;
-        // Backside is absorbing
-        SolTrace::Data::OpticalPropertiesFace mirror_back;
-        mirror_back.set_ideal_absorption();
-
-        SolTrace::Data::OpticalPropertySet mirror_opt_set(
-            mirror,
-            mirror_back,
-            SolTrace::Data::InteractionType::REFLECTION,
-            0.0,
-            0.0,
-            "HeliostatMirrorOptics");
+        SolTrace::Data::OpticalPropertySet mirror_opt_set(SolTrace::Data::InteractionType::REFLECTION, "HeliostatMirrorOptics");
+        mirror_opt_set.set_reflectivity(SolTrace::Data::OpticalSide::Front, 0.9);
+        mirror_opt_set.set_ideal_absorption(SolTrace::Data::OpticalSide::Back);
+        mirror_opt_set.set_errors(SolTrace::Data::OpticalSide::Front, SolTrace::Data::DistributionType::GAUSSIAN, 2.0, 0.0);
+        mirror_opt_set.set_errors(SolTrace::Data::OpticalSide::Back, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
         SolTrace::Data::optics_id mirror_id = simData.add_optical_property_set(mirror_opt_set);
 
         // Reading in field layout and aimpoints

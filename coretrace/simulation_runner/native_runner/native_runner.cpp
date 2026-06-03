@@ -509,9 +509,9 @@ namespace SolTrace::NativeRunner
     void NativeRunner::check_supported_options(telement_ptr telem)
     {
         check_supported_optical_distribution(
-            telem->Optics.front.error_distribution_type);
+            telem->Optics.get_error_distribution(OpticalSide::Front));
         check_supported_optical_distribution(
-            telem->Optics.back.error_distribution_type);
+            telem->Optics.get_error_distribution(OpticalSide::Back));
 
         // TODO: Put other checks here
 

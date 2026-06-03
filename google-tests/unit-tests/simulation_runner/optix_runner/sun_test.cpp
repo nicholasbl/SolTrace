@@ -10,7 +10,6 @@
 #include <functional>
 
 using SolTrace::Runner::RunnerStatus;
-using SolTrace::Data::OpticalPropertiesFace;
 using SolTrace::Data::OpticalPropertySet;
 
 namespace
@@ -333,10 +332,10 @@ namespace
         double ri_front = 0;   // Refraction not supported
         double ri_back = 0;
 
-        OpticalPropertiesFace plate_optics_face(dtype, transmissivity,
+        OpticalPropertySet plate_optics(itype, ri_front, ri_back, 
+            "PlateOptics");
+        plate_optics.set_properties(OpticalSide::Both, dtype, transmissivity,
             reflectivity, slope_err, spec_err);
-        OpticalPropertySet plate_optics(plate_optics_face, plate_optics_face,
-            itype, ri_front, ri_back, "PlateOptics");
         auto optics_id = sd.add_optical_property_set(plate_optics);
         plate->set_optical_property_set_id(optics_id);
 

@@ -29,10 +29,10 @@ namespace SolTrace::NativeRunner
         auto UnitLastDFXYZ = glm::dvec3{0.0};
         double IncidentAngle = 0;
 
-        const OpticalPropertiesFace& optics_face = LastHitBackSide == false ? optics->front : optics->back;
+        const OpticalSide side = LastHitBackSide == false ? OpticalSide::Front : OpticalSide::Back;
 
         // TODO: Implement tables...
-        switch (optics->my_type)
+        switch (optics->get_interaction_type())
         {
         case InteractionType::REFRACTION:
             // if (optics->UseTransmissivityTable)
@@ -64,7 +64,7 @@ namespace SolTrace::NativeRunner
             //     TestValue = optics->transmitivity;
             //     rev = RayEvent::TRANSMIT;
             // }
-            TestValue = optics_face.transmissivity;
+            TestValue = optics->get_transmissivity(side);
             rev = RayEvent::TRANSMIT;
             break;
         case InteractionType::REFLECTION:
@@ -96,14 +96,14 @@ namespace SolTrace::NativeRunner
             //     TestValue = optics->reflectivity;
             //     rev = RayEvent::REFLECT;
             // }
-            TestValue = optics_face.reflectivity;
+            TestValue = optics->get_reflectivity(side);
             rev = RayEvent::REFLECT;
             break;
         default:
             good = false;
             std::stringstream ss;
             ss << "Bad optical interaction."
-               << " Type: " << static_cast<int>(optics->my_type)
+               << " Type: " << static_cast<int>(optics->get_interaction_type())
                << " Stage: " << stage
                << " Thread: " << thread_id
                << "\n";

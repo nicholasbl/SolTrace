@@ -218,52 +218,26 @@ TEST(ParabolicTrough, Tracing)
     my_runner.disable_power_tower();
     my_runner.disable_point_focus();
 
-    SolTrace::Data::OpticalPropertiesFace mirror_front;
-    mirror_front.set_ideal_reflection();
-    mirror_front.slope_error = 1.5;
-    mirror_front.specularity_error = 0.5;
-
-    SolTrace::Data::OpticalPropertiesFace mirror_back;
-    mirror_back.set_ideal_absorption();
-    mirror_back.slope_error = 1e-5;
-    mirror_back.specularity_error = 1e-5;
-
-    auto mirror_optics = SolTrace::Data::OpticalPropertySet(
-        mirror_front,
-        mirror_back,
-        SolTrace::Data::InteractionType::REFLECTION,
-        0.0,
-        0.0,
-        "Mirror");
+    SolTrace::Data::OpticalPropertySet mirror_optics(SolTrace::Data::InteractionType::REFLECTION,
+        0.0, 0.0, "Mirror");
+    mirror_optics.set_ideal_one_sided_reflector(SolTrace::Data::OpticalSide::Front);
+    mirror_optics.set_errors(SolTrace::Data::OpticalSide::Front, SolTrace::Data::DistributionType::NONE, 1.5, 0.5);
+    mirror_optics.set_errors(SolTrace::Data::OpticalSide::Back, SolTrace::Data::DistributionType::NONE, 1e-5, 1e-5);
     SolTrace::Data::optics_id mirror_opt_id = my_sim.add_optical_property_set(mirror_optics);
 
-    auto absorber_optics = SolTrace::Data::OpticalPropertySet();
-    absorber_optics.front.set_ideal_absorption();
-    absorber_optics.back.set_ideal_absorption();
-    absorber_optics.front.slope_error = 1e-5;
-    absorber_optics.front.specularity_error = 1e-5;
-    absorber_optics.back.slope_error = 1e-5;
-    absorber_optics.back.specularity_error = 1e-5;
-    absorber_optics.my_type = SolTrace::Data::InteractionType::REFLECTION;
-    absorber_optics.my_name = "Absorber";
+    auto absorber_optics = SolTrace::Data::OpticalPropertySet(SolTrace::Data::InteractionType::REFLECTION, "Absorber");
+    absorber_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
+    absorber_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 1e-5, 1e-5);
     SolTrace::Data::optics_id abs_opt_id = my_sim.add_optical_property_set(absorber_optics);
 
-    auto envelop_outer_optics = SolTrace::Data::OpticalPropertySet();
+    auto envelop_outer_optics = SolTrace::Data::OpticalPropertySet(SolTrace::Data::InteractionType::REFRACTION, "EnvelopeOuter");
     envelop_outer_optics.set_ideal_transmission(1.46, 1.0);
-    envelop_outer_optics.front.slope_error = 1e-4;
-    envelop_outer_optics.front.specularity_error = 1e-4;
-    envelop_outer_optics.back.slope_error = 1e-4;
-    envelop_outer_optics.back.specularity_error = 1e-4;
-    envelop_outer_optics.my_name = "EnvelopeOuter";
+    envelop_outer_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 1e-4, 1e-4);
     SolTrace::Data::optics_id env_out_opt_id = my_sim.add_optical_property_set(envelop_outer_optics);
 
-    auto envelop_inner_optics = SolTrace::Data::OpticalPropertySet();
+    auto envelop_inner_optics = SolTrace::Data::OpticalPropertySet(SolTrace::Data::InteractionType::REFRACTION, "EnvelopeInner");
     envelop_inner_optics.set_ideal_transmission(1.0, 1.46);
-    envelop_inner_optics.front.slope_error = 1e-4;
-    envelop_inner_optics.front.specularity_error = 1e-4;
-    envelop_inner_optics.back.slope_error = 1e-4;
-    envelop_inner_optics.back.specularity_error = 1e-4;
-    envelop_inner_optics.my_name = "EnvelopeInner";
+    envelop_inner_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 1e-4, 1e-4);
     SolTrace::Data::optics_id env_in_opt_id = my_sim.add_optical_property_set(envelop_inner_optics);
 
     auto pt = SolTrace::Data::make_element<ParabolicTrough>();
@@ -367,44 +341,29 @@ TEST(ParabolicTrough, UpdateGeometry)
     my_runner.disable_power_tower();
     my_runner.disable_point_focus();
 
-    SolTrace::Data::OpticalPropertiesFace mirror_front;
-    mirror_front.set_ideal_reflection();
-    mirror_front.slope_error = 1.5;
-    mirror_front.specularity_error = 0.5;
-
-    SolTrace::Data::OpticalPropertiesFace mirror_back;
-    mirror_back.set_ideal_absorption();
-    mirror_back.slope_error = 1e-5;
-    mirror_back.specularity_error = 1e-5;
-
-    auto mirror_optics = SolTrace::Data::OpticalPropertySet(mirror_front, mirror_back,
-        SolTrace::Data::InteractionType::REFLECTION, 0, 0, "Mirror");
+    SolTrace::Data::OpticalPropertySet mirror_optics(SolTrace::Data::InteractionType::REFLECTION,
+        0.0, 0.0, "Mirror");
+    mirror_optics.set_ideal_one_sided_reflector(SolTrace::Data::OpticalSide::Front);
+    mirror_optics.set_errors(SolTrace::Data::OpticalSide::Front, SolTrace::Data::DistributionType::NONE, 1.5, 0.5);
+    mirror_optics.set_errors(SolTrace::Data::OpticalSide::Back, SolTrace::Data::DistributionType::NONE, 1e-5, 1e-5);
 
     SolTrace::Data::optics_id mirror_opt_id = my_sim.add_optical_property_set(mirror_optics);
 
-    auto absorber_optics = SolTrace::Data::OpticalPropertySet();
-    absorber_optics.front.set_ideal_absorption();
-    absorber_optics.back.set_ideal_absorption();
-    absorber_optics.my_type = SolTrace::Data::InteractionType::REFLECTION;
-    absorber_optics.my_name = "Absorber";
+    auto absorber_optics = SolTrace::Data::OpticalPropertySet(SolTrace::Data::InteractionType::REFLECTION, "Absorber");
+    absorber_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
+    absorber_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 1e-5, 1e-5);
 
     SolTrace::Data::optics_id abs_opt_id = my_sim.add_optical_property_set(absorber_optics);
 
-    auto envelop_outer_optics = SolTrace::Data::OpticalPropertySet();
+    auto envelop_outer_optics = SolTrace::Data::OpticalPropertySet(SolTrace::Data::InteractionType::REFRACTION, "EnvelopeOuter");
     envelop_outer_optics.set_ideal_transmission(1.46, 1.0);
-    envelop_outer_optics.front.slope_error = 1e-4;
-    envelop_outer_optics.front.specularity_error = 1e-4;
-    envelop_outer_optics.back.slope_error = 1e-4;
-    envelop_outer_optics.back.specularity_error = 1e-4;
+    envelop_outer_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 1e-4, 1e-4);
 
     SolTrace::Data::optics_id env_out_opt_id = my_sim.add_optical_property_set(envelop_outer_optics);
 
-    auto envelop_inner_optics = SolTrace::Data::OpticalPropertySet();
+    auto envelop_inner_optics = SolTrace::Data::OpticalPropertySet(SolTrace::Data::InteractionType::REFRACTION, "EnvelopeInner");
     envelop_inner_optics.set_ideal_transmission(1.0, 1.46);
-    envelop_inner_optics.front.slope_error = 1e-4;
-    envelop_inner_optics.front.specularity_error = 1e-4;
-    envelop_inner_optics.back.slope_error = 1e-4;
-    envelop_inner_optics.back.specularity_error = 1e-4;
+    envelop_inner_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 1e-4, 1e-4);
     
     SolTrace::Data::optics_id env_in_opt_id = my_sim.add_optical_property_set(envelop_inner_optics);
 

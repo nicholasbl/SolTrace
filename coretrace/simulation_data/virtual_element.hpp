@@ -26,7 +26,7 @@ public:
     virtual void set_optical_property_set_id(optics_id) override {}
     virtual optics_id get_optical_property_set_id() const override 
     {
-        return opt_id;
+        return opt_id;  // TODO: return identifier saying it's permanent/virtual
     }
 };
 

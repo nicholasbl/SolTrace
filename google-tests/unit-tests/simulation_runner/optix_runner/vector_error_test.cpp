@@ -9,22 +9,10 @@
 static SolTrace::Data::optics_id add_plate_optics(SimulationData& sd,
                                                   SolTrace::Data::DistributionType distribution)
 {
-    SolTrace::Data::OpticalPropertiesFace front_face;
-    front_face.set_ideal_reflection();
-    front_face.slope_error = 1.0;
-    front_face.specularity_error = 1e-3;
-    front_face.error_distribution_type = distribution;
-
-    SolTrace::Data::OpticalPropertiesFace back_face;
-    back_face.set_ideal_reflection();
-
-    SolTrace::Data::OpticalPropertySet plate_optics(
-        front_face,
-        back_face,
-        SolTrace::Data::InteractionType::REFLECTION,
-        0.0,
-        0.0,
+    SolTrace::Data::OpticalPropertySet plate_optics(SolTrace::Data::InteractionType::REFLECTION,
         "plate_optics");
+    plate_optics.set_ideal_reflection(OpticalSide::Both);
+    plate_optics.set_errors(OpticalSide::Front, distribution, 1, 1e-3);
 
     return sd.add_optical_property_set(plate_optics);
 }

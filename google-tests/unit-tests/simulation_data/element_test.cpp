@@ -12,8 +12,8 @@ TEST(OpticalProperties, OutputOperator)
 {
     std::stringstream ss;
 
-    OpticalPropertiesFace op;
-    op.set_ideal_reflection();
+    OpticalPropertySet op;
+    op.set_ideal_reflection(OpticalSide::Both);
     ss << op;
     EXPECT_GE(ss.str().length(), 0);
 }
@@ -835,10 +835,10 @@ TEST(Element, SingleElementEnforceUserFieldsSet)
     EXPECT_NO_THROW(elem->enforce_user_fields_set());
 
     // Test with optical properties set as well
-    OpticalPropertiesFace opt_face(DistributionType::GAUSSIAN,
-        0.75, 0.25, 0.1, 0.001);
-    OpticalPropertySet opt_set(opt_face, opt_face, InteractionType::REFLECTION,
+    OpticalPropertySet opt_set(InteractionType::REFLECTION,
         1, 1);
+    opt_set.set_properties(OpticalSide::Both, DistributionType::GAUSSIAN,
+        0.75, 0.25, 0.1, 0.001);
     SimulationData sd;
     optics_id id = sd.add_optical_property_set(opt_set);
     elem->set_optical_property_set_id(id);

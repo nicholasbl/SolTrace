@@ -55,27 +55,15 @@ TEST(NativeRunner, PerformanceTest)
     my_runner.enable_power_tower();
     my_runner.enable_point_focus();
 
-    OpticalPropertiesFace mirror_front;
-    mirror_front.set_ideal_reflection();
+    SolTrace::Data::OpticalPropertySet mirror_optics(SolTrace::Data::InteractionType::REFLECTION, "Mirror");
+    mirror_optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Front);
+    mirror_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Back);
+    mirror_optics.set_errors(SolTrace::Data::OpticalSide::Front, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
+    SolTrace::Data::optics_id mirror_optics_id = sdata.add_optical_property_set(mirror_optics);
 
-    OpticalPropertiesFace mirror_back;
-    mirror_back.set_ideal_absorption();
-
-    OpticalPropertySet mirror_optics(
-        mirror_front,
-        mirror_back,
-        InteractionType::REFLECTION,
-        0.0,
-        0.0,
-        "Mirror");
-    optics_id mirror_optics_id = sdata.add_optical_property_set(mirror_optics);
-
-    OpticalPropertySet absorber_optics;
-    absorber_optics.front.set_ideal_absorption();
-    absorber_optics.back.set_ideal_absorption();
-    absorber_optics.my_type = InteractionType::REFLECTION;
-    absorber_optics.my_name = "Absorber";
-    optics_id absorber_optics_id = sdata.add_optical_property_set(absorber_optics);
+    SolTrace::Data::OpticalPropertySet absorber_optics(SolTrace::Data::InteractionType::REFLECTION, "Absorber");
+    absorber_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
+    SolTrace::Data::optics_id absorber_optics_id = sdata.add_optical_property_set(absorber_optics);
 
     stage_ptr st1 = make_stage(1);
     st1->set_reference_frame_geometry(zero, khat, 0.0);

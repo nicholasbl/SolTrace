@@ -22,30 +22,13 @@ static SimulationData create_two_flat_elements_simulation(const bool separateSta
 {
     SimulationData sd;
 
-    SolTrace::Data::OpticalPropertiesFace reflective_front;
-    reflective_front.set_ideal_reflection();
-    SolTrace::Data::OpticalPropertiesFace reflective_back;
-    reflective_back.set_ideal_reflection();
-    SolTrace::Data::OpticalPropertySet reflective_optics(
-        reflective_front,
-        reflective_back,
-        SolTrace::Data::InteractionType::REFLECTION,
-        0.0,
-        0.0,
-        "reflective_plate_optics");
+    SolTrace::Data::OpticalPropertySet reflective_optics(SolTrace::Data::InteractionType::REFLECTION, "reflective_plate_optics");
+    reflective_optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+    reflective_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
     auto reflective_optics_id = sd.add_optical_property_set(reflective_optics);
 
-    SolTrace::Data::OpticalPropertiesFace absorber_front;
-    absorber_front.set_ideal_absorption();
-    SolTrace::Data::OpticalPropertiesFace absorber_back;
-    absorber_back.set_ideal_absorption();
-    SolTrace::Data::OpticalPropertySet absorber_optics(
-        absorber_front,
-        absorber_back,
-        SolTrace::Data::InteractionType::REFLECTION,
-        0.0,
-        0.0,
-        "absorbing_plate_optics");
+    SolTrace::Data::OpticalPropertySet absorber_optics(SolTrace::Data::InteractionType::REFLECTION, "absorbing_plate_optics");
+    absorber_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
     auto absorber_optics_id = sd.add_optical_property_set(absorber_optics);
 
     // Sun
@@ -330,17 +313,9 @@ TEST(StageTest, DuplicateStageNumbersThrows)
     elA->set_surface(make_surface<Flat>());
     elA->set_aperture(make_aperture<Rectangle>(1, 1));
     {
-        SolTrace::Data::OpticalPropertiesFace front_face;
-        front_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertiesFace back_face;
-        back_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertySet optics(
-            front_face,
-            back_face,
-            SolTrace::Data::InteractionType::REFLECTION,
-            0.0,
-            0.0,
-            "duplicate_stage_A_optics");
+        SolTrace::Data::OpticalPropertySet optics(SolTrace::Data::InteractionType::REFLECTION, "duplicate_stage_A_optics");
+        optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+        optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
         elA->set_optical_property_set_id(sd.add_optical_property_set(optics));
     }
     st0a->add_element(elA);
@@ -351,17 +326,9 @@ TEST(StageTest, DuplicateStageNumbersThrows)
     elB->set_surface(make_surface<Flat>());
     elB->set_aperture(make_aperture<Rectangle>(1, 1));
     {
-        SolTrace::Data::OpticalPropertiesFace front_face;
-        front_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertiesFace back_face;
-        back_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertySet optics(
-            front_face,
-            back_face,
-            SolTrace::Data::InteractionType::REFLECTION,
-            0.0,
-            0.0,
-            "duplicate_stage_B_optics");
+        SolTrace::Data::OpticalPropertySet optics(SolTrace::Data::InteractionType::REFLECTION, "duplicate_stage_B_optics");
+        optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+        optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
         elB->set_optical_property_set_id(sd.add_optical_property_set(optics));
     }
     st0b->add_element(elB);
@@ -388,17 +355,9 @@ TEST(StageTest, ElementBeforeStageThrowsWhenStagesEnabled)
     el->set_surface(make_surface<Flat>());
     el->set_aperture(make_aperture<Rectangle>(1,1));
     {
-        SolTrace::Data::OpticalPropertiesFace front_face;
-        front_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertiesFace back_face;
-        back_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertySet optics(
-            front_face,
-            back_face,
-            SolTrace::Data::InteractionType::REFLECTION,
-            0.0,
-            0.0,
-            "element_before_stage_optics");
+        SolTrace::Data::OpticalPropertySet optics(SolTrace::Data::InteractionType::REFLECTION, "element_before_stage_optics");
+        optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+        optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
         el->set_optical_property_set_id(sd.add_optical_property_set(optics));
     }
     sd.add_element(el);
@@ -411,17 +370,9 @@ TEST(StageTest, ElementBeforeStageThrowsWhenStagesEnabled)
     elB->set_surface(make_surface<Flat>());
     elB->set_aperture(make_aperture<Rectangle>(1, 1));
     {
-        SolTrace::Data::OpticalPropertiesFace front_face;
-        front_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertiesFace back_face;
-        back_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertySet optics(
-            front_face,
-            back_face,
-            SolTrace::Data::InteractionType::REFLECTION,
-            0.0,
-            0.0,
-            "element_before_stage_B_optics");
+        SolTrace::Data::OpticalPropertySet optics(SolTrace::Data::InteractionType::REFLECTION, "element_before_stage_B_optics");
+        optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+        optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
         elB->set_optical_property_set_id(sd.add_optical_property_set(optics));
     }
     st0->add_element(elB);
@@ -447,17 +398,9 @@ TEST(StageTest, ElementBeforeStageSucceedsWhenStagesDisabled)
     el->set_surface(make_surface<Flat>());
     el->set_aperture(make_aperture<Rectangle>(1,1));
     {
-        SolTrace::Data::OpticalPropertiesFace front_face;
-        front_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertiesFace back_face;
-        back_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertySet optics(
-            front_face,
-            back_face,
-            SolTrace::Data::InteractionType::REFLECTION,
-            0.0,
-            0.0,
-            "element_before_stage_disabled_optics");
+        SolTrace::Data::OpticalPropertySet optics(SolTrace::Data::InteractionType::REFLECTION, "element_before_stage_disabled_optics");
+        optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+        optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
         el->set_optical_property_set_id(sd.add_optical_property_set(optics));
     }
     sd.add_element(el);
@@ -470,17 +413,9 @@ TEST(StageTest, ElementBeforeStageSucceedsWhenStagesDisabled)
     elB->set_surface(make_surface<Flat>());
     elB->set_aperture(make_aperture<Rectangle>(1, 1));
     {
-        SolTrace::Data::OpticalPropertiesFace front_face;
-        front_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertiesFace back_face;
-        back_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertySet optics(
-            front_face,
-            back_face,
-            SolTrace::Data::InteractionType::REFLECTION,
-            0.0,
-            0.0,
-            "element_before_stage_disabled_B_optics");
+        SolTrace::Data::OpticalPropertySet optics(SolTrace::Data::InteractionType::REFLECTION, "element_before_stage_disabled_B_optics");
+        optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+        optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
         elB->set_optical_property_set_id(sd.add_optical_property_set(optics));
     }
     st0->add_element(elB);
@@ -513,17 +448,9 @@ TEST(StageTest, NoStagesCreatesSingleInternalStage)
     el->set_surface(make_surface<Flat>());
     el->set_aperture(make_aperture<Rectangle>(2,2));
     {
-        SolTrace::Data::OpticalPropertiesFace front_face;
-        front_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertiesFace back_face;
-        back_face.set_ideal_reflection();
-        SolTrace::Data::OpticalPropertySet optics(
-            front_face,
-            back_face,
-            SolTrace::Data::InteractionType::REFLECTION,
-            0.0,
-            0.0,
-            "no_stage_internal_optics");
+        SolTrace::Data::OpticalPropertySet optics(SolTrace::Data::InteractionType::REFLECTION, "no_stage_internal_optics");
+        optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+        optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
         el->set_optical_property_set_id(sd.add_optical_property_set(optics));
     }
     sd.add_element(el);

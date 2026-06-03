@@ -189,7 +189,7 @@ namespace SolTrace::NativeRunner
 
         PosOut = PosXYZ;
 
-        switch (Opticl->my_type)
+        switch (Opticl->get_interaction_type())
         {
 
             /*{  InteractionType = 1, Refraction
@@ -201,9 +201,20 @@ namespace SolTrace::NativeRunner
             // Refr1 = Opticl->RefractiveIndex[0];
             // Refr2 = Opticl->RefractiveIndex[2];
 
-            // TODO: Does this get the correct refraction index if on back side?
-            Refr1 = Opticl->refraction_index_front;
-            Refr2 = Opticl->refraction_index_back;
+            double refrac_front, refrac_back;
+            Opticl->get_refraction_indices(refrac_front, refrac_back);
+
+            if (!LastHitBackSide)
+            {
+                Refr1 = refrac_front;
+                Refr2 = refrac_back;
+            }
+            else
+            {
+                Refr1 = refrac_back;
+                Refr2 = refrac_front;
+            }
+            
             RMU = Refr1 / Refr2;
             D2 = glm::dot(DFXYZ, DFXYZ);
             B = (RMU * RMU - 1.0) / D2;

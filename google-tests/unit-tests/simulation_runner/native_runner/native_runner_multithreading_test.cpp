@@ -43,11 +43,10 @@ namespace
             glm::dvec3(0.0, 0.0, 1.0),
             0.0);
 
-        OpticalPropertySet mirror_optics_set;
-        mirror_optics_set.front.set_ideal_reflection();
-        mirror_optics_set.back.set_ideal_reflection();
-        mirror_optics_set.my_type = InteractionType::REFLECTION;
-        optics_id id = sd.add_optical_property_set(mirror_optics_set);
+        SolTrace::Data::OpticalPropertySet mirror_optics_set(SolTrace::Data::InteractionType::REFLECTION, "Mirror");
+        mirror_optics_set.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+        mirror_optics_set.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
+        SolTrace::Data::optics_id id = sd.add_optical_property_set(mirror_optics_set);
         mirror->set_optical_property_set_id(id);
 
         stage->add_element(mirror);

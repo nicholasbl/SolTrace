@@ -193,13 +193,24 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             // Add optical properties
             optics_id opt_id = el->get_optical_property_set_id();
             auto opt_set = data->get_optical_property_set(opt_id);
-            OptixCSP::OpticalDistribution od_front = this->to_optical_distribution(opt_set->front.error_distribution_type);
-            optix_el->set_optics_front(opt_set->my_type == InteractionType::REFRACTION, opt_set->front.reflectivity,
-                opt_set->front.transmissivity, opt_set->front.slope_error, opt_set->front.specularity_error, od_front);
 
-            OptixCSP::OpticalDistribution od_back = this->to_optical_distribution(opt_set->back.error_distribution_type);
-            optix_el->set_optics_back(opt_set->my_type == InteractionType::REFRACTION, opt_set->back.reflectivity,
-                opt_set->back.transmissivity, opt_set->back.slope_error, opt_set->back.specularity_error, od_back);
+            DistributionType front_dist;
+            double front_slope, front_spec;
+            opt_set->get_errors(OpticalSide::Front, front_dist, front_slope, front_spec);
+
+            OptixCSP::OpticalDistribution front_dist_optix = this->to_optical_distribution(front_dist);
+            optix_el->set_optics_front(opt_set->get_interaction_type() == InteractionType::REFRACTION, 
+                opt_set->get_reflectivity(OpticalSide::Front), opt_set->get_transmissivity(OpticalSide::Front), 
+                front_slope, front_spec, front_dist_optix);
+
+            DistributionType back_dist;
+            double back_slope, back_spec;
+            opt_set->get_errors(OpticalSide::Back, back_dist, back_slope, back_spec);
+
+            OptixCSP::OpticalDistribution back_dist_optix = this->to_optical_distribution(back_dist);
+            optix_el->set_optics_back(opt_set->get_interaction_type() == InteractionType::REFRACTION,
+                opt_set->get_reflectivity(OpticalSide::Back), opt_set->get_transmissivity(OpticalSide::Back),
+                back_slope, back_spec, back_dist_optix);
 
             if (m_sys.is_verbose())
             {

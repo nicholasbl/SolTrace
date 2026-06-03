@@ -60,10 +60,9 @@ TEST(EmbreeRunner, SingleRayValidationTest)
     sph->set_reference_frame_geometry(origin, aim, zrot);
     sph->set_aperture(SolTrace::Data::make_aperture<Hexagon>(20.0));
     sph->set_surface(SolTrace::Data::make_surface<Sphere>(c));
-    SolTrace::Data::OpticalPropertySet sphere_optics;
-    sphere_optics.front.set_ideal_reflection();
-    sphere_optics.back.set_ideal_reflection();
-    sphere_optics.my_type = InteractionType::REFLECTION;
+    SolTrace::Data::OpticalPropertySet sphere_optics(SolTrace::Data::InteractionType::REFLECTION, "Sphere");
+    sphere_optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+    sphere_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
     auto sphere_optics_id = sd.add_optical_property_set(sphere_optics);
     sph->set_optical_property_set_id(sphere_optics_id);
     sph->set_name("Sphere");
@@ -76,10 +75,9 @@ TEST(EmbreeRunner, SingleRayValidationTest)
     para->set_reference_frame_geometry(origin, aim, zrot);
     para->set_aperture(SolTrace::Data::make_aperture<Rectangle>(31.0, 31.0));
     para->set_surface(SolTrace::Data::make_surface<Parabola>(0.5 / 0.03, 0.5 / 0.03));
-    SolTrace::Data::OpticalPropertySet parabola_optics;
-    parabola_optics.front.set_ideal_absorption();
-    parabola_optics.back.set_ideal_absorption();
-    parabola_optics.my_type = InteractionType::REFLECTION;
+    SolTrace::Data::OpticalPropertySet parabola_optics(SolTrace::Data::InteractionType::REFLECTION, "Parabola");
+    parabola_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
+    parabola_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
     auto parabola_optics_id = sd.add_optical_property_set(parabola_optics);
     para->set_optical_property_set_id(parabola_optics_id);
     para->set_name("Parabola");
@@ -155,10 +153,9 @@ TEST(EmbreeRunner, PowerTowerSmokeTest)
     absorber->compute_coordinate_rotations();
     absorber->set_surface(SolTrace::Data::make_surface<Flat>()); // surface(nullptr)
     absorber->set_aperture(SolTrace::Data::make_aperture<Rectangle>(2.0, 2.0));
-    SolTrace::Data::OpticalPropertySet absorber_optics;
-    absorber_optics.front.set_ideal_absorption();
-    absorber_optics.back.set_ideal_absorption();
-    absorber_optics.my_type = InteractionType::REFLECTION;
+    SolTrace::Data::OpticalPropertySet absorber_optics(SolTrace::Data::InteractionType::REFLECTION, "Absorber");
+    absorber_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
+    absorber_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
     auto absorber_optics_id = sd.add_optical_property_set(absorber_optics);
     absorber->set_optical_property_set_id(absorber_optics_id);
 
@@ -188,10 +185,10 @@ TEST(EmbreeRunner, PowerTowerSmokeTest)
     for (int k = 0; k < NUM_ELEMENTS; ++k)
     {
         auto el = SolTrace::Data::make_element<SingleElement>();
-        SolTrace::Data::OpticalPropertySet mirror_optics;
-        mirror_optics.front.set_ideal_reflection();
-        mirror_optics.back.set_ideal_absorption();
-        mirror_optics.my_type = InteractionType::REFLECTION;
+        SolTrace::Data::OpticalPropertySet mirror_optics(SolTrace::Data::InteractionType::REFLECTION, "Mirror");
+        mirror_optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Front);
+        mirror_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Back);
+        mirror_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
         auto mirror_optics_id = sd.add_optical_property_set(mirror_optics);
         el->set_optical_property_set_id(mirror_optics_id);
 

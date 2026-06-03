@@ -280,9 +280,9 @@ void SimulationData::initialize_builtin_optical_property_sets()
     }
      
     // Add permanent optical property sets to collection
-    OpticalPropertiesFace virtual_face(DistributionType::NONE, 1, 0, 0, 0);
-    OpticalPropertySet virtual_set(virtual_face, virtual_face, InteractionType::REFRACTION, 1.0, 1.0, "VirtualProp");
-    
+    OpticalPropertySet virtual_set(InteractionType::REFRACTION, 1.0, 1.0, "VirtualProp");
+    virtual_set.set_properties(OpticalSide::Both, DistributionType::NONE, 1, 0, 0, 0);
+
     std::shared_ptr<OpticalPropertySet> virtual_ptr = std::make_shared<OpticalPropertySet>(virtual_set);
     bool flag = this->my_optical_property_sets.insert_item(OPTICS_ID_VIRTUAL, virtual_ptr);
     if (!flag)

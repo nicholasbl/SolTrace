@@ -15,25 +15,6 @@
 
 // Private
 
-SolTrace::Data::OpticalPropertiesFace make_optics(TOpticalProperties optics_legacy)
-{
-    // TODO: Not using any transmissivity or reflectivity tables
-
-    // Get error distribution type
-    SolTrace::Data::DistributionType dist_type = SolTrace::Data::char_to_distribution(optics_legacy.DistributionType);
-
-    double transmissivity = optics_legacy.Transmissivity;
-    double reflectivity = optics_legacy.Reflectivity;
-    double rms_slope = optics_legacy.RMSSlopeError;
-    double rms_spec = optics_legacy.RMSSpecError;
-
-    // Make new optical properties
-    SolTrace::Data::OpticalPropertiesFace optics = SolTrace::Data::OpticalPropertiesFace(dist_type, transmissivity,
-        reflectivity, rms_slope, rms_spec);
-
-    return optics;
-}
-
 void convert_user_sun_data(const std::vector<double>& sun_shape_angle, const std::vector<double>& sun_shape_intensity,
     std::vector<double>& sun_shape_angle_reduced, std::vector<double>& sun_shape_intensity_reduced)
 {
@@ -278,19 +259,35 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
                 // Set optical properties
                 if (is_virtual == false)
                 {
-                    SolTrace::Data::OpticalPropertiesFace optics_front = make_optics(el_legacy->Optics->Front);
-                    SolTrace::Data::OpticalPropertiesFace optics_back = make_optics(el_legacy->Optics->Back);
+                    // Convert legacy front/back optics into new OpticalPropertySet
+                    auto &front = el_legacy->Optics->Front;
+                    auto &back = el_legacy->Optics->Back;
 
-                    // Get interaction type
                     SolTrace::Data::InteractionType interaction_type = SolTrace::Data::int_to_interaction(el_legacy->InteractionType);
-                    double refrac_front = el_legacy->Optics->Front.RefractiveIndex[0];
-                    double refrac_back = el_legacy->Optics->Back.RefractiveIndex[0];
+                    double refrac_front = front.RefractiveIndex[0];
+                    double refrac_back = back.RefractiveIndex[0];
 
-                    SolTrace::Data::OpticalPropertySet optics_set(optics_front, optics_back, interaction_type,
-                        refrac_front, refrac_back);
+                    SolTrace::Data::OpticalPropertySet optics_set(interaction_type, refrac_front, refrac_back);
 
-                    optics_id id = sd.add_optical_property_set(optics_set);
+                    // Front face
+                    SolTrace::Data::DistributionType dist_front = SolTrace::Data::char_to_distribution(front.DistributionType);
+                    optics_set.set_properties(SolTrace::Data::OpticalSide::Front,
+                                              dist_front,
+                                              front.Transmissivity,
+                                              front.Reflectivity,
+                                              front.RMSSlopeError,
+                                              front.RMSSpecError);
 
+                    // Back face
+                    SolTrace::Data::DistributionType dist_back = SolTrace::Data::char_to_distribution(back.DistributionType);
+                    optics_set.set_properties(SolTrace::Data::OpticalSide::Back,
+                                              dist_back,
+                                              back.Transmissivity,
+                                              back.Reflectivity,
+                                              back.RMSSlopeError,
+                                              back.RMSSpecError);
+
+                    SolTrace::Data::optics_id id = sd.add_optical_property_set(optics_set);
                     element->set_optical_property_set_id(id);
                 }
 

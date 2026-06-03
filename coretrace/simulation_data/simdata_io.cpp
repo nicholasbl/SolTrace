@@ -279,7 +279,8 @@ bool process_sun(FILE *fp, SimulationData &sd)
 }
 
 bool read_optic_surface(FILE *fp,
-                        OpticalPropertiesFace &optics,
+                        bool is_front,
+                        OpticalPropertySet &optics,
                         int &OpticalSurfaceNumber,
                         double &refraction)
 {
@@ -360,7 +361,8 @@ bool read_optic_surface(FILE *fp,
 
     // Define optical properties
     DistributionType dist = char_to_distribution(ErrorDistribution);
-    optics = OpticalPropertiesFace(dist, Transmissivity, Reflectivity, RMSSlope, RMSSpecularity);
+    OpticalSide side = is_front ? OpticalSide::Front : OpticalSide::Back;
+    optics.set_properties(side, dist, Transmissivity, Reflectivity, RMSSlope, RMSSpecularity);
 
     if (refl_angles != 0)
         delete[] refl_angles;
@@ -394,14 +396,13 @@ bool process_optics(
         {
             // int iopt = st_add_optic(cxt, (const char*)(buf + 13));
             std::string optics_name = std::string(buf + 13);
-            OpticalPropertiesFace optics_front, optics_back;
             double refrac_front, refrac_back;
             int OpticalSurfaceNumber = 0;
-            read_optic_surface(fp, optics_front, OpticalSurfaceNumber, refrac_front);
-            read_optic_surface(fp, optics_back, OpticalSurfaceNumber, refrac_back);
-            
-            OpticalPropertySet optics_set(optics_front, optics_back, InteractionType::REFLECTION, 
-                refrac_front, refrac_back, optics_name);
+
+            OpticalPropertySet optics_set(InteractionType::UNKNOWN, optics_name);
+            read_optic_surface(fp, true, optics_set, OpticalSurfaceNumber, refrac_front);
+            read_optic_surface(fp, false, optics_set, OpticalSurfaceNumber, refrac_back);
+            optics_set.set_refraction_indices(refrac_front, refrac_back);
 
             optics_map[optics_name] = optics_set;
         }
@@ -562,7 +563,7 @@ bool read_element(
         }
 
         OpticalPropertySet optics_set = optics_iter->second;
-        optics_set.my_type = interaction;
+        optics_set.set_interaction_type(interaction);
 
         optics_id id = sd.find_or_add_optical_property_set(optics_set);
         el->set_optical_property_set_id(id);

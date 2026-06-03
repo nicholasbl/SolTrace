@@ -41,11 +41,9 @@ SimulationData create_tower_demo_simulation_data(bool create_stages)
     absorber->set_surface(make_surface<Flat>()); // surface(nullptr)
     absorber->set_aperture(make_aperture<Rectangle>(2.0, 2.0));
 
-    OpticalPropertySet abs_optics;
-    abs_optics.front.set_ideal_absorption();
-    abs_optics.back.set_ideal_absorption();
-    abs_optics.my_type = InteractionType::REFLECTION;
-    optics_id abs_id = sd.add_optical_property_set(abs_optics);
+    SolTrace::Data::OpticalPropertySet abs_optics(SolTrace::Data::InteractionType::REFLECTION, "Absorber");
+    abs_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
+    SolTrace::Data::optics_id abs_id = sd.add_optical_property_set(abs_optics);
     absorber->set_optical_property_set_id(abs_id);
 
     absorber->set_name("Absorber");
@@ -81,11 +79,9 @@ SimulationData create_tower_demo_simulation_data(bool create_stages)
     glm::dvec3 rvec, svec, avec;
     glm::dvec3 aim, pos;
 
-    OpticalPropertySet mirror_optics_set;
-    mirror_optics_set.front.set_ideal_reflection();
-    mirror_optics_set.back.set_ideal_reflection();
-    mirror_optics_set.my_type = InteractionType::REFLECTION;
-    optics_id mirror_optics_id = sd.add_optical_property_set(mirror_optics_set);
+    SolTrace::Data::OpticalPropertySet mirror_optics_set(SolTrace::Data::InteractionType::REFLECTION, "Mirror");
+    mirror_optics_set.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+    SolTrace::Data::optics_id mirror_optics_id = sd.add_optical_property_set(mirror_optics_set);
 
     for (int i = -1; i < 2; ++i)
     {

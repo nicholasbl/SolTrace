@@ -209,9 +209,9 @@ TEST(Heliostat, Trace)
     my_runner.disable_power_tower();
     my_runner.enable_point_focus();
 
-    SolTrace::Data::OpticalPropertiesFace opt_reflector(DistributionType::GAUSSIAN, 0, 1, 0, 0);
-    SolTrace::Data::OpticalPropertySet hs_opt_set(opt_reflector, opt_reflector,
-        InteractionType::REFLECTION, 0, 0);
+    SolTrace::Data::OpticalPropertySet hs_opt_set(InteractionType::REFLECTION, "HeliostatMirror");
+    hs_opt_set.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+    hs_opt_set.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::GAUSSIAN, 0.0, 0.0);
     SolTrace::Data::optics_id hs_id = my_sim.add_optical_property_set(hs_opt_set);
 
     stage_ptr st1 = SolTrace::Data::make_stage(1);
@@ -250,10 +250,8 @@ TEST(Heliostat, Trace)
     auto ret = st1->add_element(hs);
     EXPECT_TRUE(SolTrace::Data::Element::is_success(ret));
 
-    SolTrace::Data::OpticalPropertySet ab_opt_set;
-    ab_opt_set.front.set_ideal_absorption();
-    ab_opt_set.back.set_ideal_absorption();
-    ab_opt_set.my_type = InteractionType::REFLECTION;
+    SolTrace::Data::OpticalPropertySet ab_opt_set(InteractionType::REFLECTION, "Absorber");
+    ab_opt_set.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
     SolTrace::Data::optics_id ab_id = my_sim.add_optical_property_set(ab_opt_set);
 
     auto absorb = SolTrace::Data::make_element<SingleElement>();
@@ -359,9 +357,9 @@ TEST(Heliostat, TraceOffAxisCanting)
     my_runner.disable_power_tower();
     my_runner.disable_point_focus();
 
-    SolTrace::Data::OpticalPropertiesFace opt_reflector(DistributionType::GAUSSIAN, 0, 1, 0, 0);
-    SolTrace::Data::OpticalPropertySet hs_opt_set(opt_reflector, opt_reflector,
-        InteractionType::REFLECTION, 0, 0);
+    SolTrace::Data::OpticalPropertySet hs_opt_set(SolTrace::Data::InteractionType::REFLECTION, "HeliostatMirror");
+    hs_opt_set.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+    hs_opt_set.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::GAUSSIAN, 0.0, 0.0);
     SolTrace::Data::optics_id hs_id = my_sim.add_optical_property_set(hs_opt_set);
 
     stage_ptr st1 = SolTrace::Data::make_stage(1);
@@ -391,10 +389,8 @@ TEST(Heliostat, TraceOffAxisCanting)
     auto ret = st1->add_element(hs);
     EXPECT_TRUE(SolTrace::Data::Element::is_success(ret));
 
-    SolTrace::Data::OpticalPropertySet ab_opt_set;
-    ab_opt_set.front.set_ideal_absorption();
-    ab_opt_set.back.set_ideal_absorption();
-    ab_opt_set.my_type = InteractionType::REFLECTION;
+    SolTrace::Data::OpticalPropertySet ab_opt_set(SolTrace::Data::InteractionType::REFLECTION, "Absorber");
+    ab_opt_set.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
     SolTrace::Data::optics_id ab_id = my_sim.add_optical_property_set(ab_opt_set);
 
     auto absorb = SolTrace::Data::make_element<SingleElement>();
@@ -541,9 +537,8 @@ TEST(Heliostat, UpdateGeometry)
     my_runner.disable_power_tower();
     my_runner.enable_point_focus();
 
-    SolTrace::Data::OpticalPropertiesFace opt_reflector(DistributionType::GAUSSIAN, 0, 1, 0, 0);
-    SolTrace::Data::OpticalPropertySet hs_opt_set(opt_reflector, opt_reflector, 
-        InteractionType::REFLECTION, 0, 0);
+    SolTrace::Data::OpticalPropertySet hs_opt_set(InteractionType::REFLECTION, 0, 0);
+    hs_opt_set.set_properties(OpticalSide::Both, DistributionType::GAUSSIAN, 0, 1, 0, 0);
     SolTrace::Data::optics_id hs_id = my_sim.add_optical_property_set(hs_opt_set);
 
     glm::dvec3 sun_pos;
@@ -580,10 +575,8 @@ TEST(Heliostat, UpdateGeometry)
     // TODO: Test for correct z-rotation...
 
     auto absorb = SolTrace::Data::make_element<SingleElement>();
-    SolTrace::Data::OpticalPropertySet ab_opt_set;
-    ab_opt_set.front.set_ideal_absorption();
-    ab_opt_set.back.set_ideal_absorption();
-    ab_opt_set.my_type = InteractionType::REFLECTION;
+    SolTrace::Data::OpticalPropertySet ab_opt_set(InteractionType::REFLECTION);
+    ab_opt_set.set_ideal_absorption(OpticalSide::Both);
     SolTrace::Data::optics_id ab_id = my_sim.add_optical_property_set(ab_opt_set);
 
     absorb->set_optical_property_set_id(ab_id);

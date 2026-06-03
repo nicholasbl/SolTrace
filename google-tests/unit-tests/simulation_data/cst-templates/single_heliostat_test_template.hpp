@@ -113,24 +113,18 @@ public:
         //runner.disable_point_focus();
 
         // Define mirror optical properties
-        OpticalPropertiesFace mirror;
-        mirror.set_ideal_reflection();
-        mirror.reflectivity = 0.9;
-        mirror.slope_error = this->slope_error;       // mrad
-        mirror.specularity_error = this->spec_error; // mrad
-        mirror.error_distribution_type = this->error_dist;
-        // Backside is absorbing
-        OpticalPropertiesFace mirror_back;
-        mirror_back.set_ideal_absorption();
+        SolTrace::Data::OpticalPropertySet mirror_opt_set(SolTrace::Data::InteractionType::REFLECTION, "HeliostatMirror");
+        // Front reflectivity less than 1.0, back is absorbing
+        mirror_opt_set.set_reflectivity(SolTrace::Data::OpticalSide::Front, 0.9);
+        mirror_opt_set.set_ideal_absorption(SolTrace::Data::OpticalSide::Back);
+        mirror_opt_set.set_errors(SolTrace::Data::OpticalSide::Front, this->error_dist, this->slope_error, this->spec_error);
+        mirror_opt_set.set_errors(SolTrace::Data::OpticalSide::Back, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
 
         // Initial setup of heliostat
         glm::dvec3 heliostat_origin(0.0, 500.0, 5.65);
         glm::dvec3 rec_origin(0.0, 0.0, 169.0);
         heliostat = SolTrace::Data::make_element<Heliostat>();
-
-        OpticalPropertySet mirror_opt_set(mirror, mirror_back, 
-            InteractionType::REFLECTION, 0, 0);
-        optics_id mirror_id = simData.add_optical_property_set(mirror_opt_set);
+        SolTrace::Data::optics_id mirror_id = simData.add_optical_property_set(mirror_opt_set);
         heliostat->set_optics_id(mirror_id);
         heliostat->set_reference_frame_geometry(heliostat_origin, khat, 0.0);
         heliostat->set_aperture_size(11.415, 10.42);   // Width, Height
@@ -144,13 +138,9 @@ public:
         heliostat->enable();
 
         // Initial setup of receiver
-        OpticalPropertiesFace opt_rec_front_face;
-        opt_rec_front_face.set_ideal_absorption();
-        OpticalPropertiesFace opt_rec_back_face;
-        opt_rec_back_face.set_ideal_absorption();
-        OpticalPropertySet rec_opt_set(opt_rec_front_face, opt_rec_back_face, 
-            InteractionType::REFLECTION, 0, 0);
-        optics_id rec_id = simData.add_optical_property_set(rec_opt_set);
+        SolTrace::Data::OpticalPropertySet rec_opt_set(SolTrace::Data::InteractionType::REFLECTION, "Receiver");
+        rec_opt_set.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
+        SolTrace::Data::optics_id rec_id = simData.add_optical_property_set(rec_opt_set);
 
         receiver = SolTrace::Data::make_element<SingleElement>();
         receiver->set_optical_property_set_id(rec_id);

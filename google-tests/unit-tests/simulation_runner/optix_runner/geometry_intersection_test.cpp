@@ -30,10 +30,8 @@ element_id set_default_sd(SimulationData &sd,
     el->set_surface(surf);
     el->set_aperture(ap);
 
-    OpticalPropertiesFace optics_abs;
-    optics_abs.set_ideal_absorption();
-    OpticalPropertySet optics(optics_abs, optics_abs, 
-        InteractionType::REFLECTION, 0, 0);
+    OpticalPropertySet optics(InteractionType::REFLECTION, 0, 0);
+    optics.set_ideal_absorption(OpticalSide::Both);
     optics_id opt_id = sd.add_optical_property_set(optics);
     el->set_optical_property_set_id(opt_id);
 

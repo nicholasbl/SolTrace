@@ -37,20 +37,10 @@ TEST(OpticalErrors, Gaussian)
     plate->set_aperture(make_aperture<Rectangle>(5, 5));
     plate->set_name("plate");
 
-    SolTrace::Data::OpticalPropertiesFace front_face;
-    front_face.set_ideal_reflection();
-    front_face.slope_error = 1.0;
-    front_face.specularity_error = 1e-3;
-    front_face.error_distribution_type = SolTrace::Data::DistributionType::GAUSSIAN;
-    SolTrace::Data::OpticalPropertiesFace back_face;
-    back_face.set_ideal_reflection();
-    SolTrace::Data::OpticalPropertySet plate_optics(
-        front_face,
-        back_face,
-        SolTrace::Data::InteractionType::REFLECTION,
-        0.0,
-        0.0,
-        "plate_optics_gaussian");
+    SolTrace::Data::OpticalPropertySet plate_optics(SolTrace::Data::InteractionType::REFLECTION, "plate_optics_gaussian");
+    plate_optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+    plate_optics.set_errors(SolTrace::Data::OpticalSide::Front, SolTrace::Data::DistributionType::GAUSSIAN, 1.0, 1e-3);
+    plate_optics.set_errors(SolTrace::Data::OpticalSide::Back, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
     auto plate_optics_id = sd.add_optical_property_set(plate_optics);
     plate->set_optical_property_set_id(plate_optics_id);
 
@@ -149,20 +139,10 @@ TEST(OpticalErrors, Uniform)
     plate->set_aperture(make_aperture<Rectangle>(5, 5));
     plate->set_name("plate");
 
-    SolTrace::Data::OpticalPropertiesFace front_face;
-    front_face.set_ideal_reflection();
-    front_face.slope_error = 1.0;
-    front_face.specularity_error = 1e-3;
-    front_face.error_distribution_type = SolTrace::Data::DistributionType::PILLBOX;
-    SolTrace::Data::OpticalPropertiesFace back_face;
-    back_face.set_ideal_reflection();
-    SolTrace::Data::OpticalPropertySet plate_optics(
-        front_face,
-        back_face,
-        SolTrace::Data::InteractionType::REFLECTION,
-        0.0,
-        0.0,
-        "plate_optics_uniform");
+    SolTrace::Data::OpticalPropertySet plate_optics(SolTrace::Data::InteractionType::REFLECTION, "plate_optics_uniform");
+    plate_optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+    plate_optics.set_errors(SolTrace::Data::OpticalSide::Front, SolTrace::Data::DistributionType::PILLBOX, 1.0, 1e-3);
+    plate_optics.set_errors(SolTrace::Data::OpticalSide::Back, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
     auto plate_optics_id = sd.add_optical_property_set(plate_optics);
     plate->set_optical_property_set_id(plate_optics_id);
 

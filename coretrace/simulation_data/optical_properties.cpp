@@ -24,7 +24,7 @@ const std::string interaction_string(InteractionType it)
     }
 }
 
-OpticalPropertiesFace::OpticalPropertiesFace(const nlohmann::ordered_json& jnode)
+OpticalPropertySet::OpticalPropertiesFace::OpticalPropertiesFace(const nlohmann::ordered_json& jnode)
 {
     std::string distribution_string = jnode.at("error_distribution_type");
     this->error_distribution_type = get_enum_from_string(distribution_string, DistributionTypeMap, DistributionType::UNKNOWN);
@@ -35,7 +35,7 @@ OpticalPropertiesFace::OpticalPropertiesFace(const nlohmann::ordered_json& jnode
     this->specularity_error = jnode.at("specularity_error");
 }
 
-void OpticalPropertiesFace::write_json(nlohmann::ordered_json& jnode) const
+void OpticalPropertySet::OpticalPropertiesFace::write_json(nlohmann::ordered_json& jnode) const
 {
     jnode["error_distribution_type"] = DistributionTypeMap.at(this->error_distribution_type);
     jnode["transmissivity"] = this->transmissivity;
@@ -44,7 +44,7 @@ void OpticalPropertiesFace::write_json(nlohmann::ordered_json& jnode) const
     jnode["specularity_error"] = this->specularity_error;
 }
 
-bool OpticalPropertiesFace::operator==(const OpticalPropertiesFace& other) const
+bool OpticalPropertySet::OpticalPropertiesFace::operator==(const OpticalPropertiesFace& other) const
 {
     return this->error_distribution_type == other.error_distribution_type &&
         this->transmissivity == other.transmissivity &&
@@ -53,13 +53,13 @@ bool OpticalPropertiesFace::operator==(const OpticalPropertiesFace& other) const
         this->specularity_error == other.specularity_error;
 }
 
-bool OpticalPropertiesFace::operator!=(const OpticalPropertiesFace& other) const
+bool OpticalPropertySet::OpticalPropertiesFace::operator!=(const OpticalPropertiesFace& other) const
 {
     return !(*this == other);
 }
 
 std::ostream &operator<<(std::ostream &os,
-    const OpticalPropertiesFace& op)
+    const OpticalPropertySet::OpticalPropertiesFace& op)
 {
     os << "Transmissivity: " << op.transmissivity
        << "\nReflectivity: " << op.reflectivity
@@ -71,8 +71,8 @@ std::ostream &operator<<(std::ostream &os,
 OpticalPropertySet::OpticalPropertySet(const nlohmann::ordered_json& jnode)
     : front(jnode.at("front")), back(jnode.at("back"))
 {
-    std::string interaction_string = jnode.at("my_type");
-    this->my_type = get_enum_from_string(interaction_string, InteractionTypeMap, InteractionType::UNKNOWN);
+    std::string interaction_type_string = jnode.at("my_type");
+    this->my_type = get_enum_from_string(interaction_type_string, InteractionTypeMap, InteractionType::UNKNOWN);
 
     this->refraction_index_front = jnode.at("refraction_index_front");
     this->refraction_index_back = jnode.at("refraction_index_back");

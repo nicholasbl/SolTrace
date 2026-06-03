@@ -30,17 +30,12 @@ void make_two_plate_sd(SimulationData& sd, element_ptr& plate1, element_ptr& pla
 	plate1->set_aim_vector(0, 50, 100);  // Tilted 45 degrees toward +Y
 	plate1->set_surface(make_surface<Flat>());
 	plate1->set_aperture(make_aperture<Rectangle>(5, 5));
-	SolTrace::Data::OpticalPropertiesFace reflective_front;
-	reflective_front.set_ideal_reflection();
-	SolTrace::Data::OpticalPropertiesFace reflective_back;
-	reflective_back.set_ideal_reflection();
 	SolTrace::Data::OpticalPropertySet reflective_optics(
-		reflective_front,
-		reflective_back,
 		SolTrace::Data::InteractionType::REFLECTION,
 		0.0,
 		0.0,
 		"two_plate_reflector_optics");
+	reflective_optics.set_ideal_reflection(OpticalSide::Both);
 	auto reflective_optics_id = sd.add_optical_property_set(reflective_optics);
 	plate1->set_optical_property_set_id(reflective_optics_id);
 	plate1->set_name("plate1");
@@ -52,17 +47,12 @@ void make_two_plate_sd(SimulationData& sd, element_ptr& plate1, element_ptr& pla
 	plate2->set_aim_vector(0, 0, 100);  // Tilted 45 degrees toward -Y (facing plate 1)
 	plate2->set_surface(make_surface<Flat>());
 	plate2->set_aperture(make_aperture<Rectangle>(10, 10));  // Larger to catch reflected rays
-	SolTrace::Data::OpticalPropertiesFace absorbing_front;
-	absorbing_front.set_ideal_absorption();
-	SolTrace::Data::OpticalPropertiesFace absorbing_back;
-	absorbing_back.set_ideal_absorption();
 	SolTrace::Data::OpticalPropertySet absorbing_optics(
-		absorbing_front,
-		absorbing_back,
 		SolTrace::Data::InteractionType::REFLECTION,
 		0.0,
 		0.0,
 		"two_plate_absorber_optics");
+	absorbing_optics.set_ideal_absorption(OpticalSide::Both);
 	auto absorbing_optics_id = sd.add_optical_property_set(absorbing_optics);
 	plate2->set_optical_property_set_id(absorbing_optics_id);
 	plate2->set_name("plate2");
