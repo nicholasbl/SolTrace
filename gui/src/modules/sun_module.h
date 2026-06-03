@@ -165,20 +165,21 @@ class SunModule : public QObject {
     QML_ELEMENT
 
 private:
-    void update_shape();
-    void update_type();
-    void update_position();
-    void update_database_connections();
-    void load_from_database();
-    void load_from_ray_source(SD::ray_source_ptr const& ray_source);
-    void write_shape_to_database();
-    void write_position_to_database();
+    void    update_shape();
+    void    update_type();
+    QString update_position();
+    void    update_database_connections();
+    void    load_from_database();
+    void    load_from_ray_source(SD::ray_source_ptr const& ray_source);
+    void    write_shape_to_database();
+    QString write_position_to_database();
+    Data::SolarPositionCalculationMethod selected_calculation_method() const;
 
-    Data::SolarPositionCalculator m_calculator;
+    Data::SolarPositionCalculator    m_calculator;
     QVector<QMetaObject::Connection> m_database_connections;
-    bool m_loading_from_database = false;
-    bool m_writing_to_database = false;
-    bool m_updating_calculated_position = false;
+    bool                             m_loading_from_database        = false;
+    bool                             m_writing_to_database          = false;
+    bool                             m_updating_calculated_position = false;
 
 public:
     explicit SunModule(QObject* parent = nullptr);
@@ -206,6 +207,21 @@ public:
     QOBJECT_READONLY_PROPERTY(SolarCalculatorData, calc_data)
 
     Q_WRITABLE_PROPERTY(bool, sun_error_enabled, false)
+
+public slots:
+    QString apply_calculator(int    calculator,
+                             double latitude,
+                             double longitude,
+                             int    year,
+                             int    month,
+                             int    day,
+                             int    hour,
+                             int    minute,
+                             int    second,
+                             int    timezone_offset,
+                             double altitude,
+                             double pressure,
+                             double temperature);
 };
 
 } // namespace SolTrace::GUI::App

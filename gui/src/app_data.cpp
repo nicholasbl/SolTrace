@@ -82,6 +82,9 @@ void AppData::load_session() {
     calc->set_minute(s.value("minute", 0).toInt());
     calc->set_second(s.value("second", 0).toInt());
     calc->set_timezone_offset(s.value("timezone_offset", -7).toInt());
+    calc->set_altitude(s.value("altitude", 1000).toDouble());
+    calc->set_pressure(s.value("pressure", 1013.25).toDouble());
+    calc->set_temperature(s.value("temperature", 20.0).toDouble());
 
     // Sun Shape
     m_sun->shape()->set_shape(
@@ -159,6 +162,9 @@ void AppData::save_session() {
     s.setValue("minute", calc->minute());
     s.setValue("second", calc->second());
     s.setValue("timezone_offset", calc->timezone_offset());
+    s.setValue("altitude", calc->altitude());
+    s.setValue("pressure", calc->pressure());
+    s.setValue("temperature", calc->temperature());
 
     // Sun Shape
     s.setValue("shape", static_cast<int>(m_sun->shape()->shape()));
