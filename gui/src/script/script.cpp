@@ -1,5 +1,7 @@
 #include "script.h"
 
+#include <QDir>
+#include <QDirIterator>
 #include <QRegularExpression>
 
 namespace SolTrace::GUI::Script {
@@ -188,9 +190,27 @@ bool looks_like_legacy_function_script(QString const& code,
 ScriptPropertyModel::ScriptPropertyModel(QObject* parent)
     : StructTableModel(parent) { }
 
+
+static QStringList get_builtin_scripts() {
+    QStringList files;
+
+    QDirIterator it(":/assets/scripts/", // e.g. ":/scripts"
+                    QStringList() << "*.js",
+                    QDir::Files,
+                    QDirIterator::Subdirectories);
+
+    while (it.hasNext()) {
+        files << it.next();
+    }
+
+    return files;
+}
+
 Script::Script(QObject* parent)
     : QObject { parent }, m_properties { new ScriptPropertyModel(this) } {
     connect(this, &Script::code_changed, this, &Script::parse);
+
+    set_builtin_scripts(get_builtin_scripts());
 }
 
 void Script::set_database(db::Database* db) {
