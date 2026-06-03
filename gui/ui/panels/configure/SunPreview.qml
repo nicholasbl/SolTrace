@@ -12,11 +12,11 @@ Item {
     opacity: .75
 
     property var model: App.sun.shape.current_distribution
-    property var gradientStops: []
     property real max_angle: 1.0
     property real max_intensity: 0.0
     property real half_max_angle: 0.0
     property bool has_distribution: false
+    property var current_gradient: null
 
     function computeMaxAngle() {
         if (!model) {
@@ -135,12 +135,17 @@ Item {
         return chart.width / 2 + normalizedAngle(angle) * shape_path.diskRadius
     }
 
-    function clearGradientStops() {
-        const oldStops = gradientStops
-        gradientStops = []
+    function destroyRadialGradient(gradient) {
+        if (!gradient) {
+            return
+        }
+
+        const oldStops = gradient.stops
+        gradient.stops = []
         for (let i = 0; i < oldStops.length; ++i) {
             oldStops[i].destroy()
         }
+        gradient.destroy()
     }
 
     function addGradientStop(stops, position, color) {
@@ -153,8 +158,29 @@ Item {
         stops.push(stop)
     }
 
+    function createRadialGradient(stops) {
+        const gradient = Qt.createQmlObject(
+                         'import QtQuick.Shapes; RadialGradient {}',
+                         root,
+                         "sunPreviewRadialGradient")
+        gradient.centerX = Qt.binding(function() { return chart.width / 2 })
+        gradient.centerY = Qt.binding(function() { return chart.height / 2 })
+        gradient.focalX = Qt.binding(function() { return gradient.centerX })
+        gradient.focalY = Qt.binding(function() { return gradient.centerY })
+        gradient.centerRadius = Qt.binding(function() { return shape_path.diskRadius })
+        gradient.stops = stops
+        return gradient
+    }
+
+    function replaceRadialGradient(stops) {
+        const oldGradient = current_gradient
+        const gradient = createRadialGradient(stops)
+        current_gradient = gradient
+        shape_path.fillGradient = gradient
+        destroyRadialGradient(oldGradient)
+    }
+
     function rebuildGradientStops() {
-        clearGradientStops()
         max_angle = computeMaxAngle()
 
         const stops = []
@@ -164,7 +190,7 @@ Item {
             half_max_angle = 0.0
             addGradientStop(stops, 0.0, sample_color_mapCss(0.0))
             addGradientStop(stops, 1.0, sample_color_mapCss(0.0))
-            gradientStops = stops
+            replaceRadialGradient(stops)
             return
         }
 
@@ -218,15 +244,24 @@ Item {
             return a.position - b.position
         })
 
-        gradientStops = stops
+        replaceRadialGradient(stops)
     }
 
     onModelChanged: rebuildGradientStops()
 
     Component.onCompleted: rebuildGradientStops()
+    Component.onDestruction: destroyRadialGradient(current_gradient)
 
     Connections {
         target: root.model
+
+        function onChanged() {
+            root.rebuildGradientStops()
+        }
+    }
+
+    Connections {
+        target: App.sun.shape
 
         function onChanged() {
             root.rebuildGradientStops()
@@ -387,18 +422,6 @@ Item {
                     strokeWidth: 1
                     strokeColor: "white"
                     fillColor: "white"
-
-                    fillGradient: RadialGradient {
-
-                        centerX: chart.width / 2
-                        centerY: chart.height / 2
-
-                        focalX: centerX
-                        focalY: centerY
-
-                        centerRadius: shape_path.diskRadius
-                        stops: root.gradientStops
-                    }
 
                     PathAngleArc {
                         centerX: chart.width / 2

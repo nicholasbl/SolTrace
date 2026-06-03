@@ -33,6 +33,7 @@ public:
     void         set_variant_data(QVariantList data);
 
 public slots:
+    void reset(QVector<SunShapePoint> points = {});
     void append(double angle = 0.0, double intensity = 0.0);
     void remove(int index);
     void clear();
