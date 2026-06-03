@@ -4,6 +4,7 @@
 #include "MaterialDataST.h"
 #include "soltrace_constants.h"
 
+#include <cstdint>
 #include <vector_types.h>
 #include <optix.h>
 #include <curand_kernel.h>
@@ -12,11 +13,20 @@ namespace OptixCSP{
 
     const unsigned int NUM_ATTRIBUTE_VALUES = 4u;
     const unsigned int NUM_PAYLOAD_VALUES   = 2u;
-    const unsigned int MAX_TRACE_DEPTH      = 5u;
+    // NOTE: Maximum number of ray interactions in tracing with the geometry is
+    // DEFAULT_MAX_TRACE_DEPTH - 1 (so currently 4). See the end of the function
+    // __closesthit__element in materials.cu. Note the type. Limited to 255.
+    const uint8_t DEFAULT_MAX_TRACE_DEPTH = 5u;
 
     struct HitGroupData
     {
         MaterialData material_data;
+    };
+
+    struct HitRecord {
+        float4 hit_point;
+        int32_t element_id;
+        uint8_t hit_type;
     };
 
     enum RayType
@@ -31,6 +41,9 @@ namespace OptixCSP{
         CYLINDRICAL          = 2,
         TRIANGLE_FLAT        = 3,
         QUADRILATERAL_FLAT   = 4,
+        CIRCLE_FLAT          = 5,
+        HEXAGON_FLAT         = 6,
+        ANNULUS_FLAT         = 7,
 	    NUM_OPTICAL_ENTITY_TYPES
     };
 
@@ -40,15 +53,18 @@ namespace OptixCSP{
 
         unsigned int                width;   // essentially number of rays launched and sun points 
         unsigned int                height;
-        int                         max_depth;
-        unsigned int                ray_offset; // Global offset for current branch
+        unsigned int                max_depth;
+        unsigned long long          ray_offset; // Global offset for current branch
 
-        float4*                     hit_point_buffer;
+        // float4*                     hit_point_buffer;
+        HitRecord*                  hit_buffer;
         float3*                     sun_dir_buffer;
         curandState*                rng_states;
         OptixTraversableHandle      handle;
-        int32_t*                    element_id_buffer;
-        uint8_t*                    hit_type_buffer;
+        // int32_t*                    element_id_buffer;
+        // uint8_t*                    hit_type_buffer;
+        uint64_t*                   d_depth_exceeded_count; // Atomic counter: rays stopped by max depth, not absorption
+
 
         float3                      sun_vector;
         bool                        include_sun_shape_errors;

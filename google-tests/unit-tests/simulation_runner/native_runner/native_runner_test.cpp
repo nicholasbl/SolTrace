@@ -236,6 +236,59 @@ TEST(NativeRunner, SmokeTest)
               << std::endl;
 }
 
+TEST(NativeRunner, RaysLaunchedEqualsRequestedAfterRun)
+{
+    const uint_fast64_t NRAYS = 10;
+    NativeRunner runner;
+    SimulationData my_sim;
+
+    SimulationParameters &params = my_sim.get_simulation_parameters();
+    params.include_optical_errors = false;
+    params.include_sun_shape_errors = false;
+    params.number_of_rays = NRAYS;
+    params.max_number_of_rays = 10 * NRAYS;
+
+    auto sun = SolTrace::Data::make_ray_source<Sun>();
+    sun->set_position(0.0, 0.0, 100.0);
+    sun->set_shape(SolTrace::Data::SunShape::GAUSSIAN, 1.0, -5.0, 0.0);
+    my_sim.add_ray_source(sun);
+
+    auto my_st = SolTrace::Data::make_stage(0);
+    const int NUM_ELEMENTS = 4;
+    double x[NUM_ELEMENTS] = {1.0, 0.0, -1.0, 0.0};
+    double y[NUM_ELEMENTS] = {0.0, 1.0, 0.0, -1.0};
+    OpticalProperties optics(SolTrace::Data::InteractionType::REFLECTION,
+                             SolTrace::Data::DistributionType::GAUSSIAN,
+                             0.0, 1.0, 0.0, 0.0, 1.0, 1.0);
+    for (int k = 0; k < NUM_ELEMENTS; ++k)
+    {
+        element_ptr el = SolTrace::Data::make_element<SingleElement>();
+        el->set_aperture(SolTrace::Data::make_aperture<Circle>(2.0));
+        el->set_surface(SolTrace::Data::make_surface<Flat>());
+        el->set_reference_frame_geometry(glm::dvec3(x[k], y[k], 0.0),
+                                         glm::dvec3(-x[k], -y[k], 1.0),
+                                         0.0);
+        el->set_front_optical_properties(optics);
+        el->set_back_optical_properties(optics);
+        my_st->add_element(el);
+    }
+    my_sim.add_stage(my_st);
+
+    RunnerStatus sts = runner.initialize();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&my_sim);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+
+    // Before running, SunRayCount has not been accumulated yet
+    EXPECT_EQ(runner.get_number_rays_launched(), static_cast<uint_fast64_t>(0));
+
+    sts = runner.run_simulation();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+
+    EXPECT_GE(runner.get_number_rays_launched(), NRAYS);
+    EXPECT_EQ(runner.get_number_rays_traced(), NRAYS);
+}
+
 TEST(NativeRunner, PowerTowerSmokeTest)
 {
     SimulationData sd;

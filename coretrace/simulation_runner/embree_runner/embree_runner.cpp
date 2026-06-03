@@ -50,8 +50,7 @@ namespace SolTrace::EmbreeRunner
     {
         // TODO: Do a more efficient implementation of this?
         this->clean_embree();
-        NativeRunner::update_simulation(data);
-        return RunnerStatus::SUCCESS;
+        return NativeRunner::update_simulation(data);
     }
 
     RunnerStatus EmbreeRunner::run_simulation()

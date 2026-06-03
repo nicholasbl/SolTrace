@@ -83,7 +83,7 @@ namespace OptixCSP {
                 << std::string(log, log + log_size);
             throw std::runtime_error(oss.str());
         }
-        else if (log_size > 1)
+        else if (log_size > 1 && log != nullptr && log[0] != '\0')
         {
             std::cerr << "OptiX log for " << func << ":\n"
                 << std::string(log, log + log_size) << std::endl;

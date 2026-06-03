@@ -334,7 +334,7 @@ TEST(Aperture, Hexagon)
     const double TOL = 1e-12;
     const double D = 2.0;
     const double R = 0.5 * D;
-    const double S = sqrt(3.0) * R; // Side length of hexagon
+    // const double S = sqrt(3.0) * R; // Side length of hexagon
     const double AREA = 0.5 * sqrt(27.0) * R * R;
 
     const double X1 = 1.0;

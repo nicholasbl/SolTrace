@@ -1,6 +1,5 @@
 #include <cstdint>
 #include <limits>
-#include <string>
 #include <vector>
 
 #include "vec3d.h"
@@ -22,6 +21,7 @@ CspElementBase::CspElementBase()
 CspElement::CspElement()
 {
     m_origin = Vec3d(0.0, 0.0, 0.0);
+    m_aim_point = Vec3d(0.0, 0.0, 1.0);
     m_rotation_matrix = Matrix33d();
     m_surface = nullptr;
     m_aperture = nullptr;
@@ -40,6 +40,16 @@ const Vec3d &CspElement::get_origin() const
 void CspElement::set_origin(const Vec3d &o)
 {
     m_origin = o;
+}
+
+const Vec3d &CspElement::get_aim_point() const
+{
+    return m_aim_point;
+}
+
+void CspElement::set_aim_point(const Vec3d &ap)
+{
+    m_aim_point = ap;
 }
 
 std::shared_ptr<Aperture> CspElement::get_aperture() const
@@ -91,7 +101,7 @@ Matrix33d CspElement::get_rotation_matrix() const
     return m_rotation_matrix;
 }
 
-void CspElement::set_rotation_matrix(const Matrix33d& rotation_matrix)
+void CspElement::set_rotation_matrix(const Matrix33d &rotation_matrix)
 {
     m_rotation_matrix = rotation_matrix;
 }
@@ -218,14 +228,14 @@ GeometryDataST CspElement::toDeviceGeometryData() const
             Vec3d edge_y = v2 * (float)height;
 
             Vec3d local_anchor(x_coord + width, y_coord, 0.0);
-            //float3 anchor = OptixCSP::toFloat3(m_origin - v1 * 0.5 - v2 * 0.5);
+            // float3 anchor = OptixCSP::toFloat3(m_origin - v1 * 0.5 - v2 * 0.5);
             Vec3d global_anchor = rotation_matrix * local_anchor + m_origin;
 
-            GeometryDataST::Rectangle_Parabolic heliostat(OptixCSP::toFloat3(edge_x), 
-                OptixCSP::toFloat3(edge_y), 
-                OptixCSP::toFloat3(global_anchor),
-                (float)m_surface->get_curvature_1(),
-                (float)m_surface->get_curvature_2());
+            GeometryDataST::Rectangle_Parabolic heliostat(OptixCSP::toFloat3(edge_x),
+                                                          OptixCSP::toFloat3(edge_y),
+                                                          OptixCSP::toFloat3(global_anchor),
+                                                          (float)m_surface->get_curvature_1(),
+                                                          (float)m_surface->get_curvature_2());
             geometry_data.setRectangleParabolic(heliostat);
         }
 
@@ -236,13 +246,10 @@ GeometryDataST CspElement::toDeviceGeometryData() const
 
             float3 center = OptixCSP::toFloat3(m_origin);
             Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
-
             float3 base_x = OptixCSP::toFloat3(rotation_matrix.get_x_basis());
-
             float3 base_z = OptixCSP::toFloat3(rotation_matrix.get_z_basis());
 
             GeometryDataST::Cylinder_Y heliostat(center, radius, half_height, base_x, base_z);
-
             geometry_data.setCylinder_Y(heliostat);
         }
     }
@@ -263,7 +270,9 @@ GeometryDataST CspElement::toDeviceGeometryData() const
         Vec3d v2_global = rotation_matrix * v2 + m_origin;
         Vec3d v3_global = rotation_matrix * v3 + m_origin;
 
-        GeometryDataST::Triangle_Flat heliostat(OptixCSP::toFloat3(v1_global), OptixCSP::toFloat3(v2_global), OptixCSP::toFloat3(v3_global));
+        GeometryDataST::Triangle_Flat heliostat(OptixCSP::toFloat3(v1_global),
+                                                OptixCSP::toFloat3(v2_global),
+                                                OptixCSP::toFloat3(v3_global));
         geometry_data.setTriangle_Flat(heliostat);
     }
 
@@ -290,6 +299,47 @@ GeometryDataST CspElement::toDeviceGeometryData() const
                                                      OptixCSP::toFloat3(p3_global),
                                                      OptixCSP::toFloat3(p4_global));
         geometry_data.setQuadrilateral_Flat(heliostat);
+    }
+
+    if (aperture_type == ApertureType::CIRCLE)
+    {
+        ApertureCircle circ = static_cast<ApertureCircle &>(*m_aperture);
+        float r = circ.get_radius();
+        float3 o = OptixCSP::toFloat3(m_origin);
+        float3 n = normalize(OptixCSP::toFloat3(m_aim_point - m_origin));
+        if (surface_type == SurfaceType::FLAT)
+        {
+            GeometryDataST::Circle_Flat heliostat(o, n, r);
+            geometry_data.setCircle_Flat(heliostat);
+        }
+    }
+
+    if (aperture_type == ApertureType::HEXAGON)
+    {
+        ApertureHexagon hex = static_cast<ApertureHexagon &>(*m_aperture);
+        float s = hex.get_side_length();
+        float3 o = OptixCSP::toFloat3(m_origin);
+        float3 n = normalize(OptixCSP::toFloat3(m_aim_point - m_origin));
+        if (surface_type == SurfaceType::FLAT)
+        {
+            GeometryDataST::Hexagon_Flat hex(o, n, s);
+            geometry_data.setHexagon_Flat(hex);
+        }
+    }
+
+    if (aperture_type == ApertureType::ANNULUS)
+    {
+        ApertureAnnulus anf = static_cast<ApertureAnnulus &>(*m_aperture);
+        float radius_in = anf.get_radius_inner();
+        float radius_out = anf.get_radius_outer();
+        float arc = anf.get_arc();
+        float3 o = OptixCSP::toFloat3(m_origin);
+        float3 n = normalize(OptixCSP::toFloat3(m_aim_point - m_origin));
+        if (surface_type == SurfaceType::FLAT)
+        {
+            GeometryDataST::Annulus_Flat anf(o, n, radius_in, radius_out, arc);
+            geometry_data.setAnnulus_Flat(anf);
+        }
     }
 
     geometry_data.id = this->m_id;

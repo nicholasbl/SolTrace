@@ -3,7 +3,6 @@
 #include "sun_utils.h"
 #include "soltrace_state.h"
 #include "utils/util_check.hpp"
-#include "data_manager.h"
 
 #include <optix_stubs.h>
 
@@ -41,9 +40,56 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
         OptixAabb aabb;
         uint32_t sbt_offset = 0;
 
-        // if (element->get_aperture_type() == ApertureType::CIRCLE)
-        // {
-        // }
+        if (element->get_aperture_type() == ApertureType::ANNULUS)
+        {
+            if (element->get_surface_type() == SurfaceType::FLAT)
+            {
+                sbt_offset = static_cast<uint32_t>(OpticalEntityType::ANNULUS_FLAT);
+            }
+            else
+            {
+                std::stringstream ss;
+                ss << "Unimplemented surface type ("
+                   << static_cast<int>(element->get_surface_type())
+                   << ") for annular aperture ("
+                   << static_cast<int>(element->get_aperture_type());
+                throw std::runtime_error(ss.str());
+            }
+        }
+
+        if (element->get_aperture_type() == ApertureType::CIRCLE)
+        {
+            if (element->get_surface_type() == SurfaceType::FLAT)
+            {
+                sbt_offset = static_cast<uint32_t>(OpticalEntityType::CIRCLE_FLAT);
+            }
+            else
+            {
+                std::stringstream ss;
+                ss << "Unimplemented surface type ("
+                   << static_cast<int>(element->get_surface_type())
+                   << ") for circular aperture ("
+                   << static_cast<int>(element->get_aperture_type());
+                throw std::runtime_error(ss.str());
+            }
+        }
+
+        if (element->get_aperture_type() == ApertureType::HEXAGON)
+        {
+            if (element->get_surface_type() == SurfaceType::FLAT)
+            {
+                sbt_offset = static_cast<uint32_t>(OpticalEntityType::HEXAGON_FLAT);
+            }
+            else
+            {
+                std::stringstream ss;
+                ss << "Unimplemented surface type ("
+                   << static_cast<int>(element->get_surface_type())
+                   << ") for hexagon aperture ("
+                   << static_cast<int>(element->get_aperture_type());
+                throw std::runtime_error(ss.str());
+            }
+        }
 
         if (element->get_aperture_type() == ApertureType::RECTANGLE)
         {

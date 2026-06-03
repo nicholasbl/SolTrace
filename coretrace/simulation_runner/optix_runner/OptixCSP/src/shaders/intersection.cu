@@ -1,46 +1,54 @@
 #include <optix.h>
-//#include <cuda/helpers.h>
+// #include <cuda/helpers.h>
 #include "Soltrace.h"
 #include <stdio.h>
 #include "GeometryDataST.h"
 
-extern "C" {
+extern "C"
+{
     __constant__ OptixCSP::LaunchParams params;
 }
 
+extern "C" __device__ __inline__ float ray_distance_to_plane(float3 ro, float3 rd, float4 plane)
+{
+    const float3 n = make_float3(plane);
+    return (plane.w - dot(n, ro)) / dot(rd, n);
+}
 
 extern "C" __global__ void __intersection__parallelogram()
 {
-	int i = optixGetPrimitiveIndex();
-    const OptixCSP::GeometryDataST::Parallelogram& parallelogram = params.geometry_data_array[i].getParallelogram();
-        
+    int i = optixGetPrimitiveIndex();
+    const OptixCSP::GeometryDataST::Parallelogram &parallelogram = params.geometry_data_array[i].getParallelogram();
+
     // Get ray information: origin, direction, and min/max distances over which ray should be tested
     const float3 ray_orig = optixGetWorldRayOrigin();
-    const float3 ray_dir  = optixGetWorldRayDirection();
-    const float  ray_tmin = optixGetRayTmin(), ray_tmax = optixGetRayTmax();
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float ray_tmin = optixGetRayTmin(), ray_tmax = optixGetRayTmax();
 
-    // Compute ray intersection point
-    float3 n  = make_float3( parallelogram.plane );
-    float  dt = dot( ray_dir, n );
-    // Compute distance t (point of intersection) along ray direction from ray origin
-    float  t  = ( parallelogram.plane.w - dot( n, ray_orig ) ) / dt;
+    // // Compute ray intersection point
+    // float3 n  = make_float3( parallelogram.plane );
+    // float  dt = dot( ray_dir, n );
+    // // Compute distance t (point of intersection) along ray direction from ray origin
+    // float  t  = ( parallelogram.plane.w - dot( n, ray_orig ) ) / dt;
+    float t = ray_distance_to_plane(ray_orig, ray_dir, parallelogram.plane);
+    const float4 n = parallelogram.plane;
 
     // Verify intersection distance and Report ray intersection point
-    if( t > ray_tmin && t < ray_tmax )
+    if (t > ray_tmin && t < ray_tmax)
     {
-        float3 p  = ray_orig + ray_dir * t;
+        float3 p = ray_orig + ray_dir * t;
         float3 vi = p - parallelogram.anchor;
-        float  a1 = dot( parallelogram.v1, vi );
-        if( a1 >= 0 && a1 <= 1 )
+        float a1 = dot(parallelogram.v1, vi);
+        if (a1 >= 0 && a1 <= 1)
         {
-            float a2 = dot( parallelogram.v2, vi );
-            if( a2 >= 0 && a2 <= 1 )
+            float a2 = dot(parallelogram.v2, vi);
+            if (a2 >= 0 && a2 <= 1)
             {
-                optixReportIntersection( t, 
-                    0, 
-                    __float_as_uint( n.x ), 
-                    __float_as_uint( n.y ), 
-                    __float_as_uint( n.z ));
+                optixReportIntersection(t,
+                                        0,
+                                        __float_as_uint(n.x),
+                                        __float_as_uint(n.y),
+                                        __float_as_uint(n.z));
             }
         }
     }
@@ -49,61 +57,63 @@ extern "C" __global__ void __intersection__parallelogram()
 extern "C" __global__ void __intersection__rectangle_flat()
 {
 
-	const OptixCSP::GeometryDataST::Rectangle_Flat& rectangle = params.geometry_data_array[optixGetPrimitiveIndex()].getRectangle_Flat();
-        
+    const OptixCSP::GeometryDataST::Rectangle_Flat &rectangle = params.geometry_data_array[optixGetPrimitiveIndex()].getRectangle_Flat();
+
     const float3 ray_orig = optixGetWorldRayOrigin();
     const float3 ray_dir = optixGetWorldRayDirection();
     const float ray_tmin = optixGetRayTmin();
     const float ray_tmax = optixGetRayTmax();
 
-    // Get plane normal and distance
-    float3 n = make_float3(rectangle.plane);
-    float dt = dot(ray_dir, n);
-    
-    // Compute distance t (point of intersection) along ray direction from ray origin
-    float t = (rectangle.plane.w - dot(n, ray_orig)) / dt;
+    // // Get plane normal and distance
+    // float3 n = make_float3(rectangle.plane);
+    // float dt = dot(ray_dir, n);
+
+    // // Compute distance t (point of intersection) along ray direction from ray origin
+    // float t = (rectangle.plane.w - dot(n, ray_orig)) / dt;
+    float t = ray_distance_to_plane(ray_orig, ray_dir, rectangle.plane);
+    const float4 n = rectangle.plane;
 
     // Verify intersection distance
     if (t > ray_tmin && t < ray_tmax)
     {
         // Compute intersection point
         float3 p = ray_orig + ray_dir * t;
-        
+
         // Compute vector from center to intersection point
         float3 v = p - rectangle.center;
-        
+
         // Project onto x and y to get local coordinates
         float x = dot(rectangle.x, v);
         float y = dot(rectangle.y, v);
-        
+
         // Check if point is within rectangle bounds
-        if (x >= -rectangle.width/2 && x <= rectangle.width/2 &&
-            y >= -rectangle.height/2 && y <= rectangle.height/2)
+        if (x >= -rectangle.width / 2 && x <= rectangle.width / 2 &&
+            y >= -rectangle.height / 2 && y <= rectangle.height / 2)
         {
             optixReportIntersection(t,
-                0,
-                __float_as_uint(n.x),
-                __float_as_uint(n.y),
-                __float_as_uint(n.z));
+                                    0,
+                                    __float_as_uint(n.x),
+                                    __float_as_uint(n.y),
+                                    __float_as_uint(n.z));
         }
     }
 }
 
 extern "C" __global__ void __intersection__cylinder_y()
 {
-	const OptixCSP::GeometryDataST::Cylinder_Y& cyl = params.geometry_data_array[optixGetPrimitiveIndex()].getCylinder_Y();
+    const OptixCSP::GeometryDataST::Cylinder_Y &cyl = params.geometry_data_array[optixGetPrimitiveIndex()].getCylinder_Y();
 
     // Get ray information: origin, direction, and min/max distances over which ray should be tested
     const float3 ray_orig = optixGetWorldRayOrigin();
     const float3 ray_dir = normalize(optixGetWorldRayDirection());
-    const float  ray_tmin = optixGetRayTmin();
-    const float  ray_tmax = optixGetRayTmax();
+    const float ray_tmin = optixGetRayTmin();
+    const float ray_tmax = optixGetRayTmax();
 
     // Transform ray to the cylinder's local coordinate system
     float3 local_ray_orig = ray_orig - cyl.center;
     float3 local_ray_dir = ray_dir;
 
-	// TODO: check how to optimize this, there should be a way in optix to rotate coordinates 
+    // TODO: check how to optimize this, there should be a way in optix to rotate coordinates
     float3 local_x = cyl.base_x;
     float3 local_z = cyl.base_z;
     float3 local_y = cross(local_z, local_x);
@@ -111,15 +121,13 @@ extern "C" __global__ void __intersection__cylinder_y()
     local_ray_orig = make_float3(
         dot(local_ray_orig, local_x),
         dot(local_ray_orig, local_y),
-        dot(local_ray_orig, local_z)
-    );
+        dot(local_ray_orig, local_z));
     local_ray_dir = make_float3(
         dot(local_ray_dir, local_x),
         dot(local_ray_dir, local_y),
-        dot(local_ray_dir, local_z)
-    );
+        dot(local_ray_dir, local_z));
 
-	// solve quadratic equation for intersection
+    // solve quadratic equation for intersection
     float A = local_ray_dir.x * local_ray_dir.x + local_ray_dir.z * local_ray_dir.z;
     float B = 2.0f * (local_ray_orig.x * local_ray_dir.x + local_ray_orig.z * local_ray_dir.z);
     float C = local_ray_orig.x * local_ray_orig.x + local_ray_orig.z * local_ray_orig.z - cyl.radius * cyl.radius;
@@ -169,23 +177,23 @@ extern "C" __global__ void __intersection__cylinder_y()
 
     // Report intersection to OptiX
     optixReportIntersection(t,
-        0,
-        __float_as_uint(world_normal.x),
-        __float_as_uint(world_normal.y),
-        __float_as_uint(world_normal.z));
+                            0,
+                            __float_as_uint(world_normal.x),
+                            __float_as_uint(world_normal.y),
+                            __float_as_uint(world_normal.z));
 }
 
-// ray cylinder intersection with top and bottom caps 
-// it can also be modeled as cylinder with two disks. 
+// ray cylinder intersection with top and bottom caps
+// it can also be modeled as cylinder with two disks.
 extern "C" __global__ void __intersection__cylinder_y_capped()
 {
-	const OptixCSP::GeometryDataST::Cylinder_Y& cyl = params.geometry_data_array[optixGetPrimitiveIndex()].getCylinder_Y();
+    const OptixCSP::GeometryDataST::Cylinder_Y &cyl = params.geometry_data_array[optixGetPrimitiveIndex()].getCylinder_Y();
 
     // Get ray information: origin, direction, and min/max distances over which ray should be tested
     const float3 ray_orig = optixGetWorldRayOrigin();
     const float3 ray_dir = normalize(optixGetWorldRayDirection());
-    const float  ray_tmin = optixGetRayTmin();
-    const float  ray_tmax = optixGetRayTmax();
+    const float ray_tmin = optixGetRayTmin();
+    const float ray_tmax = optixGetRayTmax();
 
     // Transform ray to the cylinder's local coordinate system
     float3 local_ray_orig = ray_orig - cyl.center;
@@ -199,13 +207,11 @@ extern "C" __global__ void __intersection__cylinder_y_capped()
     local_ray_orig = make_float3(
         dot(local_ray_orig, local_x),
         dot(local_ray_orig, local_y),
-        dot(local_ray_orig, local_z)
-    );
+        dot(local_ray_orig, local_z));
     local_ray_dir = make_float3(
         dot(local_ray_dir, local_x),
         dot(local_ray_dir, local_y),
-        dot(local_ray_dir, local_z)
-    );
+        dot(local_ray_dir, local_z));
 
     // Solve quadratic equation for intersection with curved surface
     float A = local_ray_dir.x * local_ray_dir.x + local_ray_dir.z * local_ray_dir.z;
@@ -240,7 +246,7 @@ extern "C" __global__ void __intersection__cylinder_y_capped()
         {
             float t = (-cyl.half_height - local_ray_orig.y) / local_ray_dir.y;
             float2 hit_point = make_float2(local_ray_orig.x + t * local_ray_dir.x,
-                local_ray_orig.z + t * local_ray_dir.z);
+                                           local_ray_orig.z + t * local_ray_dir.z);
             if (t > ray_tmin && t < ray_tmax && dot(hit_point, hit_point) <= cyl.radius * cyl.radius)
             {
                 t_caps = t;
@@ -252,7 +258,7 @@ extern "C" __global__ void __intersection__cylinder_y_capped()
         {
             float t = (cyl.half_height - local_ray_orig.y) / local_ray_dir.y;
             float2 hit_point = make_float2(local_ray_orig.x + t * local_ray_dir.x,
-                local_ray_orig.z + t * local_ray_dir.z);
+                                           local_ray_orig.z + t * local_ray_dir.z);
             if (t > ray_tmin && t < ray_tmax && dot(hit_point, hit_point) <= cyl.radius * cyl.radius)
             {
                 t_caps = fminf(t_caps, t);
@@ -294,12 +300,10 @@ extern "C" __global__ void __intersection__cylinder_y_capped()
         0, // User-defined instance ID or custom data
         __float_as_uint(world_normal.x),
         __float_as_uint(world_normal.y),
-        __float_as_uint(world_normal.z)
-    );
+        __float_as_uint(world_normal.z));
 }
 
-
-// For a parabolic surface rectangle aperture where 
+// For a parabolic surface rectangle aperture where
 // the base (normal projection) is defined by the center and its two unit edge vectors
 // In a local coordinate system (with origin at the anchor) the flat rectangle covers:
 //    x in [0, L1]  and  y in [0, L2],
@@ -320,12 +324,12 @@ extern "C" __global__ void __intersection__cylinder_y_capped()
 // The local hit point is then transformed back to world space for reporting.
 extern "C" __global__ void __intersection__rectangle_parabolic()
 {
-    const OptixCSP::GeometryDataST::Rectangle_Parabolic& rect = params.geometry_data_array[optixGetPrimitiveIndex()].getRectangleParabolic();
+    const OptixCSP::GeometryDataST::Rectangle_Parabolic &rect = params.geometry_data_array[optixGetPrimitiveIndex()].getRectangleParabolic();
     // Get ray information.
     const float3 ray_orig = optixGetWorldRayOrigin();
     const float3 ray_dir = optixGetWorldRayDirection();
-    const float  ray_tmin = optixGetRayTmin();
-    const float  ray_tmax = optixGetRayTmax();
+    const float ray_tmin = optixGetRayTmin();
+    const float ray_tmax = optixGetRayTmax();
 
     //
     // Build the local coordinate system.
@@ -396,9 +400,11 @@ extern "C" __global__ void __intersection__rectangle_parabolic()
             }
         }
     }
-    else {
+    else
+    {
         float discr = B * B - 4.0f * A * C;
-        if (discr >= 0.0f) {
+        if (discr >= 0.0f)
+        {
             float sqrt_discr = sqrtf(discr);
             t1 = -0.5f * (B + sqrt_discr) / A;
             t2 = -0.5f * (B - sqrt_discr) / A;
@@ -443,12 +449,12 @@ extern "C" __global__ void __intersection__rectangle_parabolic()
     //    N_local = (-f_x, -f_y, 1) = ( -curv_x*x_hit, -curv_y*y_hit, 1 ).
     //
     float3 N_local = normalize(make_float3(-curv_x * x_hit,
-        -curv_y * y_hit,
-        1.0f));
+                                           -curv_y * y_hit,
+                                           1.0f));
     // Transform the normal back to world coordinates.
     float3 world_normal = normalize(N_local.x * e1 +
-        N_local.y * e2 +
-        N_local.z * n);
+                                    N_local.y * e2 +
+                                    N_local.z * n);
 
     // Compute the hit point in world space.
     float3 world_hit = ray_orig + t * ray_dir;
@@ -457,19 +463,19 @@ extern "C" __global__ void __intersection__rectangle_parabolic()
     // Here, the two reported extra attributes are the parametric coordinates (a1, a2),
     // encoded as unsigned integers.
     optixReportIntersection(t, 0,
-        __float_as_uint(world_normal.x),
-        __float_as_uint(world_normal.y),
-        __float_as_uint(world_normal.z));    
+                            __float_as_uint(world_normal.x),
+                            __float_as_uint(world_normal.y),
+                            __float_as_uint(world_normal.z));
 }
 
 // intersection algorithm for a flat triangle based on "Fast, Minimum Storage Ray/Triangle Intersection" by M�ller and Trumbore (1997)
-// code from here: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm 
+// code from here: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 extern "C" __device__ __inline__ float _triangle_intersect(
     float3 p0, float3 edge1, float3 edge2,
     float3 ro, float3 rd)
 {
     const float3 pvec = cross(rd, edge2);
-    const float  det = dot(edge1, pvec);
+    const float det = dot(edge1, pvec);
 
     // // Backface culling + parallel rejection
     // // (det must be strictly positive and not tiny)
@@ -479,26 +485,28 @@ extern "C" __device__ __inline__ float _triangle_intersect(
     // Parallel rejection
     // (det must be not tiny)
     const float eps = 1e-8f;
-    if (fabs(det) <= eps) return -1.0f;
-
+    if (fabs(det) <= eps)
+        return -1.0f;
 
     const float inv_det = 1.0f / det;
 
     const float3 tvec = ro - p0;
-    const float  u = dot(tvec, pvec) * inv_det;
-    if (u < 0.0f || u > 1.0f) return -1.0f;
+    const float u = dot(tvec, pvec) * inv_det;
+    if (u < 0.0f || u > 1.0f)
+        return -1.0f;
 
     const float3 qvec = cross(tvec, edge1);
-    const float  v = dot(rd, qvec) * inv_det;
-    if (v < 0.0f || (u + v) > 1.0f) return -1.0f;
+    const float v = dot(rd, qvec) * inv_det;
+    if (v < 0.0f || (u + v) > 1.0f)
+        return -1.0f;
 
-    const float  t = dot(edge2, qvec) * inv_det;
+    const float t = dot(edge2, qvec) * inv_det;
 
     return t;
 }
 
 // // intersection algorithm for a flat triangle based on "Fast, Minimum Storage Ray/Triangle Intersection" by M�ller and Trumbore (1997)
-// // code from here: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm 
+// // code from here: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 // extern "C" __global__ void __intersection__triangle_flat()
 // {
 // 	const OptixCSP::GeometryDataST::Triangle_Flat& tri = params.geometry_data_array[optixGetPrimitiveIndex()].getTriangle_Flat();
@@ -510,7 +518,6 @@ extern "C" __device__ __inline__ float _triangle_intersect(
 
 //     const float3 edge1 = tri.e1;
 //     const float3 edge2 = tri.e2;
-
 
 //     const float3 pvec = cross(rd, edge2);
 //     const float  det = dot(edge1, pvec);
@@ -528,7 +535,7 @@ extern "C" __device__ __inline__ float _triangle_intersect(
 
 //     const float3 qvec = cross(tvec, edge1);
 //     const float  v = dot(rd, qvec) * inv_det;
-//     if (v < 0.0f || (u + v) > 1.0f) 
+//     if (v < 0.0f || (u + v) > 1.0f)
 //         return;
 
 //     const float  t = dot(edge2, qvec) * inv_det;
@@ -544,31 +551,30 @@ extern "C" __device__ __inline__ float _triangle_intersect(
 // }
 
 // intersection algorithm for a flat triangle based on "Fast, Minimum Storage Ray/Triangle Intersection" by M�ller and Trumbore (1997)
-// code from here: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm 
+// code from here: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 extern "C" __global__ void __intersection__triangle_flat()
 {
-	const OptixCSP::GeometryDataST::Triangle_Flat& tri = params.geometry_data_array[optixGetPrimitiveIndex()].getTriangle_Flat();
+    const OptixCSP::GeometryDataST::Triangle_Flat &tri = params.geometry_data_array[optixGetPrimitiveIndex()].getTriangle_Flat();
 
     const float3 ro = optixGetObjectRayOrigin();
     const float3 rd = optixGetObjectRayDirection();
 
     const float t = _triangle_intersect(tri.v0, tri.e1, tri.e2, ro, rd);
 
-    if (t < optixGetRayTmin() || t > optixGetRayTmax()) return;
+    if (t < optixGetRayTmin() || t > optixGetRayTmax())
+        return;
 
     float3 world_normal = tri.normal;
 
     optixReportIntersection(t, 0,
-        __float_as_uint(world_normal.x),
-        __float_as_uint(world_normal.y),
-        __float_as_uint(world_normal.z));
-
+                            __float_as_uint(world_normal.x),
+                            __float_as_uint(world_normal.y),
+                            __float_as_uint(world_normal.z));
 }
-
 
 extern "C" __global__ void __intersection__quadrilateral_flat()
 {
-    const OptixCSP::GeometryDataST::Quadrilateral_Flat& quad = params.geometry_data_array[optixGetPrimitiveIndex()].getQuadrilateral_Flat();
+    const OptixCSP::GeometryDataST::Quadrilateral_Flat &quad = params.geometry_data_array[optixGetPrimitiveIndex()].getQuadrilateral_Flat();
 
     const float3 ro = optixGetObjectRayOrigin();
     const float3 rd = optixGetObjectRayDirection();
@@ -587,12 +593,138 @@ extern "C" __global__ void __intersection__quadrilateral_flat()
         t = _triangle_intersect(p2, e1, e2, ro, rd);
     }
 
-    if (t < optixGetRayTmin() || t > optixGetRayTmax()) return;
+    if (t < optixGetRayTmin() || t > optixGetRayTmax())
+        return;
 
     float3 world_normal = quad.normal;
 
     optixReportIntersection(t, 0,
-        __float_as_uint(world_normal.x),
-        __float_as_uint(world_normal.y),
-        __float_as_uint(world_normal.z));
+                            __float_as_uint(world_normal.x),
+                            __float_as_uint(world_normal.y),
+                            __float_as_uint(world_normal.z));
+}
+
+extern "C" __global__ void __intersection__circle_flat()
+{
+    const OptixCSP::GeometryDataST::Circle_Flat &circ = params.geometry_data_array[optixGetPrimitiveIndex()].getCircle_Flat();
+
+    // Get ray information: origin, direction, and min/max distances over which ray should be tested
+    const float3 ray_orig = optixGetWorldRayOrigin();
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float ray_tmin = optixGetRayTmin(), ray_tmax = optixGetRayTmax();
+
+    // // Compute ray intersection point
+    // float3 n  = make_float3( circ.plane );
+    // float  dt = dot( ray_dir, n );
+    // // Compute distance t (point of intersection) along ray direction from ray origin
+    // float  t  = ( circ.plane.w - dot( n, ray_orig ) ) / dt;
+    float t = ray_distance_to_plane(ray_orig, ray_dir, circ.plane);
+    const float4 n = circ.plane;
+
+    // Verify intersection distance and Report ray intersection point
+    if (t > ray_tmin && t < ray_tmax)
+    {
+        float3 p = ray_orig + ray_dir * t;
+        float d = length(p - circ.center);
+        if (d <= circ.r)
+        {
+            optixReportIntersection(t,
+                                    0,
+                                    __float_as_uint(n.x),
+                                    __float_as_uint(n.y),
+                                    __float_as_uint(n.z));
+        }
+    }
+}
+
+extern "C" __global__ void __intersection__hexagon_flat()
+{
+    const OptixCSP::GeometryDataST::Hexagon_Flat &hex = params.geometry_data_array[optixGetPrimitiveIndex()].getHexagon_Flat();
+
+    // Get ray information: origin, direction, and min/max distances over which ray should be tested
+    const float3 ray_orig = optixGetWorldRayOrigin();
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float ray_tmin = optixGetRayTmin(), ray_tmax = optixGetRayTmax();
+
+    float t = ray_distance_to_plane(ray_orig, ray_dir, hex.plane);
+    const float4 n = hex.plane;
+
+    // Verify intersection distance and Report ray intersection point
+    if (t > ray_tmin && t < ray_tmax)
+    {
+        // TODO: Need to adjust for possible rotation...
+        bool is_in = false;
+        float3 p = ray_orig + ray_dir * t - hex.center;
+        // float d = length(p - circ.center);
+        float s = hex.s;
+        float xl = 0.5f * s;
+        float yl = 0.5f * sqrtf(3.0f) * s;
+        if (-xl <= p.x && p.x <= xl && -yl <= p.y && p.y <= yl)
+        {
+            // Center
+            is_in = true;
+        }
+        else if (-s <= p.x && p.x < xl)
+        {
+            // Left side
+            float y1 = sqrtf(3.0f) * (p.x + s);
+            float y2 = -y1;
+            if (y2 <= p.y && p.y <= y1)
+            {
+                is_in = true;
+            }
+        }
+        else if (xl < p.x && p.x <= s)
+        {
+            // Right side
+            float y1 = sqrtf(3.0f) * (p.x - s);
+            float y2 = -y1;
+            if (y1 <= p.y && p.y <= y2)
+            {
+                is_in = true;
+            }
+        }
+
+        if (is_in)
+        {
+            optixReportIntersection(t,
+                                    0,
+                                    __float_as_uint(n.x),
+                                    __float_as_uint(n.y),
+                                    __float_as_uint(n.z));
+        }
+    }
+}
+
+extern "C" __global__ void __intersection__annulus_flat()
+{
+    const OptixCSP::GeometryDataST::Annulus_Flat &anf = params.geometry_data_array[optixGetPrimitiveIndex()].getAnnulus_Flat();
+
+    // Get ray information: origin, direction, and min/max distances over which ray should be tested
+    const float3 ray_orig = optixGetWorldRayOrigin();
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float ray_tmin = optixGetRayTmin(), ray_tmax = optixGetRayTmax();
+
+    float t = ray_distance_to_plane(ray_orig, ray_dir, anf.plane);
+    const float4 n = anf.plane;
+
+    // Verify intersection distance and Report ray intersection point
+    if (t > ray_tmin && t < ray_tmax)
+    {
+        // TODO: Need to adjust for possible rotation...
+        float3 p = ray_orig + ray_dir * t - anf.center;
+        float d = length(p);
+        if (anf.ri <= d && d <= anf.ro)
+        {
+            float theta = atan2f(p.y, p.x);
+            if (fabsf(theta) <= 0.5f * anf.arc)
+            {
+                optixReportIntersection(t,
+                                        0,
+                                        __float_as_uint(n.x),
+                                        __float_as_uint(n.y),
+                                        __float_as_uint(n.z));
+            }
+        }
+    }
 }
