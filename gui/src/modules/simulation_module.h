@@ -91,6 +91,8 @@ public slots:
     // void resume();
     void cancel();
     void select_result(int index);
+    void delete_result(int index);
+    void export_result(int index);
     void duplicate_current_result_for_edit();
 
 signals:

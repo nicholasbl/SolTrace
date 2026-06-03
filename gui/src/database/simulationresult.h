@@ -98,6 +98,7 @@ public:
 
 public slots:
     void append_result(SimulationResultPtr result);
+    void remove_result(int index);
     void clear();
 };
 

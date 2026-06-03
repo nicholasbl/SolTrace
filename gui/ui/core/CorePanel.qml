@@ -15,7 +15,7 @@ Item {
     Binding {
         target: App.view
         property: "simulation_content_view"
-        value: App.view.workflow_phase === 2
+        value: App.view.workflow_phase === 2 && App.view.analyze_section !== 0
     }
 
     // C++ -> QML (consume width from ViewModule)

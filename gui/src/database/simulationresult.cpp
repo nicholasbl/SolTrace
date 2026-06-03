@@ -137,6 +137,12 @@ SimulationResultPtr SimulationResultModel::result_at(int index) const {
     return record->result;
 }
 
+void SimulationResultModel::remove_result(int index) {
+    if (index < 0 || index >= rowCount()) return;
+
+    store_push_remove(index, 1);
+}
+
 void SimulationResultModel::clear() {
     store_remove_all();
 }

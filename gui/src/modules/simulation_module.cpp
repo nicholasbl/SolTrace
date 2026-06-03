@@ -1,5 +1,6 @@
 #include "simulation_module.h"
 
+#include <algorithm>
 #include <thread>
 
 namespace SolTrace::GUI::App {
@@ -172,6 +173,38 @@ void SimulationModule::select_result(int index) {
     m_current_result = result;
     set_current_simulation_result_name(result->database->name());
     emit new_results(result);
+}
+
+void SimulationModule::delete_result(int index) {
+    auto result = m_results->result_at(index);
+    if (!result) return;
+
+    const bool deleting_current = m_current_result == result;
+
+    m_completed_sims.erase(std::remove(m_completed_sims.begin(),
+                                       m_completed_sims.end(),
+                                       result),
+                           m_completed_sims.end());
+    m_results->remove_result(index);
+
+    if (!deleting_current) return;
+
+    db::SimulationResultPtr replacement;
+    if (m_results->rowCount() > 0) {
+        replacement = m_results->result_at(
+            std::min(index, m_results->rowCount() - 1));
+    }
+
+    m_current_result = replacement;
+    set_current_simulation_result_name(
+        replacement ? replacement->database->name() : "No Simulation Result");
+    emit new_results(replacement);
+}
+
+void SimulationModule::export_result(int index) {
+    if (!m_results->result_at(index)) return;
+
+    emit notify(ANotification::info("Result export is not implemented yet."));
 }
 
 void SimulationModule::duplicate_current_result_for_edit() {

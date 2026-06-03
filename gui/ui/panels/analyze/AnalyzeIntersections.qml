@@ -11,7 +11,7 @@ Flickable {
     property var left_panel_size: App.view.left_panel.size
     property var intersections_module : AppData.intersections
     property bool singleColumn: App.view.left_panel.size === PanelData.Small
-    property var labelAlignment: (singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
+    property int labelAlignment: (singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
 
     contentWidth: width
     contentHeight: content_column.implicitHeight
