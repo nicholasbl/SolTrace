@@ -484,8 +484,8 @@ void SunShape::sample_buie() {
     QVector<SunShapePoint> points;
     points.reserve(sample_count_estimate);
 
-    // Store the non-negative radial profile. SunShapeModel mirrors it when
-    // exporting angle/intensity arrays to the backend.
+    // Store the non-negative radial profile. The graph mirrors it on demand
+    // for display, while backend exports keep the radial profile unchanged.
     for (double theta = 0.0; theta <= max_sample_angle_mrad;
          theta += sample_step_mrad) {
         double intensity;

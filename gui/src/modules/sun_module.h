@@ -83,7 +83,7 @@ public:
     Q_WRITABLE_PROPERTY(double, half_width, 4.65)
 
     // Buie
-    Q_WRITABLE_PROPERTY(double, csr, 2.0)
+    Q_WRITABLE_PROPERTY(double, csr, 0.1)
 
     // Generated distribution (using sigma, half_width, csr)
     QOBJECT_READONLY_PROPERTY(SunShapeModel, generated_distribution)

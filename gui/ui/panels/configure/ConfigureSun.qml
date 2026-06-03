@@ -293,7 +293,7 @@ Flickable {
                             value: App.sun.shape.csr
                             decimals: 3
                             from: 0
-                            to: 0.7999
+                            to: 0.8
                             stepSize: 0.1
                             onValueChanged: { App.sun.shape.csr = value }
                         }
