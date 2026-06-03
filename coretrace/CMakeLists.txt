@@ -58,7 +58,6 @@ set(CORETRACE_SRC
 	treemesh.cpp
 	types.cpp
 	vshot.cpp
-
 	simdata_bridge.cpp
 )
 

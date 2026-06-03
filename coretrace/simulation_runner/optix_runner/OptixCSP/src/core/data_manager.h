@@ -29,6 +29,9 @@ namespace OptixCSP
         curandState *rng_states_D;
         size_t rng_states_capacity;
 
+        // Device counter: rays terminated by max depth (not absorption)
+        uint64_t *depth_exceeded_count_D;
+
         float *sun_user_angle_D;
         float *sun_user_intensity_D;
         size_t sun_user_capacity;
@@ -68,5 +71,8 @@ namespace OptixCSP
                                 unsigned long long seed,
                                 unsigned int sequence_offset,
                                 cudaStream_t stream);
+
+        /// Allocates the depth-exceeded counter on the device if not already allocated.
+        void ensureDepthExceededCounter();
     };
 }

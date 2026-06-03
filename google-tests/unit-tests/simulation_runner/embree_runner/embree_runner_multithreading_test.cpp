@@ -73,7 +73,7 @@ TEST(EmbreeRunner, CancelMultithread)
     auto fsts = std::async(&EmbreeRunner::run_simulation, &runner);
 
     // Give time to start processing
-    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     sts = runner.status_simulation();
     EXPECT_EQ(sts, RunnerStatus::RUNNING);
 

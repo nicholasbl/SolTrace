@@ -21,9 +21,6 @@ public:
     // TODO: Figure out how to store time...
     DateTime sim_dt;
 
-    bool include_sun_shape_errors;
-    bool include_optical_errors;
-
     std::uint_fast64_t number_of_rays;
     std::uint_fast64_t max_number_of_rays;
     double tolerance;
@@ -32,6 +29,9 @@ public:
     double longitude;
 
     int seed;
+
+    bool include_sun_shape_errors;
+    bool include_optical_errors;
 
     SimulationParameters() : number_of_rays(10000),
                              max_number_of_rays(1000000),

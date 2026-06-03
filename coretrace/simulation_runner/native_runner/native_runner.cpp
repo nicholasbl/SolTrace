@@ -285,8 +285,8 @@ namespace SolTrace::NativeRunner
     {
         // TODO: Do a more efficient implementation of this?
         this->tsys.ClearAll();
-        this->setup_simulation(data);
-        return RunnerStatus::SUCCESS;
+        return this->setup_simulation(data);
+        // return RunnerStatus::SUCCESS;
     }
 
     RunnerStatus NativeRunner::run_simulation()
@@ -327,7 +327,7 @@ namespace SolTrace::NativeRunner
 
         const TSystem *sys = this->get_system();
         // const TRayData ray_data = sys->AllRayData;
-        const TRayData ray_data = sys->RayData;
+        const TRayData& ray_data = sys->RayData;
         std::map<unsigned int, SolTrace::Result::ray_record_ptr> ray_records;
         std::map<unsigned int, SolTrace::Result::ray_record_ptr>::iterator iter;
         uint_fast64_t ndata = ray_data.Count();

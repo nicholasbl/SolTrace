@@ -6,7 +6,6 @@
 #include "shaders/Soltrace.h"
 
 #include <cuda_runtime.h>
-#include <iostream>
 
 namespace OptixCSP {
 
