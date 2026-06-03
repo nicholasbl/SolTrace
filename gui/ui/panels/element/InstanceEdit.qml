@@ -80,58 +80,142 @@ ColumnLayout {
             id: positionPanel
             Layout.columnSpan: 2
             Layout.fillWidth: true
-            title: "Parent-relative Position"
+            title: "Position"
             collapsible: true
 
-            function update_position_if_valid() {
-                if (!(x_pos.acceptableInput && y_pos.acceptableInput && z_pos.acceptableInput)) {
-                    return
+            STComboBar {
+                id: positionModeBar
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
+                model: ["Local", "Global"]
+            }
+
+            StackLayout {
+                id: positionSwipe
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
+                //Layout.preferredHeight: currentItem ? currentItem.implicitHeight : 0
+                currentIndex: positionModeBar.currentIndex
+
+                GridLayout {
+                    id: localPositionEditor
+                    width: positionSwipe.width
+                    columns: 2
+
+                    function update_position_if_valid() {
+                        if (!(local_x_pos.acceptableInput
+                              && local_y_pos.acceptableInput
+                              && local_z_pos.acceptableInput)) {
+                            return
+                        }
+
+                        root.module.position = Qt.vector3d(Number(local_x_pos.text),
+                                                           Number(local_y_pos.text),
+                                                           Number(local_z_pos.text))
+                    }
+
+                    STPropertyLabel { text: "X" }
+                    STTextField {
+                        id: local_x_pos
+                        Layout.fillWidth: true
+                        text: root.module.position.x
+                        validator: DoubleValidator {}
+                        onAccepted: localPositionEditor.update_position_if_valid()
+                        onTextEdited: localPositionEditor.update_position_if_valid()
+                    }
+
+                    STPropertyLabel { text: "Y" }
+                    STTextField {
+                        id: local_y_pos
+                        Layout.fillWidth: true
+                        text: root.module.position.y
+                        validator: DoubleValidator {}
+                        onAccepted: localPositionEditor.update_position_if_valid()
+                        onTextEdited: localPositionEditor.update_position_if_valid()
+                    }
+
+                    STPropertyLabel { text: "Z" }
+                    STTextField {
+                        id: local_z_pos
+                        Layout.fillWidth: true
+                        text: root.module.position.z
+                        validator: DoubleValidator {}
+                        onAccepted: localPositionEditor.update_position_if_valid()
+                        onTextEdited: localPositionEditor.update_position_if_valid()
+                    }
+
+                    STButton {
+                        Layout.fillWidth: true
+                        Layout.columnSpan: 2
+                        text: "Set Local Default Position"
+                        onClicked: {
+                            local_x_pos.text = 0
+                            local_y_pos.text = 0
+                            local_z_pos.text = -1
+                            localPositionEditor.update_position_if_valid()
+                        }
+                    }
                 }
 
-                root.module.position = Qt.vector3d(Number(x_pos.text),
-                                                   Number(y_pos.text),
-                                                   Number(z_pos.text))
-            }
+                GridLayout {
+                    id: globalPositionEditor
+                    width: positionSwipe.width
+                    columns: 2
 
-            STPropertyLabel { text: "X" }
-            STTextField {
-                id: x_pos
-                Layout.fillWidth: true
-                text: root.module.position.x
-                validator: DoubleValidator {}
-                onAccepted: positionPanel.update_position_if_valid()
-                onTextEdited: positionPanel.update_position_if_valid()
-            }
+                    function update_position_if_valid() {
+                        if (!(global_x_pos.acceptableInput
+                              && global_y_pos.acceptableInput
+                              && global_z_pos.acceptableInput)) {
+                            return
+                        }
 
-            STPropertyLabel { text: "Y" }
-            STTextField {
-                id: y_pos
-                Layout.fillWidth: true
-                text: root.module.position.y
-                validator: DoubleValidator {}
-                onAccepted: positionPanel.update_position_if_valid()
-                onTextEdited: positionPanel.update_position_if_valid()
-            }
+                        root.module.global_position =
+                                Qt.vector3d(Number(global_x_pos.text),
+                                            Number(global_y_pos.text),
+                                            Number(global_z_pos.text))
+                    }
 
-            STPropertyLabel { text: "Z" }
-            STTextField {
-                id: z_pos
-                Layout.fillWidth: true
-                text: root.module.position.z
-                validator: DoubleValidator {}
-                onAccepted: positionPanel.update_position_if_valid()
-                onTextEdited: positionPanel.update_position_if_valid()
-            }
+                    STPropertyLabel { text: "X" }
+                    STTextField {
+                        id: global_x_pos
+                        Layout.fillWidth: true
+                        text: root.module.global_position.x
+                        validator: DoubleValidator {}
+                        onAccepted: globalPositionEditor.update_position_if_valid()
+                        onTextEdited: globalPositionEditor.update_position_if_valid()
+                    }
 
-            STButton {
-                Layout.fillWidth: true
-                Layout.columnSpan: 2
-                text: "Reset"
-                onClicked: {
-                    x_pos.text = 0
-                    y_pos.text = 0
-                    z_pos.text = -1
-                    positionPanel.update_position_if_valid()
+                    STPropertyLabel { text: "Y" }
+                    STTextField {
+                        id: global_y_pos
+                        Layout.fillWidth: true
+                        text: root.module.global_position.y
+                        validator: DoubleValidator {}
+                        onAccepted: globalPositionEditor.update_position_if_valid()
+                        onTextEdited: globalPositionEditor.update_position_if_valid()
+                    }
+
+                    STPropertyLabel { text: "Z" }
+                    STTextField {
+                        id: global_z_pos
+                        Layout.fillWidth: true
+                        text: root.module.global_position.z
+                        validator: DoubleValidator {}
+                        onAccepted: globalPositionEditor.update_position_if_valid()
+                        onTextEdited: globalPositionEditor.update_position_if_valid()
+                    }
+
+                    STButton {
+                        Layout.fillWidth: true
+                        Layout.columnSpan: 2
+                        text: "Set Global Default Position"
+                        onClicked: {
+                            global_x_pos.text = 0
+                            global_y_pos.text = 0
+                            global_z_pos.text = -1
+                            globalPositionEditor.update_position_if_valid()
+                        }
+                    }
                 }
             }
         }
@@ -151,9 +235,9 @@ ColumnLayout {
                 }
 
                 root.module.set_from_angles(
-                    Qt.vector3d(Number(x_euler.text),
-                                Number(y_euler.text),
-                                Number(z_euler.text)))
+                            Qt.vector3d(Number(x_euler.text),
+                                        Number(y_euler.text),
+                                        Number(z_euler.text)))
             }
 
             STPropertyLabel { text: "X Angle" }
@@ -209,9 +293,9 @@ ColumnLayout {
 
                     function accept_position() {
                         root.module.look_at_world_position(
-                            Qt.vector3d(Number(look_at_x.text),
-                                        Number(look_at_y.text),
-                                        Number(look_at_z.text)))
+                                    Qt.vector3d(Number(look_at_x.text),
+                                                Number(look_at_y.text),
+                                                Number(look_at_z.text)))
                         close()
                     }
 
@@ -275,9 +359,9 @@ ColumnLayout {
                                 id: look_at_entity_pop
                                 exclude: [root.module.entity]
                                 onSelectedEntity: (entity) => {
-                                    root.module.look_at_entity(entity)
-                                    look_at_pop.close()
-                                }
+                                                      root.module.look_at_entity(entity)
+                                                      look_at_pop.close()
+                                                  }
                             }
                         }
                     }
