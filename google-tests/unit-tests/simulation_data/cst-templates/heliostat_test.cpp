@@ -118,7 +118,12 @@ TEST(Heliostat, ErrorChecking_SetCanting)
 
 TEST(Heliostat, ErrorChecking_CreateGeometryWithoutParameters)
 {
+    SimulationData sd;
+    auto optics = OpticalPropertySet();
+    auto optics_ref = sd.add_optical_property_set(optics);
+    
     auto hs = SolTrace::Data::make_element<Heliostat>();
+    hs->set_optics(optics_ref);
 
     // Test create_geometry without setting required parameters
     EXPECT_THROW(hs->create_geometry(), std::invalid_argument);
@@ -148,11 +153,12 @@ TEST(Heliostat, ErrorChecking_CreateGeometryWithoutParameters)
 
 TEST(Heliostat, BuildParabolaNone)
 {
-    //OpticalProperties mirror;
-    //mirror.set_ideal_reflection();
+    SimulationData sd;
+    auto optics = OpticalPropertySet();
+    auto optics_ref = sd.add_optical_property_set(optics);
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
-    //hs->set_optics_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
+    hs->set_optics(optics_ref);
     hs->set_origin(1.0, 1.0, 0.0);
     hs->set_aim_vector(0.0, 0.0, 100.0);
     hs->set_aperture_size(12.0, 12.0);
@@ -169,11 +175,12 @@ TEST(Heliostat, BuildParabolaNone)
 
 TEST(Heliostat, BuildFlatOnAxis)
 {
-    //OpticalProperties mirror;
-    //mirror.set_ideal_reflection();
+    SimulationData sd;
+    auto optics = OpticalPropertySet();
+    auto optics_ref = sd.add_optical_property_set(optics);
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
-    //hs->set_optics_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
+    hs->set_optics(optics_ref);
     hs->set_origin(1.0, 1.0, 0.0);
     hs->set_aim_vector(0.0, 0.0, 100.0);
     hs->set_aperture_size(12.0, 12.0);
@@ -474,8 +481,9 @@ TEST(Heliostat, TraceOffAxisCanting)
 
 TEST(Heliostat, ErrorChecking_UpdateGeometry)
 {
-    //OpticalProperties mirror;
-    //mirror.set_ideal_reflection();
+    SimulationData sd;
+    auto optics = OpticalPropertySet();
+    auto optics_ref = sd.add_optical_property_set(optics);
 
     glm::dvec3 sun_pos(0.0, 0.0, 1000.0);
     glm::dvec3 hs_origin(1.0, 1.0, 0.0);
@@ -500,6 +508,7 @@ TEST(Heliostat, ErrorChecking_UpdateGeometry)
     hs->set_focal_length(0.0);
     hs->set_canting(Heliostat::NONE, 0.0, 0.0);
     hs->set_target_position(abs_origin);
+    hs->set_optics(optics_ref);
 
     EXPECT_THROW(hs->update_geometry(10.0, -10.0), std::invalid_argument);
     EXPECT_THROW(hs->update_geometry(10.0, 100.0), std::invalid_argument);

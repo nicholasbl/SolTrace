@@ -41,14 +41,12 @@ TEST(ParabolicDish, ArcLength)
 
 TEST(ParabolicDish, Build)
 {
-    //OpticalProperties mirror;
-    //mirror.set_ideal_reflection();
-    //
-    //OpticalProperties absorber;
-    //absorber.set_ideal_absorption();
-
     auto dish = SolTrace::Data::make_element<ParabolicDish>();
-    //dish->set_optics(mirror, absorber);
+    SimulationData sd;
+    auto optics = OpticalPropertySet();
+    auto optics_ref = sd.add_optical_property_set(optics);
+    dish->set_optics(optics_ref, optics_ref);
+
     dish->set_origin(20.0, -20.0, 30.0);
     dish->set_aperture_size(10.0);
     dish->set_number_of_panels(2, 2);
@@ -58,7 +56,7 @@ TEST(ParabolicDish, Build)
     dish->create_geometry();
 
     dish = SolTrace::Data::make_element<ParabolicDish>();
-    //dish->set_optics(mirror, absorber);
+    dish->set_optics(optics_ref, optics_ref);
     dish->set_origin(20.0, -20.0, 30.0);
     dish->set_aperture_size(10.0);
     dish->set_number_of_panels(1, 1);
@@ -378,6 +376,11 @@ TEST(ParabolicDish, ErrorChecking_CreateGeometryWithoutParameters)
 {
     auto dish = SolTrace::Data::make_element<ParabolicDish>();
 
+    SimulationData sd;
+    auto optics = OpticalPropertySet();
+    auto optics_ref = sd.add_optical_property_set(optics);
+    dish->set_optics(optics_ref, optics_ref);
+
     // Test create_geometry without setting required parameters
     EXPECT_THROW(dish->create_geometry(), std::invalid_argument);
 
@@ -401,6 +404,12 @@ TEST(ParabolicDish, ErrorChecking_CreateGeometryWithoutParameters)
 TEST(ParabolicDish, ErrorChecking_UpdateGeometry)
 {
     auto dish = SolTrace::Data::make_element<ParabolicDish>();
+
+    SimulationData sd;
+    auto optics = OpticalPropertySet();
+    auto optics_ref = sd.add_optical_property_set(optics);
+    dish->set_optics(optics_ref, optics_ref);
+
     dish->set_aperture_size(10.0);
     dish->set_number_of_panels(2, 2);
     dish->set_gaps(0.02, 0.01, 0.5);

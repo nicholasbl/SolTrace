@@ -137,6 +137,11 @@ TEST(ParabolicTrough, ErrorChecking_CreateGeometryWithoutParameters)
 {
     auto pt = SolTrace::Data::make_element<ParabolicTrough>();
 
+    SimulationData sd;
+    auto optics = OpticalPropertySet();
+    auto optics_ref = sd.add_optical_property_set(optics);
+    pt->set_optics(optics_ref, optics_ref, optics_ref, optics_ref);
+
     // Test create_geometry without setting required parameters
     EXPECT_THROW(pt->create_geometry(), std::invalid_argument);
 
@@ -159,24 +164,12 @@ TEST(ParabolicTrough, ErrorChecking_CreateGeometryWithoutParameters)
 
 TEST(ParabolicTrough, Build)
 {
-    //OpticalProperties mirror;
-    //mirror.set_ideal_reflection();
-    //
-    //OpticalProperties absorber;
-    //absorber.set_ideal_absorption();
-    //
-    //OpticalProperties envelop_out;
-    //envelop_out.set_ideal_transmission();
-    //envelop_out.refraction_index_front = 1.46;
-    //envelop_out.refraction_index_back = 1.0;
-    //
-    //OpticalProperties envelop_in;
-    //envelop_in.set_ideal_transmission();
-    //envelop_in.refraction_index_front = 1.0;
-    //envelop_in.refraction_index_back = 1.46;
-
+    SimulationData sd;
+    auto optics = OpticalPropertySet();
+    auto optics_ref = sd.add_optical_property_set(optics);
+    
     auto pt = SolTrace::Data::make_element<ParabolicTrough>();
-    //pt->set_optics(mirror, absorber, envelop_out, envelop_in);
+    pt->set_optics(optics_ref, optics_ref, optics_ref, optics_ref);
     pt->set_origin(20.0, -20.0, 30.0);
     pt->set_aperture_size(5.774, 11.96);
     pt->set_number_panels(4, 7);
@@ -187,7 +180,7 @@ TEST(ParabolicTrough, Build)
     pt->create_geometry();
 
     pt = SolTrace::Data::make_element<ParabolicTrough>();
-    //pt->set_optics(mirror, absorber, envelop_out, envelop_in);
+    pt->set_optics(optics_ref, optics_ref, optics_ref, optics_ref);
     pt->set_origin(20.0, -20.0, 30.0);
     pt->set_aperture_size(5.774, 11.96);
     pt->set_number_panels(1, 7);
@@ -497,6 +490,12 @@ TEST(ParabolicTrough, UpdateGeometry_TrackingLimits)
     const double UPPER = 10.0;
 
     auto pt = SolTrace::Data::make_element<ParabolicTrough>();
+
+    SimulationData sd;
+    auto optics = OpticalPropertySet();
+    auto optics_ref = sd.add_optical_property_set(optics);
+    pt->set_optics(optics_ref, optics_ref, optics_ref, optics_ref);
+
     pt->set_origin(0.0, 0.0, 0.0);
     pt->set_angles(0.0, 0.0);
     pt->set_tracking_limits(LOWER, UPPER);
@@ -548,6 +547,12 @@ TEST(ParabolicTrough, UpdateGeometry_TrackingLimits)
 TEST(ParabolicTrough, ErrorChecking_UpdateGeometry)
 {
     auto pt = SolTrace::Data::make_element<ParabolicTrough>();
+
+    SimulationData sd;
+    auto optics = OpticalPropertySet();
+    auto optics_ref = sd.add_optical_property_set(optics);
+    pt->set_optics(optics_ref, optics_ref, optics_ref, optics_ref);
+
     pt->set_origin(10.0, 0.0, 0.0);
     pt->set_angles(30.0, 10.0);
     pt->set_tracking_limits(-90.0, 90.0);
