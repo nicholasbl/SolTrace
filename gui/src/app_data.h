@@ -7,6 +7,7 @@
 #include <QSharedPointer>
 
 #include "logging.h"
+#include "utilities/notification.h"
 #include "utilities/qt_helpers.h"
 
 #include <backend.h>
@@ -78,6 +79,9 @@ class AppData : public QObject {
     void clear_session();
 
 public:
+    Q_READONLY_PROPERTY(QString, current_version_info);
+    Q_READONLY_PROPERTY(QString, current_build_info);
+
     static AppData* create(QQmlEngine* qmlEngine, QJSEngine*);
 
     explicit AppData(QObject*       parent,
@@ -85,6 +89,8 @@ public:
                      QString const& documentation_directory = "");
 
     ~AppData();
+
+    Q_INVOKABLE void copy_build_info_to_clipboard();
 
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
 

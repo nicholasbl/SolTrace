@@ -10,7 +10,7 @@ import SolTrace
 ApplicationWindow {
     id: main_window
 
-    title: "SolTrace"
+    title: "SolTrace - " + AppData.current_version_info
 
     width: 1280
     height: 720

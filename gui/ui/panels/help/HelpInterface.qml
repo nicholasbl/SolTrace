@@ -12,6 +12,14 @@ ColumnLayout {
     Layout.fillHeight: true
     Layout.fillWidth: true
 
+    STButton {
+        Layout.fillWidth: true
+
+        text: "Open Log Directory"
+        text_icon: "\uf07c"
+
+        onClicked: AppData.log_list.open_log_directory()
+    }
 
     ListView {
         id: log_list_view
