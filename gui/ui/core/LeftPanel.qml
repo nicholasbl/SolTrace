@@ -86,11 +86,11 @@ ShadowedGlassRectangle {
                         font.underline: is_active && !App.view.left_panel.is_small()
                         opacity: is_active ? 1 : 0.5
                         visible: {
-                            if (is_active && App.view.left_panel.width >= 300) {
+                            if (is_active && App.view.left_panel.width >= 200) {
                                 return true
                             }
 
-                            if (App.view.left_panel.width >= 525) {
+                            if (App.view.left_panel.width >= 450) {
                                 return true
                             }
 

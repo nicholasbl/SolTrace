@@ -543,6 +543,90 @@ RowLayout {
 
                     NotificationArea {
                         id: notification_settings
+
+                        onNext_notification: function(message, type){
+                            new_note_pop.type = type
+                            new_note_pop.message = message
+                            new_note_pop.show_popup()
+                        }
+                    }
+
+                    STPopup {
+                        id: new_note_pop
+
+                        property string message
+                        property int type
+
+                        property color message_color: {
+                            switch (type) {
+                            case 0: return Material.foreground
+                            case 1: return Material.color(Material.Yellow)
+                            case 2: return Material.color(Material.Red)
+                            default: return Material.foreground
+                            }
+                        }
+
+                        contentWidth: 250
+                        contentHeight: 50
+
+                        function show_popup() {
+                            open()
+                            close_note_timer.restart()
+                        }
+
+                        closePolicy: Popup.NoAutoClose
+
+                        Timer {
+                            id: close_note_timer
+
+                            interval: 3000
+
+                            onTriggered: new_note_pop.close()
+                        }
+
+                        RowLayout {
+                            id: note_layout
+                            anchors.fill: parent
+                            Label {
+                                Material.foreground: new_note_pop.message_color
+
+                                font.pointSize: 18
+                                Layout.preferredWidth: 24
+
+                                horizontalAlignment: Qt.AlignHCenter
+                                verticalAlignment: Qt.AlignVCenter
+
+                                font.family: "Font Awesome 7 Free"
+
+                                text: {
+                                    switch (new_note_pop.type) {
+                                    case 0: return "\uf05a"
+                                    case 1: return "\uf071"
+                                    case 2: return "\uf057"
+                                    default: return "\uf05a"
+                                    }
+                                }
+                            }
+
+                            Label {
+                                Layout.fillWidth: true
+                                wrapMode: Label.WrapAtWordBoundaryOrAnywhere
+                                elide: Label.ElideRight
+
+                                Material.foreground: new_note_pop.message_color
+
+                                text: new_note_pop.message
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: note_layout
+                            onClicked: {
+                                new_note_pop.close()
+                                notification_settings.open()
+                            }
+                        }
+
                     }
                 }
 

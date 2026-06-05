@@ -343,4 +343,70 @@ void FluxMapProvider::clear() {
     m_lock.unlock();
 }
 
+// ============================================================================
+
+
+QVector<EntityNamePair> AllComputedMapsModel::rebuild_lists() {
+    QVector<EntityNamePair> new_recs;
+    m_reverse.clear();
+
+    if (!m_host) return {};
+
+    auto view = m_host->as_registry().view<HasFluxMapComponent>();
+
+    for (auto [entity, map] : view.each()) {
+        new_recs.push_back(EntityNamePair::record_for_entity(*m_host, entity));
+    }
+
+    for (qsizetype i = 0; i < new_recs.size(); ++i) {
+        m_reverse[new_recs[i].entity] = static_cast<int>(i);
+    }
+
+    return new_recs;
+}
+
+void AllComputedMapsModel::recompute() {
+    store_reset(rebuild_lists());
+}
+
+void AllComputedMapsModel::ident_changed(entt::entity entity) {
+    if (!m_host) return;
+
+    if (auto iter = m_reverse.find(entity); iter != m_reverse.end()) {
+        store_push_update(iter->second,
+                          EntityNamePair::record_for_entity(*m_host, entity));
+    }
+}
+
+
+AllComputedMapsModel::AllComputedMapsModel(QObject* parent)
+    : StructModelAdapter(parent) { }
+
+void AllComputedMapsModel::reset(Database* database) {
+    if (m_host) {
+        disconnect(m_host->identity.self(), nullptr, this, nullptr);
+        disconnect(m_host->element_tag.self(), nullptr, this, nullptr);
+    }
+
+    m_host = database;
+    recompute();
+
+    if (!database) return;
+
+    connect(database->identity.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &AllComputedMapsModel::ident_changed);
+
+    connect(database->flux_map.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &AllComputedMapsModel::recompute);
+
+    connect(database->flux_map.self(),
+            &ComponentAPIBase::removed,
+            this,
+            &AllComputedMapsModel::recompute);
+}
+
 } // namespace db

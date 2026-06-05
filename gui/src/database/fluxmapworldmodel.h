@@ -8,6 +8,7 @@
 
 #include "analysis/flux_map.h"
 #include "database.h"
+#include "database/database_models.h"
 #include "database/geometryeditor.h"
 #include "database/simulationresult.h"
 
@@ -137,6 +138,28 @@ public:
 public slots:
     void on_ready(Entity, analysis::BakedFluxMapPtr, Database const*);
     void clear();
+};
+
+// =============================================================================
+
+class AllComputedMapsModel : public StructModelAdapter<EntityNamePair> {
+    Q_OBJECT
+
+    QPointer<Database> m_host;
+
+    std::unordered_map<entt::entity, int> m_reverse;
+
+    QVector<EntityNamePair> rebuild_lists();
+
+private slots:
+    void recompute();
+    void ident_changed(entt::entity);
+
+public:
+    explicit AllComputedMapsModel(QObject* parent = nullptr);
+    ~AllComputedMapsModel() override = default;
+
+    void reset(Database* database);
 };
 
 

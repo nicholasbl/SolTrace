@@ -35,7 +35,7 @@ Flickable {
             title: "Ray Visibility"
 
             STPropertyLabel {
-                text: "Event types"
+                text: "Filter types"
                 Layout.alignment: root.labelAlignment
             }
 
@@ -58,7 +58,7 @@ Flickable {
             }
 
             STPropertyLabel {
-                text: "Show percent"
+                text: "Show"
                 Layout.alignment: root.labelAlignment
             }
 
@@ -72,6 +72,8 @@ Flickable {
                 onValueModified: {
                     AppData.intersections.ray_geometry.show_percent = value
                 }
+
+                suffix: "%"
             }
         }
     }

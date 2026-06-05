@@ -11,6 +11,7 @@ namespace SolTrace::GUI::App {
 FluxModule::FluxModule(QQmlEngine* engine, QObject* parent)
     : QObject(parent),
       m_entity_model(new db::AllElementsModel(this)),
+      m_computed_maps_model(new db::AllComputedMapsModel(this)),
       m_pending_flux_maps(new db::PendingFluxMapModel(this)),
       m_flux_map_world_model(new db::FluxMapWorldModel(this)),
       m_ray_iso_volume(new db::QMLMesh()) {

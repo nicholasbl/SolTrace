@@ -99,6 +99,8 @@ Node {
     Model {
         id: iso_vol_mesh
 
+        visible: AppData.flux.show_flux_volume
+
         geometry: AppData.flux.ray_iso_volume
 
         materials: [
