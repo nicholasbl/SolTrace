@@ -104,6 +104,7 @@ void execute_thread_runner(QPromise<SimResult>&      promise,
                 current_runner.get());
             ptr) {
             ptr->set_number_of_threads(thread_count);
+            ptr->disable_stages();
         }
 
 

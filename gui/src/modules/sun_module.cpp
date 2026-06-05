@@ -188,7 +188,9 @@ QString SunModule::write_position_to_database() {
     QScopedValueRollback<bool> guard(m_writing_to_database, true);
 
     try {
-        m_current_database->ray_source_resource.patch([this](auto& resource) {
+        m_current_database->ray_source_resource.patch([this](
+                                                          db::RaySourceResource&
+                                                              resource) {
             const bool created = !resource.source;
             if (created) { resource.source = SD::make_ray_source<SD::Sun>(); }
 
@@ -204,6 +206,8 @@ QString SunModule::write_position_to_database() {
 
             resource.source->set_position(
                 m_position->x(), m_position->y(), m_position->z());
+
+            resource.source->set_gen_type(Data::GenType::RANDOM);
         });
     } catch (std::exception const& e) {
         qWarning() << "Unable to update sun position:" << e.what();

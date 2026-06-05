@@ -28,6 +28,10 @@ load_file(QPromise<LoadResult>& result, QString fname, db::Database* new_db) {
         result.setProgressValueAndText(0, "Reading file...");
 
         auto file = QFileInfo(fname);
+        auto suffix = file.suffix().toLower();
+        bool legacy_stinput_cylinder_origins =
+            suffix == QStringLiteral("stinput") ||
+            suffix == QStringLiteral("stimport");
 
         if (!(file.isFile() && file.isReadable())) {
             result.emplaceResult(LoadFileFailed(
@@ -54,7 +58,7 @@ load_file(QPromise<LoadResult>& result, QString fname, db::Database* new_db) {
         stage = "importing content";
         result.setProgressValueAndText(50, "Importing content...");
 
-        destination->import(*new_data);
+        destination->import(*new_data, legacy_stinput_cylinder_origins);
 
         stage = "finalizing";
         result.setProgressValueAndText(100, "Done");
