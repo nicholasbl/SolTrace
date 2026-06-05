@@ -69,7 +69,10 @@ ShadowedGlassRectangle {
                         borderWidth: 0
                         font.pointSize: App.view.left_panel.is_small() ? 16 : 12
 
-                        onClicked: App.view.workflow_phase = parent.index
+                        onClicked: {
+                            App.view.workflow_phase = parent.index
+                            App.view.simulation_content_view = parent.index === 2
+                        }
 
                         STToolTip {
                             visible: parent.containsMouse && App.view.left_panel.size == PanelData.Small
@@ -86,7 +89,7 @@ ShadowedGlassRectangle {
                         font.underline: is_active && !App.view.left_panel.is_small()
                         opacity: is_active ? 1 : 0.5
                         visible: {
-                            if (is_active && App.view.left_panel.width >= 200) {
+                            if (is_active && App.view.left_panel.width >= 220) {
                                 return true
                             }
 
@@ -98,7 +101,10 @@ ShadowedGlassRectangle {
 
                         }
 
-                        onClicked: App.view.workflow_phase = parent.index
+                        onClicked: {
+                            App.view.workflow_phase = parent.index
+                            App.view.simulation_content_view = parent.index === 2
+                        }
                     }
 
                     Label {

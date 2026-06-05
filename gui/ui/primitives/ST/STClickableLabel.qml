@@ -7,7 +7,7 @@ import SolTrace
 Label {
     id: control
 
-    text: "Initialize"
+    text: ""
     
     signal clicked
 
