@@ -95,6 +95,10 @@ SimulationModule::SimulationModule(QObject* parent)
     auto thread_count = std::thread::hardware_concurrency();
     set_max_threads(thread_count <= 0 ? 1 : thread_count);
 
+#ifdef SOLTRACE_HAS_EMBREE_RUNNER
+    set_runner(Runner::Embree);
+#endif
+
     connect(this,
             &SimulationModule::new_results,
             this,
@@ -171,7 +175,7 @@ void SimulationModule::select_result(int index) {
     if (!result) return;
 
     m_current_result = result;
-    set_current_simulation_result_name(result->database->name());
+    set_current_simulation_result_name(m_results->name_at(index));
     emit new_results(result);
 }
 
@@ -190,15 +194,27 @@ void SimulationModule::delete_result(int index) {
     if (!deleting_current) return;
 
     db::SimulationResultPtr replacement;
+    QString                 replacement_name = "No Simulation Result";
     if (m_results->rowCount() > 0) {
-        replacement = m_results->result_at(
-            std::min(index, m_results->rowCount() - 1));
+        auto replacement_index = std::min(index, m_results->rowCount() - 1);
+        replacement           = m_results->result_at(replacement_index);
+        replacement_name      = m_results->name_at(replacement_index);
     }
 
     m_current_result = replacement;
-    set_current_simulation_result_name(
-        replacement ? replacement->database->name() : "No Simulation Result");
+    set_current_simulation_result_name(replacement_name);
     emit new_results(replacement);
+}
+
+void SimulationModule::rename_result(int index, QString const& name) {
+    auto result = m_results->result_at(index);
+    if (!result) return;
+
+    m_results->rename_result(index, name);
+
+    if (m_current_result == result) {
+        set_current_simulation_result_name(name);
+    }
 }
 
 void SimulationModule::export_result(int index) {

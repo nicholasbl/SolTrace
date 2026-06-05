@@ -9,8 +9,7 @@ RowLayout {
 
     signal show_script_area()
 
-    //readonly property bool show_logos: available_width > 1250
-    readonly property bool show_logos: false
+    readonly property bool show_logos: available_width > 1250
 
     TopBarLeftPane {
         Layout.fillHeight: true

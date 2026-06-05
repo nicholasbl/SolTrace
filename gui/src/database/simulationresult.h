@@ -95,10 +95,12 @@ public:
     explicit SimulationResultModel(QObject* parent = nullptr);
 
     SimulationResultPtr result_at(int index) const;
+    QString             name_at(int index) const;
 
 public slots:
     void append_result(SimulationResultPtr result);
     void remove_result(int index);
+    void rename_result(int index, QString const& name);
     void clear();
 };
 

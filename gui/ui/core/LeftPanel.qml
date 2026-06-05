@@ -49,7 +49,16 @@ ShadowedGlassRectangle {
                 visible: App.view.left_panel.is_small()
             }
 
+            Label {
+                text: ["Configure", "Simulate", "Analyze"][App.view.workflow_phase]
+                font.pointSize: 16
+                font.bold: true
+                font.family: "CMU Serif"
+            }
+
+            /*
             Repeater {
+                visible: false
                 model: ["Configure", "Simulate", "Analyze"]
 
                 RowLayout {
@@ -115,7 +124,7 @@ ShadowedGlassRectangle {
                         visible: parent.index < 2
                     }
                 }
-            }
+            }*/
 
             Item {
                 Layout.fillWidth: true

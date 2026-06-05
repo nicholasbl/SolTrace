@@ -13,11 +13,11 @@ ShadowedGlassRectangle {
     property int last_db_count: AppData.file_source.rowCount()
     property bool highlighted: false
 
-    property bool is_in_analysis_view: App.view.simulation_content_view
+    function mode_width(is_active) {
+        return mode_row.mode_control_width * (is_active ? 2 : 1)
+    }
 
-    glassColor: highlighted ? Qt.alpha(Material.accentColor, 0.35) :
-                              data_mouse_area.containsMouse ? App.theme.shadedGlassColor :
-                                                              App.theme.glassColor
+    glassColor: App.theme.glassColor
 
     function flash_added_data() {
         flash_highlight_animation.restart()
@@ -30,7 +30,20 @@ ShadowedGlassRectangle {
     }
 
     RowLayout {
+        id: mode_row
+
         anchors.fill: parent
+        anchors.leftMargin: 20
+        anchors.rightMargin: 20
+
+        spacing: 8
+
+        readonly property real separator_width: configure_separator.implicitWidth
+                                                + analyze_separator.implicitWidth
+        readonly property real mode_control_width: Math.max(
+                                                       60,
+                                                       (width - separator_width
+                                                        - spacing * 4) / 4)
 
         Connections {
             target: AppData.file_source
@@ -71,80 +84,239 @@ ShadowedGlassRectangle {
             }
         }
 
-        Label {
+        Item {
+            id: configure_mode
+            property bool is_active: App.view.workflow_phase === 0
+            property real preferred_width: root.mode_width(is_active)
+
             Layout.fillHeight: true
-            Layout.preferredWidth: implicitWidth
-            Layout.leftMargin: 20
+            Layout.preferredWidth: preferred_width
+            Layout.minimumWidth: 90
 
-            verticalAlignment: Qt.AlignVCenter
+            Behavior on preferred_width {
+                NumberAnimation {
+                    duration: 250
+                    easing.type: Easing.OutElastic
+                }
+            }
 
-            id: duplicate_result_button
-            text: root.is_in_analysis_view ? "Analyze" : "Edit Scene"
-            font.pointSize: 16
-        }
+            RowLayout {
+                anchors.fill: parent
+                spacing: 4
 
-        Rectangle {
-            Layout.preferredWidth: 1
-            Layout.fillHeight: true
+                STClickableLabel {
+                    id: current_scene_label
 
-            color: Material.dividerColor
-        }
+                    property string active_name: App.file_source.current_database ?
+                                                     App.file_source.current_database.name : "None"
+                    property real animated_point_size: configure_mode.is_active ? 16 : 15
 
-        Label {
-            Layout.fillHeight: true
-            Layout.fillWidth: true
-            verticalAlignment: Qt.AlignVCenter
-            horizontalAlignment: Qt.AlignRight
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
 
-            Layout.rightMargin: 20
+                    horizontalAlignment: Qt.AlignHCenter
+                    verticalAlignment: Qt.AlignVCenter
 
-            text: {
-                if (root.is_in_analysis_view) {
-                    return AppData.simulation.current_simulation_result_name
+                    text: configure_mode.is_active ? "Editing: " + active_name : "Configure"
+                    elide: Label.ElideMiddle
+
+                    font.bold: configure_mode.is_active
+                    font.pointSize: animated_point_size
+                    opacity: configure_mode.is_active ? 1.0 : .50
+
+                    onClicked: App.view.workflow_phase = 0
+
+                    Behavior on animated_point_size {
+                        NumberAnimation {
+                            duration: 150
+                            easing.type: Easing.InOutQuad
+                        }
+                    }
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 150
+                        }
+                    }
                 }
 
-                return App.file_source.current_database ?
-                            App.file_source.current_database.name : "None"
+                STIconButton {
+                    visible: configure_mode.is_active
+
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitHeight
+                    Layout.rightMargin: 10
+
+                    text: "\uf107"
+                    iconSize: 18
+                    toolTip: "Scene List"
+
+                    onClicked: data_pop.open()
+                }
             }
-            elide: Label.ElideMiddle
-            font.family: "CMU Serif"
-            font.bold: true
-            font.pointSize: 18
-
-
         }
+
+        Label {
+            id: configure_separator
+
+            Layout.leftMargin: 4
+            Layout.rightMargin: 4
+            Layout.alignment: Qt.AlignVCenter
+
+            font.family: "Font Awesome 7 Free"
+            text: "\uf101"
+        }
+
+        Item {
+            id: simulate_mode
+            property bool is_active: App.view.workflow_phase === 1
+            property real preferred_width: root.mode_width(is_active)
+
+            Layout.fillHeight: true
+            Layout.preferredWidth: preferred_width
+            Layout.minimumWidth: 80
+
+            Behavior on preferred_width {
+                NumberAnimation {
+                    duration: 250
+                    easing.type: Easing.OutElastic
+                }
+            }
+
+
+
+            STClickableLabel {
+                id: simulate_label
+
+                property real animated_point_size: simulate_mode.is_active ? 16 : 15
+
+                anchors.fill: parent
+
+                text: "Simulate"
+                horizontalAlignment: Qt.AlignHCenter
+                verticalAlignment: Qt.AlignVCenter
+
+                font.bold: simulate_mode.is_active
+                font.pointSize: animated_point_size
+                opacity: simulate_mode.is_active ? 1.0 : .50
+
+                onClicked: App.view.workflow_phase = 1
+
+                Behavior on animated_point_size {
+                    NumberAnimation {
+                        duration: 150
+                        easing.type: Easing.InOutQuad
+                    }
+                }
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 150
+                    }
+                }
+            }
+        }
+
+        Label {
+            id: analyze_separator
+
+            Layout.leftMargin: 4
+            Layout.rightMargin: 4
+            Layout.alignment: Qt.AlignVCenter
+
+            font.family: "Font Awesome 7 Free"
+            text: "\uf101"
+        }
+
+        Item {
+            id: analyze_mode
+            property bool is_active: App.view.workflow_phase === 2
+            property real preferred_width: root.mode_width(is_active)
+
+            Layout.fillHeight: true
+            Layout.preferredWidth: preferred_width
+            Layout.minimumWidth: 80
+
+            Behavior on preferred_width {
+                NumberAnimation {
+                    duration: 250
+                    easing.type: Easing.OutElastic
+                }
+            }
+
+            RowLayout {
+                anchors.fill: parent
+                spacing: 4
+
+                STClickableLabel {
+                    id: analyze_label
+
+                    property real animated_point_size: analyze_mode.is_active ? 16 : 15
+
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+
+                    text: "Analyze"
+                    horizontalAlignment: Qt.AlignHCenter
+                    verticalAlignment: Qt.AlignVCenter
+
+                    font.bold: analyze_mode.is_active
+                    font.pointSize: animated_point_size
+                    opacity: analyze_mode.is_active ? 1.0 : .50
+
+                    onClicked: App.view.workflow_phase = 2
+
+                    Behavior on animated_point_size {
+                        NumberAnimation {
+                            duration: 150
+                            easing.type: Easing.InOutQuad
+                        }
+                    }
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 150
+                        }
+                    }
+                }
+
+                STIconButton {
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitHeight
+                    Layout.rightMargin: 10
+
+                    visible: analyze_mode.is_active
+
+                    text: "\uf107"
+                    iconSize: 18
+                    toolTip: "Simulation Results"
+
+                    onClicked: results_pop.open()
+                }
+            }
+        }
+
     }
-
-    Rectangle {
-        anchors.fill: parent
-
-        visible: root.is_in_analysis_view
-
-        radius: height / 2.0
-
-        color: "transparent"
-
-        border.width: 2
-        border.color: Material.color(Material.Yellow)
-    }
-
-    MouseArea {
-        id: data_mouse_area
-        anchors.fill: parent
-
-        hoverEnabled: true
-
-        onClicked: data_pop.open()
-    }
-
 
     Item {
         anchors.fill: parent
 
+        ResultsPopup {
+            id: results_pop
+
+            width: root.width
+            height: Overlay.overlay.height * 0.66
+        }
+
+
         DataPopup {
             id: data_pop
 
-            width: parent.width
+            width: root.width
             height: Overlay.overlay.height * 0.66
         }
     }

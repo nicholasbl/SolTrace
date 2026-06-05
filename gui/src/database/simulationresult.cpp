@@ -137,10 +137,27 @@ SimulationResultPtr SimulationResultModel::result_at(int index) const {
     return record->result;
 }
 
+QString SimulationResultModel::name_at(int index) const {
+    auto record = get_at(index);
+    if (!record) return {};
+
+    return record->name;
+}
+
 void SimulationResultModel::remove_result(int index) {
     if (index < 0 || index >= rowCount()) return;
 
     store_push_remove(index, 1);
+}
+
+void SimulationResultModel::rename_result(int index, QString const& name) {
+    if (index < 0 || index >= rowCount()) return;
+
+    auto record = m_records[index];
+    if (record.name == name) return;
+
+    record.name = name;
+    store_push_update(index, record);
 }
 
 void SimulationResultModel::clear() {
