@@ -150,6 +150,7 @@ TEST(Element, VirtualPlane)
 
 TEST(Element, CompositeElementAccessors)
 {
+    SimulationData sd;
     auto cmp = SolTrace::Data::make_element<CompositeElement>();
     EXPECT_TRUE(cmp->is_composite());
 
@@ -157,19 +158,17 @@ TEST(Element, CompositeElementAccessors)
     EXPECT_EQ(cmp->get_aperture(), nullptr);
     EXPECT_EQ(cmp->get_surface(), nullptr);
     EXPECT_EQ(cmp->get_optical_property_set_id(), SolTrace::Data::OPTICS_ID_UNASSIGNED);
+    EXPECT_EQ(cmp->get_optical_property_set(), nullptr);
     const aperture_ptr ap = cmp->get_aperture();
     EXPECT_EQ(ap, nullptr);
     const surface_ptr sp = cmp->get_surface();
     EXPECT_EQ(sp, nullptr);
 
-    // These should do nothing...
-    EXPECT_DEBUG_DEATH(cmp->set_optical_property_set_id(-1), "CompositeElement does not support optical property sets");
-
     // Add/remove/change elements
     const int NUM_ELEMENTS = 4;
     for (int i = 0; i < NUM_ELEMENTS; ++i)
     {
-        auto elem = make_configured_element();
+        auto elem = make_configured_element(sd);
         cmp->add_element(elem);
         // EXPECT_EQ(elem->get_stage(), STAGE);
     }
@@ -178,11 +177,11 @@ TEST(Element, CompositeElementAccessors)
     cmp->remove_element(0);
     EXPECT_EQ(cmp->get_number_of_elements(), NUM_ELEMENTS - 1);
     EXPECT_EQ(cmp->get_element(0), nullptr);
-    auto elem = make_configured_element();
+    auto elem = make_configured_element(sd);
     auto id = cmp->add_element(elem);
     EXPECT_EQ(cmp->get_element(id).get(), elem.get());
 
-    auto elem2 = make_configured_element();
+    auto elem2 = make_configured_element(sd);
     EXPECT_NE(elem.get(), elem2.get());
     cmp->replace_element(id, elem2);
     EXPECT_EQ(cmp->get_element(id).get(), elem2.get());
@@ -212,7 +211,7 @@ TEST(Element, CompositeElementAccessors)
     EXPECT_FALSE(elem2->is_virtual());
 
     cmp->mark_virtual();
-    auto elem3 = make_configured_element();
+    auto elem3 = make_configured_element(sd);
     EXPECT_FALSE(elem3->is_virtual());
     cmp->add_element(elem3);
     EXPECT_TRUE(elem3->is_virtual());
@@ -237,15 +236,16 @@ TEST(Element, CompositeElementAccessors)
 
 TEST(Element, StageElementAccessors)
 {
+    SimulationData sd;
     const int_fast64_t STAGE = 10;
     const int_fast64_t RESET_STAGE = 20;
     auto st1 = SolTrace::Data::make_stage(10);
 
-    auto el1 = make_configured_element();
+    auto el1 = make_configured_element(sd);
     auto cmp1 = SolTrace::Data::make_element<CompositeElement>();
-    auto sub1 = make_configured_element();
-    auto sub2 = make_configured_element();
-    auto sub3 = make_configured_element();
+    auto sub1 = make_configured_element(sd);
+    auto sub2 = make_configured_element(sd);
+    auto sub3 = make_configured_element(sd);
     EXPECT_TRUE(SolTrace::Data::Element::is_success(cmp1->add_element(sub1)));
     EXPECT_TRUE(SolTrace::Data::Element::is_success(cmp1->add_element(sub2)));
     EXPECT_TRUE(SolTrace::Data::Element::is_success(cmp1->add_element(sub3)));
@@ -268,7 +268,8 @@ TEST(Element, StageElementAccessors)
 
 TEST(Element, CoordinateComputationsIdentity)
 {
-    auto el = make_configured_element();
+    SimulationData sd;
+    auto el = make_configured_element(sd);
     auto st = SolTrace::Data::make_stage(0);
     glm::dvec3 origin(0.0, 0.0, 0.0);
     glm::dvec3 aim(0.0, 0.0, 1.0);
@@ -350,6 +351,7 @@ TEST(Element, CoordinateComputationsIdentity)
 
 TEST(Element, CoordinateComputationsRotations)
 {
+    SimulationData sd;
     using SolTrace::Data::PI;
 
     // **** Setup Answers **** //
@@ -401,7 +403,7 @@ TEST(Element, CoordinateComputationsRotations)
     const double zrot2 = 60.0;
 
     // **** Setup Elements **** //
-    auto el = make_configured_element();
+    auto el = make_configured_element(sd);
     el->set_reference_frame_geometry(Origin, aim1, zrot1);
 
     auto st = SolTrace::Data::make_stage(0);
@@ -460,6 +462,7 @@ TEST(Element, CoordinateComputationsRotations)
 
 TEST(Element, CoordinateComputationsTranslations)
 {
+    SimulationData sd;
     // **** Setup Answers **** //
     // Origin
     glm::dvec3 Origin1(1.0, 2.0, 3.0);
@@ -482,7 +485,7 @@ TEST(Element, CoordinateComputationsTranslations)
     aim2 = 1.0 * Origin2 + 1.0 * aim2;
 
     // **** Setup Elements **** //
-    auto el = make_configured_element();
+    auto el = make_configured_element(sd);
     el->set_reference_frame_geometry(Origin1, aim1, zrot);
 
     auto st = SolTrace::Data::make_stage(0);
@@ -542,6 +545,7 @@ TEST(Element, CoordinateComputationsTranslations)
 
 TEST(Element, CoordinateComputations)
 {
+    SimulationData sd;
     using SolTrace::Data::MatrixTranspose;
     using SolTrace::Data::PI;
 
@@ -601,7 +605,7 @@ TEST(Element, CoordinateComputations)
     const double zrot2 = 60.0;
 
     // **** Setup Elements **** //
-    auto el = make_configured_element();
+    auto el = make_configured_element(sd);
     el->set_reference_frame_geometry(Origin1, aim1, zrot1);
 
     auto st = SolTrace::Data::make_stage(0);
@@ -689,6 +693,7 @@ TEST(Element, CoordinateComputations)
 
 TEST(Element, VectorCoordinateComputations)
 {
+    SimulationData sd;
     using SolTrace::Data::MatrixTranspose;
     using SolTrace::Data::PI;
 
@@ -747,7 +752,7 @@ TEST(Element, VectorCoordinateComputations)
     const double zrot2 = 60.0;
 
     // **** Setup Elements **** //
-    auto el = make_configured_element();
+    auto el = make_configured_element(sd);
     el->set_reference_frame_geometry(Origin1, aim1, zrot1);
 
     auto st = SolTrace::Data::make_stage(0);
@@ -819,8 +824,14 @@ TEST(Element, VectorCoordinateComputations)
 
 TEST(Element, SingleElementEnforceUserFieldsSet)
 {
+    SimulationData sd;
+    OpticalPropertySet opt_set(InteractionType::REFLECTION, 1, 1);
+    opt_set.set_properties(OpticalSide::Both, DistributionType::GAUSSIAN,
+        0.75, 0.25, 0.1, 0.001);
+    auto optics_ref = sd.add_optical_property_set(opt_set);
+
     auto elem = SolTrace::Data::make_element<SingleElement>();
-    elem->set_optical_property_set_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
+    elem->set_optical_property_set(optics_ref);
 
     // SingleElement requires aperture and surface to be set
     // Test that it throws when aperture is missing
@@ -833,22 +844,11 @@ TEST(Element, SingleElementEnforceUserFieldsSet)
     // Set both aperture and surface - should not throw
     elem->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Flat>());
     EXPECT_NO_THROW(elem->enforce_user_fields_set());
-
-    // Test with optical properties set as well
-    OpticalPropertySet opt_set(InteractionType::REFLECTION,
-        1, 1);
-    opt_set.set_properties(OpticalSide::Both, DistributionType::GAUSSIAN,
-        0.75, 0.25, 0.1, 0.001);
-    SimulationData sd;
-    optics_id id = sd.add_optical_property_set(opt_set);
-    elem->set_optical_property_set_id(id);
-
-    // Should still not throw
-    EXPECT_NO_THROW(elem->enforce_user_fields_set());
 }
 
 TEST(Element, CompositeElementEnforceUserFieldsSet)
 {
+    SimulationData sd;
     auto comp = SolTrace::Data::make_element<CompositeElement>();
 
     // CompositeElement requires at least one subelement
@@ -860,8 +860,7 @@ TEST(Element, CompositeElementEnforceUserFieldsSet)
     EXPECT_THROW(comp->add_element(elem1), std::invalid_argument);
 
     // Add properly configured child elements
-    auto elem2 = SolTrace::Data::make_element<SingleElement>();
-    elem2->set_optical_property_set_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
+    auto elem2 = make_configured_element(sd);
     elem2->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(2.0, 3.0));
     elem2->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Parabola>(1.0, 2.0));
     EXPECT_NO_THROW(comp->add_element(elem2));

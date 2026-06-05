@@ -136,8 +136,8 @@ TEST(NativeRunner, ErrorOnUnsupportedOptions)
     SolTrace::Data::OpticalPropertySet mirror_optics(SolTrace::Data::InteractionType::REFLECTION, "Mirror");
     mirror_optics.set_ideal_one_sided_reflector(SolTrace::Data::OpticalSide::Front);
     mirror_optics.set_errors(SolTrace::Data::OpticalSide::Front, SolTrace::Data::DistributionType::UNKNOWN, 0.0, 0.0);
-    auto mirror_optics_id = my_sim.add_optical_property_set(mirror_optics);
-    mirror->set_optical_property_set_id(mirror_optics_id);
+    auto mirror_optics_ref = my_sim.add_optical_property_set(mirror_optics);
+    mirror->set_optical_property_set(mirror_optics_ref);
 
     RunnerStatus sts;
     sts = runner.initialize();
@@ -176,7 +176,7 @@ TEST(NativeRunner, SmokeTest)
     mirror_optics_set.set_reflectivity(SolTrace::Data::OpticalSide::Back, 1.0);
     mirror_optics_set.set_errors(SolTrace::Data::OpticalSide::Front, SolTrace::Data::DistributionType::GAUSSIAN, 0.0, 0.0);
     mirror_optics_set.set_errors(SolTrace::Data::OpticalSide::Back, SolTrace::Data::DistributionType::GAUSSIAN, 0.0, 0.0);
-    auto optics_id = my_sim.add_optical_property_set(mirror_optics_set);
+    auto optics_ref = my_sim.add_optical_property_set(mirror_optics_set);
 
     for (int k = 0; k < NUM_ELEMENTS; ++k)
     {
@@ -186,7 +186,7 @@ TEST(NativeRunner, SmokeTest)
         el->set_reference_frame_geometry(glm::dvec3(x[k], y[k], 0.0),
                                          glm::dvec3(-x[k], -y[k], 1.0),
                                          0.0);
-        el->set_optical_property_set_id(optics_id);
+        el->set_optical_property_set(optics_ref);
         my_st->add_element(el);
     }
 
@@ -268,7 +268,7 @@ TEST(NativeRunner, RaysLaunchedEqualsRequestedAfterRun)
     mirror_optics_set.set_reflectivity(SolTrace::Data::OpticalSide::Back, 1.0);
     mirror_optics_set.set_errors(SolTrace::Data::OpticalSide::Front, SolTrace::Data::DistributionType::GAUSSIAN, 0.0, 0.0);
     mirror_optics_set.set_errors(SolTrace::Data::OpticalSide::Back, SolTrace::Data::DistributionType::GAUSSIAN, 0.0, 0.0);
-    auto optics_id = my_sim.add_optical_property_set(mirror_optics_set);
+    auto optics_ref = my_sim.add_optical_property_set(mirror_optics_set);
     for (int k = 0; k < NUM_ELEMENTS; ++k)
     {
         element_ptr el = SolTrace::Data::make_element<SingleElement>();
@@ -277,7 +277,7 @@ TEST(NativeRunner, RaysLaunchedEqualsRequestedAfterRun)
         el->set_reference_frame_geometry(glm::dvec3(x[k], y[k], 0.0),
                                          glm::dvec3(-x[k], -y[k], 1.0),
                                          0.0);
-        el->set_optical_property_set_id(optics_id);
+        el->set_optical_property_set(optics_ref);
         my_st->add_element(el);
     }
     my_sim.add_stage(my_st);
@@ -316,8 +316,8 @@ TEST(NativeRunner, PowerTowerSmokeTest)
     absorber->set_aperture(SolTrace::Data::make_aperture<Rectangle>(2.0, 2.0));
     SolTrace::Data::OpticalPropertySet absorber_optics(SolTrace::Data::InteractionType::REFLECTION, "Absorber");
     absorber_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
-    auto absorber_optics_id = sd.add_optical_property_set(absorber_optics);
-    absorber->set_optical_property_set_id(absorber_optics_id);
+    auto absorber_optics_ref = sd.add_optical_property_set(absorber_optics);
+    absorber->set_optical_property_set(absorber_optics_ref);
 
     // Make stage 1 -- second stage -- these can be added to SimulationData
     // in any order but should be numbered in the desired order
@@ -348,8 +348,8 @@ TEST(NativeRunner, PowerTowerSmokeTest)
         SolTrace::Data::OpticalPropertySet mirror_optics(SolTrace::Data::InteractionType::REFLECTION, "Mirror");
         mirror_optics.set_ideal_one_sided_reflector(SolTrace::Data::OpticalSide::Front);
         mirror_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Back);
-        auto mirror_optics_id = sd.add_optical_property_set(mirror_optics);
-        el->set_optical_property_set_id(mirror_optics_id);
+        auto mirror_optics_ref = sd.add_optical_property_set(mirror_optics);
+        el->set_optical_property_set(mirror_optics_ref);
 
         pos = {5 * sin(k * PI * 2.0 / NUM_ELEMENTS), 5 * cos(k * PI * 2.0 / NUM_ELEMENTS), 0.0};
         rvec = glm::normalize(absorber->get_origin_global() - pos);
@@ -475,8 +475,8 @@ TEST(NativeRunner, SingleRayValidationTest)
     SolTrace::Data::OpticalPropertySet sphere_optics(SolTrace::Data::InteractionType::REFLECTION, "Sphere");
     sphere_optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
     sphere_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
-    auto sphere_optics_id = sd.add_optical_property_set(sphere_optics);
-    sph->set_optical_property_set_id(sphere_optics_id);
+    auto sphere_optics_ref = sd.add_optical_property_set(sphere_optics);
+    sph->set_optical_property_set(sphere_optics_ref);
     sph->set_name("Sphere");
     sd.add_element(sph);
 
@@ -490,8 +490,8 @@ TEST(NativeRunner, SingleRayValidationTest)
     SolTrace::Data::OpticalPropertySet parabola_optics(SolTrace::Data::InteractionType::REFLECTION, "Parabola");
     parabola_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
     parabola_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
-    auto parabola_optics_id = sd.add_optical_property_set(parabola_optics);
-    para->set_optical_property_set_id(parabola_optics_id);
+    auto parabola_optics_ref = sd.add_optical_property_set(parabola_optics);
+    para->set_optical_property_set(parabola_optics_ref);
     para->set_name("Parabola");
     sd.add_element(para);
 

@@ -36,8 +36,8 @@ void make_two_plate_sd(SimulationData& sd, element_ptr& plate1, element_ptr& pla
 		0.0,
 		"two_plate_reflector_optics");
 	reflective_optics.set_ideal_reflection(OpticalSide::Both);
-	auto reflective_optics_id = sd.add_optical_property_set(reflective_optics);
-	plate1->set_optical_property_set_id(reflective_optics_id);
+	auto reflective_optics_ref = sd.add_optical_property_set(reflective_optics);
+	plate1->set_optical_property_set(reflective_optics_ref);
 	plate1->set_name("plate1");
 
 	// Plate 2: Positioned to receive reflected rays from plate 1
@@ -53,8 +53,8 @@ void make_two_plate_sd(SimulationData& sd, element_ptr& plate1, element_ptr& pla
 		0.0,
 		"two_plate_absorber_optics");
 	absorbing_optics.set_ideal_absorption(OpticalSide::Both);
-	auto absorbing_optics_id = sd.add_optical_property_set(absorbing_optics);
-	plate2->set_optical_property_set_id(absorbing_optics_id);
+	auto absorbing_optics_ref = sd.add_optical_property_set(absorbing_optics);
+	plate2->set_optical_property_set(absorbing_optics_ref);
 	plate2->set_name("plate2");
 
 	// Add elements to stage

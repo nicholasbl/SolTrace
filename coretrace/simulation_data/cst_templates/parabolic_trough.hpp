@@ -51,10 +51,10 @@ public:
     void set_focal_length(double flen);
     void set_gaps(double gap_x, double gap_y, double gap_center);
     void set_number_panels(int_fast64_t num_x, int_fast64_t num_y);
-    void set_optics(const optics_id mirror,
-        const optics_id absorber,
-        const optics_id envelope_inner,
-        const optics_id envelope_outer);
+    void set_optics(const OpticalPropertySetReference mirror,
+        const OpticalPropertySetReference absorber,
+        const OpticalPropertySetReference envelope_inner,
+        const OpticalPropertySetReference envelope_outer);
     // void set_position(const glm::dvec3 &pos)
     // {
     //     this->position = pos;
@@ -117,16 +117,16 @@ private:
     double gap_center;
     int_fast64_t num_panels_x;
     int_fast64_t num_panels_y;
-    optics_id optics_mirror;
+    OpticalPropertySetReference optics_mirror;
 
     // Receiver Characteristics
     double absorber_diameter;
     double envelope_diameter;
     double envelope_thickness;
     // double length;
-    optics_id optics_absorber;
-    optics_id optics_envelope_inner;
-    optics_id optics_envelope_outer;
+    OpticalPropertySetReference optics_absorber;
+    OpticalPropertySetReference optics_envelope_inner;
+    OpticalPropertySetReference optics_envelope_outer;
 
     // Solar Tracking
     double tracking_angle;

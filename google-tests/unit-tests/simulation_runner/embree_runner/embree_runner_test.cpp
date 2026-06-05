@@ -63,8 +63,8 @@ TEST(EmbreeRunner, SingleRayValidationTest)
     SolTrace::Data::OpticalPropertySet sphere_optics(SolTrace::Data::InteractionType::REFLECTION, "Sphere");
     sphere_optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
     sphere_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
-    auto sphere_optics_id = sd.add_optical_property_set(sphere_optics);
-    sph->set_optical_property_set_id(sphere_optics_id);
+    auto sphere_optics_ref = sd.add_optical_property_set(sphere_optics);
+    sph->set_optical_property_set(sphere_optics_ref);
     sph->set_name("Sphere");
     sd.add_element(sph);
 
@@ -78,8 +78,8 @@ TEST(EmbreeRunner, SingleRayValidationTest)
     SolTrace::Data::OpticalPropertySet parabola_optics(SolTrace::Data::InteractionType::REFLECTION, "Parabola");
     parabola_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
     parabola_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
-    auto parabola_optics_id = sd.add_optical_property_set(parabola_optics);
-    para->set_optical_property_set_id(parabola_optics_id);
+    auto parabola_optics_ref = sd.add_optical_property_set(parabola_optics);
+    para->set_optical_property_set(parabola_optics_ref);
     para->set_name("Parabola");
     sd.add_element(para);
 
@@ -156,8 +156,8 @@ TEST(EmbreeRunner, PowerTowerSmokeTest)
     SolTrace::Data::OpticalPropertySet absorber_optics(SolTrace::Data::InteractionType::REFLECTION, "Absorber");
     absorber_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
     absorber_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
-    auto absorber_optics_id = sd.add_optical_property_set(absorber_optics);
-    absorber->set_optical_property_set_id(absorber_optics_id);
+    auto absorber_optics_ref = sd.add_optical_property_set(absorber_optics);
+    absorber->set_optical_property_set(absorber_optics_ref);
 
     // Make stage 1 -- second stage -- these can be added to SimulationData
     // in any order but should be numbered in the desired order
@@ -189,8 +189,8 @@ TEST(EmbreeRunner, PowerTowerSmokeTest)
         mirror_optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Front);
         mirror_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Back);
         mirror_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
-        auto mirror_optics_id = sd.add_optical_property_set(mirror_optics);
-        el->set_optical_property_set_id(mirror_optics_id);
+        auto mirror_optics_ref = sd.add_optical_property_set(mirror_optics);
+        el->set_optical_property_set(mirror_optics_ref);
 
         pos = {
                 5 * sin(k * PI * 2.0 / NUM_ELEMENTS),

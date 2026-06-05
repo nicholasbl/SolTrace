@@ -19,15 +19,19 @@ class VirtualElement : public SingleElement
 {
 public:
     VirtualElement();
+    VirtualElement(const nlohmann::ordered_json& jnode,
+        const OpticalPropertySetResolver& resolve_optics);
     virtual ~VirtualElement();
 
     virtual bool is_virtual() const override { return true; }
 
-    virtual void set_optical_property_set_id(optics_id) override {}
-    virtual optics_id get_optical_property_set_id() const override 
-    {
-        return opt_id;  // TODO: return identifier saying it's permanent/virtual
-    }
+    //virtual void set_optical_property_set_id(optics_id) override {}
+    //virtual optics_id get_optical_property_set_id() const override 
+    //{
+    //    return opt_id;  // TODO: return identifier saying it's permanent/virtual
+    //}
+private:
+    std::shared_ptr<const OpticalPropertySet> owned_optical_property_set;
 };
 
 class VirtualPlane : public VirtualElement

@@ -287,8 +287,8 @@ int convert_tsystem_to_sim_data(TSystem* sys, const int seed, SolTrace::Data::Si
                                               back.RMSSlopeError,
                                               back.RMSSpecError);
 
-                    SolTrace::Data::optics_id id = sd.add_optical_property_set(optics_set);
-                    element->set_optical_property_set_id(id);
+                    auto ref = sd.add_optical_property_set(optics_set);
+                    element->set_optical_property_set(ref);
                 }
 
                 // Set element name

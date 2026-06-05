@@ -211,9 +211,9 @@ namespace SolTrace::NativeRunner
                             "Element does not match current stage");
                     }
 
-                    const auto* optics = data->get_optical_property_set(el->get_optical_property_set_id());
+                    const auto optics = el->get_optical_property_set();
                     if (optics == nullptr)
-                        throw std::runtime_error("Element has invalid optical property set id.");
+                        throw std::runtime_error("Element has invalid optical property set.");
                     telement_ptr elem = make_telement(iter->second,
                                                       current_stage,
                                                       this->eparams,
@@ -248,9 +248,9 @@ namespace SolTrace::NativeRunner
                 element_ptr el = iter->second;
                 if (el->is_enabled() && el->is_single())
                 {
-                    const auto* optics = data->get_optical_property_set(el->get_optical_property_set_id());
+                    const auto optics = el->get_optical_property_set();
                     if (optics == nullptr)
-                        throw std::runtime_error("Element has invalid optical property set id.");
+                        throw std::runtime_error("Element has invalid optical property set.");
                     telement_ptr tel = make_telement(el,
                                                      stage,
                                                      this->eparams,

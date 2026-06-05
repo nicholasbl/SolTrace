@@ -100,7 +100,7 @@ void ParabolicDish::create_geometry()
         mirror->set_aperture(make_aperture<Circle>(this->aperture_diameter));
         mirror->set_surface(make_surface<Parabola>(this->focal_length,
                                                    this->focal_length));
-        mirror->set_optical_property_set_id(optics_mirror);
+        mirror->set_optical_property_set(optics_mirror);
         mirror->enable();
 
         this->mirrors.push_back(mirror);
@@ -125,7 +125,7 @@ void ParabolicDish::create_geometry()
                                                             panel_angle));
                 mirror->set_surface(make_surface<Parabola>(this->focal_length,
                                                            this->focal_length));
-                mirror->set_optical_property_set_id(optics_mirror);
+                mirror->set_optical_property_set(optics_mirror);
                 mirror->set_name("ParabolicMirror");
                 mirror->enable();
 
@@ -145,7 +145,7 @@ void ParabolicDish::create_geometry()
     abs->set_reference_frame_geometry(origin, aim, 0.0);
     abs->set_aperture(make_aperture<Circle>(this->abs_diameter));
     abs->set_surface(make_surface<Flat>());
-    abs->set_optical_property_set_id(optics_absorber);
+    abs->set_optical_property_set(optics_absorber);
     abs->set_name("Absorber");
     abs->enable();
 
@@ -298,8 +298,8 @@ void ParabolicDish::set_number_of_panels(int_fast64_t nradial,
     return;
 }
 
-void ParabolicDish::set_optics(const optics_id &mirror,
-                               const optics_id &absorber)
+void ParabolicDish::set_optics(const OpticalPropertySetReference &mirror,
+                               const OpticalPropertySetReference &absorber)
 {
     this->optics_mirror = mirror;
     this->optics_absorber = absorber;

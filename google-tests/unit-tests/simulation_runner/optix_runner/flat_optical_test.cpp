@@ -8,7 +8,6 @@
 
 using SolTrace::Runner::RunnerStatus;
 
-using SolTrace::Data::optics_id;
 using SolTrace::Data::OpticalPropertySet;
 
 void make_default_sd(SimulationData& sd, element_ptr& plate)
@@ -44,8 +43,8 @@ void make_default_sd(SimulationData& sd, element_ptr& plate)
 	OpticalPropertySet plate_opt(itype, ri_front, ri_back, "PlateOptics");
 	plate_opt.set_properties(OpticalSide::Both, dtype, transmissivity, reflectivity,
 		slope_err, spec_err);
-	optics_id plate_opt_id = sd.add_optical_property_set(plate_opt);
-	plate->set_optical_property_set_id(plate_opt_id);
+	auto plate_opt_ref = sd.add_optical_property_set(plate_opt);
+	plate->set_optical_property_set(plate_opt_ref);
 
 	plate->set_name("plate");
 
@@ -103,8 +102,7 @@ TEST(FlatOptixOptical, Transmissivity)
 
 	// Set plate properties (transmissive)
 	double transmissivity = 0.8;
-	optics_id plate_opt_id = plate->get_optical_property_set_id();
-	OpticalPropertySet* plate_opt_set = sd.get_optical_property_set(plate_opt_id);
+	OpticalPropertySet* plate_opt_set = sd.get_mutable_optical_property_set(*plate);
 	ASSERT_NE(plate_opt_set, nullptr);
 	plate_opt_set->set_interaction_type(InteractionType::REFRACTION);
 	plate_opt_set->set_transmissivity(OpticalSide::Both, transmissivity);
@@ -141,8 +139,7 @@ TEST(FlatOptixOptical, Reflectivity)
 	
 	// Set plate properties (reflective)
 	double reflectivity = 0.6;
-	optics_id plate_opt_id = plate->get_optical_property_set_id();
-	OpticalPropertySet* plate_opt_set = sd.get_optical_property_set(plate_opt_id);
+	OpticalPropertySet* plate_opt_set = sd.get_mutable_optical_property_set(*plate);
 	ASSERT_NE(plate_opt_set, nullptr);
 	plate_opt_set->set_interaction_type(InteractionType::REFLECTION);
 	plate_opt_set->set_reflectivity(OpticalSide::Both, reflectivity);
@@ -178,8 +175,7 @@ TEST(FlatOptixOptical, SimResults)
 
 	// Set plate properties (reflective)
 	double reflectivity = 0.6;
-	optics_id plate_opt_id = plate->get_optical_property_set_id();
-	OpticalPropertySet* plate_opt_set = sd.get_optical_property_set(plate_opt_id);
+	OpticalPropertySet* plate_opt_set = sd.get_mutable_optical_property_set(*plate);
 	ASSERT_NE(plate_opt_set, nullptr);
 	plate_opt_set->set_interaction_type(InteractionType::REFLECTION);
 	plate_opt_set->set_reflectivity(OpticalSide::Both, reflectivity);
@@ -241,8 +237,7 @@ TEST(FlatOptixOptical, Absorption)
 	make_default_sd(sd, plate);
 
 	// Set plate properties (absorptive - no reflection, no transmission)
-	optics_id plate_opt_id = plate->get_optical_property_set_id();
-	OpticalPropertySet* plate_opt_set = sd.get_optical_property_set(plate_opt_id);
+	OpticalPropertySet* plate_opt_set = sd.get_mutable_optical_property_set(*plate);
 	ASSERT_NE(plate_opt_set, nullptr);
 	plate_opt_set->set_ideal_absorption(OpticalSide::Both);
 
@@ -276,8 +271,7 @@ TEST(FlatOptixOptical, IdealReflection)
 	make_default_sd(sd, plate);
 
 	// Set plate properties (ideal reflection)
-	optics_id plate_opt_id = plate->get_optical_property_set_id();
-	OpticalPropertySet* plate_opt_set = sd.get_optical_property_set(plate_opt_id);
+	OpticalPropertySet* plate_opt_set = sd.get_mutable_optical_property_set(*plate);
 	ASSERT_NE(plate_opt_set, nullptr);
 	plate_opt_set->set_ideal_reflection(OpticalSide::Both);
 
@@ -317,8 +311,7 @@ TEST(FlatOptixOptical, SeedReproducibility)
 
 		// Set plate properties
 		double reflectivity = 0.5;
-		optics_id plate_opt_id = plate->get_optical_property_set_id();
-		OpticalPropertySet* plate_opt_set = sd.get_optical_property_set(plate_opt_id);
+		OpticalPropertySet* plate_opt_set = sd.get_mutable_optical_property_set(*plate);
 		EXPECT_NE(plate_opt_set, nullptr);
 		plate_opt_set->set_interaction_type(InteractionType::REFLECTION);
 		plate_opt_set->set_reflectivity(OpticalSide::Both, reflectivity);
@@ -357,8 +350,7 @@ TEST(FlatOptixOptical, RayCountScaling)
 		params.number_of_rays = num_rays;
 		params.max_number_of_rays = num_rays * 100;
 
-		optics_id plate_opt_id = plate->get_optical_property_set_id();
-		OpticalPropertySet* plate_opt_set = sd.get_optical_property_set(plate_opt_id);
+		OpticalPropertySet* plate_opt_set = sd.get_mutable_optical_property_set(*plate);
 		EXPECT_NE(plate_opt_set, nullptr);
 		plate_opt_set->set_interaction_type(InteractionType::REFLECTION);
 		plate_opt_set->set_reflectivity(OpticalSide::Both, reflectivity);
@@ -396,8 +388,7 @@ TEST(FlatOptixOptical, MixedReflectionAbsorption)
 
 	// Set plate properties with partial reflection and absorption
 	double reflectivity = 0.4;
-	optics_id plate_opt_id = plate->get_optical_property_set_id();
-	OpticalPropertySet* plate_opt_set = sd.get_optical_property_set(plate_opt_id);
+	OpticalPropertySet* plate_opt_set = sd.get_mutable_optical_property_set(*plate);
 	ASSERT_NE(plate_opt_set, nullptr);
 	plate_opt_set->set_interaction_type(InteractionType::REFLECTION);
 	plate_opt_set->set_reflectivity(OpticalSide::Both, reflectivity);

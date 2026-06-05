@@ -118,8 +118,8 @@ namespace
             0.0,
             "ray_position_sampling_plate_optics");
         plate_optics.set_ideal_reflection(OpticalSide::Both);
-        auto plate_optics_id = sd.add_optical_property_set(plate_optics);
-        plate->set_optical_property_set_id(plate_optics_id);
+        auto plate_optics_ref = sd.add_optical_property_set(plate_optics);
+        plate->set_optical_property_set(plate_optics_ref);
         plate->set_name("plate");
 
         stage->add_element(plate);

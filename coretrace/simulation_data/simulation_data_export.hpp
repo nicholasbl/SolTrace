@@ -20,6 +20,7 @@ using SolTrace::Data::IrregularQuadrilateral;
 using SolTrace::Data::IrregularTriangle;
 using SolTrace::Data::optics_id;
 using SolTrace::Data::OpticalPropertySet;
+using SolTrace::Data::OpticalPropertySetReference;
 using SolTrace::Data::OpticalSide;
 using SolTrace::Data::Parabola;
 using SolTrace::Data::Rectangle;

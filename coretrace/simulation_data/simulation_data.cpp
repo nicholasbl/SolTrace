@@ -1,6 +1,7 @@
 #include "simulation_data.hpp"
 
 #include <cassert>
+#include <sstream>
 
 #include "composite_element.hpp"
 #include "simdata_io.hpp"
@@ -12,7 +13,6 @@ SimulationData::SimulationData() : number_of_elements(0),
                                    my_sources(0),
                                    my_optical_property_sets(0)
 {
-    initialize_builtin_optical_property_sets();
     return;
 }
 
@@ -234,24 +234,40 @@ uint_fast64_t SimulationData::remove_subelements(element_ptr el)
     return retval;
 }
 
-optics_id SimulationData::add_optical_property_set(const OpticalPropertySet& opt_set)
+OpticalPropertySetReference SimulationData::add_optical_property_set(const OpticalPropertySet& opt_set)
 {
     std::shared_ptr<OpticalPropertySet> ptr = std::make_shared<OpticalPropertySet>(opt_set);
-    return this->my_optical_property_sets.add_item(ptr);
+    const optics_id id = this->my_optical_property_sets.add_item(ptr);
+    return { id, ptr };
 }
 
-optics_id SimulationData::find_or_add_optical_property_set(const OpticalPropertySet& opt_set)
+OpticalPropertySetReference SimulationData::find_or_add_optical_property_set(const OpticalPropertySet& opt_set)
 {
     // Check if set already exists
     for (auto it = this->get_optics_iterator(); !this->is_optics_at_end(it); ++it)
     {
         const OpticalPropertySet& existing = *it->second;
         if (existing == opt_set)
-            return it->first;
+        {
+            const optics_id id = it->first;
+            auto ptr = it->second;
+            return { id, ptr };
+
+        }
     }
 
     // Add if it doesn't exist
     return add_optical_property_set(opt_set);
+}
+
+const OpticalPropertySet* SimulationData::get_optical_property_set(const Element& el) const
+{
+    return get_optical_property_set(el.get_optical_property_set_id());
+}
+
+OpticalPropertySet* SimulationData::get_mutable_optical_property_set(const Element& el)
+{
+    return this->get_optical_property_set(el.get_optical_property_set_id());
 }
 
 const OpticalPropertySet* SimulationData::get_optical_property_set(optics_id id) const
@@ -264,32 +280,6 @@ OpticalPropertySet* SimulationData::get_optical_property_set(optics_id id)
 {
     auto ptr = this->my_optical_property_sets.get_item(id);
     return ptr == nullptr ? nullptr : ptr.get();
-}
-
-OpticalPropertySet* SimulationData::get_optical_property_set(const Element& el)
-{
-    return this->get_optical_property_set(el.get_optical_property_set_id());
-}
-
-void SimulationData::initialize_builtin_optical_property_sets()
-{
-    if (this->my_optical_property_sets.get_number_of_items() > 0)
-    {
-        throw std::logic_error(
-            "initialize_builtin_optical_property_sets requires an empty optics registry");
-    }
-     
-    // Add permanent optical property sets to collection
-    OpticalPropertySet virtual_set(InteractionType::REFRACTION, 1.0, 1.0, "VirtualProp");
-    virtual_set.set_properties(OpticalSide::Both, DistributionType::NONE, 1, 0, 0, 0);
-
-    std::shared_ptr<OpticalPropertySet> virtual_ptr = std::make_shared<OpticalPropertySet>(virtual_set);
-    bool flag = this->my_optical_property_sets.insert_item(OPTICS_ID_VIRTUAL, virtual_ptr);
-    if (!flag)
-    {
-        throw std::logic_error("Error initializing built in optical properties");
-    }
-
 }
 
 int SimulationData::update_simulation_positions()
@@ -344,7 +334,6 @@ void SimulationData::clear(bool reset_parameters)
     this->number_of_elements = 0;
 
     this->my_optical_property_sets.reset(0);
-    this->initialize_builtin_optical_property_sets();   // Add back in built in optical property sets
 
     if (reset_parameters)
         this->my_parameters = SimulationParameters();   // Reset

@@ -216,8 +216,8 @@ TEST(OptixRunnerMaxRayDepth, DepthExceededCounterCountsTerminatedReflectedRays)
         0.0,
         "max_depth_reflective_override");
     reflective_optics.set_ideal_reflection(OpticalSide::Both);
-    auto reflective_optics_id = sd.add_optical_property_set(reflective_optics);
-    plate2->set_optical_property_set_id(reflective_optics_id);
+    auto reflective_optics_ref = sd.add_optical_property_set(reflective_optics);
+    plate2->set_optical_property_set(reflective_optics_ref);
 
     OptixRunner runner;
     runner.set_max_ray_depth(2); // max interactions per ray = 1 (plate 1 only)

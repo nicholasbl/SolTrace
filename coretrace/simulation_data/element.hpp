@@ -188,7 +188,8 @@ public:
   // virtual void set_optical_properties(const OpticalProperties &) = 0;
 
   virtual optics_id get_optical_property_set_id() const = 0;
-  virtual void set_optical_property_set_id(optics_id) = 0;
+  virtual std::shared_ptr<const OpticalPropertySet> get_optical_property_set() const = 0;
+  virtual void set_optical_property_set(const OpticalPropertySetReference& optics) = 0;
 
   // Accessors for CompositeElements
   virtual uint_fast64_t get_number_of_elements() const = 0;

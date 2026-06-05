@@ -119,7 +119,6 @@ TEST(Heliostat, ErrorChecking_SetCanting)
 TEST(Heliostat, ErrorChecking_CreateGeometryWithoutParameters)
 {
     auto hs = SolTrace::Data::make_element<Heliostat>();
-    hs->set_optics_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
 
     // Test create_geometry without setting required parameters
     EXPECT_THROW(hs->create_geometry(), std::invalid_argument);
@@ -153,7 +152,7 @@ TEST(Heliostat, BuildParabolaNone)
     //mirror.set_ideal_reflection();
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
-    hs->set_optics_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
+    //hs->set_optics_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
     hs->set_origin(1.0, 1.0, 0.0);
     hs->set_aim_vector(0.0, 0.0, 100.0);
     hs->set_aperture_size(12.0, 12.0);
@@ -174,7 +173,7 @@ TEST(Heliostat, BuildFlatOnAxis)
     //mirror.set_ideal_reflection();
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
-    hs->set_optics_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
+    //hs->set_optics_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
     hs->set_origin(1.0, 1.0, 0.0);
     hs->set_aim_vector(0.0, 0.0, 100.0);
     hs->set_aperture_size(12.0, 12.0);
@@ -212,7 +211,7 @@ TEST(Heliostat, Trace)
     SolTrace::Data::OpticalPropertySet hs_opt_set(InteractionType::REFLECTION, "HeliostatMirror");
     hs_opt_set.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
     hs_opt_set.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::GAUSSIAN, 0.0, 0.0);
-    SolTrace::Data::optics_id hs_id = my_sim.add_optical_property_set(hs_opt_set);
+    auto hs_ref = my_sim.add_optical_property_set(hs_opt_set);
 
     stage_ptr st1 = SolTrace::Data::make_stage(1);
     st1->set_reference_frame_geometry(zero, khat, 0.0);
@@ -229,7 +228,7 @@ TEST(Heliostat, Trace)
     glm::dvec3 aim_point = hs_origin + aim;
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
-    hs->set_optics_id(hs_id);
+    hs->set_optics(hs_ref);
 
     // hs->set_origin(hs_origin);
     // hs->set_aim_vector(0.0, 0.0, 2.0);
@@ -252,10 +251,10 @@ TEST(Heliostat, Trace)
 
     SolTrace::Data::OpticalPropertySet ab_opt_set(InteractionType::REFLECTION, "Absorber");
     ab_opt_set.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
-    SolTrace::Data::optics_id ab_id = my_sim.add_optical_property_set(ab_opt_set);
+    auto ab_ref = my_sim.add_optical_property_set(ab_opt_set);
 
     auto absorb = SolTrace::Data::make_element<SingleElement>();
-    absorb->set_optical_property_set_id(ab_id);
+    absorb->set_optical_property_set(ab_ref);
     absorb->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(5.0, 5.0));
     absorb->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Flat>());
     // absorb->set_origin(abs_origin);
@@ -360,7 +359,7 @@ TEST(Heliostat, TraceOffAxisCanting)
     SolTrace::Data::OpticalPropertySet hs_opt_set(SolTrace::Data::InteractionType::REFLECTION, "HeliostatMirror");
     hs_opt_set.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
     hs_opt_set.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::GAUSSIAN, 0.0, 0.0);
-    SolTrace::Data::optics_id hs_id = my_sim.add_optical_property_set(hs_opt_set);
+    auto hs_ref = my_sim.add_optical_property_set(hs_opt_set);
 
     stage_ptr st1 = SolTrace::Data::make_stage(1);
     st1->set_reference_frame_geometry(zero, khat, 0.0);
@@ -373,7 +372,7 @@ TEST(Heliostat, TraceOffAxisCanting)
     double canting_zenith = 90.0;
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
-    hs->set_optics_id(hs_id);
+    hs->set_optics(hs_ref);
     hs->set_reference_frame_geometry(hs_origin, khat, 0.0);
     hs->set_aperture_size(12.0, 8.0);
     hs->set_number_panels(5, 5);
@@ -391,10 +390,10 @@ TEST(Heliostat, TraceOffAxisCanting)
 
     SolTrace::Data::OpticalPropertySet ab_opt_set(SolTrace::Data::InteractionType::REFLECTION, "Absorber");
     ab_opt_set.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
-    SolTrace::Data::optics_id ab_id = my_sim.add_optical_property_set(ab_opt_set);
+    auto ab_ref = my_sim.add_optical_property_set(ab_opt_set);
 
     auto absorb = SolTrace::Data::make_element<SingleElement>();
-    absorb->set_optical_property_set_id(ab_id);
+    absorb->set_optical_property_set(ab_ref);
     absorb->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(10.0, 10.0)); // TODO: Set a tight aperture (2.35, 1.55)
     absorb->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Flat>());
     glm::dvec3 v1 = {0.0, 1.0, 0.0};
@@ -487,7 +486,7 @@ TEST(Heliostat, ErrorChecking_UpdateGeometry)
     glm::dvec3 aim_point = hs_origin + aim;
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
-    hs->set_optics_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
+    //hs->set_optics_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
     //hs->set_mirror_optics(mirror);
     // hs->set_origin(hs_origin);
     // hs->set_aim_vector(0.0, 0.0, 2.0);
@@ -539,7 +538,7 @@ TEST(Heliostat, UpdateGeometry)
 
     SolTrace::Data::OpticalPropertySet hs_opt_set(InteractionType::REFLECTION, 0, 0);
     hs_opt_set.set_properties(OpticalSide::Both, DistributionType::GAUSSIAN, 0, 1, 0, 0);
-    SolTrace::Data::optics_id hs_id = my_sim.add_optical_property_set(hs_opt_set);
+    auto hs_ref = my_sim.add_optical_property_set(hs_opt_set);
 
     glm::dvec3 sun_pos;
     SolTrace::Data::sun_position_vector_degrees(sun_pos, sun_az, sun_el);
@@ -547,7 +546,7 @@ TEST(Heliostat, UpdateGeometry)
     glm::dvec3 abs_origin(0.0, 0.0, 2.0);
 
     auto hs = SolTrace::Data::make_element<Heliostat>();
-    hs->set_optics_id(hs_id);
+    hs->set_optics(hs_ref);
     hs->set_origin(1.0, 1.0, 0.0);
     hs->set_aperture_size(12.0, 12.0);
     hs->set_number_panels(3, 4);
@@ -577,9 +576,9 @@ TEST(Heliostat, UpdateGeometry)
     auto absorb = SolTrace::Data::make_element<SingleElement>();
     SolTrace::Data::OpticalPropertySet ab_opt_set(InteractionType::REFLECTION);
     ab_opt_set.set_ideal_absorption(OpticalSide::Both);
-    SolTrace::Data::optics_id ab_id = my_sim.add_optical_property_set(ab_opt_set);
+    auto ab_ref = my_sim.add_optical_property_set(ab_opt_set);
 
-    absorb->set_optical_property_set_id(ab_id);
+    absorb->set_optical_property_set(ab_ref);
     absorb->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Rectangle>(5.0, 5.0));
     absorb->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Flat>());
     // absorb->set_origin(abs_origin);

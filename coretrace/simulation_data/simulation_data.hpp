@@ -162,12 +162,11 @@ public:
         // return citer == this->my_elements.end();
     }
 
-    optics_id add_optical_property_set(const OpticalPropertySet& opt_set);
-    optics_id find_or_add_optical_property_set(const OpticalPropertySet& opt_set);
+    OpticalPropertySetReference add_optical_property_set(const OpticalPropertySet& opt_set);
+    OpticalPropertySetReference find_or_add_optical_property_set(const OpticalPropertySet& opt_set);
 
-    const OpticalPropertySet* get_optical_property_set(optics_id id) const;
-    OpticalPropertySet* get_optical_property_set(optics_id id);
-    OpticalPropertySet* get_optical_property_set(const Element& el);
+    const OpticalPropertySet* get_optical_property_set(const Element& el) const;
+    OpticalPropertySet* get_mutable_optical_property_set(const Element& el);
 
     /// @brief Get an iterator that can be used to access all 
     ///  optical property sets owned by this SimulationData object.
@@ -336,7 +335,8 @@ private:
     uint_fast64_t add_subelements(element_ptr el);
     uint_fast64_t remove_subelements(element_ptr el);
 
-    void initialize_builtin_optical_property_sets();
+    const OpticalPropertySet* get_optical_property_set(optics_id id) const;
+    OpticalPropertySet* get_optical_property_set(optics_id id);
 };
 
 } // namespace SolTrace::Data

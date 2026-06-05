@@ -12,8 +12,10 @@
 
 #include <container.hpp>
 #include <cstdint>
+#include <functional>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -24,10 +26,17 @@
 namespace SolTrace::Data
 {
     using optics_id = std::int_fast64_t;
-    constexpr optics_id OPTICS_ID_UNASSIGNED = -2;
-    constexpr optics_id OPTICS_ID_VIRTUAL = -3;
+
+    enum OPTICS_ID_TYPES
+    {
+        OPTICS_ID_VIRTUAL = -3,
+        OPTICS_ID_UNASSIGNED = -2        
+    };
+
     class OpticalPropertySet;
+    struct OpticalPropertySetReference;
     using OpticalPropertySetContainer = Container<optics_id, OpticalPropertySet>;
+    using OpticalPropertySetResolver = std::function<OpticalPropertySetReference(const optics_id)>;
 
     enum class InteractionType
     {
@@ -48,6 +57,12 @@ namespace SolTrace::Data
         Front,
         Back,
         Both
+    };
+
+    struct OpticalPropertySetReference
+    {
+        optics_id id = OPTICS_ID_UNASSIGNED;
+        std::weak_ptr<const OpticalPropertySet> optical_property_set;
     };
 
     struct OpticalPropertySet

@@ -18,14 +18,17 @@ SingleElement::SingleElement() : ElementBase(),
     return;
 }
 
-SingleElement::SingleElement(const nlohmann::ordered_json& jnode) : ElementBase(jnode),
+SingleElement::SingleElement(const nlohmann::ordered_json& jnode,
+    const OpticalPropertySetResolver& resolve_optics) : ElementBase(jnode),
                                                                     aperture(nullptr),
                                                                     surface(nullptr),
                                                                     opt_id(OPTICS_ID_UNASSIGNED)
 {
     this->set_aperture(Aperture::make_aperture_from_json(jnode.at("aperture")));
     this->set_surface(make_surface_from_json(jnode.at("surface")));
-    this->set_optical_property_set_id(jnode.at("opt_id"));
+
+    const optics_id opt_id = jnode.at("opt_id").get<optics_id>();
+    this->set_optical_property_set(resolve_optics(opt_id));
 }
 
 SingleElement::~SingleElement()
@@ -57,12 +60,13 @@ void SingleElement::enforce_user_fields_set() const
         throw std::invalid_argument(ss.str());
     }
 
-    if (this->opt_id == OPTICS_ID_UNASSIGNED)
+    if (this->opt_id == OPTICS_ID_UNASSIGNED ||
+        this->get_optical_property_set() == nullptr)
     {
         std::stringstream ss;
         ss << "Element (Name: " << this->get_name()
             << ", UUID: " << this->get_id()
-            << ") has no optical property id assigned.";
+            << ") has no valid optical property set assigned.";
         throw std::invalid_argument(ss.str());
     }
 

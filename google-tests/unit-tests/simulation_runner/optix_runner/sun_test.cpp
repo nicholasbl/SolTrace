@@ -336,8 +336,8 @@ namespace
             "PlateOptics");
         plate_optics.set_properties(OpticalSide::Both, dtype, transmissivity,
             reflectivity, slope_err, spec_err);
-        auto optics_id = sd.add_optical_property_set(plate_optics);
-        plate->set_optical_property_set_id(optics_id);
+        auto optics_ref = sd.add_optical_property_set(plate_optics);
+        plate->set_optical_property_set(optics_ref);
 
         plate->set_name("plate");
 

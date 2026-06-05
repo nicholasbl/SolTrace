@@ -29,7 +29,8 @@ namespace SolTrace::Data
          * @brief Default constructor for composite element
          */
         CompositeElement();
-        CompositeElement(const nlohmann::ordered_json& jnode);
+        CompositeElement(const nlohmann::ordered_json& jnode,
+            const OpticalPropertySetResolver& resolve_optics);
         virtual ~CompositeElement();
 
         /**
@@ -117,9 +118,18 @@ namespace SolTrace::Data
         }
 
         /**
+         * @brief Get optical propertiy set pointer
+         * @return nullptr (composite elements don't have optical properties)
+         */
+        virtual std::shared_ptr<const OpticalPropertySet> get_optical_property_set() const
+        {
+            return nullptr;
+        }
+
+        /**
          * @brief Set optical propertiy set id (does not apply for composite elements)
          */
-        virtual void set_optical_property_set_id(optics_id) override 
+        virtual void set_optical_property_set(const OpticalPropertySetReference&) override 
         {
             assert(false && "CompositeElement does not support optical property sets");
         }

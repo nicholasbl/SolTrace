@@ -91,15 +91,15 @@ TEST(ParabolicDish, Tracing)
     mirror_optics.set_ideal_one_sided_reflector(SolTrace::Data::OpticalSide::Front);
     mirror_optics.set_errors(SolTrace::Data::OpticalSide::Front, SolTrace::Data::DistributionType::NONE, 1.5, 0.5);
     mirror_optics.set_errors(SolTrace::Data::OpticalSide::Back, SolTrace::Data::DistributionType::NONE, 1e-5, 1e-5);
-    SolTrace::Data::optics_id mirror_opt_id = my_sim.add_optical_property_set(mirror_optics);
+    auto mirror_opt_ref = my_sim.add_optical_property_set(mirror_optics);
 
     SolTrace::Data::OpticalPropertySet absorber_optics(SolTrace::Data::InteractionType::REFLECTION, "Absorber");
     absorber_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
     absorber_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 1e-5, 1e-5);
-    SolTrace::Data::optics_id abs_opt_id = my_sim.add_optical_property_set(absorber_optics);
+    auto abs_opt_ref = my_sim.add_optical_property_set(absorber_optics);
 
     auto dish = SolTrace::Data::make_element<ParabolicDish>();
-    dish->set_optics(mirror_opt_id, abs_opt_id);
+    dish->set_optics(mirror_opt_ref, abs_opt_ref);
     dish->set_origin(2.0, -2.0, 0.0);
     dish->set_aperture_size(10.0);
     dish->set_number_of_panels(2, 2);
@@ -193,15 +193,15 @@ TEST(ParabolicDish, UpdateGeometry)
     mirror_optics.set_ideal_one_sided_reflector(SolTrace::Data::OpticalSide::Front);
     mirror_optics.set_errors(SolTrace::Data::OpticalSide::Front, SolTrace::Data::DistributionType::NONE, 1.5, 0.5);
     mirror_optics.set_errors(SolTrace::Data::OpticalSide::Back, SolTrace::Data::DistributionType::NONE, 1e-5, 1e-5);
-    SolTrace::Data::optics_id mirror_opt_id = my_sim.add_optical_property_set(mirror_optics);
+    auto mirror_opt_ref = my_sim.add_optical_property_set(mirror_optics);
 
     SolTrace::Data::OpticalPropertySet absorber_optics(SolTrace::Data::InteractionType::REFLECTION, "Absorber");
     absorber_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
     absorber_optics.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 1e-5, 1e-5);
-    SolTrace::Data::optics_id abs_opt_id = my_sim.add_optical_property_set(absorber_optics);
+    auto abs_opt_ref = my_sim.add_optical_property_set(absorber_optics);
 
     auto dish = SolTrace::Data::make_element<ParabolicDish>();
-    dish->set_optics(mirror_opt_id, abs_opt_id);
+    dish->set_optics(mirror_opt_ref, abs_opt_ref);
     dish->set_origin(10.0, 2.0, 0.0);
     dish->set_aperture_size(10.0);
     dish->set_number_of_panels(2, 2);

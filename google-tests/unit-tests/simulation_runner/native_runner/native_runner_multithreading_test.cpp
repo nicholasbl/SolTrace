@@ -46,8 +46,8 @@ namespace
         SolTrace::Data::OpticalPropertySet mirror_optics_set(SolTrace::Data::InteractionType::REFLECTION, "Mirror");
         mirror_optics_set.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
         mirror_optics_set.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
-        SolTrace::Data::optics_id id = sd.add_optical_property_set(mirror_optics_set);
-        mirror->set_optical_property_set_id(id);
+        auto ref = sd.add_optical_property_set(mirror_optics_set);
+        mirror->set_optical_property_set(ref);
 
         stage->add_element(mirror);
 

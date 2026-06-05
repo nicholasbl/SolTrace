@@ -3,6 +3,7 @@
 
 #include <cmath>
 
+#include <simulation_data.hpp>
 #include <aperture.hpp>
 #include <element.hpp>
 #include <single_element.hpp>
@@ -50,12 +51,18 @@ bool is_identical(const glm::dmat3 &A, const glm::dmat3 &B)
     return check;
 }
 
-element_ptr make_configured_element()
+element_ptr make_configured_element(SimulationData& sd)
 {
+    OpticalPropertySet opt_set(InteractionType::REFLECTION, "test_optics");
+    opt_set.set_ideal_reflection(OpticalSide::Both);
+    opt_set.set_errors(OpticalSide::Both, DistributionType::NONE, 0.0, 0.0);
+    auto optics_ref = sd.find_or_add_optical_property_set(opt_set);
+
     element_ptr el = SolTrace::Data::make_element<SolTrace::Data::SingleElement>();
     el->set_aperture(SolTrace::Data::make_aperture<SolTrace::Data::Circle>(2.0));
     el->set_surface(SolTrace::Data::make_surface<SolTrace::Data::Flat>());
-    el->set_optical_property_set_id(SolTrace::Data::OPTICS_ID_VIRTUAL);
+    el->set_optical_property_set(optics_ref);
+
     return el;
 }
 

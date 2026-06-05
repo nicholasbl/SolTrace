@@ -31,8 +31,7 @@ namespace SolTrace::Data
           elevation_axis(0.0),
           sun_position(0.0),
           target_pos(0.0),
-          target_set(false),
-          facet_optics_id(OPTICS_ID_UNASSIGNED)
+          target_set(false)
     {
         this->elevation_axis = {1.0, 0.0, 0.0};
         this->sun_position = {0.0, 0.0, 1.0};
@@ -177,7 +176,7 @@ namespace SolTrace::Data
                                                    0.0);
 
                 // TODO: Make back optical properties accessible to user
-                elem->set_optical_property_set_id(this->facet_optics_id);
+                elem->set_optical_property_set(this->facet_optics);
                 elem->enable();
 
                 this->heliostat_area += panel_len_x * panel_len_y;
@@ -374,9 +373,9 @@ namespace SolTrace::Data
         return;
     }
 
-    void Heliostat::set_optics_id(optics_id id)
+    void Heliostat::set_optics(OpticalPropertySetReference ref)
     {
-        this->facet_optics_id = id;
+        this->facet_optics = ref;
         // TODO: Need to update the subelements!
         return;
     }

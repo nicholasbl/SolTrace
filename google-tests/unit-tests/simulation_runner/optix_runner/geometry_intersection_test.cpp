@@ -32,8 +32,8 @@ element_id set_default_sd(SimulationData &sd,
 
     OpticalPropertySet optics(InteractionType::REFLECTION, 0, 0);
     optics.set_ideal_absorption(OpticalSide::Both);
-    optics_id opt_id = sd.add_optical_property_set(optics);
-    el->set_optical_property_set_id(opt_id);
+    auto opt_ref = sd.add_optical_property_set(optics);
+    el->set_optical_property_set(opt_ref);
 
     el->set_name("el");
 
@@ -51,7 +51,7 @@ element_id set_default_sd(SimulationData &sd,
     stop->set_aim_vector(0, 0, 100);
     stop->set_surface(make_surface<Flat>());
     stop->set_aperture(make_aperture<Rectangle>(sx, sy));
-    stop->set_optical_property_set_id(opt_id);
+    stop->set_optical_property_set(opt_ref);
     sd.add_element(stop);
 
     // Set parameters

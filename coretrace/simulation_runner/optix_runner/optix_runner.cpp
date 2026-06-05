@@ -191,8 +191,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             optix_el->set_id(static_cast<int32_t>(id));
 
             // Add optical properties
-            optics_id opt_id = el->get_optical_property_set_id();
-            auto opt_set = data->get_optical_property_set(opt_id);
+            auto opt_set = el->get_optical_property_set();
 
             DistributionType front_dist;
             double front_slope, front_spec;

@@ -41,8 +41,8 @@ TEST(OpticalErrors, Gaussian)
     plate_optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
     plate_optics.set_errors(SolTrace::Data::OpticalSide::Front, SolTrace::Data::DistributionType::GAUSSIAN, 1.0, 1e-3);
     plate_optics.set_errors(SolTrace::Data::OpticalSide::Back, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
-    auto plate_optics_id = sd.add_optical_property_set(plate_optics);
-    plate->set_optical_property_set_id(plate_optics_id);
+    auto plate_optics_ref = sd.add_optical_property_set(plate_optics);
+    plate->set_optical_property_set(plate_optics_ref);
 
     // Add element to stage
     stage->add_element(plate);
@@ -143,8 +143,8 @@ TEST(OpticalErrors, Uniform)
     plate_optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
     plate_optics.set_errors(SolTrace::Data::OpticalSide::Front, SolTrace::Data::DistributionType::PILLBOX, 1.0, 1e-3);
     plate_optics.set_errors(SolTrace::Data::OpticalSide::Back, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
-    auto plate_optics_id = sd.add_optical_property_set(plate_optics);
-    plate->set_optical_property_set_id(plate_optics_id);
+    auto plate_optics_ref = sd.add_optical_property_set(plate_optics);
+    plate->set_optical_property_set(plate_optics_ref);
 
     // Add element to stage
     stage->add_element(plate);

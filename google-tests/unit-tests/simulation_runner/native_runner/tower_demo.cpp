@@ -43,8 +43,8 @@ SimulationData create_tower_demo_simulation_data(bool create_stages)
 
     SolTrace::Data::OpticalPropertySet abs_optics(SolTrace::Data::InteractionType::REFLECTION, "Absorber");
     abs_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
-    SolTrace::Data::optics_id abs_id = sd.add_optical_property_set(abs_optics);
-    absorber->set_optical_property_set_id(abs_id);
+    auto abs_ref = sd.add_optical_property_set(abs_optics);
+    absorber->set_optical_property_set(abs_ref);
 
     absorber->set_name("Absorber");
 
@@ -81,12 +81,12 @@ SimulationData create_tower_demo_simulation_data(bool create_stages)
 
     SolTrace::Data::OpticalPropertySet mirror_optics_set(SolTrace::Data::InteractionType::REFLECTION, "Mirror");
     mirror_optics_set.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
-    SolTrace::Data::optics_id mirror_optics_id = sd.add_optical_property_set(mirror_optics_set);
+    auto mirror_optics_ref = sd.add_optical_property_set(mirror_optics_set);
 
     for (int i = -1; i < 2; ++i)
     {
         auto el = make_element<SingleElement>();
-        el->set_optical_property_set_id(mirror_optics_id);
+        el->set_optical_property_set(mirror_optics_ref);
 
         pos = {5 * sin(i * PI / 2.0), 5 * cos(i * PI / 2.0), 0.0};
         el->set_origin(pos);

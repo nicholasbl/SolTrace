@@ -129,7 +129,7 @@ TEST(LinearFresnel, ErrorChecking_CreateGeometryWithoutParameters)
 {
     auto lf = SolTrace::Data::make_element<LinearFresnel>();
     auto virtual_optics = SolTrace::Data::OPTICS_ID_VIRTUAL;
-    lf->set_optics(virtual_optics, virtual_optics, virtual_optics, virtual_optics);
+    //lf->set_optics(virtual_optics, virtual_optics, virtual_optics, virtual_optics);
 
     // Test create_geometry without setting required parameters
     EXPECT_THROW(lf->create_geometry(), std::invalid_argument);
@@ -159,22 +159,22 @@ TEST(LinearFresnel, Build)
         0, 0, "Mirror");
     mirror_optics.set_ideal_one_sided_reflector(OpticalSide::Front);
 
-    SolTrace::Data::optics_id mirror_opt_id = my_sim.add_optical_property_set(mirror_optics);
+    auto mirror_opt_ref = my_sim.add_optical_property_set(mirror_optics);
 
     auto absorber_optics = SolTrace::Data::OpticalPropertySet(InteractionType::REFLECTION, "Absorber");
     absorber_optics.set_ideal_absorption(OpticalSide::Both);
-    SolTrace::Data::optics_id abs_opt_id = my_sim.add_optical_property_set(absorber_optics);
+    auto abs_opt_ref = my_sim.add_optical_property_set(absorber_optics);
 
     auto envelop_outer_optics = SolTrace::Data::OpticalPropertySet(InteractionType::REFRACTION, "EnvelopeOuter");
     envelop_outer_optics.set_ideal_transmission(1.46, 1.0);
-    SolTrace::Data::optics_id env_out_opt_id = my_sim.add_optical_property_set(envelop_outer_optics);
+    auto env_out_opt_ref = my_sim.add_optical_property_set(envelop_outer_optics);
 
     auto envelop_inner_optics = SolTrace::Data::OpticalPropertySet(InteractionType::REFRACTION, "EnvelopeInner");
     envelop_inner_optics.set_ideal_transmission(1.0, 1.46);
-    SolTrace::Data::optics_id env_in_opt_id = my_sim.add_optical_property_set(envelop_inner_optics);
+    auto env_in_opt_ref = my_sim.add_optical_property_set(envelop_inner_optics);
 
     auto lf = SolTrace::Data::make_element<LinearFresnel>();
-    lf->set_optics(mirror_opt_id, abs_opt_id, env_out_opt_id, env_in_opt_id);
+    lf->set_optics(mirror_opt_ref, abs_opt_ref, env_out_opt_ref, env_in_opt_ref);
     lf->set_origin(10.0, -10.0, 0.0);
     lf->set_aperture_size(6.0, 12.0);
     lf->set_number_panels(10, 4);
@@ -186,7 +186,7 @@ TEST(LinearFresnel, Build)
     lf->create_geometry();
 
     lf = SolTrace::Data::make_element<LinearFresnel>();
-    lf->set_optics(mirror_opt_id, abs_opt_id, env_out_opt_id, env_in_opt_id);
+    lf->set_optics(mirror_opt_ref, abs_opt_ref, env_out_opt_ref, env_in_opt_ref);
     lf->set_origin(10.0, -10.0, 0.0);
     lf->set_aperture_size(6.0, 12.0);
     lf->set_number_panels(1, 1);
@@ -223,25 +223,25 @@ TEST(LinearFresnel, Tracing)
     mirror_optics.set_ideal_one_sided_reflector(OpticalSide::Front);
     mirror_optics.set_errors(OpticalSide::Front, DistributionType::NONE, 1.5, 0.5);
     mirror_optics.set_errors(OpticalSide::Back, DistributionType::NONE, 1e-5, 1e-5);
-    SolTrace::Data::optics_id mirror_opt_id = my_sim.add_optical_property_set(mirror_optics);
+    auto mirror_opt_ref = my_sim.add_optical_property_set(mirror_optics);
 
     auto absorber_optics = SolTrace::Data::OpticalPropertySet(InteractionType::REFLECTION, "Absorber");
     absorber_optics.set_ideal_absorption(OpticalSide::Both);
     absorber_optics.set_errors(OpticalSide::Both, DistributionType::NONE, 1e-5, 1e-5);
-    SolTrace::Data::optics_id abs_opt_id = my_sim.add_optical_property_set(absorber_optics);
+    auto abs_opt_ref = my_sim.add_optical_property_set(absorber_optics);
 
     auto envelop_outer_optics = SolTrace::Data::OpticalPropertySet(InteractionType::REFRACTION, "EnvelopeOuter");
     envelop_outer_optics.set_ideal_transmission(1.0, 1.0);
     envelop_outer_optics.set_errors(OpticalSide::Both, DistributionType::NONE, 1e-4, 1e-4);
-    SolTrace::Data::optics_id env_out_opt_id = my_sim.add_optical_property_set(envelop_outer_optics);
+    auto env_out_opt_ref = my_sim.add_optical_property_set(envelop_outer_optics);
 
     auto envelop_inner_optics = SolTrace::Data::OpticalPropertySet(InteractionType::REFRACTION, "EnvelopeInner");
     envelop_inner_optics.set_ideal_transmission(1.0, 1.0);
     envelop_inner_optics.set_errors(OpticalSide::Both, DistributionType::NONE, 1e-4, 1e-4);
-    SolTrace::Data::optics_id env_in_opt_id = my_sim.add_optical_property_set(envelop_inner_optics);
+    auto env_in_opt_ref = my_sim.add_optical_property_set(envelop_inner_optics);
 
     auto lf = SolTrace::Data::make_element<LinearFresnel>();
-    lf->set_optics(mirror_opt_id, abs_opt_id, env_out_opt_id, env_in_opt_id);
+    lf->set_optics(mirror_opt_ref, abs_opt_ref, env_out_opt_ref, env_in_opt_ref);
     lf->set_origin(0.0, 0.0, 0.0);
     lf->set_aperture_size(6.0, 12.0);
     lf->set_number_panels(2, 2);
@@ -367,22 +367,22 @@ TEST(LinearFresnel, UpdateGeometry)
     mirror_optics.set_ideal_one_sided_reflector(OpticalSide::Front);
     mirror_optics.set_errors(OpticalSide::Front, DistributionType::NONE, 1.5, 0.5);
     mirror_optics.set_errors(OpticalSide::Back, DistributionType::NONE, 1e-5, 1e-5);
-    SolTrace::Data::optics_id mirror_opt_id = my_sim.add_optical_property_set(mirror_optics);
+    auto mirror_opt_ref = my_sim.add_optical_property_set(mirror_optics);
 
     auto absorber_optics = SolTrace::Data::OpticalPropertySet(InteractionType::REFLECTION, "Absorber");
     absorber_optics.set_ideal_absorption(OpticalSide::Both);
     absorber_optics.set_errors(OpticalSide::Both, DistributionType::NONE, 1e-5, 1e-5);
-    SolTrace::Data::optics_id abs_opt_id = my_sim.add_optical_property_set(absorber_optics);
+    auto abs_opt_ref = my_sim.add_optical_property_set(absorber_optics);
 
     auto envelop_outer_optics = SolTrace::Data::OpticalPropertySet(InteractionType::REFRACTION, "EnvelopeOuter");
     envelop_outer_optics.set_ideal_transmission(1.46, 1.0);
     envelop_outer_optics.set_errors(OpticalSide::Both, DistributionType::NONE, 1e-4, 1e-4);
-    SolTrace::Data::optics_id env_out_opt_id = my_sim.add_optical_property_set(envelop_outer_optics);
+    auto env_out_opt_ref = my_sim.add_optical_property_set(envelop_outer_optics);
 
     auto envelop_inner_optics = SolTrace::Data::OpticalPropertySet(InteractionType::REFRACTION, "EnvelopeInner");
     envelop_inner_optics.set_ideal_transmission(1.0, 1.46);
     envelop_inner_optics.set_errors(OpticalSide::Both, DistributionType::NONE, 1e-4, 1e-4);
-    SolTrace::Data::optics_id env_in_opt_id = my_sim.add_optical_property_set(envelop_inner_optics);
+    auto env_in_opt_ref = my_sim.add_optical_property_set(envelop_inner_optics);
 
     auto sun = SolTrace::Data::make_ray_source<Sun>();
     glm::dvec3 sun_pos;
@@ -393,7 +393,7 @@ TEST(LinearFresnel, UpdateGeometry)
     my_sim.add_ray_source(sun);
 
     auto lf = SolTrace::Data::make_element<LinearFresnel>();
-    lf->set_optics(mirror_opt_id, abs_opt_id, env_out_opt_id, env_in_opt_id);
+    lf->set_optics(mirror_opt_ref, abs_opt_ref, env_out_opt_ref, env_in_opt_ref);
     lf->set_origin(10.0, 0.0, 0.0);
     // lf->set_origin(0.0, 0.0, 0.0);
     lf->set_aperture_size(6.0, 12.0);
@@ -497,7 +497,7 @@ TEST(LinearFresnel, UpdateGeometry_TrackingLimits)
 
     auto lf = SolTrace::Data::make_element<LinearFresnel>();
     auto virtual_optics = SolTrace::Data::OPTICS_ID_VIRTUAL;
-    lf->set_optics(virtual_optics, virtual_optics, virtual_optics, virtual_optics);
+    //lf->set_optics(virtual_optics, virtual_optics, virtual_optics, virtual_optics);
     lf->set_origin(0.0, 0.0, 0.0);
     lf->set_aperture_size(4.0, 8.0);
     lf->set_number_panels(2, 1);
@@ -565,7 +565,7 @@ TEST(LinearFresnel, ErrorChecking_UpdateGeometryInvalidArgs)
 {
     auto lf = SolTrace::Data::make_element<LinearFresnel>();
     auto virtual_optics = SolTrace::Data::OPTICS_ID_VIRTUAL;
-    lf->set_optics(virtual_optics, virtual_optics, virtual_optics, virtual_optics);
+    //lf->set_optics(virtual_optics, virtual_optics, virtual_optics, virtual_optics);
 
     lf->set_aperture_size(5.0, 10.0);
     lf->set_number_panels(2, 2);

@@ -119,7 +119,7 @@ void ParabolicTrough::create_geometry()
             panel->set_aperture(ap);
             surf = make_surface<Parabola>(this->focal_length, 0.0);
             panel->set_surface(surf);
-            panel->set_optical_property_set_id(this->optics_mirror);
+            panel->set_optical_property_set(this->optics_mirror);
             panel->enable();
 
             this->mirrors.push_back(panel);
@@ -147,7 +147,7 @@ void ParabolicTrough::create_geometry()
     abs->set_aperture(make_aperture<Rectangle>(this->absorber_diameter,
                                                this->aperture_size_y));
     abs->set_surface(make_surface<Cylinder>(0.5 * this->absorber_diameter));
-    abs->set_optical_property_set_id(optics_absorber);
+    abs->set_optical_property_set(optics_absorber);
     abs->enable();
     this->absorbers.push_back(abs);
     auto id = this->add_element(abs);
@@ -168,7 +168,7 @@ void ParabolicTrough::create_geometry()
     envout->set_aperture(make_aperture<Rectangle>(this->envelope_diameter,
                                                   this->aperture_size_y));
     envout->set_surface(make_surface<Cylinder>(0.5 * this->envelope_diameter));
-    envout->set_optical_property_set_id(optics_envelope_outer);
+    envout->set_optical_property_set(optics_envelope_outer);
     envout->enable();
     this->envelopes.push_back(envout);
     id = this->add_element(envout);
@@ -190,7 +190,7 @@ void ParabolicTrough::create_geometry()
     double ap_y = this->aperture_size_y;
     envin->set_aperture(make_aperture<Rectangle>(ap_x, ap_y));
     envin->set_surface(make_surface<Cylinder>(0.5 * ap_x));
-    envin->set_optical_property_set_id(optics_envelope_inner);
+    envin->set_optical_property_set(optics_envelope_inner);
     envin->enable();
     this->envelopes.push_back(envin);
     id = this->add_element(envin);
@@ -455,10 +455,10 @@ void ParabolicTrough::set_number_panels(int_fast64_t num_x,
     return;
 }
 
-void ParabolicTrough::set_optics(const optics_id mirror,
-                                 const optics_id absorber,
-                                 const optics_id envelope_inner,
-                                 const optics_id envelope_outer)
+void ParabolicTrough::set_optics(const OpticalPropertySetReference mirror,
+                                 const OpticalPropertySetReference absorber,
+                                 const OpticalPropertySetReference envelope_inner,
+                                 const OpticalPropertySetReference envelope_outer)
 {
     this->optics_mirror = mirror;
     this->optics_absorber = absorber;

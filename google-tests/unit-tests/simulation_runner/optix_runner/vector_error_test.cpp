@@ -6,7 +6,7 @@
 
 #include <optix_runner.hpp>
 
-static SolTrace::Data::optics_id add_plate_optics(SimulationData& sd,
+static OpticalPropertySetReference add_plate_optics(SimulationData& sd,
                                                   SolTrace::Data::DistributionType distribution)
 {
     SolTrace::Data::OpticalPropertySet plate_optics(SolTrace::Data::InteractionType::REFLECTION,
@@ -47,7 +47,7 @@ TEST(OpticalErrors, Disabled)
     plate->set_surface(make_surface<Flat>());
     plate->set_aperture(make_aperture<Rectangle>(5, 5));
     plate->set_name("plate");
-    plate->set_optical_property_set_id(add_plate_optics(sd, SolTrace::Data::DistributionType::GAUSSIAN));
+    plate->set_optical_property_set(add_plate_optics(sd, SolTrace::Data::DistributionType::GAUSSIAN));
 
     // Add element to stage
     stage->add_element(plate);
@@ -146,7 +146,7 @@ TEST(OpticalErrors, None)
     plate->set_surface(make_surface<Flat>());
     plate->set_aperture(make_aperture<Rectangle>(5, 5));
     plate->set_name("plate");
-    plate->set_optical_property_set_id(add_plate_optics(sd, SolTrace::Data::DistributionType::NONE));
+    plate->set_optical_property_set(add_plate_optics(sd, SolTrace::Data::DistributionType::NONE));
 
     // Add element to stage
     stage->add_element(plate);
@@ -245,7 +245,7 @@ TEST(OpticalErrors, Gaussian)
     plate->set_surface(make_surface<Flat>());
     plate->set_aperture(make_aperture<Rectangle>(5, 5));
     plate->set_name("plate");
-    plate->set_optical_property_set_id(add_plate_optics(sd, SolTrace::Data::DistributionType::GAUSSIAN));
+    plate->set_optical_property_set(add_plate_optics(sd, SolTrace::Data::DistributionType::GAUSSIAN));
 
     // Add element to stage
     stage->add_element(plate);
@@ -343,7 +343,7 @@ TEST(OpticalErrors, PILLBOX)
     plate->set_surface(make_surface<Flat>());
     plate->set_aperture(make_aperture<Rectangle>(5, 5));
     plate->set_name("plate");
-    plate->set_optical_property_set_id(add_plate_optics(sd, SolTrace::Data::DistributionType::PILLBOX));
+    plate->set_optical_property_set(add_plate_optics(sd, SolTrace::Data::DistributionType::PILLBOX));
 
     // Add element to stage
     stage->add_element(plate);

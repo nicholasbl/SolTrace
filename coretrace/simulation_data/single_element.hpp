@@ -27,7 +27,8 @@ class SingleElement : public ElementBase
 {
 public:
     SingleElement();
-    SingleElement(const nlohmann::ordered_json& jnode);
+    SingleElement(const nlohmann::ordered_json& jnode,
+        const OpticalPropertySetResolver& resolve_optics);
     virtual ~SingleElement();
 
     virtual bool is_single() const override { return true; }
@@ -66,13 +67,20 @@ public:
     {
         return this->opt_id;
     }
+
+    std::shared_ptr<const OpticalPropertySet> get_optical_property_set() const override
+    {
+        return this->optical_property_set.lock();
+    }
+
     /*OpticalProperties *get_front_optical_properties() override
     {
         return &(this->optics_front);
     }*/
-    void set_optical_property_set_id(optics_id op) override
+    void set_optical_property_set(const OpticalPropertySetReference& optics) override
     {
-        this->opt_id = op;
+        this->opt_id = optics.id;
+        this->optical_property_set = optics.optical_property_set;
         return;
     }
 
@@ -98,6 +106,7 @@ protected:
     surface_ptr surface;
 
     optics_id opt_id = OPTICS_ID_UNASSIGNED;
+    std::weak_ptr<const OpticalPropertySet> optical_property_set;
 };
 
 using single_element_ptr = typename std::shared_ptr<SingleElement>;

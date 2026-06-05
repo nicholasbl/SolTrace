@@ -31,11 +31,7 @@ namespace SolTrace::Data
           env_thickness(-1.0),
           // tracking_angle(0.0),
           tracking_limit_lower(-180.0),
-          tracking_limit_upper(180.0),
-          optics_mirror(OPTICS_ID_UNASSIGNED),
-          optics_absorber(OPTICS_ID_UNASSIGNED),
-          optics_env_out(OPTICS_ID_UNASSIGNED),
-          optics_env_in(OPTICS_ID_UNASSIGNED)
+          tracking_limit_upper(180.0)
     {
         this->tracking_origin = {1.0, 0.0, 0.0};
         this->rotation_axis = {0.0, 1.0, 0.0};
@@ -175,10 +171,10 @@ namespace SolTrace::Data
         return;
     }
 
-    void LinearFresnel::set_optics(const optics_id mirror,
-                                   const optics_id absorber,
-                                   const optics_id envelop_outer,
-                                   const optics_id envelop_inner)
+    void LinearFresnel::set_optics(const OpticalPropertySetReference mirror,
+                                   const OpticalPropertySetReference absorber,
+                                   const OpticalPropertySetReference envelop_outer,
+                                   const OpticalPropertySetReference envelop_inner)
     {
         this->optics_mirror = mirror;
         this->optics_absorber = absorber;
@@ -357,7 +353,7 @@ namespace SolTrace::Data
                 }
                 mirror->set_surface(surf);
 
-                mirror->set_optical_property_set_id(optics_mirror);
+                mirror->set_optical_property_set(optics_mirror);
                 mirror->enable();
 
                 std::stringstream name;
@@ -400,7 +396,7 @@ namespace SolTrace::Data
         abs->set_aperture(make_aperture<Rectangle>(this->abs_diameter,
                                                    this->aperture_size_y));
         abs->set_surface(make_surface<Cylinder>(0.5 * this->abs_diameter));
-        abs->set_optical_property_set_id(optics_absorber);
+        abs->set_optical_property_set(optics_absorber);
         abs->enable();
 
         this->absorbers.push_back(abs);
@@ -425,7 +421,7 @@ namespace SolTrace::Data
         envout->set_aperture(make_aperture<Rectangle>(this->env_diameter,
                                                       this->aperture_size_y));
         envout->set_surface(make_surface<Cylinder>(0.5 * this->env_diameter));
-        envout->set_optical_property_set_id(optics_env_out);
+        envout->set_optical_property_set(optics_env_out);
         envout->enable();
 
         this->envelope.push_back(envout);
@@ -450,7 +446,7 @@ namespace SolTrace::Data
         double ap_y = this->aperture_size_y;
         envin->set_aperture(make_aperture<Rectangle>(ap_x, ap_y));
         envin->set_surface(make_surface<Cylinder>(0.5 * ap_x));
-        envin->set_optical_property_set_id(optics_env_in);
+        envin->set_optical_property_set(optics_env_in);
         envin->enable();
         this->envelope.push_back(envin);
         sts = this->add_element(envin);

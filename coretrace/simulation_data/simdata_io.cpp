@@ -13,6 +13,7 @@
 
 #include "constants.hpp"
 #include "basic_sun_position.hpp"
+#include "json_helpers.hpp"
 #include "ray_source.hpp"
 #include "simulation_data.hpp"
 #include "single_element.hpp"
@@ -20,7 +21,7 @@
 #include "sun.hpp"
 #include "surface.hpp"
 #include "utilities.hpp"
-#include "json_helpers.hpp"
+#include "virtual_element.hpp"
 
 namespace SolTrace::Data {
 
@@ -484,7 +485,10 @@ bool read_element(
     InteractionType interaction = int_to_interaction(atoi(tok[28].c_str()));
 
     // Create element
-    el = make_element<SingleElement>();
+    if (virt)
+        el = make_element<VirtualElement>();
+    else
+        el = make_element<SingleElement>();
     
     if (!enabled)
         el->disable();
@@ -548,11 +552,7 @@ bool read_element(
                                      zrot);
 
     // Set optical properties
-    if (virt)
-    {
-        el->set_optical_property_set_id(OPTICS_ID_VIRTUAL);
-    }
-    else
+    if (!virt)
     {
         auto optics_iter = optics_map.find(optics_name);
         if (optics_iter == optics_map.end())
@@ -565,11 +565,10 @@ bool read_element(
         OpticalPropertySet optics_set = optics_iter->second;
         optics_set.set_interaction_type(interaction);
 
-        optics_id id = sd.find_or_add_optical_property_set(optics_set);
-        el->set_optical_property_set_id(id);
+        auto optics_ref = sd.find_or_add_optical_property_set(optics_set);
+        el->set_optical_property_set(optics_ref);
     }
     
-
     return true;
 }
 
@@ -901,6 +900,11 @@ void load_json_file(SimulationData& sd, std::string filename)
 
     // Elements
     json jelements = root["elements"];
+    auto resolve_optics = [&sd](const optics_id id)
+    {
+        auto ptr = sd.my_optical_property_sets.get_item(id);
+        return OpticalPropertySetReference{ id, ptr };
+    };
     for (auto& [key, jelement] : jelements.items())
     {
         // Check if stage
@@ -908,19 +912,19 @@ void load_json_file(SimulationData& sd, std::string filename)
         if (jelement.contains("is_stage") && jelement.at("is_stage") == true)
         {
             // Make stage
-            stage_ptr stage = make_stage(jelement);
+            stage_ptr stage = make_stage(jelement, resolve_optics);
             sd.add_stage(stage);
         }
         // Composite
         else if (jelement.contains("is_composite") && jelement.at("is_composite") == true)
         {
-            composite_element_ptr comp = make_element<CompositeElement>(jelement);
+            composite_element_ptr comp = make_element<CompositeElement>(jelement, resolve_optics);
             sd.add_element(comp);
         }
         // Single Element
         else
         {
-            single_element_ptr single = make_element<SingleElement>(jelement);
+            single_element_ptr single = make_element<SingleElement>(jelement, resolve_optics);
             sd.add_element(single);
         }
     }
