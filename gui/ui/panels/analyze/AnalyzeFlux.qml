@@ -29,14 +29,14 @@ Flickable {
             Layout.fillWidth: true
 
             collapsible: true
-            title: "Compute Flux Map"
+            title: "Current Flux Map"
+
+            visible: AppData.flux.current_image.length
 
             Image {
                 Layout.columnSpan: 2
                 Layout.fillWidth: true
                 Layout.preferredHeight: width
-
-                visible: AppData.flux.current_image.length
 
                 source: map_selector.currentIndex == 0 ?
                             AppData.flux.current_image
@@ -57,13 +57,109 @@ Flickable {
 
             STComboBar {
                 id: map_selector
-                visible: AppData.flux.current_image.length
                 Layout.columnSpan: 2
                 Layout.fillWidth: true
                 collapseLabels: AppData.view.left_panel.size === PanelData.Small
                 iconModel: ["\uf00a", "\uf141"]
                 model: ["Bins", "Points"]
             }
+
+            STPropertyLabel {
+                text: "Plotted Power"
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: root.flux_module.current_flux_stats.plotted_power
+                font.bold: true
+            }
+
+            STPropertyLabel {
+                text: "Peak Flux"
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: root.flux_module.current_flux_stats.peak_flux
+                font.bold: true
+            }
+
+            STPropertyLabel {
+                text: "Min Flux"
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: root.flux_module.current_flux_stats.min_flux
+                font.bold: true
+            }
+
+            STPropertyLabel {
+                text: "Average Flux"
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: root.flux_module.current_flux_stats.average_flux
+                font.bold: true
+            }
+
+            STPropertyLabel {
+                text: "Sigma Flux"
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: root.flux_module.current_flux_stats.sigma_flux
+                font.bold: true
+            }
+
+            STPropertyLabel {
+                text: "Uniformity"
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: root.flux_module.current_flux_stats.uniformity
+                font.bold: true
+            }
+
+            STPropertyLabel {
+                text: "Peak Flux Uncert"
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: root.flux_module.current_flux_stats.peak_flux_uncertainty
+                font.bold: true
+            }
+
+            STPropertyLabel {
+                text: "Average Flux Uncert"
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: root.flux_module.current_flux_stats.average_flux_uncertainty
+                font.bold: true
+            }
+
+            STPropertyLabel {
+                text: "Centroid"
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: root.flux_module.current_flux_stats.centroid
+                font.bold: true
+            }
+        }
+
+        STPropertyPanel {
+            Layout.fillWidth: true
+
+            collapsible: true
+            title: "Compute Flux Map"
 
             STPropertyLabel {
                 text: "Entity"

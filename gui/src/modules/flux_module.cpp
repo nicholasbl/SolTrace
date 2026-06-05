@@ -29,15 +29,25 @@ FluxModule::FluxModule(QQmlEngine* engine, QObject* parent)
             &db::FluxMapWorldModel::on_ready);
 
     connect(m_pending_flux_maps,
+            &db::PendingFluxMapModel::ready,
+            this,
+            &FluxModule::flux_map_ready);
+
+    connect(m_pending_flux_maps,
             &db::PendingFluxMapModel::cleared,
             m_flux_map_world_model,
             &db::FluxMapWorldModel::on_reset);
+
+    connect(m_pending_flux_maps, &db::PendingFluxMapModel::cleared, this, [this] {
+        set_current_flux_stats({});
+    });
 }
 
 void FluxModule::set_results(db::SimulationResultPtr p) {
     m_results = p;
     set_current_entity({});
     set_current_entity_name(QString());
+    set_current_flux_stats({});
 
     if (!p) return;
 
@@ -67,10 +77,32 @@ void FluxModule::select_entity(db::Entity entity) {
 
     if (!m_results || !m_results->database || !entity.is_valid()) {
         set_current_entity_name(QString());
+        set_current_flux_stats({});
         return;
     }
 
     set_current_entity_name(m_results->database->name_of(entity));
+    refresh_current_flux_stats();
+}
+
+void FluxModule::refresh_current_flux_stats() {
+    for (auto const& item : m_flux_map_world_model->vector()) {
+        if (item.flux_entity == current_entity()) {
+            set_current_flux_stats(item.flux_stats);
+            return;
+        }
+    }
+
+    set_current_flux_stats({});
+}
+
+void FluxModule::flux_map_ready(db::Entity              entity,
+                                analysis::BakedFluxMapPtr image,
+                                db::Database const*) {
+    if (entity != current_entity()) return;
+
+    set_current_flux_stats(image ? image->stats
+                                 : analysis::BakedFluxMapStats {});
 }
 
 void FluxModule::start_generate() {

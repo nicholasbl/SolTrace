@@ -93,6 +93,7 @@ struct FluxMappedItem {
     QVector3D                            flux_position;
     QQuaternion                          flux_rotation;
     std::shared_ptr<SurfaceGeometry>     flux_geometry;
+    analysis::BakedFluxMapStats          flux_stats;
 
     RECORD_META(FluxMappedItem,
                 SM_EXPOSE_RO(flux_entity),
@@ -100,7 +101,8 @@ struct FluxMappedItem {
                 SM_EXPOSE_RO(flux_image_path),
                 SM_EXPOSE_RO(flux_position),
                 SM_EXPOSE_RO(flux_rotation),
-                SM_EXPOSE_RO(flux_geometry));
+                SM_EXPOSE_RO(flux_geometry),
+                SM_EXPOSE_RO(flux_stats));
 };
 
 class FluxMapWorldModel : public StructModelAdapter<FluxMappedItem> {

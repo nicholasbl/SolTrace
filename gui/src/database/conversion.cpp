@@ -19,10 +19,6 @@ static inline double wrap_pi(double a) {
     return a - PI;
 }
 
-static inline double angle_diff(double a, double b) {
-    return std::abs(wrap_pi(a - b));
-}
-
 static inline glm::dquat align_unit_vector(glm::dvec3 const& fromUnit,
                                            glm::dvec3 const& toUnit) {
     double d = glm::dot(fromUnit, toUnit);
@@ -55,40 +51,6 @@ glm::dquat dir_roll_to_quat(glm::dvec3 const& directionWorld,
     return glm::normalize(qRoll * qAlign);
 }
 
-static inline glm::dquat twist_around_axis(glm::dquat const& q,
-                                           glm::dvec3 const& axisUnit) {
-    glm::dvec3 v(q.x, q.y, q.z);
-    auto       proj = axisUnit * glm::dot(v, axisUnit);
-
-    glm::dquat twist(q.w, proj.x, proj.y, proj.z);
-    double     n = glm::length(twist);
-    if (n < 1e-8) return glm::identity<glm::dquat>();
-
-    return glm::normalize(twist);
-}
-
-static inline double twist_angle_radians(glm::dquat const& twist,
-                                         glm::dvec3 const& axisUnit) {
-    auto t = glm::normalize(twist);
-
-    glm::dvec3 v(t.x, t.y, t.z);
-    double     vlen = glm::length(v);
-    double     w    = t.w;
-
-    double angle = 2.0 * std::atan2(vlen, w); // [0, 2pi)
-    double s     = glm::dot(v, axisUnit);
-    if (s < 0.0) angle = -angle;
-
-    return wrap_pi(angle);
-}
-
-static inline bool approx_equal_quat(glm::dquat const& a,
-                                     glm::dquat const& b,
-                                     double            eps = 1e-5f) {
-    // q and -q represent the same rotation
-    return glm::length(a - b) <= eps || glm::length(a + b) <= eps;
-}
-
 void quat_to_dir_roll(glm::dquat const& qIn,
                       glm::dvec3&       outDirectionWorld,
                       double&           outZRollRadians) {
@@ -107,8 +69,19 @@ void quat_to_dir_roll(glm::dquat const& qIn,
     dir /= len;
     outDirectionWorld = dir;
 
-    auto twist      = twist_around_axis(q, dir);
-    outZRollRadians = twist_angle_radians(twist, dir);
+    // SimulationData does not treat zrot as an arbitrary quaternion twist
+    // around the aim vector. It stores zrot as gamma in the Spencer/Murty
+    // Euler convention used by CalculateTransformMatrices().
+    auto local_to_reference = glm::mat3_cast(q);
+    auto reference_to_local = glm::transpose(local_to_reference);
+
+    // CalculateTransformMatrices fills:
+    // RRefToLoc[1][0] = -cos(beta) * sin(gamma)
+    // RRefToLoc[1][1] =  cos(beta) * cos(gamma)
+    // GLM indexes matrices as m[column][row].
+    outZRollRadians =
+        wrap_pi(std::atan2(-reference_to_local[1][0],
+                           reference_to_local[1][1]));
 }
 
 

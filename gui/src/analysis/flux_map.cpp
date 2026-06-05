@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <optional>
 
 #define GLM_ENABLE_EXPERIMENTAL 1
@@ -412,6 +413,77 @@ static bool dump_interaction_points_csv(std::vector<glm::vec3> const& points,
     return true;
 }
 
+static BakedFluxMapStats
+compute_flux_map_stats(Grid2D<float> const&                    raster,
+                       std::vector<TriangleFluxBin> const&     triangles,
+                       std::vector<glm::vec3> const&           interaction_points,
+                       std::size_t                             source_ray_count,
+                       double                                  power_per_ray) {
+    BakedFluxMapStats stats;
+    stats.source_ray_count  = static_cast<quint64>(source_ray_count);
+    stats.plotted_ray_count = static_cast<quint64>(interaction_points.size());
+    stats.power_per_ray     = power_per_ray;
+    stats.plotted_power     = stats.plotted_ray_count * stats.power_per_ray;
+
+    if (!interaction_points.empty()) {
+        glm::dvec3 centroid(0.0);
+        for (auto const& point : interaction_points) {
+            centroid += glm::dvec3(point);
+        }
+        centroid /= static_cast<double>(interaction_points.size());
+        stats.centroid = QVector3D(centroid.x, centroid.y, centroid.z);
+    }
+
+    if (raster.size() == 0) return stats;
+
+    double sum       = 0.0;
+    double sum_sq    = 0.0;
+    double min_flux  = std::numeric_limits<double>::max();
+    double peak_flux = 0.0;
+
+    for (unsigned i = 0; i < raster.size(); ++i) {
+        const double value = raster[i];
+        sum += value;
+        sum_sq += value * value;
+        min_flux  = std::min(min_flux, value);
+        peak_flux = std::max(peak_flux, value);
+    }
+
+    const double bin_count = raster.size();
+    stats.peak_flux        = peak_flux;
+    stats.min_flux         = min_flux == std::numeric_limits<double>::max()
+                                 ? 0.0
+                                 : min_flux;
+    stats.average_flux     = sum / bin_count;
+
+    const double variance =
+        (bin_count * sum_sq - sum * sum) / (bin_count * bin_count);
+    stats.sigma_flux = std::sqrt(std::max(0.0, variance));
+    stats.uniformity = stats.average_flux > 0.0
+                           ? stats.sigma_flux / stats.average_flux
+                           : 0.0;
+
+    std::size_t peak_hit_count = 0;
+    double      peak_triangle_flux = 0.0;
+    for (auto const& triangle : triangles) {
+        if (triangle.flux > peak_triangle_flux) {
+            peak_triangle_flux = triangle.flux;
+            peak_hit_count     = triangle.hit_count;
+        }
+    }
+
+    if (peak_hit_count > 0) {
+        stats.peak_flux_uncertainty =
+            100.0 / std::sqrt(static_cast<double>(peak_hit_count));
+    }
+    if (source_ray_count > 0) {
+        stats.average_flux_uncertainty =
+            100.0 / std::sqrt(static_cast<double>(source_ray_count));
+    }
+
+    return stats;
+}
+
 /// Main fluxmap compute function
 void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
                                 FluxMapBakeOptions         opts,
@@ -457,6 +529,7 @@ void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
 
     qDebug() << Q_FUNC_INFO << "ready triangle bins";
 
+    constexpr double       power_per_ray    = 1.0;
     float                  total_ray_impact = 0.0f;
     std::vector<glm::vec2> interaction_uvs;
     std::vector<glm::vec3> interaction_points;
@@ -507,8 +580,7 @@ void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
 
             auto& triangle = triangles[projection->triangle_index];
 
-            float hit_energy = 1.0f; // replace with actual interaction/ray
-                                     // power when available
+            float hit_energy = static_cast<float>(power_per_ray);
             triangle.hit_count += 1;
             triangle.accumulated_energy += hit_energy;
             total_ray_impact += hit_energy;
@@ -551,6 +623,11 @@ void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
 
     auto points_img =
         make_points_debug_image(interaction_uvs, img.size(), mesh);
+    auto stats = compute_flux_map_stats(raster,
+                                        triangles,
+                                        interaction_points,
+                                        results->records.size(),
+                                        power_per_ray);
 
     qDebug() << Q_FUNC_INFO << "complete";
 
@@ -566,6 +643,7 @@ void execute_map_generation_for(QPromise<BakedFluxMapPtr>& promise,
         .counts    = std::move(raster),
         .bin_map   = img,
         .point_map = points_img,
+        .stats     = stats,
     }));
 }
 

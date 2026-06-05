@@ -281,6 +281,7 @@ void FluxMapWorldModel::on_ready(Entity                    e,
         .flux_position     = position,
         .flux_rotation     = rotation,
         .flux_geometry     = geom,
+        .flux_stats        = img->stats,
     });
 }
 

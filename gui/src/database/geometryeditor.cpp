@@ -255,6 +255,37 @@ void GeometryEditor::recompute_geometry_errors() {
                 .arg(aperture_name, surface_name));
     }
 
+    if (params->surface->my_type == SD::CYLINDER &&
+        params->aperture->my_type == SD::RECTANGLE) {
+
+        auto const* cylinder =
+            dynamic_cast<SD::Cylinder const*>(params->surface.get());
+        auto const* rect =
+            dynamic_cast<SD::Rectangle const*>(params->aperture.get());
+
+        if (cylinder && rect) {
+            auto close = [](double a, double b) {
+                return std::abs(a - b) <= 1.0e-8;
+            };
+
+            const double diameter = 2.0 * cylinder->radius;
+
+            if (cylinder->radius <= 0.0) {
+                errors.push_back("Cylinder radius must be positive.");
+            }
+
+            if (!close(rect->x_length(), diameter)) {
+                errors.push_back(
+                    "Cylinder rectangle width must equal the cylinder diameter.");
+            }
+
+            if (!close(rect->x_coord(), -cylinder->radius)) {
+                errors.push_back(
+                    "Cylinder rectangle X origin must be the negative radius.");
+            }
+        }
+    }
+
     m_geometry_error_model->setStringList(errors);
 }
 

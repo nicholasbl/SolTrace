@@ -76,7 +76,11 @@ public:
     /// the database constructor. We have this split here so that we can
     /// allocate a database on one thread and fill it in another.
     /// Thus: DO NOT DO QObject THINGS IN THIS FUNCTION, only fill the reg.
-    void import(SD::SimulationData&);
+    /// If importing a legacy .stinput file, shift cylindrical element origins
+    /// from the old vertex-based convention to the current centered-cylinder
+    /// convention used by the native runner.
+    void import(SD::SimulationData&,
+                bool legacy_stinput_cylinder_origins = false);
 
     /// Convert a database back into a Soltrace dataset
     std::shared_ptr<DatabaseExport> export_to_simdata();

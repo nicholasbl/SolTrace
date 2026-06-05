@@ -123,6 +123,8 @@ class Script : public QObject {
     Q_READONLY_PROPERTY(QStringList, run_errors);
     QOBJECT_READONLY_PROPERTY(ScriptPropertyModel, properties);
 
+    Q_READONLY_PROPERTY(QStringList, builtin_scripts);
+
 public:
     explicit Script(QObject* parent = nullptr);
 

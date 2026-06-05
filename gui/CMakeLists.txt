@@ -242,6 +242,13 @@ install(TARGETS SolTrace
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+install(DIRECTORY
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/examples"
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/scripts"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/SolTrace/assets"
+    PATTERN ".DS_Store" EXCLUDE
+)
+
 qt_generate_deploy_qml_app_script(
     TARGET SolTrace
     OUTPUT_SCRIPT deploy_script

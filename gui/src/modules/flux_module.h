@@ -36,11 +36,17 @@ class FluxModule : public QObject {
 
     Q_WRITABLE_PROPERTY(db::Entity, current_entity, {});
     Q_READONLY_PROPERTY(QString, current_entity_name);
+    Q_READONLY_PROPERTY(analysis::BakedFluxMapStats, current_flux_stats);
 
     // Hack
     Q_WRITABLE_PROPERTY(QString, current_image, {});
 
+private:
+    void refresh_current_flux_stats();
+
 private slots:
+    void flux_map_ready(db::Entity, analysis::BakedFluxMapPtr, db::Database const*);
+
     void flux_vol_ready(QUuid const&, analysis::SparseGrid3D<float>);
     void flux_vol_failed(QUuid const&, QString);
 

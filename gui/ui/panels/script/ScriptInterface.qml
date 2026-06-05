@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Effects
 import QtQuick.Layouts
+import QtQuick.Dialogs
 
 import SolTrace
 
@@ -17,14 +18,20 @@ ScrollView {
     contentWidth: availableWidth
 
     function load_script(url) {
+        const requestUrl = String(url).startsWith(":/")
+                         ? "qrc" + String(url)
+                         : url
+
+        console.log("Loading script from:", requestUrl)
         const request = new XMLHttpRequest()
-        request.open("GET", url)
+        request.open("GET", requestUrl)
         request.onreadystatechange = function() {
             if (request.readyState === XMLHttpRequest.DONE) {
                 if (request.status === 0 || request.status === 200) {
+                    console.log("Script ready, installing.", request.responseText)
                     root.module.code = request.responseText
                 } else {
-                    console.warn("Unable to load script", url, request.status)
+                    console.warn("Unable to load script", requestUrl, request.status)
                 }
             }
         }
@@ -57,7 +64,44 @@ ScrollView {
 
                     text: "Load"
 
-                    onClicked: root.load_script("qrc:/assets/scripts/simple.js")
+                    onClicked: file_menu.open()
+
+                    STMenu {
+                        id: file_menu
+                        MenuItem {
+                            text: "Open"
+                            onClicked: openFileDialog.open()
+                        }
+
+                        STMenu {
+                            id: recents_menu
+                            title: qsTr("Builtins")
+                            enabled: recent_instantiator.count > 0
+
+                            Instantiator {
+                                id: recent_instantiator
+                                model: root.module.builtin_scripts
+
+                                delegate: MenuItem {
+                                    implicitWidth: 140
+                                    text: modelData.replace(":/assets/scripts/", "")
+                                    onTriggered: root.load_script(modelData)
+                                }
+                                onObjectAdded: (index, object) => recents_menu.insertItem(index, object)
+                                onObjectRemoved: (index, object) => recents_menu.removeItem(object)
+                            }
+                        }
+                    }
+
+                    FileDialog {
+                        id: openFileDialog
+                        onAccepted: {
+                            var str_file = String(selectedFile)
+
+                            currentFolder = str_file.substring(0, str_file.lastIndexOf("/"))
+                            root.load_script(str_file)
+                        }
+                    }
                 }
 
                 STButton {
@@ -77,7 +121,7 @@ ScrollView {
         STPropertyPanel {
             Layout.fillWidth: true
 
-            title: "Script"
+            title: "Script Parameters"
             collapsible: true
 
             Label {
@@ -86,6 +130,8 @@ ScrollView {
                 Layout.columnSpan: 2
 
                 Layout.row: 0
+
+                elide: Label.ElideRight
 
                 text: root.module.title
                 font.bold: true
