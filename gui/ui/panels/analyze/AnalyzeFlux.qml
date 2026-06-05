@@ -11,6 +11,24 @@ Flickable {
     property var left_panel_size: App.view.left_panel.size
     property var flux_module : AppData.flux
 
+    function formatCoordinate(value) {
+        if (!isFinite(value)) {
+            return "--"
+        }
+
+        return Number(value).toFixed(3)
+    }
+
+    function formatCentroid(centroid) {
+        if (!centroid) {
+            return "--"
+        }
+
+        return "(" + formatCoordinate(centroid.x) + ", "
+                   + formatCoordinate(centroid.y) + ", "
+                   + formatCoordinate(centroid.z) + ")"
+    }
+
     contentWidth: width
     contentHeight: content_column.implicitHeight
     clip: true
@@ -149,8 +167,9 @@ Flickable {
             }
 
             Label {
+                property vector3d cent: root.flux_module.current_flux_stats.centroid
                 Layout.fillWidth: true
-                text: root.flux_module.current_flux_stats.centroid
+                text: root.formatCentroid(cent)
                 font.bold: true
             }
         }

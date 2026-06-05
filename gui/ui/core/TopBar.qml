@@ -178,10 +178,10 @@ RowLayout {
                                     // normalize before doing string operations.
                                     text: file_settings.file_name(modelData)
                                     onTriggered: {
+                                        file_menu.dismiss()
                                         var file_url = file_settings.file_url_text(modelData)
                                         file_settings.add_files(file_url)
                                         App.file_source.load_url(Qt.url(file_url))
-                                        file_menu.close()
                                     }
                                 }
 
