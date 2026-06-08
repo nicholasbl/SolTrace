@@ -25,7 +25,8 @@ namespace OptixCSP
             QUADRILATERAL_FLAT = 6,
             CIRCLE_FLAT = 7,
             HEXAGON_FLAT = 8,
-            ANNULUS_FLAT = 9
+            ANNULUS_FLAT = 9,
+            CIRCLE_PARABOLIC = 10
         };
 
         struct Parallelogram

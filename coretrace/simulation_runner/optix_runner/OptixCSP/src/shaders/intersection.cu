@@ -345,7 +345,7 @@ extern "C" __global__ void __intersection__rectangle_parabolic()
     float3 e1 = rect.v1 * L1; // recovers the original direction of edge 1, unit vector
     float3 e2 = rect.v2 * L2; // recovers the original direction of edge 2, unit ve
     // The flat (undeformed) rectangle's normal is:
-    float3 n = normalize(cross(e2, e1));
+    float3 n = normalize(cross(e1, e2));
 
     //
     // Transform ray into local coordinates.
@@ -741,7 +741,7 @@ extern "C" __global__ void __intersection__annulus_flat()
 
 extern "C" __global__ void __intersection__circle_parabolic()
 {
-    const OptixCSP::GeometryDataST::Circle_Parabolic &circp = params.geoemetry_data_array[optixGetPrimitiveIndex()].getCircle_Parabolic();
+    const OptixCSP::GeometryDataST::Circle_Parabolic &circp = params.geometry_data_array[optixGetPrimitiveIndex()].getCircle_Parabolic();
 
     const float3 ray_orig = optixGetWorldRayOrigin();
     const float3 ray_dir = optixGetWorldRayDirection();
@@ -757,7 +757,7 @@ extern "C" __global__ void __intersection__circle_parabolic()
     // TODO: Compute the local ray direction and ray origin
     const float3 x_ax = circp.x_axis;
     const float3 y_ax = circp.y_axis;
-    const float3 n = normalize(cross(e2, e1));
+    const float3 n = normalize(cross(x_ax, y_ax));
 
     float3 d = ray_orig - center;
     float ox = dot(d, x_ax);
@@ -775,6 +775,10 @@ extern "C" __global__ void __intersection__circle_parabolic()
     float t = 0.0f;
     float t1 = 0.0f;
     float t2 = 0.0f;
+
+    float x_hit = 0.0f;
+    float y_hit = 0.0f;
+    bool valid = false;
 
     if (fabsf(A) < eps)
     {
