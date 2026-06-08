@@ -747,3 +747,69 @@ TEST(OptixRunner, FlatAnnulus_PartialArc)
               << ", false positives: " << fpos
               << ", false negatives: " << fneg << std::endl;
 }
+
+TEST(OptixRunner, ParabolicCircle)
+{
+    const double R = 5.0;
+    const double FOCAL_X = 10.0;
+    const double FOCAL_Y = 30.0;
+    const double ROT_DEG = 0.0;
+    auto surf = make_surface<Parabola>(FOCAL_X, FOCAL_Y);
+    auto aper = make_aperture<Circle>(2 * R);
+
+    // z(x,y) = x^2/(2*FOCAL_X) + y^2/(2*FOCAL_Y). Maximum over the circle x^2+y^2<=R^2
+    // is R^2 / (2 * min(FOCAL_X, FOCAL_Y)), achieved along the axis with lower focal length.
+    const double Z_MAX_OFFSET = R * R / (2.0 * std::min(FOCAL_X, FOCAL_Y));
+
+    uint_fast64_t fpos = 0, fneg = 0, hits = 0, misses = 0;
+
+    SimulationData sd;
+    element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
+    SimulationResult result;
+
+    OptixRunner runner;
+    RunnerStatus sts = runner.initialize();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.report_simulation(&result, 0);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+
+    ASSERT_EQ(result.get_number_of_records(),
+              sd.get_simulation_parameters().number_of_rays);
+    for (int i = 0; i < (int)result.get_number_of_records(); ++i)
+    {
+        auto rr = result[i];
+        ASSERT_GE(rr->get_number_of_interactions(), 2);
+        glm::dvec3 p0, p1;
+        rr->get_position(0, p0);
+        rr->get_position(1, p1);
+        auto id = rr->get_element(1);
+        EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
+        EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+
+        if (id == test_elid)
+        {
+            // z is curved: Z_ELEM <= z <= Z_ELEM + Z_MAX_OFFSET
+            EXPECT_GE(p1[2], Z_ELEM - TOL * Z_ELEM) << "ray " << i;
+            EXPECT_LE(p1[2], Z_ELEM + Z_MAX_OFFSET + TOL * Z_ELEM) << "ray " << i;
+            EXPECT_TRUE(aper->is_in(p1[0], p1[1]));
+            ++hits;
+            if (!aper->is_in(p1[0], p1[1])) ++fpos;
+        }
+        else
+        {
+            EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
+            EXPECT_FALSE(aper->is_in(p1[0], p1[1]));
+            ++misses;
+            if (aper->is_in(p1[0], p1[1])) ++fneg;
+        }
+    }
+    EXPECT_GT(hits, 0u);
+    EXPECT_GT(misses, 0u);
+    std::cout << "hits: " << hits << ", misses: " << misses
+              << ", false positives: " << fpos
+              << ", false negatives: " << fneg << std::endl;
+}
