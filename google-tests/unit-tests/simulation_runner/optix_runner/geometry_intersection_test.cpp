@@ -534,6 +534,29 @@ TEST(OptixRunner, FlatAnnulus_FullArc)
     }
 }
 
+TEST(OptixRunner, FlatAnnulus_PartialArc)
+{
+    const double R0 = 5.0;
+    const double R1 = 180.0;
+    const double ARC = 0.5 * PI;
+    const double ROT_DEG = -15.0;
+    auto surf = make_surface<Flat>();
+    auto aper = make_aperture<Annulus>(R0, R1, ARC);
+
+    SimulationData sd;
+    element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
+    SimulationResult result;
+
+    OptixRunner runner;
+    RunnerStatus sts = runner.initialize();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.report_simulation(&result, 0);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
     const double cos_rot = cos(ROT_DEG * PI / 180.0);
