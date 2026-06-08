@@ -75,11 +75,11 @@ namespace OptixCSP
                 assert(dot(base_x, base_z) < 1e-3f);
             }
 
-            float3 center;      // center of the cylinder in global coordinates
-            float radius;       // radius
-            float half_height;  // half the height along the local y axis
-            float3 base_x;      // x axis of the cylinder
-            float3 base_z;      // z axis of the cylinder
+            float3 center;     // center of the cylinder in global coordinates
+            float radius;      // radius
+            float half_height; // half the height along the local y axis
+            float3 base_x;     // x axis of the cylinder
+            float3 base_z;     // z axis of the cylinder
         };
 
         struct Rectangle_Parabolic
@@ -101,8 +101,8 @@ namespace OptixCSP
             float3 v2;     // edge vector 2, stored as v2/dot(v2,v2)
             float3 anchor; // corner point of the base rectangle
             // float3 focus;
-            float curv_x;  // curvature along local x axis
-            float curv_y;  // curvature along local y axis
+            float curv_x; // curvature along local x axis
+            float curv_y; // curvature along local y axis
         };
 
         struct Triangle_Flat
@@ -145,9 +145,9 @@ namespace OptixCSP
                 const float3 n = normalize(normal);
                 plane = make_float4(n, dot(center, n));
             }
-            float4 plane;    // normal unit vector, dot(center, normal)
-            float3 center;   // local origin in global coordinates
-            float r;         // radius
+            float4 plane;  // normal unit vector, dot(center, normal)
+            float3 center; // local origin in global coordinates
+            float r;       // radius
         };
 
         struct Hexagon_Flat
@@ -173,7 +173,8 @@ namespace OptixCSP
             Annulus_Flat() = default;
             Annulus_Flat(const float3 &origin, const float3 &normal,
                          const float3 &x_ax, const float3 &y_ax,
-                         const float &r_inner, const float &r_outer, const float &arc)
+                         const float &r_inner, const float &r_outer,
+                         const float &arc)
                 : center(origin), x_axis(x_ax), y_axis(y_ax),
                   ri(r_inner), ro(r_outer), arc(arc)
             {
@@ -187,6 +188,23 @@ namespace OptixCSP
             float ri;      // inner radius
             float ro;      // outer radius
             float arc;     // total arc angle in radians, centered on x_axis
+        };
+
+        struct Circle_Parabolic
+        {
+            Circle_Parabolic() = default;
+            Circle_Parabolic(const float3 &origin, const float3 &x_ax, const float3 &y_ax,
+                             const float &curv_x, const float &curv_y, const float &r)
+                : center(origin), x_axis(x_ax), y_axis(y_ax),
+                  cx(curv_x), cy(curv_y), radius(r)
+            {
+            }
+            float3 center;
+            float3 x_axis;
+            float3 y_axis;
+            float cx;
+            float cy;
+            float radius;
         };
 
         GeometryDataST() = default;
@@ -308,6 +326,19 @@ namespace OptixCSP
             return annulus_flat;
         }
 
+        void setCircle_Parabolic(const Circle_Parabolic &circp)
+        {
+            assert(type == UNKNOWN_TYPE);
+            type = CIRCLE_PARABOLIC;
+            circle_parabolic = circp;
+        }
+
+        __host__ __device__ const Circle_Parabolic &getCircle_Parabolic() const
+        {
+            assert(type == CIRCLE_PARABOLIC);
+            return circle_parabolic;
+        }
+
         Type type = UNKNOWN_TYPE;
 
         int32_t id = OptixCSP::kElementIdUnassigned;
@@ -324,6 +355,7 @@ namespace OptixCSP
             Circle_Flat circle_flat;
             Hexagon_Flat hexagon_flat;
             Annulus_Flat annulus_flat;
+            Circle_Parabolic circle_parabolic;
         };
     };
 }

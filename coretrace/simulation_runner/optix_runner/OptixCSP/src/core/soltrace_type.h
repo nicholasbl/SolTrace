@@ -31,12 +31,12 @@ namespace OptixCSP
 		SurfaceType surfaceType;
 		ApertureType apertureType;
 
-	  SurfaceApertureMap() : surfaceType(SurfaceType::FLAT),
-		                 apertureType(ApertureType::RECTANGLE)
-	  {
-	  }
+		SurfaceApertureMap() : surfaceType(SurfaceType::FLAT),
+							   apertureType(ApertureType::RECTANGLE)
+		{
+		}
 
-          SurfaceApertureMap(SurfaceType surf, ApertureType ap) : surfaceType(surf),
+		SurfaceApertureMap(SurfaceType surf, ApertureType ap) : surfaceType(surf),
 																apertureType(ap)
 		{
 		}
@@ -48,19 +48,19 @@ namespace OptixCSP
 			return (surfaceType == map.surfaceType) && (apertureType == map.apertureType);
 		}
 
-	  bool operator<(const SurfaceApertureMap &b) const
-	  {
-	    return surfaceType < b.surfaceType ||
-	      (surfaceType == b.surfaceType && apertureType < b.apertureType);
-	  }
+		bool operator<(const SurfaceApertureMap &b) const
+		{
+			return surfaceType < b.surfaceType ||
+				   (surfaceType == b.surfaceType && apertureType < b.apertureType);
+		}
 
-	  friend std::ostream& operator<<(std::ostream &os, const SurfaceApertureMap &sam);
+		friend std::ostream &operator<<(std::ostream &os, const SurfaceApertureMap &sam);
 	};
 
-	inline std::ostream& operator<<(std::ostream &os, const SurfaceApertureMap &sam)
+	inline std::ostream &operator<<(std::ostream &os, const SurfaceApertureMap &sam)
 	{
-	  os << "SurfApMap -- Surface: " << static_cast<int>(sam.surfaceType)
-	     << " Aperture: " << static_cast<int>(sam.apertureType);
-	  return os;
+		os << "SurfApMap -- Surface: " << static_cast<int>(sam.surfaceType)
+		   << " Aperture: " << static_cast<int>(sam.apertureType);
+		return os;
 	}
 }

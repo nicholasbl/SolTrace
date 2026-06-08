@@ -307,10 +307,21 @@ GeometryDataST CspElement::toDeviceGeometryData() const
         float r = circ.get_radius();
         float3 o = OptixCSP::toFloat3(m_origin);
         float3 n = normalize(OptixCSP::toFloat3(m_aim_point - m_origin));
+        
         if (surface_type == SurfaceType::FLAT)
         {
             GeometryDataST::Circle_Flat heliostat(o, n, r);
             geometry_data.setCircle_Flat(heliostat);
+        }
+        
+        if (surface_type == SurfaceType::PARABOLIC)
+        {
+            Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
+            float3 v1 = OptixCSP::toFloat3(rotation_matrix.get_x_basis());
+            float3 v2 = OptixCSP::toFloat3(rotation_matrix.get_y_basis());
+            float cx = (float)(m_surface->get_curvature_1());
+            float cy = (float)(m_surface->get_curvature_2());
+            GeometryDataST::Circle_Parabolic heliostat(o, v1, v2, cx, cy, r);
         }
     }
 

@@ -380,19 +380,22 @@ extern "C" __global__ void __intersection__rectangle_parabolic()
     float t2 = 0.0f;
     float x_hit = 0.0f;
     float y_hit = 0.0f;
-    const float eps = 1e-12f;
+    const float eps = 1e-6f;
     bool valid = false;
 
-    if (fabsf(A) < eps) {
-        if (fabsf(B) > eps) {
+    if (fabsf(A) < eps)
+    {
+        if (fabsf(B) > eps)
+        {
             t1 = -C / B;
             const float p1x = ox + t1 * dx;
             const float p1y = oy + t1 * dy;
             const float a1 = p1x / (L1 / 2.0f);
             const float a2 = p1y / (L2 / 2.0f);
 
-            if (t1 > 0.0f && t1 >= ray_tmin && t1 <= ray_tmax
-                && !(a1 < -1.0f || a1 > 1.0f || a2 < -1.0f || a2 > 1.0f)) {
+            if ((t1 > 0.0f && t1 >= ray_tmin && t1 <= ray_tmax) &&
+                !(a1 < -1.0f || a1 > 1.0f || a2 < -1.0f || a2 > 1.0f))
+            {
                 t = t1;
                 x_hit = p1x;
                 y_hit = p1y;
@@ -418,15 +421,15 @@ extern "C" __global__ void __intersection__rectangle_parabolic()
             const float a1_2 = p2x / (L1 / 2.0f);
             const float a2_2 = p2y / (L2 / 2.0f);
 
-            if (t1 > 0.0f && t1 >= ray_tmin && t1 <= ray_tmax
-                && !(a1_1 < -1.0f || a1_1 > 1.0f || a2_1 < -1.0f || a2_1 > 1.0f)) {
+            if (t1 > 0.0f && t1 >= ray_tmin && t1 <= ray_tmax && !(a1_1 < -1.0f || a1_1 > 1.0f || a2_1 < -1.0f || a2_1 > 1.0f))
+            {
                 t = t1;
                 x_hit = p1x;
                 y_hit = p1y;
                 valid = true;
             }
-            else if (t2 > 0.0f && t2 >= ray_tmin && t2 <= ray_tmax
-                && !(a1_2 < -1.0f || a1_2 > 1.0f || a2_2 < -1.0f || a2_2 > 1.0f)) {
+            else if (t2 > 0.0f && t2 >= ray_tmin && t2 <= ray_tmax && !(a1_2 < -1.0f || a1_2 > 1.0f || a2_2 < -1.0f || a2_2 > 1.0f))
+            {
                 t = t2;
                 x_hit = p2x;
                 y_hit = p2y;
@@ -435,7 +438,8 @@ extern "C" __global__ void __intersection__rectangle_parabolic()
         }
     }
 
-    if (!valid) {
+    if (!valid)
+    {
         return;
     }
 
@@ -625,7 +629,7 @@ extern "C" __global__ void __intersection__circle_flat()
     if (t > ray_tmin && t < ray_tmax)
     {
         // Since everything is in global coordinates (e.g., the ray intersection coordinates),
-        // and  the circle is rotationally symmetric, we don't need to worry about 
+        // and the circle is rotationally symmetric, we don't need to worry about
         // any rotation of the circle in local coordinates
         float3 p = ray_orig + ray_dir * t;
         float d = length(p - circ.center);
@@ -733,4 +737,124 @@ extern "C" __global__ void __intersection__annulus_flat()
             }
         }
     }
+}
+
+extern "C" __global__ void __intersection__circle_parabolic()
+{
+    const OptixCSP::GeometryDataST::Circle_Parabolic &circp = params.geoemetry_data_array[optixGetPrimitiveIndex()].getCircle_Parabolic();
+
+    const float3 ray_orig = optixGetWorldRayOrigin();
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float ray_tmin = optixGetRayTmin(), ray_tmax = optixGetRayTmax();
+
+    const float eps = 1e-6f;
+
+    const float3 center = circp.center;
+    const float cx = circp.cx;
+    const float cy = circp.cy;
+    const float r = circp.radius;
+
+    // TODO: Compute the local ray direction and ray origin
+    const float3 x_ax = circp.x_axis;
+    const float3 y_ax = circp.y_axis;
+    const float3 n = normalize(cross(e2, e1));
+
+    float3 d = ray_orig - center;
+    float ox = dot(d, x_ax);
+    float oy = dot(d, y_ax);
+    float oz = dot(d, n);
+
+    float dx = dot(ray_dir, x_ax);
+    float dy = dot(ray_dir, y_ax);
+    float dz = dot(ray_dir, n);
+
+    float A = (0.5f * cx) * (dx * dx) + (0.5f * cy) * (dy * dy);
+    float B = cx * (ox * dx) + cy * (oy * dy) - dz;
+    float C = 0.5f * cx * ox * ox + 0.5f * cy * oy * oy - oz;
+
+    float t = 0.0f;
+    float t1 = 0.0f;
+    float t2 = 0.0f;
+
+    if (fabsf(A) < eps)
+    {
+        t1 = -C / B;
+        const float p1x = ox + t1 * dx;
+        const float p1y = oy + t1 * dy;
+        const float v = sqrtf(p1x * p1x + p1y * p1y) / r;
+
+        if (ray_tmin <= t1 && t1 <= ray_tmax && v <= 1.0f)
+        {
+            t = t1;
+            x_hit = p1x;
+            y_hit = p1y;
+            valid = true;
+        }
+    }
+    else
+    {
+        float discr = B * B - 4.0f * A * C;
+        if (discr >= 0.0f)
+        {
+            float sqrt_discr = sqrtf(discr);
+            t1 = -0.5f * (B + sqrt_discr) / A;
+            t2 = -0.5f * (B - sqrt_discr) / A;
+
+            const float p1x = ox + t1 * dx;
+            const float p1y = oy + t1 * dy;
+            const float p2x = ox + t2 * dx;
+            const float p2y = oy + t2 * dy;
+
+            const float v1 = sqrtf(p1x * p1x + p1y * p1y) / r;
+            const float v2 = sqrtf(p2x * p2x + p2y * p2y) / r;
+
+            if (ray_tmin <= t1 && t1 <= ray_tmax && v1 <= 1.0f)
+            {
+                t = t1;
+                x_hit = p1x;
+                y_hit = p1y;
+                valid = true;
+            }
+            else if (ray_tmin <= t2 && t2 <= ray_tmax && v2 <= 1.0f)
+            {
+                t = t2;
+                x_hit = p2x;
+                y_hit = p2y;
+                valid = true;
+            }
+        }
+    }
+
+    if (!valid)
+    {
+        return;
+    }
+
+    //
+    // Compute the surface normal at the hit on the paraboloid.
+    // The height function is:
+    //    f(x,y) = (curv_x/2)*x^2 + (curv_y/2)*y^2
+    // so its partial derivatives are:
+    //    f_x = curv_x * x    and    f_y = curv_y * y.
+    // Then the (unnormalized) local normal is:
+    //    N_local = (-f_x, -f_y, 1) = ( -curv_x*x_hit, -curv_y*y_hit, 1 ).
+    //
+    float3 N_local = normalize(make_float3(-cx * x_hit,
+                                           -cy * y_hit,
+                                           1.0f));
+    // Transform the normal back to world coordinates.
+    float3 world_normal = normalize(N_local.x * e1 +
+                                    N_local.y * e2 +
+                                    N_local.z * n);
+
+    // Compute the hit point in world space.
+    float3 world_hit = ray_orig + t * ray_dir;
+
+    // Report the intersection.
+    // Here, the two reported extra attributes are the parametric coordinates (a1, a2),
+    // encoded as unsigned integers.
+    optixReportIntersection(t, 0,
+                            __float_as_uint(world_normal.x),
+                            __float_as_uint(world_normal.y),
+                            __float_as_uint(world_normal.z));
 }

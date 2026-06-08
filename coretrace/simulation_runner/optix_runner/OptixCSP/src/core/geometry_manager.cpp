@@ -63,6 +63,10 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
             {
                 sbt_offset = static_cast<uint32_t>(OpticalEntityType::CIRCLE_FLAT);
             }
+            else if (element->get_surface_type() == SurfaceType::PARABOLIC)
+            {
+                sbt_offset = static_cast<uint32_t>(OpticalEntityType::CIRCLE_PARABOLIC);
+            }
             else
             {
                 std::stringstream ss;
