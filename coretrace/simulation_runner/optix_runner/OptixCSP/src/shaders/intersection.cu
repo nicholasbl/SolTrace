@@ -668,7 +668,7 @@ extern "C" __global__ void __intersection__hexagon_flat()
             // Center
             is_in = true;
         }
-        else if (-s <= px && px < xl)
+        else if (-s <= px && px < -xl)
         {
             // Left side
             float y1 = sqrtf(3.0f) * (px + s);
