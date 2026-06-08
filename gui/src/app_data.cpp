@@ -1,6 +1,6 @@
 #include "app_data.h"
 
-#include "build_info.h"
+#include "app_build_info.h"
 
 #include <QApplication>
 #include <QClipboard>
@@ -21,13 +21,16 @@ static QString build_info_string() {
                "Describe: %3\n"
                "Branch: %4\n"
                "Tag: %5\n"
-               "Dirty: %6")
+               "Dirty: %6\n"
+               "Prerelease: %7")
         .arg(QString::fromUtf8(BuildInfo::version),
              QString::fromUtf8(BuildInfo::git_commit),
              QString::fromUtf8(BuildInfo::git_describe),
              QString::fromUtf8(BuildInfo::git_branch),
              tag,
-             QString::fromUtf8(BuildInfo::git_dirty));
+             QString::fromUtf8(BuildInfo::git_dirty),
+             BuildInfo::is_prerelease ? QStringLiteral("true")
+                                       : QStringLiteral("false"));
 }
 
 void AppData::load_session() {
@@ -230,6 +233,7 @@ AppData::AppData(QObject*       parent,
     set_current_version_info(
         QString("%1 %2").arg(BuildInfo::version).arg(BuildInfo::git_commit));
     set_current_build_info(build_info_string());
+    set_is_prerelease(BuildInfo::is_prerelease);
 
 
     connect(m_file_source,

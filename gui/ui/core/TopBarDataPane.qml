@@ -5,10 +5,8 @@ import QtQuick.Layouts
 
 import SolTrace
 
-ShadowedGlassRectangle {
+Item {
     id: root
-
-    radius: height / 2
 
     property int last_db_count: AppData.file_source.rowCount()
     property bool highlighted: false
@@ -17,16 +15,8 @@ ShadowedGlassRectangle {
         return mode_row.mode_control_width * (is_active ? 2 : 1)
     }
 
-    glassColor: App.theme.glassColor
-
     function flash_added_data() {
         flash_highlight_animation.restart()
-    }
-
-    Behavior on glassColor {
-        ColorAnimation {
-            duration: 200
-        }
     }
 
     RowLayout {
@@ -125,7 +115,13 @@ ShadowedGlassRectangle {
                     font.pointSize: animated_point_size
                     opacity: configure_mode.is_active ? 1.0 : .50
 
-                    onClicked: App.view.workflow_phase = 0
+                    onClicked: {
+                        if (App.view.workflow_phase === 0) {
+                            data_pop.open()
+                        } else {
+                            App.view.workflow_phase = 0
+                        }
+                    }
 
                     Behavior on animated_point_size {
                         NumberAnimation {
@@ -140,21 +136,6 @@ ShadowedGlassRectangle {
                         }
                     }
                 }
-
-                STIconButton {
-                    visible: configure_mode.is_active
-
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.preferredWidth: implicitWidth
-                    Layout.preferredHeight: implicitHeight
-                    Layout.rightMargin: 10
-
-                    text: "\uf107"
-                    iconSize: 18
-                    toolTip: "Scene List"
-
-                    onClicked: data_pop.open()
-                }
             }
         }
 
@@ -167,6 +148,11 @@ ShadowedGlassRectangle {
 
             font.family: "Font Awesome 7 Free"
             text: "\uf101"
+
+            property bool highlight: configure_mode.is_active || simulate_mode.is_active
+
+            opacity: highlight ? 1.0 : .50
+
         }
 
         Item {
@@ -228,6 +214,10 @@ ShadowedGlassRectangle {
 
             font.family: "Font Awesome 7 Free"
             text: "\uf101"
+
+            property bool highlight: analyze_mode.is_active || simulate_mode.is_active
+
+            opacity: highlight ? 1.0 : .50
         }
 
         Item {
@@ -267,7 +257,13 @@ ShadowedGlassRectangle {
                     font.pointSize: animated_point_size
                     opacity: analyze_mode.is_active ? 1.0 : .50
 
-                    onClicked: App.view.workflow_phase = 2
+                    onClicked: {
+                        if (App.view.workflow_phase === 2) {
+                            data_pop.open()
+                        } else {
+                            App.view.workflow_phase = 2
+                        }
+                    }
 
                     Behavior on animated_point_size {
                         NumberAnimation {
@@ -281,21 +277,6 @@ ShadowedGlassRectangle {
                             duration: 150
                         }
                     }
-                }
-
-                STIconButton {
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.preferredWidth: implicitWidth
-                    Layout.preferredHeight: implicitHeight
-                    Layout.rightMargin: 10
-
-                    visible: analyze_mode.is_active
-
-                    text: "\uf107"
-                    iconSize: 18
-                    toolTip: "Simulation Results"
-
-                    onClicked: results_pop.open()
                 }
             }
         }

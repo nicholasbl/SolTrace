@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
 
+import SolTrace
+
 RowLayout {
     id: root
 
@@ -11,26 +13,38 @@ RowLayout {
 
     readonly property bool show_logos: available_width > 1250
 
-    TopBarLeftPane {
-        Layout.fillHeight: true
-        Layout.preferredWidth: root.width * 0.3
-        Layout.maximumWidth: root.width * 0.3
+    ShadowedGlassRectangle {
+        id: left_data_glass
 
-        blur_source: root.blur_source
-        available_width: root.available_width
-        show_logos: root.show_logos
-    }
-
-    TopBarDataPane {
         Layout.fillHeight: true
         Layout.fillWidth: true
 
         blur_source: root.blur_source
+        radius: height / 2
+        glassColor: App.theme.glassColor
+
+        RowLayout {
+            anchors.fill: parent
+            spacing: 0
+
+            TopBarLeftPane {
+                Layout.fillHeight: true
+                Layout.maximumWidth: root.width * 0.3
+
+                available_width: root.available_width
+                show_logos: root.show_logos
+            }
+
+            TopBarDataPane {
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                Layout.preferredWidth: 600
+            }
+        }
     }
 
     TopBarRightPane {
         Layout.fillHeight: true
-        Layout.preferredWidth: root.width * 0.3
         Layout.maximumWidth: root.width * 0.3
 
         blur_source: root.blur_source

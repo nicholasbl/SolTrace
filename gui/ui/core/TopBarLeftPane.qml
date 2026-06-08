@@ -11,25 +11,13 @@ import SolTrace
 RowLayout {
     id: root
 
-    required property var blur_source
     required property int available_width
     required property bool show_logos
 
+    spacing: 0
+
     Binding { target: soltrace_logo; property: "visible"; value: root.show_logos }
-    Binding { target: beta_logo; property: "visible"; value: root.show_logos }
-
-    ShadowedGlassRectangle {
-        blur_source: root.blur_source
-
-        radius: height / 2
-
-        implicitWidth: row.implicitWidth
-
-        Layout.fillHeight: true
-
-        RowLayout {
-            id: row
-            anchors.fill: parent
+    Binding { target: prerel_logo; property: "visible"; value: root.show_logos }
 
             STIconButton {
                 id: leftpanel_open
@@ -53,67 +41,153 @@ RowLayout {
                 }
             }
 
-            Column {
+            Item {
                 id: soltrace_logo
-                spacing: -2
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
 
-                RowLayout {
-                    id: logo_row
-                    spacing: 4
-
-                    Item { Layout.preferredWidth: 2 }
-
-                    Image {
-                        id: logo_icon
-                        source: "qrc:/assets/images/logo.svg"
-                        Layout.preferredHeight: 27
-                        Layout.preferredWidth: Layout.preferredHeight
-                        Layout.alignment: Qt.AlignBottom
-                        mipmap: true
-                        fillMode: Image.PreserveAspectFit
-
-                        layer.enabled: true
-                        layer.effect: MultiEffect {
-                            colorization: 1.0
-                            colorizationColor: App.theme.fontColor
-                        }
-                    }
-
-                    Label {
-                        id: logo_text
-                        Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignBottom
-                        font.pointSize: 18
-                        font.family: "CMU Serif"
-                        text: "SolTrace"
-                        font.bold: true
-                        font.capitalization: Font.SmallCaps
-                    }
-
-                    Item { Layout.preferredWidth: 2 }
-                }
+                implicitWidth: logo_content.implicitWidth
+                implicitHeight: logo_content.implicitHeight
 
                 Rectangle {
-                    color: App.theme.fontColor
-                    width: logo_row.width
-                    height: 1
+                    anchors.fill: logo_content
+                    anchors.margins: -5
+                    radius: 5
+
+                    color: logo_mouse_area.containsMouse ? Material.rippleColor :
+                                                           "transparent"
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 100
+                        }
+                    }
+                }
+
+                Column {
+                    id: logo_content
+                    spacing: -2
+
+                    RowLayout {
+                        id: logo_row
+                        spacing: 4
+
+                        Item { Layout.preferredWidth: 2 }
+
+                        Image {
+                            id: logo_icon
+                            source: "qrc:/assets/images/logo.svg"
+                            Layout.preferredHeight: 27
+                            Layout.preferredWidth: Layout.preferredHeight
+                            Layout.alignment: Qt.AlignBottom
+                            mipmap: true
+                            fillMode: Image.PreserveAspectFit
+
+                            layer.enabled: true
+                            layer.effect: MultiEffect {
+                                colorization: 1.0
+                                colorizationColor: App.theme.fontColor
+                            }
+                        }
+
+                        Label {
+                            id: logo_text
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignBottom
+                            font.pointSize: 18
+                            font.family: "CMU Serif"
+                            text: "SolTrace"
+                            font.bold: true
+                            font.capitalization: Font.SmallCaps
+                        }
+
+                        Item { Layout.preferredWidth: 2 }
+                    }
+
+                    Rectangle {
+                        color: App.theme.fontColor
+                        width: logo_row.width
+                        height: 1
+                    }
+                }
+
+                MouseArea {
+                    id: logo_mouse_area
+                    anchors.fill: logo_content
+                    hoverEnabled: true
+                    onClicked: version_pop.open()
+                }
+
+                STPopup {
+                    id: version_pop
+
+                    contentWidth: 280
+
+                    ColumnLayout {
+                        spacing: 6
+
+                        Label {
+                            Layout.fillWidth: true
+
+                            text: "SolTrace"
+                            font.bold: true
+                            wrapMode: Label.WrapAtWordBoundaryOrAnywhere
+                        }
+
+                        Label {
+                            Layout.fillWidth: true
+
+                            text: AppData.current_build_info
+                            wrapMode: Label.WrapAtWordBoundaryOrAnywhere
+                        }
+                    }
                 }
             }
 
-            Label {
-                id: beta_logo
+            STClickableLabel {
+                id: prerel_logo
+
+                visible: AppData.is_prerelease
 
                 Layout.alignment: Qt.AlignVCenter
                 Layout.topMargin: 10
-                Layout.rightMargin: 20
+                Layout.rightMargin: 10
 
-                text: "ALPHA"
+                text: "BETA"
                 font.pointSize: 10
                 font.family: "CMU Serif"
                 font.bold: true
                 font.italic: true
+
+                color: Material.color(Material.Yellow)
+
+                onClicked: beta_pop.open()
+
+                STPopup {
+                    id: beta_pop
+
+                    contentWidth: 280
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        spacing: 6
+
+                        Label {
+                            Layout.fillWidth: true
+
+                            text: "Pre-release build"
+                            font.bold: true
+                            wrapMode: Label.WrapAtWordBoundaryOrAnywhere
+                        }
+
+                        Label {
+                            Layout.fillWidth: true
+
+                            text: "This version of SolTrace is intended for testing and evaluation. Features, file formats, and simulation behavior may change before the final release. Verify important results with a stable release before using them for production work."
+                            wrapMode: Label.WrapAtWordBoundaryOrAnywhere
+                        }
+                    }
+                }
             }
 
             Rectangle {
@@ -279,9 +353,3 @@ RowLayout {
                 }
             }
         }
-    }
-
-    Item {
-        Layout.fillWidth: true
-    }
-}
