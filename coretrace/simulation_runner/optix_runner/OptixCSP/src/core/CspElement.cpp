@@ -316,19 +316,27 @@ GeometryDataST CspElement::toDeviceGeometryData() const
 
     if (aperture_type == ApertureType::HEXAGON)
     {
+        Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
+        Vec3d vx = rotation_matrix.get_x_basis();
+        Vec3d vy = rotation_matrix.get_y_basis();
+
         ApertureHexagon hex = static_cast<ApertureHexagon &>(*m_aperture);
         float s = hex.get_side_length();
         float3 o = OptixCSP::toFloat3(m_origin);
         float3 n = normalize(OptixCSP::toFloat3(m_aim_point - m_origin));
         if (surface_type == SurfaceType::FLAT)
         {
-            GeometryDataST::Hexagon_Flat hex(o, n, s);
+            GeometryDataST::Hexagon_Flat hex(o, n, vx, vy, s);
             geometry_data.setHexagon_Flat(hex);
         }
     }
 
     if (aperture_type == ApertureType::ANNULUS)
     {
+        Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
+        Vec3d vx = rotation_matrix.get_x_basis();
+        Vec3d vy = rotation_matrix.get_y_basis();
+
         ApertureAnnulus anf = static_cast<ApertureAnnulus &>(*m_aperture);
         float radius_in = anf.get_radius_inner();
         float radius_out = anf.get_radius_outer();
@@ -337,7 +345,8 @@ GeometryDataST CspElement::toDeviceGeometryData() const
         float3 n = normalize(OptixCSP::toFloat3(m_aim_point - m_origin));
         if (surface_type == SurfaceType::FLAT)
         {
-            GeometryDataST::Annulus_Flat anf(o, n, radius_in, radius_out, arc);
+            GeometryDataST::Annulus_Flat anf(o, n, vx, vy,
+                                             radius_in, radius_out, arc);
             geometry_data.setAnnulus_Flat(anf);
         }
     }

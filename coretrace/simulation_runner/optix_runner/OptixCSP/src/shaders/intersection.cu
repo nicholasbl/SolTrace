@@ -624,6 +624,9 @@ extern "C" __global__ void __intersection__circle_flat()
     // Verify intersection distance and Report ray intersection point
     if (t > ray_tmin && t < ray_tmax)
     {
+        // Since everything is in global coordinates (e.g., the ray intersection coordinates),
+        // and  the circle is rotationally symmetric, we don't need to worry about 
+        // any rotation of the circle in local coordinates
         float3 p = ray_orig + ray_dir * t;
         float d = length(p - circ.center);
         if (d <= circ.r)
@@ -652,34 +655,35 @@ extern "C" __global__ void __intersection__hexagon_flat()
     // Verify intersection distance and Report ray intersection point
     if (t > ray_tmin && t < ray_tmax)
     {
-        // TODO: Need to adjust for possible rotation...
         bool is_in = false;
         float3 p = ray_orig + ray_dir * t - hex.center;
-        // float d = length(p - circ.center);
-        float s = hex.s;
-        float xl = 0.5f * s;
-        float yl = 0.5f * sqrtf(3.0f) * s;
-        if (-xl <= p.x && p.x <= xl && -yl <= p.y && p.y <= yl)
+        // Project onto the local x and y axes which are unit vectors
+        const float px = dot(p, hex.x_axis);
+        const float py = dot(p, hex.y_axis);
+        const float s = hex.s;
+        const float xl = 0.5f * s;
+        const float yl = 0.5f * sqrtf(3.0f) * s;
+        if (-xl <= px && px <= xl && -yl <= py && py <= yl)
         {
             // Center
             is_in = true;
         }
-        else if (-s <= p.x && p.x < xl)
+        else if (-s <= px && px < xl)
         {
             // Left side
-            float y1 = sqrtf(3.0f) * (p.x + s);
+            float y1 = sqrtf(3.0f) * (px + s);
             float y2 = -y1;
-            if (y2 <= p.y && p.y <= y1)
+            if (y2 <= py && py <= y1)
             {
                 is_in = true;
             }
         }
-        else if (xl < p.x && p.x <= s)
+        else if (xl < px && px <= s)
         {
             // Right side
-            float y1 = sqrtf(3.0f) * (p.x - s);
+            float y1 = sqrtf(3.0f) * (px - s);
             float y2 = -y1;
-            if (y1 <= p.y && p.y <= y2)
+            if (y1 <= py && py <= y2)
             {
                 is_in = true;
             }
@@ -716,7 +720,9 @@ extern "C" __global__ void __intersection__annulus_flat()
         float d = length(p);
         if (anf.ri <= d && d <= anf.ro)
         {
-            float theta = atan2f(p.y, p.x);
+            float px = dot(p, anf.x_axis);
+            float py = dot(p, anf.y_axis);
+            float theta = atan2f(py, px);
             if (fabsf(theta) <= 0.5f * anf.arc)
             {
                 optixReportIntersection(t,

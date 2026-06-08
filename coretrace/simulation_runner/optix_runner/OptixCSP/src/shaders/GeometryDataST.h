@@ -25,7 +25,7 @@ namespace OptixCSP
             QUADRILATERAL_FLAT = 6,
             CIRCLE_FLAT = 7,
             HEXAGON_FLAT = 8,
-	    ANNULUS_FLAT = 9
+            ANNULUS_FLAT = 9
         };
 
         struct Parallelogram
@@ -40,10 +40,10 @@ namespace OptixCSP
                 this->v2 *= 1.0f / dot(v2, v2);
                 plane = make_float4(normal, d);
             }
-            float4 plane;
-            float3 v1;
-            float3 v2;
-            float3 anchor;
+            float4 plane;  // plane equation: (normal, dot(anchor, normal))
+            float3 v1;     // edge vector 1, stored as v1/dot(v1,v1)
+            float3 v2;     // edge vector 2, stored as v2/dot(v2,v2)
+            float3 anchor; // corner point of the parallelogram
         };
 
         // same as parallelogram, however defined with different attributes
@@ -58,12 +58,12 @@ namespace OptixCSP
                 plane = make_float4(normal, d);
             }
 
-            float4 plane;
-            float3 center;
-            float3 x;
-            float3 y;
-            float width;
-            float height;
+            float4 plane;  // normal unit vector, dot(center, normal)
+            float3 center; // center in global coordinates
+            float3 x;      // local x axis unit vector
+            float3 y;      // local y axis unit vector
+            float width;   // full width along x
+            float height;  // full height along y
         };
 
         struct Cylinder_Y
@@ -75,11 +75,11 @@ namespace OptixCSP
                 assert(dot(base_x, base_z) < 1e-3f);
             }
 
-            float3 center;
-            float radius;
-            float half_height;
-            float3 base_x; // x axis of the cylinder
-            float3 base_z; // z axis of the cylinder
+            float3 center;      // center of the cylinder in global coordinates
+            float radius;       // radius
+            float half_height;  // half the height along the local y axis
+            float3 base_x;      // x axis of the cylinder
+            float3 base_z;      // z axis of the cylinder
         };
 
         struct Rectangle_Parabolic
@@ -96,13 +96,13 @@ namespace OptixCSP
                 plane = make_float4(normal, d);
             }
 
-            float4 plane;
-            float3 v1;
-            float3 v2;
-            float3 anchor;
+            float4 plane;  // plane equation of the base rectangle: (normal, dot(anchor, normal))
+            float3 v1;     // edge vector 1, stored as v1/dot(v1,v1)
+            float3 v2;     // edge vector 2, stored as v2/dot(v2,v2)
+            float3 anchor; // corner point of the base rectangle
             // float3 focus;
-            float curv_x;
-            float curv_y;
+            float curv_x;  // curvature along local x axis
+            float curv_y;  // curvature along local y axis
         };
 
         struct Triangle_Flat
@@ -116,8 +116,8 @@ namespace OptixCSP
             }
             float3 v0;     // base vertex
             float3 e1, e2; // edges
-            float3 normal;
-            float d; // plane distance
+            float3 normal; // normal unit vector
+            float d;       // plane distance
         };
 
         struct Quadrilateral_Flat
@@ -142,40 +142,51 @@ namespace OptixCSP
             Circle_Flat(const float3 &origin, const float3 &normal, const float &radius)
                 : r(radius), center(origin)
             {
-                plane = make_float4(normalize(normal), dot(center, normal));
+                const float3 n = normalize(normal);
+                plane = make_float4(n, dot(center, n));
             }
-            float4 plane;
-            float3 center;
-            float r;
+            float4 plane;    // normal unit vector, dot(center, normal)
+            float3 center;   // local origin in global coordinates
+            float r;         // radius
         };
 
         struct Hexagon_Flat
         {
             Hexagon_Flat() = default;
-            Hexagon_Flat(const float3 &origin, const float3 &normal, const float &side_length)
-                : s(side_length), center(origin)
+            Hexagon_Flat(const float3 &origin, const float3 &normal,
+                         const float3 &x_ax, const float3 &y_ax,
+                         const float &side_length)
+                : center(origin), x_axis(x_ax), y_axis(y_ax), s(side_length)
             {
-                plane = make_float4(normalize(normal), dot(center, normal));
+                const float3 n = normalize(normal);
+                plane = make_float4(n, dot(center, n));
             }
-            float4 plane;
-            float3 center;
-            float s;
+            float4 plane;  // normal unit vector, dot(center, normal)
+            float3 center; // local origin in global coordinates
+            float3 x_axis; // unit vector
+            float3 y_axis; // unit vector
+            float s;       // side length
         };
 
         struct Annulus_Flat
         {
             Annulus_Flat() = default;
             Annulus_Flat(const float3 &origin, const float3 &normal,
+                         const float3 &x_ax, const float3 &y_ax,
                          const float &r_inner, const float &r_outer, const float &arc)
-	      : center(origin), ri(r_inner), ro(r_outer), arc(arc)
+                : center(origin), x_axis(x_ax), y_axis(y_ax),
+                  ri(r_inner), ro(r_outer), arc(arc)
             {
-                plane = make_float4(normalize(normal), dot(center, normal));
+                const float3 n = normalize(normal);
+                plane = make_float4(n, dot(center, n));
             }
-            float4 plane;
-            float3 center;
-            float ri;
-            float ro;
-	  float arc; // Arc angle in radians with x-axis in the middle
+            float4 plane;  // normal unit vector, dot(center, normal)
+            float3 center; // local origin in global coordinates
+            float3 x_axis; // local x axis unit vector (arc is centered about this axis)
+            float3 y_axis; // local y axis unit vector
+            float ri;      // inner radius
+            float ro;      // outer radius
+            float arc;     // total arc angle in radians, centered on x_axis
         };
 
         GeometryDataST() = default;
