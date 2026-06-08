@@ -6,13 +6,52 @@
 #include <simulation_result_export.hpp>
 #include <simulation_runner.hpp>
 
-using SolTrace::Runner::RunnerStatus;
 using SolTrace::Data::D2R;
+using SolTrace::Runner::RunnerStatus;
 
 const double Z_ELEM = 50.0;
 const double Z_BACKSTOP = Z_ELEM - 0.5 * Z_ELEM;
 const double TOL = 1e-6;
 const uint_fast64_t NRAYS = 10000;
+
+// Adapted from CspElement::set_bounding_box_local.
+// Computes the global axis-aligned bounding box for a local bounding box
+// transformed by a z-axis rotation (in degrees) and origin offset.
+static void compute_global_bounding_box(
+    const glm::dvec3 &lower_local,
+    const glm::dvec3 &upper_local,
+    double zrot_deg,             // z-axis rotation in degrees (local-to-global)
+    const glm::dvec3 &origin,
+    glm::dvec3 &lower_global,
+    glm::dvec3 &upper_global)
+{
+    const double cr = cos(zrot_deg * D2R);
+    const double sr = sin(zrot_deg * D2R);
+    // glm is column-major: columns are (cr, sr, 0), (-sr, cr, 0), (0, 0, 1)
+    const glm::dmat3 rotation(cr, sr, 0.0,
+                              -sr, cr, 0.0,
+                              0.0, 0.0, 1.0);
+    const glm::dvec3 c0 = lower_local;
+    const glm::dvec3 c7 = upper_local;
+    const glm::dvec3 corners[8] = {
+        rotation * glm::dvec3(c0[0], c0[1], c0[2]) + origin,
+        rotation * glm::dvec3(c0[0], c0[1], c7[2]) + origin,
+        rotation * glm::dvec3(c0[0], c7[1], c0[2]) + origin,
+        rotation * glm::dvec3(c7[0], c0[1], c0[2]) + origin,
+        rotation * glm::dvec3(c0[0], c7[1], c7[2]) + origin,
+        rotation * glm::dvec3(c7[0], c0[1], c7[2]) + origin,
+        rotation * glm::dvec3(c7[0], c7[1], c0[2]) + origin,
+        rotation * glm::dvec3(c7[0], c7[1], c7[2]) + origin,
+    };
+
+    lower_global = glm::dvec3(std::numeric_limits<double>::max());
+    upper_global = glm::dvec3(std::numeric_limits<double>::lowest());
+    for (const auto &c : corners)
+    {
+        lower_global = glm::min(lower_global, c);
+        upper_global = glm::max(upper_global, c);
+    }
+}
 
 element_id set_default_sd(SimulationData &sd,
                           surface_ptr surf,
@@ -46,10 +85,20 @@ element_id set_default_sd(SimulationData &sd,
     // Back stop element that is bigger than the created element so that the
     // testing element casts a shadow on this big thing.
     element_ptr stop = make_element<SingleElement>();
-    double xlb, xub, ylb, yub;
+    double xlb, xub, ylb, yub, zlb, zub;
     ap->bounding_box(xlb, xub, ylb, yub);
-    const double sx = std::max(fabs(xlb), fabs(xub)) + 2.0;
-    const double sy = std::max(fabs(ylb), fabs(yub)) + 2.0;
+    surf->bounding_box(xlb, xub, ylb, yub, zlb, zub);
+
+    // Transform local AABB into global AABB accounting for zrot
+    glm::dvec3 lower_global, upper_global;
+    compute_global_bounding_box(glm::dvec3(xlb, ylb, zlb),
+                                glm::dvec3(xub, yub, zub),
+                                rotation,
+                                glm::dvec3(0.0, 0.0, Z_ELEM),
+                                lower_global, upper_global);
+
+    const double sx = std::max(fabs(lower_global[0]), fabs(upper_global[0])) + 2.0;
+    const double sy = std::max(fabs(lower_global[1]), fabs(upper_global[1])) + 2.0;
     stop->set_origin(0, 0, Z_BACKSTOP);
     stop->set_aim_vector(0, 0, 100);
     stop->set_surface(make_surface<Flat>());
@@ -75,6 +124,8 @@ TEST(OptixRunner, FlatRectangle)
     auto surf = make_surface<Flat>();
     auto aper = make_aperture<Rectangle>(XL, YL);
 
+    uint_fast64_t fpos = 0, fneg = 0, hits = 0, misses = 0;
+
     SimulationData sd;
     element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
@@ -103,7 +154,7 @@ TEST(OptixRunner, FlatRectangle)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double lx = p1[0] * cos_rot - p1[1] * sin_rot;
         const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
@@ -112,6 +163,8 @@ TEST(OptixRunner, FlatRectangle)
             EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
             // And that we are in the aperture
             EXPECT_TRUE(aper->is_in(lx, ly));
+            ++hits;
+            if (!aper->is_in(lx, ly)) ++fpos;
         }
         else
         {
@@ -119,8 +172,15 @@ TEST(OptixRunner, FlatRectangle)
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
             // And that we are not in the aperture.
             EXPECT_FALSE(aper->is_in(lx, ly));
+            ++misses;
+            if (aper->is_in(lx, ly)) ++fneg;
         }
     }
+    EXPECT_GT(hits, 0u);
+    EXPECT_GT(misses, 0u);
+    std::cout << "hits: " << hits << ", misses: " << misses
+              << ", false positives: " << fpos
+              << ", false negatives: " << fneg << std::endl;
 }
 
 TEST(OptixRunner, FlatEquilateralTriangle)
@@ -130,6 +190,8 @@ TEST(OptixRunner, FlatEquilateralTriangle)
     auto surf = make_surface<Flat>();
     auto aper = make_aperture<EquilateralTriangle>(d);
 
+    uint_fast64_t fpos = 0, fneg = 0, hits = 0, misses = 0;
+
     SimulationData sd;
     element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
@@ -158,20 +220,29 @@ TEST(OptixRunner, FlatEquilateralTriangle)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double lx = p1[0] * cos_rot - p1[1] * sin_rot;
         const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
             EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
             EXPECT_TRUE(aper->is_in(lx, ly));
+            ++hits;
+            if (!aper->is_in(lx, ly)) ++fpos;
         }
         else
         {
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
             EXPECT_FALSE(aper->is_in(lx, ly));
+            ++misses;
+            if (aper->is_in(lx, ly)) ++fneg;
         }
     }
+    EXPECT_GT(hits, 0u);
+    EXPECT_GT(misses, 0u);
+    std::cout << "hits: " << hits << ", misses: " << misses
+              << ", false positives: " << fpos
+              << ", false negatives: " << fneg << std::endl;
 }
 
 TEST(OptixRunner, FlatTriangle)
@@ -182,6 +253,8 @@ TEST(OptixRunner, FlatTriangle)
     auto surf = make_surface<Flat>();
     auto aper = make_aperture<IrregularTriangle>(x1, y1, x2, y2, x3, y3);
 
+    uint_fast64_t fpos = 0, fneg = 0, hits = 0, misses = 0;
+
     SimulationData sd;
     element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
@@ -210,20 +283,29 @@ TEST(OptixRunner, FlatTriangle)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double lx = p1[0] * cos_rot - p1[1] * sin_rot;
         const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
             EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
             EXPECT_TRUE(aper->is_in(lx, ly));
+            ++hits;
+            if (!aper->is_in(lx, ly)) ++fpos;
         }
         else
         {
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
             EXPECT_FALSE(aper->is_in(lx, ly));
+            ++misses;
+            if (aper->is_in(lx, ly)) ++fneg;
         }
     }
+    EXPECT_GT(hits, 0u);
+    EXPECT_GT(misses, 0u);
+    std::cout << "hits: " << hits << ", misses: " << misses
+              << ", false positives: " << fpos
+              << ", false negatives: " << fneg << std::endl;
 }
 
 TEST(OptixRunner, FlatQuadrilateral)
@@ -236,6 +318,8 @@ TEST(OptixRunner, FlatQuadrilateral)
     auto aper = make_aperture<IrregularQuadrilateral>(
         x1, y1, x2, y2, x3, y3, x4, y4);
 
+    uint_fast64_t fpos = 0, fneg = 0, hits = 0, misses = 0;
+
     SimulationData sd;
     element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
@@ -264,20 +348,29 @@ TEST(OptixRunner, FlatQuadrilateral)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double lx = p1[0] * cos_rot - p1[1] * sin_rot;
         const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
             EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
             EXPECT_TRUE(aper->is_in(lx, ly));
+            ++hits;
+            if (!aper->is_in(lx, ly)) ++fpos;
         }
         else
         {
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
             EXPECT_FALSE(aper->is_in(lx, ly));
+            ++misses;
+            if (aper->is_in(lx, ly)) ++fneg;
         }
     }
+    EXPECT_GT(hits, 0u);
+    EXPECT_GT(misses, 0u);
+    std::cout << "hits: " << hits << ", misses: " << misses
+              << ", false positives: " << fpos
+              << ", false negatives: " << fneg << std::endl;
 }
 
 TEST(OptixRunner, ParabolaRectangle)
@@ -291,6 +384,8 @@ TEST(OptixRunner, ParabolaRectangle)
     auto surf = make_surface<Parabola>(FX, FY);
     auto aper = make_aperture<Rectangle>(XL, YL);
 
+    uint_fast64_t fpos = 0, fneg = 0, hits = 0, misses = 0;
+
     SimulationData sd;
     element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
@@ -319,7 +414,7 @@ TEST(OptixRunner, ParabolaRectangle)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double lx = p1[0] * cos_rot - p1[1] * sin_rot;
         const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
@@ -327,13 +422,22 @@ TEST(OptixRunner, ParabolaRectangle)
             const double z1 = Z_ELEM + 0.5 * CX * lx * lx + 0.5 * CY * ly * ly;
             EXPECT_NEAR(p1[2], z1, TOL * Z_ELEM) << "ray " << i;
             EXPECT_TRUE(aper->is_in(lx, ly));
+            ++hits;
+            if (!aper->is_in(lx, ly)) ++fpos;
         }
         else
         {
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
             EXPECT_FALSE(aper->is_in(lx, ly));
+            ++misses;
+            if (aper->is_in(lx, ly)) ++fneg;
         }
     }
+    EXPECT_GT(hits, 0u);
+    EXPECT_GT(misses, 0u);
+    std::cout << "hits: " << hits << ", misses: " << misses
+              << ", false positives: " << fpos
+              << ", false negatives: " << fneg << std::endl;
 }
 
 TEST(OptixRunner, Cylinder)
@@ -344,6 +448,8 @@ TEST(OptixRunner, Cylinder)
     auto surf = make_surface<Cylinder>(R);
     auto aper = make_aperture<Rectangle>(2 * R, YL);
 
+    uint_fast64_t fpos = 0, fneg = 0, hits = 0, misses = 0;
+
     SimulationData sd;
     element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
@@ -372,7 +478,7 @@ TEST(OptixRunner, Cylinder)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double lx = p1[0] * cos_rot - p1[1] * sin_rot;
         const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
@@ -380,21 +486,32 @@ TEST(OptixRunner, Cylinder)
             const double z1 = Z_ELEM + sqrt(R * R - lx * lx);
             EXPECT_NEAR(p1[2], z1, TOL * Z_ELEM) << "ray " << i;
             EXPECT_TRUE(aper->is_in(lx, ly));
+            ++hits;
+            if (!aper->is_in(lx, ly)) ++fpos;
         }
         else
         {
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
             EXPECT_FALSE(aper->is_in(lx, ly));
+            ++misses;
+            if (aper->is_in(lx, ly)) ++fneg;
         }
     }
+    EXPECT_GT(hits, 0u);
+    EXPECT_GT(misses, 0u);
+    std::cout << "hits: " << hits << ", misses: " << misses
+              << ", false positives: " << fpos
+              << ", false negatives: " << fneg << std::endl;
 }
 
 TEST(OptixRunner, FlatCircle)
 {
     const double R = 5.0;
-    const double ROT_DEG = 10.0;  // Should make no difference
+    const double ROT_DEG = 10.0; // Should make no difference
     auto surf = make_surface<Flat>();
     auto aper = make_aperture<Circle>(2 * R);
+
+    uint_fast64_t fpos = 0, fneg = 0, hits = 0, misses = 0;
 
     SimulationData sd;
     element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
@@ -427,13 +544,22 @@ TEST(OptixRunner, FlatCircle)
         {
             EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
             EXPECT_TRUE(aper->is_in(p1[0], p1[1]));
+            ++hits;
+            if (!aper->is_in(p1[0], p1[1])) ++fpos;
         }
         else
         {
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
             EXPECT_FALSE(aper->is_in(p1[0], p1[1]));
+            ++misses;
+            if (aper->is_in(p1[0], p1[1])) ++fneg;
         }
     }
+    EXPECT_GT(hits, 0u);
+    EXPECT_GT(misses, 0u);
+    std::cout << "hits: " << hits << ", misses: " << misses
+              << ", false positives: " << fpos
+              << ", false negatives: " << fneg << std::endl;
 }
 
 TEST(OptixRunner, FlatHexagon)
@@ -443,6 +569,8 @@ TEST(OptixRunner, FlatHexagon)
     auto surf = make_surface<Flat>();
     auto aper = make_aperture<Hexagon>(2 * S);
 
+    uint_fast64_t fpos = 0, fneg = 0, hits = 0, misses = 0;
+
     SimulationData sd;
     element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
@@ -471,30 +599,41 @@ TEST(OptixRunner, FlatHexagon)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double lx = p1[0] * cos_rot - p1[1] * sin_rot;
         const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
             EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
             EXPECT_TRUE(aper->is_in(lx, ly));
+            ++hits;
+            if (!aper->is_in(lx, ly)) ++fpos;
         }
         else
         {
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
             EXPECT_FALSE(aper->is_in(lx, ly));
+            ++misses;
+            if (aper->is_in(lx, ly)) ++fneg;
         }
     }
+    EXPECT_GT(hits, 0u);
+    EXPECT_GT(misses, 0u);
+    std::cout << "hits: " << hits << ", misses: " << misses
+              << ", false positives: " << fpos
+              << ", false negatives: " << fneg << std::endl;
 }
 
 TEST(OptixRunner, FlatAnnulus_FullArc)
 {
     const double R0 = 5.0;
     const double R1 = 180.0;
-    const double ARC = 2 * PI;
+    const double ARC = 360.0;
     const double ROT_DEG = -15.0; // Should make no difference
     auto surf = make_surface<Flat>();
     auto aper = make_aperture<Annulus>(R0, R1, ARC);
+
+    uint_fast64_t fpos = 0, fneg = 0, hits = 0, misses = 0;
 
     SimulationData sd;
     element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
@@ -527,23 +666,34 @@ TEST(OptixRunner, FlatAnnulus_FullArc)
         {
             EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
             EXPECT_TRUE(aper->is_in(p1[0], p1[1]));
+            ++hits;
+            if (!aper->is_in(p1[0], p1[1])) ++fpos;
         }
         else
         {
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
             EXPECT_FALSE(aper->is_in(p1[0], p1[1]));
+            ++misses;
+            if (aper->is_in(p1[0], p1[1])) ++fneg;
         }
     }
+    EXPECT_GT(hits, 0u);
+    EXPECT_GT(misses, 0u);
+    std::cout << "hits: " << hits << ", misses: " << misses
+              << ", false positives: " << fpos
+              << ", false negatives: " << fneg << std::endl;
 }
 
 TEST(OptixRunner, FlatAnnulus_PartialArc)
 {
     const double R0 = 5.0;
     const double R1 = 180.0;
-    const double ARC = 0.5 * PI;
+    const double ARC = 90.0;
     const double ROT_DEG = -15.0;
     auto surf = make_surface<Flat>();
     auto aper = make_aperture<Annulus>(R0, R1, ARC);
+
+    uint_fast64_t fpos = 0, fneg = 0, hits = 0, misses = 0;
 
     SimulationData sd;
     element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
@@ -573,19 +723,27 @@ TEST(OptixRunner, FlatAnnulus_PartialArc)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double lx = p1[0] * cos_rot - p1[1] * sin_rot;
         const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
             EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
             EXPECT_TRUE(aper->is_in(lx, ly));
+            ++hits;
+            if (!aper->is_in(lx, ly)) ++fpos;
         }
         else
         {
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
             EXPECT_FALSE(aper->is_in(lx, ly));
+            ++misses;
+            if (aper->is_in(lx, ly)) ++fneg;
         }
     }
+    EXPECT_GT(hits, 0u);
+    EXPECT_GT(misses, 0u);
+    std::cout << "hits: " << hits << ", misses: " << misses
+              << ", false positives: " << fpos
+              << ", false negatives: " << fneg << std::endl;
 }
-
