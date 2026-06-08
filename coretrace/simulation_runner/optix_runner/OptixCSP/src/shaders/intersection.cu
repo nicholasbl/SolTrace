@@ -847,8 +847,8 @@ extern "C" __global__ void __intersection__circle_parabolic()
                                            -cy * y_hit,
                                            1.0f));
     // Transform the normal back to world coordinates.
-    float3 world_normal = normalize(N_local.x * e1 +
-                                    N_local.y * e2 +
+    float3 world_normal = normalize(N_local.x * x_ax +
+                                    N_local.y * y_ax +
                                     N_local.z * n);
 
     // Compute the hit point in world space.
