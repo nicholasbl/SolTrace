@@ -1,11 +1,13 @@
 #include <gtest/gtest.h>
 
+#include <constants.hpp>
 #include <optix_runner.hpp>
 #include <simulation_data_export.hpp>
 #include <simulation_result_export.hpp>
 #include <simulation_runner.hpp>
 
 using SolTrace::Runner::RunnerStatus;
+using SolTrace::Data::D2R;
 
 const double Z_ELEM = 50.0;
 const double Z_BACKSTOP = Z_ELEM - 0.5 * Z_ELEM;
@@ -89,8 +91,8 @@ TEST(OptixRunner, FlatRectangle)
 
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
-    const double cos_rot = cos(ROT_DEG * PI / 180.0);
-    const double sin_rot = sin(ROT_DEG * PI / 180.0);
+    const double cos_rot = cos(ROT_DEG * D2R);
+    const double sin_rot = sin(ROT_DEG * D2R);
     for (int i = 0; i < (int)result.get_number_of_records(); ++i)
     {
         auto rr = result[i];
@@ -101,8 +103,8 @@ TEST(OptixRunner, FlatRectangle)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
-        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
+        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
@@ -144,8 +146,8 @@ TEST(OptixRunner, FlatEquilateralTriangle)
 
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
-    const double cos_rot = cos(ROT_DEG * PI / 180.0);
-    const double sin_rot = sin(ROT_DEG * PI / 180.0);
+    const double cos_rot = cos(ROT_DEG * D2R);
+    const double sin_rot = sin(ROT_DEG * D2R);
     for (int i = 0; i < (int)result.get_number_of_records(); ++i)
     {
         auto rr = result[i];
@@ -156,8 +158,8 @@ TEST(OptixRunner, FlatEquilateralTriangle)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
-        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
+        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
@@ -196,8 +198,8 @@ TEST(OptixRunner, FlatTriangle)
 
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
-    const double cos_rot = cos(ROT_DEG * PI / 180.0);
-    const double sin_rot = sin(ROT_DEG * PI / 180.0);
+    const double cos_rot = cos(ROT_DEG * D2R);
+    const double sin_rot = sin(ROT_DEG * D2R);
     for (int i = 0; i < (int)result.get_number_of_records(); ++i)
     {
         auto rr = result[i];
@@ -208,8 +210,8 @@ TEST(OptixRunner, FlatTriangle)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
-        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
+        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
@@ -250,8 +252,8 @@ TEST(OptixRunner, FlatQuadrilateral)
 
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
-    const double cos_rot = cos(ROT_DEG * PI / 180.0);
-    const double sin_rot = sin(ROT_DEG * PI / 180.0);
+    const double cos_rot = cos(ROT_DEG * D2R);
+    const double sin_rot = sin(ROT_DEG * D2R);
     for (int i = 0; i < (int)result.get_number_of_records(); ++i)
     {
         auto rr = result[i];
@@ -262,8 +264,8 @@ TEST(OptixRunner, FlatQuadrilateral)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
-        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
+        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
@@ -305,8 +307,8 @@ TEST(OptixRunner, ParabolaRectangle)
 
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
-    const double cos_rot = cos(ROT_DEG * PI / 180.0);
-    const double sin_rot = sin(ROT_DEG * PI / 180.0);
+    const double cos_rot = cos(ROT_DEG * D2R);
+    const double sin_rot = sin(ROT_DEG * D2R);
     for (int i = 0; i < (int)result.get_number_of_records(); ++i)
     {
         auto rr = result[i];
@@ -317,8 +319,8 @@ TEST(OptixRunner, ParabolaRectangle)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
-        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
+        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
@@ -358,8 +360,8 @@ TEST(OptixRunner, Cylinder)
 
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
-    const double cos_rot = cos(ROT_DEG * PI / 180.0);
-    const double sin_rot = sin(ROT_DEG * PI / 180.0);
+    const double cos_rot = cos(ROT_DEG * D2R);
+    const double sin_rot = sin(ROT_DEG * D2R);
     for (int i = 0; i < (int)result.get_number_of_records(); ++i)
     {
         auto rr = result[i];
@@ -370,8 +372,8 @@ TEST(OptixRunner, Cylinder)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
-        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
+        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
@@ -457,8 +459,8 @@ TEST(OptixRunner, FlatHexagon)
 
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
-    const double cos_rot = cos(ROT_DEG * PI / 180.0);
-    const double sin_rot = sin(ROT_DEG * PI / 180.0);
+    const double cos_rot = cos(ROT_DEG * D2R);
+    const double sin_rot = sin(ROT_DEG * D2R);
     for (int i = 0; i < (int)result.get_number_of_records(); ++i)
     {
         auto rr = result[i];
@@ -469,8 +471,8 @@ TEST(OptixRunner, FlatHexagon)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
-        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
+        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
@@ -559,8 +561,8 @@ TEST(OptixRunner, FlatAnnulus_PartialArc)
 
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
-    const double cos_rot = cos(ROT_DEG * PI / 180.0);
-    const double sin_rot = sin(ROT_DEG * PI / 180.0);
+    const double cos_rot = cos(ROT_DEG * D2R);
+    const double sin_rot = sin(ROT_DEG * D2R);
     for (int i = 0; i < (int)result.get_number_of_records(); ++i)
     {
         auto rr = result[i];
@@ -571,8 +573,8 @@ TEST(OptixRunner, FlatAnnulus_PartialArc)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
-        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
-        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
+        const double lx =  p1[0] * cos_rot - p1[1] * sin_rot;
+        const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
