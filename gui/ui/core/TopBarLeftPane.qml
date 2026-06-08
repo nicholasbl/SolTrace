@@ -14,9 +14,6 @@ RowLayout {
 
     spacing: 0
 
-    Binding { target: soltrace_logo; property: "visible"; value: root.show_logos }
-    Binding { target: prerel_logo; property: "visible"; value: root.show_logos }
-
     STIconButton {
         id: leftpanel_open
         Layout.preferredWidth: implicitWidth
@@ -41,6 +38,8 @@ RowLayout {
 
     Item {
         id: soltrace_logo
+        visible: root.show_logos
+
         Layout.fillWidth: true
         Layout.alignment: Qt.AlignVCenter
 
@@ -145,7 +144,7 @@ RowLayout {
     STClickableLabel {
         id: prerel_logo
 
-        visible: AppData.is_prerelease
+        visible: root.show_logos && AppData.is_prerelease
 
         Layout.alignment: Qt.AlignVCenter
         Layout.topMargin: 10

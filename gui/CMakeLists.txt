@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(SolTraceApp VERSION 0.1 LANGUAGES CXX)
+project(SolTraceApp VERSION 4.0.0 LANGUAGES CXX)
 
 include(cmake/CPM.cmake)
 

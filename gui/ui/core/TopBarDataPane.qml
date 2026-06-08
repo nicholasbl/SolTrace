@@ -252,7 +252,6 @@ Item {
             id: current_scene_label
 
             property bool is_active: App.view.workflow_phase === 0
-            property real animated_point_size: is_active ? 16 : 15
 
             Layout.fillHeight: true
 
@@ -262,8 +261,8 @@ Item {
             text: is_active ? "Configure: " + root.active_name : "Configure"
             elide: Label.ElideMiddle
 
-            font.bold: is_active
-            font.pointSize: animated_point_size
+            //font.bold: is_active
+            font.pointSize: 16
             opacity: is_active ? 1.0 : .50
 
             onClicked: {
@@ -271,13 +270,6 @@ Item {
                     data_pop.open()
                 } else {
                     App.view.workflow_phase = 0
-                }
-            }
-
-            Behavior on animated_point_size {
-                NumberAnimation {
-                    duration: 150
-                    easing.type: Easing.InOutQuad
                 }
             }
 
@@ -290,7 +282,7 @@ Item {
 
         STClickableLabel {
             id: swap_data_indicator
-            text: "\uf2f1"
+            text: "\uf0d7"
 
             font.family: "Font Awesome 7 Free"
 
@@ -319,7 +311,6 @@ Item {
             id: simulate_label
 
             property bool is_active: App.view.workflow_phase === 1
-            property real animated_point_size: is_active ? 16 : 15
 
             Layout.fillHeight: true
 
@@ -327,18 +318,11 @@ Item {
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
 
-            font.bold: is_active
-            font.pointSize: animated_point_size
+            //font.bold: is_active
+            font.pointSize: 16
             opacity: is_active ? 1.0 : .50
 
             onClicked: App.view.workflow_phase = 1
-
-            Behavior on animated_point_size {
-                NumberAnimation {
-                    duration: 150
-                    easing.type: Easing.InOutQuad
-                }
-            }
 
             Behavior on opacity {
                 NumberAnimation {
@@ -349,7 +333,7 @@ Item {
 
         STClickableLabel {
             id: swap_simulation_data_indicator
-            text: "\uf2f1"
+            text: "\uf0d7"
 
             font.family: "Font Awesome 7 Free"
 
@@ -377,16 +361,16 @@ Item {
             id: analyze_label
 
             property bool is_active: App.view.workflow_phase === 2
-            property real animated_point_size: is_active ? 16 : 15
 
             Layout.fillHeight: true
+
+            font.pointSize: 16
 
             text: is_active ? "Analyze: " + root.active_result_name : "Analyze"
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
 
-            font.bold: is_active
-            font.pointSize: animated_point_size
+            //font.bold: is_active
             opacity: is_active ? 1.0 : .50
 
             onClicked: {
@@ -394,13 +378,6 @@ Item {
                     results_pop.open()
                 } else {
                     App.view.workflow_phase = 2
-                }
-            }
-
-            Behavior on animated_point_size {
-                NumberAnimation {
-                    duration: 150
-                    easing.type: Easing.InOutQuad
                 }
             }
 
@@ -413,7 +390,7 @@ Item {
 
         STClickableLabel {
             id: swap_results_indicator
-            text: "\uf2f1"
+            text: "\uf0d7"
 
             font.family: "Font Awesome 7 Free"
 
