@@ -85,6 +85,28 @@ void SimulationModule::job_done() {
     emit new_results(results);
 }
 
+void SimulationModule::job_failed(QString const& message) {
+    qDebug() << Q_FUNC_INFO << message;
+
+    auto* from = qobject_cast<RunningJob*>(sender());
+    if (!from) {
+        qCritical() << Q_FUNC_INFO << "bad cast";
+        return;
+    }
+
+    if (m_running != from) {
+        qCritical() << Q_FUNC_INFO << m_running << from;
+        return;
+    }
+
+    set_is_running(false);
+    m_running = nullptr;
+    set_progress(0);
+    set_current_stage("Idle");
+
+    emit notify(ANotification::error(message));
+}
+
 SimulationModule::SimulationModule(QObject* parent)
     : QObject { parent },
       m_status(new StatusComponent(this)),
@@ -160,7 +182,10 @@ void SimulationModule::run() {
     connect(
         m_running, &RunningJob::finished, this, &SimulationModule::job_done);
     connect(
+        m_running, &RunningJob::error, this, &SimulationModule::job_failed);
+    connect(
         m_running, &RunningJob::finished, m_running, &RunningJob::deleteLater);
+    connect(m_running, &RunningJob::error, m_running, &RunningJob::deleteLater);
     connect(this, &QObject::destroyed, m_running, &RunningJob::cancel);
 
     set_is_running(true);

@@ -43,6 +43,8 @@ RowLayout {
         Layout.fillWidth: true
         Layout.alignment: Qt.AlignVCenter
 
+        Layout.rightMargin: 10
+
         implicitWidth: logo_content.implicitWidth
         implicitHeight: logo_content.implicitHeight
 
@@ -98,6 +100,24 @@ RowLayout {
                     font.capitalization: Font.SmallCaps
                 }
 
+                STClickableLabel {
+                    id: prerel_logo
+
+                    visible: AppData.is_prerelease
+
+                    //anchors.bottom: parent.bottom
+                    //anchors.left: parent.left
+
+                    text: "\uf071"
+                    font.pointSize: 24
+                    font.family: "Font Awesome 7 Free"
+
+                    style: Label.Outline
+                    styleColor: "black"
+
+                    color: Material.color(Material.Yellow)
+                }
+
                 Item { Layout.preferredWidth: 2 }
             }
 
@@ -121,6 +141,7 @@ RowLayout {
             contentWidth: 280
 
             ColumnLayout {
+                anchors.fill: parent
                 spacing: 6
 
                 Label {
@@ -134,6 +155,15 @@ RowLayout {
                 Label {
                     Layout.fillWidth: true
 
+                    color: Material.color(Material.Yellow)
+
+                    text: "This version of SolTrace is intended for testing and evaluation. Features, file formats, and simulation behavior may change before the final release. Verify important results with a stable release before using them for production work."
+                    wrapMode: Label.WrapAtWordBoundaryOrAnywhere
+                }
+
+                Label {
+                    Layout.fillWidth: true
+
                     text: AppData.current_build_info
                     wrapMode: Label.WrapAtWordBoundaryOrAnywhere
                 }
@@ -141,50 +171,6 @@ RowLayout {
         }
     }
 
-    STClickableLabel {
-        id: prerel_logo
 
-        visible: root.show_logos && AppData.is_prerelease
-
-        Layout.alignment: Qt.AlignVCenter
-        Layout.topMargin: 10
-        Layout.rightMargin: 10
-
-        text: "BETA"
-        font.pointSize: 10
-        font.family: "CMU Serif"
-        font.bold: true
-        font.italic: true
-
-        color: Material.color(Material.Yellow)
-
-        onClicked: beta_pop.open()
-
-        STPopup {
-            id: beta_pop
-
-            contentWidth: 280
-
-            ColumnLayout {
-                anchors.fill: parent
-                spacing: 6
-
-                Label {
-                    Layout.fillWidth: true
-
-                    text: "Pre-release build"
-                    font.bold: true
-                    wrapMode: Label.WrapAtWordBoundaryOrAnywhere
-                }
-
-                Label {
-                    Layout.fillWidth: true
-
-                    text: "This version of SolTrace is intended for testing and evaluation. Features, file formats, and simulation behavior may change before the final release. Verify important results with a stable release before using them for production work."
-                    wrapMode: Label.WrapAtWordBoundaryOrAnywhere
-                }
-            }
-        }
-    }
 
 }

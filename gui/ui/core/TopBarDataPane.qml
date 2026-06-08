@@ -269,6 +269,7 @@ Item {
                 if (App.view.workflow_phase === 0) {
                     data_pop.open()
                 } else {
+                    App.view.simulation_content_view = false
                     App.view.workflow_phase = 0
                 }
             }
@@ -322,7 +323,10 @@ Item {
             font.pointSize: 16
             opacity: is_active ? 1.0 : .50
 
-            onClicked: App.view.workflow_phase = 1
+            onClicked: {
+                App.view.simulation_content_view = false
+                App.view.workflow_phase = 1
+            }
 
             Behavior on opacity {
                 NumberAnimation {
@@ -377,6 +381,7 @@ Item {
                 if (App.view.workflow_phase === 2) {
                     results_pop.open()
                 } else {
+                    App.view.simulation_content_view = true
                     App.view.workflow_phase = 2
                 }
             }

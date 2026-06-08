@@ -43,6 +43,7 @@ class SimulationModule : public QObject {
 
 private slots:
     void job_done();
+    void job_failed(QString const& message);
     void update_result_world(db::SimulationResultPtr);
 
 public:
