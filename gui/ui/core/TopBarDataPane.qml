@@ -1,19 +1,24 @@
+import QtCore
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
+import QtQuick.Dialogs
 
 import SolTrace
 
 Item {
     id: root
 
+    implicitWidth: mode_row.implicitWidth + mode_row.anchors.leftMargin
+                   + mode_row.anchors.rightMargin
+    implicitHeight: mode_row.implicitHeight
+
     property int last_db_count: AppData.file_source.rowCount()
     property bool highlighted: false
-
-    function mode_width(is_active) {
-        return mode_row.mode_control_width * (is_active ? 2 : 1)
-    }
+    readonly property string active_name: App.file_source.current_database ?
+                                             App.file_source.current_database.name : "None"
+    readonly property string active_result_name: App.simulation.current_simulation_result_name
 
     function flash_added_data() {
         flash_highlight_animation.restart()
@@ -27,13 +32,6 @@ Item {
         anchors.rightMargin: 20
 
         spacing: 8
-
-        readonly property real separator_width: configure_separator.implicitWidth
-                                                + analyze_separator.implicitWidth
-        readonly property real mode_control_width: Math.max(
-                                                       60,
-                                                       (width - separator_width
-                                                        - spacing * 4) / 4)
 
         Connections {
             target: AppData.file_source
@@ -74,69 +72,231 @@ Item {
             }
         }
 
-        Item {
-            id: configure_mode
-            property bool is_active: App.view.workflow_phase === 0
-            property real preferred_width: root.mode_width(is_active)
+        STClickableLabel {
+            id: file_label
 
             Layout.fillHeight: true
-            Layout.preferredWidth: preferred_width
-            Layout.minimumWidth: 90
+            Layout.leftMargin: 4
+            Layout.rightMargin: 4
 
-            Behavior on preferred_width {
+            borderWidth: 0
+
+            text: "File"
+            font.pointSize: 16
+            horizontalAlignment: Qt.AlignHCenter
+            verticalAlignment: Qt.AlignVCenter
+
+            onClicked: file_menu.open()
+
+            STMenu {
+                id: file_menu
+                MenuItem {
+                    text: "New"
+                    onClicked: App.file_source.load_new()
+
+                    enabled: !AppData.file_source.is_loading
+                }
+                MenuItem {
+                    text: "Open"
+                    onClicked: openFileDialog.open()
+
+                    enabled: !AppData.file_source.is_loading
+                }
+
+                STMenu {
+                    id: recents_menu
+                    title: qsTr("Recent Files")
+                    enabled: recent_instantiator.count > 0
+
+                    Instantiator {
+                        id: recent_instantiator
+                        model: file_settings.recent_files
+
+                        delegate: MenuItem {
+                            // Show file name only. Settings may restore
+                            // entries as strings or QUrl-like values, so
+                            // normalize before doing string operations.
+                            text: file_settings.file_name(modelData)
+                            onTriggered: {
+                                file_menu.dismiss()
+                                var file_url = file_settings.file_url_text(modelData)
+                                file_settings.add_files(file_url)
+                                App.file_source.load_url(Qt.url(file_url))
+                            }
+                        }
+
+                        onObjectAdded: (index, object) => recents_menu.insertItem(index, object)
+                        onObjectRemoved: (index, object) => recents_menu.removeItem(object)
+                    }
+
+                    MenuSeparator {
+                        visible: recent_instantiator.count > 0
+                    }
+
+                    MenuItem {
+                        text: qsTr("Clear Menu")
+                        onTriggered: file_settings.clear_recent_files()
+                    }
+                }
+
+                MenuItem {
+                    text: "Save"
+
+                    enabled: !AppData.file_source.is_loading
+                }
+            }
+
+            QtObject {
+                id: file_settings
+
+                property var recent_files: []
+                property url last_selected_file: ""
+                property url last_selected_folder: StandardPaths.standardLocations(
+                                                       StandardPaths.DocumentsLocation)[0]
+
+                function file_url_text(file_path) {
+                    return String(file_path)
+                }
+
+                function file_name(file_path) {
+                    var file_url = file_url_text(file_path)
+                    return decodeURIComponent(file_url.split('/').pop())
+                }
+
+                function recent_files_array() {
+                    var files = []
+
+                    if (!recent_files) {
+                        return files
+                    }
+
+                    for (var i = 0; i < recent_files.length; ++i) {
+                        files.push(file_url_text(recent_files[i]))
+                    }
+
+                    return files
+                }
+
+                function set_recent_files(files) {
+                    recent_files = files
+                }
+
+                function clear_recent_files() {
+                    set_recent_files([])
+                }
+
+                function add_files(file_path) {
+                    var normalized_file_path = file_url_text(file_path)
+                    var files = recent_files_array()
+                    var index = files.indexOf(normalized_file_path)
+
+                    if (index !== -1) {
+                        files.splice(index, 1)
+                    }
+
+                    files.unshift(normalized_file_path)
+
+                    if (files.length > 5) {
+                        files.pop()
+                    }
+
+                    // Assign a fresh array so the Instantiator model
+                    // receives a change notification.
+                    set_recent_files(files)
+                }
+            }
+
+            Settings {
+                id: file_settings_storage
+
+                category: "file_history"
+
+                property alias recent_files: file_settings.recent_files
+                property alias last_selected_file: file_settings.last_selected_file
+                property alias last_selected_folder: file_settings.last_selected_folder
+            }
+
+            FileDialog {
+                id: openFileDialog
+
+                currentFolder: file_settings.last_selected_folder
+                selectedFile: file_settings.last_selected_file
+
+                onAccepted: {
+                    var str_file = String(selectedFile)
+
+                    file_settings.last_selected_file = selectedFile
+                    file_settings.last_selected_folder = str_file.substring(0, str_file.lastIndexOf("/"))
+                    file_settings.add_files(selectedFile.toString())
+                    App.file_source.load_url(selectedFile)
+                }
+            }
+        }
+
+        Label {
+            id: file_separator
+
+            Layout.leftMargin: 4
+            Layout.rightMargin: 4
+            Layout.alignment: Qt.AlignVCenter
+
+            font.family: "Font Awesome 7 Free"
+            text: "\uf101"
+
+            property bool highlight: current_scene_label.is_active
+
+            opacity: highlight ? 1.0 : .50
+        }
+
+        STClickableLabel {
+            id: current_scene_label
+
+            property bool is_active: App.view.workflow_phase === 0
+            property real animated_point_size: is_active ? 16 : 15
+
+            Layout.fillHeight: true
+
+            horizontalAlignment: Qt.AlignHCenter
+            verticalAlignment: Qt.AlignVCenter
+
+            text: is_active ? "Configure: " + root.active_name : "Configure"
+            elide: Label.ElideMiddle
+
+            font.bold: is_active
+            font.pointSize: animated_point_size
+            opacity: is_active ? 1.0 : .50
+
+            onClicked: {
+                if (App.view.workflow_phase === 0) {
+                    data_pop.open()
+                } else {
+                    App.view.workflow_phase = 0
+                }
+            }
+
+            Behavior on animated_point_size {
                 NumberAnimation {
-                    duration: 250
-                    easing.type: Easing.OutElastic
+                    duration: 150
+                    easing.type: Easing.InOutQuad
                 }
             }
 
-            RowLayout {
-                anchors.fill: parent
-                spacing: 4
-
-                STClickableLabel {
-                    id: current_scene_label
-
-                    property string active_name: App.file_source.current_database ?
-                                                     App.file_source.current_database.name : "None"
-                    property real animated_point_size: configure_mode.is_active ? 16 : 15
-
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    Layout.minimumWidth: 0
-
-                    horizontalAlignment: Qt.AlignHCenter
-                    verticalAlignment: Qt.AlignVCenter
-
-                    text: configure_mode.is_active ? "Editing: " + active_name : "Configure"
-                    elide: Label.ElideMiddle
-
-                    font.bold: configure_mode.is_active
-                    font.pointSize: animated_point_size
-                    opacity: configure_mode.is_active ? 1.0 : .50
-
-                    onClicked: {
-                        if (App.view.workflow_phase === 0) {
-                            data_pop.open()
-                        } else {
-                            App.view.workflow_phase = 0
-                        }
-                    }
-
-                    Behavior on animated_point_size {
-                        NumberAnimation {
-                            duration: 150
-                            easing.type: Easing.InOutQuad
-                        }
-                    }
-
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: 150
-                        }
-                    }
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 150
                 }
             }
+        }
+
+        STClickableLabel {
+            id: swap_data_indicator
+            text: "\uf2f1"
+
+            font.family: "Font Awesome 7 Free"
+
+            visible: App.view.workflow_phase === 0
+
+            onClicked: data_pop.open()
         }
 
         Label {
@@ -149,60 +309,53 @@ Item {
             font.family: "Font Awesome 7 Free"
             text: "\uf101"
 
-            property bool highlight: configure_mode.is_active || simulate_mode.is_active
+            property bool highlight: current_scene_label.is_active || simulate_label.is_active
 
             opacity: highlight ? 1.0 : .50
 
         }
 
-        Item {
-            id: simulate_mode
+        STClickableLabel {
+            id: simulate_label
+
             property bool is_active: App.view.workflow_phase === 1
-            property real preferred_width: root.mode_width(is_active)
+            property real animated_point_size: is_active ? 16 : 15
 
             Layout.fillHeight: true
-            Layout.preferredWidth: preferred_width
-            Layout.minimumWidth: 80
 
-            Behavior on preferred_width {
+            text: is_active ? "Simulate: " + root.active_name : "Simulate"
+            horizontalAlignment: Qt.AlignHCenter
+            verticalAlignment: Qt.AlignVCenter
+
+            font.bold: is_active
+            font.pointSize: animated_point_size
+            opacity: is_active ? 1.0 : .50
+
+            onClicked: App.view.workflow_phase = 1
+
+            Behavior on animated_point_size {
                 NumberAnimation {
-                    duration: 250
-                    easing.type: Easing.OutElastic
+                    duration: 150
+                    easing.type: Easing.InOutQuad
                 }
             }
 
-
-
-            STClickableLabel {
-                id: simulate_label
-
-                property real animated_point_size: simulate_mode.is_active ? 16 : 15
-
-                anchors.fill: parent
-
-                text: "Simulate"
-                horizontalAlignment: Qt.AlignHCenter
-                verticalAlignment: Qt.AlignVCenter
-
-                font.bold: simulate_mode.is_active
-                font.pointSize: animated_point_size
-                opacity: simulate_mode.is_active ? 1.0 : .50
-
-                onClicked: App.view.workflow_phase = 1
-
-                Behavior on animated_point_size {
-                    NumberAnimation {
-                        duration: 150
-                        easing.type: Easing.InOutQuad
-                    }
-                }
-
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 150
-                    }
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 150
                 }
             }
+        }
+
+        STClickableLabel {
+            id: swap_simulation_data_indicator
+            text: "\uf2f1"
+
+            font.family: "Font Awesome 7 Free"
+
+            visible: App.view.workflow_phase === 1
+
+            onClicked: data_pop.open()
         }
 
         Label {
@@ -215,70 +368,58 @@ Item {
             font.family: "Font Awesome 7 Free"
             text: "\uf101"
 
-            property bool highlight: analyze_mode.is_active || simulate_mode.is_active
+            property bool highlight: analyze_label.is_active || simulate_label.is_active
 
             opacity: highlight ? 1.0 : .50
         }
 
-        Item {
-            id: analyze_mode
+        STClickableLabel {
+            id: analyze_label
+
             property bool is_active: App.view.workflow_phase === 2
-            property real preferred_width: root.mode_width(is_active)
+            property real animated_point_size: is_active ? 16 : 15
 
             Layout.fillHeight: true
-            Layout.preferredWidth: preferred_width
-            Layout.minimumWidth: 80
 
-            Behavior on preferred_width {
+            text: is_active ? "Analyze: " + root.active_result_name : "Analyze"
+            horizontalAlignment: Qt.AlignHCenter
+            verticalAlignment: Qt.AlignVCenter
+
+            font.bold: is_active
+            font.pointSize: animated_point_size
+            opacity: is_active ? 1.0 : .50
+
+            onClicked: {
+                if (App.view.workflow_phase === 2) {
+                    results_pop.open()
+                } else {
+                    App.view.workflow_phase = 2
+                }
+            }
+
+            Behavior on animated_point_size {
                 NumberAnimation {
-                    duration: 250
-                    easing.type: Easing.OutElastic
+                    duration: 150
+                    easing.type: Easing.InOutQuad
                 }
             }
 
-            RowLayout {
-                anchors.fill: parent
-                spacing: 4
-
-                STClickableLabel {
-                    id: analyze_label
-
-                    property real animated_point_size: analyze_mode.is_active ? 16 : 15
-
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    Layout.minimumWidth: 0
-
-                    text: "Analyze"
-                    horizontalAlignment: Qt.AlignHCenter
-                    verticalAlignment: Qt.AlignVCenter
-
-                    font.bold: analyze_mode.is_active
-                    font.pointSize: animated_point_size
-                    opacity: analyze_mode.is_active ? 1.0 : .50
-
-                    onClicked: {
-                        if (App.view.workflow_phase === 2) {
-                            data_pop.open()
-                        } else {
-                            App.view.workflow_phase = 2
-                        }
-                    }
-
-                    Behavior on animated_point_size {
-                        NumberAnimation {
-                            duration: 150
-                            easing.type: Easing.InOutQuad
-                        }
-                    }
-
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: 150
-                        }
-                    }
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 150
                 }
             }
+        }
+
+        STClickableLabel {
+            id: swap_results_indicator
+            text: "\uf2f1"
+
+            font.family: "Font Awesome 7 Free"
+
+            visible: App.view.workflow_phase === 2
+
+            onClicked: results_pop.open()
         }
 
     }
