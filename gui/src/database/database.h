@@ -122,6 +122,8 @@ public:
 
     ComponentAPIUpdate<ColorComponent> color;
 
+    ComponentAPI<HasFluxMapComponent> flux_map;
+
     SingletonComponentAPI<DatabaseNameResource> database_name_resource;
     SingletonComponentAPI<RaySourceResource>    ray_source_resource;
     SingletonComponentAPI<SD::SimulationParameters>

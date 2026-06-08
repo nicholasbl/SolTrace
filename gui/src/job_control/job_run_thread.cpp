@@ -186,9 +186,11 @@ void execute_thread_runner(QPromise<SimResult>&      promise,
         switch (run_result) {
         case SolTrace::Runner::RunnerStatus::CANCEL:
             promise.setProgressValueAndText(100, "Cancelled");
+            promise.emplaceResult(QStringLiteral("Cancelled"));
             return;
         case SolTrace::Runner::RunnerStatus::ERROR:
             promise.setProgressValueAndText(100, "Run failed");
+            promise.emplaceResult(QStringLiteral("Run failed"));
             return;
         case SolTrace::Runner::RunnerStatus::RUNNING:
             // we really shouldnt get here
@@ -197,9 +199,11 @@ void execute_thread_runner(QPromise<SimResult>&      promise,
         case SolTrace::Runner::RunnerStatus::SUCCESS: break;
         case SolTrace::Runner::RunnerStatus::TIMEOUT:
             promise.setProgressValueAndText(100, "Run failed: timeout");
+            promise.emplaceResult(QStringLiteral("Run failed: timeout"));
             return;
         default:
             promise.setProgressValueAndText(100, "Run failed: unknown");
+            promise.emplaceResult(QStringLiteral("Run failed: unknown"));
             return;
         }
 

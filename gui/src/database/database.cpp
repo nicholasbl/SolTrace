@@ -305,6 +305,7 @@ Database::Database(QString database_name, QObject* p)
       tag_membership(m_registry),
       selected(m_registry),
       color(m_registry),
+      flux_map(m_registry),
       database_name_resource(m_registry),
       ray_source_resource(m_registry),
       simulation_parameters_resource(m_registry) {

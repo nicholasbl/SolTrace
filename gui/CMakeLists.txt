@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(SolTraceApp VERSION 0.1 LANGUAGES CXX)
+project(SolTraceApp VERSION 4.0.0 LANGUAGES CXX)
 
 include(cmake/CPM.cmake)
 
@@ -13,6 +13,7 @@ set(SOLTRACE_GIT_BRANCH "unknown")
 set(SOLTRACE_GIT_TAG "")
 set(SOLTRACE_GIT_DESCRIBE "unknown")
 set(SOLTRACE_GIT_DIRTY "unknown")
+set(SOLTRACE_IS_PRERELEASE ON)
 
 if(Git_FOUND)
     execute_process(

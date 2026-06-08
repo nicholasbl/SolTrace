@@ -163,6 +163,33 @@ ScrollView {
         STPropertyPanel {
             Layout.fillWidth: true
 
+            title: "Build Info"
+            collapsed: false
+
+            ColumnLayout {
+                spacing: 6
+
+                Label {
+                    Layout.fillWidth: true
+                    text: AppData.current_version_info
+                    font.bold: true
+                    elide: Text.ElideRight
+                }
+
+                STClickableLabel {
+                    Layout.fillWidth: true
+                    text: "Copy build info to clipboard"
+                    color: Material.accentColor
+                    borderWidth: 0
+
+                    onClicked: AppData.copy_build_info_to_clipboard()
+                }
+            }
+        }
+
+        STPropertyPanel {
+            Layout.fillWidth: true
+
             title: "Inline Documentation"
             collapsed: false
 

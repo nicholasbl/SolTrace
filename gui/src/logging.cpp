@@ -2,12 +2,14 @@
 
 #include "app_build_info.h"
 
+#include <QDesktopServices>
 #include <QDir>
 #include <QFile>
 #include <QMutex>
 #include <QMutexLocker>
 #include <QStandardPaths>
 #include <QTextStream>
+#include <QUrl>
 
 #include <memory>
 
@@ -37,6 +39,13 @@ LogList::~LogList() { }
 void LogList::append_line(QString string) {
     this->append(LogRecord { .content = string });
     spin_off();
+}
+
+bool LogList::open_log_directory() {
+    if (m_log_directory.isEmpty()) return false;
+
+    QDir().mkpath(m_log_directory);
+    return QDesktopServices::openUrl(QUrl::fromLocalFile(m_log_directory));
 }
 
 // =============================================================================
@@ -115,6 +124,7 @@ LogList* initialize_logging_handler() {
 
 
     CURRENT_LOG_LIST = std::make_unique<LogList>();
+    CURRENT_LOG_LIST->set_log_directory(log_dir_path);
 
     qInstallMessageHandler(fileMessageHandler);
 

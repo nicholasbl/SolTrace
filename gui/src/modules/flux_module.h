@@ -28,6 +28,7 @@ class FluxModule : public QObject {
     db::SimulationResultPtr m_results;
 
     QOBJECT_READONLY_PROPERTY(db::AllElementsModel, entity_model);
+    QOBJECT_READONLY_PROPERTY(db::AllComputedMapsModel, computed_maps_model);
     QOBJECT_READONLY_PROPERTY(db::PendingFluxMapModel, pending_flux_maps);
     QOBJECT_READONLY_PROPERTY(db::FluxMapWorldModel, flux_map_world_model);
 
@@ -37,6 +38,8 @@ class FluxModule : public QObject {
     Q_WRITABLE_PROPERTY(db::Entity, current_entity, {});
     Q_READONLY_PROPERTY(QString, current_entity_name);
     Q_READONLY_PROPERTY(analysis::BakedFluxMapStats, current_flux_stats);
+
+    Q_WRITABLE_PROPERTY(bool, show_flux_volume, true);
 
     // Hack
     Q_WRITABLE_PROPERTY(QString, current_image, {});

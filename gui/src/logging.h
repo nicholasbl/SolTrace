@@ -17,6 +17,7 @@ class LogList : public StructTableModel<LogRecord> {
     Q_OBJECT
 
     Q_WRITABLE_PROPERTY(quint32, max_line_count, 1000);
+    Q_READONLY_PROPERTY(QString, log_directory);
 
 private slots:
     void spin_off();
@@ -27,6 +28,9 @@ public:
 
 public slots:
     void append_line(QString);
+
+public:
+    Q_INVOKABLE bool open_log_directory();
 };
 
 LogList* initialize_logging_handler();

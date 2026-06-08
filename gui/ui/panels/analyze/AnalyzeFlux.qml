@@ -11,6 +11,24 @@ Flickable {
     property var left_panel_size: App.view.left_panel.size
     property var flux_module : AppData.flux
 
+    function formatCoordinate(value) {
+        if (!isFinite(value)) {
+            return "--"
+        }
+
+        return Number(value).toFixed(3)
+    }
+
+    function formatCentroid(centroid) {
+        if (!centroid) {
+            return "--"
+        }
+
+        return "(" + formatCoordinate(centroid.x) + ", "
+                   + formatCoordinate(centroid.y) + ", "
+                   + formatCoordinate(centroid.z) + ")"
+    }
+
     contentWidth: width
     contentHeight: content_column.implicitHeight
     clip: true
@@ -149,8 +167,9 @@ Flickable {
             }
 
             Label {
+                property vector3d cent: root.flux_module.current_flux_stats.centroid
                 Layout.fillWidth: true
-                text: root.flux_module.current_flux_stats.centroid
+                text: root.formatCentroid(cent)
                 font.bold: true
             }
         }
@@ -184,15 +203,33 @@ Flickable {
                 }
             }
 
+            STButton {
+                Layout.fillWidth: true
+                Layout.columnSpan: 2
+
+                text: "Enqueue Job"
+                text_icon: "\uf0da"
+
+                onClicked: {
+                    AppData.flux.start_generate()
+                }
+            }
+
+            STPropertySeparator {
+                title: "Computed Maps"
+                visible: existing_maps.count > 0
+            }
+
             ListView {
-                visible: false
+                id: existing_maps
+                visible: count > 0
                 Layout.columnSpan: 2
                 Layout.fillHeight: true
                 Layout.fillWidth: true
                 Layout.preferredHeight: 200
                 clip: true
 
-                model: AppData.flux.entity_model
+                model: AppData.flux.computed_maps_model
 
                 ScrollIndicator.vertical: ScrollIndicator { }
 
@@ -206,18 +243,6 @@ Flickable {
                     onClicked: {
                         AppData.flux.select_entity(delegate.entity)
                     }
-                }
-            }
-
-            STButton {
-                Layout.fillWidth: true
-                Layout.columnSpan: 2
-
-                text: "Enqueue Job"
-                text_icon: "\uf0da"
-
-                onClicked: {
-                    AppData.flux.start_generate()
                 }
             }
         }
@@ -253,13 +278,10 @@ Flickable {
                     AppData.flux.start_generate_volume_flux(resolution_spin.value)
                 }
             }
-        }
 
-        STPropertyPanel {
-            Layout.fillWidth: true
-
-            collapsible: true
-            title: "Flux Isosurface"
+            STPropertySeparator {
+                title: "Isosurface"
+            }
 
             STPropertyLabel {
                 text: "Isovalue"
@@ -287,6 +309,13 @@ Flickable {
                     AppData.flux.start_generate_isosurface(iso_spin.value)
                 }
             }
+
+            STSwitch {
+                text: "Visible"
+                checked: AppData.flux.show_flux_volume
+                onToggled: AppData.flux.show_flux_volume = checked
+            }
+
         }
     }
 }

@@ -49,7 +49,16 @@ ShadowedGlassRectangle {
                 visible: App.view.left_panel.is_small()
             }
 
+            Label {
+                text: ["Configure", "Simulate", "Analyze"][App.view.workflow_phase]
+                font.pointSize: 16
+                font.bold: true
+                font.family: "CMU Serif"
+            }
+
+            /*
             Repeater {
+                visible: false
                 model: ["Configure", "Simulate", "Analyze"]
 
                 RowLayout {
@@ -69,7 +78,10 @@ ShadowedGlassRectangle {
                         borderWidth: 0
                         font.pointSize: App.view.left_panel.is_small() ? 16 : 12
 
-                        onClicked: App.view.workflow_phase = parent.index
+                        onClicked: {
+                            App.view.workflow_phase = parent.index
+                            App.view.simulation_content_view = parent.index === 2
+                        }
 
                         STToolTip {
                             visible: parent.containsMouse && App.view.left_panel.size == PanelData.Small
@@ -86,11 +98,11 @@ ShadowedGlassRectangle {
                         font.underline: is_active && !App.view.left_panel.is_small()
                         opacity: is_active ? 1 : 0.5
                         visible: {
-                            if (is_active && App.view.left_panel.width >= 300) {
+                            if (is_active && App.view.left_panel.width >= 220) {
                                 return true
                             }
 
-                            if (App.view.left_panel.width >= 525) {
+                            if (App.view.left_panel.width >= 450) {
                                 return true
                             }
 
@@ -98,7 +110,10 @@ ShadowedGlassRectangle {
 
                         }
 
-                        onClicked: App.view.workflow_phase = parent.index
+                        onClicked: {
+                            App.view.workflow_phase = parent.index
+                            App.view.simulation_content_view = parent.index === 2
+                        }
                     }
 
                     Label {
@@ -109,7 +124,7 @@ ShadowedGlassRectangle {
                         visible: parent.index < 2
                     }
                 }
-            }
+            }*/
 
             Item {
                 Layout.fillWidth: true

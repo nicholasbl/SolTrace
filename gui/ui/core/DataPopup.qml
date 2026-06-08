@@ -15,11 +15,13 @@ STPopup {
 
     ColumnLayout {
         anchors.fill: parent
+        spacing: 8
 
         Label {
             Layout.fillWidth: true
 
-            text: "Available Databases"
+            text: "Available Scenes"
+            font.bold: true
         }
 
         Rectangle {
@@ -35,6 +37,7 @@ STPopup {
             Layout.fillWidth: true
 
             model: AppData.file_source
+            clip: true
 
             delegate: STItemDelegate {
                 id: db_delegate
@@ -44,12 +47,13 @@ STPopup {
 
                 text: database.name
 
-                font.pointSize: 20
+                font.pointSize: 18
 
                 highlighted: root.current_db === database
 
                 onClicked: {
                     AppData.file_source.set_current(index)
+                    App.view.simulation_content_view = false
                 }
             }
         }
@@ -62,7 +66,14 @@ STPopup {
             Layout.rightMargin: 3
         }
 
+        Label {
+            text: "Current Scene"
+            font.bold: true
+        }
+
         RowLayout {
+            enabled: !!root.current_db
+
             Label {
                 font.family: "Font Awesome 7 Free"
 
@@ -72,16 +83,21 @@ STPopup {
             }
 
             STTextField {
-                text: current_db.name
+                text: root.current_db ? root.current_db.name : ""
                 Layout.fillWidth: true
 
-                onTextChanged: current_db.name = text
+                onTextChanged: {
+                    if (root.current_db) {
+                        root.current_db.name = text
+                    }
+                }
             }
         }
 
         RowLayout {
             STIconButton {
                 text: "\uf2ed"
+                toolTip: "Delete Scene"
                 onClicked: AppData.file_source.delete_current()
             }
 
@@ -91,6 +107,7 @@ STPopup {
 
             STIconButton {
                 text: "\uf055"
+                toolTip: "New Scene"
 
                 onClicked: new_name_pop.open()
 
@@ -101,7 +118,7 @@ STPopup {
 
                     STTextField {
                         id: text_input
-                        placeholderText: "New database name..."
+                        placeholderText: "New scene name..."
 
                         onAccepted: new_name_pop.accept()
                     }
@@ -110,7 +127,6 @@ STPopup {
 
                     onAccepted: AppData.file_source.append_new(text_input.text)
                 }
-
             }
         }
     }

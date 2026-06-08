@@ -43,6 +43,7 @@ class SimulationModule : public QObject {
 
 private slots:
     void job_done();
+    void job_failed(QString const& message);
     void update_result_world(db::SimulationResultPtr);
 
 public:
@@ -92,6 +93,7 @@ public slots:
     void cancel();
     void select_result(int index);
     void delete_result(int index);
+    void rename_result(int index, QString const& name);
     void export_result(int index);
     void duplicate_current_result_for_edit();
 

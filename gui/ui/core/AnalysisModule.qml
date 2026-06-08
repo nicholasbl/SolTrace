@@ -12,15 +12,15 @@ ColumnLayout {
     STComboBar {
         id: bar
 
-        currentIndex: App.view.analyze_section
+        currentIndex: Math.min(App.view.analyze_section, 1)
         onCurrentIndexChanged: App.view.analyze_section = currentIndex
 
         Layout.fillWidth: true
 
         collapseLabels: App.view.left_panel.size === PanelData.Small
 
-        iconModel: ["\uf1da", "\uf601", "\uf201"]
-        model: ["Results", "Intersections", "Flux"]
+        iconModel: ["\uf601", "\uf201"]
+        model: ["Intersections", "Flux"]
 
     }
 
@@ -31,14 +31,10 @@ ColumnLayout {
     }
 
     StackLayout {
-        currentIndex: App.view.analyze_section
+        currentIndex: bar.currentIndex
         Layout.fillWidth: true
         Layout.fillHeight: true
         Layout.margins: 8
-
-        HistoryPanel {
-
-        }
 
         AnalyzeIntersections {
 

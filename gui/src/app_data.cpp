@@ -1,8 +1,37 @@
 #include "app_data.h"
+
+#include "app_build_info.h"
+
 #include <QApplication>
+#include <QClipboard>
+#include <QGuiApplication>
 #include <QSettings>
 
 namespace SolTrace::GUI::App {
+
+static QString build_info_string() {
+    auto tag = BuildInfo::git_tag[0] == '\0'
+                   ? QStringLiteral("(none)")
+                   : QString::fromUtf8(BuildInfo::git_tag);
+
+    return QStringLiteral(
+               "SolTrace build\n"
+               "Version: %1\n"
+               "Commit: %2\n"
+               "Describe: %3\n"
+               "Branch: %4\n"
+               "Tag: %5\n"
+               "Dirty: %6\n"
+               "Prerelease: %7")
+        .arg(QString::fromUtf8(BuildInfo::version),
+             QString::fromUtf8(BuildInfo::git_commit),
+             QString::fromUtf8(BuildInfo::git_describe),
+             QString::fromUtf8(BuildInfo::git_branch),
+             tag,
+             QString::fromUtf8(BuildInfo::git_dirty),
+             BuildInfo::is_prerelease ? QStringLiteral("true")
+                                       : QStringLiteral("false"));
+}
 
 void AppData::load_session() {
     QSettings s;
@@ -201,6 +230,12 @@ AppData::AppData(QObject*       parent,
       m_flux(new FluxModule(engine, this)),
       m_script(new Script::Script(this)) {
 
+    set_current_version_info(
+        QString("%1 %2").arg(BuildInfo::version).arg(BuildInfo::git_commit));
+    set_current_build_info(build_info_string());
+    set_is_prerelease(BuildInfo::is_prerelease);
+
+
     connect(m_file_source,
             &DatabaseModule::current_database_value_changed,
             this,
@@ -269,6 +304,11 @@ AppData::AppData(QObject*       parent,
     load_session();
 
     m_file_source->load_new();
+}
+
+void AppData::copy_build_info_to_clipboard() {
+    QGuiApplication::clipboard()->setText(current_build_info());
+    emit notification(ANotification::info("Copied build info to clipboard."));
 }
 
 AppData::~AppData() {

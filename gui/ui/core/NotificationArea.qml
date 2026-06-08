@@ -13,6 +13,8 @@ STPopup {
 
     onOpened: new_notification_count = 0
 
+    signal next_notification(message: string, type: int)
+
     ListModel {
         id: notification_model
     }
@@ -35,6 +37,8 @@ STPopup {
                     "date" : Qt.formatDateTime(new Date(), "MMM d h:mm:ss AP"),
                 }
             )
+
+            root.next_notification(new_note.message, new_note.type)
 
             while (notification_model.count > 50) {
                 notification_model.remove(notification_model.count - 1)

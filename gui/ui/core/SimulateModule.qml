@@ -108,9 +108,7 @@ ColumnLayout {
             text_icon: "\uf1da"
             onClicked: {
                 App.view.left_panel.visible = true
-                // Select the lightweight Results tab before entering Analyze.
-                // Otherwise a stale Intersections/Flux tab can briefly enable
-                // SimulationResultNode and eagerly load heavy result geometry.
+                App.view.simulation_content_view = true
                 App.view.analyze_section = 0
                 App.view.workflow_phase = 2
             }
