@@ -317,8 +317,8 @@ GeometryDataST CspElement::toDeviceGeometryData() const
     if (aperture_type == ApertureType::HEXAGON)
     {
         Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
-        Vec3d vx = rotation_matrix.get_x_basis();
-        Vec3d vy = rotation_matrix.get_y_basis();
+        float3 vx = OptixCSP::toFloat3(rotation_matrix.get_x_basis());
+        float3 vy = OptixCSP::toFloat3(rotation_matrix.get_y_basis());
 
         ApertureHexagon hex = static_cast<ApertureHexagon &>(*m_aperture);
         float s = hex.get_side_length();
@@ -334,8 +334,8 @@ GeometryDataST CspElement::toDeviceGeometryData() const
     if (aperture_type == ApertureType::ANNULUS)
     {
         Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
-        Vec3d vx = rotation_matrix.get_x_basis();
-        Vec3d vy = rotation_matrix.get_y_basis();
+        float3 vx = OptixCSP::toFloat3(rotation_matrix.get_x_basis());
+        float3 vy = OptixCSP::toFloat3(rotation_matrix.get_y_basis());
 
         ApertureAnnulus anf = static_cast<ApertureAnnulus &>(*m_aperture);
         float radius_in = anf.get_radius_inner();
