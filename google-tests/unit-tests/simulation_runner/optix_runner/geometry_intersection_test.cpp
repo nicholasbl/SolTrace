@@ -14,7 +14,8 @@ const uint_fast64_t NRAYS = 10000;
 
 element_id set_default_sd(SimulationData &sd,
                           surface_ptr surf,
-                          aperture_ptr ap)
+                          aperture_ptr ap,
+                          double rotation)
 {
     sd.clear();
 
@@ -35,6 +36,7 @@ element_id set_default_sd(SimulationData &sd,
     el->set_front_optical_properties(el_optics);
     el->set_back_optical_properties(el_optics);
     el->set_name("el");
+    el->set_zrot(rotation);
 
     // Add element to stage
     element_id id = sd.add_element(el);
@@ -44,8 +46,8 @@ element_id set_default_sd(SimulationData &sd,
     element_ptr stop = make_element<SingleElement>();
     double xlb, xub, ylb, yub;
     ap->bounding_box(xlb, xub, ylb, yub);
-    const double sx = std::max(fabs(xlb), fabs(xub)) + 1.0;
-    const double sy = std::max(fabs(ylb), fabs(yub)) + 1.0;
+    const double sx = std::max(fabs(xlb), fabs(xub)) + 2.0;
+    const double sy = std::max(fabs(ylb), fabs(yub)) + 2.0;
     stop->set_origin(0, 0, Z_BACKSTOP);
     stop->set_aim_vector(0, 0, 100);
     stop->set_surface(make_surface<Flat>());
@@ -67,11 +69,12 @@ TEST(OptixRunner, FlatRectangle)
 {
     const double XL = 10.0;
     const double YL = 5.0;
+    const double ROT_DEG = -10.0;
     auto surf = make_surface<Flat>();
     auto aper = make_aperture<Rectangle>(XL, YL);
 
     SimulationData sd;
-    element_id test_elid = set_default_sd(sd, surf, aper);
+    element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
 
     OptixRunner runner;
@@ -86,6 +89,8 @@ TEST(OptixRunner, FlatRectangle)
 
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
+    const double cos_rot = cos(ROT_DEG * PI / 180.0);
+    const double sin_rot = sin(ROT_DEG * PI / 180.0);
     for (int i = 0; i < (int)result.get_number_of_records(); ++i)
     {
         auto rr = result[i];
@@ -96,20 +101,22 @@ TEST(OptixRunner, FlatRectangle)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
+        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
             // We hit the test element. Check that the height is as expected
             EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
             // And that we are in the aperture
-            EXPECT_TRUE(aper->is_in(p1[0], p1[1]));
+            EXPECT_TRUE(aper->is_in(lx, ly));
         }
         else
         {
             // We hit the back stop element. Check that the height is as expected
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
             // And that we are not in the aperture.
-            EXPECT_FALSE(aper->is_in(p1[0], p1[1]));
+            EXPECT_FALSE(aper->is_in(lx, ly));
         }
     }
 }
@@ -117,11 +124,12 @@ TEST(OptixRunner, FlatRectangle)
 TEST(OptixRunner, FlatEquilateralTriangle)
 {
     const double d = 4.0;
+    const double ROT_DEG = 90.0;
     auto surf = make_surface<Flat>();
     auto aper = make_aperture<EquilateralTriangle>(d);
 
     SimulationData sd;
-    element_id test_elid = set_default_sd(sd, surf, aper);
+    element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
 
     OptixRunner runner;
@@ -136,6 +144,8 @@ TEST(OptixRunner, FlatEquilateralTriangle)
 
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
+    const double cos_rot = cos(ROT_DEG * PI / 180.0);
+    const double sin_rot = sin(ROT_DEG * PI / 180.0);
     for (int i = 0; i < (int)result.get_number_of_records(); ++i)
     {
         auto rr = result[i];
@@ -146,16 +156,18 @@ TEST(OptixRunner, FlatEquilateralTriangle)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
+        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
             EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
-            EXPECT_TRUE(aper->is_in(p1[0], p1[1]));
+            EXPECT_TRUE(aper->is_in(lx, ly));
         }
         else
         {
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
-            EXPECT_FALSE(aper->is_in(p1[0], p1[1]));
+            EXPECT_FALSE(aper->is_in(lx, ly));
         }
     }
 }
@@ -164,11 +176,12 @@ TEST(OptixRunner, FlatTriangle)
 {
     const double x1 = 0.0, x2 = 1.0, x3 = 2.0 * x2;
     const double y1 = 0.0, y2 = 2.0, y3 = y1;
+    const double ROT_DEG = 110.0;
     auto surf = make_surface<Flat>();
     auto aper = make_aperture<IrregularTriangle>(x1, y1, x2, y2, x3, y3);
 
     SimulationData sd;
-    element_id test_elid = set_default_sd(sd, surf, aper);
+    element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
 
     OptixRunner runner;
@@ -183,6 +196,8 @@ TEST(OptixRunner, FlatTriangle)
 
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
+    const double cos_rot = cos(ROT_DEG * PI / 180.0);
+    const double sin_rot = sin(ROT_DEG * PI / 180.0);
     for (int i = 0; i < (int)result.get_number_of_records(); ++i)
     {
         auto rr = result[i];
@@ -193,16 +208,18 @@ TEST(OptixRunner, FlatTriangle)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
+        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
             EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
-            EXPECT_TRUE(aper->is_in(p1[0], p1[1]));
+            EXPECT_TRUE(aper->is_in(lx, ly));
         }
         else
         {
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
-            EXPECT_FALSE(aper->is_in(p1[0], p1[1]));
+            EXPECT_FALSE(aper->is_in(lx, ly));
         }
     }
 }
@@ -212,12 +229,13 @@ TEST(OptixRunner, FlatQuadrilateral)
     // Parallelogram
     const double x1 = 0.0, x2 = 3.0, x3 = (x2 - x1) + 1.0, x4 = x3 - x2 + x1;
     const double y1 = 0.0, y2 = y1, y3 = 2.0, y4 = y3;
+    const double ROT_DEG = -45.0;
     auto surf = make_surface<Flat>();
     auto aper = make_aperture<IrregularQuadrilateral>(
         x1, y1, x2, y2, x3, y3, x4, y4);
 
     SimulationData sd;
-    element_id test_elid = set_default_sd(sd, surf, aper);
+    element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
 
     OptixRunner runner;
@@ -232,6 +250,8 @@ TEST(OptixRunner, FlatQuadrilateral)
 
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
+    const double cos_rot = cos(ROT_DEG * PI / 180.0);
+    const double sin_rot = sin(ROT_DEG * PI / 180.0);
     for (int i = 0; i < (int)result.get_number_of_records(); ++i)
     {
         auto rr = result[i];
@@ -242,16 +262,18 @@ TEST(OptixRunner, FlatQuadrilateral)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
+        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
             EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
-            EXPECT_TRUE(aper->is_in(p1[0], p1[1]));
+            EXPECT_TRUE(aper->is_in(lx, ly));
         }
         else
         {
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
-            EXPECT_FALSE(aper->is_in(p1[0], p1[1]));
+            EXPECT_FALSE(aper->is_in(lx, ly));
         }
     }
 }
@@ -263,11 +285,12 @@ TEST(OptixRunner, ParabolaRectangle)
     constexpr double FX = 0.5 / CX;
     constexpr double FY = 0.5 / CY;
     const double XL = 10.0, YL = 5.0;
+    const double ROT_DEG = -135.0;
     auto surf = make_surface<Parabola>(FX, FY);
     auto aper = make_aperture<Rectangle>(XL, YL);
 
     SimulationData sd;
-    element_id test_elid = set_default_sd(sd, surf, aper);
+    element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
 
     OptixRunner runner;
@@ -282,6 +305,8 @@ TEST(OptixRunner, ParabolaRectangle)
 
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
+    const double cos_rot = cos(ROT_DEG * PI / 180.0);
+    const double sin_rot = sin(ROT_DEG * PI / 180.0);
     for (int i = 0; i < (int)result.get_number_of_records(); ++i)
     {
         auto rr = result[i];
@@ -292,17 +317,19 @@ TEST(OptixRunner, ParabolaRectangle)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
+        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
-            const double z1 = Z_ELEM + 0.5 * CX * p1[0] * p1[0] + 0.5 * CY * p1[1] * p1[1];
+            const double z1 = Z_ELEM + 0.5 * CX * lx * lx + 0.5 * CY * ly * ly;
             EXPECT_NEAR(p1[2], z1, TOL * Z_ELEM) << "ray " << i;
-            EXPECT_TRUE(aper->is_in(p1[0], p1[1]));
+            EXPECT_TRUE(aper->is_in(lx, ly));
         }
         else
         {
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
-            EXPECT_FALSE(aper->is_in(p1[0], p1[1]));
+            EXPECT_FALSE(aper->is_in(lx, ly));
         }
     }
 }
@@ -311,11 +338,12 @@ TEST(OptixRunner, Cylinder)
 {
     const double R = 5.0;
     const double YL = 3.0; // Total cylinder length
+    const double ROT_DEG = 25.0;
     auto surf = make_surface<Cylinder>(R);
     auto aper = make_aperture<Rectangle>(2 * R, YL);
 
     SimulationData sd;
-    element_id test_elid = set_default_sd(sd, surf, aper);
+    element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
 
     OptixRunner runner;
@@ -330,6 +358,8 @@ TEST(OptixRunner, Cylinder)
 
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
+    const double cos_rot = cos(ROT_DEG * PI / 180.0);
+    const double sin_rot = sin(ROT_DEG * PI / 180.0);
     for (int i = 0; i < (int)result.get_number_of_records(); ++i)
     {
         auto rr = result[i];
@@ -340,17 +370,19 @@ TEST(OptixRunner, Cylinder)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
+        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
-            const double z1 = Z_ELEM + sqrt(R * R - p1[0] * p1[0]);
+            const double z1 = Z_ELEM + sqrt(R * R - lx * lx);
             EXPECT_NEAR(p1[2], z1, TOL * Z_ELEM) << "ray " << i;
-            EXPECT_TRUE(aper->is_in(p1[0], p1[1]));
+            EXPECT_TRUE(aper->is_in(lx, ly));
         }
         else
         {
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
-            EXPECT_FALSE(aper->is_in(p1[0], p1[1]));
+            EXPECT_FALSE(aper->is_in(lx, ly));
         }
     }
 }
@@ -358,11 +390,12 @@ TEST(OptixRunner, Cylinder)
 TEST(OptixRunner, FlatCircle)
 {
     const double R = 5.0;
+    const double ROT_DEG = 10.0;  // Should make no difference
     auto surf = make_surface<Flat>();
     auto aper = make_aperture<Circle>(2 * R);
 
     SimulationData sd;
-    element_id test_elid = set_default_sd(sd, surf, aper);
+    element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
 
     OptixRunner runner;
@@ -404,11 +437,12 @@ TEST(OptixRunner, FlatCircle)
 TEST(OptixRunner, FlatHexagon)
 {
     const double S = 5.0;
+    const double ROT_DEG = 30.0;
     auto surf = make_surface<Flat>();
     auto aper = make_aperture<Hexagon>(2 * S);
 
     SimulationData sd;
-    element_id test_elid = set_default_sd(sd, surf, aper);
+    element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
 
     OptixRunner runner;
@@ -423,6 +457,8 @@ TEST(OptixRunner, FlatHexagon)
 
     ASSERT_EQ(result.get_number_of_records(),
               sd.get_simulation_parameters().number_of_rays);
+    const double cos_rot = cos(ROT_DEG * PI / 180.0);
+    const double sin_rot = sin(ROT_DEG * PI / 180.0);
     for (int i = 0; i < (int)result.get_number_of_records(); ++i)
     {
         auto rr = result[i];
@@ -433,30 +469,33 @@ TEST(OptixRunner, FlatHexagon)
         auto id = rr->get_element(1);
         EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
         EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
+        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
 
         if (id == test_elid)
         {
             EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
-            EXPECT_TRUE(aper->is_in(p1[0], p1[1]));
+            EXPECT_TRUE(aper->is_in(lx, ly));
         }
         else
         {
             EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
-            EXPECT_FALSE(aper->is_in(p1[0], p1[1]));
+            EXPECT_FALSE(aper->is_in(lx, ly));
         }
     }
 }
 
-TEST(OptixRunner, FlatAnnulus)
+TEST(OptixRunner, FlatAnnulus_FullArc)
 {
     const double R0 = 5.0;
-    const double R1 = 10.0;
+    const double R1 = 180.0;
     const double ARC = 2 * PI;
+    const double ROT_DEG = -15.0; // Should make no difference
     auto surf = make_surface<Flat>();
     auto aper = make_aperture<Annulus>(R0, R1, ARC);
 
     SimulationData sd;
-    element_id test_elid = set_default_sd(sd, surf, aper);
+    element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
     SimulationResult result;
 
     OptixRunner runner;
@@ -494,3 +533,34 @@ TEST(OptixRunner, FlatAnnulus)
         }
     }
 }
+
+    ASSERT_EQ(result.get_number_of_records(),
+              sd.get_simulation_parameters().number_of_rays);
+    const double cos_rot = cos(ROT_DEG * PI / 180.0);
+    const double sin_rot = sin(ROT_DEG * PI / 180.0);
+    for (int i = 0; i < (int)result.get_number_of_records(); ++i)
+    {
+        auto rr = result[i];
+        ASSERT_GE(rr->get_number_of_interactions(), 2);
+        glm::dvec3 p0, p1;
+        rr->get_position(0, p0);
+        rr->get_position(1, p1);
+        auto id = rr->get_element(1);
+        EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
+        EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        const double lx =  p1[0] * cos_rot + p1[1] * sin_rot;
+        const double ly = -p1[0] * sin_rot + p1[1] * cos_rot;
+
+        if (id == test_elid)
+        {
+            EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
+            EXPECT_TRUE(aper->is_in(lx, ly));
+        }
+        else
+        {
+            EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
+            EXPECT_FALSE(aper->is_in(lx, ly));
+        }
+    }
+}
+
