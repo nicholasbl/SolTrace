@@ -309,7 +309,7 @@ bool read_optic_surface(FILE *fp,
     double RMSSlope = atof(parts[7].c_str());
     double RMSSpecularity = atof(parts[8].c_str());
     refraction = atof(parts[9].c_str());
-    double RefractionIndexImag = atof(parts[10].c_str());
+    double RefractionIndexImag = atof(parts[10].c_str());   // TODO: Safe to ignore?
     double GratingCoeffs[4];
     GratingCoeffs[0] = atof(parts[11].c_str());
     GratingCoeffs[1] = atof(parts[12].c_str());

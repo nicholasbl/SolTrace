@@ -193,6 +193,9 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             // Add optical properties
             auto opt_set = el->get_optical_property_set();
 
+            if (opt_set == nullptr)
+                throw std::runtime_error("Element has invalid optical property set.");
+
             DistributionType front_dist;
             double front_slope, front_spec;
             opt_set->get_errors(OpticalSide::Front, front_dist, front_slope, front_spec);

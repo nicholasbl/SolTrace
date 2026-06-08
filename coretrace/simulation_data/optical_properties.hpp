@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <functional>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <stdexcept>
@@ -346,7 +347,7 @@ namespace SolTrace::Data
             return this->my_name;
         }
 
-        const void get_refraction_indices(double& rfront, double& rback) const
+        void get_refraction_indices(double& rfront, double& rback) const
         {
             rfront = this->refraction_index_front;
             rback = this->refraction_index_back;
