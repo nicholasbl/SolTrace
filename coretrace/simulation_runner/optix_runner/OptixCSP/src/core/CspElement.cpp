@@ -322,6 +322,7 @@ GeometryDataST CspElement::toDeviceGeometryData() const
             float cx = (float)(m_surface->get_curvature_1());
             float cy = (float)(m_surface->get_curvature_2());
             GeometryDataST::Circle_Parabolic heliostat(o, v1, v2, cx, cy, r);
+            geometry_data.setCircle_Parabolic(heliostat);
         }
     }
 
