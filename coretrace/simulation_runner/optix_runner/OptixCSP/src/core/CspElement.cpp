@@ -341,6 +341,14 @@ GeometryDataST CspElement::toDeviceGeometryData() const
             GeometryDataST::Hexagon_Flat hex(o, n, vx, vy, s);
             geometry_data.setHexagon_Flat(hex);
         }
+
+	if (surface_type == SurfaceType::PARABOLIC)
+	  {
+	    float cx = (float)(m_surface->get_curvature_1());
+	    float cy = (float)(m_surface->get_curvature_2());
+	    GeometryDataST::Hexagon_Parabolic hex(o, vx, vy, cx, cy, s);
+	    geometry_data.setHexagon_Parabolic(hex);
+	  }
     }
 
     if (aperture_type == ApertureType::ANNULUS)

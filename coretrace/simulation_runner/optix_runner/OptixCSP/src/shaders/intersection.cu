@@ -739,7 +739,7 @@ extern "C" __global__ void __intersection__hexagon_parabolic()
     const int nc = parabolic_solve(ox, oy, oz, dx, dy, dz,
                                    hexp.cx, hexp.cy,
                                    ray_tmin, ray_tmax,
-                                   ts, lxs, lys;)
+                                   ts, lxs, lys);
 
         for (int i = 0; i < nc; ++i)
     {
@@ -780,10 +780,10 @@ extern "C" __global__ void __intersection__hexagon_parabolic()
         if (is_in)
         {
             const float3 wn = parabolic_world_normal(lxs[i], lys[i],
-                                                     hexp.curv_x, hexp.curv_y,
+                                                     hexp.cx, hexp.cy,
                                                      hexp.x_axis, hexp.y_axis, n);
 
-            optixReportIntersection(t,
+            optixReportIntersection(ts[i],
                                     0,
                                     __float_as_uint(wn.x),
                                     __float_as_uint(wn.y),
