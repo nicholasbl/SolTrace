@@ -84,6 +84,10 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
             {
                 sbt_offset = static_cast<uint32_t>(OpticalEntityType::HEXAGON_FLAT);
             }
+            elseif (element->get_surface_type() == SurfaceType::PARABOLIC)
+            {
+                sbt_offset = static_cast<uint32_t>(OpticalEntityType::HEXAGON_PARABOLIC);
+            }
             else
             {
                 std::stringstream ss;

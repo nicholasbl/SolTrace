@@ -45,10 +45,10 @@ namespace OptixCSP{
         HEXAGON_FLAT            = 6,
         ANNULUS_FLAT            = 7,
         CIRCLE_PARABOLIC        = 8,
-        // HEXAGON_PARABOLIC       = 9,
-        // TRIANGLE_PARABOLIC      = 10,
-        // ANNULUS_PARABOLIC       = 11,
-        // QUADRILATERAL_PARABOLIC = 12,
+        HEXAGON_PARABOLIC       = 9,
+        TRIANGLE_PARABOLIC      = 10,
+        ANNULUS_PARABOLIC       = 11,
+        QUADRILATERAL_PARABOLIC = 12,
 	    NUM_OPTICAL_ENTITY_TYPES
     };
 

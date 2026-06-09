@@ -26,7 +26,11 @@ namespace OptixCSP
             CIRCLE_FLAT = 7,
             HEXAGON_FLAT = 8,
             ANNULUS_FLAT = 9,
-            CIRCLE_PARABOLIC = 10
+            CIRCLE_PARABOLIC = 10,
+            HEXAGON_PARABOLIC = 11,
+            TRIANGLE_PARABOLIC = 12,
+            ANNULUS_PARABOLIC = 13,
+            QUADRILATERAL_PARABOLIC = 14
         };
 
         struct Parallelogram
@@ -208,6 +212,26 @@ namespace OptixCSP
             float radius;
         };
 
+        struct Hexagon_Parabolic
+        {
+            Hexagon_Parabolic() = default;
+            Hexagon_Parabolic(const float3 &origin, const float3 &x_ax, const float3 &y_ax,
+                              const float &curv_x, const float &curv_y, const float &side_len) : center(origin), x_axis(x_ax), y_axis(y_ax),
+                                                                                                 cx(curv_x), cy(curv_y), s(side_len)
+            {
+            }
+            float3 center;
+            float3 x_axis;
+            float3 y_axis;
+            float cx;
+            float cy;
+            float s;
+        };
+
+        struct Triangle_Parabolic{};
+        struct Annulus_Parabolic{};
+        struct Quadrilateral_Parabolic{};
+
         GeometryDataST() = default;
 
         void setParallelogram(const Parallelogram &p)
@@ -340,6 +364,58 @@ namespace OptixCSP
             return circle_parabolic;
         }
 
+        void setHexagon_Parabolic(const Hexagon_Parabolic &hexp)
+        {
+            assert(type == UNKNOWN_TYPE);
+            type = HEXAGON_PARABOLIC;
+            hexagon_parabolic = hexp;
+        }
+
+        __host__ __device__ const Hexagon_Parabolic &getHexagon_Parabolic() const
+        {
+            assert(type == HEXAGON_PARABOLIC);
+            return hexagon_parabolic;
+        }
+
+        void setTriangle_Parabolic(const Triangle_Parabolic &tp)
+        {
+            assert(type == UNKNOWN_TYPE);
+            type = TRIANGLE_PARABOLIC;
+            triangle_parabolic = tp;
+        }
+
+        __host__ __device__ const Triangle_Parabolic &getTriangle_Parabolic() const
+        {
+            assert(type == TRIANGLE_PARABOLIC);
+            return triangle_parabolic;
+        }
+
+        void setAnnulus_Parabolic(const Annulus_Parabolic &ap)
+        {
+            assert(type == UNKNOWN_TYPE);
+            type = ANNULUS_PARABOLIC;
+            annulus_parabolic = ap;
+        }
+
+        __host__ __device__ const Annulus_Parabolic &getAnnulus_Parabolic() const
+        {
+            assert(type == ANNULUS_PARABOLIC);
+            return annulus_parabolic;
+        }
+
+        void setQuadrilateral_Parabolic(const Quadrilateral_Parabolic &qp)
+        {
+            assert(type == UNKNOWN_TYPE);
+            type = QUADRILATERAL_PARABOLIC;
+            quadrilateral_parabolic = qp;
+        }
+
+        __host__ __device__ const Quadrilateral_Parabolic &getQuadrilateral_Parabolic() const
+        {
+            assert(type == QUADRILATERAL_PARABOLIC);
+            return quadrilateral_parabolic;
+        }
+
         Type type = UNKNOWN_TYPE;
 
         int32_t id = OptixCSP::kElementIdUnassigned;
@@ -357,6 +433,10 @@ namespace OptixCSP
             Hexagon_Flat hexagon_flat;
             Annulus_Flat annulus_flat;
             Circle_Parabolic circle_parabolic;
+            Hexagon_Parabolic hexagon_parabolic;
+            Triangle_Parabolic triangle_parabolic;
+            Annulus_Parabolic annulus_parabolic;
+            Quadrilateral_Parabolic quadrilateral_parabolic;
         };
     };
 }
