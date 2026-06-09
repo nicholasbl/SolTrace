@@ -224,10 +224,11 @@ GeometryDataST CspElement::toDeviceGeometryData() const
 
         if (surface_type == SurfaceType::PARABOLIC)
         {
-            Vec3d edge_x = v1 * (float)(-width);
-            Vec3d edge_y = v2 * (float)height;
+            Vec3d edge_x = v1 * (float)(width);
+            Vec3d edge_y = v2 * (float)(height);
 
-            Vec3d local_anchor(x_coord + width, y_coord, 0.0);
+            // Lower left corner
+            Vec3d local_anchor(x_coord, y_coord, 0.0);
             // float3 anchor = OptixCSP::toFloat3(m_origin - v1 * 0.5 - v2 * 0.5);
             Vec3d global_anchor = rotation_matrix * local_anchor + m_origin;
 
