@@ -102,7 +102,7 @@ element_id set_default_sd(SimulationData &sd,
     stop->set_origin(0, 0, Z_BACKSTOP);
     stop->set_aim_vector(0, 0, 100);
     stop->set_surface(make_surface<Flat>());
-    stop->set_aperture(make_aperture<Rectangle>(sx, sy));
+    stop->set_aperture(make_aperture<Rectangle>(2.0 * sx, 2.0 * sy));
     sd.add_element(stop);
 
     // Set parameters
@@ -759,7 +759,7 @@ TEST(OptixRunner, ParabolicCircle)
 
     // z(x,y) = x^2/(2*FOCAL_X) + y^2/(2*FOCAL_Y). Maximum over the circle x^2+y^2<=R^2
     // is R^2 / (2 * min(FOCAL_X, FOCAL_Y)), achieved along the axis with lower focal length.
-    const double Z_MAX_OFFSET = R * R / (2.0 * std::min(FOCAL_X, FOCAL_Y));
+    // const double Z_MAX_OFFSET = R * R / (2.0 * std::min(FOCAL_X, FOCAL_Y));
 
     uint_fast64_t fpos = 0, fneg = 0, hits = 0, misses = 0;
 
@@ -793,8 +793,10 @@ TEST(OptixRunner, ParabolicCircle)
         if (id == test_elid)
         {
             // z is curved: Z_ELEM <= z <= Z_ELEM + Z_MAX_OFFSET
-            EXPECT_GE(p1[2], Z_ELEM - TOL * Z_ELEM) << "ray " << i;
-            EXPECT_LE(p1[2], Z_ELEM + Z_MAX_OFFSET + TOL * Z_ELEM) << "ray " << i;
+	    // EXPECT_GE(p1[2], Z_ELEM - TOL * Z_ELEM) << "ray " << i;
+            // EXPECT_LE(p1[2], Z_ELEM + Z_MAX_OFFSET + TOL * Z_ELEM) << "ray " << i;
+	  double zsol = p1[0] * p1[0] / (4.0 * FOCAL_X) + p1[1] * p1[1] / (4.0 * FOCAL_Y) + Z_ELEM;
+	  EXPECT_NEAR(p1[2], zsol, TOL * Z_ELEM);
             EXPECT_TRUE(aper->is_in(p1[0], p1[1]));
             ++hits;
             if (!aper->is_in(p1[0], p1[1])) ++fpos;

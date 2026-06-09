@@ -345,7 +345,7 @@ extern "C" __global__ void __intersection__rectangle_parabolic()
     float3 e1 = rect.v1 * L1; // recovers the original direction of edge 1, unit vector
     float3 e2 = rect.v2 * L2; // recovers the original direction of edge 2, unit ve
     // The flat (undeformed) rectangle's normal is:
-    float3 n = normalize(cross(e1, e2));
+    float3 n = normalize(cross(e2, e1));
 
     //
     // Transform ray into local coordinates.
