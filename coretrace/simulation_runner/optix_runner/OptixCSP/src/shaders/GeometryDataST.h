@@ -216,8 +216,9 @@ namespace OptixCSP
         {
             Hexagon_Parabolic() = default;
             Hexagon_Parabolic(const float3 &origin, const float3 &x_ax, const float3 &y_ax,
-                              const float &curv_x, const float &curv_y, const float &side_len) : center(origin), x_axis(x_ax), y_axis(y_ax),
-                                                                                                 cx(curv_x), cy(curv_y), s(side_len)
+                              const float &curv_x, const float &curv_y, const float &side_len)
+                : center(origin), x_axis(x_ax), y_axis(y_ax),
+                  cx(curv_x), cy(curv_y), s(side_len)
             {
             }
             float3 center;
@@ -228,9 +229,34 @@ namespace OptixCSP
             float s;
         };
 
-        struct Triangle_Parabolic{};
-        struct Annulus_Parabolic{};
-        struct Quadrilateral_Parabolic{};
+        struct Triangle_Parabolic
+        {
+        };
+        
+        struct Annulus_Parabolic
+        {
+            Annulus_Parabolic() = default;
+            Annulus_Parabolic(const float3 &origin, const float3 &x_ax, const float3 &y_ax,
+                              const float &curv_x, const float &curv_y,
+                              const float &r_inner, const float &r_outer, const float &arc)
+                : center(origin), x_axis(x_ax), y_axis(y_ax),
+                  cx(curv_x), cy(curv_y),
+                  ri(r_inner), ro(r_outer), arc(arc)
+            {
+            }
+            float3 center;
+            float3 x_axis;
+            float3 y_axis;
+            float cx;
+            float cy;
+            float ri;
+            float ro;
+            float arc; // in radians
+        };
+        
+        struct Quadrilateral_Parabolic
+        {
+        };
 
         GeometryDataST() = default;
 

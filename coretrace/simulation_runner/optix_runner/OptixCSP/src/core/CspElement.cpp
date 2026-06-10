@@ -308,13 +308,13 @@ GeometryDataST CspElement::toDeviceGeometryData() const
         float r = circ.get_radius();
         float3 o = OptixCSP::toFloat3(m_origin);
         float3 n = normalize(OptixCSP::toFloat3(m_aim_point - m_origin));
-        
+
         if (surface_type == SurfaceType::FLAT)
         {
             GeometryDataST::Circle_Flat heliostat(o, n, r);
             geometry_data.setCircle_Flat(heliostat);
         }
-        
+
         if (surface_type == SurfaceType::PARABOLIC)
         {
             Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
@@ -337,19 +337,20 @@ GeometryDataST CspElement::toDeviceGeometryData() const
         float s = hex.get_side_length();
         float3 o = OptixCSP::toFloat3(m_origin);
         float3 n = normalize(OptixCSP::toFloat3(m_aim_point - m_origin));
+
         if (surface_type == SurfaceType::FLAT)
         {
             GeometryDataST::Hexagon_Flat hex(o, n, vx, vy, s);
             geometry_data.setHexagon_Flat(hex);
         }
 
-	if (surface_type == SurfaceType::PARABOLIC)
-	  {
-	    float cx = (float)(m_surface->get_curvature_1());
-	    float cy = (float)(m_surface->get_curvature_2());
-	    GeometryDataST::Hexagon_Parabolic hex(o, vx, vy, cx, cy, s);
-	    geometry_data.setHexagon_Parabolic(hex);
-	  }
+        if (surface_type == SurfaceType::PARABOLIC)
+        {
+            float cx = (float)(m_surface->get_curvature_1());
+            float cy = (float)(m_surface->get_curvature_2());
+            GeometryDataST::Hexagon_Parabolic hex(o, vx, vy, cx, cy, s);
+            geometry_data.setHexagon_Parabolic(hex);
+        }
     }
 
     if (aperture_type == ApertureType::ANNULUS)
@@ -364,11 +365,21 @@ GeometryDataST CspElement::toDeviceGeometryData() const
         float arc = anf.get_arc();
         float3 o = OptixCSP::toFloat3(m_origin);
         float3 n = normalize(OptixCSP::toFloat3(m_aim_point - m_origin));
+
         if (surface_type == SurfaceType::FLAT)
         {
             GeometryDataST::Annulus_Flat anf(o, n, vx, vy,
                                              radius_in, radius_out, arc);
             geometry_data.setAnnulus_Flat(anf);
+        }
+
+        if (surface_type == SurfaceType::PARABOLIC)
+        {
+            float cx = (float)(m_surface->get_curvature_1());
+            float cy = (float)(m_surface->get_curvature_2());
+            GeometryDataST::Annulus_Parabolic anp(o, vx, vy, cx, cy,
+                                                  radius_in, radius_out, arc);
+            geometry_data.setAnnulus_Parabolic(anp);
         }
     }
 
