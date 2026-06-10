@@ -231,6 +231,31 @@ namespace OptixCSP
 
         struct Triangle_Parabolic
         {
+            Triangle_Parabolic() = default;
+            // Vertices v0, v1, v2 are in the local XY aperture frame.
+            // The constructor precomputes the barycentric inverse transform so
+            // the aperture test reduces to two dot products with no per-ray division.
+            Triangle_Parabolic(const float3 &origin, const float3 &x_ax, const float3 &y_ax,
+                               const float &curv_x, const float &curv_y,
+                               const float2 &v0, const float2 &v1, const float2 &v2)
+                : center(origin), x_axis(x_ax), y_axis(y_ax),
+                  cx(curv_x), cy(curv_y)
+            {
+                const float2 e1 = make_float2(v1.x - v0.x, v1.y - v0.y);
+                const float2 e2 = make_float2(v2.x - v0.x, v2.y - v0.y);
+                const float inv_det = 1.0f / (e1.x * e2.y - e1.y * e2.x);
+                // u = dot(utest, float3(px, py, 1.0f))
+                utest = make_float3( e2.y, -e2.x, v0.y * e2.x - v0.x * e2.y) * inv_det;
+                // v = dot(vtest, float3(px, py, 1.0f))
+                vtest = make_float3(-e1.y,  e1.x, v0.x * e1.y - v0.y * e1.x) * inv_det;
+            }
+            float3 center; // element origin in global coordinates
+            float3 x_axis; // local x axis unit vector
+            float3 y_axis; // local y axis unit vector
+            float cx;      // curvature along local x axis
+            float cy;      // curvature along local y axis
+            float3 utest;  // precomputed row: u = dot(utest, float3(px, py, 1.0f))
+            float3 vtest;  // precomputed row: v = dot(vtest, float3(px, py, 1.0f))
         };
         
         struct Annulus_Parabolic

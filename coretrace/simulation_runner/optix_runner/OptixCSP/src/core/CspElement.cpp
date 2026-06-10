@@ -265,16 +265,40 @@ GeometryDataST CspElement::toDeviceGeometryData() const
         v2 = tri.get_v1();
         v3 = tri.get_v2();
 
-        // given the origin and rotation, compute global coordinates of the triangle vertices
-        Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
-        Vec3d v1_global = rotation_matrix * v1 + m_origin;
-        Vec3d v2_global = rotation_matrix * v2 + m_origin;
-        Vec3d v3_global = rotation_matrix * v3 + m_origin;
+        if (surface_type == SurfaceType::FLAT)
+        {
+            // given the origin and rotation, compute global coordinates of the triangle vertices
+            Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
+            Vec3d v1_global = rotation_matrix * v1 + m_origin;
+            Vec3d v2_global = rotation_matrix * v2 + m_origin;
+            Vec3d v3_global = rotation_matrix * v3 + m_origin;
 
-        GeometryDataST::Triangle_Flat heliostat(OptixCSP::toFloat3(v1_global),
-                                                OptixCSP::toFloat3(v2_global),
-                                                OptixCSP::toFloat3(v3_global));
-        geometry_data.setTriangle_Flat(heliostat);
+            GeometryDataST::Triangle_Flat heliostat(OptixCSP::toFloat3(v1_global),
+                                                    OptixCSP::toFloat3(v2_global),
+                                                    OptixCSP::toFloat3(v3_global));
+            geometry_data.setTriangle_Flat(heliostat);
+        }
+
+        if (surface_type == SurfaceType::PARABOLIC)
+        {
+            Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
+            float3 vx = OptixCSP::toFloat3(rotation_matrix.get_x_basis());
+            float3 vy = OptixCSP::toFloat3(rotation_matrix.get_y_basis());
+
+            float cx = (float)(m_surface->get_curvature_1());
+            float cy = (float)(m_surface->get_curvature_2());
+            float3 o = OptixCSP::toFloat3(m_origin);
+
+            // Triangle vertices are in local element XY frame (z=0).
+            // The 2D local x,y coords for the aperture test equal the
+            // Vec3d x and y components directly (since rotation is orthonormal).
+            float2 lv0 = make_float2((float)v1.x, (float)v1.y);
+            float2 lv1 = make_float2((float)v2.x, (float)v2.y);
+            float2 lv2 = make_float2((float)v3.x, (float)v3.y);
+
+            GeometryDataST::Triangle_Parabolic trip(o, vx, vy, cx, cy, lv0, lv1, lv2);
+            geometry_data.setTriangle_Parabolic(trip);
+        }
     }
 
     if (aperture_type == ApertureType::QUADRILATERAL)

@@ -75,7 +75,7 @@ extern "C" __device__ __inline__ int parabolic_solve(
     const float B = cx * ox * dx + cy * oy * dy - dz;
     const float C = 0.5f * cx * ox * ox + 0.5f * cy * oy * oy - oz;
 
-    const float eps = 1e-6f;
+    const float eps = 1e-12f;
     int count = 0;
 
     if (fabsf(A) < eps)
@@ -208,6 +208,29 @@ extern "C" __device__ __inline__ bool annulus_contains(float px, float py, float
         return false;
     const float theta = atan2f(py, px);
     return fabsf(theta) <= 0.5f * arc;
+}
+
+// -----------------------------------------------------------------------
+// Shared helpers for triangle apertures
+//
+// The triangle aperture is encoded as two precomputed row vectors utest and
+// vtest such that the barycentric coordinates of a point (px, py) are:
+//   u = dot(utest, float3(px, py, 1.0f))
+//   v = dot(vtest, float3(px, py, 1.0f))
+// The point is inside when u >= 0, v >= 0, and u + v <= 1.
+// These rows are computed once at setup time from the three triangle vertices.
+// -----------------------------------------------------------------------
+
+// Return true if the 2-D point (px, py) lies inside the triangle whose
+// barycentric inverse transform is encoded in utest and vtest.
+extern "C" __device__ __inline__ bool triangle_contains(float px, float py,
+                                                        float3 utest, float3 vtest)
+{
+    const float3 p = make_float3(px, py, 1.0f);
+    const float u = dot(utest, p);
+    if (u < 0.0f || u > 1.0f) return false;
+    const float v = dot(vtest, p);
+    return v >= 0.0f && (u + v) <= 1.0f;
 }
 
 // -----------------------------------------------------------------------
@@ -829,6 +852,41 @@ extern "C" __global__ void __intersection__hexagon_parabolic()
 
 extern "C" __global__ void __intersection__triangle_parabolic()
 {
+    const OptixCSP::GeometryDataST::Triangle_Parabolic &trip =
+        params.geometry_data_array[optixGetPrimitiveIndex()].getTriangle_Parabolic();
+
+    const float3 ray_orig = optixGetWorldRayOrigin();
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float ray_tmin = optixGetRayTmin();
+    const float ray_tmax = optixGetRayTmax();
+
+    float3 n;
+    float ox, oy, oz, dx, dy, dz;
+    parabolic_ray_to_local(ray_orig, ray_dir,
+                           trip.center, trip.x_axis, trip.y_axis,
+                           n, ox, oy, oz, dx, dy, dz);
+
+    float ts[2], lxs[2], lys[2];
+    const int nc = parabolic_solve(ox, oy, oz, dx, dy, dz,
+                                   trip.cx, trip.cy,
+                                   ray_tmin, ray_tmax,
+                                   ts, lxs, lys);
+
+    for (int i = 0; i < nc; ++i)
+    {
+        if (triangle_contains(lxs[i], lys[i], trip.utest, trip.vtest))
+        {
+            const float3 wn = parabolic_world_normal(lxs[i], lys[i],
+                                                     trip.cx, trip.cy,
+                                                     trip.x_axis, trip.y_axis,
+                                                     n);
+            optixReportIntersection(ts[i], 0,
+                                    __float_as_uint(wn.x),
+                                    __float_as_uint(wn.y),
+                                    __float_as_uint(wn.z));
+            return;
+        }
+    }
 }
 
 extern "C" __global__ void __intersection__annulus_parabolic()
