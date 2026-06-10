@@ -9,11 +9,135 @@ extern "C"
     __constant__ OptixCSP::LaunchParams params;
 }
 
+/**************** Surface Helper Functions ****************/
+
+// -----------------------------------------------------------------------
+// Shared helpers for a planar (flat) surface
+//
+// All planar surfaces have the equation
+//    <n, (p - p0)> = 0
+// where n is the normal vector, p0 = (x0, y0, z0) is a point in the plane,
+// generally the origin of the aperture.
+// -----------------------------------------------------------------------
+
 extern "C" __device__ __inline__ float ray_distance_to_plane(float3 ro, float3 rd, float4 plane)
 {
     const float3 n = make_float3(plane);
     return (plane.w - dot(n, ro)) / dot(rd, n);
 }
+
+// -----------------------------------------------------------------------
+// Shared helpers for parabolic surface intersections.
+//
+// All parabolic surfaces share the same quadric equation:
+//   z = (cx/2)*x^2 + (cy/2)*y^2
+// in a local frame (center, x_ax, y_ax, n=cross(x_ax,y_ax)).
+// The three helpers below factor out the ray transform, quadratic solve,
+// and normal computation. Each kernel only supplies the aperture test.
+// -----------------------------------------------------------------------
+
+// Transform a world-space ray into the local parabolic frame.
+// Outputs the frame normal n = normalize(cross(x_ax, y_ax)) and
+// the local ray origin (ox,oy,oz) and direction (dx,dy,dz).
+extern "C" __device__ __inline__ void parabolic_ray_to_local(
+    const float3 &ray_orig, const float3 &ray_dir,
+    const float3 &center,
+    const float3 &x_ax, const float3 &y_ax,
+    float3 &n,
+    float &ox, float &oy, float &oz,
+    float &dx, float &dy, float &dz)
+{
+    n = normalize(cross(x_ax, y_ax));
+    const float3 d = ray_orig - center;
+    ox = dot(d, x_ax);
+    oy = dot(d, y_ax);
+    oz = dot(d, n);
+    dx = dot(ray_dir, x_ax);
+    dy = dot(ray_dir, y_ax);
+    dz = dot(ray_dir, n);
+}
+
+// Solve A*t^2 + B*t + C = 0 for the paraboloid-ray intersection and return
+// up to two hits within [ray_tmin, ray_tmax], ordered by ascending t.
+// Returns the number of valid hits (0, 1, or 2).
+// t_out[i], lx_out[i], ly_out[i] give the ray parameter and local (x,y) of each hit.
+extern "C" __device__ __inline__ int parabolic_solve(
+    float ox, float oy, float oz,
+    float dx, float dy, float dz,
+    float cx, float cy,
+    float ray_tmin, float ray_tmax,
+    float t_out[2], float lx_out[2], float ly_out[2])
+{
+    const float A = 0.5f * cx * dx * dx + 0.5f * cy * dy * dy;
+    const float B = cx * ox * dx + cy * oy * dy - dz;
+    const float C = 0.5f * cx * ox * ox + 0.5f * cy * oy * oy - oz;
+
+    const float eps = 1e-6f;
+    int count = 0;
+
+    if (fabsf(A) < eps)
+    {
+        if (fabsf(B) > eps)
+        {
+            const float t = -C / B;
+            if (t >= ray_tmin && t <= ray_tmax)
+            {
+                t_out[0] = t;
+                lx_out[0] = ox + t * dx;
+                ly_out[0] = oy + t * dy;
+                count = 1;
+            }
+        }
+    }
+    else
+    {
+        const float discr = B * B - 4.0f * A * C;
+        if (discr >= 0.0f)
+        {
+            const float sq = sqrtf(discr);
+            // A > 0 (physical curvature), so ta <= tb is guaranteed.
+            const float ta = -0.5f * (B + sq) / A;
+            const float tb = -0.5f * (B - sq) / A;
+            if (ta >= ray_tmin && ta <= ray_tmax)
+            {
+                t_out[count] = ta;
+                lx_out[count] = ox + ta * dx;
+                ly_out[count] = oy + ta * dy;
+                ++count;
+            }
+            if (tb >= ray_tmin && tb <= ray_tmax)
+            {
+                t_out[count] = tb;
+                lx_out[count] = ox + tb * dx;
+                ly_out[count] = oy + tb * dy;
+                ++count;
+            }
+        }
+    }
+    return count;
+}
+
+// Compute the world-space unit normal at a parabolic surface hit.
+// x_hit, y_hit : local coordinates of the hit point
+// cx, cy       : curvature parameters
+// x_ax, y_ax   : local frame unit vectors
+// n            : normalize(cross(x_ax, y_ax))
+extern "C" __device__ __inline__ float3 parabolic_world_normal(
+    float x_hit, float y_hit,
+    float cx, float cy,
+    const float3 &x_ax, const float3 &y_ax, const float3 &n)
+{
+    const float3 N_local = make_float3(-cx * x_hit, -cy * y_hit, 1.0f);
+    return N_local.x * x_ax + N_local.y * y_ax + N_local.z * n;
+}
+
+// -----------------------------------------------------------------------
+
+
+/**************** Aperture Helper Functions ****************/
+
+
+/**************** Optix Intersection Functions ****************/
 
 extern "C" __global__ void __intersection__parallelogram()
 {
@@ -430,6 +554,39 @@ extern "C" __global__ void __intersection__circle_flat()
     }
 }
 
+extern "C" __device__ __inline__ bool hexagon_contains(float px, float py, float s)
+{
+    bool is_in = false;
+    const float xl = 0.5f * s;
+    const float yl = 0.5f * sqrtf(3.0f) * s;
+    if (-xl <= px && px <= xl && -yl <= py && py <= yl)
+    {
+        // Center
+        is_in = true;
+    }
+    else if (-s <= px && px < -xl)
+    {
+        // Left side
+        float y1 = sqrtf(3.0f) * (px + s);
+        float y2 = -y1;
+        if (y2 <= py && py <= y1)
+        {
+            is_in = true;
+        }
+    }
+    else if (xl < px && px <= s)
+    {
+        // Right side
+        float y1 = sqrtf(3.0f) * (px - s);
+        float y2 = -y1;
+        if (y1 <= py && py <= y2)
+        {
+            is_in = true;
+        }
+    }
+    return is_in;
+}
+
 extern "C" __global__ void __intersection__hexagon_flat()
 {
     const OptixCSP::GeometryDataST::Hexagon_Flat &hex = params.geometry_data_array[optixGetPrimitiveIndex()].getHexagon_Flat();
@@ -445,41 +602,13 @@ extern "C" __global__ void __intersection__hexagon_flat()
     // Verify intersection distance and Report ray intersection point
     if (t > ray_tmin && t < ray_tmax)
     {
-        bool is_in = false;
         float3 p = ray_orig + ray_dir * t - hex.center;
         // Project onto the local x and y axes which are unit vectors
         const float px = dot(p, hex.x_axis);
         const float py = dot(p, hex.y_axis);
         const float s = hex.s;
-        const float xl = 0.5f * s;
-        const float yl = 0.5f * sqrtf(3.0f) * s;
-        if (-xl <= px && px <= xl && -yl <= py && py <= yl)
-        {
-            // Center
-            is_in = true;
-        }
-        else if (-s <= px && px < -xl)
-        {
-            // Left side
-            float y1 = sqrtf(3.0f) * (px + s);
-            float y2 = -y1;
-            if (y2 <= py && py <= y1)
-            {
-                is_in = true;
-            }
-        }
-        else if (xl < px && px <= s)
-        {
-            // Right side
-            float y1 = sqrtf(3.0f) * (px - s);
-            float y2 = -y1;
-            if (y1 <= py && py <= y2)
-            {
-                is_in = true;
-            }
-        }
 
-        if (is_in)
+        if (hexagon_contains(px, py, s))
         {
             optixReportIntersection(t,
                                     0,
@@ -523,113 +652,6 @@ extern "C" __global__ void __intersection__annulus_flat()
         }
     }
 }
-
-// -----------------------------------------------------------------------
-// Shared helpers for parabolic surface intersections.
-//
-// All parabolic surfaces share the same quadric equation:
-//   z = (cx/2)*x^2 + (cy/2)*y^2
-// in a local frame (center, x_ax, y_ax, n=cross(x_ax,y_ax)).
-// The three helpers below factor out the ray transform, quadratic solve,
-// and normal computation. Each kernel only supplies the aperture test.
-// -----------------------------------------------------------------------
-
-// Transform a world-space ray into the local parabolic frame.
-// Outputs the frame normal n = normalize(cross(x_ax, y_ax)) and
-// the local ray origin (ox,oy,oz) and direction (dx,dy,dz).
-extern "C" __device__ __inline__ void parabolic_ray_to_local(
-    const float3 &ray_orig, const float3 &ray_dir,
-    const float3 &center,
-    const float3 &x_ax, const float3 &y_ax,
-    float3 &n,
-    float &ox, float &oy, float &oz,
-    float &dx, float &dy, float &dz)
-{
-    n = normalize(cross(x_ax, y_ax));
-    const float3 d = ray_orig - center;
-    ox = dot(d, x_ax);
-    oy = dot(d, y_ax);
-    oz = dot(d, n);
-    dx = dot(ray_dir, x_ax);
-    dy = dot(ray_dir, y_ax);
-    dz = dot(ray_dir, n);
-}
-
-// Solve A*t^2 + B*t + C = 0 for the paraboloid-ray intersection and return
-// up to two hits within [ray_tmin, ray_tmax], ordered by ascending t.
-// Returns the number of valid hits (0, 1, or 2).
-// t_out[i], lx_out[i], ly_out[i] give the ray parameter and local (x,y) of each hit.
-extern "C" __device__ __inline__ int parabolic_solve(
-    float ox, float oy, float oz,
-    float dx, float dy, float dz,
-    float cx, float cy,
-    float ray_tmin, float ray_tmax,
-    float t_out[2], float lx_out[2], float ly_out[2])
-{
-    const float A = 0.5f * cx * dx * dx + 0.5f * cy * dy * dy;
-    const float B = cx * ox * dx + cy * oy * dy - dz;
-    const float C = 0.5f * cx * ox * ox + 0.5f * cy * oy * oy - oz;
-
-    const float eps = 1e-6f;
-    int count = 0;
-
-    if (fabsf(A) < eps)
-    {
-        if (fabsf(B) > eps)
-        {
-            const float t = -C / B;
-            if (t >= ray_tmin && t <= ray_tmax)
-            {
-                t_out[0] = t;
-                lx_out[0] = ox + t * dx;
-                ly_out[0] = oy + t * dy;
-                count = 1;
-            }
-        }
-    }
-    else
-    {
-        const float discr = B * B - 4.0f * A * C;
-        if (discr >= 0.0f)
-        {
-            const float sq = sqrtf(discr);
-            // A > 0 (physical curvature), so ta <= tb is guaranteed.
-            const float ta = -0.5f * (B + sq) / A;
-            const float tb = -0.5f * (B - sq) / A;
-            if (ta >= ray_tmin && ta <= ray_tmax)
-            {
-                t_out[count] = ta;
-                lx_out[count] = ox + ta * dx;
-                ly_out[count] = oy + ta * dy;
-                ++count;
-            }
-            if (tb >= ray_tmin && tb <= ray_tmax)
-            {
-                t_out[count] = tb;
-                lx_out[count] = ox + tb * dx;
-                ly_out[count] = oy + tb * dy;
-                ++count;
-            }
-        }
-    }
-    return count;
-}
-
-// Compute the world-space unit normal at a parabolic surface hit.
-// x_hit, y_hit : local coordinates of the hit point
-// cx, cy       : curvature parameters
-// x_ax, y_ax   : local frame unit vectors
-// n            : normalize(cross(x_ax, y_ax))
-extern "C" __device__ __inline__ float3 parabolic_world_normal(
-    float x_hit, float y_hit,
-    float cx, float cy,
-    const float3 &x_ax, const float3 &y_ax, const float3 &n)
-{
-    const float3 N_local = make_float3(-cx * x_hit, -cy * y_hit, 1.0f);
-    return N_local.x * x_ax + N_local.y * y_ax + N_local.z * n;
-}
-
-// -----------------------------------------------------------------------
 
 // Parabolic surface, rectangle aperture.
 // z = (curv_x/2)*x^2 + (curv_y/2)*y^2, aperture: |x| <= L1/2, |y| <= L2/2.
@@ -741,43 +763,15 @@ extern "C" __global__ void __intersection__hexagon_parabolic()
                                    ray_tmin, ray_tmax,
                                    ts, lxs, lys);
 
-        for (int i = 0; i < nc; ++i)
+    for (int i = 0; i < nc; ++i)
     {
-        bool is_in = false;
         float3 p = ray_orig + ray_dir * ts[i] - hexp.center;
         // Project onto the local x and y axes which are unit vectors
         const float px = dot(p, hexp.x_axis);
         const float py = dot(p, hexp.y_axis);
         const float s = hexp.s;
-        const float xl = 0.5f * s;
-        const float yl = 0.5f * sqrtf(3.0f) * s;
-        if (-xl <= px && px <= xl && -yl <= py && py <= yl)
-        {
-            // Center
-            is_in = true;
-        }
-        else if (-s <= px && px < -xl)
-        {
-            // Left side
-            float y1 = sqrtf(3.0f) * (px + s);
-            float y2 = -y1;
-            if (y2 <= py && py <= y1)
-            {
-                is_in = true;
-            }
-        }
-        else if (xl < px && px <= s)
-        {
-            // Right side
-            float y1 = sqrtf(3.0f) * (px - s);
-            float y2 = -y1;
-            if (y1 <= py && py <= y2)
-            {
-                is_in = true;
-            }
-        }
 
-        if (is_in)
+        if (hexagon_contains(px, py, s))
         {
             const float3 wn = parabolic_world_normal(lxs[i], lys[i],
                                                      hexp.cx, hexp.cy,
