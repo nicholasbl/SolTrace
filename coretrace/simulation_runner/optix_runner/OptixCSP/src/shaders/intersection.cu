@@ -187,6 +187,30 @@ extern "C" __device__ __inline__ bool hexagon_contains(float px, float py, float
 }
 
 // -----------------------------------------------------------------------
+// Shared helpers for annulus apertures
+//
+// An annular sector aperture is defined in the local (x, y) frame by:
+//   Inner radius ri  : points closer than ri to the origin are excluded
+//   Outer radius ro  : points farther than ro from the origin are excluded
+//   Arc angle arc    : full sweep angle (radians) centered on the +x axis;
+//                      a point at angle theta is included when |theta| <= arc/2
+// A full annulus (no arc clipping) has arc = 2*pi.
+// -----------------------------------------------------------------------
+
+// Return true if the point (px, py) lies within an annular sector centered at the
+// origin. The sector is defined by inner radius ri, outer radius ro, and a full
+// arc angle arc (in radians) symmetric about the local x-axis (i.e., theta = 0).
+// px and py must be expressed in the aperture's local x/y frame.
+extern "C" __device__ __inline__ bool annulus_contains(float px, float py, float ri, float ro, float arc)
+{
+    const float rsq = px * px + py * py;
+    if (rsq < ri * ri || rsq > ro * ro)
+        return false;
+    const float theta = atan2f(py, px);
+    return fabsf(theta) <= 0.5f * arc;
+}
+
+// -----------------------------------------------------------------------
 
 /**************** Optix Intersection Functions ****************/
 
@@ -653,20 +677,15 @@ extern "C" __global__ void __intersection__annulus_flat()
     if (t > ray_tmin && t < ray_tmax)
     {
         float3 p = ray_orig + ray_dir * t - anf.center;
-        float d = length(p);
-        if (anf.ri <= d && d <= anf.ro)
+        const float px = dot(p, anf.x_axis);
+        const float py = dot(p, anf.y_axis);
+        if (annulus_contains(px, py, anf.ri, anf.ro, anf.arc))
         {
-            float px = dot(p, anf.x_axis);
-            float py = dot(p, anf.y_axis);
-            float theta = atan2f(py, px);
-            if (fabsf(theta) <= 0.5f * anf.arc)
-            {
-                optixReportIntersection(t,
-                                        0,
-                                        __float_as_uint(n.x),
-                                        __float_as_uint(n.y),
-                                        __float_as_uint(n.z));
-            }
+            optixReportIntersection(t,
+                                    0,
+                                    __float_as_uint(n.x),
+                                    __float_as_uint(n.y),
+                                    __float_as_uint(n.z));
         }
     }
 }
@@ -834,28 +853,19 @@ extern "C" __global__ void __intersection__annulus_parabolic()
                                    ray_tmin, ray_tmax,
                                    ts, lxs, lys);
 
-    const float risq = anap.ri * anap.ri;
-    const float rosq = anap.ro * anap.ro;
-    const float theta_max = 0.5f * anap.arc;
-
     for (int i = 0; i < nc; ++i)
     {
-        const float rsq = lxs[i] * lxs[i] + lys[i] * lys[i];
-        if (risq <= rsq && rsq <= rosq)
+        if (annulus_contains(lxs[i], lys[i], anap.ri, anap.ro, anap.arc))
         {
-            float theta = atan2f(lys[i], lxs[i]);
-            if (fabsf(theta) <= theta_max)
-            {
-                const float3 wn = parabolic_world_normal(lxs[i], lys[i],
-                                                         anap.cx, anap.cy,
-                                                         anap.x_axis, anap.y_axis,
-                                                         n);
-                optixReportIntersection(ts[i], 0,
-                                        __float_as_uint(wn.x),
-                                        __float_as_uint(wn.y),
-                                        __float_as_uint(wn.z));
-                return;
-            }
+            const float3 wn = parabolic_world_normal(lxs[i], lys[i],
+                                                     anap.cx, anap.cy,
+                                                     anap.x_axis, anap.y_axis,
+                                                     n);
+            optixReportIntersection(ts[i], 0,
+                                    __float_as_uint(wn.x),
+                                    __float_as_uint(wn.y),
+                                    __float_as_uint(wn.z));
+            return;
         }
     }
 }
