@@ -771,9 +771,10 @@ namespace SolTrace::Data
             // valid CCW traversal.
             const double cx = 0.25 * (x1 + x2 + x3 + x4);
             const double cy = 0.25 * (y1 + y2 + y3 + y4);
-            double pts[4][2] = {{x1, y1}, {x2, y2}, {x3, y3}, {x4, y4}};
-            std::sort(std::begin(pts), std::end(pts),
-                      [cx, cy](const double *a, const double *b)
+            using P2 = std::array<double, 2>;
+            std::array<P2, 4> pts = {P2{x1, y1}, P2{x2, y2}, P2{x3, y3}, P2{x4, y4}};
+            std::sort(pts.begin(), pts.end(),
+                      [cx, cy](const P2 &a, const P2 &b)
                       {
                           return std::atan2(a[1] - cy, a[0] - cx) <
                                  std::atan2(b[1] - cy, b[0] - cx);

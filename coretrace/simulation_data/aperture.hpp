@@ -803,6 +803,7 @@ namespace SolTrace::Data
          * shared diagonal endpoints and makes x1-x3 interior.
          */
         void ensure_valid_diagonal();
+    };
 
     /**
      * @brief Test if point is inside triangle defined by three vertices
