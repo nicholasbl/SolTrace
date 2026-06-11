@@ -139,6 +139,11 @@ MouseArea {
 
     anchors.fill: parent
     acceptedButtons: Qt.LeftButton
+    cursorShape: (App.view.mouse_mode === ViewModule.SelectItem
+                  || App.view.mouse_mode === ViewModule.SelectMaterial
+                  || App.view.mouse_mode === ViewModule.SelectGeometry)
+                 ? Qt.CrossCursor
+                 : Qt.ArrowCursor
 
     onPressed: (mouse) => {
         tracePick("pressed mode=" + App.view.mouse_mode

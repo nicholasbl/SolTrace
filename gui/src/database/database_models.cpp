@@ -279,6 +279,12 @@ QVariant MaterialGroupsModel::get(int index) {
     return QVariant::fromValue(rec->entity);
 }
 
+int MaterialGroupsModel::index_of(db::Entity entity) const {
+    auto iter = m_reverse.find(entity);
+    if (iter == m_reverse.end()) return -1;
+    return iter->second;
+}
+
 // =============================================================================
 
 QVector<EntityNamePair> GeometryGroupsModel::rebuild_lists() {
@@ -326,6 +332,12 @@ void GeometryGroupsModel::group_removed(db::Entity e) {
 
 GeometryGroupsModel::GeometryGroupsModel(QObject* parent)
     : StructModelAdapter(parent) { }
+
+int GeometryGroupsModel::index_of(db::Entity entity) const {
+    auto iter = m_reverse.find(entity);
+    if (iter == m_reverse.end()) return -1;
+    return iter->second;
+}
 
 void GeometryGroupsModel::reset(Database* database) {
     if (m_host) {

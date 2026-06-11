@@ -146,6 +146,7 @@ public:
 
 public slots:
     QVariant get(int index);
+    int      index_of(db::Entity entity) const;
 };
 
 /// A model providing the active geometry groups in a database
@@ -172,6 +173,7 @@ public:
 
 public slots:
     QVariant get(int index);
+    int      index_of(db::Entity entity) const;
 };
 
 // =============================================================================

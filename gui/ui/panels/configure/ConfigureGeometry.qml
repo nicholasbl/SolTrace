@@ -24,6 +24,14 @@ AdaptiveFilteredEditor {
         }
     }
 
+    Connections {
+        target: App.materials
+        function onCurrent_geometry_changed() {
+            root.selectSourceIndex(
+                        root.source_model.index_of(App.materials.current_geometry))
+        }
+    }
+
     onItemClicked: function(index, modelData) {
         App.materials.current_geometry = modelData.entity
     }
