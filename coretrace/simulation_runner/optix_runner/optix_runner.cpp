@@ -2,6 +2,7 @@
 #include "simulation_data/simulation_data_export.hpp"
 
 #include <iostream>
+#include <optical_properties.hpp>
 #include <sstream>
 #include <stdexcept>
 
@@ -9,6 +10,8 @@ using SolTrace::Runner::RunnerStatus;
 using SolTrace::Runner::SimulationRunner;
 
 using SolTrace::Result::SimulationResult;
+
+using SolTrace::Data::optics_id;
 
 OptixRunner::OptixRunner() : SimulationRunner(),
                              m_simdata(nullptr),
@@ -188,15 +191,28 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
             optix_el->set_id(static_cast<int32_t>(id));
 
             // Add optical properties
-            OpticalProperties *opt_front = el->get_front_optical_properties();
-            OptixCSP::OpticalDistribution od = this->to_optical_distribution(opt_front->error_distribution_type);
-            optix_el->set_optics_front(opt_front->my_type == InteractionType::REFRACTION, opt_front->reflectivity,
-                                       opt_front->transmitivity, opt_front->slope_error, opt_front->specularity_error, od);
+            auto opt_set = el->get_optical_property_set();
 
-            OpticalProperties *opt_back = el->get_back_optical_properties();
-            od = this->to_optical_distribution(opt_back->error_distribution_type);
-            optix_el->set_optics_back(opt_back->my_type == InteractionType::REFRACTION, opt_back->reflectivity,
-                                      opt_back->transmitivity, opt_back->slope_error, opt_back->specularity_error, od);
+            if (opt_set == nullptr)
+                throw std::runtime_error("Element has invalid optical property set.");
+
+            DistributionType front_dist;
+            double front_slope, front_spec;
+            opt_set->get_errors(OpticalSide::Front, front_dist, front_slope, front_spec);
+
+            OptixCSP::OpticalDistribution front_dist_optix = this->to_optical_distribution(front_dist);
+            optix_el->set_optics_front(opt_set->get_interaction_type() == InteractionType::REFRACTION, 
+                opt_set->get_reflectivity(OpticalSide::Front), opt_set->get_transmissivity(OpticalSide::Front), 
+                front_slope, front_spec, front_dist_optix);
+
+            DistributionType back_dist;
+            double back_slope, back_spec;
+            opt_set->get_errors(OpticalSide::Back, back_dist, back_slope, back_spec);
+
+            OptixCSP::OpticalDistribution back_dist_optix = this->to_optical_distribution(back_dist);
+            optix_el->set_optics_back(opt_set->get_interaction_type() == InteractionType::REFRACTION,
+                opt_set->get_reflectivity(OpticalSide::Back), opt_set->get_transmissivity(OpticalSide::Back),
+                back_slope, back_spec, back_dist_optix);
 
             if (m_sys.is_verbose())
             {

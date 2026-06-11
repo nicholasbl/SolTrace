@@ -16,10 +16,10 @@ namespace SolTrace::NativeRunner
                                     int_fast64_t stage,
                                     unsigned thread_id,
                                     MTRand &myrng,
-                                    const OpticalProperties *optics,
+                                    const OpticalPropertySet *optics,
                                     const glm::dvec3 &LastDFXYZ,
                                     const glm::dvec3 &LastCosRaySurfElement,
-                                    // bool LastHitBackSide,
+                                    bool LastHitBackSide,
                                     RayEvent &rev)
     {
         bool good = true;
@@ -28,8 +28,11 @@ namespace SolTrace::NativeRunner
         double TestValue;
         auto UnitLastDFXYZ = glm::dvec3{0.0};
         double IncidentAngle = 0;
+
+        const OpticalSide side = LastHitBackSide == false ? OpticalSide::Front : OpticalSide::Back;
+
         // TODO: Implement tables...
-        switch (optics->my_type)
+        switch (optics->get_interaction_type())
         {
         case InteractionType::REFRACTION:
             // if (optics->UseTransmissivityTable)
@@ -61,7 +64,7 @@ namespace SolTrace::NativeRunner
             //     TestValue = optics->transmitivity;
             //     rev = RayEvent::TRANSMIT;
             // }
-            TestValue = optics->transmitivity;
+            TestValue = optics->get_transmissivity(side);
             rev = RayEvent::TRANSMIT;
             break;
         case InteractionType::REFLECTION:
@@ -93,19 +96,19 @@ namespace SolTrace::NativeRunner
             //     TestValue = optics->reflectivity;
             //     rev = RayEvent::REFLECT;
             // }
-            TestValue = optics->reflectivity;
+            TestValue = optics->get_reflectivity(side);
             rev = RayEvent::REFLECT;
             break;
         default:
             good = false;
             std::stringstream ss;
             ss << "Bad optical interaction."
-               << " Type: " << static_cast<int>(optics->my_type)
+               << " Type: " << static_cast<int>(optics->get_interaction_type())
                << " Stage: " << stage
                << " Thread: " << thread_id
                << "\n";
             logger->error_log(ss.str());
-            break;
+            return false;
         }
 
         // Apply MonteCarlo probability of absorption. Limited

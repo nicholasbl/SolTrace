@@ -377,7 +377,7 @@ namespace SolTrace::NativeRunner
 					}
 
 					// Get optics and check for absorption
-					const OpticalProperties *optics = 0;
+					const OpticalPropertySet *optics_set = 0;
 					RayEvent rev = RayEvent::VIRTUAL;
 					if (Stage->Virtual)
 					{
@@ -391,19 +391,17 @@ namespace SolTrace::NativeRunner
 						telement_ptr optelm =
 							Stage->ElementList[LastElementNumber - 1];
 
-						if (LastHitBackSide)
-							optics = &optelm->Optics.Back;
-						else
-							optics = &optelm->Optics.Front;
+						optics_set = &optelm->Optics;
 
 						bool good = determine_interaction_type(
 							logger,
 							i,
 							0,
 							myrng,
-							optics,
+							optics_set,
 							LastDFXYZ,
 							LastCosRaySurfElement,
+							LastHitBackSide,
 							rev);
 
 						if (!good)
@@ -423,7 +421,8 @@ namespace SolTrace::NativeRunner
 					ProcessInteraction(System,
 									   myrng,
 									   IncludeSunShape,
-									   optics,
+									   optics_set,
+									   LastHitBackSide,
 									   IncludeErrors,
 									   i,
 									   Stage,

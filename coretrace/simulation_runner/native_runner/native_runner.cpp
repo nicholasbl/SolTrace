@@ -211,9 +211,13 @@ namespace SolTrace::NativeRunner
                             "Element does not match current stage");
                     }
 
+                    const auto optics = el->get_optical_property_set();
+                    if (optics == nullptr)
+                        throw std::runtime_error("Element has invalid optical property set.");
                     telement_ptr elem = make_telement(iter->second,
                                                       current_stage,
-                                                      this->eparams);
+                                                      this->eparams,
+                                                      *optics);
                     // ++element_number;
                     // current_stage->ElementList.push_back(elem);
                     current_stage->add_element(elem);
@@ -244,9 +248,13 @@ namespace SolTrace::NativeRunner
                 element_ptr el = iter->second;
                 if (el->is_enabled() && el->is_single())
                 {
+                    const auto optics = el->get_optical_property_set();
+                    if (optics == nullptr)
+                        throw std::runtime_error("Element has invalid optical property set.");
                     telement_ptr tel = make_telement(el,
                                                      stage,
-                                                     this->eparams);
+                                                     this->eparams,
+                                                     *optics);
                     // stage->ElementList.push_back(tel);
                     // ++element_number;
                     this->check_supported_options(tel);
@@ -501,9 +509,9 @@ namespace SolTrace::NativeRunner
     void NativeRunner::check_supported_options(telement_ptr telem)
     {
         check_supported_optical_distribution(
-            telem->Optics.Front.error_distribution_type);
+            telem->Optics.get_error_distribution(OpticalSide::Front));
         check_supported_optical_distribution(
-            telem->Optics.Back.error_distribution_type);
+            telem->Optics.get_error_distribution(OpticalSide::Back));
 
         // TODO: Put other checks here
 

@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "single_element.hpp"
+#include "virtual_element.hpp"
 
 namespace SolTrace::Data
 {
@@ -15,9 +16,9 @@ namespace SolTrace::Data
         return;
     }
 
-    CompositeElement::CompositeElement(const nlohmann::ordered_json &jnode) : ElementBase(jnode),
-                                                                              number_of_elements(0),
-                                                                              my_elements()
+    CompositeElement::CompositeElement(const nlohmann::ordered_json &jnode,
+        const OpticalPropertySetResolver& resolve_optics) 
+        : ElementBase(jnode), number_of_elements(0),my_elements()
     {
         using json = nlohmann::ordered_json;
 
@@ -29,12 +30,21 @@ namespace SolTrace::Data
             bool is_single = jelement.at("is_single");
             if (is_single)
             {
-                element_ptr el = make_element<SingleElement>(jelement);
-                this->add_element(el);
+                if (jelement.at("virtual_flag") == true)
+                {
+                    element_ptr el = make_element<VirtualElement>(jelement, resolve_optics);
+                    this->add_element(el);
+                }
+                else
+                {
+                    element_ptr el = make_element<SingleElement>(jelement, resolve_optics);
+                    this->add_element(el);
+                }
+                
             }
             else
             {
-                composite_element_ptr comp = make_element<CompositeElement>(jelement);
+                composite_element_ptr comp = make_element<CompositeElement>(jelement, resolve_optics);
                 this->add_element(comp);
             }
         }

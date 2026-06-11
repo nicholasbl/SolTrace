@@ -20,7 +20,8 @@ namespace SolTrace::NativeRunner {
 
 void SurfaceNormalErrors(MTRand &myrng,
                          glm::dvec3 &CosIn,
-                         const SolTrace::Data::OpticalProperties *OptProperties,
+                         const SolTrace::Data::OpticalPropertySet* OptProperties,
+						 const bool LastHitBackSide,
                          glm::dvec3 &CosOut) noexcept(false) // throw(nanexcept)
 {
 
@@ -35,6 +36,8 @@ void SurfaceNormalErrors(MTRand &myrng,
 					   }*/
 
     int i = 0;
+
+	const OpticalSide side = LastHitBackSide == false ? OpticalSide::Front : OpticalSide::Back;
 
     glm::dvec3 Origin(0.0, 0.0, 0.0);
     glm::dvec3 Euler(0.0, 0.0, 0.0);
@@ -68,9 +71,9 @@ void SurfaceNormalErrors(MTRand &myrng,
 
     // TODO: Add distribution type to optical properties
     // dist = OptProperties->DistributionType;
-    dist = OptProperties->error_distribution_type;
+	dist = OptProperties->get_error_distribution(side);
     // delop = OptProperties->RMSSlopeError / 1000.0;
-	delop = OptProperties->slope_error / 1000.0;
+	delop = OptProperties->get_slope_error(side) / 1000.0;
 
 	switch (dist)
 	{
@@ -125,7 +128,8 @@ void Errors(
     TSun* Sun,
     // TElement *Element,
     // TOpticalProperties *OptProperties,
-    const SolTrace::Data::OpticalProperties* OptProperties,
+    const SolTrace::Data::OpticalPropertySet* OptProperties,
+	const bool LastHitBackSide,
     glm::dvec3& CosOut,
     glm::dvec3& DFXYZ)
 {
@@ -151,6 +155,8 @@ void Errors(
     glm::dvec3 Euler(0.0, 0.0, 0.0);
     glm::dvec3 PosIn(0.0, 0.0, 0.0);
     glm::dvec3 PosOut(0.0, 0.0, 0.0);
+
+	const OpticalSide side = LastHitBackSide == false ? OpticalSide::Front : OpticalSide::Back;
 
     // char dist = 'g';
     double delop = 0.0, thetax = 0.0, thetay = 0.0, theta2 = 0.0, phi = 0.0, theta = 0.0, stest = 0.0;
@@ -264,10 +270,10 @@ void Errors(
 	{
 		// dist = OptProperties->DistributionType; // errors
 		// // delop = sqrt(4.0*sqr(OptProperties->RMSSlopeError)+sqr(OptProperties->RMSSpecError))/1000.0;
-		delop = OptProperties->specularity_error;
+		delop = OptProperties->get_specularity_error(side);
 
 	Label_50:
-		switch (OptProperties->error_distribution_type)
+		switch (OptProperties->get_error_distribution(side))
 		{
 		case DistributionType::GAUSSIAN:			// case 'g':
 			thetax = myrng.randNorm(0., delop);
@@ -324,7 +330,7 @@ void Errors(
     /*{If reflection error application and new ray direction (after errors) physically goes through opaque surface,
     then go back and get new perturbation 06-12-07}*/		
 	if ((Source == 2) &&
-		(OptProperties->my_type == InteractionType::REFLECTION) &&
+		(OptProperties->get_interaction_type() == InteractionType::REFLECTION) &&
         (glm::dot(CosOut, DFXYZ) < 0) &&
 		maxcall++ < 50000)
 	{

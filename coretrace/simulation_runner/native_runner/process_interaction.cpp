@@ -9,102 +9,105 @@
 namespace SolTrace::NativeRunner
 {
 
-void ProcessInteraction(
-    // system info
-    TSystem *System,
-    MTRand &myrng,
-    const bool IncludeSunShape,
-    const SolTrace::Data::OpticalProperties *optics,
-    const bool IncludeErrors,
-    // stage info
-    const int i,
-    // const TStage *Stage,
-    const tstage_ptr Stage,
-    // const telement_ptr Elem,
-    // const int k,
-    // ray info
-    const uint_fast64_t MultipleHitCount,
-    glm::dvec3 &LastDFXYZ,
-    // Outputs
-    glm::dvec3 &LastCosRaySurfElement,
-    int &ErrorFlag,
-    glm::dvec3 &CosRayOutElement,
-    glm::dvec3 &LastPosRaySurfElement,
-    glm::dvec3 &PosRayOutElement)
-{
-    // Initialize
-    glm::dvec3 CosIn(0.0, 0.0, 0.0);
-    glm::dvec3 CosOut(0.0, 0.0, 0.0);
+    void ProcessInteraction(
+        // system info
+        TSystem* System,
+        MTRand& myrng,
+        const bool IncludeSunShape,
+        const SolTrace::Data::OpticalPropertySet* optics,
+        const bool LastHitBackSide,
+        const bool IncludeErrors,
+        // stage info
+        const int i,
+        // const TStage *Stage,
+        const tstage_ptr Stage,
+        // const telement_ptr Elem,
+        // const int k,
+        // ray info
+        const uint_fast64_t MultipleHitCount,
+        glm::dvec3& LastDFXYZ,
+        // Outputs
+        glm::dvec3& LastCosRaySurfElement,
+        int& ErrorFlag,
+        glm::dvec3& CosRayOutElement,
+        glm::dvec3& LastPosRaySurfElement,
+        glm::dvec3& PosRayOutElement)
+    {
+        // Initialize
+        glm::dvec3 CosIn(0.0, 0.0, 0.0);
+        glm::dvec3 CosOut(0.0, 0.0, 0.0);
 
-    if (!Stage->Virtual) {
-        // change to account for first hit only in primary stage 8-11-31
-        if (IncludeSunShape && i == 0 && MultipleHitCount == 1) {
-            // Apply sunshape to UNPERTURBED ray at intersection point
-            // only apply sunshape error once for primary stage
-            CosIn = LastCosRaySurfElement;
-            // sun shape
-            Errors(myrng, CosIn, 1, &System->Sun, optics, CosOut, LastDFXYZ);
-            LastCosRaySurfElement = CosOut;
-        }
+        if (!Stage->Virtual) {
+            // change to account for first hit only in primary stage 8-11-31
+            if (IncludeSunShape && i == 0 && MultipleHitCount == 1) {
+                // Apply sunshape to UNPERTURBED ray at intersection point
+                // only apply sunshape error once for primary stage
+                CosIn = LastCosRaySurfElement;
+                // sun shape
+                Errors(myrng, CosIn, 1, &System->Sun, optics, LastHitBackSide, CosOut, LastDFXYZ);
+                LastCosRaySurfElement = CosOut;
+            }
 
-        //{Determine interaction at surface and direction of perturbed ray}
-        ErrorFlag = 0;
+            //{Determine interaction at surface and direction of perturbed ray}
+            ErrorFlag = 0;
 
-        // {Apply surface normal errors to surface normal before interaction
-        // ray at intersection point - Wendelin 11-23-09}
-        if (IncludeErrors) {
-            CosIn = CosRayOutElement;
-            // surface normal errors
-            SurfaceNormalErrors(myrng, LastDFXYZ, optics, CosOut);
+            // {Apply surface normal errors to surface normal before interaction
+            // ray at intersection point - Wendelin 11-23-09}
+            if (IncludeErrors) {
+                CosIn = CosRayOutElement;
+                // surface normal errors
+                SurfaceNormalErrors(myrng, LastDFXYZ, optics, LastHitBackSide, CosOut);
+                // myrng_counter++;
+                LastDFXYZ = CosOut;
+            }
+
+            Interaction(myrng,
+                LastPosRaySurfElement,
+                LastCosRaySurfElement,
+                LastDFXYZ, // Stage->ElementList[k]->InteractionType,
+                optics,
+                LastHitBackSide,
+                630.0,
+                PosRayOutElement,
+                CosRayOutElement,
+                &ErrorFlag);
             // myrng_counter++;
-            LastDFXYZ = CosOut;
-        }
 
-        Interaction(myrng,
-                    LastPosRaySurfElement,
-                    LastCosRaySurfElement,
-                    LastDFXYZ, // Stage->ElementList[k]->InteractionType,
+            // {Apply specularity optical error to PERTURBED (i.e. after
+            // interaction) ray at intersection point}
+            if (IncludeErrors) {
+                // if (optics->error_distribution_type == 'F' ||
+                // 	optics->error_distribution_type == 'f')
+                // {
+                // 	// Apply diffuse errors relative to surface normal
+                // 	CopyVec3(CosIn, LastDFXYZ);
+                // }
+                // else
+                // {
+                // 	// Apply all other errors relative to the specularly-reflected
+                // 	// direction
+                // 	CopyVec3(CosIn, CosRayOutElement);
+                // }
+
+                // TODO: Not sure what error distribution type 'F' is?
+                // Do we need to implement it? For now just use the 'else'
+                // clause from the above.
+                CosIn = CosRayOutElement;
+
+                // optical errors
+                Errors(myrng,
+                    CosIn,
+                    2,
+                    &System->Sun,
+                    //    Stage->ElementList[k].get(),
                     optics,
-                    630.0,
-                    PosRayOutElement,
-                    CosRayOutElement,
-                    &ErrorFlag);
-        // myrng_counter++;
-
-        // {Apply specularity optical error to PERTURBED (i.e. after
-        // interaction) ray at intersection point}
-        if (IncludeErrors) {
-            // if (optics->error_distribution_type == 'F' ||
-            // 	optics->error_distribution_type == 'f')
-            // {
-            // 	// Apply diffuse errors relative to surface normal
-            // 	CopyVec3(CosIn, LastDFXYZ);
-            // }
-            // else
-            // {
-            // 	// Apply all other errors relative to the specularly-reflected
-            // 	// direction
-            // 	CopyVec3(CosIn, CosRayOutElement);
-            // }
-
-            // TODO: Not sure what error distribution type 'F' is?
-            // Do we need to implement it? For now just use the 'else'
-            // clause from the above.
-            CosIn = CosRayOutElement;
-
-            // optical errors
-            Errors(myrng,
-                   CosIn,
-                   2,
-                   &System->Sun,
-                   //    Stage->ElementList[k].get(),
-                   optics,
-                   CosOut,
-                   LastDFXYZ);
-            // myrng_counter++;
-            CosRayOutElement = CosOut;
+                    LastHitBackSide,
+                    CosOut,
+                    LastDFXYZ);
+                // myrng_counter++;
+                CosRayOutElement = CosOut;
+            }
         }
-    }
     }
 
     inline double sqr(double x) { return (x) * (x); }
@@ -113,7 +116,8 @@ void ProcessInteraction(
                      const glm::dvec3 &PosXYZ,
                      const glm::dvec3 &CosKLM,
                      const glm::dvec3 &DFXYZ,
-                     const SolTrace::Data::OpticalProperties *Opticl,
+                     const SolTrace::Data::OpticalPropertySet *Opticl,
+                     const bool LastHitBackSide,
                      double Wavelength,
                      glm::dvec3 &PosOut,
                      glm::dvec3 &CosOut,
@@ -185,7 +189,7 @@ void ProcessInteraction(
 
         PosOut = PosXYZ;
 
-        switch (Opticl->my_type)
+        switch (Opticl->get_interaction_type())
         {
 
             /*{  InteractionType = 1, Refraction
@@ -196,8 +200,21 @@ void ProcessInteraction(
             // as the commented out bit immediately below.
             // Refr1 = Opticl->RefractiveIndex[0];
             // Refr2 = Opticl->RefractiveIndex[2];
-            Refr1 = Opticl->refraction_index_front;
-            Refr2 = Opticl->refraction_index_back;
+
+            double refrac_front, refrac_back;
+            Opticl->get_refraction_indices(refrac_front, refrac_back);
+
+            if (!LastHitBackSide)
+            {
+                Refr1 = refrac_front;
+                Refr2 = refrac_back;
+            }
+            else
+            {
+                Refr1 = refrac_back;
+                Refr2 = refrac_front;
+            }
+            
             RMU = Refr1 / Refr2;
             D2 = glm::dot(DFXYZ, DFXYZ);
             B = (RMU * RMU - 1.0) / D2;
