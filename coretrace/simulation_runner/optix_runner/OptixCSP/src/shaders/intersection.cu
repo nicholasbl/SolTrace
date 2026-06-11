@@ -592,18 +592,17 @@ extern "C" __global__ void __intersection__quadrilateral_flat()
     const float3 ro = optixGetObjectRayOrigin();
     const float3 rd = optixGetObjectRayDirection();
 
+    // Decompose as (p0,p1,p2) ∪ (p0,p2,p3) — same p0-p2 diagonal as the parabolic kernel.
     const float3 p0 = quad.p0;
-    const float3 p2 = quad.p2;
+    const float3 e02 = quad.p2 - p0;
     float3 e1 = quad.p1 - p0;
-    float3 e2 = quad.p3 - p0;
 
-    float t = _triangle_intersect(p0, e1, e2, ro, rd);
+    float t = _triangle_intersect(p0, e1, e02, ro, rd);
 
     if (t < optixGetRayTmin() || t > optixGetRayTmax())
     {
-        e1 = quad.p1 - p2;
-        e2 = quad.p3 - p2;
-        t = _triangle_intersect(p2, e1, e2, ro, rd);
+        const float3 e3 = quad.p3 - p0;
+        t = _triangle_intersect(p0, e02, e3, ro, rd);
     }
 
     if (t < optixGetRayTmin() || t > optixGetRayTmax())
