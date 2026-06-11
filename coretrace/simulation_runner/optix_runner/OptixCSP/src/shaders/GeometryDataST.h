@@ -245,9 +245,9 @@ namespace OptixCSP
                 const float2 e2 = make_float2(v2.x - v0.x, v2.y - v0.y);
                 const float inv_det = 1.0f / (e1.x * e2.y - e1.y * e2.x);
                 // u = dot(utest, float3(px, py, 1.0f))
-                utest = make_float3( e2.y, -e2.x, v0.y * e2.x - v0.x * e2.y) * inv_det;
+                utest = make_float3(e2.y, -e2.x, v0.y * e2.x - v0.x * e2.y) * inv_det;
                 // v = dot(vtest, float3(px, py, 1.0f))
-                vtest = make_float3(-e1.y,  e1.x, v0.x * e1.y - v0.y * e1.x) * inv_det;
+                vtest = make_float3(-e1.y, e1.x, v0.x * e1.y - v0.y * e1.x) * inv_det;
             }
             float3 center; // element origin in global coordinates
             float3 x_axis; // local x axis unit vector
@@ -257,7 +257,7 @@ namespace OptixCSP
             float3 utest;  // precomputed row: u = dot(utest, float3(px, py, 1.0f))
             float3 vtest;  // precomputed row: v = dot(vtest, float3(px, py, 1.0f))
         };
-        
+
         struct Annulus_Parabolic
         {
             Annulus_Parabolic() = default;
@@ -278,9 +278,38 @@ namespace OptixCSP
             float ro;
             float arc; // in radians
         };
-        
+
         struct Quadrilateral_Parabolic
         {
+            Quadrilateral_Parabolic() = default;
+            Quadrilateral_Parabolic(const float3 &origin, const float3 &x_ax, const float3 &y_ax,
+                                    const float &curv_x, const float &curv_y,
+                                    const float2 &v0, const float2 &v1,
+                                    const float2 &v2, const float2 &v3)
+                : center(origin), x_axis(x_ax), y_axis(y_ax), cx(curv_x), cy(curv_y)
+            {
+                const float2 e1 = make_float2(v1.x - v0.x, v1.y - v0.y);
+                const float2 e2 = make_float2(v2.x - v0.x, v2.y - v0.y);
+                const float inv_det = 1.0f / (e1.x * e2.y - e1.y * e2.x);
+                // u = dot(utest, float3(px, py, 1.0f))
+                u1test = make_float3(e2.y, -e2.x, v0.y * e2.x - v0.x * e2.y) * inv_det;
+                // v = dot(vtest, float3(px, py, 1.0f))
+                v1test = make_float3(-e1.y, e1.x, v0.x * e1.y - v0.y * e1.x) * inv_det;
+
+                const float2 e3 = make_float2(v3.x - v0.x, v3.y - v0.y);
+                const float inv_det2 = 1.0f / (e2.x * e3.y - e2.y * e3.x);
+                u2test = make_float3(e3.y, -e3.x, v0.y * e3.x - v0.x * e3.y) * inv_det2;
+                v2test = make_float3(-e2.y, e2.x, v0.x * e2.y - v0.y * e2.x) * inv_det2;
+            }
+            float3 center; // element origin in global coordinates
+            float3 x_axis; // local x axis unit vector
+            float3 y_axis; // local y axis unit vector
+            float cx;      // curvature along local x axis
+            float cy;      // curvature along local y axis
+            float3 u1test;  // precomputed row: u = dot(utest, float3(px, py, 1.0f))
+            float3 v1test;  // precomputed row: v = dot(vtest, float3(px, py, 1.0f))
+            float3 u2test;
+            float3 v2test;
         };
 
         GeometryDataST() = default;

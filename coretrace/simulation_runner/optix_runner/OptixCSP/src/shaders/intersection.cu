@@ -228,7 +228,8 @@ extern "C" __device__ __inline__ bool triangle_contains(float px, float py,
 {
     const float3 p = make_float3(px, py, 1.0f);
     const float u = dot(utest, p);
-    if (u < 0.0f || u > 1.0f) return false;
+    if (u < 0.0f || u > 1.0f)
+        return false;
     const float v = dot(vtest, p);
     return v >= 0.0f && (u + v) <= 1.0f;
 }
@@ -930,4 +931,39 @@ extern "C" __global__ void __intersection__annulus_parabolic()
 
 extern "C" __global__ void __intersection__quadrilateral_parabolic()
 {
+    const OptixCSP::GeometryDataST::Quadrilateral_Parabolic &quap =
+        params.geometry_data_array[optixGetPrimitiveIndex()].getQuadrilateral_Parabolic();
+
+    const float3 ray_orig = optixGetWorldRayOrigin();
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float ray_tmin = optixGetRayTmin();
+    const float ray_tmax = optixGetRayTmax();
+
+    float3 n;
+    float ox, oy, oz, dx, dy, dz;
+    parabolic_ray_to_local(ray_orig, ray_dir,
+                           quap.center, quap.x_axis, quap.y_axis,
+                           n, ox, oy, oz, dx, dy, dz);
+
+    float ts[2], lxs[2], lys[2];
+    const int nc = parabolic_solve(ox, oy, oz, dx, dy, dz,
+                                   quap.cx, quap.cy,
+                                   ray_tmin, ray_tmax,
+                                   ts, lxs, lys);
+
+    for (int i = 0; i < nc; ++i)
+    {
+        if (triangle_contains(lxs[i], lys[i], quap.u1test, quap.v1test) ||
+            triangle_contains(lxs[i], lys[i], quap.u2test, quap.v2test))
+        {
+            const float3 wn = parabolic_world_normal(lxs[i], lys[i],
+                                                     quap.cx, quap.cy,
+                                                     quap.x_axis, quap.y_axis, n);
+            optixReportIntersection(ts[i], 0,
+                                    __float_as_uint(wn.x),
+                                    __float_as_uint(wn.y),
+                                    __float_as_uint(wn.z));
+            return;
+        }
+    }
 }
