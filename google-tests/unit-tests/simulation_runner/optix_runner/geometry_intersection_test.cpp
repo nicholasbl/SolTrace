@@ -251,6 +251,78 @@ TEST(OptixRunner, FlatEquilateralTriangle)
 
 TEST(OptixRunner, FlatTriangle)
 {
+    // Same triangle as FlatTriangle but vertices supplied in CCW order:
+    // (0,0)->(2,0)->(1,2). The optix_runner's cross-product sign check sees
+    // a positive area and does NOT swap, so the CCW path is taken directly.
+    // Results should be identical to FlatTriangle.
+    const double x1 = 0.0, x2 = 2.0, x3 = 1.0;
+    const double y1 = 0.0, y2 = 0.0, y3 = 2.0;
+    const double ROT_DEG = 110.0;
+    auto surf = make_surface<Flat>();
+    auto aper = make_aperture<IrregularTriangle>(x1, y1, x2, y2, x3, y3);
+
+    uint_fast64_t fpos = 0, fneg = 0, hits = 0, misses = 0;
+
+    SimulationData sd;
+    element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
+    SimulationResult result;
+
+    OptixRunner runner;
+    RunnerStatus sts = runner.initialize();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.report_simulation(&result, 0);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+
+    ASSERT_EQ(result.get_number_of_records(),
+              sd.get_simulation_parameters().number_of_rays);
+    const double cos_rot = cos(ROT_DEG * D2R);
+    const double sin_rot = sin(ROT_DEG * D2R);
+    for (int i = 0; i < (int)result.get_number_of_records(); ++i)
+    {
+        auto rr = result[i];
+        ASSERT_GE(rr->get_number_of_interactions(), 2);
+        glm::dvec3 p0, p1;
+        rr->get_position(0, p0);
+        rr->get_position(1, p1);
+        auto id = rr->get_element(1);
+        EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
+        EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        const double lx = p1[0] * cos_rot - p1[1] * sin_rot;
+        const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
+
+        if (id == test_elid)
+        {
+            EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
+            EXPECT_TRUE(aper->is_in(lx, ly));
+            ++hits;
+            if (!aper->is_in(lx, ly))
+                ++fpos;
+        }
+        else
+        {
+            EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
+            EXPECT_FALSE(aper->is_in(lx, ly));
+            ++misses;
+            if (aper->is_in(lx, ly))
+                ++fneg;
+        }
+    }
+    EXPECT_GT(hits, 0u);
+    EXPECT_GT(misses, 0u);
+    std::cout << "hits: " << hits << ", misses: " << misses
+              << ", false positives: " << fpos
+              << ", false negatives: " << fneg << std::endl;
+}
+
+TEST(OptixRunner, FlatTriangle_CW)
+{
+    // Vertices are in CW order (signed area = -2). The optix_runner's
+    // cross-product sign check detects this and swaps p1<->p2 to produce
+    // CCW winding before building the geometry.
     const double x1 = 0.0, x2 = 1.0, x3 = 2.0 * x2;
     const double y1 = 0.0, y2 = 2.0, y3 = y1;
     const double ROT_DEG = 110.0;
@@ -319,6 +391,79 @@ TEST(OptixRunner, FlatQuadrilateral)
     // Parallelogram
     const double x1 = 0.0, x2 = 3.0, x3 = (x2 - x1) + 1.0, x4 = x3 - x2 + x1;
     const double y1 = 0.0, y2 = y1, y3 = 2.0, y4 = y3;
+    const double ROT_DEG = -45.0;
+    auto surf = make_surface<Flat>();
+    auto aper = make_aperture<IrregularQuadrilateral>(
+        x1, y1, x2, y2, x3, y3, x4, y4);
+
+    uint_fast64_t fpos = 0, fneg = 0, hits = 0, misses = 0;
+
+    SimulationData sd;
+    element_id test_elid = set_default_sd(sd, surf, aper, ROT_DEG);
+    SimulationResult result;
+
+    OptixRunner runner;
+    RunnerStatus sts = runner.initialize();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.setup_simulation(&sd);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.run_simulation();
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+    sts = runner.report_simulation(&result, 0);
+    ASSERT_EQ(sts, RunnerStatus::SUCCESS);
+
+    ASSERT_EQ(result.get_number_of_records(),
+              sd.get_simulation_parameters().number_of_rays);
+    const double cos_rot = cos(ROT_DEG * D2R);
+    const double sin_rot = sin(ROT_DEG * D2R);
+    for (int i = 0; i < (int)result.get_number_of_records(); ++i)
+    {
+        auto rr = result[i];
+        ASSERT_GE(rr->get_number_of_interactions(), 2);
+        glm::dvec3 p0, p1;
+        rr->get_position(0, p0);
+        rr->get_position(1, p1);
+        auto id = rr->get_element(1);
+        EXPECT_NEAR(p0[0], p1[0], TOL) << "ray " << i;
+        EXPECT_NEAR(p0[1], p1[1], TOL) << "ray " << i;
+        const double lx = p1[0] * cos_rot - p1[1] * sin_rot;
+        const double ly = p1[0] * sin_rot + p1[1] * cos_rot;
+
+        if (id == test_elid)
+        {
+            EXPECT_NEAR(p1[2], Z_ELEM, TOL * Z_ELEM) << "ray " << i;
+            EXPECT_TRUE(aper->is_in(lx, ly));
+            ++hits;
+            if (!aper->is_in(lx, ly))
+                ++fpos;
+        }
+        else
+        {
+            EXPECT_NEAR(p1[2], Z_BACKSTOP, TOL * Z_ELEM);
+            EXPECT_FALSE(aper->is_in(lx, ly));
+            ++misses;
+            if (aper->is_in(lx, ly))
+                ++fneg;
+        }
+    }
+    EXPECT_GT(hits, 0u);
+    EXPECT_GT(misses, 0u);
+    std::cout << "hits: " << hits << ", misses: " << misses
+              << ", false positives: " << fpos
+              << ", false negatives: " << fneg << std::endl;
+}
+
+TEST(OptixRunner, FlatQuadrilateral_CW)
+{
+    // Same parallelogram as FlatQuadrilateral but vertices supplied in
+    // clockwise winding order: (0,0)->(1,2)->(4,2)->(3,0).
+    // The x1-x3 diagonal is already interior for this ordering, so
+    // ensure_valid_diagonal() leaves the vertices unchanged (CW).
+    // The optix_runner's shoelace sign check detects the negative area and
+    // swaps p1<->p3 to restore CCW winding before building the geometry.
+    // Results should be identical to FlatQuadrilateral.
+    const double x1 = 0.0, x2 = 1.0, x3 = 4.0, x4 = 3.0;
+    const double y1 = 0.0, y2 = 2.0, y3 = 2.0, y4 = 0.0;
     const double ROT_DEG = -45.0;
     auto surf = make_surface<Flat>();
     auto aper = make_aperture<IrregularQuadrilateral>(
