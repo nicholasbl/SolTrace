@@ -31,71 +31,9 @@ jobs:
       # tend to be platform-specific, especially while adding new bundle types.
       fail-fast: false
       matrix:
-        # Each row is a complete artifact flavor. The baseline rows build only
-        # the native CPU runner; the Embree rows add Embree support and use
-        # distinct artifact names so release users can choose explicitly.
+        # Each row is a complete Embree-enabled artifact flavor. Embree is the
+        # supported release path going forward.
         include:
-          - name: macOS ARM64 bundle
-            id: macos-arm64
-            platform: macos
-            runner: macos-26
-            shell: bash
-            qt_host: mac
-            qt_arch: clang_64
-            qt_modules: qtgraphs qtquick3d qtshadertools
-            # macOS Qt 6.11 is working with the current stable aqt release, so
-            # keep it pinned instead of pulling a moving aqt master.
-            aqt_version: "==3.3.*"
-            aqt_source: ""
-            cmake_extra: -DCMAKE_OSX_ARCHITECTURES=arm64
-            embree_enabled: "OFF"
-            embree_asset_regex: ""
-            artifact_name: SolTrace-macOS-ARM64
-            asset_name: SolTrace-macOS-arm64.zip
-
-          - name: Windows x64 bundle
-            id: windows-x64
-            platform: windows
-            runner: windows-latest
-            shell: pwsh
-            qt_host: windows
-            qt_arch: win64_msvc2022_64
-            # Windows required `all` during bring-up because Qt's deployed DLL
-            # dependencies pulled in modules not obvious from the direct CMake
-            # link list.
-            qt_modules: all
-            aqt_version: ""
-            # Qt 6.11 changed the Windows archive layout before aqt 3.3.x knew
-            # how to consume it. Pull aqt master until a released aqt version
-            # contains the fix.
-            aqt_source: git+https://github.com/miurahr/aqtinstall.git@master
-            cmake_extra: ""
-            embree_enabled: "OFF"
-            embree_asset_regex: ""
-            artifact_name: SolTrace-Windows-x64
-            asset_name: SolTrace-Windows-x64.zip
-
-          - name: Linux x64 AppImage
-            id: linux-x64
-            platform: linux
-            # Build AppImages on 22.04 instead of 24.04 so Qt's upstream Linux
-            # binaries can resolve older ABI dependencies such as libtiff.so.5,
-            # and so the resulting AppImage has a less aggressive glibc floor.
-            runner: ubuntu-22.04
-            shell: bash
-            qt_host: linux
-            qt_arch: linux_gcc_64
-            # Keep Linux aligned with Windows for now: install all Qt modules so
-            # linuxdeploy's Qt plugin can find indirect plugin/QML dependencies.
-            qt_modules: all
-            aqt_version: "==3.3.*"
-            aqt_source: ""
-            cmake_extra: ""
-            embree_enabled: "OFF"
-            embree_asset_regex: ""
-            artifact_name: SolTrace-Linux-x64
-            asset_name: SolTrace-Linux-x86_64.AppImage
-
           - name: macOS ARM64 Embree bundle
             id: macos-arm64-embree
             platform: macos
@@ -366,8 +304,8 @@ jobs:
           -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}"
           -DSOLTRACE_BUILD_GUI=ON
           -DSOLTRACE_BUILD_TESTS=OFF
-          # Matrix rows decide whether to include embree_runner. OptiX remains
-          # disabled in GUI release packaging for now because CUDA/driver
+          # Release artifacts include embree_runner. OptiX remains disabled in
+          # GUI release packaging for now because CUDA/driver
           # deployment is a separate packaging problem.
           -DSOLTRACE_BUILD_EMBREE_SUPPORT=${{ matrix.embree_enabled }}
           -DSOLTRACE_BUILD_OPTIX_SUPPORT=OFF
@@ -447,8 +385,7 @@ jobs:
 
       - name: Package Linux AppImage
         # Build a minimal AppDir and let linuxdeploy plus the Qt plugin pull in
-        # Qt libraries, plugins, and QML imports. Embree rows prepend their
-        # runtime directory to LD_LIBRARY_PATH so linuxdeploy can see it too.
+        # Qt libraries, plugins, QML imports, and the Embree runtime.
         if: matrix.platform == 'linux'
         shell: bash
         env:
