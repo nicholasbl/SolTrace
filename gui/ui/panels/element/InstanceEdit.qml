@@ -17,6 +17,14 @@ ColumnLayout {
         Layout.fillWidth: true
         columns: 2
 
+        STSwitch {
+            Layout.columnSpan: 2
+            text: "Edit in 3D"
+            checked: App.view.mouse_mode === ViewModule.EditItem
+            onToggled: App.view.mouse_mode = checked ? ViewModule.EditItem
+                                                      : ViewModule.Camera
+        }
+
         STPropertyLabel {
             text: "Parent"
             Layout.alignment: root.labelAlignment

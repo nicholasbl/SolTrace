@@ -78,6 +78,16 @@ class ViewModule : public QObject {
 public:
     explicit ViewModule(QObject* parent = nullptr);
 
+    enum MouseMode {
+        Camera = 0,
+        SelectItem = 1,
+        SelectMaterial = 2,
+        SelectGeometry = 3,
+        EditItem = 4
+    };
+
+    Q_ENUM(MouseMode)
+
     // Panel Data
     QOBJECT_READONLY_PROPERTY(PanelData, left_panel)
     QOBJECT_READONLY_PROPERTY(PanelData, right_panel)
@@ -105,6 +115,7 @@ public:
 
     Q_WRITABLE_PROPERTY(bool, simulation_content_view, false)
     Q_WRITABLE_PROPERTY(bool, show_intersections, true)
+    Q_WRITABLE_PROPERTY(MouseMode, mouse_mode, MouseMode::Camera)
 
     // Viewport State
     QOBJECT_READONLY_PROPERTY(SimulationViewState, sim)

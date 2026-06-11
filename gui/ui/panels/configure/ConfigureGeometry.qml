@@ -39,6 +39,12 @@ AdaptiveFilteredEditor {
                 value: search_field.text
             }
         }
+
+        STIconButton {
+            text: "\uf245"
+            toolTip: "Select Geometry From View"
+            onClicked: App.view.mouse_mode = ViewModule.SelectGeometry
+        }
     }
 
     listFooter: RowLayout {
