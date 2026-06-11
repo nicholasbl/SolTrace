@@ -29,6 +29,7 @@ STPropertyPanel {
             from: -90
             to: 90
             decimals: 4
+            suffix: "deg"
             onValueModified: { root.latitude = value; root.modified() }
         }
         Binding { latField.value: root.latitude }
@@ -43,9 +44,9 @@ STPropertyPanel {
             from: -180
             to: 180
             decimals: 4
+            suffix: "deg"
             onValueModified: { root.longitude = value; root.modified() }
         }
         Binding { lonField.value: root.longitude }
     }
 }
-

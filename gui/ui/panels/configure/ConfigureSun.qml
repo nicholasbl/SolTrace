@@ -276,6 +276,7 @@ Flickable {
                             label: "Standard Deviation"
                             value: App.sun.shape.sigma
                             decimals: 3
+                            suffix: "mrad"
                             onValueChanged: { App.sun.shape.sigma = value }
                         }
 
@@ -284,6 +285,7 @@ Flickable {
                             label: "Half-width"
                             value: App.sun.shape.half_width
                             decimals: 3
+                            suffix: "mrad"
                             onValueChanged: { App.sun.shape.half_width = value }
                         }
 

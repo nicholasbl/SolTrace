@@ -68,15 +68,27 @@ ColumnLayout {
                 required property real content
                 required property real min
                 required property real max
+                required property int type
+                readonly property bool isAngle: type === 1
+
+                function toDisplayValue(value) {
+                    return isAngle ? value * 180.0 / Math.PI : value
+                }
+
+                function toModelValue(value) {
+                    return isAngle ? value * Math.PI / 180.0 : value
+                }
+
                 Layout.fillWidth: true
                 Layout.row: root.singleColumn ? (index * 2 + 3) : (index + 1)
                 Layout.column: root.singleColumn ? 0 : 1
                 Layout.columnSpan: root.singleColumn ? 2 : 1
-                value: content
-                from: min
-                to: max
-                stepSize: 0.01
-                onValueModified: model.content = value
+                value: toDisplayValue(content)
+                from: toDisplayValue(min)
+                to: toDisplayValue(max)
+                stepSize: isAngle ? 1 : 0.01
+                suffix: isAngle ? "deg" : ""
+                onValueModified: model.content = toModelValue(value)
             }
         }
     }
