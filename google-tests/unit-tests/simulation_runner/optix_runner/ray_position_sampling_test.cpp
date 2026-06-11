@@ -8,6 +8,7 @@
 
 #include <gtest/gtest.h>
 
+#include <optical_properties.hpp>
 #include <optix_runner.hpp>
 #include <simulation_data.hpp>
 #include <simulation_data_export.hpp>
@@ -111,11 +112,14 @@ namespace
         plate->set_aim_vector(0, 0, 100);
         plate->set_surface(make_surface<Flat>());
         plate->set_aperture(make_aperture<Rectangle>(200, 200));
-        OpticalProperties op(InteractionType::REFLECTION,
-                             DistributionType::NONE,
-                             0, 1, 0, 0, 0, 0);
-        plate->set_front_optical_properties(op);
-        plate->set_back_optical_properties(op);
+        SolTrace::Data::OpticalPropertySet plate_optics(
+            SolTrace::Data::InteractionType::REFLECTION,
+            0.0,
+            0.0,
+            "ray_position_sampling_plate_optics");
+        plate_optics.set_ideal_reflection(OpticalSide::Both);
+        auto plate_optics_ref = sd.add_optical_property_set(plate_optics);
+        plate->set_optical_property_set(plate_optics_ref);
         plate->set_name("plate");
 
         stage->add_element(plate);

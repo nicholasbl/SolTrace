@@ -3,6 +3,7 @@
 #include <composite_element.hpp>
 #include <constants.hpp>
 #include <element.hpp>
+#include <optical_properties.hpp>
 #include <optix_runner.hpp>
 #include <sun.hpp>
 #include <simulation_data.hpp>
@@ -31,9 +32,15 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
     absorber->set_aim_vector(0.0, 5.0, 0.0);
     absorber->set_surface(make_surface<Flat>());
     absorber->set_aperture(make_aperture<Rectangle>(2.0, 2.0));
-    OpticalProperties *foptics = absorber->get_front_optical_properties();
-    foptics->my_type = InteractionType::REFLECTION;
-    foptics->reflectivity = 0.0;
+
+    SolTrace::Data::OpticalPropertySet absorber_optics(
+        InteractionType::REFLECTION,
+        0.0,
+        0.0,
+        "absorber_optics");
+    absorber_optics.set_ideal_absorption(OpticalSide::Both);
+    auto absorber_optics_ref = sd.add_optical_property_set(absorber_optics);
+    absorber->set_optical_property_set(absorber_optics_ref);
     absorber->set_name("Absorber");
 
     // // Absorber -- Cylindrical -- MAY NOT WORK DUE TO UNIMPLEMENTED CODE!
@@ -71,11 +78,18 @@ TEST(GpuTowerDemo, OptixRunnerWithStages)
 
     double spacing = PI / 4.0;
 
+    SolTrace::Data::OpticalPropertySet reflector_optics(
+        InteractionType::REFLECTION,
+        0.0,
+        0.0,
+        "reflector_optics");
+    reflector_optics.set_ideal_one_sided_reflector();
+    auto reflector_optics_ref = sd.add_optical_property_set(reflector_optics);
+
     for (int i = -1; i < 4; ++i)
     {
         auto el = make_element<SingleElement>();
-        foptics = el->get_front_optical_properties();
-        foptics->reflectivity = 1.0;
+        el->set_optical_property_set(reflector_optics_ref);
 
         pos = {5 * sin(i * spacing),
                5 * cos(i * spacing),
@@ -171,7 +185,14 @@ static void setup_tower_sd(SimulationData &sd, uint_fast64_t nrays)
     absorber->set_aim_vector(0.0, 5.0, 0.0);
     absorber->set_surface(make_surface<Flat>());
     absorber->set_aperture(make_aperture<Rectangle>(2.0, 2.0));
-    absorber->get_front_optical_properties()->set_ideal_absorption();
+    SolTrace::Data::OpticalPropertySet absorber_optics(
+        InteractionType::REFLECTION,
+        0.0,
+        0.0,
+        "tower_absorber_optics");
+    absorber_optics.set_ideal_absorption(OpticalSide::Both);
+    auto absorber_optics_ref = sd.add_optical_property_set(absorber_optics);
+    absorber->set_optical_property_set(absorber_optics_ref);
 
     auto st1 = make_stage(1);
     st1->set_origin(0.0, 0.0, 0.0);
@@ -183,10 +204,17 @@ static void setup_tower_sd(SimulationData &sd, uint_fast64_t nrays)
     st0->set_aim_vector(0.0, 0.0, 1.0);
 
     const double spacing = PI / 4.0;
+    SolTrace::Data::OpticalPropertySet reflector_optics(
+        InteractionType::REFLECTION,
+        0.0,
+        0.0,
+        "tower_reflector_optics");
+    reflector_optics.set_ideal_one_sided_reflector();
+    auto reflector_optics_ref = sd.add_optical_property_set(reflector_optics);
     for (int i = -1; i < 4; ++i)
     {
         auto el = make_element<SingleElement>();
-        el->get_front_optical_properties()->reflectivity = 1.0;
+        el->set_optical_property_set(reflector_optics_ref);
 
         glm::dvec3 pos = {5 * sin(i * spacing), 5 * cos(i * spacing), 0.0};
         el->set_origin(pos);

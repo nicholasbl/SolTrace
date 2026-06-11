@@ -18,17 +18,20 @@ namespace SolTrace::Data {
 class VirtualElement : public SingleElement
 {
 public:
-    static void set_virtual_optics(OpticalProperties &op);
-
     VirtualElement();
+    VirtualElement(const nlohmann::ordered_json& jnode,
+        const OpticalPropertySetResolver& resolve_optics);
     virtual ~VirtualElement();
 
     virtual bool is_virtual() const override { return true; }
 
-    void set_front_optical_properties(const OpticalProperties &op) override {}
-    void set_back_optical_properties(const OpticalProperties &op) override {}
-
+    //virtual void set_optical_property_set_id(optics_id) override {}
+    //virtual optics_id get_optical_property_set_id() const override 
+    //{
+    //    return opt_id;  // TODO: return identifier saying it's permanent/virtual
+    //}
 private:
+    std::shared_ptr<const OpticalPropertySet> owned_optical_property_set;
 };
 
 class VirtualPlane : public VirtualElement

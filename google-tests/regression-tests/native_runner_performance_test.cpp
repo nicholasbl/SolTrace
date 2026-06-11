@@ -55,8 +55,15 @@ TEST(NativeRunner, PerformanceTest)
     my_runner.enable_power_tower();
     my_runner.enable_point_focus();
 
-    OpticalProperties mirror;
-    mirror.set_ideal_reflection();
+    SolTrace::Data::OpticalPropertySet mirror_optics(SolTrace::Data::InteractionType::REFLECTION, "Mirror");
+    mirror_optics.set_ideal_reflection(SolTrace::Data::OpticalSide::Front);
+    mirror_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Back);
+    mirror_optics.set_errors(SolTrace::Data::OpticalSide::Front, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
+    auto mirror_optics_ref = sdata.add_optical_property_set(mirror_optics);
+
+    SolTrace::Data::OpticalPropertySet absorber_optics(SolTrace::Data::InteractionType::REFLECTION, "Absorber");
+    absorber_optics.set_ideal_absorption(SolTrace::Data::OpticalSide::Both);
+    auto absorber_optics_ref = sdata.add_optical_property_set(absorber_optics);
 
     stage_ptr st1 = make_stage(1);
     st1->set_reference_frame_geometry(zero, khat, 0.0);
@@ -90,7 +97,7 @@ TEST(NativeRunner, PerformanceTest)
             // vector_add(1.0, hs_origin, 1.0, aim, aim_point);
 
             auto hs = make_element<Heliostat>();
-            hs->set_mirror_optics(mirror);
+            hs->set_optics(mirror_optics_ref);
             // hs->set_reference_frame_geometry(hs_origin, aim, 0.0);
             hs->set_origin(hs_origin);
             hs->set_aperture_size(2.0 * dx, 2.0 * dy);
@@ -119,8 +126,7 @@ TEST(NativeRunner, PerformanceTest)
     }
 
     auto absorb = make_element<SingleElement>();
-    absorb->get_front_optical_properties()->set_ideal_absorption();
-    absorb->get_back_optical_properties()->set_ideal_absorption();
+    absorb->set_optical_property_set(absorber_optics_ref);
     absorb->set_aperture(make_aperture<Circle>(2.0 * ABS_RADIUS));
     absorb->set_surface(make_surface<Sphere>(1.0 / ABS_RADIUS));
     // absorb->set_surface(make_surface<Flat>());
