@@ -292,9 +292,9 @@ GeometryDataST CspElement::toDeviceGeometryData() const
             // Triangle vertices are in local element XY frame (z=0).
             // The 2D local x,y coords for the aperture test equal the
             // Vec3d x and y components directly (since rotation is orthonormal).
-            float2 lv0 = make_float2((float)v1.x, (float)v1.y);
-            float2 lv1 = make_float2((float)v2.x, (float)v2.y);
-            float2 lv2 = make_float2((float)v3.x, (float)v3.y);
+            float2 lv0 = make_float2((float)v1[0], (float)v1[1]);
+            float2 lv1 = make_float2((float)v2[0], (float)v2[1]);
+            float2 lv2 = make_float2((float)v3[0], (float)v3[1]);
 
             GeometryDataST::Triangle_Parabolic trip(o, vx, vy, cx, cy, lv0, lv1, lv2);
             geometry_data.setTriangle_Parabolic(trip);
@@ -312,18 +312,38 @@ GeometryDataST CspElement::toDeviceGeometryData() const
         p3 = quad.get_p2();
         p4 = quad.get_p3();
 
-        // given the origin and rotation, compute global coordinates of the triangle vertices
-        Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
-        Vec3d p1_global = rotation_matrix * p1 + m_origin;
-        Vec3d p2_global = rotation_matrix * p2 + m_origin;
-        Vec3d p3_global = rotation_matrix * p3 + m_origin;
-        Vec3d p4_global = rotation_matrix * p4 + m_origin;
+        if (surface_type == SurfaceType::FLAT)
+        {
+            // given the origin and rotation, compute global coordinates of the triangle vertices
+            Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
+            Vec3d p1_global = rotation_matrix * p1 + m_origin;
+            Vec3d p2_global = rotation_matrix * p2 + m_origin;
+            Vec3d p3_global = rotation_matrix * p3 + m_origin;
+            Vec3d p4_global = rotation_matrix * p4 + m_origin;
 
-        GeometryDataST::Quadrilateral_Flat heliostat(OptixCSP::toFloat3(p1_global),
-                                                     OptixCSP::toFloat3(p2_global),
-                                                     OptixCSP::toFloat3(p3_global),
-                                                     OptixCSP::toFloat3(p4_global));
-        geometry_data.setQuadrilateral_Flat(heliostat);
+            GeometryDataST::Quadrilateral_Flat heliostat(OptixCSP::toFloat3(p1_global),
+                                                         OptixCSP::toFloat3(p2_global),
+                                                         OptixCSP::toFloat3(p3_global),
+                                                         OptixCSP::toFloat3(p4_global));
+            geometry_data.setQuadrilateral_Flat(heliostat);
+        }
+
+        if (surface_type == SurfaceType::PARABOLIC)
+        {
+            Matrix33d rotation_matrix = get_rotation_matrix(); // L2G rotation matrix
+            float3 vx = OptixCSP::toFloat3(rotation_matrix.get_x_basis());
+            float3 vy = OptixCSP::toFloat3(rotation_matrix.get_y_basis());
+
+            float cx = (float)(m_surface->get_curvature_1());
+            float cy = (float)(m_surface->get_curvature_2());
+            float3 o = OptixCSP::toFloat3(m_origin);
+
+            GeometryDataST::Quadrilateral_Parabolic heliostat(
+                o, vx, vy, cx, cy,
+                OptixCSP::toFloat3(p1), OptixCSP::toFloat3(p2), 
+                OptixCSP::toFloat3(p3), OptixCSP::toFloat3(p4));
+            geometry_data.setQuadrilateral_Parabolic(heliostat);
+        }
     }
 
     if (aperture_type == ApertureType::CIRCLE)
