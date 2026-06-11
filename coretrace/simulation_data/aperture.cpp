@@ -670,6 +670,7 @@ namespace SolTrace::Data
           x3(x3), y3(y3),
           x4(x4), y4(y4)
     {
+        ensure_valid_diagonal();
     }
 
     IrregularQuadrilateral::IrregularQuadrilateral(const nlohmann::ordered_json &jnode)
@@ -683,6 +684,7 @@ namespace SolTrace::Data
         this->y3 = jnode.at("y3");
         this->x4 = jnode.at("x4");
         this->y4 = jnode.at("y4");
+        ensure_valid_diagonal();
     }
 
     double IrregularQuadrilateral::aperture_area() const
@@ -748,6 +750,53 @@ namespace SolTrace::Data
     bool IrregularQuadrilateral::is_in(double x, double y) const
     {
         return inquad(x1, y1, x2, y2, x3, y3, x4, y4, x, y);
+    }
+
+    void IrregularQuadrilateral::ensure_valid_diagonal()
+    {
+        // Returns true when x2 and x4 are on opposite sides of the x1-x3 line,
+        // i.e. the x1-x3 diagonal is interior to the polygon.
+        const auto diagonal_ok = [this]()
+        {
+            const double ex = x3 - x1, ey = y3 - y1;
+            const double d2 = ex * (y2 - y1) - ey * (x2 - x1);
+            const double d4 = ex * (y4 - y1) - ey * (x4 - x1);
+            return d2 * d4 < 0.0;
+        };
+
+        if (!diagonal_ok())
+        {
+            // Vertices are not in simple-polygon order (self-intersecting /
+            // bowtie input). Re-sort by angle from the centroid to recover a
+            // valid CCW traversal.
+            const double cx = 0.25 * (x1 + x2 + x3 + x4);
+            const double cy = 0.25 * (y1 + y2 + y3 + y4);
+            double pts[4][2] = {{x1, y1}, {x2, y2}, {x3, y3}, {x4, y4}};
+            std::sort(std::begin(pts), std::end(pts),
+                      [cx, cy](const double *a, const double *b)
+                      {
+                          return std::atan2(a[1] - cy, a[0] - cx) <
+                                 std::atan2(b[1] - cy, b[0] - cx);
+                      });
+            x1 = pts[0][0]; y1 = pts[0][1];
+            x2 = pts[1][0]; y2 = pts[1][1];
+            x3 = pts[2][0]; y3 = pts[2][1];
+            x4 = pts[3][0]; y4 = pts[3][1];
+
+            // The sort produces a valid CCW polygon but the starting vertex is
+            // arbitrary. If the reflex vertex landed at position x1 or x3, the
+            // x1-x3 diagonal is still exterior. One cyclic shift swaps which
+            // pair of opposite vertices forms the diagonal (x1-x3 becomes the
+            // old x2-x4), which is guaranteed to be interior for a simple polygon.
+            if (!diagonal_ok())
+            {
+                const double tx = x1, ty = y1;
+                x1 = x2; y1 = y2;
+                x2 = x3; y2 = y3;
+                x3 = x4; y3 = y4;
+                x4 = tx; y4 = ty;
+            }
+        }
     }
 
     aperture_ptr IrregularQuadrilateral::make_copy() const
