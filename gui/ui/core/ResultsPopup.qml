@@ -210,7 +210,10 @@ STPopup {
                 enabled: root.has_current_result
                 text: "\uf019"
                 toolTip: "Export Result"
-                onClicked: AppData.simulation.export_result(root.selected_result_index)
+                onClicked: {
+                    AppData.simulation.select_result(root.selected_result_index)
+                    AppData.exporter.export_current()
+                }
             }
         }
     }

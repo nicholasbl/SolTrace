@@ -35,7 +35,8 @@ class RayGeometry : public QQuick3DGeometry {
     */
 
     Q_WRITABLE_PROPERTY(QStringList, event_include, {});
-    Q_WRITABLE_PROPERTY(float, show_percent, 50);
+    Q_WRITABLE_PROPERTY(float, show_percent, 100);
+    Q_READONLY_PROPERTY(quint64, available_rays);
 
 private slots:
     void inclusion_list_update();

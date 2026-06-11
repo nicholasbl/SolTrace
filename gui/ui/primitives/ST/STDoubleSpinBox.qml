@@ -10,16 +10,23 @@ DoubleSpinBox {
 
     property string internal_computed_suffix : suffix.length ? " " + suffix : ""
 
+    function textWithoutSuffix(text) {
+        text = String(text).trim()
+        if (!suffix.length) return text
+
+        const suffixText = String(suffix)
+        if (text.endsWith(suffixText)) {
+            text = text.slice(0, text.length - suffixText.length).trim()
+        }
+        return text
+    }
+
     textFromValue: function(value, locale) {
         return Number(value).toLocaleString(locale, 'f', control.decimals) + internal_computed_suffix
     }
 
     valueFromText: function(text, locale) {
-        if (suffix.length) {
-            text = text.replace(suffix,"")
-        }
-
-        return Number.fromLocaleString(locale, text)
+        return Number.fromLocaleString(locale, textWithoutSuffix(text))
     }
 
     contentItem: TextInput {

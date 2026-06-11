@@ -4,8 +4,21 @@
 #include "utilities/math_utility.h"
 
 #include <magic_enum/magic_enum.hpp>
+#include <algorithm>
+#include <cmath>
 
 namespace analysis {
+
+namespace {
+
+constexpr quint64 DEFAULT_VISIBLE_RAY_COUNT = 10000;
+
+float percent_for_ray_count(quint64 count, quint64 available) {
+    if (available == 0) return 0.0f;
+    return static_cast<float>(count * 100.0 / available);
+}
+
+} // namespace
 
 EventTypeContainer::EventTypeContainer(
     std::initializer_list<db::RayEventType> l)
@@ -50,14 +63,20 @@ void RayGeometry::rebuild_geometry() {
 
     clear();
 
+    const auto effective_percent = std::clamp(this->show_percent(), 0.0f, 100.0f);
+    const auto requested_rays =
+        static_cast<double>(m_database->records.size()) *
+        static_cast<double>(effective_percent) / 100.0;
+    const size_t ray_limit = std::min(
+        m_database->records.size(),
+        static_cast<size_t>(std::llround(requested_rays)));
+
     size_t vertex_count = 0;
-
-    {
-
-        for (auto const& rec : m_database->records) {
-
-            vertex_count += rec.events.size();
-        }
+    size_t counted_rays = 0;
+    for (auto const& rec : m_database->records) {
+        if (counted_rays >= ray_limit) break;
+        vertex_count += rec.events.size();
+        counted_rays += 1;
     }
 
     qDebug() << Q_FUNC_INFO << vertex_count;
@@ -67,20 +86,17 @@ void RayGeometry::rebuild_geometry() {
     verts.reserve(vertex_count);
     index.reserve(vertex_count * 2); // close enough
 
-
-    size_t ray_limit =
-        m_database->records.size() * (this->show_percent() / 100.);
-
     {
         size_t ray_number = 0;
+        size_t rays_remaining = ray_limit;
 
         for (auto const& ray : m_database->records) {
 
-            if (ray_limit == 0) { break; }
+            if (rays_remaining == 0) { break; }
 
             // qDebug() << "Ray" << ray_number;
 
-            ray_limit -= 1;
+            rays_remaining -= 1;
             ray_number += 1;
 
 
@@ -219,7 +235,15 @@ RayGeometry::RayGeometry(QQuick3DObject* parent) : QQuick3DGeometry(parent) {
 void RayGeometry::set_results(db::SimulationResultPtr data) {
     qDebug() << Q_FUNC_INFO << "New ray geometry database";
     m_database = std::move(data);
-    rebuild_geometry();
+    const auto available =
+        m_database ? static_cast<quint64>(m_database->records.size()) : 0;
+    set_available_rays(available);
+
+    const auto default_percent = percent_for_ray_count(
+        std::min(DEFAULT_VISIBLE_RAY_COUNT, available), available);
+    const bool percent_changed = show_percent() != default_percent;
+    set_show_percent(default_percent);
+    if (!percent_changed) rebuild_geometry();
 }
 
 } // namespace analysis

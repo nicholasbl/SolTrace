@@ -104,6 +104,7 @@ public:
     Q_WRITABLE_PROPERTY(int, documentation_section, 0)
 
     Q_WRITABLE_PROPERTY(bool, simulation_content_view, false)
+    Q_WRITABLE_PROPERTY(bool, show_intersections, true)
 
     // Viewport State
     QOBJECT_READONLY_PROPERTY(SimulationViewState, sim)

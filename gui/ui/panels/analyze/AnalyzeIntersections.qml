@@ -13,6 +13,22 @@ Flickable {
     property bool singleColumn: App.view.left_panel.size === PanelData.Small
     property int labelAlignment: (singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
 
+    function formatRayCount(count) {
+        return Number(count).toLocaleString(Qt.locale(), "f", 0) + " rays"
+    }
+
+    function visibleRayCount() {
+        const available = AppData.intersections.ray_geometry.available_rays
+        return Math.round(available *
+                          AppData.intersections.ray_geometry.show_percent / 100.0)
+    }
+
+    function setVisibleRayCount(count) {
+        const available = AppData.intersections.ray_geometry.available_rays
+        AppData.intersections.ray_geometry.show_percent =
+                available > 0 ? count * 100.0 / available : 0.0
+    }
+
     contentWidth: width
     contentHeight: content_column.implicitHeight
     clip: true
@@ -25,6 +41,15 @@ Flickable {
         InlineDocumentation {
             key: "analyze.intersections"
             target: App.view.left_panel
+        }
+
+        Label {
+            Layout.fillWidth: true
+            Layout.columnSpan: 2
+            text: root.formatRayCount(
+                      AppData.intersections.ray_geometry.available_rays)
+            opacity: 0.75
+            horizontalAlignment: Text.AlignHCenter
         }
 
         STPropertyPanel {
@@ -62,18 +87,35 @@ Flickable {
                 Layout.alignment: root.labelAlignment
             }
 
-            STSpinBox {
-                from: 0
-                to: 100
+            STSwitch {
+                checked: AppData.view.show_intersections
+
+                onToggled: AppData.view.show_intersections = checked
+            }
+
+            STDoubleSpinBox {
+                Layout.columnSpan: 2
+                from: 0.0
+                to: 100.0
                 value: AppData.intersections.ray_geometry.show_percent
-
+                stepSize: 1.0
                 Layout.fillWidth: true
-
                 onValueModified: {
                     AppData.intersections.ray_geometry.show_percent = value
                 }
-
                 suffix: "%"
+            }
+
+            STDoubleSpinBox {
+                Layout.columnSpan: 2
+                from: 0.0
+                to: AppData.intersections.ray_geometry.available_rays
+                value: root.visibleRayCount()
+                stepSize: 1000
+                decimals: 0
+                Layout.fillWidth: true
+                onValueModified: root.setVisibleRayCount(value)
+                suffix: "rays"
             }
         }
     }

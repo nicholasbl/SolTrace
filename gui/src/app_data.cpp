@@ -228,6 +228,7 @@ AppData::AppData(QObject*       parent,
       m_simulation(new SimulationModule(this)),
       m_intersections(new IntersectionsModule(this)),
       m_flux(new FluxModule(engine, this)),
+      m_exporter(new ExportModule(this)),
       m_script(new Script::Script(this)) {
 
     set_current_version_info(
@@ -250,6 +251,11 @@ AppData::AppData(QObject*       parent,
             &AppData::notification);
 
     connect(m_layout, &LayoutModule::notify, this, &AppData::notification);
+
+    connect(m_exporter,
+            &ExportModule::notify,
+            this,
+            &AppData::notification);
 
     connect(this,
             &AppData::current_database_value_changed,
@@ -290,6 +296,16 @@ AppData::AppData(QObject*       parent,
             &IntersectionsModule::set_results);
 
     connect(this, &AppData::new_results, m_flux, &FluxModule::set_results);
+
+    connect(this,
+            &AppData::new_results,
+            m_exporter,
+            &ExportModule::set_results);
+
+    connect(m_flux->pending_flux_maps(),
+            &db::PendingFluxMapModel::ready,
+            m_exporter,
+            &ExportModule::cache_flux_map);
 
     connect(m_simulation,
             &SimulationModule::edit_result_copy_requested,
