@@ -38,14 +38,15 @@ int main(int argc, char* argv[]) {
 
     SolTrace::GUI::App::initialize_logging_handler();
 
-
-#ifdef QT_QML_DEBUG
-    QQmlDebuggingEnabler::startTcpDebugServer(
-        3768,
-        QQmlDebuggingEnabler::DoNotWaitForClient,
-        // QQmlDebuggingEnabler::WaitForClient,
-        QStringLiteral("127.0.0.1"));
-#endif
+    /*
+    #ifdef QT_QML_DEBUG
+        QQmlDebuggingEnabler::startTcpDebugServer(
+            3768,
+            QQmlDebuggingEnabler::DoNotWaitForClient,
+            // QQmlDebuggingEnabler::WaitForClient,
+            QStringLiteral("127.0.0.1"));
+    #endif
+    */
 
     // Load fonts
     for (auto font : font_list) {

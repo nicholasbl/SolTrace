@@ -350,7 +350,7 @@ void copy_marker_component(entt::registry const& from,
                            EntityMapper&         mapper,
                            entt::registry&       to) {
     for (auto [e] : from.view<T>().each()) {
-        to.emplace<T>(mapper(e));
+        to.emplace_or_replace<T>(mapper(e));
     }
 }
 
@@ -359,7 +359,7 @@ void copy_plain_component(entt::registry const& from,
                           EntityMapper&         mapper,
                           entt::registry&       to) {
     for (auto [e, c] : from.view<T>().each()) {
-        to.emplace<T>(mapper(e), c);
+        to.emplace_or_replace<T>(mapper(e), c);
     }
 }
 
@@ -370,7 +370,7 @@ void copy_nested_component(entt::registry const& from,
     for (auto [e, c] : from.view<T>().each()) {
         T component_copy = c;
         component_copy.remap_entities(mapper);
-        to.emplace<T>(mapper(e), component_copy);
+        to.emplace_or_replace<T>(mapper(e), component_copy);
     }
 }
 
