@@ -19,6 +19,9 @@ EntityListEditor {
 
     onEditingChanged: {
         App.view.editing_layout = editing
+        if (!editing && App.view.mouse_mode === ViewModule.EditItem) {
+            App.view.mouse_mode = ViewModule.Camera
+        }
     }
 
     Connections {
@@ -43,6 +46,12 @@ EntityListEditor {
                 property: "name_filter"
                 value: search_field.text
             }
+        }
+
+        STIconButton {
+            text: "\uf245"
+            toolTip: "Select Item From View"
+            onClicked: App.view.mouse_mode = ViewModule.SelectItem
         }
 
         STIconButton {

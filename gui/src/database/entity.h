@@ -3,6 +3,7 @@
 #include <entt/entt.hpp>
 
 #include <QDebug>
+#include <QString>
 #include <qqmlintegration.h>
 
 namespace db {
@@ -25,6 +26,11 @@ public:
     operator entt::entity() const { return value; }
 
     Q_INVOKABLE bool is_valid() const { return value != entt::null; }
+
+    Q_INVOKABLE QString debug_string() const {
+        if (!is_valid()) return QStringLiteral("entity(null)");
+        return QStringLiteral("entity(%1)").arg(entt::to_integral(value));
+    }
 };
 
 inline QDebug operator<<(QDebug debug, Entity const& c) {

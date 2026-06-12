@@ -17,6 +17,14 @@ ColumnLayout {
         Layout.fillWidth: true
         columns: 2
 
+        STSwitch {
+            Layout.columnSpan: 2
+            text: "Edit in 3D"
+            checked: App.view.mouse_mode === ViewModule.EditItem
+            onToggled: App.view.mouse_mode = checked ? ViewModule.EditItem
+                                                      : ViewModule.Camera
+        }
+
         STPropertyLabel {
             text: "Parent"
             Layout.alignment: root.labelAlignment
@@ -240,7 +248,7 @@ ColumnLayout {
                                         Number(z_euler.text)))
             }
 
-            STPropertyLabel { text: "X Angle" }
+            STPropertyLabel { text: "X Angle (deg)" }
             STTextField {
                 id: x_euler
                 Layout.fillWidth: true
@@ -250,7 +258,7 @@ ColumnLayout {
                 onTextEdited: rotPanel.update_from_angles()
             }
 
-            STPropertyLabel { text: "Y Angle" }
+            STPropertyLabel { text: "Y Angle (deg)" }
             STTextField {
                 id: y_euler
                 Layout.fillWidth: true
@@ -260,7 +268,7 @@ ColumnLayout {
                 onTextEdited: rotPanel.update_from_angles()
             }
 
-            STPropertyLabel { text: "Z Angle" }
+            STPropertyLabel { text: "Z Angle (deg)" }
             STTextField {
                 id: z_euler
                 Layout.fillWidth: true

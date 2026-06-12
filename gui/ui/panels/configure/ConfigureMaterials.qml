@@ -25,6 +25,14 @@ AdaptiveFilteredEditor {
         }
     }
 
+    Connections {
+        target: App.materials
+        function onCurrent_material_changed() {
+            root.selectSourceIndex(
+                        root.source_model.index_of(App.materials.current_material))
+        }
+    }
+
     onItemClicked: function(index, modelData) {
         // if (App.db) App.db.clear_selection()
         App.materials.current_material = modelData.entity
@@ -41,6 +49,12 @@ AdaptiveFilteredEditor {
                 property: "filterText"
                 value: search_field.text
             }
+        }
+
+        STIconButton {
+            text: "\uf245"
+            toolTip: "Select Material From View"
+            onClicked: App.view.mouse_mode = ViewModule.SelectMaterial
         }
     }
 

@@ -29,13 +29,10 @@ class RayGeometry : public QQuick3DGeometry {
 
     EventTypeContainer m_include_events;
 
-    /*
-    std::unordered_set<SD::element_id> m_selected_elements;
-    std::unordered_set<RD::ray_id>     m_selected_rays;
-    */
-
     Q_WRITABLE_PROPERTY(QStringList, event_include, {});
-    Q_WRITABLE_PROPERTY(float, show_percent, 50);
+    Q_WRITABLE_PROPERTY(float, show_percent, 100);
+    Q_READONLY_PROPERTY(quint64, available_rays);
+    Q_WRITABLE_PROPERTY(qint64, selected_ray_id, -1);
 
 private slots:
     void inclusion_list_update();
@@ -47,6 +44,11 @@ public:
 
 public slots:
     void rebuild_geometry();
+
+    // For performance we will be dropping precision.
+    void pick_ray(QVector3D world_position,
+                  QVector3D world_direction,
+                  float     angle_tolerance_rads);
 };
 
 } // namespace analysis

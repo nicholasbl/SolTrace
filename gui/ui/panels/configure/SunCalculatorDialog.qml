@@ -98,6 +98,7 @@ STPopup {
                 from: -90
                 to: 90
                 decimals: 4
+                suffix: "deg"
                 value: root.latitude
                 onValueModified: root.latitude = value
             }
@@ -108,6 +109,7 @@ STPopup {
                 from: -180
                 to: 180
                 decimals: 4
+                suffix: "deg"
                 value: root.longitude
                 onValueModified: root.longitude = value
             }

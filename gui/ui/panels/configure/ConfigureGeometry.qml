@@ -24,6 +24,14 @@ AdaptiveFilteredEditor {
         }
     }
 
+    Connections {
+        target: App.materials
+        function onCurrent_geometry_changed() {
+            root.selectSourceIndex(
+                        root.source_model.index_of(App.materials.current_geometry))
+        }
+    }
+
     onItemClicked: function(index, modelData) {
         App.materials.current_geometry = modelData.entity
     }
@@ -38,6 +46,12 @@ AdaptiveFilteredEditor {
                 property: "filterText"
                 value: search_field.text
             }
+        }
+
+        STIconButton {
+            text: "\uf245"
+            toolTip: "Select Geometry From View"
+            onClicked: App.view.mouse_mode = ViewModule.SelectGeometry
         }
     }
 

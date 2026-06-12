@@ -25,10 +25,11 @@ QVector<ApertureParameter> make_parameters_for(SD::ApertureType type) {
                 .min     = 0.0,
             },
             {
-                .name    = "Arc angle (rad)",
+                .name    = "Arc angle",
                 .content = 2 * M_PI,
                 .min     = 0.0,
                 .max     = 2 * M_PI,
+                .type    = AngleApertureParameter,
             },
         };
         break;

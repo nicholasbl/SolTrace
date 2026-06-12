@@ -19,6 +19,7 @@ QVector<SurfaceParameter> make_parameters_for(SD::SurfaceType type) {
                 .content = M_PI / 4.0,
                 .min     = 0.0,
                 .max     = M_PI / 2.0,
+                .type    = AngleSurfaceParameter,
             },
         };
         break;

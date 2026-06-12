@@ -7,6 +7,10 @@ include(cmake/CPM.cmake)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+if(MSVC)
+	add_compile_options("$<$<AND:$<CONFIG:Debug>,$<COMPILE_LANG_AND_ID:CXX,MSVC>>:/bigobj>")
+endif()
+
 option(SOLTRACE_BUILD_GUI "Build the GUI parts of Soltrace" ON)
 option(
 	SOLTRACE_BUILD_CORETRACE 

@@ -13,10 +13,32 @@ Flickable {
     property bool singleColumn: App.view.left_panel.size === PanelData.Small
     property int labelAlignment: (singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
 
+    property var ray_geom: AppData.intersections.ray_geometry
+
+    property bool is_selected_ray_valid: ray_geom.selected_ray_id >= 0
+
+    function formatRayCount(count) {
+        return Number(count).toLocaleString(Qt.locale(), "f", 0) + " rays"
+    }
+
+    function visibleRayCount() {
+        const available = ray_geom.available_rays
+        return Math.round(available *
+                          ray_geom.show_percent / 100.0)
+    }
+
+    function setVisibleRayCount(count) {
+        const available = ray_geom.available_rays
+        ray_geom.show_percent =
+                available > 0 ? count * 100.0 / available : 0.0
+    }
+
     contentWidth: width
     contentHeight: content_column.implicitHeight
     clip: true
     boundsBehavior: Flickable.StopAtBounds
+
+
 
     ColumnLayout {
         id: content_column
@@ -27,12 +49,33 @@ Flickable {
             target: App.view.left_panel
         }
 
+        Label {
+            Layout.fillWidth: true
+            Layout.columnSpan: 2
+            text: root.formatRayCount(
+                      root.ray_geom.available_rays)
+            opacity: 0.75
+            horizontalAlignment: Text.AlignHCenter
+        }
+
         STPropertyPanel {
             Layout.fillWidth: true
             columns: root.singleColumn ? 1 : 2
 
             collapsible: true
             title: "Ray Visibility"
+
+
+            STPropertyLabel {
+                text: "Show"
+                Layout.alignment: root.labelAlignment
+            }
+
+            STSwitch {
+                checked: AppData.view.show_intersections
+
+                onToggled: AppData.view.show_intersections = checked
+            }
 
             STPropertyLabel {
                 text: "Filter types"
@@ -41,40 +84,89 @@ Flickable {
 
             STButton {
                 Layout.fillWidth: true
-                text: AppData.intersections.ray_geometry.event_include.length > 0
-                      ? AppData.intersections.ray_geometry.event_include.join(", ")
+                text: root.ray_geom.event_include.length > 0
+                      ? root.ray_geom.event_include.join(", ")
                       : "None"
 
                 onClicked: ray_filter_popup.open_with(
-                               AppData.intersections.ray_geometry.event_include)
+                               root.ray_geom.event_include)
 
                 RayFilterPopup {
                     id: ray_filter_popup
 
                     onModified: function(filter) {
-                        AppData.intersections.ray_geometry.event_include = filter
+                        root.ray_geom.event_include = filter
                     }
                 }
             }
 
+            STDoubleSpinBox {
+                Layout.columnSpan: 2
+                from: 0.0
+                to: 100.0
+                value: root.ray_geom.show_percent
+                stepSize: 1.0
+                Layout.fillWidth: true
+                onValueModified: {
+                    root.ray_geom.show_percent = value
+                }
+                suffix: "%"
+            }
+
+            STDoubleSpinBox {
+                Layout.columnSpan: 2
+                from: 0.0
+                to: root.ray_geom.available_rays
+                value: root.visibleRayCount()
+                stepSize: 1000
+                decimals: 0
+                Layout.fillWidth: true
+                onValueModified: root.setVisibleRayCount(value)
+                suffix: "rays"
+            }
+
+            STPropertySeparator {
+                title: "Selection"
+            }
+
             STPropertyLabel {
-                text: "Show"
+                text: "Selected ID"
+                Layout.alignment: root.labelAlignment
+
+                visible: root.is_selected_ray_valid
+            }
+
+            RowLayout {
+                visible: root.is_selected_ray_valid
+
+                Label {
+                    Layout.fillWidth: true
+                    text: root.ray_geom.selected_ray_id
+
+                    visible: root.is_selected_ray_valid
+                }
+
+                STIconButton {
+                    text: "\uf057"
+
+                    onClicked: root.ray_geom.selected_ray_id = -1
+                }
+            }
+
+
+            STPropertyLabel {
+                text: "Pick"
                 Layout.alignment: root.labelAlignment
             }
 
-            STSpinBox {
-                from: 0
-                to: 100
-                value: AppData.intersections.ray_geometry.show_percent
-
+            STButton {
                 Layout.fillWidth: true
-
-                onValueModified: {
-                    AppData.intersections.ray_geometry.show_percent = value
-                }
-
-                suffix: "%"
+                text: "Ray From View"
+                text_icon: "\uf245"
+                onClicked: App.view.mouse_mode = ViewModule.PickRay
             }
+
+
         }
     }
 }

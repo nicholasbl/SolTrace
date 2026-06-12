@@ -22,7 +22,7 @@ ShadowedGlassRectangle {
                 id: info_row
                 Layout.fillWidth: true
 
-                text: ["Scripting", "Help", "Export"][App.view.right_panel_section]
+                text: ["Scripting", "Help"][Math.min(App.view.right_panel_section, 1)]
                 font.pointSize: 16
                 font.family: "CMU Serif"
                 font.bold: true
@@ -44,17 +44,17 @@ ShadowedGlassRectangle {
         STComboBar {
             id: section
             Layout.fillWidth: true
-            currentIndex: App.view.right_panel_section
+            currentIndex: Math.min(App.view.right_panel_section, 1)
             onCurrentIndexChanged: App.view.right_panel_section = currentIndex
             collapseLabels: App.view.right_panel.size === PanelData.Small
-            model: ["Scripting", "Help", "Export"]
-            iconModel: ["\uf1c9", "\ue4e3", "\uf019"]
+            model: ["Scripting", "Help"]
+            iconModel: ["\uf1c9", "\ue4e3"]
         }
 
         // need this?
         StackLayout {
             id: script_stack
-            currentIndex: App.view.right_panel_section
+            currentIndex: Math.min(App.view.right_panel_section, 1)
 
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -62,7 +62,6 @@ ShadowedGlassRectangle {
             ScriptInterface {}
 
             HelpInterface {}
-            Item {}
         }
     }
 }

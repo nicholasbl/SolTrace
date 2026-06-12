@@ -14,6 +14,7 @@
 
 #include <modules/database_module.h>
 #include <modules/documentation_module.h>
+#include <modules/export_module.h>
 #include <modules/flux_module.h>
 #include <modules/intersections_module.h>
 #include <modules/layout_module.h>
@@ -114,6 +115,8 @@ public:
     QOBJECT_READONLY_PROPERTY(IntersectionsModule, intersections)
 
     QOBJECT_READONLY_PROPERTY(FluxModule, flux)
+
+    QOBJECT_READONLY_PROPERTY(ExportModule, exporter)
 
     QOBJECT_READONLY_PROPERTY(Script::Script, script)
 

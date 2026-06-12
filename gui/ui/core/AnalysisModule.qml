@@ -12,15 +12,15 @@ ColumnLayout {
     STComboBar {
         id: bar
 
-        currentIndex: Math.min(App.view.analyze_section, 1)
+        currentIndex: Math.min(App.view.analyze_section, 2)
         onCurrentIndexChanged: App.view.analyze_section = currentIndex
 
         Layout.fillWidth: true
 
         collapseLabels: App.view.left_panel.size === PanelData.Small
 
-        iconModel: ["\uf601", "\uf201"]
-        model: ["Intersections", "Flux"]
+        iconModel: ["\uf601", "\uf201", "\uf019"]
+        model: ["Intersections", "Flux", "Export"]
 
     }
 
@@ -41,6 +41,10 @@ ColumnLayout {
         }
 
         AnalyzeFlux {
+
+        }
+
+        AnalyzeExport {
 
         }
     }

@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick3D
 import QtQuick3D.Helpers
 import QtQuick3D.AssetUtils
-import QtQuick.Controls.Material
 
 import SolTrace
 
@@ -11,7 +10,8 @@ Item {
 
     property int activeAxis: -1
     property int gizmoMode: 0
-    property bool showGizmo: App.view.editing_layout && App.layout.instance_edit
+    property bool showGizmo: App.view.mouse_mode === ViewModule.EditItem
+                             && App.layout.instance_edit
     property bool isDragging: false
     property point lastMousePos: Qt.point(0, 0)
     property real initialAngle: 0.0
@@ -29,61 +29,6 @@ Item {
 
     function reset_camera_view() {
         controller.reset_view()
-    }
-
-    Menu {
-        id: geometryInstanceContextMenu
-        property var focused_group: null
-        property int index: -1
-        property bool reopening: false
-
-        enter: null
-        exit: null
-
-        onClosed: {
-            if (reopening) return
-            if (focused_group) {
-                focused_group = null
-                index = -1
-            }
-        }
-
-        MenuItem {
-            text: "View/Edit Material"
-            onClicked: {
-                if (geometryInstanceContextMenu.focused_group) {
-                    App.view.workflow_phase = 0
-                    App.view.left_panel.visible = true
-                    App.materials.current_material = geometryInstanceContextMenu.focused_group.group_instances.material_of(geometryInstanceContextMenu.index)
-                    App.view.configure_section = 1
-                    App.view.editing_material = true
-                }
-            }
-        }
-        MenuItem {
-            text: "View/Edit Geometry"
-            onClicked: {
-                if (geometryInstanceContextMenu.focused_group) {
-                    App.view.workflow_phase = 0
-                    App.view.left_panel.visible = true
-                    App.materials.current_geometry = geometryInstanceContextMenu.focused_group.group_instances.geometry_of(geometryInstanceContextMenu.index)
-                    App.view.configure_section = 2
-                    App.view.editing_geometry = true
-                }
-            }
-        }
-        MenuItem {
-            text: "View/Edit Layout"
-            onClicked: {
-                if (geometryInstanceContextMenu.focused_group) {
-                    App.view.workflow_phase = 0
-                    App.view.left_panel.visible = true
-                    App.layout.edited_element = geometryInstanceContextMenu.focused_group.group_instances.at(geometryInstanceContextMenu.index)
-                    App.view.configure_section = 3
-                    App.view.editing_layout = true
-                }
-            }
-        }
     }
 
     View3D {
@@ -214,7 +159,7 @@ Item {
         Binding {
             target: gizmoOverlay
             property: "enabled"
-            value: App.view.workflow_phase == 0 && App.view.left_panel.visible && App.view.configure_section == 3 && App.view.editing_layout
+            value: root.showGizmo
         }
     }
 
@@ -236,10 +181,10 @@ Item {
     }
 
     SimulationMouseArea {
+        enabled: App.view.mouse_mode !== ViewModule.Camera
         view: view
         controller: controller
         gizmoOverlay: gizmoOverlay
-        geometryInstanceContextMenu: geometryInstanceContextMenu
         root: root
     }
 }

@@ -1,5 +1,7 @@
 #include "intersections_module.h"
 
+#include <QDebug>
+
 namespace SolTrace::GUI::App {
 
 IntersectionsModule::IntersectionsModule(QObject* parent)
@@ -8,7 +10,9 @@ IntersectionsModule::IntersectionsModule(QObject* parent)
 }
 
 void IntersectionsModule::set_results(db::SimulationResultPtr ptr) {
+    m_results = ptr;
     m_ray_geometry->set_results(ptr);
 }
+
 
 } // namespace SolTrace::GUI::App

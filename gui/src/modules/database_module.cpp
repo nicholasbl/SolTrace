@@ -96,6 +96,9 @@ void DatabaseModule::file_ready(QUrl, LoadResult result) {
                            this->store_push_append(DatabaseRecord {
                                .database = arg.ptr,
                            });
+                           this->notify(ANotification::info(
+                               QString("New scene available: %1")
+                                   .arg(arg.ptr->name())));
                        }
                    },
                    [this](LoadFileFailed failure) {
@@ -114,6 +117,8 @@ void DatabaseModule::file_failed(QUrl, QString reason) {
 
 void DatabaseModule::load_url(QUrl url, QString name_override) {
     if (is_loading()) {
+        emit notify(
+            ANotification::error("Currently loading file, please wait."));
         return;
         // emit cancel_current_load(QPrivateSignal {});
     }

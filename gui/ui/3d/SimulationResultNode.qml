@@ -46,6 +46,7 @@ Node {
     }
 
     Model {
+        visible: AppData.view.show_intersections
         geometry: AppData.intersections.ray_geometry
 
         materials : [

@@ -15,18 +15,25 @@ namespace SD = SolTrace::Data;
 
 namespace db {
 
+enum SurfaceParameterType {
+    GenericSurfaceParameter = 0,
+    AngleSurfaceParameter   = 1,
+};
+
 struct SurfaceParameter {
     QString name;
     double  content = 0.0;
     double  min     = std::numeric_limits<double>::lowest();
     double  max     = std::numeric_limits<double>::max();
+    int     type    = GenericSurfaceParameter;
 
 
     RECORD_META(SurfaceParameter,
                 SM_EXPOSE_RO(name),
                 SM_EXPOSE_RW(content),
                 SM_EXPOSE_RO(min),
-                SM_EXPOSE_RO(max));
+                SM_EXPOSE_RO(max),
+                SM_EXPOSE_RO(type));
 };
 
 
