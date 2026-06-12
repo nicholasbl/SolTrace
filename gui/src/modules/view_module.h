@@ -83,7 +83,8 @@ public:
         SelectItem = 1,
         SelectMaterial = 2,
         SelectGeometry = 3,
-        EditItem = 4
+        EditItem = 4,
+        PickRay = 5
     };
 
     Q_ENUM(MouseMode)

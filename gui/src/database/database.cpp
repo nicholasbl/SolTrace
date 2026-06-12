@@ -1027,7 +1027,7 @@ std::shared_ptr<DatabaseExport> Database::export_to_simdata() {
 
     auto new_name = QString("%1 v%2")
                         .arg(this->name())
-                        .arg(QDateTime::currentDateTime().toSecsSinceEpoch());
+                        .arg(QDateTime::currentSecsSinceEpoch());
 
     auto clone_result =
         clone_database_with_entity_map(*this, new_name, nullptr);

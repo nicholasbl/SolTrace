@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QVector3D>
 #include "utilities/qt_helpers.h"
 #include "backend.h"
 #include "module_common.h"

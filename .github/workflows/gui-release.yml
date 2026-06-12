@@ -97,14 +97,14 @@ jobs:
           - name: Windows x64 Embree OptiX bundle
             id: windows-x64-embree-optix
             platform: windows
-            runner: windows-latest
+            runner: windows-2022
             shell: pwsh
             qt_host: windows
             qt_arch: win64_msvc2022_64
             qt_modules: all
             aqt_version: ""
             aqt_source: git+https://github.com/miurahr/aqtinstall.git@master
-            cmake_extra: ""
+            cmake_extra: '-G "Visual Studio 17 2022" -A x64'
             embree_enabled: "ON"
             optix_enabled: "ON"
             embree_asset_regex: ".*x64.*windows.*\\.zip$"

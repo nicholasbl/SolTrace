@@ -7,6 +7,7 @@ import QtQuick
 // then updates application state:
 // - clicking a scene instance selects it for layout editing
 // - clicking a scene instance in material/geometry mode selects that group
+// - clicking in ray-pick mode sends a camera ray to the intersections backend
 // - dragging a transform gizmo axis/plane changes the edited instance
 //
 // Coordinate note:
@@ -43,6 +44,12 @@ MouseArea {
     // rotation and is only used for camera projection math.
     function toScene(p) {
         return Qt.vector3d(p.x, p.z, -p.y)
+    }
+
+    // Inverse of toScene(). Use this when passing a camera ray to C++ result
+    // data, which is stored in SolTrace/database coordinates.
+    function fromScene(p) {
+        return Qt.vector3d(p.x, -p.z, p.y)
     }
 
     // Convert a 2D mouse delta into movement along a 3D world axis.
@@ -94,7 +101,8 @@ MouseArea {
     function returnToCameraModeIfOneShot() {
         if (App.view.mouse_mode === ViewModule.SelectItem
                 || App.view.mouse_mode === ViewModule.SelectMaterial
-                || App.view.mouse_mode === ViewModule.SelectGeometry) {
+                || App.view.mouse_mode === ViewModule.SelectGeometry
+                || App.view.mouse_mode === ViewModule.PickRay) {
             App.view.mouse_mode = ViewModule.Camera
         }
     }
@@ -108,6 +116,49 @@ MouseArea {
         if (entity.debug_string) return entity.debug_string()
         if (entity.value !== undefined) return "entity(" + entity.value + ")"
         return String(entity)
+    }
+
+    function clickRay(mx, my) {
+        var cam = controller.active_camera
+        var originScene = Qt.vector3d(cam.scenePosition.x,
+                                      cam.scenePosition.y,
+                                      cam.scenePosition.z)
+        var forward = Qt.vector3d(cam.forward.x,
+                                  cam.forward.y,
+                                  cam.forward.z).normalized()
+        var right = Qt.vector3d(cam.right.x,
+                                cam.right.y,
+                                cam.right.z).normalized()
+        var up = Qt.vector3d(cam.up.x,
+                             cam.up.y,
+                             cam.up.z).normalized()
+
+        var nx = (mx / Math.max(1, view.width) - 0.5) * 2.0
+        var ny = (0.5 - my / Math.max(1, view.height)) * 2.0
+
+        var fovDegrees = cam.fieldOfView !== undefined ? cam.fieldOfView : 45.0
+        var fov = fovDegrees * Math.PI / 180.0
+        var halfHeight = Math.tan(fov * 0.5)
+        var halfWidth = halfHeight * Math.max(1, view.width) / Math.max(1, view.height)
+
+        var directionScene = forward
+            .plus(right.times(nx * halfWidth))
+            .plus(up.times(ny * halfHeight))
+            .normalized()
+
+        return {
+            position: fromScene(originScene),
+            direction: fromScene(directionScene).normalized()
+        }
+    }
+
+    function pickRay(mx, my) {
+        var ray = clickRay(mx, my)
+        tracePick("pick ray position=" + ray.position
+                  + " direction=" + ray.direction)
+        AppData.intersections.ray_geometry.pick_ray(ray.position,
+                                                    ray.direction,
+                                                    0.01)
     }
 
     function openLayoutEditorFor(entity) {
@@ -141,7 +192,8 @@ MouseArea {
     acceptedButtons: Qt.LeftButton
     cursorShape: (App.view.mouse_mode === ViewModule.SelectItem
                   || App.view.mouse_mode === ViewModule.SelectMaterial
-                  || App.view.mouse_mode === ViewModule.SelectGeometry)
+                  || App.view.mouse_mode === ViewModule.SelectGeometry
+                  || App.view.mouse_mode === ViewModule.PickRay)
                  ? Qt.CrossCursor
                  : Qt.ArrowCursor
 
@@ -149,8 +201,14 @@ MouseArea {
         tracePick("pressed mode=" + App.view.mouse_mode
                   + " x=" + mouse.x + " y=" + mouse.y)
 
-        // The analysis/simulation-result view has its own visual content. This
-        // mouse area currently only supports editing database geometry.
+        if (App.view.mouse_mode === ViewModule.PickRay) {
+            pickRay(mouse.x, mouse.y)
+            returnToCameraModeIfOneShot()
+            return
+        }
+
+        // The analysis/simulation-result view has its own visual content. Other
+        // mouse modes currently only support editing database geometry.
         if (App.view.simulation_content_view) {
             tracePick("ignored: simulation content view is active")
             returnToCameraModeIfOneShot()
