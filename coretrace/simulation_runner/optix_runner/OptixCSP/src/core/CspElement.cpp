@@ -340,8 +340,8 @@ GeometryDataST CspElement::toDeviceGeometryData() const
 
             GeometryDataST::Quadrilateral_Parabolic heliostat(
                 o, vx, vy, cx, cy,
-                OptixCSP::toFloat3(p1), OptixCSP::toFloat3(p2), 
-                OptixCSP::toFloat3(p3), OptixCSP::toFloat3(p4));
+                make_float2(p1[0], p1[1]), make_float2(p2[0], p2[1]), 
+                make_float2(p3[0], p3[1]), make_float2(p4[0], p4[1]));
             geometry_data.setQuadrilateral_Parabolic(heliostat);
         }
     }

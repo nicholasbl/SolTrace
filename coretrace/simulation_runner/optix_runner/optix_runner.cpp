@@ -354,7 +354,7 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 // Aperture always lies in x-y-plane with positive z-axis corresponding to
                 // the front of the geometric element so CCW winding always gives the front
                 // of the element.
-                const double signed_area = (p1.x - p0.x) * (p2.y - p0.y) - (p1.y - p0.y) * (p2.x - p0.x);
+                const double signed_area = (p1[0] - p0[0]) * (p2[1] - p0[1]) - (p1[1] - p0[1]) * (p2[0] - p0[0]);
                 if (signed_area < 0.0)
                     std::swap(p1, p2);
 
@@ -376,10 +376,10 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 // Ensure CCW winding using the shoelace signed-area formula.
                 // For a simple (non-self-intersecting) quad the sign of 2*A tells
                 // the winding without decomposing into triangles.
-                const double signed_area2 = (p0.x * p1.y - p1.x * p0.y)
-                                          + (p1.x * p2.y - p2.x * p1.y)
-                                          + (p2.x * p3.y - p3.x * p2.y)
-                                          + (p3.x * p0.y - p0.x * p3.y);
+                const double signed_area2 = (p0[0] * p1[1] - p1[0] * p0[1])
+                                          + (p1[0] * p2[1] - p2[0] * p1[1])
+                                          + (p2[0] * p3[1] - p3[0] * p2[1])
+                                          + (p3[0] * p0[1] - p0[0] * p3[1]);
                 if (signed_area2 < 0.0)
                     std::swap(p1, p3); // reverse winding, keeping p0 and p2 fixed
 
