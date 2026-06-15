@@ -713,10 +713,11 @@ namespace SolTrace::Data
         //
         // The quadrilateral must be a SIMPLE (non-self-intersecting) polygon.
         // The vertices may be supplied in any order; the constructors call
-        // ensure_valid_diagonal() which sorts them by angle from the centroid
-        // into a consistent CCW traversal and ensures the x1-x3 diagonal is
-        // interior. All triangle-decomposition logic (inquad, the flat and
-        // parabolic intersection kernels) depends on this diagonal being interior.
+        // ensure_valid_diagonal() to ensure the x1-x3 diagonal is interior.
+         // If the supplied order is self-intersecting ("bowtie"), ensure_valid_diagonal()
+         // re-sorts the points into a simple traversal (typically CCW). All
+         // triangle-decomposition logic (inquad, the flat and parabolic intersection
+         // kernels) depends on this diagonal being interior.
         double x1;
         double y1;
         double x2;

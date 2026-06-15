@@ -6,6 +6,9 @@
 
 #include "common.hpp"
 
+#include <array>
+#include <utility>
+
 // Bounding box test helper functions
 std::vector<double> generate_grid(double a, double b, uint_fast64_t npoints)
 {

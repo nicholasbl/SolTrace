@@ -6,6 +6,9 @@
 #include <simulation_result_export.hpp>
 #include <simulation_runner.hpp>
 
+#include <iostream>
+#include <limits>
+
 using SolTrace::Data::D2R;
 using SolTrace::Runner::RunnerStatus;
 
