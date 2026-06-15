@@ -54,7 +54,7 @@ ScrollView {
 
             STSpinBox {
                 Layout.fillWidth: true
-                from: 0
+                from: 1
                 value: AppData.simulation.ray_count
                 to: 1000000000
                 onValueModified: AppData.simulation.ray_count = value
@@ -67,7 +67,7 @@ ScrollView {
 
             STSpinBox {
                 Layout.fillWidth: true
-                from: 0
+                from: 1
                 value: AppData.simulation.max_ray_count
                 to: 1000000000
                 onValueModified: AppData.simulation.max_ray_count = value
