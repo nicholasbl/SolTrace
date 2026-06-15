@@ -319,6 +319,8 @@ Database::Database(QString database_name, QObject* p)
 
     database_name_resource.set(DatabaseNameResource { .name = database_name });
 
+    simulation_parameters_resource.set({});
+
     qDebug() << Q_FUNC_INFO;
 }
 
@@ -856,18 +858,30 @@ static void install_group(SD::element_ptr          ptr,
     ptr->set_back_optical_properties(param.optics_back);
 }
 
-std::shared_ptr<DatabaseExport> Database::export_to_simdata() {
+Result<std::shared_ptr<DatabaseExport>, QString> Database::export_to_simdata() {
     SD::SimulationData ret;
 
     auto param_ptr = simulation_parameters_resource.get();
-    if (!param_ptr) return nullptr;
+    if (!param_ptr) {
+        return QStringLiteral("Internal error: simulation is missing "
+                              "simulation parameters resource.");
+    }
 
     ret.get_simulation_parameters() = *param_ptr;
 
     auto ray_source_ptr = ray_source_resource.get();
-    if (!ray_source_ptr) return nullptr;
+    if (!ray_source_ptr) {
+        return QStringLiteral("Ray source is not defined for this simulation.");
+    }
 
     ret.add_ray_source(ray_source_ptr->source);
+
+    {
+        auto view = m_registry.view<const ElementComponent>();
+        if (view->size() == 0) {
+            return QStringLiteral("There are no elements in this simulation.");
+        }
+    }
 
     std::unordered_map<entt::entity, SD::element_ptr> entity_element_map;
 
@@ -1003,11 +1017,12 @@ std::shared_ptr<DatabaseExport> Database::export_to_simdata() {
         try {
             ret.add_element(iter.second);
         } catch (std::exception const& e) {
-            qCritical() << "Unable to export entity"
+            qCritical() << "Unable to export element"
                         << entt::to_integral(iter.first)
                         << iter.second->get_name() << e.what();
 
-            return nullptr;
+            return QStringLiteral(
+                "Internal error: an element could not be exported.");
         }
     }
 
@@ -1369,7 +1384,7 @@ QString Database::name_of(Entity item) const {
         return ptr->name;
     }
 
-    return QString("Entity %1").arg(entt::to_integral(item.value));
+    return QString("Element %1").arg(entt::to_integral(item.value));
 }
 
 void Database::set_name_of(db::Entity item, QString new_name) {
@@ -1379,8 +1394,12 @@ void Database::set_name_of(db::Entity item, QString new_name) {
         item, IdentityComponent { .name = new_name });
 }
 
+QString Database::sanitize_element_name(QString name) {
+    return sanitize_new_name<ElementComponent>(m_registry, name, "Element");
+}
+
 QString Database::sanitize_entity_name(QString name) {
-    return sanitize_new_name<ElementComponent>(m_registry, name, "Entity");
+    return sanitize_element_name(name);
 }
 
 db::Entity Database::add_element(QString new_name, db::Entity parent) {

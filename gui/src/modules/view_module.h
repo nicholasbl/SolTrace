@@ -80,10 +80,10 @@ public:
 
     enum MouseMode {
         Camera = 0,
-        SelectItem = 1,
+        SelectElement = 1,
         SelectMaterial = 2,
         SelectGeometry = 3,
-        EditItem = 4,
+        EditElement = 4,
         PickRay = 5
     };
 

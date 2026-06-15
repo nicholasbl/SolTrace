@@ -181,14 +181,14 @@ Flickable {
             title: "Compute Flux Map"
 
             STPropertyLabel {
-                text: "Entity"
+                text: "Element"
             }
 
             STButton {
                 Layout.fillWidth: true
 
                 text: AppData.flux.current_entity_name.length ?
-                          AppData.flux.current_entity_name : "Select Entity"
+                          AppData.flux.current_entity_name : "Select Element"
                 text_icon: "\uf245"
 
                 onClicked: entity_pop.open()

@@ -99,7 +99,7 @@ MouseArea {
     }
 
     function returnToCameraModeIfOneShot() {
-        if (App.view.mouse_mode === ViewModule.SelectItem
+        if (App.view.mouse_mode === ViewModule.SelectElement
                 || App.view.mouse_mode === ViewModule.SelectMaterial
                 || App.view.mouse_mode === ViewModule.SelectGeometry
                 || App.view.mouse_mode === ViewModule.PickRay) {
@@ -162,7 +162,7 @@ MouseArea {
     }
 
     function openLayoutEditorFor(entity) {
-        tracePick("select item -> " + entityString(entity))
+        tracePick("select element -> " + entityString(entity))
         App.view.workflow_phase = 0
         App.view.left_panel.visible = true
         App.view.configure_section = 3
@@ -190,7 +190,7 @@ MouseArea {
 
     anchors.fill: parent
     acceptedButtons: Qt.LeftButton
-    cursorShape: (App.view.mouse_mode === ViewModule.SelectItem
+    cursorShape: (App.view.mouse_mode === ViewModule.SelectElement
                   || App.view.mouse_mode === ViewModule.SelectMaterial
                   || App.view.mouse_mode === ViewModule.SelectGeometry
                   || App.view.mouse_mode === ViewModule.PickRay)
@@ -218,7 +218,7 @@ MouseArea {
         // First priority: transform gizmo handles. When a handle is hit, this
         // starts a drag operation and records enough state to interpret later
         // onPositionChanged events.
-        if (App.view.mouse_mode === ViewModule.EditItem
+        if (App.view.mouse_mode === ViewModule.EditElement
                 && root.showGizmo
                 && mouse.button === Qt.LeftButton) {
             var gizmoResult = gizmoOverlay.pick(mouse.x, mouse.y)
@@ -296,20 +296,20 @@ MouseArea {
                 return
             }
 
-            var itemEntity = object.instancing.at(index)
+            var elementEntity = object.instancing.at(index)
             var materialEntity = object.instancing.material_of(index)
             var geometryEntity = object.instancing.geometry_of(index)
 
             tracePick("instance index=" + index
-                      + " item=" + entityString(itemEntity)
+                      + " element=" + entityString(elementEntity)
                       + " material=" + entityString(materialEntity)
                       + " geometry=" + entityString(geometryEntity))
 
-            if (App.view.mouse_mode === ViewModule.SelectItem
-                    || App.view.mouse_mode === ViewModule.EditItem) {
+            if (App.view.mouse_mode === ViewModule.SelectElement
+                    || App.view.mouse_mode === ViewModule.EditElement) {
                 // Selecting a concrete geometry instance makes it the layout
                 // edit target and opens the left panel directly to Layout editing.
-                openLayoutEditorFor(itemEntity)
+                openLayoutEditorFor(elementEntity)
             } else if (App.view.mouse_mode === ViewModule.SelectMaterial) {
                 openMaterialEditorFor(materialEntity)
             } else if (App.view.mouse_mode === ViewModule.SelectGeometry) {

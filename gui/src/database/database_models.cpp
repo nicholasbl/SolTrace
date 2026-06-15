@@ -803,7 +803,7 @@ void AnInstanceEditor::set_parent(db::Entity newParent) {
 
     if (newParent == m_entity) {
         emit notify(
-            ANotification::error("Cannot make entity a parent of itself"));
+            ANotification::error("An element cannot be its own parent."));
         return;
     }
 
@@ -819,7 +819,7 @@ void AnInstanceEditor::set_parent(db::Entity newParent) {
             if (ptr->parent == m_entity) {
                 // cycle
                 emit notify(ANotification::error(
-                    "Cycle detected in parent/child relationships"));
+                    "That parent would create a loop in the element hierarchy."));
                 return;
             }
 
@@ -913,7 +913,7 @@ void AnInstanceEditor::look_at_world_position(QVector3D targetPosition) {
 
     if (glm::length(direction) < 1e-8) {
         emit notify(ANotification::error(
-            "Cannot point at the element's current position."));
+            "Choose a different target position for this element."));
         return;
     }
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "backend.h"
 #include "module_common.h"
+#include "utilities/notification.h"
 #include "utilities/qt_helpers.h"
 #include "utilities/structmodel.h"
 #include <QDateTime>
@@ -222,6 +223,9 @@ public slots:
                              double altitude,
                              double pressure,
                              double temperature);
+
+signals:
+    void notify(ANotification);
 };
 
 } // namespace SolTrace::GUI::App

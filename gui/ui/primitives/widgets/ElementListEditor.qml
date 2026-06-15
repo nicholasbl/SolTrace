@@ -24,7 +24,7 @@ Item {
     // Footer component shown below the list (e.g. an add button)
     property Component listFooter: null
 
-    // The component shown when an item is selected
+    // The component shown when an element is selected
     property Component detailView: null
 
     // Placeholder shown in wide mode when nothing is selected

@@ -445,6 +445,14 @@ std::string sun_box_summary(SolTrace::Result::SimulationResult& actual,
     return out.str();
 }
 
+::testing::AssertionResult export_succeeded(
+    Result<std::shared_ptr<db::DatabaseExport>, QString> const& result) {
+    if (result) return ::testing::AssertionSuccess();
+
+    return ::testing::AssertionFailure()
+           << result.get_failure().toStdString();
+}
+
 void expect_sun_box_near(SolTrace::Result::SimulationResult& actual,
                          SolTrace::Result::SimulationResult& expected,
                          bool compare_sun_ray_count = true) {
@@ -477,7 +485,10 @@ TEST(DatabaseRoundTrip, PowerTowerSurroundExportsEquivalentGlobalSimData) {
     db::Database database("round-trip");
     database.import(original, true /* legacy_stinput_cylinder_origins */);
 
-    auto exported = database.export_to_simdata();
+    auto exported_result = database.export_to_simdata();
+    ASSERT_TRUE(export_succeeded(exported_result));
+
+    auto exported = exported_result.get_success();
     ASSERT_NE(exported, nullptr);
     ASSERT_NE(exported->data, nullptr);
 
@@ -515,7 +526,10 @@ TEST(DatabaseRoundTrip, PowerTowerSurroundNativeTraceMatchesOriginalSimData) {
     database.import(source_for_database,
                     true /* legacy_stinput_cylinder_origins */);
 
-    auto exported = database.export_to_simdata();
+    auto exported_result = database.export_to_simdata();
+    ASSERT_TRUE(export_succeeded(exported_result));
+
+    auto exported = exported_result.get_success();
     ASSERT_NE(exported, nullptr);
     ASSERT_NE(exported->data, nullptr);
 
@@ -529,7 +543,10 @@ TEST(DatabaseRoundTrip, PowerTowerSurroundNativeTraceMatchesOriginalSimData) {
     expected_database.import(source_for_expected,
                              true /* legacy_stinput_cylinder_origins */);
 
-    auto expected_exported = expected_database.export_to_simdata();
+    auto expected_exported_result = expected_database.export_to_simdata();
+    ASSERT_TRUE(export_succeeded(expected_exported_result));
+
+    auto expected_exported = expected_exported_result.get_success();
     ASSERT_NE(expected_exported, nullptr);
     ASSERT_NE(expected_exported->data, nullptr);
     configure_tiny_deterministic_run(*expected_exported->data);

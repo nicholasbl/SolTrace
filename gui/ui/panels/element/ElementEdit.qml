@@ -20,8 +20,8 @@ ColumnLayout {
         STSwitch {
             Layout.columnSpan: 2
             text: "Edit in 3D"
-            checked: App.view.mouse_mode === ViewModule.EditItem
-            onToggled: App.view.mouse_mode = checked ? ViewModule.EditItem
+            checked: App.view.mouse_mode === ViewModule.EditElement
+            onToggled: App.view.mouse_mode = checked ? ViewModule.EditElement
                                                       : ViewModule.Camera
         }
 
@@ -37,11 +37,11 @@ ColumnLayout {
             property string parent_name: root.module.parent_name
             text: parent_name.length ? parent_name : "Unassigned"
             onClicked: parent_pop.open()
-            SelectEntityPopup {
+            SelectElementPopup {
                 id: parent_pop
                 exclude: [root.module.entity]
                 allowNothing: true
-                onSelectedEntity: (entity) => root.module.parent = entity
+                onSelectedElement: (element) => root.module.parent = element
                 onSelectedNothing: root.module.clear_parent()
             }
         }
@@ -313,7 +313,7 @@ ColumnLayout {
                         STComboBar {
                             id: look_at_mode
                             Layout.fillWidth: true
-                            model: ["Position", "Entity"]
+                            model: ["Position", "Element"]
                             iconModel: ["\uf3c5", "\uf6d1"]
                         }
 
@@ -360,14 +360,14 @@ ColumnLayout {
                         STButton {
                             visible: look_at_mode.currentIndex === 1
                             Layout.fillWidth: true
-                            text: "Choose Entity"
-                            onClicked: look_at_entity_pop.open()
+                            text: "Choose Element"
+                            onClicked: look_at_element_pop.open()
 
-                            SelectEntityPopup {
-                                id: look_at_entity_pop
+                            SelectElementPopup {
+                                id: look_at_element_pop
                                 exclude: [root.module.entity]
-                                onSelectedEntity: (entity) => {
-                                                      root.module.look_at_entity(entity)
+                                onSelectedElement: (element) => {
+                                                      root.module.look_at_entity(element)
                                                       look_at_pop.close()
                                                   }
                             }

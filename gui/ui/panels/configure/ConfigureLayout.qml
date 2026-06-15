@@ -6,7 +6,7 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 import SolTrace
 
-EntityListEditor {
+ElementListEditor {
     id: root
 
     property var module: App.layout
@@ -19,7 +19,7 @@ EntityListEditor {
 
     onEditingChanged: {
         App.view.editing_layout = editing
-        if (!editing && App.view.mouse_mode === ViewModule.EditItem) {
+        if (!editing && App.view.mouse_mode === ViewModule.EditElement) {
             App.view.mouse_mode = ViewModule.Camera
         }
     }
@@ -50,8 +50,8 @@ EntityListEditor {
 
         STIconButton {
             text: "\uf245"
-            toolTip: "Select Item From View"
-            onClicked: App.view.mouse_mode = ViewModule.SelectItem
+            toolTip: "Select Element From View"
+            onClicked: App.view.mouse_mode = ViewModule.SelectElement
         }
 
         STIconButton {
@@ -69,7 +69,7 @@ EntityListEditor {
                         Layout.fillWidth: true
                         Layout.columnSpan: 3
 
-                        text: "Filter entities by:"
+                        text: "Filter elements by:"
                     }
 
                     Label {
@@ -149,7 +149,7 @@ EntityListEditor {
             text: "\uf055"
 
             onCreateRequested: function(name) {
-                var new_name = AppData.current_database.sanitize_entity_name(name)
+                var new_name = AppData.current_database.sanitize_element_name(name)
                 var entity = AppData.current_database.add_element(new_name)
                 root.module.edited_element = entity
                 root.editing = true
@@ -163,7 +163,7 @@ EntityListEditor {
             opacity: enabled ? 1.0 : 0.4
 
             onCreateRequested: function(name) {
-                var new_name = AppData.current_database.sanitize_entity_name(name)
+                var new_name = AppData.current_database.sanitize_element_name(name)
                 var entity = AppData.current_database.add_element(
                             new_name,
                             root.module.viewed_element
@@ -192,7 +192,7 @@ EntityListEditor {
                 onAccepted: (new_name) => {
                     var curr_db = root.module.current_database
 
-                    new_name = curr_db.sanitize_entity_name(new_name);
+                    new_name = curr_db.sanitize_element_name(new_name);
 
                     curr_db.set_name_of(
                                     root.module.edited_element,
@@ -208,7 +208,7 @@ EntityListEditor {
             Layout.fillWidth: true
             contentWidth: availableWidth
 
-            InstanceEdit {
+            ElementEdit {
                 width: layout_scroll.availableWidth
                 height: implicitHeight
             }
@@ -230,7 +230,7 @@ EntityListEditor {
                         Label {
                             Layout.fillWidth: true
                             wrapMode: Text.WordWrap
-                            text: "Delete this element? Any children of this entity will be made top-level."
+                            text: "Delete this element? Any children of this element will be made top-level."
                         }
                     }
 

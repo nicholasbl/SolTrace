@@ -189,8 +189,8 @@ void execute_thread_runner(QPromise<SimResult>&      promise,
             promise.emplaceResult(QStringLiteral("Cancelled"));
             return;
         case SolTrace::Runner::RunnerStatus::ERROR:
-            promise.setProgressValueAndText(100, "Run failed");
-            promise.emplaceResult(QStringLiteral("Run failed"));
+            promise.setProgressValueAndText(100, "Simulation failed");
+            promise.emplaceResult(QStringLiteral("The simulation failed."));
             return;
         case SolTrace::Runner::RunnerStatus::RUNNING:
             // we really shouldnt get here
@@ -198,12 +198,13 @@ void execute_thread_runner(QPromise<SimResult>&      promise,
             break;
         case SolTrace::Runner::RunnerStatus::SUCCESS: break;
         case SolTrace::Runner::RunnerStatus::TIMEOUT:
-            promise.setProgressValueAndText(100, "Run failed: timeout");
-            promise.emplaceResult(QStringLiteral("Run failed: timeout"));
+            promise.setProgressValueAndText(100, "Simulation timed out");
+            promise.emplaceResult(QStringLiteral("The simulation timed out."));
             return;
         default:
-            promise.setProgressValueAndText(100, "Run failed: unknown");
-            promise.emplaceResult(QStringLiteral("Run failed: unknown"));
+            promise.setProgressValueAndText(100, "Simulation failed");
+            promise.emplaceResult(
+                QStringLiteral("The simulation failed for an unknown reason."));
             return;
         }
 

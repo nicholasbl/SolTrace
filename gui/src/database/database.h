@@ -6,6 +6,7 @@
 #include "database/database_notification.h"
 #include "entity.h"
 #include "magic_enum/magic_enum.hpp"
+#include "utilities/result.h"
 
 #include <QDebug>
 #include <QPointer>
@@ -83,7 +84,7 @@ public:
                 bool legacy_stinput_cylinder_origins = false);
 
     /// Convert a database back into a Soltrace dataset
-    std::shared_ptr<DatabaseExport> export_to_simdata();
+    Result<std::shared_ptr<DatabaseExport>, QString> export_to_simdata();
 
     QString name() const;
     void    set_name(QString);
@@ -200,6 +201,7 @@ public slots:
 
     void set_name_of(db::Entity item, QString new_name);
 
+    QString sanitize_element_name(QString);
     QString sanitize_entity_name(QString);
 
     db::Entity add_element(QString new_name, db::Entity parent = {});

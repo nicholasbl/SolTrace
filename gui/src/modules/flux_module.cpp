@@ -108,13 +108,33 @@ void FluxModule::flux_map_ready(db::Entity              entity,
 
 void FluxModule::start_generate() {
     qDebug() << Q_FUNC_INFO << "Starting fluxmap generation for current entity";
+    if (!m_results) {
+        emit notify(ANotification::warning(
+            "Run a simulation before generating a flux map."));
+        return;
+    }
+
+    if (!current_entity().is_valid()) {
+        emit notify(ANotification::warning(
+            "Select an element before generating a flux map."));
+        return;
+    }
+
     m_pending_flux_maps->start_generate_for(current_entity());
 }
 
 void FluxModule::start_generate_volume_flux(unsigned resolution) {
-    if (ray_volume_flux_in_progress()) return;
+    if (ray_volume_flux_in_progress()) {
+        emit notify(ANotification::info(
+            "Volume flux generation is already running."));
+        return;
+    }
 
-    if (!m_results) return;
+    if (!m_results) {
+        emit notify(ANotification::warning(
+            "Run a simulation before generating volume flux."));
+        return;
+    }
 
     set_ray_volume_flux_in_progress(true);
 
@@ -131,8 +151,16 @@ void FluxModule::start_generate_volume_flux(unsigned resolution) {
 }
 
 void FluxModule::start_generate_isosurface(float value) {
-    if (!m_results) return;
-    if (!m_results->ray_volume.size_in_bricks()) return;
+    if (!m_results) {
+        emit notify(ANotification::warning(
+            "Run a simulation before creating an isosurface."));
+        return;
+    }
+    if (!m_results->ray_volume.size_in_bricks()) {
+        emit notify(ANotification::warning(
+            "Generate volume flux before creating an isosurface."));
+        return;
+    }
 
     qDebug() << Q_FUNC_INFO << "launching volume generation" << value;
     launch_async_task<db::Mesh>(QUuid::createUuid(),
@@ -148,20 +176,27 @@ void FluxModule::flux_vol_ready(QUuid const&                  id,
                                 analysis::SparseGrid3D<float> grid) {
     if (m_results) m_results->ray_volume = grid;
     set_ray_volume_flux_in_progress(false);
+    emit notify(ANotification::info("Volume flux generation complete."));
     qDebug() << Q_FUNC_INFO << id;
 }
 void FluxModule::flux_vol_failed(QUuid const& id, QString reason) {
     qDebug() << Q_FUNC_INFO << id;
-    qCritical() << "Unable to generate isosurface" << reason;
+    set_ray_volume_flux_in_progress(false);
+    qCritical() << "Unable to generate volume flux" << reason;
+    emit notify(ANotification::error(
+        QString("Could not generate volume flux: %1").arg(reason)));
 }
 
 void FluxModule::iso_surf_ready(QUuid const& id, db::Mesh mesh) {
     qDebug() << Q_FUNC_INFO << id;
     m_ray_iso_volume->set_current_mesh(mesh);
+    emit notify(ANotification::info("Isosurface generation complete."));
 }
 void FluxModule::iso_surf_failed(QUuid const& id, QString reason) {
     qDebug() << Q_FUNC_INFO << id;
     qCritical() << "Unable to generate isosurface" << reason;
+    emit notify(ANotification::error(
+        QString("Could not generate the isosurface: %1").arg(reason)));
 }
 
 } // namespace SolTrace::GUI::App

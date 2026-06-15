@@ -72,7 +72,8 @@ void SimulationModule::job_done() {
 
     if (!results) {
         emit notify(
-            ANotification::error("Simulation finished without results."));
+            ANotification::error(
+                "The simulation completed, but no results were produced."));
         return;
     }
 
@@ -104,7 +105,11 @@ void SimulationModule::job_failed(QString const& message) {
     set_progress(0);
     set_current_stage("Idle");
 
-    emit notify(ANotification::error(message));
+    if (message.startsWith(QStringLiteral("Cancelled"))) {
+        emit notify(ANotification::info("Simulation cancelled."));
+    } else {
+        emit notify(ANotification::error(message));
+    }
 }
 
 SimulationModule::SimulationModule(QObject* parent)
@@ -135,22 +140,31 @@ SimulationModule::~SimulationModule() {
 
 void SimulationModule::run() {
     qDebug() << Q_FUNC_INFO;
-    if (!m_current_database) return;
+    if (!m_current_database) {
+        emit notify(ANotification::warning(
+            "Create or load a scene before running a simulation."));
+        return;
+    }
 
     if (m_running) {
-        emit notify(
-            ANotification::error("A running job is already in progress."));
+        emit notify(ANotification::error(
+            "A simulation is already running. Wait for it to finish before "
+            "starting another one."));
         return;
     }
 
     qDebug() << Q_FUNC_INFO << "Launch";
-    auto sim_data = m_current_database->export_to_simdata();
+    auto exported_result = m_current_database->export_to_simdata();
 
-    if (!sim_data) {
-        emit notify(
-            ANotification::error("Unable to pack simulation database."));
+    if (!exported_result) {
+        auto err = exported_result.get_failure();
+
+        emit notify(ANotification::error(
+            QString("Could not start the simulation: %1").arg(err)));
         return;
     }
+
+    auto sim_data = exported_result.get_success();
 
     sim_data->data->set_seed(m_seed_value);
     sim_data->data->set_number_of_rays(m_ray_count);
@@ -245,7 +259,7 @@ void SimulationModule::rename_result(int index, QString const& name) {
 void SimulationModule::export_result(int index) {
     if (!m_results->result_at(index)) return;
 
-    emit notify(ANotification::info("Result export is not implemented yet."));
+    emit notify(ANotification::info("Result export is not available yet."));
 }
 
 void SimulationModule::duplicate_current_result_for_edit() {

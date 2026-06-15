@@ -252,8 +252,17 @@ AppData::AppData(QObject*       parent,
 
     connect(m_layout, &LayoutModule::notify, this, &AppData::notification);
 
+    connect(m_sun, &SunModule::notify, this, &AppData::notification);
+
+    connect(m_flux, &FluxModule::notify, this, &AppData::notification);
+
     connect(m_exporter,
             &ExportModule::notify,
+            this,
+            &AppData::notification);
+
+    connect(m_script,
+            &Script::Script::notify,
             this,
             &AppData::notification);
 
