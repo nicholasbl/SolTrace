@@ -68,6 +68,45 @@ Flickable {
             Layout.margins: 8
         }
 
+        STPropertyPanel {
+            Layout.fillWidth: true
+
+            title: "Visualization"
+            collapsible: true
+
+            ColumnLayout {
+                width: parent.width
+
+                STSwitch {
+                    text: "Visible"
+                    checked: App.view.sim.sun_viz
+                    onToggled: App.view.sim.sun_viz = checked
+                }
+
+                ColorPickerField {
+                    id: sunColorPicker
+                    Layout.preferredWidth: 200
+                    color: App.view.sim.sun_color
+                    label: "Sun Color"
+                    onUpdated: {
+                        App.view.sim.sun_color = sunColorPicker.color
+                    }
+                }
+
+                STSpinBoxField {
+                    Layout.preferredWidth: 200
+
+                    label: "Scale Factor"
+                    value: App.view.sim.sun_viz_scale
+                    onValueModified: {
+                        App.view.sim.sun_viz_scale = value
+                    }
+                    from: 0
+                    to: 100
+                }
+            }
+        }
+
 
         STComboBar {
             id: bar

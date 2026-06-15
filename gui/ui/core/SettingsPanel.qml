@@ -43,6 +43,7 @@ ShadowedGlassRectangle {
             model: ListModel {
                 ListElement { name: "What's New"; icon: "✦" }
                 ListElement { name: "Theme"; icon: "\uf53f" }
+                ListElement { name: "Scene"; icon: "\uf1b2" }
                 ListElement { name: "Documentation"; icon: "\uf02d" }
                 ListElement { name: "Team"; icon: "\uf500" }
             }
@@ -84,6 +85,8 @@ ShadowedGlassRectangle {
                 FeaturePanel {}
 
                 ThemeSettings {}
+
+                SceneSettings {}
 
                 DocumentationSettings {}
 

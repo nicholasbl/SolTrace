@@ -162,7 +162,7 @@ Flickable {
             STButton {
                 Layout.fillWidth: true
                 text: "Ray From View"
-                text_icon: "\uf245"
+                text_icon: "\uf05b"
                 onClicked: App.view.mouse_mode = ViewModule.PickRay
             }
 

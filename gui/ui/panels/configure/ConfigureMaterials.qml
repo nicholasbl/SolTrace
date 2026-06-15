@@ -52,7 +52,7 @@ AdaptiveFilteredEditor {
         }
 
         STIconButton {
-            text: "\uf245"
+            text: "\uf05b"
             toolTip: "Select Material From View"
             onClicked: App.view.mouse_mode = ViewModule.SelectMaterial
         }

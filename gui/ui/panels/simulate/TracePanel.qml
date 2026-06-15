@@ -122,7 +122,7 @@ ScrollView {
             STButton {
                 Layout.fillWidth: true
                 Layout.columnSpan: root.singleColumn ? 1 : 2
-                text: "Enqueue Job"
+                text: "Start Simulation"
                 text_icon: "\uf0da"
                 onClicked: {
                     AppData.simulation.run()

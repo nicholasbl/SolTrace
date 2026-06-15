@@ -49,7 +49,7 @@ ElementListEditor {
         }
 
         STIconButton {
-            text: "\uf245"
+            text: "\uf05b"
             toolTip: "Select Element From View"
             onClicked: App.view.mouse_mode = ViewModule.SelectElement
         }
@@ -190,15 +190,15 @@ ElementListEditor {
                 text: root.module.edited_element_name
 
                 onAccepted: (new_name) => {
-                    var curr_db = root.module.current_database
+                                var curr_db = root.module.current_database
 
-                    new_name = curr_db.sanitize_element_name(new_name);
+                                new_name = curr_db.sanitize_element_name(new_name);
 
-                    curr_db.set_name_of(
+                                curr_db.set_name_of(
                                     root.module.edited_element,
                                     new_name
                                     )
-                }                
+                            }
             }
         }
 

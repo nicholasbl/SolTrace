@@ -49,7 +49,7 @@ AdaptiveFilteredEditor {
         }
 
         STIconButton {
-            text: "\uf245"
+            text: "\uf05b"
             toolTip: "Select Geometry From View"
             onClicked: App.view.mouse_mode = ViewModule.SelectGeometry
         }

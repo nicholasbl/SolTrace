@@ -19,7 +19,7 @@ ColumnLayout {
 
         STSwitch {
             Layout.columnSpan: 2
-            text: "Edit in 3D"
+            text: "Use 3D widget"
             checked: App.view.mouse_mode === ViewModule.EditElement
             onToggled: App.view.mouse_mode = checked ? ViewModule.EditElement
                                                       : ViewModule.Camera
@@ -84,11 +84,13 @@ ColumnLayout {
             }
         }
 
+
+
         STPropertyPanel {
             id: positionPanel
             Layout.columnSpan: 2
             Layout.fillWidth: true
-            title: "Position"
+            title: "Placement"
             collapsible: true
 
             STComboBar {
@@ -155,7 +157,7 @@ ColumnLayout {
                     STButton {
                         Layout.fillWidth: true
                         Layout.columnSpan: 2
-                        text: "Set Local Default Position"
+                        text: "Reset Local Default Position"
                         onClicked: {
                             local_x_pos.text = 0
                             local_y_pos.text = 0
@@ -216,7 +218,7 @@ ColumnLayout {
                     STButton {
                         Layout.fillWidth: true
                         Layout.columnSpan: 2
-                        text: "Set Global Default Position"
+                        text: "Reset Global Default Position"
                         onClicked: {
                             global_x_pos.text = 0
                             global_y_pos.text = 0
@@ -377,11 +379,29 @@ ColumnLayout {
             }
         }
 
-        STSwitch {
+        STPropertyPanel {
             Layout.columnSpan: 2
-            text: "Hidden"
-            checked: root.module.hidden
-            onToggled: root.module.hidden = checked
+            Layout.fillWidth: true
+            title: "Visualization"
+            collapsible: true
+
+            STSwitch {
+                Layout.columnSpan: 2
+                text: "Hidden"
+                checked: root.module.hidden
+                onToggled: root.module.hidden = checked
+            }
+
+            ColorPickerField {
+                id: elementColorPicker
+                Layout.columnSpan: 2
+                Layout.preferredWidth: 200
+                color: root.module.color
+                label: "Element Color"
+                onUpdated: {
+                    root.module.color = elementColorPicker.color
+                }
+            }
         }
 
         STSwitch {

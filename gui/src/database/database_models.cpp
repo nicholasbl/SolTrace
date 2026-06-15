@@ -456,6 +456,7 @@ void AnInstanceEditor::recompute() {
     emit position_changed();
     emit global_position_changed();
     emit orientation_changed();
+    emit color_changed();
     emit hidden_changed();
     emit disabled_changed();
     emit material_group_changed();
@@ -508,6 +509,7 @@ void AnInstanceEditor::reset(Database* database) {
             m_host->global_transform.self(), nullptr, this, nullptr);
         QObject::disconnect(m_host->invisible.self(), nullptr, this, nullptr);
         QObject::disconnect(m_host->disabled.self(), nullptr, this, nullptr);
+        QObject::disconnect(m_host->color.self(), nullptr, this, nullptr);
         QObject::disconnect(
             m_host->material_group_membership.self(), nullptr, this, nullptr);
         QObject::disconnect(
@@ -557,6 +559,16 @@ void AnInstanceEditor::reset(Database* database) {
             &AnInstanceEditor::an_entity_changed);
 
     connect(database->disabled.self(),
+            &ComponentAPIBase::removed,
+            this,
+            &AnInstanceEditor::an_entity_changed);
+
+    connect(database->color.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &AnInstanceEditor::an_entity_changed);
+
+    connect(database->color.self(),
             &ComponentAPIBase::removed,
             this,
             &AnInstanceEditor::an_entity_changed);
@@ -667,6 +679,24 @@ void AnInstanceEditor::set_orientation(const QQuaternion& newOrientation) {
     });
 
     emit orientation_changed();
+}
+
+QColor AnInstanceEditor::color() const {
+    if (m_host and m_host->valid(m_entity)) {
+        if (auto tf = m_host->color.get(m_entity); tf) { return tf->color; }
+    }
+
+    return Qt::white;
+}
+
+void AnInstanceEditor::set_color(QColor newColor) {
+    if (color() == newColor) return;
+    if (!m_host) return;
+    if (!m_host->valid(m_entity)) return;
+
+    m_host->set_color(m_entity, newColor);
+
+    emit color_changed();
 }
 
 bool AnInstanceEditor::hidden() const {
