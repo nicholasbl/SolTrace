@@ -36,8 +36,8 @@ ShadowedGlassRectangle {
                 id: info_row
                 Layout.fillWidth: true
 
-                text: ["Scenes", "Results", "Scripting"][
-                          Math.min(App.view.right_panel_section, 2)]
+                text: ["Results", "Scripting"][
+                          Math.min(App.view.right_panel_section, 1)]
                 font.pointSize: 16
                 font.family: "CMU Serif"
                 font.bold: true
@@ -61,10 +61,10 @@ ShadowedGlassRectangle {
 
             Layout.fillWidth: true
 
-            currentIndex: Math.min(App.view.right_panel_section, 2)
+            currentIndex: Math.min(App.view.right_panel_section, 1)
             collapseLabels: App.view.right_panel.size === PanelData.Small
-            model: ["Scenes", "Results", "Scripting"]
-            iconModel: ["\uf1b2", "\uf201", "\uf1c9"]
+            model: ["Results", "Scripting"]
+            iconModel: ["\uf201", "\uf1c9"]
 
             onCurrentIndexChanged: App.view.right_panel_section = currentIndex
         }
@@ -75,9 +75,7 @@ ShadowedGlassRectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            currentIndex: Math.min(App.view.right_panel_section, 2)
-
-            SceneListPane {}
+            currentIndex: Math.min(App.view.right_panel_section, 1)
 
             ResultListPane {}
 

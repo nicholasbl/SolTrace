@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
 
@@ -13,6 +14,15 @@ RowLayout {
     signal show_script_area()
 
     readonly property bool show_logos: available_width > 900
+    readonly property bool analyzing: App.view.workflow_phase === 3
+    readonly property string current_context_title: analyzing ? "Analyze" : "Scene"
+    readonly property string current_context_name: analyzing
+                                                   ? (App.simulation.current_simulation_result_name.length ?
+                                                          App.simulation.current_simulation_result_name
+                                                        : "None")
+                                                   : (App.file_source.current_database ?
+                                                          App.file_source.current_database.name
+                                                        : "None")
 
     ShadowedGlassRectangle {
         id: left_control_glass
@@ -42,8 +52,41 @@ RowLayout {
         }
     }
 
-    Item {
-        Layout.fillWidth: true
+    RowLayout {
+        id: context_row
+
+        Layout.leftMargin: 18
+        Layout.rightMargin: 18
+        spacing: 8
+
+        Item {
+            Layout.fillWidth: true
+        }
+
+        Label {
+            text: root.current_context_title
+            font.bold: true
+            opacity: 0.65
+            elide: Text.ElideRight
+        }
+
+        Rectangle {
+            Layout.fillHeight: true
+            Layout.topMargin: 10
+            Layout.bottomMargin: 10
+            Layout.preferredWidth: 1
+            color: Material.dividerColor
+        }
+
+        Label {
+            Layout.maximumWidth: 320
+            text: root.current_context_name
+            elide: Text.ElideMiddle
+        }
+
+        Item {
+            Layout.fillWidth: true
+        }
     }
 
     TopBarRightPane {

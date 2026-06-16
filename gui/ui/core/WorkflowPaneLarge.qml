@@ -17,10 +17,6 @@ Item {
 
     signal closeClicked()
 
-    FileController {
-        id: file_controller
-    }
-
     ColumnLayout {
         id: workflow_layout
 
@@ -75,37 +71,15 @@ Item {
 
             WorkflowLargeItem {
                 icon: "\uf56f"
-                title: "File"
-                value: "Import a file"
-                value_clickable: false
-
-                onActivated: file_menu.open()
-
-                WorkflowFileMenu {
-                    id: file_menu
-                    controller: file_controller
-                }
-            }
-
-            Label {
-                Layout.alignment: Qt.AlignVCenter
-                font.family: "Font Awesome 7 Free"
-                text: "\uf101"
-                opacity: App.view.workflow_phase === 0 ? 1.0 : 0.5
-            }
-
-            WorkflowLargeItem {
-                icon: "\uf7d9"
-                title: "Configure"
+                title: "Data"
                 value: root.active_name
                 active: App.view.workflow_phase === 0
+                value_clickable: false
 
                 onActivated: {
                     App.view.simulation_content_view = false
                     App.view.workflow_phase = 0
                 }
-
-                onValueClicked: data_pop.open()
             }
 
             Label {
@@ -117,8 +91,8 @@ Item {
             }
 
             WorkflowLargeItem {
-                icon: "\uf04b"
-                title: "Simulate"
+                icon: "\uf7d9"
+                title: "Configure"
                 value: root.active_name
                 active: App.view.workflow_phase === 1
 
@@ -139,14 +113,36 @@ Item {
             }
 
             WorkflowLargeItem {
-                icon: "\uf1fe"
-                title: "Analyze"
-                value: root.active_result_name
+                icon: "\uf04b"
+                title: "Simulate"
+                value: root.active_name
                 active: App.view.workflow_phase === 2
 
                 onActivated: {
-                    App.view.simulation_content_view = true
+                    App.view.simulation_content_view = false
                     App.view.workflow_phase = 2
+                }
+
+                onValueClicked: data_pop.open()
+            }
+
+            Label {
+                Layout.alignment: Qt.AlignVCenter
+                font.family: "Font Awesome 7 Free"
+                text: "\uf101"
+                opacity: App.view.workflow_phase === 2
+                         || App.view.workflow_phase === 3 ? 1.0 : 0.5
+            }
+
+            WorkflowLargeItem {
+                icon: "\uf1fe"
+                title: "Analyze"
+                value: root.active_result_name
+                active: App.view.workflow_phase === 3
+
+                onActivated: {
+                    App.view.simulation_content_view = true
+                    App.view.workflow_phase = 3
                 }
 
                 onValueClicked: results_pop.open()

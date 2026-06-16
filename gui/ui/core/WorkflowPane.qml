@@ -14,19 +14,11 @@ Item {
 
     property int last_db_count: AppData.file_source.rowCount()
     property bool highlighted: false
-    readonly property string active_name: App.file_source.current_database ?
-                                             App.file_source.current_database.name : "None"
-    readonly property string active_result_name: App.simulation.current_simulation_result_name
-
     function flash_added_data() {
         flash_highlight_animation.restart()
     }
 
     signal openClicked()
-
-    FileController {
-        id: file_controller
-    }
 
     RowLayout {
         id: mode_row
@@ -126,7 +118,7 @@ Item {
         }
 
         STClickableLabel {
-            id: file_label
+            id: data_label
 
             Layout.fillHeight: true
             Layout.leftMargin: 4
@@ -134,16 +126,17 @@ Item {
 
             borderWidth: 0
 
-            text: "File"
+            property bool is_active: App.view.workflow_phase === 0
+
+            text: "Data"
             font.pointSize: 16
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
+            opacity: is_active ? 1.0 : .50
 
-            onClicked: file_menu.open()
-
-            WorkflowFileMenu {
-                id: file_menu
-                controller: file_controller
+            onClicked: {
+                App.view.simulation_content_view = false
+                App.view.workflow_phase = 0
             }
         }
 
@@ -157,7 +150,8 @@ Item {
             font.family: "Font Awesome 7 Free"
             text: "\uf101"
 
-            property bool highlight: current_scene_label.is_active
+            property bool highlight: data_label.is_active
+                                     || current_scene_label.is_active
 
             opacity: highlight ? 1.0 : .50
         }
@@ -165,14 +159,14 @@ Item {
         STClickableLabel {
             id: current_scene_label
 
-            property bool is_active: App.view.workflow_phase === 0
+            property bool is_active: App.view.workflow_phase === 1
 
             Layout.fillHeight: true
 
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
 
-            text: is_active ? "Configure: " + root.active_name : "Configure"
+            text: "Configure"
             elide: Label.ElideMiddle
 
             //font.bold: is_active
@@ -180,11 +174,11 @@ Item {
             opacity: is_active ? 1.0 : .50
 
             onClicked: {
-                if (App.view.workflow_phase === 0) {
+                if (App.view.workflow_phase === 1) {
                     data_pop.open()
                 } else {
                     App.view.simulation_content_view = false
-                    App.view.workflow_phase = 0
+                    App.view.workflow_phase = 1
                 }
             }
 
@@ -201,7 +195,7 @@ Item {
 
             font.family: "Font Awesome 7 Free"
 
-            visible: App.view.workflow_phase === 0
+            visible: App.view.workflow_phase === 1
 
             onClicked: data_pop.open()
         }
@@ -225,11 +219,11 @@ Item {
         STClickableLabel {
             id: simulate_label
 
-            property bool is_active: App.view.workflow_phase === 1
+            property bool is_active: App.view.workflow_phase === 2
 
             Layout.fillHeight: true
 
-            text: is_active ? "Simulate: " + root.active_name : "Simulate"
+            text: "Simulate"
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
 
@@ -239,7 +233,7 @@ Item {
 
             onClicked: {
                 App.view.simulation_content_view = false
-                App.view.workflow_phase = 1
+                App.view.workflow_phase = 2
             }
 
             Behavior on opacity {
@@ -255,7 +249,7 @@ Item {
 
             font.family: "Font Awesome 7 Free"
 
-            visible: App.view.workflow_phase === 1
+            visible: App.view.workflow_phase === 2
 
             onClicked: data_pop.open()
         }
@@ -278,13 +272,13 @@ Item {
         STClickableLabel {
             id: analyze_label
 
-            property bool is_active: App.view.workflow_phase === 2
+            property bool is_active: App.view.workflow_phase === 3
 
             Layout.fillHeight: true
 
             font.pointSize: 16
 
-            text: is_active ? "Analyze: " + root.active_result_name : "Analyze"
+            text: "Analyze"
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
 
@@ -292,11 +286,11 @@ Item {
             opacity: is_active ? 1.0 : .50
 
             onClicked: {
-                if (App.view.workflow_phase === 2) {
+                if (App.view.workflow_phase === 3) {
                     results_pop.open()
                 } else {
                     App.view.simulation_content_view = true
-                    App.view.workflow_phase = 2
+                    App.view.workflow_phase = 3
                 }
             }
 
@@ -313,7 +307,7 @@ Item {
 
             font.family: "Font Awesome 7 Free"
 
-            visible: App.view.workflow_phase === 2
+            visible: App.view.workflow_phase === 3
 
             onClicked: results_pop.open()
         }

@@ -22,7 +22,7 @@ ColumnLayout {
 
     function showResultMode() {
         App.view.simulation_content_view = true
-        App.view.workflow_phase = 2
+        App.view.workflow_phase = 3
     }
 
     function showSceneMode() {

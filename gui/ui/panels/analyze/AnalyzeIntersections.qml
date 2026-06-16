@@ -154,15 +154,10 @@ Flickable {
                 }
             }
 
-
-            STPropertyLabel {
-                text: "Pick"
-                Layout.alignment: root.labelAlignment
-            }
-
             STButton {
+                Layout.columnSpan: root.child_column_span
                 Layout.fillWidth: true
-                text: "Ray From View"
+                text: "Pick Ray From View"
                 text_icon: "\uf05b"
                 onClicked: App.view.mouse_mode = ViewModule.PickRay
             }
