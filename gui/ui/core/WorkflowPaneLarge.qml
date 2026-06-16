@@ -72,15 +72,20 @@ Item {
             WorkflowLargeItem {
                 icon: "\uf56f"
                 title: "1. Data"
-                value: root.active_name
+                value: "Load"
                 active: App.view.workflow_phase === 0
-                value_clickable: false
 
                 description: "Load content"
 
                 onActivated: {
                     App.view.simulation_content_view = false
                     App.view.workflow_phase = 0
+                }
+
+                onValueClicked: file_menu.open()
+
+                WorkflowFileMenu {
+                    id: file_menu
                 }
             }
 

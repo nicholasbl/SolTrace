@@ -135,8 +135,16 @@ Item {
             opacity: is_active ? 1.0 : .50
 
             onClicked: {
-                App.view.simulation_content_view = false
-                App.view.workflow_phase = 0
+                if (App.view.workflow_phase === 0) {
+                    file_menu.open()
+                } else {
+                    App.view.simulation_content_view = false
+                    App.view.workflow_phase = 0
+                }
+            }
+
+            WorkflowFileMenu {
+                id: file_menu
             }
         }
 

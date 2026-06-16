@@ -27,8 +27,12 @@ Item {
         controller.align_to_axis(axis, invert)
     }
 
-    function orient_camera_to(point) {
-        controller.look_at(point)
+    function scene_position_from_database_position(point) {
+        return Qt.vector3d(point.x, point.z, -point.y)
+    }
+
+    function orient_camera_to_database_position(point) {
+        controller.look_at(scene_position_from_database_position(point))
     }
 
     function reset_camera_view() {

@@ -417,15 +417,25 @@ Item {
             root.active_camera.eulerRotation.y = yaw
         }
 
+        function rotation_from_forward(direction) {
+            var forward = direction.normalized()
+            var horizontal = Math.sqrt(forward.x * forward.x
+                                       + forward.z * forward.z)
+            var yaw = Math.atan2(-forward.x, -forward.z) * 180.0 / Math.PI
+            var pitch = Math.atan2(forward.y, horizontal) * 180.0 / Math.PI
+
+            pitch = Math.max(Math.min(pitch, 89), -89)
+
+            return Quaternion.fromEulerAngles(pitch, yaw, 0)
+        }
+
         function align_to_axis(axis, invert) {
             var axis_setup = root.build_align_vector(axis, invert)
 
             // WASD alignment rotates in place. Position is animated from/to the
             // same value so the shared ParallelAnimation can drive both
             // position and rotation targets without a special case.
-            var rotation = Quaternion.lookAt(
-                        Qt.vector3d(0, 0, 0),
-                        axis_setup)
+            var rotation = rotation_from_forward(axis_setup)
 
             camera_move_animation.from = root.active_camera.position
             camera_move_animation.to = root.active_camera.position
@@ -450,8 +460,7 @@ Item {
             camera_move_animation.to = camera_position
 
             camera_rotation_animation.from = cam.rotation
-            camera_rotation_animation.to = Quaternion.lookAt(camera_position,
-                                                             target)
+            camera_rotation_animation.to = rotation_from_forward(offset)
 
             is_animating = true
             wasd_camera_animation.start()
