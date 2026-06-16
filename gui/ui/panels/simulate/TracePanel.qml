@@ -118,16 +118,6 @@ ScrollView {
                 checked: AppData.simulation.optical_errors
                 onToggled: AppData.simulation.optical_errors = checked
             }
-
-            STButton {
-                Layout.fillWidth: true
-                Layout.columnSpan: root.singleColumn ? 1 : 2
-                text: "Start Simulation"
-                text_icon: "\uf0da"
-                onClicked: {
-                    AppData.simulation.run()
-                }
-            }
         }
     }
 }

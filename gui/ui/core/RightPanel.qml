@@ -10,6 +10,20 @@ ShadowedGlassRectangle {
     id: root
     required property int available_width
 
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.AllButtons
+        hoverEnabled: true
+        preventStealing: true
+
+        onPressed: (mouse) => mouse.accepted = true
+        onReleased: (mouse) => mouse.accepted = true
+        onClicked: (mouse) => mouse.accepted = true
+        onDoubleClicked: (mouse) => mouse.accepted = true
+        onPositionChanged: (mouse) => mouse.accepted = true
+        onWheel: (wheel) => wheel.accepted = true
+    }
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 10
@@ -22,7 +36,8 @@ ShadowedGlassRectangle {
                 id: info_row
                 Layout.fillWidth: true
 
-                text: ["Scripting", "Help"][Math.min(App.view.right_panel_section, 1)]
+                text: ["Scenes", "Results", "Scripting"][
+                          Math.min(App.view.right_panel_section, 2)]
                 font.pointSize: 16
                 font.family: "CMU Serif"
                 font.bold: true
@@ -43,25 +58,30 @@ ShadowedGlassRectangle {
 
         STComboBar {
             id: section
+
             Layout.fillWidth: true
-            currentIndex: Math.min(App.view.right_panel_section, 1)
-            onCurrentIndexChanged: App.view.right_panel_section = currentIndex
+
+            currentIndex: Math.min(App.view.right_panel_section, 2)
             collapseLabels: App.view.right_panel.size === PanelData.Small
-            model: ["Scripting", "Help"]
-            iconModel: ["\uf1c9", "\ue4e3"]
+            model: ["Scenes", "Results", "Scripting"]
+            iconModel: ["\uf1b2", "\uf201", "\uf1c9"]
+
+            onCurrentIndexChanged: App.view.right_panel_section = currentIndex
         }
 
-        // need this?
         StackLayout {
-            id: script_stack
-            currentIndex: Math.min(App.view.right_panel_section, 1)
+            id: content_stack
 
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            ScriptInterface {}
+            currentIndex: Math.min(App.view.right_panel_section, 2)
 
-            HelpInterface {}
+            SceneListPane {}
+
+            ResultListPane {}
+
+            ScriptInterface {}
         }
     }
 }

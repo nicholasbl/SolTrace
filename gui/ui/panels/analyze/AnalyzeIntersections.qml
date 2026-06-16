@@ -15,6 +15,8 @@ Flickable {
 
     property var ray_geom: AppData.intersections.ray_geometry
 
+    property int child_column_span: singleColumn ? 1 : 2
+
     property bool is_selected_ray_valid: ray_geom.selected_ray_id >= 0
 
     function formatRayCount(count) {
@@ -66,12 +68,11 @@ Flickable {
             title: "Ray Visibility"
 
 
-            STPropertyLabel {
-                text: "Show"
-                Layout.alignment: root.labelAlignment
-            }
-
             STSwitch {
+                Layout.fillWidth: true
+                Layout.columnSpan: root.child_column_span
+
+                text: "Show Intersections"
                 checked: AppData.view.show_intersections
 
                 onToggled: AppData.view.show_intersections = checked
@@ -101,7 +102,7 @@ Flickable {
             }
 
             STDoubleSpinBox {
-                Layout.columnSpan: 2
+                Layout.columnSpan: root.child_column_span
                 from: 0.0
                 to: 100.0
                 value: root.ray_geom.show_percent
@@ -114,7 +115,7 @@ Flickable {
             }
 
             STDoubleSpinBox {
-                Layout.columnSpan: 2
+                Layout.columnSpan: root.child_column_span
                 from: 0.0
                 to: root.ray_geom.available_rays
                 value: root.visibleRayCount()

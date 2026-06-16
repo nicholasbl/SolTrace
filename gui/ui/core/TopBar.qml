@@ -15,10 +15,9 @@ RowLayout {
     readonly property bool show_logos: available_width > 900
 
     ShadowedGlassRectangle {
-        id: left_data_glass
+        id: left_control_glass
 
         Layout.fillHeight: true
-        //Layout.fillWidth: true
         Layout.preferredWidth: left_data_row.implicitWidth
 
         blur_source: root.blur_source
@@ -39,20 +38,6 @@ RowLayout {
 
                 available_width: root.available_width
                 show_logos: root.show_logos
-            }
-
-            Rectangle {
-                Layout.fillHeight: true
-                width: 1
-                color: Material.dividerColor
-            }
-
-            TopBarDataPane {
-                id: top_bar_data_pane
-
-                Layout.fillHeight: true
-                Layout.fillWidth: true
-                Layout.preferredWidth: implicitWidth
             }
         }
     }

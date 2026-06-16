@@ -51,7 +51,7 @@ RowLayout {
         Rectangle {
             anchors.fill: logo_content
             anchors.margins: -5
-            radius: 5
+            radius: 12
 
             color: logo_mouse_area.containsMouse ? Material.rippleColor :
                                                    "transparent"

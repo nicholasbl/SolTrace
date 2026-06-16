@@ -47,11 +47,11 @@ RowLayout {
                     anchors.horizontalCenter: parent.left
                     anchors.verticalCenter: parent.top
 
-                    opacity: notification_settings.new_notification_count > 0
+                    opacity: notification_settings.new_alert_count > 0
 
                     Connections {
                         target: notification_settings
-                        function onNew_notification_countChanged() {
+                        function onNew_alert_countChanged() {
                             pulse_animation.restart()
                         }
                     }
@@ -141,6 +141,7 @@ RowLayout {
 
                         Label {
                             Layout.fillWidth: true
+                            Layout.fillHeight: true
                             wrapMode: Label.WrapAtWordBoundaryOrAnywhere
                             elide: Label.ElideRight
 
@@ -157,21 +158,6 @@ RowLayout {
                             notification_settings.open()
                         }
                     }
-                }
-            }
-
-            STIconButton {
-                Layout.preferredWidth: implicitWidth
-                Layout.preferredHeight: implicitHeight
-                label.font.pointSize: 20
-
-                text: "\uf030"
-                toolTip: "Navigation Settings"
-
-                onClicked: nav_settings_pop.open()
-
-                NavigationSettings {
-                    id: nav_settings_pop
                 }
             }
 

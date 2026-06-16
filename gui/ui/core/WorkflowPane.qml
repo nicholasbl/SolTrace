@@ -1,9 +1,7 @@
-import QtCore
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-import QtQuick.Dialogs
 
 import SolTrace
 
@@ -22,6 +20,12 @@ Item {
 
     function flash_added_data() {
         flash_highlight_animation.restart()
+    }
+
+    signal openClicked()
+
+    FileController {
+        id: file_controller
     }
 
     RowLayout {
@@ -72,6 +76,55 @@ Item {
             }
         }
 
+        Label {
+            text: "Workflow"
+
+            //font.family: "CMU Serif"
+
+            font.bold: true
+
+            opacity: 0.65
+
+            Rectangle {
+                id: wf_highlight
+
+                bottomLeftRadius: 42 / 2
+                topLeftRadius: 42 / 2
+                anchors.fill: parent
+                anchors.leftMargin: -20
+                anchors.rightMargin: -8
+                anchors.topMargin: -12
+                anchors.bottomMargin: -12
+
+                color: Material.rippleColor
+
+                opacity: wf_mouse.containsMouse
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 150
+                    }
+                }
+            }
+
+            MouseArea {
+                id: wf_mouse
+                anchors.fill: parent
+                anchors.margins: -5
+
+                hoverEnabled: true
+
+                onClicked: root.openClicked()
+            }
+        }
+
+        Rectangle {
+            color: Material.dividerColor
+
+            width: 1
+            Layout.fillHeight: true
+        }
+
         STClickableLabel {
             id: file_label
 
@@ -88,148 +141,9 @@ Item {
 
             onClicked: file_menu.open()
 
-            STMenu {
+            WorkflowFileMenu {
                 id: file_menu
-                MenuItem {
-                    text: "New"
-                    onClicked: App.file_source.load_new()
-
-                    enabled: !AppData.file_source.is_loading
-                }
-                MenuItem {
-                    text: "Open"
-                    onClicked: openFileDialog.open()
-
-                    enabled: !AppData.file_source.is_loading
-                }
-
-                STMenu {
-                    id: recents_menu
-                    title: qsTr("Recent Files")
-                    enabled: recent_instantiator.count > 0
-
-                    Instantiator {
-                        id: recent_instantiator
-                        model: file_settings.recent_files
-
-                        delegate: MenuItem {
-                            // Show file name only. Settings may restore
-                            // entries as strings or QUrl-like values, so
-                            // normalize before doing string operations.
-                            text: file_settings.file_name(modelData)
-                            onTriggered: {
-                                file_menu.dismiss()
-                                var file_url = file_settings.file_url_text(modelData)
-                                file_settings.add_files(file_url)
-                                App.file_source.load_url(Qt.url(file_url))
-                            }
-                        }
-
-                        onObjectAdded: (index, object) => recents_menu.insertItem(index, object)
-                        onObjectRemoved: (index, object) => recents_menu.removeItem(object)
-                    }
-
-                    MenuSeparator {
-                        visible: recent_instantiator.count > 0
-                    }
-
-                    MenuItem {
-                        text: qsTr("Clear Menu")
-                        onTriggered: file_settings.clear_recent_files()
-                    }
-                }
-
-                MenuItem {
-                    text: "Save"
-
-                    enabled: !AppData.file_source.is_loading
-                }
-            }
-
-            QtObject {
-                id: file_settings
-
-                property var recent_files: []
-                property url last_selected_file: ""
-                property url last_selected_folder: StandardPaths.standardLocations(
-                                                       StandardPaths.DocumentsLocation)[0]
-
-                function file_url_text(file_path) {
-                    return String(file_path)
-                }
-
-                function file_name(file_path) {
-                    var file_url = file_url_text(file_path)
-                    return decodeURIComponent(file_url.split('/').pop())
-                }
-
-                function recent_files_array() {
-                    var files = []
-
-                    if (!recent_files) {
-                        return files
-                    }
-
-                    for (var i = 0; i < recent_files.length; ++i) {
-                        files.push(file_url_text(recent_files[i]))
-                    }
-
-                    return files
-                }
-
-                function set_recent_files(files) {
-                    recent_files = files
-                }
-
-                function clear_recent_files() {
-                    set_recent_files([])
-                }
-
-                function add_files(file_path) {
-                    var normalized_file_path = file_url_text(file_path)
-                    var files = recent_files_array()
-                    var index = files.indexOf(normalized_file_path)
-
-                    if (index !== -1) {
-                        files.splice(index, 1)
-                    }
-
-                    files.unshift(normalized_file_path)
-
-                    if (files.length > 5) {
-                        files.pop()
-                    }
-
-                    // Assign a fresh array so the Instantiator model
-                    // receives a change notification.
-                    set_recent_files(files)
-                }
-            }
-
-            Settings {
-                id: file_settings_storage
-
-                category: "file_history"
-
-                property alias recent_files: file_settings.recent_files
-                property alias last_selected_file: file_settings.last_selected_file
-                property alias last_selected_folder: file_settings.last_selected_folder
-            }
-
-            FileDialog {
-                id: openFileDialog
-
-                currentFolder: file_settings.last_selected_folder
-                selectedFile: file_settings.last_selected_file
-
-                onAccepted: {
-                    var str_file = String(selectedFile)
-
-                    file_settings.last_selected_file = selectedFile
-                    file_settings.last_selected_folder = str_file.substring(0, str_file.lastIndexOf("/"))
-                    file_settings.add_files(selectedFile.toString())
-                    App.file_source.load_url(selectedFile)
-                }
+                controller: file_controller
             }
         }
 
@@ -403,7 +317,6 @@ Item {
 
             onClicked: results_pop.open()
         }
-
     }
 
     Item {
@@ -412,6 +325,7 @@ Item {
         ResultsPopup {
             id: results_pop
 
+            //y: root.popup_above ? -height - 10 : root.height + 10
             width: root.width
             height: Overlay.overlay.height * 0.66
         }
@@ -420,6 +334,7 @@ Item {
         DataPopup {
             id: data_pop
 
+            //y: root.popup_above ? -height - 10 : root.height + 10
             width: root.width
             height: Overlay.overlay.height * 0.66
         }
