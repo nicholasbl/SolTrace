@@ -53,6 +53,27 @@ Item {
     property vector3d default_orthographic_position: Qt.vector3d(0, 0, 500)
     property quaternion default_camera_rotation: Quaternion.fromEulerAngles(0, 0, 0)
 
+    property real min_camera_distance: 0.01
+    property real max_camera_distance: 1000000.0
+
+    function clamp_value(value, min_value, max_value) {
+        return Math.max(min_value, Math.min(max_value, value))
+    }
+
+    function clamp_camera_position(position) {
+        var distance = position.length()
+
+        if (distance > max_camera_distance) {
+            return position.normalized().times(max_camera_distance)
+        }
+
+        return position
+    }
+
+    function clamp_orbit_distance(distance) {
+        return clamp_value(distance, min_camera_distance, max_camera_distance)
+    }
+
     // Public entry point used by axis buttons/gizmos. The active navigation
     // mode gets to decide how axis alignment should behave.
     function align_to_axis(axis, invert) {
@@ -66,11 +87,13 @@ Item {
     function reset_view() {
         rotation_target_offset = Qt.vector3d(0, 0, 0)
 
-        perspective_camera.position = default_perspective_position
+        perspective_camera.position = clamp_camera_position(
+                    default_perspective_position)
         perspective_camera.rotation = default_camera_rotation
 
         if (orthographic_camera) {
-            orthographic_camera.position = default_orthographic_position
+            orthographic_camera.position = clamp_camera_position(
+                        default_orthographic_position)
             orthographic_camera.rotation = default_camera_rotation
         }
 
@@ -394,9 +417,11 @@ Item {
 
                 let current_pos = root.active_camera.position
 
-                let new_pos = Qt.vector3d(current_pos.x, current_pos.y, current_pos.z).plus(delta)
+                let new_pos = Qt.vector3d(current_pos.x,
+                                          current_pos.y,
+                                          current_pos.z).plus(delta)
 
-                root.active_camera.position = Qt.vector3d(new_pos.x, new_pos.y, new_pos.z)
+                root.active_camera.position = root.clamp_camera_position(new_pos)
             }
         }
 
@@ -437,8 +462,11 @@ Item {
             // position and rotation targets without a special case.
             var rotation = rotation_from_forward(axis_setup)
 
-            camera_move_animation.from = root.active_camera.position
-            camera_move_animation.to = root.active_camera.position
+            var camera_position = root.clamp_camera_position(
+                        root.active_camera.position)
+
+            camera_move_animation.from = camera_position
+            camera_move_animation.to = camera_position
 
             camera_rotation_animation.from = root.active_camera.rotation
             camera_rotation_animation.to = rotation
@@ -449,7 +477,7 @@ Item {
 
         function look_at(point) {
             var cam = root.active_camera
-            var camera_position = cam.position
+            var camera_position = root.clamp_camera_position(cam.position)
             var target = Qt.vector3d(point.x, point.y, point.z)
             var offset = target.minus(camera_position)
 
@@ -552,9 +580,6 @@ Item {
         property real zoom_factor: 0.0005
         property real pan_sensitivity: 1.0
 
-        property real min_distance: 0.01
-        property real max_distance: 1000000.0
-
         property bool is_animating: false
 
         property real animation_duration: 0.25
@@ -634,13 +659,14 @@ Item {
                                 animation_to_distance,
                                 eased)
 
-            apply_orbit_transform(distance)
+            apply_orbit_transform(root.clamp_orbit_distance(distance))
 
             if (t >= 1.0) {
                 is_animating = false
                 yaw_deg = animation_to_yaw_deg
                 pitch_deg = animation_to_pitch_deg
-                apply_orbit_transform(animation_to_distance)
+                apply_orbit_transform(root.clamp_orbit_distance(
+                                          animation_to_distance))
             }
         }
 
@@ -693,10 +719,11 @@ Item {
             // requested distance, then the orbit rotation moves that offset into
             // world space. The camera rotation is the same quaternion so it
             // looks back toward the target.
-            var local_orbit_offset = Qt.vector3d(0, 0, distance)
+            var orbit_distance = root.clamp_orbit_distance(distance)
+            var local_orbit_offset = Qt.vector3d(0, 0, orbit_distance)
             var new_offset = q.times(local_orbit_offset)
 
-            cam.position = target.plus(new_offset)
+            cam.position = root.clamp_camera_position(target.plus(new_offset))
             cam.rotation = q
         }
 
@@ -755,8 +782,13 @@ Item {
             var delta = right.times(-internal.mouse_delta_pos.x * world_units_per_pixel)
                 .plus(up.times(internal.mouse_delta_pos.y * world_units_per_pixel))
 
-            root.rotation_target_offset = root.rotation_target_offset.plus(delta)
-            cam.position = cam.position.plus(delta)
+            var requested_position = cam.position.plus(delta)
+            var clamped_position = root.clamp_camera_position(requested_position)
+            var applied_delta = clamped_position.minus(cam.position)
+
+            root.rotation_target_offset =
+                    root.rotation_target_offset.plus(applied_delta)
+            cam.position = clamped_position
         }
 
 
@@ -775,9 +807,7 @@ Item {
                 return
 
             var zoom_scale = Math.exp(-delta_y * zoom_factor)
-            var new_distance = clamp(distance * zoom_scale,
-                                     min_distance,
-                                     max_distance)
+            var new_distance = root.clamp_orbit_distance(distance * zoom_scale)
 
             apply_orbit_transform(new_distance)
         }
@@ -810,6 +840,8 @@ Item {
             if (current_distance < 0.000001)
                 current_distance = 1.0
 
+            current_distance = root.clamp_orbit_distance(current_distance)
+
             var axis_offset = build_align_vector(axis, invert)
             var desired_offset = axis_offset.times(current_distance)
 
@@ -839,6 +871,8 @@ Item {
             if (distance < 0.000001)
                 return
 
+            distance = root.clamp_orbit_distance(distance)
+
             is_animating = false
             initialize_from_camera()
             apply_orbit_transform(distance)
@@ -857,13 +891,15 @@ Item {
             if (distance < 0.000001)
                 distance = 1.0
 
+            distance = root.clamp_orbit_distance(distance)
+
             animation_from_yaw_deg = yaw_deg
             animation_from_pitch_deg = pitch_deg
             animation_from_distance = distance
 
             animation_to_yaw_deg = to_yaw_deg
             animation_to_pitch_deg = to_pitch_deg
-            animation_to_distance = to_distance
+            animation_to_distance = root.clamp_orbit_distance(to_distance)
 
             animation_time = 0.0
             is_animating = true
