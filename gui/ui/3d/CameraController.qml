@@ -59,6 +59,10 @@ Item {
         internal.current_controller.align_to_axis(axis, invert)
     }
 
+    function look_at(point) {
+        internal.current_controller.look_at(point)
+    }
+
     function reset_view() {
         rotation_target_offset = Qt.vector3d(0, 0, 0)
 
@@ -303,7 +307,7 @@ Item {
         }
 
         onFinished: {
-            console.log("Animation done")
+            wasd_control.is_animating = false
         }
     }
 
@@ -428,6 +432,26 @@ Item {
 
             camera_rotation_animation.from = root.active_camera.rotation
             camera_rotation_animation.to = rotation
+
+            is_animating = true
+            wasd_camera_animation.start()
+        }
+
+        function look_at(point) {
+            var cam = root.active_camera
+            var camera_position = cam.position
+            var target = Qt.vector3d(point.x, point.y, point.z)
+            var offset = target.minus(camera_position)
+
+            if (offset.length() < 0.000001)
+                return
+
+            camera_move_animation.from = camera_position
+            camera_move_animation.to = camera_position
+
+            camera_rotation_animation.from = cam.rotation
+            camera_rotation_animation.to = Quaternion.lookAt(camera_position,
+                                                             target)
 
             is_animating = true
             wasd_camera_animation.start()
@@ -791,6 +815,25 @@ Item {
                                   current_distance)
         }
 
+        function look_at(point) {
+            var cam = root.active_camera
+            var target = Qt.vector3d(point.x, point.y, point.z)
+            var base = root.rotation_target
+                    ? root.rotation_target.scenePosition
+                    : Qt.vector3d(0, 0, 0)
+
+            root.rotation_target_offset = target.minus(base)
+
+            var offset = cam.position.minus(rotation_point)
+            var distance = offset.length()
+
+            if (distance < 0.000001)
+                return
+
+            is_animating = false
+            initialize_from_camera()
+            apply_orbit_transform(distance)
+        }
 
         function start_orbit_animation(to_yaw_deg, to_pitch_deg, to_distance) {
             var cam = root.active_camera

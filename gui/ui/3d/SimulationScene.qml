@@ -27,6 +27,10 @@ Item {
         controller.align_to_axis(axis, invert)
     }
 
+    function orient_camera_to(point) {
+        controller.look_at(point)
+    }
+
     function reset_camera_view() {
         controller.reset_view()
     }

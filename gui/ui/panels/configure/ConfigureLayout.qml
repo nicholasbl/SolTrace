@@ -217,6 +217,14 @@ ElementListEditor {
 
         RowLayout {
             STIconButton {
+                text: "\uf140"
+                toolTip: "Orient Camera to Element"
+                enabled: root.module.instance_edit
+                onClicked: simulation_scene.orient_camera_to(
+                               root.module.instance_edit.global_position)
+            }
+
+            STIconButton {
                 text: "\uf2ed"
                 onClicked: delete_element_dialog.open()
 

@@ -177,7 +177,7 @@ Item {
                     text: root.emptyListText
                     opacity: 0.5
                     visible: root.emptyListText.length > 0
-                             && root._getModelCount() === 0
+                             && narrowListView.count === 0
                 }
             }
 
@@ -257,7 +257,7 @@ Item {
                         text: root.emptyListText
                         opacity: 0.5
                         visible: root.emptyListText.length > 0
-                                 && root._getModelCount() === 0
+                                 && wideListView.count === 0
                     }
                 }
 

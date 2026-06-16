@@ -40,6 +40,16 @@ Item {
     readonly property bool wideMode: width >= wideThreshold
     readonly property bool hasSelection: currentIndex >= 0
 
+    readonly property int list_count : {
+        if (!internal.model) {
+            return 0
+        }
+
+        return (typeof internal.model.rowCount === "function")
+                ? internal.model.rowCount()
+                : internal.model.count
+    }
+
     // Signal
     signal itemClicked(int index, var modelData)
 
@@ -52,21 +62,11 @@ Item {
         editing = false
     }
 
-    function _getModelCount() {
-        if (!internal.model) {
-            return 0
-        }
-
-        return (typeof internal.model.rowCount === "function")
-                ? internal.model.rowCount()
-                : internal.model.count
-    }
-
     Connections {
         target: internal.model
         ignoreUnknownSignals: true
         function onRowsRemoved(modelParent, first, last) {
-            if (root._getModelCount() === 0) {
+            if (root.list_count === 0) {
                 root.currentIndex = -1
                 root.editing = false
             } else if (root.currentIndex > last) {
@@ -160,7 +160,7 @@ Item {
                     text: root.emptyListText
                     opacity: 0.5
                     visible: root.emptyListText.length > 0
-                             && root._getModelCount() === 0
+                             && narrowListView.count === 0
                 }
             }
 
@@ -246,7 +246,7 @@ Item {
                         text: root.emptyListText
                         opacity: 0.5
                         visible: root.emptyListText.length > 0
-                                 && root._getModelCount() === 0
+                                 && wideListView.count === 0
                     }
                 }
 
