@@ -12,6 +12,7 @@ AdaptiveFilteredEditor {
     source_model: App.materials.geometry_list
     wideThreshold: 500
     listWidth: 250
+    emptyListText: "Geometries define reusable element shapes. Create one below to assign it to elements."
 
     onEditingChanged: {
         App.view.editing_geometry = editing

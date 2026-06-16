@@ -33,6 +33,9 @@ Item {
     // Placeholder shown in wide mode when nothing is selected
     property Component placeholder: null
 
+    // Text shown over the list when the list model is empty
+    property string emptyListText: ""
+
     // Read only data
     readonly property bool wideMode: width >= wideThreshold
     readonly property bool hasSelection: currentIndex >= 0
@@ -50,6 +53,10 @@ Item {
     }
 
     function _getModelCount() {
+        if (!internal.model) {
+            return 0
+        }
+
         return (typeof internal.model.rowCount === "function")
                 ? internal.model.rowCount()
                 : internal.model.count
@@ -115,6 +122,7 @@ Item {
             }
 
             ListView {
+                id: narrowListView
                 Layout.fillHeight: true
                 Layout.fillWidth: true
                 clip: true
@@ -140,6 +148,19 @@ Item {
                             root.itemClicked(index, model)
                         }
                     }
+                }
+
+                Label {
+                    anchors.centerIn: parent
+                    anchors.margins: 24
+
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Label.WrapAtWordBoundaryOrAnywhere
+                    text: root.emptyListText
+                    opacity: 0.5
+                    visible: root.emptyListText.length > 0
+                             && root._getModelCount() === 0
                 }
             }
 
@@ -189,6 +210,7 @@ Item {
                 }
 
                 ListView {
+                    id: wideListView
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     clip: true
@@ -214,6 +236,17 @@ Item {
                                 root.itemClicked(index, model)
                             }
                         }
+                    }
+
+                    Label {
+                        anchors.centerIn: parent
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Label.WrapAtWordBoundaryOrAnywhere
+                        text: root.emptyListText
+                        opacity: 0.5
+                        visible: root.emptyListText.length > 0
+                                 && root._getModelCount() === 0
                     }
                 }
 

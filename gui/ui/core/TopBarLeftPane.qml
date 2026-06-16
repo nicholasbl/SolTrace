@@ -12,14 +12,24 @@ RowLayout {
     required property int available_width
     required property bool show_logos
 
+    readonly property bool analyzing: App.view.workflow_phase === 3
+    readonly property string current_context_title: analyzing ? "Analyze" : "Configure"
+    readonly property string current_context_name: analyzing
+                                                   ? (App.simulation.current_simulation_result_name.length ?
+                                                          App.simulation.current_simulation_result_name
+                                                        : "None")
+                                                   : (App.file_source.current_database ?
+                                                          App.file_source.current_database.name
+                                                        : "None")
+
     spacing: 0
 
     STIconButton {
         id: leftpanel_open
         Layout.preferredWidth: implicitWidth
         Layout.preferredHeight: implicitHeight
-        Layout.leftMargin: 20
-        Layout.rightMargin: 10
+        //Layout.leftMargin: 20
+        //Layout.rightMargin: 10
 
         text: "\uf0c9"
         toolTip: (App.view.left_panel.visible ? "Close": "Open") + " Left Panel"
@@ -40,7 +50,6 @@ RowLayout {
         id: soltrace_logo
         visible: root.show_logos
 
-        Layout.fillWidth: true
         Layout.alignment: Qt.AlignVCenter
 
         Layout.rightMargin: 10
@@ -171,6 +180,35 @@ RowLayout {
         }
     }
 
+    RowLayout {
+        id: context_row
 
+        Layout.fillWidth: true
+        Layout.leftMargin: 8
+        Layout.rightMargin: 12
+        spacing: 8
+
+        Label {
+            text: root.current_context_title
+            font.bold: true
+            opacity: 0.65
+            elide: Text.ElideRight
+        }
+
+        Rectangle {
+            Layout.fillHeight: true
+            Layout.topMargin: 10
+            Layout.bottomMargin: 10
+            Layout.preferredWidth: 1
+            color: Material.dividerColor
+        }
+
+        Label {
+            Layout.fillWidth: true
+            Layout.maximumWidth: 320
+            text: root.current_context_name
+            elide: Text.ElideMiddle
+        }
+    }
 
 }

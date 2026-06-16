@@ -118,8 +118,9 @@ ColumnLayout {
             text: "View Results"
             //text_icon: "\uf1da"
             onClicked: {
-                App.view.right_panel.visible = true
-                App.view.right_panel_section = 1
+                App.view.workflow_phase = 3
+                App.view.analyze_section = 0
+                App.view.simulation_content_view = true
             }
         }
     }

@@ -11,6 +11,8 @@ Rectangle {
     property string icon
     property string title
     property string value
+    property string description
+
     property bool active: false
     property bool value_clickable: true
 
@@ -18,12 +20,12 @@ Rectangle {
     signal valueClicked()
 
     Layout.preferredWidth: 170
-    Layout.preferredHeight: 84
+    Layout.preferredHeight: 96
 
     radius: 8
     color: item_mouse.containsMouse ? Material.rippleColor
                                     : Material.dividerColor
-    border.width: active ? 1 : 0
+    border.width: active ? 2 : 0
     border.color: Material.frameColor
 
     MouseArea {
@@ -38,7 +40,7 @@ Rectangle {
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 8
-        spacing: 6
+        spacing: 3
 
         RowLayout {
             Layout.fillWidth: true
@@ -54,6 +56,17 @@ Rectangle {
                 font.bold: true
                 elide: Text.ElideRight
             }
+        }
+
+        Label {
+            Layout.fillWidth: true
+            text: root.description
+            wrapMode: Label.WrapAtWordBoundaryOrAnywhere
+            opacity: .75
+        }
+
+        Item {
+            Layout.fillHeight: true
         }
 
         STClickableLabel {

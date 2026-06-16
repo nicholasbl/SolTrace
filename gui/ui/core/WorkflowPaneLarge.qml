@@ -71,10 +71,12 @@ Item {
 
             WorkflowLargeItem {
                 icon: "\uf56f"
-                title: "Data"
+                title: "1. Data"
                 value: root.active_name
                 active: App.view.workflow_phase === 0
                 value_clickable: false
+
+                description: "Load content"
 
                 onActivated: {
                     App.view.simulation_content_view = false
@@ -92,9 +94,11 @@ Item {
 
             WorkflowLargeItem {
                 icon: "\uf7d9"
-                title: "Configure"
+                title: "2. Configure"
                 value: root.active_name
                 active: App.view.workflow_phase === 1
+
+                description: "Arrange and define the trace scenario"
 
                 onActivated: {
                     App.view.simulation_content_view = false
@@ -114,9 +118,11 @@ Item {
 
             WorkflowLargeItem {
                 icon: "\uf04b"
-                title: "Simulate"
+                title: "3. Trace"
                 value: root.active_name
                 active: App.view.workflow_phase === 2
+
+                description: "Execute a ray trace of a scene"
 
                 onActivated: {
                     App.view.simulation_content_view = false
@@ -136,9 +142,11 @@ Item {
 
             WorkflowLargeItem {
                 icon: "\uf1fe"
-                title: "Analyze"
+                title: "4. Analyze"
                 value: root.active_result_name
                 active: App.view.workflow_phase === 3
+
+                description: "Analyze traced rays"
 
                 onActivated: {
                     App.view.simulation_content_view = true

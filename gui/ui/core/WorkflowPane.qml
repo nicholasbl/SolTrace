@@ -128,7 +128,7 @@ Item {
 
             property bool is_active: App.view.workflow_phase === 0
 
-            text: "Data"
+            text: "1. Data"
             font.pointSize: 16
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
@@ -166,7 +166,7 @@ Item {
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
 
-            text: "Configure"
+            text: "2. Configure"
             elide: Label.ElideMiddle
 
             //font.bold: is_active
@@ -223,7 +223,7 @@ Item {
 
             Layout.fillHeight: true
 
-            text: "Simulate"
+            text: "3. Trace"
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
 
@@ -278,7 +278,7 @@ Item {
 
             font.pointSize: 16
 
-            text: "Analyze"
+            text: "4. Analyze"
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
 

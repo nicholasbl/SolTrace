@@ -13,6 +13,7 @@ AdaptiveFilteredEditor {
 
     wideThreshold: 500
     listWidth: 250
+    emptyListText: "Materials define optical properties. Create one below to assign it to elements."
 
     onEditingChanged: {
         App.view.editing_material = editing

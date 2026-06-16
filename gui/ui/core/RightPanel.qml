@@ -36,8 +36,7 @@ ShadowedGlassRectangle {
                 id: info_row
                 Layout.fillWidth: true
 
-                text: ["Results", "Scripting"][
-                          Math.min(App.view.right_panel_section, 1)]
+                text: "Scripting"
                 font.pointSize: 16
                 font.family: "CMU Serif"
                 font.bold: true
@@ -56,30 +55,9 @@ ShadowedGlassRectangle {
             }
         }
 
-        STComboBar {
-            id: section
-
-            Layout.fillWidth: true
-
-            currentIndex: Math.min(App.view.right_panel_section, 1)
-            collapseLabels: App.view.right_panel.size === PanelData.Small
-            model: ["Results", "Scripting"]
-            iconModel: ["\uf201", "\uf1c9"]
-
-            onCurrentIndexChanged: App.view.right_panel_section = currentIndex
-        }
-
-        StackLayout {
-            id: content_stack
-
+        ScriptInterface {
             Layout.fillWidth: true
             Layout.fillHeight: true
-
-            currentIndex: Math.min(App.view.right_panel_section, 1)
-
-            ResultListPane {}
-
-            ScriptInterface {}
         }
     }
 }

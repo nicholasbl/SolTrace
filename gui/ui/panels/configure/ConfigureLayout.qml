@@ -16,6 +16,7 @@ ElementListEditor {
     model: has_viewed_entity ? module.filtered_child_model : module.filtered_root_elements_model
     wideThreshold: 500
     listWidth: 250
+    emptyListText: "Scene elements combine geometry, material, and placement to define a physical object. Create one below to build the scene."
 
     onEditingChanged: {
         App.view.editing_layout = editing
