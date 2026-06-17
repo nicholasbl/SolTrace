@@ -61,7 +61,7 @@ Item {
         anchors.top: top_bar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.bottom: parent.bottom
+        anchors.bottom: bottom_blank.top
         anchors.margins: 10
         blur_source: root.blur_source
         enabled: App.view.settings_panel.visible
@@ -74,15 +74,15 @@ Item {
         anchors.top: top_bar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.bottom: parent.bottom
+        anchors.bottom: bottom_blank.top
         anchors.margins: 10
         orientation: Qt.Horizontal
 
         handle: Rectangle {
             implicitWidth: 6
             color: SplitHandle.pressed ? "#80ffffff"
-                 : SplitHandle.hovered ? "#40ffffff"
-                                       : "transparent"
+                                       : SplitHandle.hovered ? "#40ffffff"
+                                                             : "transparent"
         }
 
         LeftPanel {
@@ -120,6 +120,136 @@ Item {
             visible: App.view.right_panel.visible
             enabled: visible
             opacity: enabled
+        }
+    }
+
+    Item {
+        id: bottom_blank
+
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 10
+
+        height: 42
+    }
+
+    ShadowedGlassRectangle {
+        id: workflow_bar
+
+        property bool is_open: false
+
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 10
+
+        blur_source: root.blur_source
+        radius: 42 / 2
+        glassColor: App.theme.glassColor
+
+        width: Math.min(Math.max(parent.width
+                                 - 2 * (navigation_settings_button.implicitWidth
+                                        + 28), 0),
+                        workflow_bar.is_open
+                        ? workflow_large_pane.implicitWidth
+                        : workflow_data_pane.implicitWidth)
+        height: workflow_bar.is_open ? workflow_large_pane.implicitHeight : 42
+
+        onIs_openChanged: {
+            if (is_open) {
+                workflow_data_pane.visible = false
+                workflow_data_pane.opacity = 0
+                workflow_large_pane.opacity = 0
+                workflow_large_pane.visible = true
+                workflow_large_fade.restart()
+            } else {
+                workflow_large_pane.visible = false
+                workflow_large_pane.opacity = 0
+                workflow_data_pane.opacity = 0
+                workflow_data_pane.visible = true
+                workflow_small_fade.restart()
+            }
+        }
+
+        Item {
+            NumberAnimation {
+                id: workflow_small_fade
+                target: workflow_data_pane
+                property: "opacity"
+                to: 1
+                duration: 150
+            }
+
+            NumberAnimation {
+                id: workflow_large_fade
+                target: workflow_large_pane
+                property: "opacity"
+                to: 1
+                duration: 150
+            }
+        }
+
+        WorkflowPane {
+            id: workflow_data_pane
+
+            anchors.fill: parent
+
+            opacity: 1
+            visible: true
+
+            onOpenClicked: workflow_bar.is_open = true
+        }
+
+        WorkflowPaneLarge {
+            id: workflow_large_pane
+
+            anchors.fill: parent
+
+            opacity: 0
+            visible: false
+
+            onCloseClicked: workflow_bar.is_open = false
+        }
+
+
+    }
+
+    // Rectangle {
+    //     height: 32
+
+    //     anchors.left: workflow_bar.left
+    //     anchors.right: workflow_bar.right
+    //     anchors.verticalCenter: workflow_bar.top
+
+    //     anchors.verticalCenterOffset: -8
+
+    //     border.width: 1
+
+    //     color: open_panel_rect.containsMouse ? Material.rippleColor : "transparent"
+
+    //     MouseArea {
+    //         id: open_panel_rect
+
+    //         anchors.fill: parent
+
+    //         hoverEnabled: true
+    //         onClicked: workflow_bar.is_open = !workflow_bar.is_open
+    //     }
+    // }
+
+    STIconButton {
+        id: navigation_settings_button
+
+        anchors.right: parent.right
+        anchors.rightMargin: 14
+        anchors.verticalCenter: bottom_blank.verticalCenter
+
+        text: "\uf03d"
+        toolTip: "Navigation Settings"
+        label.font.pointSize: 20
+
+        onClicked: nav_settings_pop.open()
+
+        NavigationSettings {
+            id: nav_settings_pop
         }
     }
 }

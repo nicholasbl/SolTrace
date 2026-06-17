@@ -415,4 +415,8 @@ void Script::run() {
     }
 }
 
+void Script::notify_error(QString message) {
+    emit notify(ANotification::error(std::move(message)));
+}
+
 } // namespace SolTrace::GUI::Script

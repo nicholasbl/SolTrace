@@ -104,13 +104,23 @@ ColumnLayout {
         STButton {
             Layout.columnSpan: 2
             Layout.fillWidth: true
-            text: "View Results"
-            text_icon: "\uf1da"
+            text: "Start Simulation"
+            text_icon: "\uf0da"
             onClicked: {
-                App.view.left_panel.visible = true
-                App.view.simulation_content_view = true
+                AppData.simulation.run()
+            }
+        }
+
+        STClickableLabel {
+            Layout.columnSpan: 2
+            Layout.fillWidth: false
+            Layout.alignment: Qt.AlignRight
+            text: "View Results"
+            //text_icon: "\uf1da"
+            onClicked: {
+                App.view.workflow_phase = 3
                 App.view.analyze_section = 0
-                App.view.workflow_phase = 2
+                App.view.simulation_content_view = true
             }
         }
     }

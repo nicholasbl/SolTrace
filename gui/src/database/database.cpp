@@ -29,35 +29,35 @@ std::optional<T> optional_ptr(T* ptr) {
     return std::nullopt;
 }
 
-template <>
-struct std::hash<SD::OpticalProperties> {
-    std::size_t operator()(SD::OpticalProperties const& a) const {
-        size_t seed = 0;
+// template <>
+// struct std::hash<SD::OpticalProperties> {
+//     std::size_t operator()(SD::OpticalProperties const& a) const {
+//         size_t seed = 0;
 
-        hash_combine(seed, a.my_type);
-        hash_combine(seed, a.error_distribution_type);
-        hash_combine(seed, a.transmitivity);
-        hash_combine(seed, a.reflectivity);
-        hash_combine(seed, a.slope_error);
-        hash_combine(seed, a.specularity_error);
-        hash_combine(seed, a.refraction_index_front);
-        hash_combine(seed, a.refraction_index_back);
+//         hash_combine(seed, a.my_type);
+//         hash_combine(seed, a.error_distribution_type);
+//         hash_combine(seed, a.transmissivity);
+//         hash_combine(seed, a.reflectivity);
+//         hash_combine(seed, a.slope_error);
+//         hash_combine(seed, a.specularity_error);
+//         hash_combine(seed, a.refraction_index_front);
+//         hash_combine(seed, a.refraction_index_back);
 
-        return seed;
-    }
-};
+//         return seed;
+//     }
+// };
 
-template <>
-struct std::hash<db::MaterialComponent> {
-    std::size_t operator()(db::MaterialComponent const& a) const {
-        size_t seed = 0;
+// template <>
+// struct std::hash<db::MaterialComponent> {
+//     std::size_t operator()(db::MaterialComponent const& a) const {
+//         size_t seed = 0;
 
-        hash_combine(seed, a.optics_front);
-        hash_combine(seed, a.optics_back);
+//         hash_combine(seed, a.optics_front);
+//         hash_combine(seed, a.optics_back);
 
-        return seed;
-    }
-};
+//         return seed;
+//     }
+// };
 
 template <>
 struct std::hash<db::GeometryComponent> {
@@ -319,6 +319,8 @@ Database::Database(QString database_name, QObject* p)
 
     database_name_resource.set(DatabaseNameResource { .name = database_name });
 
+    simulation_parameters_resource.set({});
+
     qDebug() << Q_FUNC_INFO;
 }
 
@@ -505,29 +507,33 @@ Database* Database::clone(QString new_database_name, QObject* p) const {
 
 // =============================================================================
 
+struct MaterialMap {
+    std::unordered_map<std::shared_ptr<const SD::OpticalPropertySet>,
+                       entt::entity>
+        map;
+};
+
 static void import_optics(
     Database&                                            reg,
     entt::entity                                         entity,
     SD::Element const&                                   item,
-    std::unordered_map<MaterialComponent, entt::entity>& material_groups,
+    MaterialMap&                                         material_groups,
     std::unordered_map<GeometryComponent, entt::entity>& geometry_groups,
     size_t&                                              group_counter) {
 
     auto& registry = reg.as_registry();
 
+    auto property_sptr = item.get_optical_property_set();
+
     // If it has nothing, dont import
-    if (!item.get_front_optical_properties() and
-        !item.get_back_optical_properties() and !item.get_aperture() and
-        !item.get_surface()) {
+    if (!property_sptr and !item.get_aperture() and !item.get_surface()) {
         // does not have geometry.
         qDebug() << "Skipping optics on" << entt::to_integral(entity);
         return;
     }
 
     // It should have all or nothing
-    if (!item.get_front_optical_properties() or
-        !item.get_back_optical_properties() or !item.get_aperture() or
-        !item.get_surface()) {
+    if (!property_sptr or !item.get_aperture() or !item.get_surface()) {
 
         emplace_patch<ImportErrorComponent>(reg, entity, [](auto& c) {
             c.reason += "Missing aperture and surface";
@@ -537,18 +543,18 @@ static void import_optics(
         return;
     }
 
-    auto local_mat = MaterialComponent {
-        .optics_front = *item.get_front_optical_properties(),
-        .optics_back  = *item.get_back_optical_properties(),
-    };
+    // auto local_mat = MaterialComponent {
+    //     .optics_front = *item.get_front_optical_properties(),
+    //     .optics_back  = *item.get_back_optical_properties(),
+    // };
 
     auto local_geom = GeometryComponent {
         .aperture = item.get_aperture(),
         .surface  = item.get_surface(),
     };
 
-    if (auto group = material_groups.find(local_mat);
-        group != material_groups.end()) {
+    if (auto group = material_groups.map.find(property_sptr);
+        group != material_groups.map.end()) {
         // we have such a group
 
         reg.assign_material(entity, group->second);
@@ -556,7 +562,7 @@ static void import_optics(
     } else {
         // no such group
 
-        auto new_group_params = local_mat;
+        auto new_group_params = MaterialComponent { *property_sptr };
 
         auto new_group = MaterialGroupComponent { };
 
@@ -572,7 +578,7 @@ static void import_optics(
 
         group_counter++;
 
-        material_groups.try_emplace(local_mat, group_entity);
+        material_groups.map.try_emplace(property_sptr, group_entity);
 
         reg.assign_material(entity, group_entity);
     }
@@ -678,7 +684,7 @@ void Database::import(SD::SimulationData& data,
     };
 
     // MAP MAY NOT BE RE-USED!
-    std::unordered_map<MaterialComponent, entt::entity> material_groups;
+    MaterialMap                                         material_groups;
     std::unordered_map<GeometryComponent, entt::entity> geometry_groups;
 
     size_t group_counter = 0;
@@ -846,28 +852,39 @@ static void install_transform(SD::element_ptr           ptr,
     ptr->set_zrot_radians(roll);
 }
 
-static void install_group(SD::element_ptr          ptr,
-                          MaterialComponent const& param,
-                          GeometryComponent const& geom_param) {
+static void install_group(SD::element_ptr                 ptr,
+                          SD::OpticalPropertySetReference param,
+                          GeometryComponent const&        geom_param) {
     ptr->set_aperture(geom_param.aperture);
     ptr->set_surface(geom_param.surface);
 
-    ptr->set_front_optical_properties(param.optics_front);
-    ptr->set_back_optical_properties(param.optics_back);
+    ptr->set_optical_property_set(param);
 }
 
-std::shared_ptr<DatabaseExport> Database::export_to_simdata() {
+Result<std::shared_ptr<DatabaseExport>, QString> Database::export_to_simdata() {
     SD::SimulationData ret;
 
     auto param_ptr = simulation_parameters_resource.get();
-    if (!param_ptr) return nullptr;
+    if (!param_ptr) {
+        return QStringLiteral("Internal error: simulation is missing "
+                              "simulation parameters resource.");
+    }
 
     ret.get_simulation_parameters() = *param_ptr;
 
     auto ray_source_ptr = ray_source_resource.get();
-    if (!ray_source_ptr) return nullptr;
+    if (!ray_source_ptr) {
+        return QStringLiteral("Ray source is not defined for this simulation.");
+    }
 
     ret.add_ray_source(ray_source_ptr->source);
+
+    {
+        auto view = m_registry.view<const ElementComponent>();
+        if (view->size() == 0) {
+            return QStringLiteral("There are no elements in this simulation.");
+        }
+    }
 
     std::unordered_map<entt::entity, SD::element_ptr> entity_element_map;
 
@@ -917,14 +934,26 @@ std::shared_ptr<DatabaseExport> Database::export_to_simdata() {
         }
     }
 
+    std::unordered_map<entt::entity, SD::OpticalPropertySetReference> prop_map;
+
+    {
+        auto view =
+            m_registry
+                .view<const MaterialGroupComponent, const MaterialComponent>();
+        for (auto const& [e, mat_members, mat_data] : view.each()) {
+            auto ref = ret.find_or_add_optical_property_set(mat_data.optics);
+
+            prop_map.try_emplace(e, ref);
+        }
+    }
+
     {
         auto view = m_registry.view<const MaterialGroupMemberComponent,
                                     const GeometryGroupMemberComponent>();
         for (auto const& [e, mat, geom] : view.each()) {
 
             // get group, we assume this is valid
-            auto const& mat_group =
-                m_registry.get<MaterialComponent>(mat.group);
+            auto const& mat_group = prop_map.at(mat.group);
             auto const& geom_group =
                 m_registry.get<GeometryComponent>(geom.group);
 
@@ -1003,11 +1032,12 @@ std::shared_ptr<DatabaseExport> Database::export_to_simdata() {
         try {
             ret.add_element(iter.second);
         } catch (std::exception const& e) {
-            qCritical() << "Unable to export entity"
+            qCritical() << "Unable to export element"
                         << entt::to_integral(iter.first)
                         << iter.second->get_name() << e.what();
 
-            return nullptr;
+            return QStringLiteral(
+                "Internal error: an element could not be exported.");
         }
     }
 
@@ -1369,7 +1399,7 @@ QString Database::name_of(Entity item) const {
         return ptr->name;
     }
 
-    return QString("Entity %1").arg(entt::to_integral(item.value));
+    return QString("Element %1").arg(entt::to_integral(item.value));
 }
 
 void Database::set_name_of(db::Entity item, QString new_name) {
@@ -1379,8 +1409,12 @@ void Database::set_name_of(db::Entity item, QString new_name) {
         item, IdentityComponent { .name = new_name });
 }
 
+QString Database::sanitize_element_name(QString name) {
+    return sanitize_new_name<ElementComponent>(m_registry, name, "Element");
+}
+
 QString Database::sanitize_entity_name(QString name) {
-    return sanitize_new_name<ElementComponent>(m_registry, name, "Entity");
+    return sanitize_element_name(name);
 }
 
 db::Entity Database::add_element(QString new_name, db::Entity parent) {
@@ -1455,8 +1489,8 @@ db::Entity Database::add_material_group(QString             new_name,
 
         params = other_p;
     } else {
-        params.optics_back.set_ideal_absorption();
-        params.optics_front.set_ideal_reflection();
+        params.optics.set_ideal_absorption(SD::OpticalSide::Back);
+        params.optics.set_ideal_reflection(SD::OpticalSide::Front);
     }
 
     for (auto mem : std::as_const(members)) {

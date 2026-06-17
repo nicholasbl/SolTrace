@@ -13,6 +13,7 @@ AdaptiveFilteredEditor {
 
     wideThreshold: 500
     listWidth: 250
+    emptyListText: "Materials define optical properties. Create one below to assign it to elements."
 
     onEditingChanged: {
         App.view.editing_material = editing
@@ -52,7 +53,7 @@ AdaptiveFilteredEditor {
         }
 
         STIconButton {
-            text: "\uf245"
+            text: "\uf05b"
             toolTip: "Select Material From View"
             onClicked: App.view.mouse_mode = ViewModule.SelectMaterial
         }
@@ -110,7 +111,7 @@ AdaptiveFilteredEditor {
                                : App.materials.material_edit.back_editor
 
             reflectance: face.reflectivity
-            transmittance: face.transmitivity
+            transmittance: face.transmissivity
             nFront: face.refraction_index_front
             nBack: face.refraction_index_back
             slopeErrorMrad: face.slope_error

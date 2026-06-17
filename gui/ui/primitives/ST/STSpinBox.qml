@@ -9,28 +9,19 @@ SpinBox {
 
     property string suffix
 
-    property string internal_computed_suffix : suffix.length ? " " + suffix : ""
-
-    function textWithoutSuffix(text) {
-        text = String(text).trim()
-        if (!suffix.length) return text
-
-        const suffixText = String(suffix)
-        if (text.endsWith(suffixText)) {
-            text = text.slice(0, text.length - suffixText.length).trim()
-        }
-        return text
-    }
-
     textFromValue: function(value, locale) {
-        return Number(value).toLocaleString(locale, 'f', 0) + internal_computed_suffix
+        return Number(value).toLocaleString(locale, 'f', 0)
     }
 
     valueFromText: function(text, locale) {
-        return Math.round(Number.fromLocaleString(locale, textWithoutSuffix(text)))
+        return Math.round(Number.fromLocaleString(locale, String(text).trim()))
     }
 
     contentItem: TextInput {
+        id: input
+        readonly property int suffixRightMargin: 30
+        readonly property int suffixSpacing: 8
+
         z: 2
         color: App.theme.fontColor
         text: control.textFromValue(control.value, control.locale)
@@ -38,9 +29,22 @@ SpinBox {
         font.pointSize: App.theme.labelSize
         horizontalAlignment: Qt.AlignHCenter
         verticalAlignment: Qt.AlignVCenter
+        rightPadding: suffixLabel.visible ? suffixLabel.width + suffixRightMargin + suffixSpacing : 0
         readOnly: !control.editable
         validator: control.validator
         inputMethodHints: control.inputMethodHints
+
+        Label {
+            id: suffixLabel
+            anchors.right: parent.right
+            anchors.rightMargin: input.suffixRightMargin
+            anchors.verticalCenter: parent.verticalCenter
+            color: App.theme.fontColor
+            font.family: input.font.family
+            font.pointSize: input.font.pointSize
+            text: control.suffix
+            visible: text.length > 0
+        }
     }
 
     background: WellRectangle {

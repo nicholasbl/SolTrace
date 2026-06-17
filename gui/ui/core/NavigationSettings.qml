@@ -24,9 +24,8 @@ STPopup {
             currentIndex: AppData.view.sim.camera
             onCurrentIndexChanged: AppData.view.sim.camera = currentIndex
             Layout.fillWidth: true
-            collapseLabels: AppData.view.left_panel.size === PanelData.Small
             model: ["FPS Camera", "Orbital Camera"]
-            iconModel: ["\uf828", "\uf03d"]
+            iconModel: ["\uf03d", "\uf135"]
         }
 
         InlineDocumentation {
@@ -39,7 +38,6 @@ STPopup {
             currentIndex: AppData.view.sim.perspective
             onCurrentIndexChanged: AppData.view.sim.perspective = currentIndex
             Layout.fillWidth: true
-            collapseLabels: AppData.view.left_panel.size === PanelData.Small
             model: ["Perspective", "Orthographic"]
             iconModel: ["\uf1b2", "\uf0c8"]
         }

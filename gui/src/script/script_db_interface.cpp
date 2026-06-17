@@ -101,18 +101,37 @@ nlohmann::ordered_json to_njson(QJsonObject const& object) {
     return nlohmann::ordered_json::parse(bytes.constData());
 }
 
-QJsonObject to_qjson(SD::OpticalProperties const& properties) {
-    nlohmann::ordered_json json;
-    properties.write_json(json);
-    return to_qjson(json);
+QJsonObject to_qjson(SD::OpticalPropertySet const& properties,
+                     SD::OpticalSide               side) {
+    double refraction_index_front;
+    double refraction_index_back;
+    properties.get_refraction_indices(refraction_index_front,
+                                      refraction_index_back);
+
+    return QJsonObject {
+        { "my_type",
+          QString::fromStdString(
+              SD::InteractionTypeMap.at(properties.get_interaction_type())) },
+        { "error_distribution_type",
+          QString::fromStdString(
+              SD::DistributionTypeMap.at(
+                  properties.get_error_distribution(side))) },
+        { "transmissivity", properties.get_transmissivity(side) },
+        { "reflectivity", properties.get_reflectivity(side) },
+        { "slope_error", properties.get_slope_error(side) },
+        { "specularity_error", properties.get_specularity_error(side) },
+        { "refraction_index_front", refraction_index_front },
+        { "refraction_index_back", refraction_index_back },
+    };
 }
 
-void patch_optical_properties(SD::OpticalProperties& properties,
-                              QJsonObject const&     object) {
+void patch_optical_properties(SD::OpticalPropertySet& properties,
+                              SD::OpticalSide         side,
+                              QJsonObject const&      object) {
     if (object.contains("my_type")) {
         auto key = object.value("my_type").toString().toStdString();
         if (auto value = db::reverse_lookup(SD::InteractionTypeMap, key)) {
-            properties.my_type = *value;
+            properties.set_interaction_type(*value);
         }
     }
 
@@ -120,33 +139,63 @@ void patch_optical_properties(SD::OpticalProperties& properties,
         auto key =
             object.value("error_distribution_type").toString().toStdString();
         if (auto value = db::reverse_lookup(SD::DistributionTypeMap, key)) {
-            properties.error_distribution_type = *value;
+            auto slope_error = properties.get_slope_error(side);
+            auto spec_error  = properties.get_specularity_error(side);
+            properties.set_errors(side, *value, slope_error, spec_error);
         }
     }
 
     if (object.contains("transmissivity")) {
-        properties.transmitivity = object.value("transmissivity").toDouble();
+        properties.set_transmissivity(
+            side, object.value("transmissivity").toDouble());
     }
     if (object.contains("transmitivity")) {
-        properties.transmitivity = object.value("transmitivity").toDouble();
+        properties.set_transmissivity(
+            side, object.value("transmitivity").toDouble());
     }
     if (object.contains("reflectivity")) {
-        properties.reflectivity = object.value("reflectivity").toDouble();
+        properties.set_reflectivity(
+            side, object.value("reflectivity").toDouble());
     }
     if (object.contains("slope_error")) {
-        properties.slope_error = object.value("slope_error").toDouble();
+        auto distribution = properties.get_error_distribution(side);
+        auto spec_error   = properties.get_specularity_error(side);
+        properties.set_errors(
+            side,
+            distribution,
+            object.value("slope_error").toDouble(),
+            spec_error);
     }
     if (object.contains("specularity_error")) {
-        properties.specularity_error =
-            object.value("specularity_error").toDouble();
+        auto distribution = properties.get_error_distribution(side);
+        auto slope_error  = properties.get_slope_error(side);
+        properties.set_errors(
+            side,
+            distribution,
+            slope_error,
+            object.value("specularity_error").toDouble());
     }
+
+    double refraction_index_front;
+    double refraction_index_back;
+    properties.get_refraction_indices(refraction_index_front,
+                                      refraction_index_back);
+
+    bool has_refraction_change = false;
     if (object.contains("refraction_index_front")) {
-        properties.refraction_index_front =
+        refraction_index_front =
             object.value("refraction_index_front").toDouble();
+        has_refraction_change = true;
     }
     if (object.contains("refraction_index_back")) {
-        properties.refraction_index_back =
+        refraction_index_back =
             object.value("refraction_index_back").toDouble();
+        has_refraction_change = true;
+    }
+
+    if (has_refraction_change) {
+        properties.set_refraction_indices(refraction_index_front,
+                                          refraction_index_back);
     }
 }
 
@@ -426,8 +475,8 @@ QJsonObject ScriptDBInterface::get_material_properties(db::Entity entity) {
     if (!material) return {};
 
     return QJsonObject {
-        { "front", to_qjson(material->optics_front) },
-        { "back", to_qjson(material->optics_back) },
+        { "front", to_qjson(material->optics, SD::OpticalSide::Front) },
+        { "back", to_qjson(material->optics, SD::OpticalSide::Back) },
     };
 }
 
@@ -438,12 +487,14 @@ void ScriptDBInterface::set_material_properties(db::Entity  entity,
     m_database->material_parameters.try_patch(
         entity, [&](db::MaterialComponent& material) {
             if (object.value("front").isObject()) {
-                patch_optical_properties(material.optics_front,
+                patch_optical_properties(material.optics,
+                                         SD::OpticalSide::Front,
                                          object.value("front").toObject());
             }
 
             if (object.value("back").isObject()) {
-                patch_optical_properties(material.optics_back,
+                patch_optical_properties(material.optics,
+                                         SD::OpticalSide::Back,
                                          object.value("back").toObject());
             }
         });

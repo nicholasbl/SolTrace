@@ -22,7 +22,7 @@ static constexpr FunctionExport exports[] = {
     },
     {
         "get_all_materials",
-        "Obtain all available materials, identified by an entity.",
+        "Obtain all available materials, identified by internal IDs.",
     },
 };
 

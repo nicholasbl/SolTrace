@@ -14,12 +14,6 @@
 
 namespace SD = SolTrace::Data;
 
-namespace SolTrace {
-namespace Data {
-bool operator==(SD::OpticalProperties const& a, SD::OpticalProperties const& b);
-}
-} // namespace SolTrace
-
 namespace db {
 
 // When adding components, be sure to add them to the database clone function!
@@ -97,8 +91,7 @@ struct DatabaseNameResource {
 
 /// A set of material properties.
 struct MaterialComponent {
-    SD::OpticalProperties optics_front;
-    SD::OpticalProperties optics_back;
+    SD::OpticalPropertySet optics;
 
     bool operator==(MaterialComponent const&) const;
 };

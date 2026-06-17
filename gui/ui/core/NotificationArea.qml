@@ -10,8 +10,12 @@ STPopup {
     id: root
 
     property int new_notification_count: 0
+    property int new_alert_count: 0
 
-    onOpened: new_notification_count = 0
+    onOpened: {
+        new_notification_count = 0
+        new_alert_count = 0
+    }
 
     signal next_notification(message: string, type: int)
 
@@ -24,8 +28,12 @@ STPopup {
 
         function onNotification(new_note) {
 
-            if (!root.visible)
+            if (!root.visible) {
                 root.new_notification_count = root.new_notification_count + 1
+                if (new_note.type > 0) {
+                    root.new_alert_count = root.new_alert_count + 1
+                }
+            }
 
             console.log("Adding note: ", new_note.message)
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "script/script_db_interface.h"
+#include "utilities/notification.h"
 #include "utilities/qt_helpers.h"
 #include "utilities/structmodel.h"
 
@@ -134,8 +135,10 @@ public slots:
     bool parse();
 
     void run();
+    void notify_error(QString message);
 
 signals:
+    void notify(ANotification);
 };
 
 } // namespace SolTrace::GUI::Script

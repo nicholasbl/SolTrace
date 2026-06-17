@@ -6,7 +6,7 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 import SolTrace
 
-EntityListEditor {
+ElementListEditor {
     id: root
 
     property var module: App.layout
@@ -16,10 +16,11 @@ EntityListEditor {
     model: has_viewed_entity ? module.filtered_child_model : module.filtered_root_elements_model
     wideThreshold: 500
     listWidth: 250
+    emptyListText: "Scene elements combine geometry, material, and placement to define a physical object. Create one below to build the scene."
 
     onEditingChanged: {
         App.view.editing_layout = editing
-        if (!editing && App.view.mouse_mode === ViewModule.EditItem) {
+        if (!editing && App.view.mouse_mode === ViewModule.EditElement) {
             App.view.mouse_mode = ViewModule.Camera
         }
     }
@@ -49,9 +50,9 @@ EntityListEditor {
         }
 
         STIconButton {
-            text: "\uf245"
-            toolTip: "Select Item From View"
-            onClicked: App.view.mouse_mode = ViewModule.SelectItem
+            text: "\uf05b"
+            toolTip: "Select Element From View"
+            onClicked: App.view.mouse_mode = ViewModule.SelectElement
         }
 
         STIconButton {
@@ -69,7 +70,7 @@ EntityListEditor {
                         Layout.fillWidth: true
                         Layout.columnSpan: 3
 
-                        text: "Filter entities by:"
+                        text: "Filter elements by:"
                     }
 
                     Label {
@@ -149,7 +150,7 @@ EntityListEditor {
             text: "\uf055"
 
             onCreateRequested: function(name) {
-                var new_name = AppData.current_database.sanitize_entity_name(name)
+                var new_name = AppData.current_database.sanitize_element_name(name)
                 var entity = AppData.current_database.add_element(new_name)
                 root.module.edited_element = entity
                 root.editing = true
@@ -163,7 +164,7 @@ EntityListEditor {
             opacity: enabled ? 1.0 : 0.4
 
             onCreateRequested: function(name) {
-                var new_name = AppData.current_database.sanitize_entity_name(name)
+                var new_name = AppData.current_database.sanitize_element_name(name)
                 var entity = AppData.current_database.add_element(
                             new_name,
                             root.module.viewed_element
@@ -190,15 +191,15 @@ EntityListEditor {
                 text: root.module.edited_element_name
 
                 onAccepted: (new_name) => {
-                    var curr_db = root.module.current_database
+                                var curr_db = root.module.current_database
 
-                    new_name = curr_db.sanitize_entity_name(new_name);
+                                new_name = curr_db.sanitize_element_name(new_name);
 
-                    curr_db.set_name_of(
+                                curr_db.set_name_of(
                                     root.module.edited_element,
                                     new_name
                                     )
-                }                
+                            }
             }
         }
 
@@ -208,13 +209,15 @@ EntityListEditor {
             Layout.fillWidth: true
             contentWidth: availableWidth
 
-            InstanceEdit {
+            ElementEdit {
                 width: layout_scroll.availableWidth
                 height: implicitHeight
             }
         }
 
         RowLayout {
+
+
             STIconButton {
                 text: "\uf2ed"
                 onClicked: delete_element_dialog.open()
@@ -230,7 +233,7 @@ EntityListEditor {
                         Label {
                             Layout.fillWidth: true
                             wrapMode: Text.WordWrap
-                            text: "Delete this element? Any children of this entity will be made top-level."
+                            text: "Delete this element? Any children of this element will be made top-level."
                         }
                     }
 
@@ -255,6 +258,18 @@ EntityListEditor {
                         }
                     }
                 }
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+            STIconButton {
+                text: "\uf140"
+                toolTip: "Orient Camera to Element"
+                enabled: root.module.instance_edit
+                onClicked: simulation_scene.orient_camera_to_database_position(
+                               root.module.instance_edit.global_position)
             }
         }
     }

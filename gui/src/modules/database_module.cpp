@@ -35,7 +35,7 @@ load_file(QPromise<LoadResult>& result, QString fname, db::Database* new_db) {
 
         if (!(file.isFile() && file.isReadable())) {
             result.emplaceResult(LoadFileFailed(
-                QString("Unable to open file for reading: %1").arg(fname)));
+                QString("Could not open the file for reading: %1").arg(fname)));
             return;
         }
 
@@ -46,7 +46,8 @@ load_file(QPromise<LoadResult>& result, QString fname, db::Database* new_db) {
         stage = "parsing file";
         if (!new_data->import_from_file(str)) {
             result.emplaceResult(
-                LoadFileFailed(QString("Unable to import file: %1").arg(fname)));
+                LoadFileFailed(QString("Could not import the file: %1")
+                                   .arg(fname)));
             return;
         }
 
@@ -76,11 +77,11 @@ load_file(QPromise<LoadResult>& result, QString fname, db::Database* new_db) {
         });
     } catch (std::exception const& e) {
         result.emplaceResult(LoadFileFailed(
-            QString("Exception while loading %1 during %2: %3")
+            QString("Could not load %1 while %2: %3")
                 .arg(fname, stage, QString::fromUtf8(e.what()))));
     } catch (...) {
         result.emplaceResult(LoadFileFailed(
-            QString("Unknown exception while loading %1 during %2")
+            QString("Could not load %1 while %2.")
                 .arg(fname, stage)));
     }
 }
@@ -97,7 +98,7 @@ void DatabaseModule::file_ready(QUrl, LoadResult result) {
                                .database = arg.ptr,
                            });
                            this->notify(ANotification::info(
-                               QString("New scene available: %1")
+                               QString("Loaded scene: %1")
                                    .arg(arg.ptr->name())));
                        }
                    },
@@ -111,14 +112,14 @@ void DatabaseModule::file_ready(QUrl, LoadResult result) {
 }
 
 void DatabaseModule::file_failed(QUrl, QString reason) {
-    emit notify(ANotification::error("File load error: " + reason));
+    emit notify(ANotification::error("Could not load the file: " + reason));
     set_is_loading(false);
 }
 
 void DatabaseModule::load_url(QUrl url, QString name_override) {
     if (is_loading()) {
-        emit notify(
-            ANotification::error("Currently loading file, please wait."));
+        emit notify(ANotification::warning(
+            "A file is already loading. Please wait for it to finish."));
         return;
         // emit cancel_current_load(QPrivateSignal {});
     }
@@ -234,16 +235,25 @@ void DatabaseModule::append_new(QString new_name) {
 }
 
 bool DatabaseModule::append_clone(db::SimulationResultPtr result) {
-    if (!result) return false;
-    if (!result->database) return false;
+    if (!result || !result->database) {
+        emit notify(ANotification::warning(
+            "Select a simulation result before creating an editable copy."));
+        return false;
+    }
 
     auto clone_name = result->database->name() + " Copy";
     auto clone      = result->database->clone(clone_name, this);
-    if (!clone) return false;
+    if (!clone) {
+        emit notify(ANotification::error(
+            "Could not create an editable copy of this result."));
+        return false;
+    }
 
     this->store_push_append(DatabaseRecord {
         .database = clone,
     });
+    emit notify(ANotification::info(
+        QString("Created editable scene: %1").arg(clone_name)));
 
     return true;
 }

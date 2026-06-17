@@ -181,15 +181,15 @@ Flickable {
             title: "Compute Flux Map"
 
             STPropertyLabel {
-                text: "Entity"
+                text: "Element"
             }
 
             STButton {
                 Layout.fillWidth: true
 
                 text: AppData.flux.current_entity_name.length ?
-                          AppData.flux.current_entity_name : "Select Entity"
-                text_icon: "\uf245"
+                          AppData.flux.current_entity_name : "Select Element"
+                text_icon: "\uf05b"
 
                 onClicked: entity_pop.open()
 
@@ -207,7 +207,7 @@ Flickable {
                 Layout.fillWidth: true
                 Layout.columnSpan: 2
 
-                text: "Enqueue Job"
+                text: "Compute Map"
                 text_icon: "\uf0da"
 
                 onClicked: {

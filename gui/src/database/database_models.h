@@ -8,6 +8,7 @@
 
 #include <entt/entity/fwd.hpp>
 
+#include <QColor>
 #include <QQuaternion>
 #include <QStringListModel>
 #include <QVector3D>
@@ -220,6 +221,8 @@ class AnInstanceEditor : public QObject {
     Q_PROPERTY(QQuaternion orientation READ orientation WRITE set_orientation
                    NOTIFY orientation_changed FINAL)
     Q_PROPERTY(
+        QColor color READ color WRITE set_color NOTIFY color_changed FINAL)
+    Q_PROPERTY(
         bool hidden READ hidden WRITE set_hidden NOTIFY hidden_changed FINAL)
     Q_PROPERTY(bool disabled READ disabled WRITE set_disabled NOTIFY
                    disabled_changed FINAL)
@@ -272,6 +275,9 @@ public:
     QQuaternion orientation() const;
     void        set_orientation(const QQuaternion& newOrientation);
 
+    QColor color() const;
+    void   set_color(QColor newColor);
+
     bool hidden() const;
     void set_hidden(bool newHidden);
 
@@ -310,6 +316,7 @@ signals:
     void position_changed();
     void global_position_changed();
     void orientation_changed();
+    void color_changed();
     void hidden_changed();
     void disabled_changed();
     void material_group_changed();

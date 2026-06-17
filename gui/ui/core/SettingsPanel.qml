@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
 import SolTrace
@@ -21,7 +22,7 @@ ShadowedGlassRectangle {
             text: "\uf00d"
             onClicked: {
                 App.view.settings_panel.visible = false
-                App.view.left_panel.visible = App.view.left_panel.
+                App.view.left_panel.visible = App.view.left_panel.saved_visible
                 App.view.right_panel.visible = App.view.right_panel.saved_visible
             }
 
@@ -43,6 +44,8 @@ ShadowedGlassRectangle {
             model: ListModel {
                 ListElement { name: "What's New"; icon: "✦" }
                 ListElement { name: "Theme"; icon: "\uf53f" }
+                ListElement { name: "Scene"; icon: "\uf1b2" }
+                ListElement { name: "Logs"; icon: "\uf15c" }
                 ListElement { name: "Documentation"; icon: "\uf02d" }
                 ListElement { name: "Team"; icon: "\uf500" }
             }
@@ -84,6 +87,10 @@ ShadowedGlassRectangle {
                 FeaturePanel {}
 
                 ThemeSettings {}
+
+                SceneSettings {}
+
+                LogSettings {}
 
                 DocumentationSettings {}
 

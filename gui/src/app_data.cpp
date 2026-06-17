@@ -252,8 +252,17 @@ AppData::AppData(QObject*       parent,
 
     connect(m_layout, &LayoutModule::notify, this, &AppData::notification);
 
+    connect(m_sun, &SunModule::notify, this, &AppData::notification);
+
+    connect(m_flux, &FluxModule::notify, this, &AppData::notification);
+
     connect(m_exporter,
             &ExportModule::notify,
+            this,
+            &AppData::notification);
+
+    connect(m_script,
+            &Script::Script::notify,
             this,
             &AppData::notification);
 
@@ -313,7 +322,7 @@ AppData::AppData(QObject*       parent,
             [this](db::SimulationResultPtr result) {
                 if (!m_file_source->append_clone(result)) return;
 
-                m_view->set_workflow_phase(0);
+                m_view->set_workflow_phase(1);
                 m_view->set_simulation_content_view(false);
             });
 

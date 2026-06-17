@@ -8,7 +8,7 @@ RowLayout {
     id: root
     property string title
 
-    Layout.columnSpan: 2
+    Layout.columnSpan: parent.columns === 2 ? 2 : 1
 
     Label {
         text: root.title

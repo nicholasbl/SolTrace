@@ -127,6 +127,9 @@ void SunModule::write_shape_to_database() {
         });
     } catch (std::exception const& e) {
         qWarning() << "Unable to update sun shape:" << e.what();
+        emit notify(ANotification::error(
+            QString("Could not update the sun shape: %1")
+                .arg(QString::fromUtf8(e.what()))));
     }
 }
 
@@ -172,6 +175,9 @@ QString SunModule::update_position() {
         return write_position_to_database();
     } catch (std::exception const& e) {
         qWarning() << "Unable to calculate sun position:" << e.what();
+        emit notify(ANotification::error(
+            QString("Could not calculate the sun position: %1")
+                .arg(QString::fromUtf8(e.what()))));
         return e.what();
     }
 
@@ -211,6 +217,9 @@ QString SunModule::write_position_to_database() {
         });
     } catch (std::exception const& e) {
         qWarning() << "Unable to update sun position:" << e.what();
+        emit notify(ANotification::error(
+            QString("Could not update the sun position: %1")
+                .arg(QString::fromUtf8(e.what()))));
 
         return e.what();
     }

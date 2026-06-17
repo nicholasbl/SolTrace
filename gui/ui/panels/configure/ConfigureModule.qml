@@ -24,8 +24,8 @@ ColumnLayout {
 
         collapseLabels: App.view.left_panel.size === PanelData.Small
 
-        iconModel: ["\uf185", "\uf53f", "\uf1b2", "\ue4e6", "\uf5c3"]
-        model: ["Sun", "Material", "Geometry", "Layout", "Appearance"]
+        iconModel: ["\uf185", "\uf53f", "\uf1b2", "\ue4e6"]
+        model: ["Sun", "Materials", "Geometries", "Scene"]
         
     }
 
@@ -48,9 +48,6 @@ ColumnLayout {
         }
 
         ConfigureLayout {
-        }
-
-        ConfigureAppearance {
         }
     }
     

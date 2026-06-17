@@ -45,8 +45,7 @@ struct ElementSnapshot {
 
     std::string aperture_json;
     std::string surface_json;
-    std::string front_optics_json;
-    std::string back_optics_json;
+    std::string optics_json;
 };
 
 std::string dump_json(nlohmann::ordered_json const& node) {
@@ -71,7 +70,7 @@ std::string dump_surface(SD::Element const& element) {
     return dump_json(node);
 }
 
-std::string dump_optics(SD::OpticalProperties const* optics) {
+std::string dump_optics(std::shared_ptr<const SD::OpticalPropertySet> optics) {
     if (!optics) return "null";
 
     nlohmann::ordered_json node;
@@ -132,9 +131,7 @@ ElementSnapshot snapshot_element(SD::Element const& element,
             normalized_or_zero(element.get_aim_vector_global() - origin),
         .aperture_json = dump_aperture(element),
         .surface_json  = dump_surface(element),
-        .front_optics_json =
-            dump_optics(element.get_front_optical_properties()),
-        .back_optics_json = dump_optics(element.get_back_optical_properties()),
+        .optics_json   = dump_optics(element.get_optical_property_set()),
     };
 }
 
@@ -321,8 +318,7 @@ void expect_snapshots_near(ElementSnapshot const& actual,
         EXPECT_EQ(actual.enabled, expected.enabled);
         EXPECT_EQ(actual.aperture_json, expected.aperture_json);
         EXPECT_EQ(actual.surface_json, expected.surface_json);
-        EXPECT_EQ(actual.front_optics_json, expected.front_optics_json);
-        EXPECT_EQ(actual.back_optics_json, expected.back_optics_json);
+        EXPECT_EQ(actual.optics_json, expected.optics_json);
     }
 
     {
@@ -445,6 +441,14 @@ std::string sun_box_summary(SolTrace::Result::SimulationResult& actual,
     return out.str();
 }
 
+::testing::AssertionResult export_succeeded(
+    Result<std::shared_ptr<db::DatabaseExport>, QString> const& result) {
+    if (result) return ::testing::AssertionSuccess();
+
+    return ::testing::AssertionFailure()
+           << result.get_failure().toStdString();
+}
+
 void expect_sun_box_near(SolTrace::Result::SimulationResult& actual,
                          SolTrace::Result::SimulationResult& expected,
                          bool compare_sun_ray_count = true) {
@@ -477,7 +481,10 @@ TEST(DatabaseRoundTrip, PowerTowerSurroundExportsEquivalentGlobalSimData) {
     db::Database database("round-trip");
     database.import(original, true /* legacy_stinput_cylinder_origins */);
 
-    auto exported = database.export_to_simdata();
+    auto exported_result = database.export_to_simdata();
+    ASSERT_TRUE(export_succeeded(exported_result));
+
+    auto exported = exported_result.get_success();
     ASSERT_NE(exported, nullptr);
     ASSERT_NE(exported->data, nullptr);
 
@@ -515,7 +522,10 @@ TEST(DatabaseRoundTrip, PowerTowerSurroundNativeTraceMatchesOriginalSimData) {
     database.import(source_for_database,
                     true /* legacy_stinput_cylinder_origins */);
 
-    auto exported = database.export_to_simdata();
+    auto exported_result = database.export_to_simdata();
+    ASSERT_TRUE(export_succeeded(exported_result));
+
+    auto exported = exported_result.get_success();
     ASSERT_NE(exported, nullptr);
     ASSERT_NE(exported->data, nullptr);
 
@@ -529,7 +539,10 @@ TEST(DatabaseRoundTrip, PowerTowerSurroundNativeTraceMatchesOriginalSimData) {
     expected_database.import(source_for_expected,
                              true /* legacy_stinput_cylinder_origins */);
 
-    auto expected_exported = expected_database.export_to_simdata();
+    auto expected_exported_result = expected_database.export_to_simdata();
+    ASSERT_TRUE(export_succeeded(expected_exported_result));
+
+    auto expected_exported = expected_exported_result.get_success();
     ASSERT_NE(expected_exported, nullptr);
     ASSERT_NE(expected_exported->data, nullptr);
     configure_tiny_deterministic_run(*expected_exported->data);

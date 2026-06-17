@@ -8,28 +8,19 @@ DoubleSpinBox {
 
     property string suffix
 
-    property string internal_computed_suffix : suffix.length ? " " + suffix : ""
-
-    function textWithoutSuffix(text) {
-        text = String(text).trim()
-        if (!suffix.length) return text
-
-        const suffixText = String(suffix)
-        if (text.endsWith(suffixText)) {
-            text = text.slice(0, text.length - suffixText.length).trim()
-        }
-        return text
-    }
-
     textFromValue: function(value, locale) {
-        return Number(value).toLocaleString(locale, 'f', control.decimals) + internal_computed_suffix
+        return Number(value).toLocaleString(locale, 'f', control.decimals)
     }
 
     valueFromText: function(text, locale) {
-        return Number.fromLocaleString(locale, textWithoutSuffix(text))
+        return Number.fromLocaleString(locale, String(text).trim())
     }
 
     contentItem: TextInput {
+        id: input
+        readonly property int suffixRightMargin: 5
+        readonly property int suffixSpacing: 8
+
         z: 2
         text: control.textFromValue(control.value, control.locale)
         color: App.theme.fontColor
@@ -37,9 +28,25 @@ DoubleSpinBox {
         font.pointSize: App.theme.labelSize
         horizontalAlignment: Qt.AlignHCenter
         verticalAlignment: Qt.AlignVCenter
+        // rightPadding: suffixLabel.visible ?
+        //                   suffixLabel.width + suffixRightMargin + suffixSpacing
+        //                 : 0
+        rightPadding: 0
         readOnly: !control.editable
         validator: control.validator
         inputMethodHints: control.inputMethodHints
+
+        Label {
+            id: suffixLabel
+            anchors.right: parent.right
+            anchors.rightMargin: input.suffixRightMargin
+            anchors.verticalCenter: parent.verticalCenter
+            color: App.theme.fontColor
+            font.family: input.font.family
+            font.pointSize: input.font.pointSize
+            text: control.suffix
+            visible: text.length > 0
+        }
     }
 
     background: WellRectangle {

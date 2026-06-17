@@ -87,7 +87,7 @@ void execute_process_runner(QPromise<SimResult>&      promise,
 
         if (!process.waitForStarted()) {
             promise.emplaceResult(
-                QStringLiteral("Failed to start worker process"));
+                QStringLiteral("Could not start the simulation worker."));
             return;
         }
 
@@ -146,7 +146,7 @@ static SimDataPtr worker_start_flow(QByteArray work_dir) {
     database.import(*dataset);
 
     // TODO: Non native runner
-    return database.export_to_simdata();
+    return database.export_to_simdata().get_success();
 }
 
 inline QJsonArray to_json(glm::vec3 v) {

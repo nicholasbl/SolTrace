@@ -10,7 +10,7 @@ Item {
 
     property int activeAxis: -1
     property int gizmoMode: 0
-    property bool showGizmo: App.view.mouse_mode === ViewModule.EditItem
+    property bool showGizmo: App.view.mouse_mode === ViewModule.EditElement
                              && App.layout.instance_edit
     property bool isDragging: false
     property point lastMousePos: Qt.point(0, 0)
@@ -25,6 +25,14 @@ Item {
 
     function align_to_axis(axis, invert) {
         controller.align_to_axis(axis, invert)
+    }
+
+    function scene_position_from_database_position(point) {
+        return Qt.vector3d(point.x, point.z, -point.y)
+    }
+
+    function orient_camera_to_database_position(point) {
+        controller.look_at(scene_position_from_database_position(point))
     }
 
     function reset_camera_view() {

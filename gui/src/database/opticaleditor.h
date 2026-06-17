@@ -15,23 +15,22 @@ class OpticalPropertiesObject : public QObject, public DatabaseObserver {
     entt::entity m_current_group = entt::null;
     bool         m_back          = false;
 
-    SolTrace::Data::OpticalProperties const* get_properties() const;
+    SD::OpticalSide m_side = SD::OpticalSide::Front;
+
+    SolTrace::Data::OpticalPropertySet const* get_properties() const;
 
     template <class F>
     void patch_properties(F&& f) {
         if (!database()) return;
 
         database()->material_parameters.try_patch(
-            m_current_group, [this, &f](MaterialComponent& c) {
-                if (m_back) {
-                    f(c.optics_back);
-                } else {
-                    f(c.optics_front);
-                }
-            });
+            m_current_group,
+            [this, &f](MaterialComponent& c) { f(c.optics, m_side); });
     }
 
 private:
+    // TODO: interaction is now unified front and back.
+
     Q_PROPERTY(QString interaction_type READ interaction_type WRITE
                    set_interaction_type NOTIFY interaction_type_changed)
 
@@ -39,9 +38,8 @@ private:
         QString error_distribution_type READ error_distribution_type WRITE
             set_error_distribution_type NOTIFY error_distribution_type_changed)
 
-    // spelling preserved from library
-    Q_PROPERTY(double transmitivity READ transmitivity WRITE set_transmitivity
-                   NOTIFY transmitivity_changed)
+    Q_PROPERTY(double transmissivity READ transmissivity WRITE
+                   set_transmissivity NOTIFY transmissivity_changed)
 
     Q_PROPERTY(double reflectivity READ reflectivity WRITE set_reflectivity
                    NOTIFY reflectivity_changed)
@@ -61,8 +59,8 @@ private:
             set_refraction_index_back NOTIFY refraction_index_back_changed)
 
     // UX helpers
-    Q_PROPERTY(double transmitivity_min READ transmitivity_min CONSTANT)
-    Q_PROPERTY(double transmitivity_max READ transmitivity_max CONSTANT)
+    Q_PROPERTY(double transmissivity_min READ transmissivity_min CONSTANT)
+    Q_PROPERTY(double transmissivity_max READ transmissivity_max CONSTANT)
     Q_PROPERTY(double reflectivity_min READ reflectivity_min CONSTANT)
     Q_PROPERTY(double reflectivity_max READ reflectivity_max CONSTANT)
 
@@ -83,7 +81,7 @@ public:
     QString interaction_type() const;
     QString error_distribution_type() const;
 
-    double transmitivity() const;
+    double transmissivity() const;
     double reflectivity() const;
     double slope_error() const;
     double specularity_error() const;
@@ -94,7 +92,7 @@ public slots:
     void set_interaction_type(QString v);
     void set_error_distribution_type(QString v);
 
-    void set_transmitivity(double v);
+    void set_transmissivity(double v);
     void set_reflectivity(double v);
     void set_slope_error(double v);
     void set_specularity_error(double v);
@@ -111,7 +109,7 @@ signals:
     void interaction_type_changed();
     void error_distribution_type_changed();
 
-    void transmitivity_changed();
+    void transmissivity_changed();
     void reflectivity_changed();
     void slope_error_changed();
     void specularity_error_changed();
@@ -119,8 +117,8 @@ signals:
     void refraction_index_back_changed();
 
 private:
-    double transmitivity_min() const { return 0.0; }
-    double transmitivity_max() const { return 1.0; }
+    double transmissivity_min() const { return 0.0; }
+    double transmissivity_max() const { return 1.0; }
     double reflectivity_min() const { return 0.0; }
     double reflectivity_max() const { return 1.0; }
 };

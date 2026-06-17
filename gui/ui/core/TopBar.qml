@@ -1,71 +1,46 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
 
 import SolTrace
 
-RowLayout {
+ShadowedGlassRectangle {
     id: root
 
-    property var blur_source
     required property int available_width
 
     signal show_script_area()
 
     readonly property bool show_logos: available_width > 900
+    radius: height / 2
+    glassColor: App.theme.glassColor
 
-    ShadowedGlassRectangle {
-        id: left_data_glass
+    RowLayout {
+        anchors.fill: parent
+        anchors.leftMargin: 10
+        anchors.rightMargin: 10
+        spacing: 0
 
-        Layout.fillHeight: true
-        //Layout.fillWidth: true
-        Layout.preferredWidth: left_data_row.implicitWidth
+        TopBarLeftPane {
+            id: top_bar_left_pane
 
-        blur_source: root.blur_source
-        radius: height / 2
-        glassColor: App.theme.glassColor
+            Layout.fillHeight: true
+            Layout.fillWidth: true
 
-        RowLayout {
-            id: left_data_row
-
-            anchors.fill: parent
-            spacing: 0
-
-            TopBarLeftPane {
-                id: top_bar_left_pane
-
-                Layout.fillHeight: true
-                Layout.maximumWidth: root.width * 0.3
-
-                available_width: root.available_width
-                show_logos: root.show_logos
-            }
-
-            Rectangle {
-                Layout.fillHeight: true
-                width: 1
-                color: Material.dividerColor
-            }
-
-            TopBarDataPane {
-                id: top_bar_data_pane
-
-                Layout.fillHeight: true
-                Layout.fillWidth: true
-                Layout.preferredWidth: implicitWidth
-            }
+            available_width: root.available_width
+            show_logos: root.show_logos
         }
-    }
 
-    Item {
-        Layout.fillWidth: true
-    }
+        Item {
+            Layout.fillWidth: true
+        }
 
-    TopBarRightPane {
-        Layout.fillHeight: true
-        Layout.maximumWidth: root.width * 0.3
+        TopBarRightPane {
+            Layout.fillHeight: true
 
-        blur_source: root.blur_source
-        available_width: root.available_width
+            blur_source: root.blur_source
+            available_width: root.available_width
+        }
     }
 }

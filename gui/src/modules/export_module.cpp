@@ -165,18 +165,19 @@ void ExportModule::update_can_export() {
 void ExportModule::export_current() {
     if (!m_results) {
         emit notify(ANotification::warning(
-            QStringLiteral("There is no simulation result to export.")));
+            QStringLiteral("Run a simulation before exporting results.")));
         return;
     }
 
     auto const directory_path = path_from_url(export_directory());
     if (!ensure_directory(directory_path)) {
-        emit notify(ANotification::error(
-            QStringLiteral("Unable to create export directory.")));
+        emit notify(ANotification::error(QStringLiteral(
+            "Could not create the export folder. Check the folder path and "
+            "permissions.")));
         return;
     }
 
-    emit notify(ANotification::info(QStringLiteral("Starting export...")));
+    emit notify(ANotification::info(QStringLiteral("Exporting results...")));
 
     QDir const directory(directory_path);
     auto const stem          = current_result_file_stem();
@@ -234,8 +235,9 @@ void ExportModule::export_current() {
 
         QFile file(directory.filePath(stem + QStringLiteral("_rays.csv")));
         if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-            emit notify(ANotification::error(
-                QStringLiteral("Unable to write ray CSV export.")));
+            emit notify(ANotification::error(QStringLiteral(
+                "Could not write the ray data file. Check folder permissions "
+                "and available disk space.")));
             return;
         }
 
@@ -272,13 +274,15 @@ void ExportModule::export_current() {
     }
 
     if (files_written == 0) {
-        emit notify(ANotification::warning(
-            QStringLiteral("No export files were produced.")));
+        emit notify(ANotification::warning(QStringLiteral(
+            "No files were exported. Enable at least one export option and "
+            "try again.")));
         return;
     }
 
     emit notify(ANotification::info(
-        QStringLiteral("Exported %1 file(s).").arg(files_written)));
+        QStringLiteral("Export complete: wrote %1 file(s).")
+            .arg(files_written)));
 }
 
 } // namespace SolTrace::GUI::App

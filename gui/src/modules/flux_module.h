@@ -5,6 +5,7 @@
 #include "database/mesh_qml_bridge.h"
 #include "database/rootelementsmodel.h"
 #include "module_common.h"
+#include "utilities/notification.h"
 #include "utilities/qt_helpers.h"
 #include <QObject>
 
@@ -67,6 +68,9 @@ public slots:
 
     void start_generate_volume_flux(unsigned resolution);
     void start_generate_isosurface(float value);
+
+signals:
+    void notify(ANotification);
 };
 
 } // namespace SolTrace::GUI::App

@@ -32,6 +32,7 @@ ScrollView {
                     root.module.code = request.responseText
                 } else {
                     console.warn("Unable to load script", requestUrl, request.status)
+                    root.module.notify_error("Could not load the script.")
                 }
             }
         }

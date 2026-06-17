@@ -50,7 +50,8 @@ ShadowedGlassRectangle {
             }
 
             Label {
-                text: ["Configure", "Simulate", "Analyze"][App.view.workflow_phase]
+                text: ["Data", "Configure", "Simulate", "Analyze"][
+                          Math.min(App.view.workflow_phase, 3)]
                 font.pointSize: 16
                 font.bold: true
                 font.family: "CMU Serif"
@@ -59,7 +60,7 @@ ShadowedGlassRectangle {
             /*
             Repeater {
                 visible: false
-                model: ["Configure", "Simulate", "Analyze"]
+                model: ["Data", "Configure", "Simulate", "Analyze"]
 
                 RowLayout {
                     id: labelRow
@@ -80,7 +81,7 @@ ShadowedGlassRectangle {
 
                         onClicked: {
                             App.view.workflow_phase = parent.index
-                            App.view.simulation_content_view = parent.index === 2
+                            App.view.simulation_content_view = parent.index === 3
                         }
 
                         STToolTip {
@@ -112,7 +113,7 @@ ShadowedGlassRectangle {
 
                         onClicked: {
                             App.view.workflow_phase = parent.index
-                            App.view.simulation_content_view = parent.index === 2
+                            App.view.simulation_content_view = parent.index === 3
                         }
                     }
 
@@ -121,7 +122,7 @@ ShadowedGlassRectangle {
                         Layout.rightMargin: 4
                         font.family: "Font Awesome 7 Free"
                         text: "\uf101"
-                        visible: parent.index < 2
+                        visible: parent.index < 3
                     }
                 }
             }*/
@@ -159,6 +160,7 @@ ShadowedGlassRectangle {
         anchors.bottom: parent.bottom
         anchors.margins: 10
 
+        SceneListPane {}
         ConfigureModule {}
         SimulateModule {}
         AnalysisModule {}
