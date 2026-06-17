@@ -2,33 +2,6 @@
 #include <QtGui/qmatrix4x4.h>
 #include <stdexcept>
 
-// TODO: Consolidate
-
-namespace SolTrace {
-namespace Data {
-bool operator==(SD::OpticalProperties const& a,
-                SD::OpticalProperties const& b) {
-    return std::tie(a.my_type,
-                    a.error_distribution_type,
-                    a.transmitivity,
-                    a.reflectivity,
-                    a.slope_error,
-                    a.specularity_error,
-                    a.refraction_index_front,
-                    a.refraction_index_back) ==
-           std::tie(b.my_type,
-                    b.error_distribution_type,
-                    b.transmitivity,
-                    b.reflectivity,
-                    b.slope_error,
-                    b.specularity_error,
-                    b.refraction_index_front,
-                    b.refraction_index_back);
-}
-} // namespace Data
-} // namespace SolTrace
-
-
 namespace db {
 
 glm::dmat4 TransformComponent::as_matrix() const {
@@ -207,7 +180,7 @@ static bool is_equal(SD::surface_ptr const& a, SD::surface_ptr const& b) {
 }
 
 bool MaterialComponent::operator==(db::MaterialComponent const& b) const {
-    return optics_front == b.optics_front and optics_back == b.optics_back;
+    return optics == b.optics;
 }
 
 RaySourceResource RaySourceResource::clone() const {

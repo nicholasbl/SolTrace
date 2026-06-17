@@ -45,8 +45,7 @@ struct ElementSnapshot {
 
     std::string aperture_json;
     std::string surface_json;
-    std::string front_optics_json;
-    std::string back_optics_json;
+    std::string optics_json;
 };
 
 std::string dump_json(nlohmann::ordered_json const& node) {
@@ -71,7 +70,7 @@ std::string dump_surface(SD::Element const& element) {
     return dump_json(node);
 }
 
-std::string dump_optics(SD::OpticalProperties const* optics) {
+std::string dump_optics(std::shared_ptr<const SD::OpticalPropertySet> optics) {
     if (!optics) return "null";
 
     nlohmann::ordered_json node;
@@ -132,9 +131,7 @@ ElementSnapshot snapshot_element(SD::Element const& element,
             normalized_or_zero(element.get_aim_vector_global() - origin),
         .aperture_json = dump_aperture(element),
         .surface_json  = dump_surface(element),
-        .front_optics_json =
-            dump_optics(element.get_front_optical_properties()),
-        .back_optics_json = dump_optics(element.get_back_optical_properties()),
+        .optics_json   = dump_optics(element.get_optical_property_set()),
     };
 }
 
@@ -321,8 +318,7 @@ void expect_snapshots_near(ElementSnapshot const& actual,
         EXPECT_EQ(actual.enabled, expected.enabled);
         EXPECT_EQ(actual.aperture_json, expected.aperture_json);
         EXPECT_EQ(actual.surface_json, expected.surface_json);
-        EXPECT_EQ(actual.front_optics_json, expected.front_optics_json);
-        EXPECT_EQ(actual.back_optics_json, expected.back_optics_json);
+        EXPECT_EQ(actual.optics_json, expected.optics_json);
     }
 
     {

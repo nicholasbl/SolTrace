@@ -158,10 +158,10 @@ STPropertyPanel {
         to: 1.0
         decimals: 4
         stepSize: 0.01
-        value: root.side_editor ? root.side_editor.transmitivity : 0
+        value: root.side_editor ? root.side_editor.transmissivity : 0
         onValueModified: {
             if (root.side_editor) {
-                root.side_editor.transmitivity = value
+                root.side_editor.transmissivity = value
             }
         }
     }

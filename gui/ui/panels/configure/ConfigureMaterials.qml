@@ -111,7 +111,7 @@ AdaptiveFilteredEditor {
                                : App.materials.material_edit.back_editor
 
             reflectance: face.reflectivity
-            transmittance: face.transmitivity
+            transmittance: face.transmissivity
             nFront: face.refraction_index_front
             nBack: face.refraction_index_back
             slopeErrorMrad: face.slope_error
