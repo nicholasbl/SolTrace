@@ -760,6 +760,6 @@ TEST(io_json, stage_read_fail)
     jstage["elements"] = json::object(); // Empty node
 
     // Try to make stage
-    EXPECT_THROW(make_stage(jstage), std::invalid_argument);
+    EXPECT_THROW(make_stage(jstage, nullptr), std::invalid_argument);
 
 }
