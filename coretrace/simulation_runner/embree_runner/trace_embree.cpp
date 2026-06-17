@@ -429,7 +429,7 @@ namespace SolTrace::EmbreeRunner
                     }
 
                     // Get optics and check for absorption
-                    const OpticalProperties *optics = 0;
+                    decltype(&Stage->ElementList[0]->Optics) optics_set = nullptr;
                     RayEvent rev = RayEvent::VIRTUAL;
                     if (Stage->Virtual)
                     {
@@ -441,10 +441,7 @@ namespace SolTrace::EmbreeRunner
                     {
                         telement_ptr const& optelm =
                             Stage->ElementList[LastElementNumber - 1];
-                        if (LastHitBackSide)
-                            optics = &optelm->Optics.Back;
-                        else
-                            optics = &optelm->Optics.Front;
+                        optics_set = &optelm->Optics;
 
                         bool good;
                         {
@@ -454,9 +451,10 @@ namespace SolTrace::EmbreeRunner
                                 i,
                                 thread_id,
                                 myrng,
-                                optics,
+                                optics_set,
                                 LastDFXYZ,
                                 LastCosRaySurfElement,
+                                LastHitBackSide,
                                 rev);
                             // t_determine_interaction += std::chrono::duration_cast<std::chrono::nanoseconds>(
                             //     Clock::now() - _t0).count();
@@ -484,7 +482,8 @@ namespace SolTrace::EmbreeRunner
                             System,
                             myrng,
                             IncludeSunShape,
-                            optics,
+                            optics_set,
+                            LastHitBackSide,
                             IncludeErrors,
                             i,
                             Stage,

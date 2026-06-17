@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <optical_properties.hpp>
 #include <optix_runner.hpp>
 #include <simulation_data.hpp>
 #include <simulation_data_export.hpp>
@@ -29,8 +30,14 @@ void make_two_plate_sd(SimulationData& sd, element_ptr& plate1, element_ptr& pla
 	plate1->set_aim_vector(0, 50, 100);  // Tilted 45 degrees toward +Y
 	plate1->set_surface(make_surface<Flat>());
 	plate1->set_aperture(make_aperture<Rectangle>(5, 5));
-	plate1->get_front_optical_properties()->set_ideal_reflection();
-	plate1->get_back_optical_properties()->set_ideal_reflection();
+	SolTrace::Data::OpticalPropertySet reflective_optics(
+		SolTrace::Data::InteractionType::REFLECTION,
+		0.0,
+		0.0,
+		"two_plate_reflector_optics");
+	reflective_optics.set_ideal_reflection(OpticalSide::Both);
+	auto reflective_optics_ref = sd.add_optical_property_set(reflective_optics);
+	plate1->set_optical_property_set(reflective_optics_ref);
 	plate1->set_name("plate1");
 
 	// Plate 2: Positioned to receive reflected rays from plate 1
@@ -40,8 +47,14 @@ void make_two_plate_sd(SimulationData& sd, element_ptr& plate1, element_ptr& pla
 	plate2->set_aim_vector(0, 0, 100);  // Tilted 45 degrees toward -Y (facing plate 1)
 	plate2->set_surface(make_surface<Flat>());
 	plate2->set_aperture(make_aperture<Rectangle>(10, 10));  // Larger to catch reflected rays
-	plate2->get_front_optical_properties()->set_ideal_absorption();
-	plate2->get_back_optical_properties()->set_ideal_absorption();
+	SolTrace::Data::OpticalPropertySet absorbing_optics(
+		SolTrace::Data::InteractionType::REFLECTION,
+		0.0,
+		0.0,
+		"two_plate_absorber_optics");
+	absorbing_optics.set_ideal_absorption(OpticalSide::Both);
+	auto absorbing_optics_ref = sd.add_optical_property_set(absorbing_optics);
+	plate2->set_optical_property_set(absorbing_optics_ref);
 	plate2->set_name("plate2");
 
 	// Add elements to stage

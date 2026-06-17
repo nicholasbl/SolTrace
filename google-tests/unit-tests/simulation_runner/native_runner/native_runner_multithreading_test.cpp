@@ -42,8 +42,13 @@ namespace
         mirror->set_reference_frame_geometry(glm::dvec3(0.0, 0.0, 0.0),
             glm::dvec3(0.0, 0.0, 1.0),
             0.0);
-        mirror->get_front_optical_properties()->set_ideal_reflection();
-        mirror->get_back_optical_properties()->set_ideal_reflection();
+
+        SolTrace::Data::OpticalPropertySet mirror_optics_set(SolTrace::Data::InteractionType::REFLECTION, "Mirror");
+        mirror_optics_set.set_ideal_reflection(SolTrace::Data::OpticalSide::Both);
+        mirror_optics_set.set_errors(SolTrace::Data::OpticalSide::Both, SolTrace::Data::DistributionType::NONE, 0.0, 0.0);
+        auto ref = sd.add_optical_property_set(mirror_optics_set);
+        mirror->set_optical_property_set(ref);
+
         stage->add_element(mirror);
 
         sd.add_stage(stage);

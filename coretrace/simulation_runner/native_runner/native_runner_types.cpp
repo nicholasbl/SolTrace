@@ -466,7 +466,8 @@ namespace SolTrace::NativeRunner
 
     telement_ptr make_telement(element_ptr el,
                                tstage_ptr my_stage,
-                               const ElementParameters &eparams)
+                               const ElementParameters &eparams,
+                               const SolTrace::Data::OpticalPropertySet& optics)
     {
         // std::cout << "Name: " << el->get_name()
         //           << "\nSDID: " << el->get_id()
@@ -490,8 +491,7 @@ namespace SolTrace::NativeRunner
                                                       eparams);
 
         // How to handle optical properties?
-        telem->Optics.Front = *el->get_front_optical_properties();
-        telem->Optics.Back = *el->get_back_optical_properties();
+        telem->Optics = optics;
 
         telem->sim_data_id = el->get_id();
         telem->element_number = my_stage->next_element_number();

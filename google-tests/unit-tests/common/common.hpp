@@ -18,7 +18,7 @@ bool is_identical(const glm::dmat3 &A,
 // Convenience function for making element with all
 // required fields are set. Used when the test does not
 // care about the specifics of the element.
-SolTrace::Data::element_ptr make_configured_element();
+SolTrace::Data::element_ptr make_configured_element(SimulationData& sd);
 
 // Helper functions to create surfaces
 inline std::shared_ptr<Cylinder> create_cylinder_surface(double radius = 1.0)
