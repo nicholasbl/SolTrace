@@ -646,8 +646,7 @@ bool load_stinput_file(SimulationData& sd, std::string filename) {
         return false;
 
     // Read in simulation parameters (if any)
-    if (!process_sim_par(fp, sd))
-        return false;
+    process_sim_par(fp, sd);
 
     fclose(fp);
 
