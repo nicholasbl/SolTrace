@@ -55,7 +55,6 @@
 #include "glm/ext/matrix_transform.hpp"
 
 #include "calculator_factory.hpp"
-#include "matvec.hpp"
 #include "native_runner_types.hpp"
 #include "simulation_data_export.hpp"
 #include "simulation_result_export.hpp"

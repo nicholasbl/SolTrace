@@ -7,7 +7,6 @@
 #include <sstream>
 
 #include "aperture.hpp"
-#include "matvec.hpp"
 #include "simulation_data_export.hpp"
 #include "surface.hpp"
 

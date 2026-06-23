@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <fstream>
+
 #include <aperture.hpp>
 #include <surface.hpp>
 #include <constants.hpp>

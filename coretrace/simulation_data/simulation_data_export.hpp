@@ -60,14 +60,6 @@ using SolTrace::Data::make_stage;
 using SolTrace::Data::make_surface;
 using SolTrace::Data::make_surface_from_type;
 
-// Matrix-Vector Functions
-using SolTrace::Data::AddVec3;
-using SolTrace::Data::CopyVec3;
-using SolTrace::Data::DOT;
-using SolTrace::Data::IdentityMat3;
-using SolTrace::Data::SetVec3;
-using SolTrace::Data::ZeroVec3;
-
 // Coordinate Transform Functions
 using SolTrace::Data::CalculateTransformMatrices;
 using SolTrace::Data::TransformToLocal;

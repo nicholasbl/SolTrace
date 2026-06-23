@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <chrono>
+#include <fstream>
 #include <sstream>
 
 #include <embree_runner.hpp>
@@ -354,22 +355,6 @@ TEST(EmbreeRunner, ValidationTest2)
     EXPECT_TRUE(sd.get_number_of_ray_sources() > 0);
 
     std::cout << "Num Elements: " << sd.get_number_of_elements() << std::endl;
-
-    // Change the location of the absorber to account for difference in origin
-    // of cylinder in new and legacy. Local z-axis of the absorber is aligned
-    // with the global y-axis so the offset to add the radius of the cylinder
-    // in the positive y-axis direction.
-    auto absorb = sd.get_element(absorber_id);
-    ASSERT_TRUE(absorb->get_surface()->get_type() == SurfaceType::CYLINDER);
-    auto surf = std::dynamic_pointer_cast<Cylinder>(absorb->get_surface());
-    ASSERT_TRUE(surf != nullptr);
-    double r = surf->radius;
-    glm::dvec3 offset(0.0, r, 0.0);
-    glm::dvec3 oref = absorb->get_origin_ref();
-    oref = oref + offset;
-    glm::dvec3 aref = absorb->get_aim_vector_ref();
-    aref = aref + offset;
-    absorb->set_reference_frame_geometry(oref, aref, 0.0);
 
     // Parameters
     SimulationParameters &params = sd.get_simulation_parameters();
