@@ -11,8 +11,8 @@
 
 #include <nlohmann/json.hpp>
 
-#include "constants.hpp"
 #include "basic_sun_position.hpp"
+#include "constants.hpp"
 #include "json_helpers.hpp"
 #include "ray_source.hpp"
 #include "simulation_data.hpp"
@@ -25,183 +25,134 @@
 
 namespace SolTrace::Data {
 
-DistributionType char_to_distribution(const char dist_char)
-{
-    switch (dist_char)
-    {
-    case ('g'):
-    {
+DistributionType char_to_distribution(const char dist_char) {
+    switch (dist_char) {
+    case ('g'): {
         return DistributionType::GAUSSIAN;
     }
-    case ('p'):
-    {
+    case ('p'): {
         return DistributionType::PILLBOX;
     }
-    case ('f'):
-    {
+    case ('f'): {
         return DistributionType::DIFFUSE;
     }
-    case ('d'):
-    {
+    case ('d'): {
         return DistributionType::USER_DEFINED;
     }
-    default:
-    {
+    default: {
         return DistributionType::GAUSSIAN;
     }
     }
 }
 
-SunShape char_to_sunshape(const char dist_char)
-{
-    switch (dist_char)
-    {
-    case ('g'):
-    {
+SunShape char_to_sunshape(const char dist_char) {
+    switch (dist_char) {
+    case ('g'): {
         return SunShape::GAUSSIAN;
     }
-    case ('p'):
-    {
+    case ('p'): {
         return SunShape::PILLBOX;
     }
-    case ('d'):
-    {
+    case ('d'): {
         return SunShape::USER_DEFINED;
     }
-    default:
-    {
+    default: {
         return SunShape::GAUSSIAN;
     }
     }
 }
 
-InteractionType int_to_interaction(const int interaction_int)
-{
-    switch (interaction_int)
-    {
-    case (1):
-    {
+InteractionType int_to_interaction(const int interaction_int) {
+    switch (interaction_int) {
+    case (1): {
         return InteractionType::REFRACTION;
     }
-    case (2):
-    {
+    case (2): {
         return InteractionType::REFLECTION;
     }
-    default:
-    {
+    default: {
         return InteractionType::REFLECTION;
     }
     }
 }
 
-ApertureType char_to_aperture(const char aperture_char)
-{
-    switch (aperture_char)
-    {
-    case ('c'):
-    {
+ApertureType char_to_aperture(const char aperture_char) {
+    switch (aperture_char) {
+    case ('c'): {
         return ApertureType::CIRCLE;
     }
-    case ('h'):
-    {
+    case ('h'): {
         return ApertureType::HEXAGON;
     }
-    case ('t'):
-    {
+    case ('t'): {
         return ApertureType::EQUILATERAL_TRIANGLE;
     }
-    case ('r'):
-    {
+    case ('r'): {
         return ApertureType::RECTANGLE;
     }
-    case ('a'):
-    {
+    case ('a'): {
         return ApertureType::ANNULUS;
     }
-    case ('l'):
-    {
+    case ('l'): {
         return ApertureType::SINGLE_AXIS_CURVATURE_SECTION;
     }
-    case ('i'):
-    {
+    case ('i'): {
         return ApertureType::IRREGULAR_TRIANGLE;
     }
-    case ('q'):
-    {
+    case ('q'): {
         return ApertureType::IRREGULAR_QUADRILATERAL;
     }
-    default:
-    {
+    default: {
         return ApertureType::APERTURE_UNKNOWN;
     }
     }
 }
 
-SurfaceType char_to_surface(const char surface_char)
-{
-    switch (surface_char)
-    {
-    case ('s'):
-        return SurfaceType::SPHERE;
-    case ('p'):
-        return SurfaceType::PARABOLA;
-    case ('o'):
-        return SurfaceType::HYPER;
-    case ('g'):
-        return SurfaceType::GENERAL_SPENCER_MURTY;
-    case ('f'):
-        return SurfaceType::FLAT;
-    case ('c'):
-        return SurfaceType::CONE;
-    case ('t'):
-        return SurfaceType::CYLINDER;
-    case ('d'):
-        return SurfaceType::TORUS;
-    default:
-        return SurfaceType::SURFACE_UNKNOWN;
+SurfaceType char_to_surface(const char surface_char) {
+    switch (surface_char) {
+    case ('s'): return SurfaceType::SPHERE;
+    case ('p'): return SurfaceType::PARABOLA;
+    case ('o'): return SurfaceType::HYPER;
+    case ('g'): return SurfaceType::GENERAL_SPENCER_MURTY;
+    case ('f'): return SurfaceType::FLAT;
+    case ('c'): return SurfaceType::CONE;
+    case ('t'): return SurfaceType::CYLINDER;
+    case ('d'): return SurfaceType::TORUS;
+    default: return SurfaceType::SURFACE_UNKNOWN;
     }
 }
 
-static void read_line(char *buf, int len, FILE *fp)
-{
+static void read_line(char* buf, int len, FILE* fp) {
     fgets(buf, len, fp);
     int nch = strlen(buf);
-    if (nch > 0 && buf[nch - 1] == '\n')
-        buf[nch - 1] = 0;
-    if (nch - 1 > 0 && buf[nch - 2] == '\r')
-        buf[nch - 2] = 0;
+    if (nch > 0 && buf[nch - 1] == '\n') buf[nch - 1] = 0;
+    if (nch - 1 > 0 && buf[nch - 2] == '\r') buf[nch - 2] = 0;
 }
 
-std::vector<std::string> split(const std::string &str,
-                               const std::string &delim,
-                               bool ret_empty,
-                               bool ret_delim)
-{
+std::vector<std::string> split(const std::string& str,
+                               const std::string& delim,
+                               bool               ret_empty,
+                               bool               ret_delim) {
     std::vector<std::string> list;
 
-    char cur_delim[2] = {0, 0};
-    std::string::size_type m_pos = 0;
-    std::string token;
+    char                   cur_delim[2] = { 0, 0 };
+    std::string::size_type m_pos        = 0;
+    std::string            token;
 
-    while (m_pos < str.length())
-    {
+    while (m_pos < str.length()) {
         std::string::size_type pos = str.find_first_of(delim, m_pos);
-        if (pos == std::string::npos)
-        {
+        if (pos == std::string::npos) {
             cur_delim[0] = 0;
             token.assign(str, m_pos, std::string::npos);
             m_pos = str.length();
-        }
-        else
-        {
-            cur_delim[0] = str[pos];
+        } else {
+            cur_delim[0]               = str[pos];
             std::string::size_type len = pos - m_pos;
             token.assign(str, m_pos, len);
             m_pos = pos + 1;
         }
 
-        if (token.empty() && !ret_empty)
-            continue;
+        if (token.empty() && !ret_empty) continue;
 
         list.push_back(token);
 
@@ -212,38 +163,46 @@ std::vector<std::string> split(const std::string &str,
     return list;
 }
 
-bool process_sun(FILE *fp, SimulationData &sd)
-{
+bool process_sun(FILE* fp, SimulationData& sd) {
     char buf[1024];
 
     // Read Sun info
-    int bi = 0, count = 0;
-    char cshape = 'g';
+    int    bi = 0, count = 0;
+    char   cshape = 'g';
     double Sigma, HalfWidth;
-    bool PointSource;
+    bool   PointSource;
     double X, Y, Z, Latitude, Day, Hour;
-    bool UseLDHSpec;
+    bool   UseLDHSpec;
 
     read_line(buf, 1023, fp);
-    sscanf(buf, "SUN\tPTSRC\t%d\tSHAPE\t%c\tSIGMA\t%lg\tHALFWIDTH\t%lg",
-           &bi, &cshape, &Sigma, &HalfWidth);
+    sscanf(buf,
+           "SUN\tPTSRC\t%d\tSHAPE\t%c\tSIGMA\t%lg\tHALFWIDTH\t%lg",
+           &bi,
+           &cshape,
+           &Sigma,
+           &HalfWidth);
     PointSource = (bi != 0);
-    cshape = tolower(cshape);
+    cshape      = tolower(cshape);
 
     read_line(buf, 1023, fp);
 
-    sscanf(buf, "XYZ\t%lg\t%lg\t%lg\tUSELDH\t%d\tLDH\t%lg\t%lg\t%lg",
-           &X, &Y, &Z, &bi, &Latitude, &Day, &Hour);
+    sscanf(buf,
+           "XYZ\t%lg\t%lg\t%lg\tUSELDH\t%d\tLDH\t%lg\t%lg\t%lg",
+           &X,
+           &Y,
+           &Z,
+           &bi,
+           &Latitude,
+           &Day,
+           &Hour);
     UseLDHSpec = (bi != 0);
 
     read_line(buf, 1023, fp);
     sscanf(buf, "USER SHAPE DATA\t%d", &count);
     std::vector<double> angle_vec;
     std::vector<double> intensity_vec;
-    if (count > 0)
-    {
-        for (int i = 0; i < count; i++)
-        {
+    if (count > 0) {
+        for (int i = 0; i < count; i++) {
             double x, y;
             read_line(buf, 1023, fp);
             sscanf(buf, "%lg\t%lg", &x, &y);
@@ -256,8 +215,7 @@ bool process_sun(FILE *fp, SimulationData &sd)
     auto sun = make_ray_source<Sun>();
 
     // Define sun position
-    if (UseLDHSpec)
-    {
+    if (UseLDHSpec) {
         // sun->set_position(Latitude, Day, Hour);
         st_sun_position(Latitude, Day, Hour, &X, &Y, &Z);
     }
@@ -279,82 +237,73 @@ bool process_sun(FILE *fp, SimulationData &sd)
     return true;
 }
 
-bool read_optic_surface(FILE *fp,
-                        bool is_front,
-                        OpticalPropertySet &optics,
-                        int &OpticalSurfaceNumber,
-                        double &refraction)
-{
-    if (!fp)
-        return false;
+bool read_optic_surface(FILE*               fp,
+                        bool                is_front,
+                        OpticalPropertySet& optics,
+                        int&                OpticalSurfaceNumber,
+                        double&             refraction) {
+    if (!fp) return false;
     char buf[1024];
     read_line(buf, 1023, fp);
     std::vector<std::string> parts = split(std::string(buf), "\t", true, false);
-    if (parts.size() < 15)
-    {
+    if (parts.size() < 15) {
         printf("too few tokens for optical surface: %zu\n", parts.size());
         printf("\t>> %s\n", buf);
         return false;
     }
 
     char ErrorDistribution = 'g';
-    if (parts[1].length() > 0)
-        ErrorDistribution = parts[1][0];
+    if (parts[1].length() > 0) ErrorDistribution = parts[1][0];
 
     int ApertureStopOrGratingType = atoi(parts[2].c_str());
-    OpticalSurfaceNumber = atoi(parts[3].c_str());
-    int DiffractionOrder = atoi(parts[4].c_str());
-    double Reflectivity = atof(parts[5].c_str());
-    double Transmissivity = atof(parts[6].c_str());
-    double RMSSlope = atof(parts[7].c_str());
-    double RMSSpecularity = atof(parts[8].c_str());
-    refraction = atof(parts[9].c_str());
-    //double RefractionIndexImag = atof(parts[10].c_str());   // This is not used
+    OpticalSurfaceNumber          = atoi(parts[3].c_str());
+    int    DiffractionOrder       = atoi(parts[4].c_str());
+    double Reflectivity           = atof(parts[5].c_str());
+    double Transmissivity         = atof(parts[6].c_str());
+    double RMSSlope               = atof(parts[7].c_str());
+    double RMSSpecularity         = atof(parts[8].c_str());
+    refraction                    = atof(parts[9].c_str());
+    // double RefractionIndexImag = atof(parts[10].c_str());   // This is not
+    // used
     double GratingCoeffs[4];
     GratingCoeffs[0] = atof(parts[11].c_str());
     GratingCoeffs[1] = atof(parts[12].c_str());
     GratingCoeffs[2] = atof(parts[13].c_str());
     GratingCoeffs[3] = atof(parts[14].c_str());
 
-    bool UseReflectivityTable = false;
-    int refl_npoints = 0;
-    double *refl_angles = 0;
-    double *refls = 0;
+    bool    UseReflectivityTable = false;
+    int     refl_npoints         = 0;
+    double* refl_angles          = 0;
+    double* refls                = 0;
 
-    bool UseTransmissivityTable = false;
-    int trans_npoints = 0;
-    double *trans_angles = 0;
-    double *transs = 0;
+    bool    UseTransmissivityTable = false;
+    int     trans_npoints          = 0;
+    double* trans_angles           = 0;
+    double* transs                 = 0;
 
-    if (parts.size() >= 17)
-    {
+    if (parts.size() >= 17) {
         UseReflectivityTable = (atoi(parts[15].c_str()) > 0);
-        refl_npoints = atoi(parts[16].c_str());
-        if (parts.size() >= 19)
-        {
+        refl_npoints         = atoi(parts[16].c_str());
+        if (parts.size() >= 19) {
             UseTransmissivityTable = (atoi(parts[17].c_str()) > 0);
-            trans_npoints = atoi(parts[18].c_str());
+            trans_npoints          = atoi(parts[18].c_str());
         }
     }
 
-    if (UseReflectivityTable)
-    {
+    if (UseReflectivityTable) {
         refl_angles = new double[refl_npoints];
-        refls = new double[refl_npoints];
+        refls       = new double[refl_npoints];
 
-        for (int i = 0; i < refl_npoints; i++)
-        {
+        for (int i = 0; i < refl_npoints; i++) {
             read_line(buf, 1023, fp);
             sscanf(buf, "%lg %lg", &refl_angles[i], &refls[i]);
         }
     }
-    if (UseTransmissivityTable)
-    {
+    if (UseTransmissivityTable) {
         trans_angles = new double[trans_npoints];
-        transs = new double[trans_npoints];
+        transs       = new double[trans_npoints];
 
-        for (int i = 0; i < trans_npoints; i++)
-        {
+        for (int i = 0; i < trans_npoints; i++) {
             read_line(buf, 1023, fp);
             sscanf(buf, "%lg %lg", &trans_angles[i], &transs[i]);
         }
@@ -362,24 +311,19 @@ bool read_optic_surface(FILE *fp,
 
     // Define optical properties
     DistributionType dist = char_to_distribution(ErrorDistribution);
-    OpticalSide side = is_front ? OpticalSide::Front : OpticalSide::Back;
-    optics.set_properties(side, dist, Transmissivity, Reflectivity, RMSSlope, RMSSpecularity);
+    OpticalSide      side = is_front ? OpticalSide::Front : OpticalSide::Back;
+    optics.set_properties(
+        side, dist, Transmissivity, Reflectivity, RMSSlope, RMSSpecularity);
 
-    if (refl_angles != 0)
-        delete[] refl_angles;
-    if (refls != 0)
-        delete[] refls;
-    if (trans_angles != 0)
-        delete[] trans_angles;
-    if (transs != 0)
-        delete[] transs;
+    if (refl_angles != 0) delete[] refl_angles;
+    if (refls != 0) delete[] refls;
+    if (trans_angles != 0) delete[] trans_angles;
+    if (transs != 0) delete[] transs;
     return true;
 }
 
-bool process_optics(
-    FILE *fp,
-    std::map<std::string, OpticalPropertySet> &optics_map)
-{
+bool process_optics(FILE*                                      fp,
+                    std::map<std::string, OpticalPropertySet>& optics_map) {
     char buf[1024];
 
     // Read number of optics
@@ -388,134 +332,112 @@ bool process_optics(
     sscanf(buf, "OPTICS LIST COUNT\t%d", &count);
 
     // Define each optics
-    for (int i = 0; i < count; i++)
-    {
+    for (int i = 0; i < count; i++) {
         // Read optical pair info line
         read_line(buf, 1023, fp);
 
-        if (strncmp(buf, "OPTICAL PAIR", 12) == 0)
-        {
+        if (strncmp(buf, "OPTICAL PAIR", 12) == 0) {
             // int iopt = st_add_optic(cxt, (const char*)(buf + 13));
             std::string optics_name = std::string(buf + 13);
-            double refrac_front, refrac_back;
-            int OpticalSurfaceNumber = 0;
+            double      refrac_front, refrac_back;
+            int         OpticalSurfaceNumber = 0;
 
-            OpticalPropertySet optics_set(InteractionType::UNKNOWN, optics_name);
-            read_optic_surface(fp, true, optics_set, OpticalSurfaceNumber, refrac_front);
-            read_optic_surface(fp, false, optics_set, OpticalSurfaceNumber, refrac_back);
+            OpticalPropertySet optics_set(InteractionType::UNKNOWN,
+                                          optics_name);
+            read_optic_surface(
+                fp, true, optics_set, OpticalSurfaceNumber, refrac_front);
+            read_optic_surface(
+                fp, false, optics_set, OpticalSurfaceNumber, refrac_back);
             optics_set.set_refraction_indices(refrac_front, refrac_back);
 
             optics_map[optics_name] = optics_set;
-        }
-        else
+        } else
             return false;
     }
 
     return true;
 }
 
-bool read_element(
-    FILE *fp,
-    std::map<std::string, OpticalPropertySet> &optics_map,
-    element_ptr &el,
-    SimulationData &sd,
-    bool virt)
-{
+bool read_element(FILE*                                      fp,
+                  std::map<std::string, OpticalPropertySet>& optics_map,
+                  element_ptr&                               el,
+                  SimulationData&                            sd,
+                  bool                                       virt) {
     char buf[1024];
     read_line(buf, 1023, fp);
 
     std::vector<std::string> tok = split(buf, "\t", true, false);
-    if (tok.size() < 29)
-    {
+    if (tok.size() < 29) {
         printf("too few tokens for element: %zu\n", tok.size());
         printf("\t>> %s\n", buf);
         return false;
     }
 
-    bool enabled = atoi(tok[0].c_str()) ? 1 : 0;
-    glm::dvec3 xyz = {
-        atof(tok[1].c_str()),
-        atof(tok[2].c_str()),
-        atof(tok[3].c_str())
-    };
-    glm::dvec3 aim = {
-        atof(tok[4].c_str()),
-        atof(tok[5].c_str()),
-        atof(tok[6].c_str())
-    };
-    double zrot = atof(tok[7].c_str());
+    bool       enabled = atoi(tok[0].c_str()) ? 1 : 0;
+    glm::dvec3 xyz     = { atof(tok[1].c_str()),
+                           atof(tok[2].c_str()),
+                           atof(tok[3].c_str()) };
+    glm::dvec3 aim     = { atof(tok[4].c_str()),
+                           atof(tok[5].c_str()),
+                           atof(tok[6].c_str()) };
+    double     zrot    = atof(tok[7].c_str());
 
     char ShapeIndex = ' ';
-    if (tok[8].length() > 0)
-    {
+    if (tok[8].length() > 0) {
         ShapeIndex = tok[8][0];
-    }
-    else
-    {
+    } else {
         printf("no aperture index specified for element\n");
         return false;
     }
 
     std::vector<double> aperture_params;
-    for (int i = 0; i < 8; i++)
-    {
+    for (int i = 0; i < 8; i++) {
         aperture_params.push_back(atof(tok[i + 9].c_str()));
     }
 
     char SurfaceIndex = ' ';
-    if (tok[17].length() > 0)
-    {
+    if (tok[17].length() > 0) {
         SurfaceIndex = tok[17][0];
-    }
-    else
-    {
+    } else {
         printf("no surface index specified for element\n");
         return false;
     }
 
     std::vector<double> surface_params;
-    for (int i = 0; i < 8; i++)
-    {
+    for (int i = 0; i < 8; i++) {
         surface_params.push_back(atof(tok[i + 18].c_str()));
     }
 
     // Skipping surface file for now
-    std::string SurfaceFile = tok[26];
-    std::string optics_name = tok[27].c_str();
+    std::string     SurfaceFile = tok[26];
+    std::string     optics_name = tok[27].c_str();
     InteractionType interaction = int_to_interaction(atoi(tok[28].c_str()));
 
     // Create element
-    if (virt)
-        el = make_element<VirtualElement>();
+    if (virt) el = make_element<VirtualElement>();
     else
         el = make_element<SingleElement>();
-    
-    if (!enabled)
-        el->disable();
+
+    if (!enabled) el->disable();
 
     // Make aperture
     ApertureType aperture_type = char_to_aperture(ShapeIndex);
-    if (aperture_type == ApertureType::APERTURE_UNKNOWN)
-    {
+    if (aperture_type == ApertureType::APERTURE_UNKNOWN) {
         std::stringstream ss;
         ss << "Aperture character " << ShapeIndex
            << " returned unknown aperture type " << aperture_type;
         throw std::invalid_argument(ss.str());
     }
-    
-    aperture_ptr ap_ptr = Aperture::make_aperture_from_type(
-        aperture_type, aperture_params);
-    if (ap_ptr == nullptr)
-    {
+
+    aperture_ptr ap_ptr =
+        Aperture::make_aperture_from_type(aperture_type, aperture_params);
+    if (ap_ptr == nullptr) {
         std::stringstream ss;
         ss << "Unable to make aperture pointer -- "
-           << "\nChar: " << ShapeIndex
-           << "\nType: " << aperture_type
+           << "\nChar: " << ShapeIndex << "\nType: " << aperture_type
            << "\nParams: [";
-        for (auto cit = aperture_params.cbegin();
-             cit != aperture_params.cend();
-             ++cit)
-        {
+        for (auto cit = aperture_params.cbegin(); cit != aperture_params.cend();
+             ++cit) {
             ss << *cit << ", ";
         }
         ss << "]" << std::endl;
@@ -525,40 +447,46 @@ bool read_element(
 
     // Make surface
     SurfaceType surface_type = char_to_surface(SurfaceIndex);
-    if (surface_type == SurfaceType::SURFACE_UNKNOWN)
-    {
+    if (surface_type == SurfaceType::SURFACE_UNKNOWN) {
         std::stringstream ss;
         ss << "Unknown surface type " << surface_type;
         throw std::invalid_argument(ss.str());
     }
     surface_ptr surf_ptr = make_surface_from_type(surface_type, surface_params);
     el->set_surface(surf_ptr);
-    if (surface_type == SurfaceType::CYLINDER)
-    {
-        ap_ptr = el->get_aperture();
+    if (surface_type == SurfaceType::CYLINDER) {
+        ap_ptr    = el->get_aperture();
         auto rect = std::dynamic_pointer_cast<Rectangle>(ap_ptr);
-        auto cyl = std::dynamic_pointer_cast<Cylinder>(surf_ptr);
-        if (rect == nullptr || cyl == nullptr)
-        {
+        auto cyl  = std::dynamic_pointer_cast<Cylinder>(surf_ptr);
+        if (rect == nullptr || cyl == nullptr) {
             throw std::invalid_argument("This should not happen!");
         }
-        rect->set_x_length(2.0 * cyl->radius);
-        rect->set_x_coord(-1.0 * cyl->radius);
+        double r = cyl->radius;
+        // Force aperture to have correct dimensions
+        rect->set_x_length(2.0 * r);
+        rect->set_x_coord(-1.0 * r);
+        // Adjust for difference between legacy cylinder coordinates
+        // and new cylinder coordinates
+        glm::dvec3 s_loc = glm::dvec3(0, 0, r);
+        glm::dvec3 s_ref;
+        el->set_reference_frame_geometry(
+            glm::dvec3(xyz), glm::dvec3(aim), zrot);
+        el->convert_vector_local_to_reference(s_ref, s_loc);
+        xyz = el->get_origin_ref() + s_ref;
+        // Because this is actually a point, need to adjust it as well...
+        aim = el->get_aim_vector_ref() + s_ref;
     }
 
     // Set element position and orientation
-    el->set_reference_frame_geometry(glm::dvec3(xyz),
-                                     glm::dvec3(aim),
-                                     zrot);
+    el->set_reference_frame_geometry(glm::dvec3(xyz), glm::dvec3(aim), zrot);
 
     // Set optical properties
-    if (!virt)
-    {
+    if (!virt) {
         auto optics_iter = optics_map.find(optics_name);
-        if (optics_iter == optics_map.end())
-        {
+        if (optics_iter == optics_map.end()) {
             std::stringstream ss;
-            ss << "Element references unknown optical property set: " << optics_name;
+            ss << "Element references unknown optical property set: "
+               << optics_name;
             throw std::runtime_error(ss.str());
         }
 
@@ -568,15 +496,13 @@ bool read_element(
         auto optics_ref = sd.find_or_add_optical_property_set(optics_set);
         el->set_optical_property_set(optics_ref);
     }
-    
+
     return true;
 }
 
-bool process_stages(
-    FILE *fp,
-    SimulationData &sd,
-    std::map<std::string, OpticalPropertySet> &optics_map)
-{
+bool process_stages(FILE*                                      fp,
+                    SimulationData&                            sd,
+                    std::map<std::string, OpticalPropertySet>& optics_map) {
     char buf[1024];
 
     // Loop through stages
@@ -584,15 +510,20 @@ bool process_stages(
     read_line(buf, 1023, fp);
     sscanf(buf, "STAGE LIST COUNT\t%d", &count_stage);
 
-    for (int i_stage = 0; i_stage < count_stage; i_stage++)
-    {
-        int virt = 0, multi = 1, count_element = 0, tr = 0;
+    for (int i_stage = 0; i_stage < count_stage; i_stage++) {
+        int    virt = 0, multi = 1, count_element = 0, tr = 0;
         double X, Y, Z, AX, AY, AZ, ZRot;
 
         read_line(buf, 1023, fp);
-        sscanf(buf, "STAGE\tXYZ\t%lg\t%lg\t%lg\tAIM\t%lg\t%lg\t%lg\tZROT\t%lg\tVIRTUAL\t%d\tMULTIHIT\t%d\tELEMENTS\t%d\tTRACETHROUGH\t%d",
-               &X, &Y, &Z,
-               &AX, &AY, &AZ,
+        sscanf(buf,
+               "STAGE\tXYZ\t%lg\t%lg\t%lg\tAIM\t%lg\t%lg\t%lg\tZROT\t%"
+               "lg\tVIRTUAL\t%d\tMULTIHIT\t%d\tELEMENTS\t%d\tTRACETHROUGH\t%d",
+               &X,
+               &Y,
+               &Z,
+               &AX,
+               &AY,
+               &AZ,
                &ZRot,
                &virt,
                &multi,
@@ -607,31 +538,25 @@ bool process_stages(
         stage->set_aim_vector(AX, AY, AZ);
         stage->set_zrot(ZRot);
         stage->compute_coordinate_rotations();
-        if (virt)
-        {
+        if (virt) {
             stage->mark_virtual();
-        }
-        else
-        {
+        } else {
             stage->unmark_virtual();
         }
 
         // Loop through elements
-        for (int i_element = 0; i_element < count_element; i_element++)
-        {
+        for (int i_element = 0; i_element < count_element; i_element++) {
             element_ptr el;
             read_element(fp, optics_map, el, sd, virt);
             el->set_name(std::to_string(i_element));
             // TODO make virtual if stage is virtual?
 
-            if (!Element::is_success(stage->add_element(el)))
-            {
+            if (!Element::is_success(stage->add_element(el))) {
                 std::cout << "Failed to add element to stage" << std::endl;
             }
         }
 
-        if (!Element::is_success(sd.add_stage(stage)))
-        {
+        if (!Element::is_success(sd.add_stage(stage))) {
             std::cout << "Failed to add stage to SimulationData" << std::endl;
         }
     }
@@ -639,68 +564,67 @@ bool process_stages(
     return true;
 }
 
-bool process_sim_par(FILE *fp, SimulationData &sd)
-{
+bool process_sim_par(FILE* fp, SimulationData& sd) {
     char buf[1024];
 
     // Check if end of file
-    if (feof(fp))
-        return false;
+    if (feof(fp)) return false;
 
     // Check for simulation parameters
     read_line(buf, 1023, fp);
-    if (strncmp(buf, "TRACE", 5) != 0)
-        return false;
+    if (strncmp(buf, "TRACE", 5) != 0) return false;
 
     // Get simulation parameters
     int n_rays, n_rays_sun, n_cpu, seed, ss, err, pf;
-    int n = sscanf(buf, "TRACE\tNRAY\t%d\tNSUN\t%d\tCPU\t%d\tSEED\t%d\tSUNSHAPE\t%d\tERRORS\t%d\tPTFOCUS\t%d",
-                   &n_rays, &n_rays_sun, &n_cpu, &seed, &ss, &err, &pf);
+    int n = sscanf(buf,
+                   "TRACE\tNRAY\t%d\tNSUN\t%d\tCPU\t%d\tSEED\t%d\tSUNSHAPE\t%"
+                   "d\tERRORS\t%d\tPTFOCUS\t%d",
+                   &n_rays,
+                   &n_rays_sun,
+                   &n_cpu,
+                   &seed,
+                   &ss,
+                   &err,
+                   &pf);
 
     // Assign simulation parameters
-    SimulationParameters &par = sd.get_simulation_parameters();
-    par.number_of_rays = n_rays;
-    par.max_number_of_rays = n_rays_sun;
-    par.seed = seed;
+    SimulationParameters& par    = sd.get_simulation_parameters();
+    par.number_of_rays           = n_rays;
+    par.max_number_of_rays       = n_rays_sun;
+    par.seed                     = seed;
     par.include_sun_shape_errors = ss;
-    par.include_optical_errors = err;
+    par.include_optical_errors   = err;
 
     // TODO Assign number CPUs, point focus?
     return true;
 }
 
-bool load_stinput_file(SimulationData &sd, std::string filename)
-{
-    // TODO: Reset simulation data?
-
+bool load_stinput_file(SimulationData& sd, std::string filename) {
     // Read in file
-    FILE *fp = fopen(filename.data(), "r");
-    if (!fp)
-    {
-        printf("failed to open system input file: %s\n",
-               filename.data());
+    FILE* fp = fopen(filename.data(), "r");
+    if (!fp) {
+        printf("failed to open system input file: %s\n", filename.data());
         return false;
     }
+
+    // Clear simulation data after the file has successfully opened
+    sd.clear();
 
     // Buffer to store read line
     char buf[1024];
 
     // Get version info (if first line starts with '#')
-    int vmaj = 0, vmin = 0, vmic = 0;
+    int  vmaj = 0, vmin = 0, vmic = 0;
     char c = fgetc(fp);
-    if (c == '#')
-    {
+    if (c == '#') {
         read_line(buf, 1023, fp);
-        sscanf(buf, " SOLTRACE VERSION %d.%d.%d INPUT FILE",
-               &vmaj, &vmin, &vmic);
+        sscanf(
+            buf, " SOLTRACE VERSION %d.%d.%d INPUT FILE", &vmaj, &vmin, &vmic);
 
         // unsigned int file_version = vmaj*10000 + vmin*100 + vmic;
 
-        printf("loading input file version %d.%d.%d\n",
-               vmaj, vmin, vmic);
-    }
-    else
-    {
+        printf("loading input file version %d.%d.%d\n", vmaj, vmin, vmic);
+    } else {
         ungetc(c, fp);
     }
 
@@ -722,8 +646,7 @@ bool load_stinput_file(SimulationData &sd, std::string filename)
     return true;
 }
 
-void write_json_file(SimulationData& sd, std::string filename)
-{
+void write_json_file(SimulationData& sd, std::string filename) {
     using json = nlohmann::ordered_json;
 
     // Create empty object
@@ -731,7 +654,7 @@ void write_json_file(SimulationData& sd, std::string filename)
 
     // Write general meta data
     {
-        root["schema_version"] = kSchemaVersion;
+        root["schema_version"]     = kSchemaVersion;
         root["number_of_elements"] = sd.get_number_of_elements();
     }
 
@@ -745,20 +668,19 @@ void write_json_file(SimulationData& sd, std::string filename)
     // Write ray sources
     {
         json jsources;
-        for (auto it = sd.get_ray_source_iterator(); !sd.is_ray_source_at_end(it); ++it)
-        {
+        for (auto it = sd.get_ray_source_iterator();
+             !sd.is_ray_source_at_end(it);
+             ++it) {
             json jsrc;
 
-            SolTrace::Data::ray_source_id i = it->first;
-            auto ray_source = it->second;
+            SolTrace::Data::ray_source_id i          = it->first;
+            auto                          ray_source = it->second;
 
             // Check source type
-            if (auto sun_ptr = std::dynamic_pointer_cast<SolTrace::Data::Sun>(ray_source))
-            {
+            if (auto sun_ptr = std::dynamic_pointer_cast<SolTrace::Data::Sun>(
+                    ray_source)) {
                 sun_ptr->write_json(jsrc);
-            }
-            else
-            {
+            } else {
                 // UNSUPPORTED type
                 throw std::runtime_error("Unsupported ray source type");
             }
@@ -772,12 +694,12 @@ void write_json_file(SimulationData& sd, std::string filename)
     // Write optical properties
     {
         json joptics_top;
-        for (auto it = sd.get_optics_iterator(); !sd.is_optics_at_end(it); ++it)
-        {
+        for (auto it = sd.get_optics_iterator(); !sd.is_optics_at_end(it);
+             ++it) {
             json joptics;
 
-            SolTrace::Data::optics_id id = it->first;
-            auto optics_set = it->second;
+            SolTrace::Data::optics_id id         = it->first;
+            auto                      optics_set = it->second;
 
             optics_set->write_json(joptics);
 
@@ -789,14 +711,12 @@ void write_json_file(SimulationData& sd, std::string filename)
     // Write Elements
     {
         json jelements_top;
-        int i_top = 0;
-        for (auto it = sd.get_iterator(); !sd.is_at_end(it); ++it)
-        {
+        int  i_top = 0;
+        for (auto it = sd.get_iterator(); !sd.is_at_end(it); ++it) {
             json jelement;
             auto element = it->second;
 
-            if (element->is_single() && (element->is_top_level() == false))
-            {
+            if (element->is_single() && (element->is_top_level() == false)) {
                 // Skip single elements that are within other stages/composites
                 continue;
             }
@@ -812,15 +732,13 @@ void write_json_file(SimulationData& sd, std::string filename)
 
     // Write to disk
     std::ofstream ofs(filename, std::ios::out | std::ios::trunc);
-    if (!ofs.is_open())
-        throw std::runtime_error("Failure writing json");
+    if (!ofs.is_open()) throw std::runtime_error("Failure writing json");
     ofs << root.dump(kJsonIndentSpaces) << '\n';
 
     return;
 }
 
-void load_json_file(SimulationData& sd, std::string filename)
-{
+void load_json_file(SimulationData& sd, std::string filename) {
     using json = nlohmann::ordered_json;
 
     // Clear simulation data
@@ -828,29 +746,27 @@ void load_json_file(SimulationData& sd, std::string filename)
 
     // Load json file
     std::ifstream ifs(filename);
-    if (!ifs.is_open())
-        throw std::runtime_error("Failure opening json");
+    if (!ifs.is_open()) throw std::runtime_error("Failure opening json");
 
     // Load json from file stream
     json root;
     ifs >> root;
 
     // File meta data
-    std::string schema_version = root.at("schema_version");
-    int number_of_elements = root.at("number_of_elements");
+    std::string schema_version     = root.at("schema_version");
+    int         number_of_elements = root.at("number_of_elements");
 
     // Simulation parameters
-    SolTrace::Data::SimulationParameters& sim_par = sd.get_simulation_parameters();
+    SolTrace::Data::SimulationParameters& sim_par =
+        sd.get_simulation_parameters();
     json jpar = root["simulation_parameters"];
-    sim_par = SolTrace::Data::SimulationParameters(jpar);
+    sim_par   = SolTrace::Data::SimulationParameters(jpar);
 
     // Ray sources
     json jsources = root["ray_sources"];
-    for (auto& [key, jsrc] : jsources.items())
-    {
+    for (auto& [key, jsrc] : jsources.items()) {
         std::string source_type = jsrc.at("source_type");
-        if (source_type != "Sun")
-        {
+        if (source_type != "Sun") {
             // UNSUPPORTED source type
             throw std::runtime_error("Unsupported ray source type");
         }
@@ -862,35 +778,34 @@ void load_json_file(SimulationData& sd, std::string filename)
 
     // Optical properties
     json joptics = root.at("optical_properties");
-    for (auto& [key, joptic] : joptics.items())
-    {
-        optics_id opt_id = static_cast<optics_id>(std::stoll(key));
+    for (auto& [key, joptic] : joptics.items()) {
+        optics_id          opt_id = static_cast<optics_id>(std::stoll(key));
         OpticalPropertySet opt_set(joptic);
 
         // Check for pre-existing optical property sets
-        const OpticalPropertySet* existing = sd.get_optical_property_set(opt_id);
-        if (existing != nullptr)
-        {
+        const OpticalPropertySet* existing =
+            sd.get_optical_property_set(opt_id);
+        if (existing != nullptr) {
             // This should be a built in optical property set
             if (opt_id >= 0)
-                throw std::runtime_error("Custom optical property set already exists");
+                throw std::runtime_error(
+                    "Custom optical property set already exists");
 
             // Ensure loaded built in matches
-            if (*existing != opt_set)
-            {
+            if (*existing != opt_set) {
                 std::stringstream ss;
-                ss << "Built-in optical property set mismatch for id " << opt_id;
+                ss << "Built-in optical property set mismatch for id "
+                   << opt_id;
                 throw std::runtime_error(ss.str());
             }
-        }
-        else // Insert new optical property set
+        } else // Insert new optical property set
         {
-            auto ptr = std::make_shared<OpticalPropertySet>(opt_set);
+            auto ptr  = std::make_shared<OpticalPropertySet>(opt_set);
             bool flag = sd.my_optical_property_sets.insert_item(opt_id, ptr);
-            if (!flag)
-            {
+            if (!flag) {
                 std::stringstream ss;
-                ss << "Failed to insert optical property set id from JSON: " << opt_id;
+                ss << "Failed to insert optical property set id from JSON: "
+                   << opt_id;
                 throw std::runtime_error(ss.str());
             }
         }
@@ -899,32 +814,30 @@ void load_json_file(SimulationData& sd, std::string filename)
     sd.my_optical_property_sets.recompute_next_id(0);
 
     // Elements
-    json jelements = root["elements"];
-    auto resolve_optics = [&sd](const optics_id id)
-    {
+    json jelements      = root["elements"];
+    auto resolve_optics = [&sd](const optics_id id) {
         auto ptr = sd.my_optical_property_sets.get_item(id);
-        return OpticalPropertySetReference{ id, ptr };
+        return OpticalPropertySetReference { id, ptr };
     };
-    for (auto& [key, jelement] : jelements.items())
-    {
+    for (auto& [key, jelement] : jelements.items()) {
         // Check if stage
         // Note a stage is also a composite, so check stage first
-        if (jelement.contains("is_stage") && jelement.at("is_stage") == true)
-        {
+        if (jelement.contains("is_stage") && jelement.at("is_stage") == true) {
             // Make stage
             stage_ptr stage = make_stage(jelement, resolve_optics);
             sd.add_stage(stage);
         }
         // Composite
-        else if (jelement.contains("is_composite") && jelement.at("is_composite") == true)
-        {
-            composite_element_ptr comp = make_element<CompositeElement>(jelement, resolve_optics);
+        else if (jelement.contains("is_composite") &&
+                 jelement.at("is_composite") == true) {
+            composite_element_ptr comp =
+                make_element<CompositeElement>(jelement, resolve_optics);
             sd.add_element(comp);
         }
         // Single Element
-        else
-        {
-            single_element_ptr single = make_element<SingleElement>(jelement, resolve_optics);
+        else {
+            single_element_ptr single =
+                make_element<SingleElement>(jelement, resolve_optics);
             sd.add_element(single);
         }
     }
