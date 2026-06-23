@@ -65,7 +65,8 @@ Item {
 
             lightProbe: Texture {
                 textureData: {
-                    if (App.view.sim.blueprint_mode) return blueprintSky
+                    if (App.view.sim.sky == SimulationViewState.Day) return daySky
+                    if (App.view.sim.sky == SimulationViewState.Blueprint) return blueprintSky
                     let elevation = edit_node.elevation
                     if (elevation > 30) return daySky
                     if (elevation > 10) return lateAfternoonSky

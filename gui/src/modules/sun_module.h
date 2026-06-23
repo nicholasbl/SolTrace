@@ -36,7 +36,7 @@ public:
     void         set_variant_data(QVariantList data);
 
 public slots:
-    void reset(QVector<SunShapePoint> points = {});
+    void reset(QVector<SunShapePoint> points = { });
     void append(double angle = 0.0, double intensity = 0.0);
     void remove(int index);
     void clear();
@@ -104,6 +104,7 @@ signals:
 
 class SolarCalculatorData : public QObject {
     Q_OBJECT
+    QML_ELEMENT
 public:
     explicit SolarCalculatorData(QObject* parent = nullptr);
 
@@ -144,6 +145,16 @@ public:
 
 signals:
     void changed();
+
+public slots:
+    void set_spring();
+    void set_summer();
+    void set_fall();
+    void set_winter();
+
+    void set_morning();
+    void set_noon();
+    void set_afternoon();
 };
 
 class SolarPositionData : public QObject {
@@ -166,9 +177,6 @@ class SunModule : public QObject {
     QML_ELEMENT
 
 private:
-    void    update_shape();
-    void    update_type();
-    QString update_position();
     void    update_database_connections();
     void    load_from_database();
     void    load_from_ray_source(SD::ray_source_ptr const& ray_source);
@@ -191,9 +199,15 @@ public:
     QOBJECT_READONLY_PROPERTY(SunShape, shape)
 
     enum class Type { Directional, PointSource };
+    enum class DirectionalPositionType { Calculator, Angle };
+
     Q_ENUM(Type)
+    Q_ENUM(DirectionalPositionType)
 
     Q_WRITABLE_PROPERTY(Type, type, Type::Directional)
+    Q_WRITABLE_PROPERTY(DirectionalPositionType,
+                        ds_position_type,
+                        DirectionalPositionType::Calculator)
 
     // Current sun position
     QOBJECT_WRITABLE_PROPERTY(SolarPositionData, position)
@@ -223,6 +237,10 @@ public slots:
                              double altitude,
                              double pressure,
                              double temperature);
+
+    void    update_shape();
+    void    update_type();
+    QString update_position();
 
 signals:
     void notify(ANotification);

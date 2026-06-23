@@ -157,25 +157,9 @@ RowLayout {
         text: "\uf013"
         toolTip: "Settings"
 
-        Connections {
-            target: App.view.settings_panel
-            function onVisible_changed() {
-                if (App.view.settings_panel.visible) {
-                    App.view.left_panel.saved_visible = App.view.left_panel.visible
-                    App.view.left_panel.visible = false
-
-                    App.view.right_panel.saved_visible = App.view.right_panel.visible
-                    App.view.right_panel.visible = false
-                } else {
-                    App.view.left_panel.visible = App.view.left_panel.saved_visible
-                    App.view.right_panel.visible = App.view.right_panel.saved_visible
-                    App.view.fit_panels(root.available_width, false, true)
-                }
-            }
-        }
-
         onClicked: {
-            App.view.settings_panel.visible = !App.view.settings_panel.visible
+            App.view.full_panel.mode = FullPanelData.Settings
+            if (!App.view.full_panel.visible) App.view.toggle_full_panel(root.available_width)
         }
     }
 
@@ -187,14 +171,6 @@ RowLayout {
         text: "\uf0c9"
         toolTip: (App.view.right_panel.visible ? "Close": "Open") + " Right Panel"
         label.font.pointSize: 20
-        onClicked: {
-            if (App.view.settings_panel.visible) {
-                App.view.settings_panel.visible = false
-                return
-            }
-
-            App.view.right_panel.visible = !App.view.right_panel.visible && !App.view.settings_panel.visible
-            App.view.fit_panels(root.available_width, true)
-        }
+        onClicked: App.view.toggle_right_panel(root.available_width)
     }
 }

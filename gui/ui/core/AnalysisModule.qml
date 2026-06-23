@@ -9,7 +9,7 @@ import SolTrace
 ColumnLayout {
     id: root
 
-    STComboBar {
+    STPipelineBar {
         id: bar
 
         currentIndex: Math.min(App.view.analyze_section, 3)
@@ -17,9 +17,10 @@ ColumnLayout {
 
         Layout.fillWidth: true
 
-        collapseLabels: App.view.left_panel.size === PanelData.Small
+        collapseLabels: App.view.left_panel.size === SplitPanelData.Small
 
-        iconModel: ["\uf03a", "\ue4bc", "\uf201", "\uf019"]
+        prefixModel: ["4a", "4b", "4c", "4d"]
+        iconModel: ["\uf03a", "\ue4bc", "\uf06d", "\uf019"]
         model: ["Results", "Intersections", "Flux", "Export"]
 
     }
@@ -49,5 +50,10 @@ ColumnLayout {
         AnalyzeExport {
 
         }
+    }
+
+    WorkflowStepper {
+        previous: "Run Tracer"
+        currentIndex: ViewModule.Analyze
     }
 }

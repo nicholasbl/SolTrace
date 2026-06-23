@@ -12,6 +12,7 @@ Column {
     property string suffix: ""
     property real value: 0
     signal valueModified()
+    width: 200
     spacing: 5
 
     STDoubleSpinBox {

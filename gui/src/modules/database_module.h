@@ -21,7 +21,7 @@ struct DatabaseRecord {
 
 struct LoadedFile {
     // TODO: Store this in the DB
-    QString       provenance = {};
+    QString       provenance = { };
     db::Database* ptr        = nullptr;
 };
 
@@ -39,6 +39,14 @@ class DatabaseModule : public StructModelAdapter<DatabaseRecord> {
     QML_ELEMENT
 
     QOBJECT_WRITABLE_PROPERTY(db::Database, current_database)
+    Q_PROPERTY(QUrl examples_folder READ examples_folder CONSTANT)
+    Q_WRITABLE_PROPERTY(QString,
+                        default_example_filename,
+                        "Power-tower-surround_singlefacet.stinput")
+    Q_PROPERTY(QUrl default_example READ default_example)
+
+    QUrl examples_folder() const;
+    QUrl default_example() const;
 
     Q_WRITABLE_PROPERTY(bool, is_loading, false)
 
