@@ -2,6 +2,8 @@
 #  src/CMakeLists.txt   – builds the OptixCSP core library
 # ──────────────────────────────────────────────────────────────
 
+include(GNUInstallDirs)
+
 # ---------------------------------------------------------------------------
 # core target
 # ---------------------------------------------------------------------------
@@ -105,6 +107,11 @@ endforeach()
 add_custom_target(OptixCSP_shaders DEPENDS ${PTX_OUTPUTS} ${SHADER_FILES}
                                    SOURCES ${SHADER_FILES}
 )
+
+install(FILES ${PTX_OUTPUTS}
+    DESTINATION ${CMAKE_INSTALL_BINDIR}/ptx
+)
+
 # ---------------------------------------------------------------------------
 # core depends on shaders target
 # ---------------------------------------------------------------------------

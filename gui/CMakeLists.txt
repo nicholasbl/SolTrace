@@ -208,6 +208,7 @@ endif()
 
 if(TARGET optix_runner)
     target_compile_definitions(SolTrace PRIVATE SOLTRACE_HAS_OPTIX_RUNNER)
+    target_link_libraries(SolTrace PRIVATE optix_runner)
 endif()
 
 target_include_directories(SolTrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

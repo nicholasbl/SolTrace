@@ -178,6 +178,9 @@ void SimulationModule::run() {
 #ifdef SOLTRACE_HAS_EMBREE_RUNNER
     if (m_runner == Runner::Embree) { backend = ThreadRunnerBackend::Embree; }
 #endif
+#ifdef SOLTRACE_HAS_OPTIX_RUNNER
+    if (m_runner == Runner::GPU) { backend = ThreadRunnerBackend::Optix; }
+#endif
 
     qDebug() << Q_FUNC_INFO << magic_enum::enum_name(backend);
 
