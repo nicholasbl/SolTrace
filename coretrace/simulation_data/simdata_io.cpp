@@ -2,6 +2,7 @@
 #include "simdata_io.hpp"
 
 #include <array>
+#include <cctype>
 #include <cstring>
 #include <exception>
 #include <fstream>
@@ -182,7 +183,7 @@ bool process_sun(FILE* fp, SimulationData& sd) {
            &Sigma,
            &HalfWidth);
     PointSource = (bi != 0);
-    cshape      = tolower(cshape);
+    cshape      = static_cast<char>(std::tolower(static_cast<unsigned char>(cshape)));
 
     read_line(buf, 1023, fp);
 
@@ -344,10 +345,10 @@ bool process_optics(FILE*                                      fp,
 
             OpticalPropertySet optics_set(InteractionType::UNKNOWN,
                                           optics_name);
-            read_optic_surface(
-                fp, true, optics_set, OpticalSurfaceNumber, refrac_front);
-            read_optic_surface(
-                fp, false, optics_set, OpticalSurfaceNumber, refrac_back);
+            if(!read_optic_surface(fp, true, optics_set, OpticalSurfaceNumber, refrac_front))
+                return false;
+            if(!read_optic_surface(fp, false, optics_set, OpticalSurfaceNumber, refrac_back))
+                return false;
             optics_set.set_refraction_indices(refrac_front, refrac_back);
 
             optics_map[optics_name] = optics_set;
@@ -547,7 +548,10 @@ bool process_stages(FILE*                                      fp,
         // Loop through elements
         for (int i_element = 0; i_element < count_element; i_element++) {
             element_ptr el;
-            read_element(fp, optics_map, el, sd, virt);
+            if (!read_element(fp, optics_map, el, sd, virt) || el == nullptr)
+            {
+                return false;
+            }
             el->set_name(std::to_string(i_element));
             // TODO make virtual if stage is virtual?
 
@@ -576,16 +580,16 @@ bool process_sim_par(FILE* fp, SimulationData& sd) {
 
     // Get simulation parameters
     int n_rays, n_rays_sun, n_cpu, seed, ss, err, pf;
-    int n = sscanf(buf,
-                   "TRACE\tNRAY\t%d\tNSUN\t%d\tCPU\t%d\tSEED\t%d\tSUNSHAPE\t%"
-                   "d\tERRORS\t%d\tPTFOCUS\t%d",
-                   &n_rays,
-                   &n_rays_sun,
-                   &n_cpu,
-                   &seed,
-                   &ss,
-                   &err,
-                   &pf);
+    sscanf(buf,
+           "TRACE\tNRAY\t%d\tNSUN\t%d\tCPU\t%d\tSEED\t%d\tSUNSHAPE\t%"
+           "d\tERRORS\t%d\tPTFOCUS\t%d",
+           &n_rays,
+           &n_rays_sun,
+           &n_cpu,
+           &seed,
+           &ss,
+           &err,
+           &pf);
 
     // Assign simulation parameters
     SimulationParameters& par    = sd.get_simulation_parameters();
@@ -629,17 +633,21 @@ bool load_stinput_file(SimulationData& sd, std::string filename) {
     }
 
     // Read in Sun
-    process_sun(fp, sd);
+    if(!process_sun(fp, sd))
+        return false;
 
     // Read in Optics
     std::map<std::string, OpticalPropertySet> optics_map;
-    process_optics(fp, optics_map);
+    if (!process_optics(fp, optics_map))
+        return false;
 
     // Read in Stages
-    process_stages(fp, sd, optics_map);
+    if (!process_stages(fp, sd, optics_map))
+        return false;
 
     // Read in simulation parameters (if any)
-    process_sim_par(fp, sd);
+    if (!process_sim_par(fp, sd))
+        return false;
 
     fclose(fp);
 
