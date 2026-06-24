@@ -57,7 +57,7 @@ ScrollView {
                 Flow {
                     id: bannerPills
 
-                    Layout.fillWidth: true
+                    Layout.preferredWidth: 0.5 * parent.width
                     Layout.alignment: Qt.AlignHCenter
                     spacing: 6
 

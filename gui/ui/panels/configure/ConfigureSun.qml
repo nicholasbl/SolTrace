@@ -180,6 +180,35 @@ Flickable {
                         SolarCalculator {
                             Layout.fillWidth: true
                         }
+
+                        GridLayout {
+                            Layout.fillWidth: true
+                            columns: App.view.left_panel.size == SplitPanelData.Small ? 1 : 2
+
+                            STSpinBoxField {
+                                enableSpinBox: false
+                                Layout.fillWidth: true
+                                Layout.preferredWidth: 100
+                                label: "Azimuth"
+                                value: App.sun.position.azimuth
+                                from: 0
+                                to: 360
+                                decimals: 3
+                                suffix: "deg"
+                            }
+
+                            STSpinBoxField {
+                                enableSpinBox: false
+                                Layout.fillWidth: true
+                                Layout.preferredWidth: 100
+                                label: "Elevation"
+                                value: App.sun.position.elevation
+                                from: -90
+                                to: 90
+                                decimals: 3
+                                suffix: "deg"
+                            }
+                        }
                     }
 
                     ColumnLayout {

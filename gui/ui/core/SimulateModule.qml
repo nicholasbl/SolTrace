@@ -10,13 +10,22 @@ ColumnLayout {
     id: root
     Layout.fillWidth: true
 
-    STPipelineBar {
+    Label {
+        Layout.fillWidth: true
+        Layout.leftMargin: 10
+        Layout.rightMargin: 10
+        Layout.bottomMargin: 8
+
+        text: "Configure ray tracing parameters, run the simulation, and review diagnostic output."
+        wrapMode: Text.WordWrap
+    }
+
+    STComboBar {
         id: bar
         currentIndex: AppData.view.simulate_section
         onCurrentIndexChanged: AppData.view.simulate_section = currentIndex
         Layout.fillWidth: true
         collapseLabels: AppData.view.left_panel.size === SplitPanelData.Small
-        prefixModel: ["3a", "3b"]
         model: ["Execution", "Diagnostics"]
         iconModel: ["\uf04b", "\uf188"]
     }

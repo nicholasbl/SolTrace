@@ -183,6 +183,6 @@ ShadowedGlassRectangle {
         LoadModule {}
         ConfigureModule {}
         SimulateModule {}
-        AnalysisModule {}
+        AnalyzeModule {}
     }
 }

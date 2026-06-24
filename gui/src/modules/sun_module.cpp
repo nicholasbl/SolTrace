@@ -77,10 +77,11 @@ SunModule::SunModule(QObject* parent)
 
 {
     connect(m_shape, &SunShape::changed, this, &SunModule::update_shape);
-    connect(m_calc_data,
+
+    /* connect(m_calc_data,
             &SolarCalculatorData::changed,
             this,
-            &SunModule::update_position);
+            &SunModule::update_position); */
 
     connect(this, &SunModule::type_changed, this, &SunModule::update_type);
     connect(this,
@@ -163,14 +164,17 @@ QString SunModule::update_position() {
         m_calculator.set_time(
             m_calc_data->hour(), m_calc_data->minute(), m_calc_data->second());
 
-        double x, y, z;
+        double x, y, z, azimuth, elevation;
         m_calculator.get_sun_vector(&x, &y, &z);
+        m_calculator.get_azimuth_elevation(&azimuth, &elevation);
         {
             QScopedValueRollback<bool> guard(m_updating_calculated_position,
                                              true);
             m_position->set_x(x);
             m_position->set_y(y);
             m_position->set_z(z);
+            m_position->set_azimuth(azimuth);
+            m_position->set_elevation(elevation);
         }
         return write_position_to_database();
     } catch (std::exception const& e) {

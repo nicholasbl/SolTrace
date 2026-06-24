@@ -166,6 +166,9 @@ public:
     Q_WRITABLE_PROPERTY(double, y, 1000.0)
     Q_WRITABLE_PROPERTY(double, z, 1000.0)
 
+    Q_WRITABLE_PROPERTY(double, azimuth, 90)
+    Q_WRITABLE_PROPERTY(double, elevation, 90)
+
     Q_WRITABLE_PROPERTY(bool, from_calculator, true)
 
 signals:

@@ -68,8 +68,13 @@ void AppData::load_session() {
     m_view->set_sun_section(s.value("sun_section", 0).toUInt());
     m_view->set_right_panel_section(s.value("right_panel_section", 0).toUInt());
 
-    m_view->set_documentation_section(
-        s.value("documentation_section", 0).toUInt());
+    m_view->full_panel()->set_mode(static_cast<FullPanelData::FullPanelMode>(
+        s.value("full_panel_mode", 0).toUInt()));
+    m_view->full_panel()->set_settings_section(
+        s.value("settings_section", 0).toUInt());
+    m_view->full_panel()->set_docs_section(s.value("docs_section", 0).toUInt());
+    m_view->full_panel()->set_build_section(
+        s.value("build_section", 0).toUInt());
 
     // Viewport
     auto* sim = m_view->sim();
@@ -88,12 +93,18 @@ void AppData::load_session() {
 
     s.beginGroup("Sun");
 
-    // Position
-    m_sun->position()->set_from_calculator(
-        s.value("position_from_calculator", true).toBool());
-    m_sun->position()->set_x(s.value("position_x", 1000.0).toDouble());
-    m_sun->position()->set_y(s.value("position_y", 1000.0).toDouble());
-    m_sun->position()->set_z(s.value("position_z", 1000.0).toDouble());
+    // Sun Position
+    m_sun->ds_position()->set_from_calculator(
+        s.value("ds_from_calculator", true).toBool());
+    m_sun->ds_position()->set_x(s.value("ds_position_x", 1000.0).toDouble());
+    m_sun->ds_position()->set_y(s.value("ds_position_y", 1000.0).toDouble());
+    m_sun->ds_position()->set_z(s.value("ds_position_z", 1000.0).toDouble());
+
+    m_sun->ps_position()->set_from_calculator(
+        s.value("ps_from_calculator", true).toBool());
+    m_sun->ps_position()->set_x(s.value("ps_position_x", 1000.0).toDouble());
+    m_sun->ps_position()->set_y(s.value("ps_position_y", 1000.0).toDouble());
+    m_sun->ps_position()->set_z(s.value("ps_position_z", 1000.0).toDouble());
 
     m_sun->set_type(static_cast<SunModule::Type>(s.value("type", 0).toInt()));
 
@@ -154,7 +165,11 @@ void AppData::save_session() {
     s.setValue("sun_section", m_view->sun_section());
     s.setValue("right_panel_section", m_view->right_panel_section());
 
-    s.setValue("documentation_section", m_view->documentation_section());
+    s.setValue("full_panel_mode",
+               static_cast<int>(m_view->full_panel()->mode()));
+    s.setValue("settings_section", m_view->full_panel()->settings_section());
+    s.setValue("docs_section", m_view->full_panel()->docs_section());
+    s.setValue("build_section", m_view->full_panel()->build_section());
 
     // Viewport
     auto* sim = m_view->sim();
@@ -168,12 +183,18 @@ void AppData::save_session() {
     s.endGroup();
 
     s.beginGroup("Sun");
-    // Position
-    s.setValue("position_from_calculator",
-               m_sun->position()->from_calculator());
-    s.setValue("position_x", m_sun->position()->x());
-    s.setValue("position_y", m_sun->position()->y());
-    s.setValue("position_z", m_sun->position()->z());
+
+    // Sun Position
+
+    s.setValue("ds_from_calculator", m_sun->ds_position()->from_calculator());
+    s.setValue("ds_position_x", m_sun->ds_position()->x());
+    s.setValue("ds_position_y", m_sun->ds_position()->y());
+    s.setValue("ds_position_z", m_sun->ds_position()->z());
+
+    s.setValue("ps_from_calculator", m_sun->ps_position()->from_calculator());
+    s.setValue("ps_position_x", m_sun->ps_position()->x());
+    s.setValue("ps_position_y", m_sun->ps_position()->y());
+    s.setValue("ps_position_z", m_sun->ps_position()->z());
 
     s.setValue("type", static_cast<int>(m_sun->type()));
 

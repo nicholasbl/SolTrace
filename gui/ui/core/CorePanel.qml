@@ -60,7 +60,7 @@ Item {
         available_width: root.width
     }
 
-    SettingsPanel {
+    FullPanel {
         anchors.top: top_bar.bottom
         anchors.left: parent.left
         anchors.right: parent.right

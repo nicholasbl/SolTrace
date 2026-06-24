@@ -38,9 +38,9 @@ ShadowedGlassRectangle {
 
                 wideThreshold: 500
                 listWidth: 200
-                currentIndex: App.view.documentation_section
+                currentIndex: App.view.full_panel.settings_section
                 onCurrentIndexChanged: {
-                    App.view.documentation_section = currentIndex
+                   App.view.full_panel.settings_section = currentIndex
                 }
 
                 model: ListModel {
@@ -97,9 +97,9 @@ ShadowedGlassRectangle {
 
                 wideThreshold: 500
                 listWidth: 200
-                currentIndex: App.view.documentation_section
+                currentIndex: App.view.full_panel.docs_section
                 onCurrentIndexChanged: {
-                    App.view.documentation_section = currentIndex
+                    App.view.full_panel.docs_section = currentIndex
                 }
 
                 model: ListModel {
@@ -156,9 +156,9 @@ ShadowedGlassRectangle {
 
                 wideThreshold: 500
                 listWidth: 200
-                currentIndex: App.view.documentation_section
+                currentIndex: App.view.full_panel.build_section
                 onCurrentIndexChanged: {
-                    App.view.documentation_section = currentIndex
+                   App.view.full_panel.build_section = currentIndex
                 }
 
                 model: ListModel {

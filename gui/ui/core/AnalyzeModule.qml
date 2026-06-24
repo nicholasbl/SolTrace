@@ -9,7 +9,18 @@ import SolTrace
 ColumnLayout {
     id: root
 
-    STPipelineBar {
+    Label {
+        Layout.fillWidth: true
+        Layout.leftMargin: 10
+        Layout.rightMargin: 10
+        Layout.bottomMargin: 8
+
+        text: "Explore simulation results, inspect ray intersections, analyze flux distributions, and export data."
+        wrapMode: Text.WordWrap
+    }
+
+
+    STComboBar {
         id: bar
 
         currentIndex: Math.min(App.view.analyze_section, 3)
@@ -19,10 +30,8 @@ ColumnLayout {
 
         collapseLabels: App.view.left_panel.size === SplitPanelData.Small
 
-        prefixModel: ["4a", "4b", "4c", "4d"]
         iconModel: ["\uf03a", "\ue4bc", "\uf06d", "\uf019"]
         model: ["Results", "Intersections", "Flux", "Export"]
-
     }
 
     Rectangle {

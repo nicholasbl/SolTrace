@@ -24,6 +24,9 @@ public:
     Q_WRITABLE_PROPERTY(bool, visible, false)
     Q_WRITABLE_PROPERTY(bool, saved_visible, false)
     Q_WRITABLE_PROPERTY(FullPanelMode, mode, FullPanelMode::Settings)
+    Q_WRITABLE_PROPERTY(int, settings_section, 0)
+    Q_WRITABLE_PROPERTY(int, docs_section, 0)
+    Q_WRITABLE_PROPERTY(int, build_section, 0)
 
 public slots:
     void show();
@@ -148,9 +151,6 @@ public:
     Q_WRITABLE_PROPERTY(bool, editing_geometry, false)
     Q_WRITABLE_PROPERTY(bool, editing_layout, false)
     Q_WRITABLE_PROPERTY(bool, editing_appearance, false)
-
-    // Settings State
-    Q_WRITABLE_PROPERTY(int, documentation_section, 0)
 
     // Simulation State
     Q_WRITABLE_PROPERTY(bool, simulation_content_view, false)
