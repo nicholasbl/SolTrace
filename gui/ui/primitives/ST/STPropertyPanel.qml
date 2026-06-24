@@ -43,6 +43,7 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
+        anchors.bottom: parent.bottom
         anchors.margins: 10
 
         spacing: 10
@@ -86,6 +87,7 @@ Rectangle {
         GridLayout {
             id: layout
             Layout.fillWidth: true
+            Layout.fillHeight: true
 
             columns: root.columns
 

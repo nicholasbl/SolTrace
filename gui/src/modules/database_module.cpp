@@ -2,6 +2,8 @@
 #include "utilities/asynctask.h"
 #include "utilities/math_utility.h"
 
+#include <QCoreApplication>
+#include <QDir>
 #include <QtConcurrent/qtconcurrentrun.h>
 #include <QtCore/qfileinfo.h>
 #include <QtCore/qfuturewatcher.h>
@@ -27,7 +29,7 @@ load_file(QPromise<LoadResult>& result, QString fname, db::Database* new_db) {
         stage = "reading file";
         result.setProgressValueAndText(0, "Reading file...");
 
-        auto file = QFileInfo(fname);
+        auto file   = QFileInfo(fname);
         auto suffix = file.suffix().toLower();
         bool legacy_stinput_cylinder_origins =
             suffix == QStringLiteral("stinput") ||
@@ -45,14 +47,13 @@ load_file(QPromise<LoadResult>& result, QString fname, db::Database* new_db) {
 
         stage = "parsing file";
         if (!new_data->import_from_file(str)) {
-            result.emplaceResult(
-                LoadFileFailed(QString("Could not import the file: %1")
-                                   .arg(fname)));
+            result.emplaceResult(LoadFileFailed(
+                QString("Could not import the file: %1").arg(fname)));
             return;
         }
 
         if (result.isCanceled()) {
-            result.emplaceResult(LoadedFile {});
+            result.emplaceResult(LoadedFile { });
             return;
         }
 
@@ -67,7 +68,7 @@ load_file(QPromise<LoadResult>& result, QString fname, db::Database* new_db) {
         // We cannot store non-copy types into Qt types, sigh.
 
         if (result.isCanceled()) {
-            result.emplaceResult(LoadedFile {});
+            result.emplaceResult(LoadedFile { });
             return;
         }
 
@@ -81,32 +82,42 @@ load_file(QPromise<LoadResult>& result, QString fname, db::Database* new_db) {
                 .arg(fname, stage, QString::fromUtf8(e.what()))));
     } catch (...) {
         result.emplaceResult(LoadFileFailed(
-            QString("Could not load %1 while %2.")
-                .arg(fname, stage)));
+            QString("Could not load %1 while %2.").arg(fname, stage)));
     }
+}
+
+QUrl DatabaseModule::examples_folder() const {
+    QDir appDir(QCoreApplication::applicationDirPath());
+#ifdef Q_OS_MACOS
+    appDir.cdUp(); // Contents/
+    appDir.cd("Resources/examples");
+#else
+    appDir.cd("examples"); // Linux/Windows: alongside binary
+#endif
+    return QUrl::fromLocalFile(appDir.absolutePath());
 }
 
 void DatabaseModule::file_ready(QUrl, LoadResult result) {
 
-    std::visit(overloaded {
-                   [this](LoadedFile& arg) {
-                       if (!arg.ptr) {
-                           // Cancelled.
-                       } else {
-                           arg.ptr->setParent(this);
-                           this->store_push_append(DatabaseRecord {
-                               .database = arg.ptr,
-                           });
-                           this->notify(ANotification::info(
-                               QString("Loaded scene: %1")
-                                   .arg(arg.ptr->name())));
-                       }
-                   },
-                   [this](LoadFileFailed failure) {
-                       emit this->notify(failure.notification);
-                   },
-               },
-               result);
+    std::visit(
+        overloaded {
+            [this](LoadedFile& arg) {
+                if (!arg.ptr) {
+                    // Cancelled.
+                } else {
+                    arg.ptr->setParent(this);
+                    this->store_push_append(DatabaseRecord {
+                        .database = arg.ptr,
+                    });
+                    this->notify(ANotification::info(
+                        QString("Loaded scene: %1").arg(arg.ptr->name())));
+                }
+            },
+            [this](LoadFileFailed failure) {
+                emit this->notify(failure.notification);
+            },
+        },
+        result);
 
     set_is_loading(false);
 }
@@ -231,7 +242,7 @@ void DatabaseModule::delete_current() {
 }
 
 void DatabaseModule::append_new(QString new_name) {
-    load_url({}, new_name);
+    load_url({ }, new_name);
 }
 
 bool DatabaseModule::append_clone(db::SimulationResultPtr result) {
@@ -256,6 +267,12 @@ bool DatabaseModule::append_clone(db::SimulationResultPtr result) {
         QString("Created editable scene: %1").arg(clone_name)));
 
     return true;
+}
+
+QUrl DatabaseModule::default_example() const {
+    auto path =
+        examples_folder().toLocalFile() + "/" + m_default_example_filename;
+    return QUrl::fromLocalFile(path);
 }
 
 } // namespace SolTrace::GUI::App

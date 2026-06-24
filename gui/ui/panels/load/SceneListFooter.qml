@@ -23,6 +23,13 @@ RowLayout {
     }
 
     STIconButton {
+        enabled: !!AppData.file_source.current_database
+        text: "\uf0eb"
+        toolTip: "Load Example"
+        onClicked: file_controller.open_example()
+    }
+
+    STIconButton {
         enabled: !AppData.file_source.is_loading
         text: "\uf56f"
         toolTip: "Import Scene"

@@ -166,6 +166,21 @@ qt_add_qml_module(SolTrace
         QtQuick3D
 )
 
+# Add examples folder
+if(APPLE)
+    # Copies into .app/Contents/Resources/examples
+    file(GLOB EXAMPLE_FILES "${CMAKE_SOURCE_DIR}/gui/assets/examples/*")
+    set_source_files_properties(${EXAMPLE_FILES} PROPERTIES
+        MACOSX_PACKAGE_LOCATION "Resources/examples")
+    target_sources(SolTrace PRIVATE ${EXAMPLE_FILES})
+else()
+    # Copies alongside the binary
+    add_custom_command(TARGET SolTrace POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/gui/assets/examples"
+        "$<TARGET_FILE_DIR:SolTrace>/examples")
+endif()
+
 CPMAddPackage(
     NAME EnTT
     VERSION 3.16.0

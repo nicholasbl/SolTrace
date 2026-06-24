@@ -91,6 +91,10 @@ Node {
             Qt.vector3d(0, 0, 1)         // up (any vector not parallel to forward)
         )
 
+        Component.onCompleted: {
+            App.sun.update_position()
+        }
+
         // Ray arrows
         Repeater3D {
             model: parent.generatePositions()
@@ -119,6 +123,7 @@ Node {
                     roughness: 1
                     baseColor: App.view.sim.sun_color
                     }
+
                 }
             }
         }

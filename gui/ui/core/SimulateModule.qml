@@ -8,13 +8,24 @@ import SolTrace
 
 ColumnLayout {
     id: root
+    Layout.fillWidth: true
+
+    Label {
+        Layout.fillWidth: true
+        Layout.leftMargin: 10
+        Layout.rightMargin: 10
+        Layout.bottomMargin: 8
+
+        text: "Configure ray tracing parameters, run the simulation, and review diagnostic output."
+        wrapMode: Text.WordWrap
+    }
 
     STComboBar {
         id: bar
         currentIndex: AppData.view.simulate_section
         onCurrentIndexChanged: AppData.view.simulate_section = currentIndex
         Layout.fillWidth: true
-        collapseLabels: AppData.view.left_panel.size === PanelData.Small
+        collapseLabels: AppData.view.left_panel.size === SplitPanelData.Small
         model: ["Execution", "Diagnostics"]
         iconModel: ["\uf04b", "\uf188"]
     }
@@ -45,7 +56,7 @@ ColumnLayout {
 
             STButton {
                 text: "View Logs"
-                text_icon: ""
+                left_text_icon: ""
             }
 
             InlineDocumentation {
@@ -56,7 +67,7 @@ ColumnLayout {
 
             STButton {
                 text: "View Bounding Boxes"
-                text_icon: ""
+                left_text_icon: ""
             }
 
             InlineDocumentation {
@@ -67,7 +78,7 @@ ColumnLayout {
 
             STButton {
                 text: "View Element Volumes"
-                text_icon: ""
+                left_text_icon: ""
             }
         }
     }
@@ -105,7 +116,7 @@ ColumnLayout {
             Layout.columnSpan: 2
             Layout.fillWidth: true
             text: "Start Simulation"
-            text_icon: "\uf0da"
+            left_text_icon: "\uf0da"
             onClicked: {
                 AppData.simulation.run()
             }
@@ -125,4 +136,9 @@ ColumnLayout {
         }
     }
 
+    WorkflowStepper {
+        previous: "Configure Scene"
+        next: "Analyze Results"
+        currentIndex: ViewModule.Simulate
+    }
 }

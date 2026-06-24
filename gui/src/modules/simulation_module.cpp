@@ -142,7 +142,7 @@ void SimulationModule::run() {
     qDebug() << Q_FUNC_INFO;
     if (!m_current_database) {
         emit notify(ANotification::warning(
-            "Create or load a scene before running a simulation."));
+            "Create or Load Scene before running a simulation."));
         return;
     }
 

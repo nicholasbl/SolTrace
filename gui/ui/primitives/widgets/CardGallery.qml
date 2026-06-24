@@ -40,8 +40,10 @@ Flow {
                 Loader {
                     Layout.fillWidth: true
                     sourceComponent: root.delegate
-                    onLoaded: root.injectProperties(item, wrapper.index)
-                }
+                    onLoaded: {
+                        item.width = Qt.binding(() => width)
+                        root.injectProperties(item, wrapper.index)
+                    }                }
             }
 
             STIconButton {
@@ -68,7 +70,10 @@ Flow {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     sourceComponent: root.preview
-                    onLoaded: root.injectProperties(item, wrapper.index)
+                    onLoaded: {
+                        item.width = Qt.binding(() => width)
+                        root.injectProperties(item, wrapper.index)
+                    }
                 }
             }
         }
