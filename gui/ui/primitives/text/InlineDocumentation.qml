@@ -31,6 +31,8 @@ ColumnLayout {
 
         Layout.fillWidth: true
 
+        textFormat: Label.MarkdownText
+
         text: {
             App.docs.locale
             App.docs.version

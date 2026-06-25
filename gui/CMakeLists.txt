@@ -170,6 +170,7 @@ qt_add_qml_module(SolTrace
 if(APPLE)
     # Copies into .app/Contents/Resources/examples
     file(GLOB EXAMPLE_FILES "${CMAKE_SOURCE_DIR}/gui/assets/examples/*")
+    list(FILTER EXAMPLE_FILES EXCLUDE REGEX "/\\.DS_Store$")
     set_source_files_properties(${EXAMPLE_FILES} PROPERTIES
         MACOSX_PACKAGE_LOCATION "Resources/examples")
     target_sources(SolTrace PRIVATE ${EXAMPLE_FILES})
@@ -260,7 +261,6 @@ install(TARGETS SolTrace
 )
 
 install(DIRECTORY
-    "${CMAKE_CURRENT_SOURCE_DIR}/assets/examples"
     "${CMAKE_CURRENT_SOURCE_DIR}/assets/scripts"
     DESTINATION "${CMAKE_INSTALL_DATADIR}/SolTrace/assets"
     PATTERN ".DS_Store" EXCLUDE

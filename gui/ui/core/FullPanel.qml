@@ -203,7 +203,7 @@ ShadowedGlassRectangle {
 
                     FeaturePanel {}
 
-                    BuildInfoModule {}
+                    BInfoModule {}
 
                     LogSettings {}
 
