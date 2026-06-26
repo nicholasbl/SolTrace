@@ -25,7 +25,12 @@ namespace OptixCSP
             QUADRILATERAL_FLAT = 6,
             CIRCLE_FLAT = 7,
             HEXAGON_FLAT = 8,
-	    ANNULUS_FLAT = 9
+            ANNULUS_FLAT = 9,
+            CIRCLE_PARABOLIC = 10,
+            HEXAGON_PARABOLIC = 11,
+            TRIANGLE_PARABOLIC = 12,
+            ANNULUS_PARABOLIC = 13,
+            QUADRILATERAL_PARABOLIC = 14
         };
 
         struct Parallelogram
@@ -40,10 +45,10 @@ namespace OptixCSP
                 this->v2 *= 1.0f / dot(v2, v2);
                 plane = make_float4(normal, d);
             }
-            float4 plane;
-            float3 v1;
-            float3 v2;
-            float3 anchor;
+            float4 plane;  // plane equation: (normal, dot(anchor, normal))
+            float3 v1;     // edge vector 1, stored as v1/dot(v1,v1)
+            float3 v2;     // edge vector 2, stored as v2/dot(v2,v2)
+            float3 anchor; // corner point of the parallelogram
         };
 
         // same as parallelogram, however defined with different attributes
@@ -58,12 +63,12 @@ namespace OptixCSP
                 plane = make_float4(normal, d);
             }
 
-            float4 plane;
-            float3 center;
-            float3 x;
-            float3 y;
-            float width;
-            float height;
+            float4 plane;  // normal unit vector, dot(center, normal)
+            float3 center; // center in global coordinates
+            float3 x;      // local x axis unit vector
+            float3 y;      // local y axis unit vector
+            float width;   // full width along x
+            float height;  // full height along y
         };
 
         struct Cylinder_Y
@@ -75,11 +80,11 @@ namespace OptixCSP
                 assert(dot(base_x, base_z) < 1e-3f);
             }
 
-            float3 center;
-            float radius;
-            float half_height;
-            float3 base_x; // x axis of the cylinder
-            float3 base_z; // z axis of the cylinder
+            float3 center;     // center of the cylinder in global coordinates
+            float radius;      // radius
+            float half_height; // half the height along the local y axis
+            float3 base_x;     // x axis of the cylinder
+            float3 base_z;     // z axis of the cylinder
         };
 
         struct Rectangle_Parabolic
@@ -96,13 +101,13 @@ namespace OptixCSP
                 plane = make_float4(normal, d);
             }
 
-            float4 plane;
-            float3 v1;
-            float3 v2;
-            float3 anchor;
+            float4 plane;  // plane equation of the base rectangle: (normal, dot(anchor, normal))
+            float3 v1;     // edge vector 1, stored as v1/dot(v1,v1)
+            float3 v2;     // edge vector 2, stored as v2/dot(v2,v2)
+            float3 anchor; // corner point of the base rectangle
             // float3 focus;
-            float curv_x;
-            float curv_y;
+            float curv_x; // curvature along local x axis
+            float curv_y; // curvature along local y axis
         };
 
         struct Triangle_Flat
@@ -116,8 +121,8 @@ namespace OptixCSP
             }
             float3 v0;     // base vertex
             float3 e1, e2; // edges
-            float3 normal;
-            float d; // plane distance
+            float3 normal; // normal unit vector
+            float d;       // plane distance
         };
 
         struct Quadrilateral_Flat
@@ -142,40 +147,169 @@ namespace OptixCSP
             Circle_Flat(const float3 &origin, const float3 &normal, const float &radius)
                 : r(radius), center(origin)
             {
-                plane = make_float4(normalize(normal), dot(center, normal));
+                const float3 n = normalize(normal);
+                plane = make_float4(n, dot(center, n));
             }
-            float4 plane;
-            float3 center;
-            float r;
+            float4 plane;  // normal unit vector, dot(center, normal)
+            float3 center; // local origin in global coordinates
+            float r;       // radius
         };
 
         struct Hexagon_Flat
         {
             Hexagon_Flat() = default;
-            Hexagon_Flat(const float3 &origin, const float3 &normal, const float &side_length)
-                : s(side_length), center(origin)
+            Hexagon_Flat(const float3 &origin, const float3 &normal,
+                         const float3 &x_ax, const float3 &y_ax,
+                         const float &side_length)
+                : center(origin), x_axis(x_ax), y_axis(y_ax), s(side_length)
             {
-                plane = make_float4(normalize(normal), dot(center, normal));
+                const float3 n = normalize(normal);
+                plane = make_float4(n, dot(center, n));
             }
-            float4 plane;
-            float3 center;
-            float s;
+            float4 plane;  // normal unit vector, dot(center, normal)
+            float3 center; // local origin in global coordinates
+            float3 x_axis; // unit vector
+            float3 y_axis; // unit vector
+            float s;       // side length
         };
 
         struct Annulus_Flat
         {
             Annulus_Flat() = default;
             Annulus_Flat(const float3 &origin, const float3 &normal,
-                         const float &r_inner, const float &r_outer, const float &arc)
-	      : center(origin), ri(r_inner), ro(r_outer), arc(arc)
+                         const float3 &x_ax, const float3 &y_ax,
+                         const float &r_inner, const float &r_outer,
+                         const float &arc)
+                : center(origin), x_axis(x_ax), y_axis(y_ax),
+                  ri(r_inner), ro(r_outer), arc(arc)
             {
-                plane = make_float4(normalize(normal), dot(center, normal));
+                const float3 n = normalize(normal);
+                plane = make_float4(n, dot(center, n));
             }
-            float4 plane;
+            float4 plane;  // normal unit vector, dot(center, normal)
+            float3 center; // local origin in global coordinates
+            float3 x_axis; // local x axis unit vector (arc is centered about this axis)
+            float3 y_axis; // local y axis unit vector
+            float ri;      // inner radius
+            float ro;      // outer radius
+            float arc;     // total arc angle in radians, centered on x_axis
+        };
+
+        struct Circle_Parabolic
+        {
+            Circle_Parabolic() = default;
+            Circle_Parabolic(const float3 &origin, const float3 &x_ax, const float3 &y_ax,
+                             const float &curv_x, const float &curv_y, const float &r)
+                : center(origin), x_axis(x_ax), y_axis(y_ax),
+                  cx(curv_x), cy(curv_y), radius(r)
+            {
+            }
             float3 center;
+            float3 x_axis;
+            float3 y_axis;
+            float cx;
+            float cy;
+            float radius;
+        };
+
+        struct Hexagon_Parabolic
+        {
+            Hexagon_Parabolic() = default;
+            Hexagon_Parabolic(const float3 &origin, const float3 &x_ax, const float3 &y_ax,
+                              const float &curv_x, const float &curv_y, const float &side_len)
+                : center(origin), x_axis(x_ax), y_axis(y_ax),
+                  cx(curv_x), cy(curv_y), s(side_len)
+            {
+            }
+            float3 center;
+            float3 x_axis;
+            float3 y_axis;
+            float cx;
+            float cy;
+            float s;
+        };
+
+        struct Triangle_Parabolic
+        {
+            Triangle_Parabolic() = default;
+            // Vertices v0, v1, v2 are in the local XY aperture frame.
+            // The constructor precomputes the barycentric inverse transform so
+            // the aperture test reduces to two dot products with no per-ray division.
+            Triangle_Parabolic(const float3 &origin, const float3 &x_ax, const float3 &y_ax,
+                               const float &curv_x, const float &curv_y,
+                               const float2 &v0, const float2 &v1, const float2 &v2)
+                : center(origin), x_axis(x_ax), y_axis(y_ax),
+                  cx(curv_x), cy(curv_y)
+            {
+                const float2 e1 = make_float2(v1.x - v0.x, v1.y - v0.y);
+                const float2 e2 = make_float2(v2.x - v0.x, v2.y - v0.y);
+                const float inv_det = 1.0f / (e1.x * e2.y - e1.y * e2.x);
+                // u = dot(utest, float3(px, py, 1.0f))
+                utest = make_float3(e2.y, -e2.x, v0.y * e2.x - v0.x * e2.y) * inv_det;
+                // v = dot(vtest, float3(px, py, 1.0f))
+                vtest = make_float3(-e1.y, e1.x, v0.x * e1.y - v0.y * e1.x) * inv_det;
+            }
+            float3 center; // element origin in global coordinates
+            float3 x_axis; // local x axis unit vector
+            float3 y_axis; // local y axis unit vector
+            float cx;      // curvature along local x axis
+            float cy;      // curvature along local y axis
+            float3 utest;  // precomputed row: u = dot(utest, float3(px, py, 1.0f))
+            float3 vtest;  // precomputed row: v = dot(vtest, float3(px, py, 1.0f))
+        };
+
+        struct Annulus_Parabolic
+        {
+            Annulus_Parabolic() = default;
+            Annulus_Parabolic(const float3 &origin, const float3 &x_ax, const float3 &y_ax,
+                              const float &curv_x, const float &curv_y,
+                              const float &r_inner, const float &r_outer, const float &arc)
+                : center(origin), x_axis(x_ax), y_axis(y_ax),
+                  cx(curv_x), cy(curv_y),
+                  ri(r_inner), ro(r_outer), arc(arc)
+            {
+            }
+            float3 center;
+            float3 x_axis;
+            float3 y_axis;
+            float cx;
+            float cy;
             float ri;
             float ro;
-	  float arc; // Arc angle in radians with x-axis in the middle
+            float arc; // in radians
+        };
+
+        struct Quadrilateral_Parabolic
+        {
+            Quadrilateral_Parabolic() = default;
+            Quadrilateral_Parabolic(const float3 &origin, const float3 &x_ax, const float3 &y_ax,
+                                    const float &curv_x, const float &curv_y,
+                                    const float2 &v0, const float2 &v1,
+                                    const float2 &v2, const float2 &v3)
+                : center(origin), x_axis(x_ax), y_axis(y_ax), cx(curv_x), cy(curv_y)
+            {
+                const float2 e1 = make_float2(v1.x - v0.x, v1.y - v0.y);
+                const float2 e2 = make_float2(v2.x - v0.x, v2.y - v0.y);
+                const float inv_det = 1.0f / (e1.x * e2.y - e1.y * e2.x);
+                // u = dot(utest, float3(px, py, 1.0f))
+                u1test = make_float3(e2.y, -e2.x, v0.y * e2.x - v0.x * e2.y) * inv_det;
+                // v = dot(vtest, float3(px, py, 1.0f))
+                v1test = make_float3(-e1.y, e1.x, v0.x * e1.y - v0.y * e1.x) * inv_det;
+
+                const float2 e3 = make_float2(v3.x - v0.x, v3.y - v0.y);
+                const float inv_det2 = 1.0f / (e2.x * e3.y - e2.y * e3.x);
+                u2test = make_float3(e3.y, -e3.x, v0.y * e3.x - v0.x * e3.y) * inv_det2;
+                v2test = make_float3(-e2.y, e2.x, v0.x * e2.y - v0.y * e2.x) * inv_det2;
+            }
+            float3 center; // element origin in global coordinates
+            float3 x_axis; // local x axis unit vector
+            float3 y_axis; // local y axis unit vector
+            float cx;      // curvature along local x axis
+            float cy;      // curvature along local y axis
+            float3 u1test;  // precomputed row: u = dot(utest, float3(px, py, 1.0f))
+            float3 v1test;  // precomputed row: v = dot(vtest, float3(px, py, 1.0f))
+            float3 u2test;
+            float3 v2test;
         };
 
         GeometryDataST() = default;
@@ -297,6 +431,71 @@ namespace OptixCSP
             return annulus_flat;
         }
 
+        void setCircle_Parabolic(const Circle_Parabolic &circp)
+        {
+            assert(type == UNKNOWN_TYPE);
+            type = CIRCLE_PARABOLIC;
+            circle_parabolic = circp;
+        }
+
+        __host__ __device__ const Circle_Parabolic &getCircle_Parabolic() const
+        {
+            assert(type == CIRCLE_PARABOLIC);
+            return circle_parabolic;
+        }
+
+        void setHexagon_Parabolic(const Hexagon_Parabolic &hexp)
+        {
+            assert(type == UNKNOWN_TYPE);
+            type = HEXAGON_PARABOLIC;
+            hexagon_parabolic = hexp;
+        }
+
+        __host__ __device__ const Hexagon_Parabolic &getHexagon_Parabolic() const
+        {
+            assert(type == HEXAGON_PARABOLIC);
+            return hexagon_parabolic;
+        }
+
+        void setTriangle_Parabolic(const Triangle_Parabolic &tp)
+        {
+            assert(type == UNKNOWN_TYPE);
+            type = TRIANGLE_PARABOLIC;
+            triangle_parabolic = tp;
+        }
+
+        __host__ __device__ const Triangle_Parabolic &getTriangle_Parabolic() const
+        {
+            assert(type == TRIANGLE_PARABOLIC);
+            return triangle_parabolic;
+        }
+
+        void setAnnulus_Parabolic(const Annulus_Parabolic &ap)
+        {
+            assert(type == UNKNOWN_TYPE);
+            type = ANNULUS_PARABOLIC;
+            annulus_parabolic = ap;
+        }
+
+        __host__ __device__ const Annulus_Parabolic &getAnnulus_Parabolic() const
+        {
+            assert(type == ANNULUS_PARABOLIC);
+            return annulus_parabolic;
+        }
+
+        void setQuadrilateral_Parabolic(const Quadrilateral_Parabolic &qp)
+        {
+            assert(type == UNKNOWN_TYPE);
+            type = QUADRILATERAL_PARABOLIC;
+            quadrilateral_parabolic = qp;
+        }
+
+        __host__ __device__ const Quadrilateral_Parabolic &getQuadrilateral_Parabolic() const
+        {
+            assert(type == QUADRILATERAL_PARABOLIC);
+            return quadrilateral_parabolic;
+        }
+
         Type type = UNKNOWN_TYPE;
 
         int32_t id = OptixCSP::kElementIdUnassigned;
@@ -313,6 +512,11 @@ namespace OptixCSP
             Circle_Flat circle_flat;
             Hexagon_Flat hexagon_flat;
             Annulus_Flat annulus_flat;
+            Circle_Parabolic circle_parabolic;
+            Hexagon_Parabolic hexagon_parabolic;
+            Triangle_Parabolic triangle_parabolic;
+            Annulus_Parabolic annulus_parabolic;
+            Quadrilateral_Parabolic quadrilateral_parabolic;
         };
     };
 }

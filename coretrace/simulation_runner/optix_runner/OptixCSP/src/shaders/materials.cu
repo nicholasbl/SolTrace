@@ -58,7 +58,7 @@ extern "C" __device__ __inline__ float3 orthonormal_vector(float3 v)
         // w = make_float3(0.0f, 1.0f, 0.0f);
         // u = cross(v, w);
         u = make_float3(-v.z, 0.0f, v.x);
-    }    
+    }
     return normalize(u);
 }
 
@@ -104,10 +104,13 @@ extern "C" __global__ void __closesthit__element()
     const bool optical_errors = params.optical_errors;
 
     // Fetch the normal vector from the hit attributes passed by OptiX
-    float3 object_normal = make_float3(__uint_as_float(optixGetAttribute_0()), __uint_as_float(optixGetAttribute_1()),
+    float3 object_normal = make_float3(__uint_as_float(optixGetAttribute_0()),
+                                       __uint_as_float(optixGetAttribute_1()),
                                        __uint_as_float(optixGetAttribute_2()));
-    // Transform the object-space normal to world space using OptiX built-in function
-    float3 world_normal = normalize(optixTransformNormalFromObjectToWorldSpace(object_normal));
+    // // Transform the object-space normal to world space using OptiX built-in function
+    // float3 world_normal = normalize(optixTransformNormalFromObjectToWorldSpace(object_normal));
+    // All reports from the intersection functions are in world coordinates
+    float3 world_normal = normalize(object_normal);
 
     // Compute the facing normal, which handles the direction of the normal based on the incoming ray direction
     const float3 ray_dir = optixGetWorldRayDirection();
@@ -140,8 +143,8 @@ extern "C" __global__ void __closesthit__element()
     const float transmissivity = material.transmissivity;
     const bool use_transmissivity = material.use_refraction;
     const float reflectivity = material.reflectivity;
-    const float normal_sigma = 1e-3f * material.slope_error;        // Convert mrad to rad
-    const float spec_sigma = 1e-3f * material.specularity_error;    // Convert mrad to rad
+    const float normal_sigma = 1e-3f * material.slope_error;     // Convert mrad to rad
+    const float spec_sigma = 1e-3f * material.specularity_error; // Convert mrad to rad
     const uint8_t error_type = material.optical_dist;
 
     // Surface normal (macro-surface) errors
@@ -288,7 +291,7 @@ extern "C" __global__ void __closesthit__element()
     else if (!absorbed)
     {
         // Ray hit an element but max depth was reached; count it (absorption at this depth does not count).
-        atomicAdd(reinterpret_cast<unsigned long long*>(params.d_depth_exceeded_count), 1ULL);
+        atomicAdd(reinterpret_cast<unsigned long long *>(params.d_depth_exceeded_count), 1ULL);
     }
 
     setPayload(prd);

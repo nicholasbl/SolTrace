@@ -46,6 +46,10 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
             {
                 sbt_offset = static_cast<uint32_t>(OpticalEntityType::ANNULUS_FLAT);
             }
+            else if (element->get_surface_type() == SurfaceType::PARABOLIC)
+            {
+                sbt_offset = static_cast<uint32_t>(OpticalEntityType::ANNULUS_PARABOLIC);
+            }
             else
             {
                 std::stringstream ss;
@@ -63,6 +67,10 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
             {
                 sbt_offset = static_cast<uint32_t>(OpticalEntityType::CIRCLE_FLAT);
             }
+            else if (element->get_surface_type() == SurfaceType::PARABOLIC)
+            {
+                sbt_offset = static_cast<uint32_t>(OpticalEntityType::CIRCLE_PARABOLIC);
+            }
             else
             {
                 std::stringstream ss;
@@ -79,6 +87,10 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
             if (element->get_surface_type() == SurfaceType::FLAT)
             {
                 sbt_offset = static_cast<uint32_t>(OpticalEntityType::HEXAGON_FLAT);
+            }
+            else if (element->get_surface_type() == SurfaceType::PARABOLIC)
+            {
+                sbt_offset = static_cast<uint32_t>(OpticalEntityType::HEXAGON_PARABOLIC);
             }
             else
             {
@@ -122,6 +134,10 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
             {
                 sbt_offset = static_cast<uint32_t>(OpticalEntityType::TRIANGLE_FLAT);
             }
+            else if (element->get_surface_type() == SurfaceType::PARABOLIC)
+            {
+                sbt_offset = static_cast<uint32_t>(OpticalEntityType::TRIANGLE_PARABOLIC);
+            }
             else
             {
                 std::stringstream ss;
@@ -138,6 +154,10 @@ void GeometryManager::collect_geometry_info(const std::vector<std::shared_ptr<Cs
             if (element->get_surface_type() == SurfaceType::FLAT)
             {
                 sbt_offset = static_cast<uint32_t>(OpticalEntityType::QUADRILATERAL_FLAT);
+            }
+            else if (element->get_surface_type() == SurfaceType::PARABOLIC)
+            {
+                sbt_offset = static_cast<uint32_t>(OpticalEntityType::QUADRILATERAL_PARABOLIC);
             }
             else
             {

@@ -707,7 +707,15 @@ namespace SolTrace::Data
 
     struct IrregularQuadrilateral : public Aperture
     {
-        // Locations of the 4 vertices
+        // Locations of the 4 vertices.
+        //
+        // The quadrilateral must be a SIMPLE (non-self-intersecting) polygon.
+        // The vertices may be supplied in any order; the constructors call
+        // ensure_valid_diagonal() to ensure the x1-x3 diagonal is interior.
+         // If the supplied order is self-intersecting ("bowtie"), ensure_valid_diagonal()
+         // re-sorts the points into a simple traversal (typically CCW). All
+         // triangle-decomposition logic (inquad, the flat and parabolic intersection
+         // kernels) depends on this diagonal being interior.
         double x1;
         double y1;
         double x2;
@@ -784,6 +792,16 @@ namespace SolTrace::Data
          */
         virtual std::tuple<std::vector<double>, std::vector<int>>
         triangulation() const override;
+
+        /**
+         * @brief Ensure the x1-x3 diagonal is interior to the quadrilateral.
+         * All runners decompose the quad into triangles (x1,x2,x3) and
+         * (x1,x3,x4) along this diagonal. If x2 and x4 lie on the same side
+         * of the x1-x3 line the diagonal is exterior and the decomposition
+         * is incorrect; swapping x2<->x4 moves the reflex vertex onto the
+         * shared diagonal endpoints and makes x1-x3 interior.
+         */
+        void ensure_valid_diagonal();
     };
 
     /**

@@ -345,9 +345,18 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 auto el_aperture = std::dynamic_pointer_cast<IrregularTriangle>(el->get_aperture());
                 assert(el_aperture != nullptr);
 
+
                 OptixCSP::Vec3d p0(el_aperture->x1, el_aperture->y1, 0.0);
                 OptixCSP::Vec3d p1(el_aperture->x2, el_aperture->y2, 0.0);
                 OptixCSP::Vec3d p2(el_aperture->x3, el_aperture->y3, 0.0);
+
+                // Ensure CCW winding (right-hand rule) required by ApertureTriangle
+                // Aperture always lies in x-y-plane with positive z-axis corresponding to
+                // the front of the geometric element so CCW winding always gives the front
+                // of the element.
+                const double signed_area = (p1[0] - p0[0]) * (p2[1] - p0[1]) - (p1[1] - p0[1]) * (p2[0] - p0[0]);
+                if (signed_area < 0.0)
+                    std::swap(p1, p2);
 
                 auto aperture = std::make_shared<OptixCSP::ApertureTriangle>(p0, p1, p2);
                 optix_el->set_aperture(aperture);
@@ -363,6 +372,16 @@ RunnerStatus OptixRunner::setup_elements(const SimulationData *data)
                 OptixCSP::Vec3d p1(el_aperture->x2, el_aperture->y2, 0.0);
                 OptixCSP::Vec3d p2(el_aperture->x3, el_aperture->y3, 0.0);
                 OptixCSP::Vec3d p3(el_aperture->x4, el_aperture->y4, 0.0);
+
+                // Ensure CCW winding using the shoelace signed-area formula.
+                // For a simple (non-self-intersecting) quad the sign of 2*A tells
+                // the winding without decomposing into triangles.
+                const double signed_area2 = (p0[0] * p1[1] - p1[0] * p0[1])
+                                          + (p1[0] * p2[1] - p2[0] * p1[1])
+                                          + (p2[0] * p3[1] - p3[0] * p2[1])
+                                          + (p3[0] * p0[1] - p0[0] * p3[1]);
+                if (signed_area2 < 0.0)
+                    std::swap(p1, p3); // reverse winding, keeping p0 and p2 fixed
 
                 auto aperture = std::make_shared<OptixCSP::ApertureQuadrilateral>(p0, p1, p2, p3);
                 optix_el->set_aperture(aperture);

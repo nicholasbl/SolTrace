@@ -6,6 +6,9 @@
 
 #include "common.hpp"
 
+#include <array>
+#include <utility>
+
 // Bounding box test helper functions
 std::vector<double> generate_grid(double a, double b, uint_fast64_t npoints)
 {
@@ -598,6 +601,93 @@ TEST(Aperture, IrregularQuadrilateral)
     std::cout << "Number of hits outside of bounding box: " << nhit_out << std::endl;
     std::cout << "Number of hits inside bounding box: " << nhit_in << std::endl;
     std::cout << "Expected fraction of hits: " << frac << std::endl;
+}
+
+TEST(Aperture, IrregularQuadrilateral_VertexOrder)
+{
+    // Verify that the same parallelogram described with four different vertex
+    // orderings — CCW, CW (reverse), a cyclic rotation, and a self-intersecting
+    // "bowtie" ordering — all produce identical area and is_in results after
+    // ensure_valid_diagonal() normalises the representation.
+    //
+    // Canonical CCW vertices: (0,0) -> (3,0) -> (4,2) -> (1,2)
+    const double TOL = 1e-12;
+    const double AREA = 6.0; // parallelogram: base 3 * height 2
+    // One interior and one exterior point, chosen away from edges.
+    const double IX = 2.5, IY = 1.0; // clearly inside
+    const double OX = 4.5, OY = 1.0; // clearly outside
+
+    // Helper: extract the four normalised vertices as an array of (x,y) pairs.
+    using V4 = std::array<std::pair<double,double>, 4>;
+    auto get_verts = [](const aperture_ptr &ap) -> V4 {
+        const auto *q = dynamic_cast<const IrregularQuadrilateral *>(ap.get());
+        return {{ {q->x1,q->y1}, {q->x2,q->y2}, {q->x3,q->y3}, {q->x4,q->y4} }};
+    };
+    // Returns true when both arrays contain the same four (x,y) pairs (any order).
+    auto same_vertex_set = [&](const V4 &a, const V4 &b) -> bool {
+        for (const auto &va : a) {
+            bool found = false;
+            for (const auto &vb : b)
+                if (std::abs(va.first - vb.first) < TOL &&
+                    std::abs(va.second - vb.second) < TOL)
+                { found = true; break; }
+            if (!found) return false;
+        }
+        return true;
+    };
+    // Returns true when the x1-x3 diagonal of q is interior to the quad,
+    // i.e. x2 and x4 are on strictly opposite sides of the x1-x3 line.
+    auto diagonal_interior = [&](const aperture_ptr &ap) -> bool {
+        const auto *q = dynamic_cast<const IrregularQuadrilateral *>(ap.get());
+        const double ex = q->x3 - q->x1, ey = q->y3 - q->y1;
+        const double d2 = ex * (q->y2 - q->y1) - ey * (q->x2 - q->x1);
+        const double d4 = ex * (q->y4 - q->y1) - ey * (q->x4 - q->x1);
+        return d2 * d4 < 0.0;
+    };
+
+    // 1) CCW (canonical)
+    auto q_ccw = make_aperture<IrregularQuadrilateral>(
+        0.0, 0.0,  3.0, 0.0,  4.0, 2.0,  1.0, 2.0);
+    EXPECT_NEAR(q_ccw->aperture_area(), AREA, TOL) << "CCW area";
+    EXPECT_TRUE( q_ccw->is_in(IX, IY)) << "CCW inside";
+    EXPECT_FALSE(q_ccw->is_in(OX, OY)) << "CCW outside";
+    EXPECT_TRUE(diagonal_interior(q_ccw)) << "CCW diagonal interior";
+    const V4 canonical = get_verts(q_ccw);
+
+    // 2) CW (full reversal): (0,0) -> (1,2) -> (4,2) -> (3,0)
+    // The x1-x3 diagonal (0,0)-(4,2) is already interior for this ordering,
+    // so ensure_valid_diagonal() is a no-op and the vertices stay CW.
+    auto q_cw = make_aperture<IrregularQuadrilateral>(
+        0.0, 0.0,  1.0, 2.0,  4.0, 2.0,  3.0, 0.0);
+    EXPECT_NEAR(q_cw->aperture_area(), AREA, TOL) << "CW area";
+    EXPECT_TRUE( q_cw->is_in(IX, IY)) << "CW inside";
+    EXPECT_FALSE(q_cw->is_in(OX, OY)) << "CW outside";
+    EXPECT_TRUE(diagonal_interior(q_cw)) << "CW diagonal interior";
+    EXPECT_TRUE(same_vertex_set(canonical, get_verts(q_cw))) << "CW vertex set";
+
+    // 3) Cyclic rotation of CCW: start from (3,0)
+    //    (3,0) -> (4,2) -> (1,2) -> (0,0)
+    // The x1-x3 diagonal (3,0)-(1,2) is interior, so ensure_valid_diagonal()
+    // is again a no-op.
+    auto q_rot = make_aperture<IrregularQuadrilateral>(
+        3.0, 0.0,  4.0, 2.0,  1.0, 2.0,  0.0, 0.0);
+    EXPECT_NEAR(q_rot->aperture_area(), AREA, TOL) << "rotated area";
+    EXPECT_TRUE( q_rot->is_in(IX, IY)) << "rotated inside";
+    EXPECT_FALSE(q_rot->is_in(OX, OY)) << "rotated outside";
+    EXPECT_TRUE(diagonal_interior(q_rot)) << "rotated diagonal interior";
+    EXPECT_TRUE(same_vertex_set(canonical, get_verts(q_rot))) << "rotated vertex set";
+
+    // 4) Self-intersecting "bowtie" order: (0,0) -> (4,2) -> (3,0) -> (1,2)
+    //    The x1-x3 diagonal test fails (same-sign cross products), so
+    //    ensure_valid_diagonal() angle-sorts and cyclic-shifts to recover a
+    //    valid simple polygon with an interior x1-x3 diagonal.
+    auto q_bowtie = make_aperture<IrregularQuadrilateral>(
+        0.0, 0.0,  4.0, 2.0,  3.0, 0.0,  1.0, 2.0);
+    EXPECT_NEAR(q_bowtie->aperture_area(), AREA, TOL) << "bowtie area";
+    EXPECT_TRUE( q_bowtie->is_in(IX, IY)) << "bowtie inside";
+    EXPECT_FALSE(q_bowtie->is_in(OX, OY)) << "bowtie outside";
+    EXPECT_TRUE(diagonal_interior(q_bowtie)) << "bowtie diagonal interior";
+    EXPECT_TRUE(same_vertex_set(canonical, get_verts(q_bowtie))) << "bowtie vertex set";
 }
 
 TEST(Aperture, MakeApertureFromType)
