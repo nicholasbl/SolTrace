@@ -4,10 +4,10 @@ namespace SolTrace::GUI::App {
 
 ViewModule::ViewModule(QObject* parent)
     : QObject { parent },
-      m_left_panel(new SplitPanelData()),
-      m_right_panel(new SplitPanelData()),
-      m_full_panel(new FullPanelData()),
-      m_sim(new SimulationViewState()) { }
+      m_left_panel(new SplitPanelData(this)),
+      m_right_panel(new SplitPanelData(this)),
+      m_full_panel(new FullPanelData(this)),
+      m_sim(new SimulationViewState(this)) { }
 
 void SplitPanelData::update_size() {
     PanelSize new_size;

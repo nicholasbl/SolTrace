@@ -90,6 +90,9 @@ public:
 
     enum class SkyType { Day, Blueprint, Adaptive };
 
+    explicit SimulationViewState(QObject* parent = nullptr)
+        : QObject(parent) { }
+
     Q_ENUM(Camera)
     Q_ENUM(Perspective)
     Q_ENUM(SkyType)

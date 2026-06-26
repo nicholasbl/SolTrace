@@ -21,8 +21,8 @@ struct DatabaseRecord {
 
 struct LoadedFile {
     // TODO: Store this in the DB
-    QString       provenance = { };
-    db::Database* ptr        = nullptr;
+    QString                       provenance = {};
+    std::unique_ptr<db::Database> ptr;
 };
 
 struct LoadFileFailed {
@@ -32,7 +32,7 @@ struct LoadFileFailed {
         : notification(ANotification::error(message)) { }
 };
 
-using LoadResult = std::variant<LoadedFile, LoadFileFailed>;
+// using LoadResult = std::variant<LoadedFile, LoadFileFailed>;
 
 class DatabaseModule : public StructModelAdapter<DatabaseRecord> {
     Q_OBJECT
@@ -50,8 +50,8 @@ class DatabaseModule : public StructModelAdapter<DatabaseRecord> {
 
     Q_WRITABLE_PROPERTY(bool, is_loading, false)
 
-    void file_ready(QUrl, LoadResult);
-    void file_failed(QUrl, QString);
+    void file_ready(QUrl, LoadedFile);
+    void file_failed(QUrl, LoadFileFailed);
 
 public:
     DatabaseModule(QObject* parent = nullptr);

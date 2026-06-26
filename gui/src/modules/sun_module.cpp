@@ -69,11 +69,11 @@ points_from_user_data(std::vector<double> const& angles,
 
 SunModule::SunModule(QObject* parent)
     : QObject(parent),
-      m_status(new StatusComponent()),
-      m_shape(new SunShape()),
-      m_ps_position(new SolarPositionData()),
-      m_ds_position(new SolarPositionData()),
-      m_calc_data(new SolarCalculatorData())
+      m_status(new StatusComponent(this)),
+      m_shape(new SunShape(this)),
+      m_ps_position(new SolarPositionData(this)),
+      m_ds_position(new SolarPositionData(this)),
+      m_calc_data(new SolarCalculatorData(this))
 
 {
     connect(m_shape, &SunShape::changed, this, &SunModule::update_shape);
@@ -363,8 +363,8 @@ QString SunModule::apply_calculator(int    calculator,
 
 SunShape::SunShape(QObject* parent)
     : QObject(parent),
-      m_generated_distribution(new SunShapeModel()),
-      m_custom_distribution(new SunShapeModel()) {
+      m_generated_distribution(new SunShapeModel(this)),
+      m_custom_distribution(new SunShapeModel(this)) {
 
     // SunShape::shape_changed() -> SunShape::update_current_distribution()
     connect(this,
