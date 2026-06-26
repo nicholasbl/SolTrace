@@ -22,12 +22,6 @@ ColumnLayout {
         Layout.fillHeight: true
     }
 
-    Rectangle {
-        Layout.fillWidth: true
-        height: 1
-        color: Material.dividerColor
-    }
-
     WorkflowStepper {
         previous: "Get Started"
         next: "Configure Scene"

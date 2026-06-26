@@ -175,6 +175,14 @@ Input: shape object may contain shape, sigma, half_width, csr, and user_distribu
 
 Example: db.set_sun_shape({ shape: "gaussian", sigma: 2.8 })
 ---
+get_all_elements
+
+Obtain all scene elements.
+
+Inputs: none. Output: array of Entity handles for all entities with an ElementComponent. Use get_identity, get_transform, get_material_of, and get_geometry_of to inspect each element.
+
+Example: const elements = db.get_all_elements()
+---
 create
 
 Create a new CSP element. Requires geometry and material to be useful.

@@ -50,6 +50,7 @@ public slots:
     void        set_sun_position(QJsonValue position);
     void        set_sun_shape(QJsonObject shape);
 
+    QVector<db::Entity> get_all_elements();
     db::Entity create();
     void       destroy(db::Entity entity);
     bool       valid(db::Entity entity);

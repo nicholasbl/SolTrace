@@ -180,6 +180,7 @@ public slots:
 
     void run();
     void notify_error(QString message);
+    QString api_markdown();
 
 signals:
     void notify(ANotification);

@@ -631,6 +631,11 @@ void ScriptDBInterface::set_sun_shape(QJsonObject object) {
     }
 }
 
+QVector<db::Entity> ScriptDBInterface::get_all_elements() {
+    if (!m_database) return {};
+    return collect_entities<db::ElementComponent>(m_database->as_registry());
+}
+
 db::Entity ScriptDBInterface::create() {
     if (!m_database) return {};
 

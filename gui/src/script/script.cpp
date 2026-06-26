@@ -1,4 +1,5 @@
 #include "script.h"
+#include "script/schema_builder.h"
 
 #include <QDebug>
 #include <QDir>
@@ -509,6 +510,11 @@ void Script::run() {
 
 void Script::notify_error(QString message) {
     emit notify(ANotification::error(std::move(message)));
+}
+
+QString Script::api_markdown() {
+    ScriptDBInterface api(m_database);
+    return SchemaBuilder::build_markdown(&api);
 }
 
 } // namespace SolTrace::GUI::Script

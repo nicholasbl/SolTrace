@@ -56,6 +56,65 @@ ScrollView {
         }
     }
 
+    STPopup {
+        id: api_popup
+
+        parent: Overlay.overlay
+        modal: true
+        focus: true
+        enable_shadow: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+        property string apiText: ""
+        readonly property real popupMargin: 24
+
+        onOpened: apiText = root.module.api_markdown()
+
+        width: Math.max(320, Math.min(parent.width - popupMargin * 2, 920))
+        height: Math.max(320, Math.min(parent.height - popupMargin * 2, 720))
+        x: Math.round((parent.width - width) / 2)
+        y: Math.round((parent.height - height) / 2)
+
+        contentItem: ColumnLayout {
+            spacing: 8
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                Label {
+                    Layout.fillWidth: true
+
+                    text: "Script API"
+                    font.bold: true
+                    elide: Label.ElideRight
+                }
+
+                STIconButton {
+                    icon: "\uf00d"
+                    toolTip: "Close"
+                    onClicked: api_popup.close()
+                }
+            }
+
+            ScrollView {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                clip: true
+
+                TextArea {
+                    text: api_popup.apiText
+                    readOnly: true
+                    selectByMouse: true
+                    wrapMode: TextEdit.Wrap
+                    textFormat: TextEdit.MarkdownText
+
+                    background: Item {}
+                }
+            }
+        }
+    }
+
     ColumnLayout {
         width: root.availableWidth
 
@@ -202,52 +261,58 @@ ScrollView {
             }
         }
 
-        STPropertySeparator {
-            title: "Execute"
-        }
-
-        RowLayout {
+        STPropertyPanel {
             Layout.fillWidth: true
-            Layout.columnSpan: 2
+            title: "Execute"
 
-
-            STTextField {
+            RowLayout {
                 Layout.fillWidth: true
-                text: root.module.working_directory
+                Layout.columnSpan: 2
 
-                onAccepted: root.module.working_directory = text
-                onTextEdited: root.module.working_directory = text
-            }
 
-            STIconButton {
-                icon: "\uf07c"
-                onClicked: workingDirectoryDialog.open()
-            }
+                STTextField {
+                    Layout.fillWidth: true
+                    text: root.module.working_directory
 
-            FolderDialog {
-                id: workingDirectoryDialog
-                currentFolder: root.pathToFileUrl(root.module.working_directory)
+                    onAccepted: root.module.working_directory = text
+                    onTextEdited: root.module.working_directory = text
+                }
 
-                onAccepted: {
-                    const value = String(selectedFolder)
-                    root.module.working_directory =
-                            decodeURIComponent(value.replace(/^file:\/\//, ""))
+                // something weird with this icon button. doesnt seem to have the right bounds
+                STIconButton {
+                    icon: "\uf07c"
+                    toolTip: "Select Working Directory"
+                    onClicked: workingDirectoryDialog.open()
+
+
+                    FolderDialog {
+                        id: workingDirectoryDialog
+                        currentFolder: root.pathToFileUrl(root.module.working_directory)
+
+                        onAccepted: {
+                            const value = String(selectedFolder)
+                            root.module.working_directory =
+                                    decodeURIComponent(value.replace(/^file:\/\//, ""))
+                        }
+                    }
                 }
             }
-        }
 
-        STButton {
-            text: "Run"
-            Layout.columnSpan: 2
-            Layout.fillWidth: true
+            STButton {
+                text: "Run"
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
 
-            enabled: root.module.valid
+                enabled: root.module.valid
 
-            onClicked: {
-                output_model.clear()
-                root.module.run()
+                onClicked: {
+                    output_model.clear()
+                    root.module.run()
+                }
             }
+
         }
+
 
         STPropertyPanel {
             Layout.fillWidth: true
@@ -285,6 +350,16 @@ ScrollView {
 
                 onCountChanged: positionViewAtEnd()
             }
+        }
+
+        STIconButton {
+            Layout.alignment: Qt.AlignRight
+            Layout.rightMargin: 6
+
+            icon: "\uf02d"
+            label: "Script API"
+            toolTip: "Show Script API"
+            onClicked: api_popup.open()
         }
     }
 }

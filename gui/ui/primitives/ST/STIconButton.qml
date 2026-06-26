@@ -23,8 +23,11 @@ Rectangle {
 
     radius: height / 2
 
-    color: mouse_area.containsPress ?
-              Material.highlightedRippleColor : "transparent"
+    color: {
+        if (mouse_area.containsPress) return Material.highlightedRippleColor
+        if (mouse_area.containsMouse) return Material.rippleColor
+        return "transparent"
+    }
 
     border.color: Material.dividerColor
     border.width: mouse_area.containsPress ? 1 : 0

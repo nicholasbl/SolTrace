@@ -17,6 +17,8 @@ ScrollView {
     property bool singleColumn: App.view.left_panel.size === SplitPanelData.Small
     property var labelAlignment: (singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
 
+    property int columnSpan: singleColumn ? 1 : 2
+
     ColumnLayout {
         width: root.availableWidth
 
@@ -29,13 +31,12 @@ ScrollView {
         STPropertyPanel {
             Layout.fillWidth: true
 
-            collapsible: false
-            title: "New Job"
+            title: "Trace Configuration"
             columns: root.singleColumn ? 1 : 2
 
             STComboBox {
                 Layout.fillWidth: true
-                Layout.columnSpan: root.singleColumn ? 1 : 2
+                Layout.columnSpan: root.columnSpan
                 model: AppData.simulation.runners
                 textRole: "name"
                 valueRole: "runner"
@@ -103,7 +104,7 @@ ScrollView {
 
             STPropertyLabel {
                 text: "Options"
-                Layout.rowSpan: root.singleColumn ? 1 : 3
+                Layout.columnSpan: root.columnSpan
                 Layout.alignment: root.labelAlignment
             }
 
@@ -117,6 +118,65 @@ ScrollView {
                 text: "Optical Errors"
                 checked: AppData.simulation.optical_errors
                 onToggled: AppData.simulation.optical_errors = checked
+            }
+
+            STSwitch {
+                text: "Tracer Debug (if applicable)"
+                //checked: AppData.simulation.optical_errors
+                //onToggled: AppData.simulation.optical_errors = checked
+            }
+        }
+
+        STPropertyPanel {
+            Layout.fillWidth: true
+
+            collapsible: true
+            title: "Execution"
+
+            STPropertyLabel {
+                text: "Progress"
+            }
+
+            ProgressBar {
+                Layout.fillWidth: true
+                from: 0
+                to: 100
+                value: AppData.simulation.progress
+
+                enabled: AppData.simulation.is_running
+            }
+
+            STPropertyLabel {
+                text: "Stage"
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: AppData.simulation.is_running ?
+                          AppData.simulation.current_stage : "Idle"
+            }
+
+            STButton {
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
+                text: "Start Trace"
+                left_text_icon: "\uf0da"
+                onClicked: {
+                    AppData.simulation.run()
+                }
+            }
+
+            STIconButton {
+                Layout.columnSpan: root.columnSpan
+                Layout.fillWidth: false
+                Layout.alignment: Qt.AlignRight
+                icon: "\uf1da"
+                label: "View Results"
+                onClicked: {
+                    App.view.workflow_phase = 3
+                    App.view.analyze_section = 0
+                    App.view.simulation_content_view = true
+                }
             }
         }
     }

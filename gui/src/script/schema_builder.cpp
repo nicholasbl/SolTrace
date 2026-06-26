@@ -166,4 +166,49 @@ QJsonObject SchemaBuilder::build(ScriptDBInterface* iface, QString task) {
     };
 }
 
+QString SchemaBuilder::build_markdown(ScriptDBInterface* iface, QString task) {
+
+    auto schema = build(iface, task);
+
+    QStringList lines;
+    lines << QStringLiteral("# SolTrace Script API") << QString {}
+          << QStringLiteral("Runtime: JavaScript")
+          << QStringLiteral("Global objects: db");
+
+    if (!task.isEmpty()) {
+        lines << QString {} << QStringLiteral("Task: %1").arg(task);
+    }
+
+    auto methods = schema[QStringLiteral("api")]
+                       .toObject()[QStringLiteral("db")]
+                       .toArray();
+
+    for (auto const& value : methods) {
+        auto method = value.toObject();
+
+        QStringList args;
+        for (auto const& arg_value : method[QStringLiteral("args")].toArray()) {
+            auto arg  = arg_value.toObject();
+            auto name = arg[QStringLiteral("name")].toString();
+            auto type = arg[QStringLiteral("type")].toString();
+
+            args << (type.isEmpty() ? name
+                                    : QStringLiteral("%1: %2").arg(name, type));
+        }
+
+        auto returns = method[QStringLiteral("returns")].toString();
+        auto suffix  = returns.isEmpty()
+                           ? QString {}
+                           : QStringLiteral(" -> %1").arg(returns);
+
+        lines << QString {}
+              << QStringLiteral("## db.%1(%2)%3")
+                     .arg(method[QStringLiteral("name")].toString(),
+                          args.join(QStringLiteral(", ")), suffix)
+              << QString {} << method[QStringLiteral("description")].toString();
+    }
+
+    return lines.join('\n').trimmed();
+}
+
 } // namespace SolTrace::GUI::Script

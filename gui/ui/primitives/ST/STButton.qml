@@ -84,7 +84,7 @@ Button {
             offset.x: 0
             offset.y: 0
             radius: background.radius
-            blur: 30
+            blur: 15
             spread: 3
             color: Material.dropShadowColor
         }
