@@ -36,7 +36,11 @@ RowLayout {
         label: "Import"
         toolTip: "Import Scene"
 
-        onClicked: file_controller.open_file()
+        onClicked: file_menu.open()
+
+        WorkflowFileMenu {
+            id: file_menu
+        }
     }
 
     STIconButton {

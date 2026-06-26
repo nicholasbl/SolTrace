@@ -173,7 +173,7 @@ ScrollView {
                 icon: "\uf1da"
                 label: "View Results"
                 onClicked: {
-                    App.view.workflow_phase = 3
+                    App.view.workflow_phase = ViewModule.Analyze
                     App.view.analyze_section = 0
                     App.view.simulation_content_view = true
                 }

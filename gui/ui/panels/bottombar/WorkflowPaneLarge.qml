@@ -94,7 +94,7 @@ Item {
                 font.family: "Font Awesome 7 Free"
                 text: "\uf101"
                 opacity: App.view.workflow_phase === ViewModule.Load
-                         || App.view.workflow_phase === 1 ? 1.0 : 0.5
+                         || App.view.workflow_phase === ViewModule.Configure ? 1.0 : 0.5
             }
 
             WorkflowLargeItem {
@@ -118,7 +118,7 @@ Item {
                 font.family: "Font Awesome 7 Free"
                 text: "\uf101"
                 opacity: App.view.workflow_phase === ViewModule.Configure
-                         || App.view.workflow_phase === 2 ? 1.0 : 0.5
+                         || App.view.workflow_phase === ViewModule.Simulate ? 1.0 : 0.5
             }
 
             WorkflowLargeItem {
@@ -142,7 +142,7 @@ Item {
                 font.family: "Font Awesome 7 Free"
                 text: "\uf101"
                 opacity: App.view.workflow_phase === ViewModule.Simulate
-                         || App.view.workflow_phase === 3 ? 1.0 : 0.5
+                         || App.view.workflow_phase === ViewModule.Analyze ? 1.0 : 0.5
             }
 
             WorkflowLargeItem {
