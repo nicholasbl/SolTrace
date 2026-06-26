@@ -59,11 +59,6 @@
 #ifndef SOLTRACE_MATVEC_H
 #define SOLTRACE_MATVEC_H
 
-#include <string>
-#include <vector>
-#include <iostream>
-#include <fstream>
-
 #include <glm/vec3.hpp>
 #include <glm/mat3x3.hpp>
 
@@ -74,33 +69,9 @@ namespace SolTrace::Data
                           const double V[3],
                           double MxV[3]);
 
-    template <typename R, typename T>
-    inline void MatrixVectorMult_generic(const R M[3][3],
-                                         const T V[3],
-                                         T MxV[3])
-    {
-        MxV[0] = M[0][0] * V[0] + M[0][1] * V[1] + M[0][2] * V[2];
-        MxV[1] = M[1][0] * V[0] + M[1][1] * V[1] + M[1][2] * V[2];
-        MxV[2] = M[2][0] * V[0] + M[2][1] * V[1] + M[2][2] * V[2];
-        return;
-    }
-
-    // void MatrixVectorMult(const double M[3][3],
-    //                       const double V[3],
-    //                       double MxV[3])
-    // {
-    //     return MatrixVectorMult_generic(M, V, MxV);
-    // }
-
     void MatrixTranspose(const double InputMatrix[3][3],
                          int NumRowsCols,
                          double OutputMatrix[3][3]);
-    void MatrixMatrixMult(const double M1[3][3],
-                          const double M2[3][3],
-                          double OutputMatrix[3][3]);
-
-    double DOT(const double A[3], const double B[3]);
-
     void TransformToLocal(const double PosRef[3],
                           const double CosRef[3],
                           const double Origin[3],
@@ -137,54 +108,6 @@ namespace SolTrace::Data
                                     glm::dmat3& RRefToLoc,
                                     glm::dmat3& RLocToRef);
 
-
-    // inline void CopyVec3(double dest[3], const std::vector<double> &src);
-    // inline void CopyVec3(std::vector<double> &dest, const double src[3]);
-    // inline void CopyVec3(double dest[3], const double src[3]);
-
-    // void AddVec3(double a, const double x[3],
-    //              double b, const double y[3]);
-    void AddVec3(double a, const double x[3],
-                 double b, const double y[3],
-                 double z[3]);
-
-    inline void ZeroVec3(double vec[3])
-    {
-        vec[0] = vec[1] = vec[2] = 0.0;
-        return;
-    }
-
-    inline void SetVec3(double vec[3], double v1, double v2, double v3)
-    {
-        vec[0] = v1;
-        vec[1] = v2;
-        vec[2] = v3;
-    }
-
-    inline void CopyVec3(double dest[3], const std::vector<double> &src)
-    {
-        dest[0] = src[0];
-        dest[1] = src[1];
-        dest[2] = src[2];
-    }
-
-    inline void CopyVec3(std::vector<double> &dest, const double src[3])
-    {
-        dest[0] = src[0];
-        dest[1] = src[1];
-        dest[2] = src[2];
-    }
-
-    inline void CopyVec3(double dest[3], const double src[3])
-    {
-        dest[0] = src[0];
-        dest[1] = src[1];
-        dest[2] = src[2];
-    }
-
-    void CopyMat3(double dest[3][3], const double src[3][3]);
-
-    void IdentityMat3(double mat[3][3]);
 
 } // namespace SolTrace::Data
 

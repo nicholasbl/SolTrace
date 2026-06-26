@@ -9,11 +9,234 @@ extern "C"
     __constant__ OptixCSP::LaunchParams params;
 }
 
+/**************** Surface Helper Functions ****************/
+
+// -----------------------------------------------------------------------
+// Shared helpers for a planar (flat) surface
+//
+// All planar surfaces have the equation
+//    <n, (p - p0)> = 0
+// where n is the normal vector, p0 = (x0, y0, z0) is a point in the plane,
+// generally the origin of the aperture.
+// -----------------------------------------------------------------------
+
+// Return the ray parameter t at which the ray (ro + t*rd) intersects the plane.
+// The plane is encoded as float4(nx, ny, nz, d) where nx/ny/nz is the unit normal
+// and d = dot(n, p0) for any point p0 on the plane.
 extern "C" __device__ __inline__ float ray_distance_to_plane(float3 ro, float3 rd, float4 plane)
 {
     const float3 n = make_float3(plane);
     return (plane.w - dot(n, ro)) / dot(rd, n);
 }
+
+// -----------------------------------------------------------------------
+// Shared helpers for parabolic surface intersections.
+//
+// All parabolic surfaces share the same quadric equation:
+//   z = (cx/2)*x^2 + (cy/2)*y^2
+// in a local frame (center, x_ax, y_ax, n=cross(x_ax,y_ax)).
+// The three helpers below factor out the ray transform, quadratic solve,
+// and normal computation. Each kernel only supplies the aperture test.
+// -----------------------------------------------------------------------
+
+// Transform a world-space ray into the local parabolic frame.
+// Outputs the frame normal n = normalize(cross(x_ax, y_ax)) and
+// the local ray origin (ox,oy,oz) and direction (dx,dy,dz).
+extern "C" __device__ __inline__ void parabolic_ray_to_local(
+    const float3 &ray_orig, const float3 &ray_dir,
+    const float3 &center,
+    const float3 &x_ax, const float3 &y_ax,
+    float3 &n,
+    float &ox, float &oy, float &oz,
+    float &dx, float &dy, float &dz)
+{
+    n = normalize(cross(x_ax, y_ax));
+    const float3 d = ray_orig - center;
+    ox = dot(d, x_ax);
+    oy = dot(d, y_ax);
+    oz = dot(d, n);
+    dx = dot(ray_dir, x_ax);
+    dy = dot(ray_dir, y_ax);
+    dz = dot(ray_dir, n);
+}
+
+// Solve A*t^2 + B*t + C = 0 for the paraboloid-ray intersection and return
+// up to two hits within [ray_tmin, ray_tmax], ordered by ascending t.
+// Returns the number of valid hits (0, 1, or 2).
+// t_out[i], lx_out[i], ly_out[i] give the ray parameter and local (x,y) of each hit.
+extern "C" __device__ __inline__ int parabolic_solve(
+    float ox, float oy, float oz,
+    float dx, float dy, float dz,
+    float cx, float cy,
+    float ray_tmin, float ray_tmax,
+    float t_out[2], float lx_out[2], float ly_out[2])
+{
+    const float A = 0.5f * cx * dx * dx + 0.5f * cy * dy * dy;
+    const float B = cx * ox * dx + cy * oy * dy - dz;
+    const float C = 0.5f * cx * ox * ox + 0.5f * cy * oy * oy - oz;
+
+    const float eps = 1e-12f;
+    int count = 0;
+
+    if (fabsf(A) < eps)
+    {
+        if (fabsf(B) > eps)
+        {
+            const float t = -C / B;
+            if (t >= ray_tmin && t <= ray_tmax)
+            {
+                t_out[0] = t;
+                lx_out[0] = ox + t * dx;
+                ly_out[0] = oy + t * dy;
+                count = 1;
+            }
+        }
+    }
+    else
+    {
+        const float discr = B * B - 4.0f * A * C;
+        if (discr >= 0.0f)
+        {
+            const float sq = sqrtf(discr);
+            // A > 0 (physical curvature), so ta <= tb is guaranteed.
+            const float ta = -0.5f * (B + sq) / A;
+            const float tb = -0.5f * (B - sq) / A;
+            if (ta >= ray_tmin && ta <= ray_tmax)
+            {
+                t_out[count] = ta;
+                lx_out[count] = ox + ta * dx;
+                ly_out[count] = oy + ta * dy;
+                ++count;
+            }
+            if (tb >= ray_tmin && tb <= ray_tmax)
+            {
+                t_out[count] = tb;
+                lx_out[count] = ox + tb * dx;
+                ly_out[count] = oy + tb * dy;
+                ++count;
+            }
+        }
+    }
+    return count;
+}
+
+// Compute the world-space unit normal at a parabolic surface hit.
+// x_hit, y_hit : local coordinates of the hit point
+// cx, cy       : curvature parameters
+// x_ax, y_ax   : local frame unit vectors
+// n            : normalize(cross(x_ax, y_ax))
+extern "C" __device__ __inline__ float3 parabolic_world_normal(
+    float x_hit, float y_hit,
+    float cx, float cy,
+    const float3 &x_ax, const float3 &y_ax, const float3 &n)
+{
+    const float3 N_local = make_float3(-cx * x_hit, -cy * y_hit, 1.0f);
+    return N_local.x * x_ax + N_local.y * y_ax + N_local.z * n;
+}
+
+// -----------------------------------------------------------------------
+
+/**************** Aperture Helper Functions ****************/
+
+// -----------------------------------------------------------------------
+// Shared helpers for hexagon apertures
+//
+// A regular hexagon with circumradius s (vertex-to-center distance) is
+// decomposed into three vertical strips in the local (x, y) frame:
+//   Left  cap : x in [-s,   -s/2)  — bounded by the two left edges
+//   Center    : x in [-s/2,  s/2]  — full-height rectangular band
+//   Right cap : x in ( s/2,  s]    — bounded by the two right edges
+// The flat (top/bottom) edges are horizontal at y = ±(sqrt(3)/2)*s and
+// the diagonal edges satisfy |y| = sqrt(3)*(|x| - s) on each cap.
+// -----------------------------------------------------------------------
+
+// Return true if the point (px, py) lies within a flat-top regular hexagon
+// centered at the origin with circumradius s (vertex-to-center distance).
+// px and py must be expressed in the hexagon's local x/y frame.
+extern "C" __device__ __inline__ bool hexagon_contains(float px, float py, float s)
+{
+    bool is_in = false;
+    const float xl = 0.5f * s;
+    const float yl = 0.5f * sqrtf(3.0f) * s;
+    if (-xl <= px && px <= xl && -yl <= py && py <= yl)
+    {
+        // Center
+        is_in = true;
+    }
+    else if (-s <= px && px < -xl)
+    {
+        // Left side
+        float y1 = sqrtf(3.0f) * (px + s);
+        float y2 = -y1;
+        if (y2 <= py && py <= y1)
+        {
+            is_in = true;
+        }
+    }
+    else if (xl < px && px <= s)
+    {
+        // Right side
+        float y1 = sqrtf(3.0f) * (px - s);
+        float y2 = -y1;
+        if (y1 <= py && py <= y2)
+        {
+            is_in = true;
+        }
+    }
+    return is_in;
+}
+
+// -----------------------------------------------------------------------
+// Shared helpers for annulus apertures
+//
+// An annular sector aperture is defined in the local (x, y) frame by:
+//   Inner radius ri  : points closer than ri to the origin are excluded
+//   Outer radius ro  : points farther than ro from the origin are excluded
+//   Arc angle arc    : full sweep angle (radians) centered on the +x axis;
+//                      a point at angle theta is included when |theta| <= arc/2
+// A full annulus (no arc clipping) has arc = 2*pi.
+// -----------------------------------------------------------------------
+
+// Return true if the point (px, py) lies within an annular sector centered at the
+// origin. The sector is defined by inner radius ri, outer radius ro, and a full
+// arc angle arc (in radians) symmetric about the local x-axis (i.e., theta = 0).
+// px and py must be expressed in the aperture's local x/y frame.
+extern "C" __device__ __inline__ bool annulus_contains(float px, float py, float ri, float ro, float arc)
+{
+    const float rsq = px * px + py * py;
+    if (rsq < ri * ri || rsq > ro * ro)
+        return false;
+    const float theta = atan2f(py, px);
+    return fabsf(theta) <= 0.5f * arc;
+}
+
+// -----------------------------------------------------------------------
+// Shared helpers for triangle apertures
+//
+// The triangle aperture is encoded as two precomputed row vectors utest and
+// vtest such that the barycentric coordinates of a point (px, py) are:
+//   u = dot(utest, float3(px, py, 1.0f))
+//   v = dot(vtest, float3(px, py, 1.0f))
+// The point is inside when u >= 0, v >= 0, and u + v <= 1.
+// These rows are computed once at setup time from the three triangle vertices.
+// -----------------------------------------------------------------------
+
+// Return true if the 2-D point (px, py) lies inside the triangle whose
+// barycentric inverse transform is encoded in utest and vtest.
+extern "C" __device__ __inline__ bool triangle_contains(float px, float py,
+                                                        float3 utest, float3 vtest)
+{
+    const float3 p = make_float3(px, py, 1.0f);
+    const float u = dot(utest, p);
+    if (u < 0.0f || u > 1.0f)
+        return false;
+    const float v = dot(vtest, p);
+    return v >= 0.0f && (u + v) <= 1.0f;
+}
+
+// -----------------------------------------------------------------------
+
+/**************** Optix Intersection Functions ****************/
 
 extern "C" __global__ void __intersection__parallelogram()
 {
@@ -303,171 +526,6 @@ extern "C" __global__ void __intersection__cylinder_y_capped()
         __float_as_uint(world_normal.z));
 }
 
-// For a parabolic surface rectangle aperture where
-// the base (normal projection) is defined by the center and its two unit edge vectors
-// In a local coordinate system (with origin at the anchor) the flat rectangle covers:
-//    x in [0, L1]  and  y in [0, L2],
-// where L1 and L2 are the lengths of the original edge vectors.
-// The parabolic surface is given by:
-//    z = (curv_x/2)*x^2 + (curv_y/2)*y^2
-// and the ray (in local coordinates) is:
-//    (ox,oy,oz) + t*(dx,dy,dz)
-// We solve for t such that:
-//    oz + t*dz = (curv_x/2)*(ox+t*dx)^2 + (curv_y/2)*(oy+t*dy)^2
-// which expands into a quadratic: A*t^2 + B*t + C = 0.
-// After finding the valid t, we compute the local hit (x,y) and then check that
-//   0 <= x <= L1   and   0 <= y <= L2.
-// Finally, we compute the surface normal from the paraboloid derivative
-//    f_x = curv_x * x    and    f_y = curv_y * y,
-// so that the (unnormalized) local normal is (-f_x, -f_y, 1).
-//
-// The local hit point is then transformed back to world space for reporting.
-extern "C" __global__ void __intersection__rectangle_parabolic()
-{
-    const OptixCSP::GeometryDataST::Rectangle_Parabolic &rect = params.geometry_data_array[optixGetPrimitiveIndex()].getRectangleParabolic();
-    // Get ray information.
-    const float3 ray_orig = optixGetWorldRayOrigin();
-    const float3 ray_dir = optixGetWorldRayDirection();
-    const float ray_tmin = optixGetRayTmin();
-    const float ray_tmax = optixGetRayTmax();
-
-    //
-    // Build the local coordinate system.
-    //
-    // We assume that the rectangle was defined with an anchor at its corner and
-    // two edge vectors. The stored rect.v1 and rect.v2 are the reciprocals:
-    //     stored_v1 = original_v1 / dot(original_v1, original_v1)
-    // Thus, the original edge lengths are:
-    // Note rect.v1 had the size of 1/original_v1_length
-    float L1 = 1.0f / length(rect.v1);
-    float L2 = 1.0f / length(rect.v2);
-    // And the unit edge directions are:
-    float3 e1 = rect.v1 * L1; // recovers the original direction of edge 1, unit vector
-    float3 e2 = rect.v2 * L2; // recovers the original direction of edge 2, unit ve
-    // The flat (undeformed) rectangle's normal is:
-    float3 n = normalize(cross(e2, e1));
-
-    //
-    // Transform ray into local coordinates.
-    // The local coordinates (x,y,z) are defined such that:
-    //   - The origin is at rect.anchor.
-    //   - The x-axis is e1.
-    //   - The y-axis is e2.
-    //   - The z-axis is n.
-    //
-    // Compute the rectangle center (shifting from the lower-right corner)
-    float3 rect_center = rect.anchor + (L1 / 2.0f) * e1 + (L2 / 2.0f) * e2;
-
-    float3 d = ray_orig - rect_center;
-    float ox = dot(d, e1);
-    float oy = dot(d, e2);
-    float oz = dot(d, n);
-
-    float dx = dot(ray_dir, e1);
-    float dy = dot(ray_dir, e2);
-    float dz = dot(ray_dir, n);
-
-    // Retrieve curvature parameters.
-    const float curv_x = rect.curv_x;
-    const float curv_y = rect.curv_y;
-
-    float A = (curv_x * 0.5f) * (dx * dx) + (curv_y * 0.5f) * (dy * dy);
-    float B = curv_x * (ox * dx) + curv_y * (oy * dy) - dz;
-    float C = (curv_x * 0.5f) * (ox * ox) + (curv_y * 0.5f) * (oy * oy) - oz;
-
-    float t = 0.0f;
-    float t1 = 0.0f;
-    float t2 = 0.0f;
-    float x_hit = 0.0f;
-    float y_hit = 0.0f;
-    const float eps = 1e-12f;
-    bool valid = false;
-
-    if (fabsf(A) < eps) {
-        if (fabsf(B) > eps) {
-            t1 = -C / B;
-            const float p1x = ox + t1 * dx;
-            const float p1y = oy + t1 * dy;
-            const float a1 = p1x / (L1 / 2.0f);
-            const float a2 = p1y / (L2 / 2.0f);
-
-            if (t1 > 0.0f && t1 >= ray_tmin && t1 <= ray_tmax
-                && !(a1 < -1.0f || a1 > 1.0f || a2 < -1.0f || a2 > 1.0f)) {
-                t = t1;
-                x_hit = p1x;
-                y_hit = p1y;
-                valid = true;
-            }
-        }
-    }
-    else
-    {
-        float discr = B * B - 4.0f * A * C;
-        if (discr >= 0.0f)
-        {
-            float sqrt_discr = sqrtf(discr);
-            t1 = -0.5f * (B + sqrt_discr) / A;
-            t2 = -0.5f * (B - sqrt_discr) / A;
-
-            const float p1x = ox + t1 * dx;
-            const float p1y = oy + t1 * dy;
-            const float p2x = ox + t2 * dx;
-            const float p2y = oy + t2 * dy;
-            const float a1_1 = p1x / (L1 / 2.0f);
-            const float a2_1 = p1y / (L2 / 2.0f);
-            const float a1_2 = p2x / (L1 / 2.0f);
-            const float a2_2 = p2y / (L2 / 2.0f);
-
-            if (t1 > 0.0f && t1 >= ray_tmin && t1 <= ray_tmax
-                && !(a1_1 < -1.0f || a1_1 > 1.0f || a2_1 < -1.0f || a2_1 > 1.0f)) {
-                t = t1;
-                x_hit = p1x;
-                y_hit = p1y;
-                valid = true;
-            }
-            else if (t2 > 0.0f && t2 >= ray_tmin && t2 <= ray_tmax
-                && !(a1_2 < -1.0f || a1_2 > 1.0f || a2_2 < -1.0f || a2_2 > 1.0f)) {
-                t = t2;
-                x_hit = p2x;
-                y_hit = p2y;
-                valid = true;
-            }
-        }
-    }
-
-    if (!valid) {
-        return;
-    }
-
-    //
-    // Compute the surface normal at the hit on the paraboloid.
-    // The height function is:
-    //    f(x,y) = (curv_x/2)*x^2 + (curv_y/2)*y^2
-    // so its partial derivatives are:
-    //    f_x = curv_x * x    and    f_y = curv_y * y.
-    // Then the (unnormalized) local normal is:
-    //    N_local = (-f_x, -f_y, 1) = ( -curv_x*x_hit, -curv_y*y_hit, 1 ).
-    //
-    float3 N_local = normalize(make_float3(-curv_x * x_hit,
-                                           -curv_y * y_hit,
-                                           1.0f));
-    // Transform the normal back to world coordinates.
-    float3 world_normal = normalize(N_local.x * e1 +
-                                    N_local.y * e2 +
-                                    N_local.z * n);
-
-    // Compute the hit point in world space.
-    float3 world_hit = ray_orig + t * ray_dir;
-
-    // Report the intersection.
-    // Here, the two reported extra attributes are the parametric coordinates (a1, a2),
-    // encoded as unsigned integers.
-    optixReportIntersection(t, 0,
-                            __float_as_uint(world_normal.x),
-                            __float_as_uint(world_normal.y),
-                            __float_as_uint(world_normal.z));
-}
-
 // intersection algorithm for a flat triangle based on "Fast, Minimum Storage Ray/Triangle Intersection" by M�ller and Trumbore (1997)
 // code from here: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 extern "C" __device__ __inline__ float _triangle_intersect(
@@ -505,51 +563,6 @@ extern "C" __device__ __inline__ float _triangle_intersect(
     return t;
 }
 
-// // intersection algorithm for a flat triangle based on "Fast, Minimum Storage Ray/Triangle Intersection" by M�ller and Trumbore (1997)
-// // code from here: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-// extern "C" __global__ void __intersection__triangle_flat()
-// {
-// 	const OptixCSP::GeometryDataST::Triangle_Flat& tri = params.geometry_data_array[optixGetPrimitiveIndex()].getTriangle_Flat();
-
-//     const float3 ro = optixGetObjectRayOrigin();
-//     const float3 rd = optixGetObjectRayDirection();
-
-// 	//printf("Ray origin: (%f,%f,%f), direction: (%f,%f,%f)\n", ro.x, ro.y, ro.z, rd.x, rd.y, rd.z);
-
-//     const float3 edge1 = tri.e1;
-//     const float3 edge2 = tri.e2;
-
-//     const float3 pvec = cross(rd, edge2);
-//     const float  det = dot(edge1, pvec);
-
-//     // Backface culling + parallel rejection
-//     // (det must be strictly positive and not tiny)
-//     const float eps = 1e-8f;
-//     if (det <= eps) return;
-
-//     const float inv_det = 1.0f / det;
-
-//     const float3 tvec = ro - tri.v0;
-//     const float  u = dot(tvec, pvec) * inv_det;
-//     if (u < 0.0f || u > 1.0f) return;
-
-//     const float3 qvec = cross(tvec, edge1);
-//     const float  v = dot(rd, qvec) * inv_det;
-//     if (v < 0.0f || (u + v) > 1.0f)
-//         return;
-
-//     const float  t = dot(edge2, qvec) * inv_det;
-//     if (t < optixGetRayTmin() || t > optixGetRayTmax()) return;
-
-//     float3 world_normal = tri.normal;
-
-//     optixReportIntersection(t, 0,
-//         __float_as_uint(world_normal.x),
-//         __float_as_uint(world_normal.y),
-//         __float_as_uint(world_normal.z));
-
-// }
-
 // intersection algorithm for a flat triangle based on "Fast, Minimum Storage Ray/Triangle Intersection" by M�ller and Trumbore (1997)
 // code from here: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 extern "C" __global__ void __intersection__triangle_flat()
@@ -579,18 +592,17 @@ extern "C" __global__ void __intersection__quadrilateral_flat()
     const float3 ro = optixGetObjectRayOrigin();
     const float3 rd = optixGetObjectRayDirection();
 
+    // Decompose as (p0,p1,p2) ∪ (p0,p2,p3) — same p0-p2 diagonal as the parabolic kernel.
     const float3 p0 = quad.p0;
-    const float3 p2 = quad.p2;
+    const float3 e02 = quad.p2 - p0;
     float3 e1 = quad.p1 - p0;
-    float3 e2 = quad.p3 - p0;
 
-    float t = _triangle_intersect(p0, e1, e2, ro, rd);
+    float t = _triangle_intersect(p0, e1, e02, ro, rd);
 
     if (t < optixGetRayTmin() || t > optixGetRayTmax())
     {
-        e1 = quad.p1 - p2;
-        e2 = quad.p3 - p2;
-        t = _triangle_intersect(p2, e1, e2, ro, rd);
+        const float3 e3 = quad.p3 - p0;
+        t = _triangle_intersect(p0, e02, e3, ro, rd);
     }
 
     if (t < optixGetRayTmin() || t > optixGetRayTmax())
@@ -624,6 +636,9 @@ extern "C" __global__ void __intersection__circle_flat()
     // Verify intersection distance and Report ray intersection point
     if (t > ray_tmin && t < ray_tmax)
     {
+        // Since everything is in global coordinates (e.g., the ray intersection coordinates),
+        // and the circle is rotationally symmetric, we don't need to worry about
+        // any rotation of the circle in local coordinates
         float3 p = ray_orig + ray_dir * t;
         float d = length(p - circ.center);
         if (d <= circ.r)
@@ -652,40 +667,13 @@ extern "C" __global__ void __intersection__hexagon_flat()
     // Verify intersection distance and Report ray intersection point
     if (t > ray_tmin && t < ray_tmax)
     {
-        // TODO: Need to adjust for possible rotation...
-        bool is_in = false;
         float3 p = ray_orig + ray_dir * t - hex.center;
-        // float d = length(p - circ.center);
-        float s = hex.s;
-        float xl = 0.5f * s;
-        float yl = 0.5f * sqrtf(3.0f) * s;
-        if (-xl <= p.x && p.x <= xl && -yl <= p.y && p.y <= yl)
-        {
-            // Center
-            is_in = true;
-        }
-        else if (-s <= p.x && p.x < xl)
-        {
-            // Left side
-            float y1 = sqrtf(3.0f) * (p.x + s);
-            float y2 = -y1;
-            if (y2 <= p.y && p.y <= y1)
-            {
-                is_in = true;
-            }
-        }
-        else if (xl < p.x && p.x <= s)
-        {
-            // Right side
-            float y1 = sqrtf(3.0f) * (p.x - s);
-            float y2 = -y1;
-            if (y1 <= p.y && p.y <= y2)
-            {
-                is_in = true;
-            }
-        }
+        // Project onto the local x and y axes which are unit vectors
+        const float px = dot(p, hex.x_axis);
+        const float py = dot(p, hex.y_axis);
+        const float s = hex.s;
 
-        if (is_in)
+        if (hexagon_contains(px, py, s))
         {
             optixReportIntersection(t,
                                     0,
@@ -711,20 +699,270 @@ extern "C" __global__ void __intersection__annulus_flat()
     // Verify intersection distance and Report ray intersection point
     if (t > ray_tmin && t < ray_tmax)
     {
-        // TODO: Need to adjust for possible rotation...
         float3 p = ray_orig + ray_dir * t - anf.center;
-        float d = length(p);
-        if (anf.ri <= d && d <= anf.ro)
+        const float px = dot(p, anf.x_axis);
+        const float py = dot(p, anf.y_axis);
+        if (annulus_contains(px, py, anf.ri, anf.ro, anf.arc))
         {
-            float theta = atan2f(p.y, p.x);
-            if (fabsf(theta) <= 0.5f * anf.arc)
-            {
-                optixReportIntersection(t,
-                                        0,
-                                        __float_as_uint(n.x),
-                                        __float_as_uint(n.y),
-                                        __float_as_uint(n.z));
-            }
+            optixReportIntersection(t,
+                                    0,
+                                    __float_as_uint(n.x),
+                                    __float_as_uint(n.y),
+                                    __float_as_uint(n.z));
+        }
+    }
+}
+
+// Parabolic surface, rectangle aperture.
+// z = (curv_x/2)*x^2 + (curv_y/2)*y^2, aperture: |x| <= L1/2, |y| <= L2/2.
+extern "C" __global__ void __intersection__rectangle_parabolic()
+{
+    const OptixCSP::GeometryDataST::Rectangle_Parabolic &rect =
+        params.geometry_data_array[optixGetPrimitiveIndex()].getRectangleParabolic();
+
+    const float3 ray_orig = optixGetWorldRayOrigin();
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float ray_tmin = optixGetRayTmin();
+    const float ray_tmax = optixGetRayTmax();
+
+    // Recover unit edge vectors and half-lengths from the stored reciprocal vectors.
+    // rect.v1 = original_v1 / dot(original_v1, original_v1), so |rect.v1| = 1/L1.
+    const float L1 = 1.0f / length(rect.v1);
+    const float L2 = 1.0f / length(rect.v2);
+    const float3 e1 = rect.v1 * L1;
+    const float3 e2 = rect.v2 * L2;
+    const float3 center = rect.anchor + (0.5f * L1) * e1 + (0.5f * L2) * e2;
+
+    float3 n;
+    float ox, oy, oz, dx, dy, dz;
+    parabolic_ray_to_local(ray_orig, ray_dir, center, e1, e2,
+                           n, ox, oy, oz, dx, dy, dz);
+
+    float ts[2], lxs[2], lys[2];
+    const int nc = parabolic_solve(ox, oy, oz, dx, dy, dz,
+                                   rect.curv_x, rect.curv_y,
+                                   ray_tmin, ray_tmax, ts, lxs, lys);
+
+    const float half_L1 = 0.5f * L1;
+    const float half_L2 = 0.5f * L2;
+    for (int i = 0; i < nc; ++i)
+    {
+        if (lxs[i] >= -half_L1 && lxs[i] <= half_L1 &&
+            lys[i] >= -half_L2 && lys[i] <= half_L2)
+        {
+            const float3 wn = parabolic_world_normal(lxs[i], lys[i],
+                                                     rect.curv_x, rect.curv_y,
+                                                     e1, e2, n);
+            optixReportIntersection(ts[i], 0,
+                                    __float_as_uint(wn.x),
+                                    __float_as_uint(wn.y),
+                                    __float_as_uint(wn.z));
+            return;
+        }
+    }
+}
+
+// Parabolic surface, circle aperture.
+// z = (cx/2)*x^2 + (cy/2)*y^2, aperture: x^2 + y^2 <= radius^2.
+extern "C" __global__ void __intersection__circle_parabolic()
+{
+    const OptixCSP::GeometryDataST::Circle_Parabolic &circp =
+        params.geometry_data_array[optixGetPrimitiveIndex()].getCircle_Parabolic();
+
+    const float3 ray_orig = optixGetWorldRayOrigin();
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float ray_tmin = optixGetRayTmin();
+    const float ray_tmax = optixGetRayTmax();
+
+    float3 n;
+    float ox, oy, oz, dx, dy, dz;
+    parabolic_ray_to_local(ray_orig, ray_dir,
+                           circp.center, circp.x_axis, circp.y_axis,
+                           n, ox, oy, oz, dx, dy, dz);
+
+    float ts[2], lxs[2], lys[2];
+    const int nc = parabolic_solve(ox, oy, oz, dx, dy, dz,
+                                   circp.cx, circp.cy,
+                                   ray_tmin, ray_tmax,
+                                   ts, lxs, lys);
+
+    const float r2 = circp.radius * circp.radius;
+    for (int i = 0; i < nc; ++i)
+    {
+        if (lxs[i] * lxs[i] + lys[i] * lys[i] <= r2)
+        {
+            const float3 wn = parabolic_world_normal(lxs[i], lys[i],
+                                                     circp.cx, circp.cy,
+                                                     circp.x_axis, circp.y_axis, n);
+            optixReportIntersection(ts[i], 0,
+                                    __float_as_uint(wn.x),
+                                    __float_as_uint(wn.y),
+                                    __float_as_uint(wn.z));
+            return;
+        }
+    }
+}
+
+extern "C" __global__ void __intersection__hexagon_parabolic()
+{
+    const OptixCSP::GeometryDataST::Hexagon_Parabolic &hexp =
+        params.geometry_data_array[optixGetPrimitiveIndex()].getHexagon_Parabolic();
+
+    const float3 ray_orig = optixGetWorldRayOrigin();
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float ray_tmin = optixGetRayTmin();
+    const float ray_tmax = optixGetRayTmax();
+
+    float3 n;
+    float ox, oy, oz, dx, dy, dz;
+    parabolic_ray_to_local(ray_orig, ray_dir,
+                           hexp.center, hexp.x_axis, hexp.y_axis,
+                           n, ox, oy, oz, dx, dy, dz);
+
+    float ts[2], lxs[2], lys[2];
+    const int nc = parabolic_solve(ox, oy, oz, dx, dy, dz,
+                                   hexp.cx, hexp.cy,
+                                   ray_tmin, ray_tmax,
+                                   ts, lxs, lys);
+
+    for (int i = 0; i < nc; ++i)
+    {
+        float3 p = ray_orig + ray_dir * ts[i] - hexp.center;
+        // Project onto the local x and y axes which are unit vectors
+        const float px = dot(p, hexp.x_axis);
+        const float py = dot(p, hexp.y_axis);
+        const float s = hexp.s;
+
+        if (hexagon_contains(px, py, s))
+        {
+            const float3 wn = parabolic_world_normal(lxs[i], lys[i],
+                                                     hexp.cx, hexp.cy,
+                                                     hexp.x_axis, hexp.y_axis, n);
+
+            optixReportIntersection(ts[i],
+                                    0,
+                                    __float_as_uint(wn.x),
+                                    __float_as_uint(wn.y),
+                                    __float_as_uint(wn.z));
+
+            return;
+        }
+    }
+}
+
+extern "C" __global__ void __intersection__triangle_parabolic()
+{
+    const OptixCSP::GeometryDataST::Triangle_Parabolic &trip =
+        params.geometry_data_array[optixGetPrimitiveIndex()].getTriangle_Parabolic();
+
+    const float3 ray_orig = optixGetWorldRayOrigin();
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float ray_tmin = optixGetRayTmin();
+    const float ray_tmax = optixGetRayTmax();
+
+    float3 n;
+    float ox, oy, oz, dx, dy, dz;
+    parabolic_ray_to_local(ray_orig, ray_dir,
+                           trip.center, trip.x_axis, trip.y_axis,
+                           n, ox, oy, oz, dx, dy, dz);
+
+    float ts[2], lxs[2], lys[2];
+    const int nc = parabolic_solve(ox, oy, oz, dx, dy, dz,
+                                   trip.cx, trip.cy,
+                                   ray_tmin, ray_tmax,
+                                   ts, lxs, lys);
+
+    for (int i = 0; i < nc; ++i)
+    {
+        if (triangle_contains(lxs[i], lys[i], trip.utest, trip.vtest))
+        {
+            const float3 wn = parabolic_world_normal(lxs[i], lys[i],
+                                                     trip.cx, trip.cy,
+                                                     trip.x_axis, trip.y_axis,
+                                                     n);
+            optixReportIntersection(ts[i], 0,
+                                    __float_as_uint(wn.x),
+                                    __float_as_uint(wn.y),
+                                    __float_as_uint(wn.z));
+            return;
+        }
+    }
+}
+
+extern "C" __global__ void __intersection__annulus_parabolic()
+{
+    const OptixCSP::GeometryDataST::Annulus_Parabolic &anap =
+        params.geometry_data_array[optixGetPrimitiveIndex()].getAnnulus_Parabolic();
+
+    const float3 ray_orig = optixGetWorldRayOrigin();
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float ray_tmin = optixGetRayTmin();
+    const float ray_tmax = optixGetRayTmax();
+
+    float3 n;
+    float ox, oy, oz, dx, dy, dz;
+    parabolic_ray_to_local(ray_orig, ray_dir,
+                           anap.center, anap.x_axis, anap.y_axis,
+                           n, ox, oy, oz, dx, dy, dz);
+
+    float ts[2], lxs[2], lys[2];
+    const int nc = parabolic_solve(ox, oy, oz, dx, dy, dz,
+                                   anap.cx, anap.cy,
+                                   ray_tmin, ray_tmax,
+                                   ts, lxs, lys);
+
+    for (int i = 0; i < nc; ++i)
+    {
+        if (annulus_contains(lxs[i], lys[i], anap.ri, anap.ro, anap.arc))
+        {
+            const float3 wn = parabolic_world_normal(lxs[i], lys[i],
+                                                     anap.cx, anap.cy,
+                                                     anap.x_axis, anap.y_axis,
+                                                     n);
+            optixReportIntersection(ts[i], 0,
+                                    __float_as_uint(wn.x),
+                                    __float_as_uint(wn.y),
+                                    __float_as_uint(wn.z));
+            return;
+        }
+    }
+}
+
+extern "C" __global__ void __intersection__quadrilateral_parabolic()
+{
+    const OptixCSP::GeometryDataST::Quadrilateral_Parabolic &quap =
+        params.geometry_data_array[optixGetPrimitiveIndex()].getQuadrilateral_Parabolic();
+
+    const float3 ray_orig = optixGetWorldRayOrigin();
+    const float3 ray_dir = optixGetWorldRayDirection();
+    const float ray_tmin = optixGetRayTmin();
+    const float ray_tmax = optixGetRayTmax();
+
+    float3 n;
+    float ox, oy, oz, dx, dy, dz;
+    parabolic_ray_to_local(ray_orig, ray_dir,
+                           quap.center, quap.x_axis, quap.y_axis,
+                           n, ox, oy, oz, dx, dy, dz);
+
+    float ts[2], lxs[2], lys[2];
+    const int nc = parabolic_solve(ox, oy, oz, dx, dy, dz,
+                                   quap.cx, quap.cy,
+                                   ray_tmin, ray_tmax,
+                                   ts, lxs, lys);
+
+    for (int i = 0; i < nc; ++i)
+    {
+        if (triangle_contains(lxs[i], lys[i], quap.u1test, quap.v1test) ||
+            triangle_contains(lxs[i], lys[i], quap.u2test, quap.v2test))
+        {
+            const float3 wn = parabolic_world_normal(lxs[i], lys[i],
+                                                     quap.cx, quap.cy,
+                                                     quap.x_axis, quap.y_axis, n);
+            optixReportIntersection(ts[i], 0,
+                                    __float_as_uint(wn.x),
+                                    __float_as_uint(wn.y),
+                                    __float_as_uint(wn.z));
+            return;
         }
     }
 }

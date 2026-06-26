@@ -57,6 +57,7 @@ target_link_libraries(optix_runner
     PRIVATE OptixCSP::OptixCSP_core
     PUBLIC  CUDA::cuda_driver
             simdata
+            ${CMAKE_DL_LIBS}
 )
 
 install(TARGETS optix_runner OptixCSP_core

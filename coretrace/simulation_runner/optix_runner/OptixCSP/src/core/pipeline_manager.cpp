@@ -58,7 +58,12 @@ const std::map<OpticalEntityType, std::string> IntersectionKernelMap = {
     {OpticalEntityType::QUADRILATERAL_FLAT, "__intersection__quadrilateral_flat"},
     {OpticalEntityType::CIRCLE_FLAT, "__intersection__circle_flat"},
     {OpticalEntityType::HEXAGON_FLAT, "__intersection__hexagon_flat"},
-    {OpticalEntityType::ANNULUS_FLAT, "__intersection__annulus_flat"}};
+    {OpticalEntityType::ANNULUS_FLAT, "__intersection__annulus_flat"},
+    {OpticalEntityType::CIRCLE_PARABOLIC, "__intersection__circle_parabolic"},
+    {OpticalEntityType::HEXAGON_PARABOLIC, "__intersection__hexagon_parabolic"},
+    {OpticalEntityType::TRIANGLE_PARABOLIC, "__intersection__triangle_parabolic"},
+    {OpticalEntityType::ANNULUS_PARABOLIC, "__intersection__annulus_parabolic"},
+    {OpticalEntityType::QUADRILATERAL_PARABOLIC, "__intersection__quadrilateral_parabolic"}};
 
 pipelineManager::pipelineManager(SoltraceState &state) : m_state(state) {}
 
@@ -205,18 +210,28 @@ void pipelineManager::loadModules()
     moduleCompileOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL;
 #endif
 
-    // Geometry module.
     {
         std::string ptx = loadPtxFromFile("intersection");
         LOG_SIZE = sizeof(LOG);
-        OPTIX_CHECK(optixModuleCreate(
+        // We are temporarily replacing OPTIX_CHECK with a manual check
+        OptixResult result = optixModuleCreate(
             m_state.context,
             &moduleCompileOptions,
             &m_state.pipeline_compile_options,
             ptx.c_str(),
             ptx.size(),
             LOG, &LOG_SIZE,
-            &m_state.geometry_module));
+            &m_state.geometry_module);
+
+        // If it fails, print the REAL error message from the LOG buffer
+        if (result != OPTIX_SUCCESS)
+        {
+            std::cerr << "--- OPTIX COMPILATION LOG ---\n"
+                      << std::string(LOG, LOG_SIZE)
+                      << "\n--- END LOG ---\n";
+            // Now, re-throw the error so the test still fails
+            throw std::runtime_error("optixModuleCreate failed for intersection.ptx");
+        }
     }
     // Shading/materials module.
     {
