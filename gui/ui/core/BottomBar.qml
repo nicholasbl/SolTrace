@@ -36,7 +36,7 @@ RowLayout {
             anchors.horizontalCenter: parent.horizontalCenter
 
             STIconButton {
-                text: "\uf005"
+                icon: "\uf005"
                 toolTip: "Get Started"
 
                 onClicked: {
@@ -46,7 +46,7 @@ RowLayout {
             }
 
             STIconButton {
-                text: "\uf02d"
+                icon: "\uf02d"
                 toolTip: "Docs"
 
                 onClicked: {
@@ -56,7 +56,7 @@ RowLayout {
             }
 
             STIconButton {
-                text: "\uf05a"
+                icon: "\uf05a"
                 toolTip: "Build Info"
 
                 onClicked: {
@@ -178,7 +178,7 @@ RowLayout {
             anchors.horizontalCenter: parent.horizontalCenter
 
             STIconButton {
-                text: AppData.view.sim.camera == SimulationViewState.WASD ? "\uf047" : "\ue4bb"
+                icon: AppData.view.sim.camera == SimulationViewState.WASD ? "\uf047" : "\ue4bb"
                 toolTip: "Camera Mode"
 
                 onClicked: camera_popup.open()
@@ -223,7 +223,7 @@ RowLayout {
             }
 
             STIconButton {
-                text: "\uf06e"
+                icon: "\uf06e"
                 toolTip: "Perspective"
 
                 onClicked: perspective_popup.open()
@@ -256,7 +256,7 @@ RowLayout {
             }
 
             STIconButton {
-                text: "\uf568"
+                icon: "\uf568"
                 toolTip: "Alignment"
 
                 onClicked: camera_alignment_popup.open()

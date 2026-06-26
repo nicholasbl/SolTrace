@@ -50,7 +50,7 @@ Flow {
                 anchors.top: parent.top
                 anchors.right: parent.right
                 anchors.margins: 8
-                text: "\uf08e"
+                icon: "\uf08e"
                 onClicked: popup.open()
                 visible: root.preview !== null
             }

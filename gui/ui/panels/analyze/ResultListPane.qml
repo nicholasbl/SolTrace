@@ -177,7 +177,7 @@ ColumnLayout {
     RowLayout {
         STIconButton {
             enabled: root.has_current_result
-            text: "\uf2ed"
+            icon: "\uf2ed"
             toolTip: "Delete Result"
             onClicked: AppData.simulation.delete_result(root.selected_result_index)
         }
@@ -188,7 +188,7 @@ ColumnLayout {
 
         STIconButton {
             enabled: root.has_current_result
-            text: "\uf24d"
+            icon: "\uf24d"
             toolTip: "Create Scene from Result"
 
             onClicked: {
@@ -200,7 +200,7 @@ ColumnLayout {
 
         STIconButton {
             enabled: root.has_current_result
-            text: "\uf019"
+            icon: "\uf019"
             toolTip: "Export Result"
             onClicked: {
                 AppData.simulation.select_result(root.selected_result_index)

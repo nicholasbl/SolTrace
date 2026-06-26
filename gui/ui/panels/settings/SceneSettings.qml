@@ -58,7 +58,7 @@ ScrollView {
                 }
 
                 STIconButton {
-                    text: "\uf059"
+                    icon: "\uf059"
                     onClicked: skyInfo.open()
 
                     STPopup {

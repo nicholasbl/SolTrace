@@ -126,6 +126,12 @@ ColumnLayout {
         }
     }
 
+    Rectangle {
+        Layout.fillWidth: true
+        height: 1
+        color: Material.dividerColor
+    }
+
     WorkflowStepper {
         Layout.fillWidth: true
         next: "Load Scene"

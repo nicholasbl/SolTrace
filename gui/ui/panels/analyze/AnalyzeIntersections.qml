@@ -148,7 +148,7 @@ Flickable {
                 }
 
                 STIconButton {
-                    text: "\uf057"
+                    icon: "\uf057"
 
                     onClicked: root.ray_geom.selected_ray_id = -1
                 }

@@ -57,7 +57,7 @@ ShadowedGlassRectangle {
         }
 
         STIconButton {
-            text: "\uf07c"
+            icon: "\uf07c"
             toolTip: "Load Scene"
             opacity: App.view.workflow_phase === ViewModule.Load ? 1.0 : 0.5
 
@@ -84,7 +84,7 @@ ShadowedGlassRectangle {
         }
 
         STIconButton {
-            text: "\uf1de"
+            icon: "\uf1de"
             toolTip: "Configure Scene"
             opacity: App.view.workflow_phase === ViewModule.Configure ? 1.0 : 0.5
 
@@ -107,7 +107,7 @@ ShadowedGlassRectangle {
         }
 
         STIconButton {
-            text: "\uf04b"
+            icon: "\uf04b"
             toolTip: "Trace Scene"
             opacity: App.view.workflow_phase === ViewModule.Simulate ? 1.0 : 0.5
 
@@ -130,7 +130,7 @@ ShadowedGlassRectangle {
         }
 
         STIconButton {
-            text: "\uf080"
+            icon: "\uf080"
             toolTip: "Analyze Results"
             opacity: App.view.workflow_phase === ViewModule.Analyze ? 1.0 : 0.5
 

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Controls.Material
 import SolTrace
 
 ColumnLayout {
@@ -16,5 +17,20 @@ ColumnLayout {
         wrapMode: Text.WordWrap
     }
 
-    SceneListPane {}
+    SceneListPane {
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+    }
+
+    Rectangle {
+        Layout.fillWidth: true
+        height: 1
+        color: Material.dividerColor
+    }
+
+    WorkflowStepper {
+        previous: "Get Started"
+        next: "Configure Scene"
+        currentIndex: ViewModule.Load
+    }
 }

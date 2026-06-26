@@ -65,7 +65,7 @@ Flickable {
                 mipmap: true
 
                 STIconButton {
-                    text: "\uf019"
+                    icon: "\uf019"
 
                     anchors.bottom: parent.bottom
                     anchors.right: parent.right

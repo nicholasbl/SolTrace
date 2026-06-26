@@ -19,7 +19,7 @@ ShadowedGlassRectangle {
             anchors.top: parent.top
             anchors.right: parent.right
 
-            text: "\uf00d"
+            icon: "\uf00d"
             onClicked: {
                 App.view.toggle_full_panel(root.available_width)
             }

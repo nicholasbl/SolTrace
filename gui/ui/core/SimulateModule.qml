@@ -136,6 +136,12 @@ ColumnLayout {
         }
     }
 
+    Rectangle {
+        Layout.fillWidth: true
+        height: 1
+        color: Material.dividerColor
+    }
+
     WorkflowStepper {
         previous: "Configure Scene"
         next: "Analyze Results"

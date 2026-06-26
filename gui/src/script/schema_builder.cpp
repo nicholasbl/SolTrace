@@ -1,30 +1,68 @@
 #include "schema_builder.h"
 #include "script/script_db_interface.h"
 
+#include <QDebug>
+#include <QFile>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QMetaMethod>
 #include <QMetaObject>
+#include <QStringList>
 
+#include <algorithm>
 
 namespace SolTrace::GUI::Script {
 
 struct FunctionExport {
-    const char* name;
-    const char* desc;
+    QString name;
+    QString desc;
 };
 
-static constexpr FunctionExport exports[] = {
-    {
-        "create",
-        "Create a new CSP element. Requires geometry and material to be "
-        "useful.",
-    },
-    {
-        "get_all_materials",
-        "Obtain all available materials, identified by internal IDs.",
-    },
-};
+static QString load_export_docs() {
+    QFile file(QStringLiteral(":/docs/script/db_schema.md"));
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qCritical() << "Unable to load script schema docs from resource"
+                    << file.fileName() << file.errorString();
+        return {};
+    }
+
+    return QString::fromUtf8(file.readAll());
+}
+
+static QVector<FunctionExport> parse_exports(QString const& docs) {
+    QVector<FunctionExport> ret;
+    auto                    lines = docs.split('\n');
+    int                     pos   = 0;
+
+    while (pos < lines.size()) {
+        while (pos < lines.size() && lines[pos].trimmed() != "---") {
+            ++pos;
+        }
+        if (pos >= lines.size()) break;
+        ++pos;
+
+        while (pos < lines.size() && lines[pos].trimmed().isEmpty()) {
+            ++pos;
+        }
+        if (pos >= lines.size()) break;
+
+        auto name = lines[pos].trimmed();
+        ++pos;
+
+        QStringList body_lines;
+        while (pos < lines.size() && lines[pos].trimmed() != "---") {
+            body_lines << lines[pos].trimmed();
+            ++pos;
+        }
+
+        ret.push_back(FunctionExport {
+            name,
+            body_lines.join('\n').trimmed(),
+        });
+    }
+
+    return ret;
+}
 
 struct FunctionRecord {
     QString                          name;
@@ -61,19 +99,10 @@ struct FunctionRecord {
 static QString clean_type(QString s) {
     s.replace("void", "");
     s.replace("db::", "");
+    s.replace("QVector<Entity>", "[Entity]");
     s.replace("QList<", "[");
     s.replace(">", "]");
     return s;
-}
-
-template <class U, class F>
-QVector<U> map(QVector<QByteArray> in, F&& func) {
-    QVector<U> ret;
-
-    for (auto const& item : in) {
-        ret << func(item);
-    }
-    return ret;
 }
 
 QJsonObject SchemaBuilder::build(ScriptDBInterface* iface, QString task) {
@@ -89,9 +118,11 @@ QJsonObject SchemaBuilder::build(ScriptDBInterface* iface, QString task) {
         method_lookup[meta_func.name()] = meta_func;
     }
 
-    for (auto exp : exports) {
-        auto name = QString(exp.name);
-        auto desc = QString(exp.desc);
+    auto exports = parse_exports(load_export_docs());
+
+    for (auto const& exp : exports) {
+        auto name = exp.name;
+        auto desc = exp.desc;
         if (!method_lookup.contains(name)) {
             qCritical() << "Missing script function" << name << "for schema";
         }
@@ -101,6 +132,7 @@ QJsonObject SchemaBuilder::build(ScriptDBInterface* iface, QString task) {
         FunctionRecord record;
 
         record.name = name;
+        record.desc = desc;
 
         auto pnames = info.parameterNames();
         auto ptypes = info.parameterTypes();
@@ -120,8 +152,6 @@ QJsonObject SchemaBuilder::build(ScriptDBInterface* iface, QString task) {
         { QStringLiteral("runtime"),
           QJsonObject {
               { QStringLiteral("language"), QStringLiteral("javascript") },
-              { QStringLiteral("entrypoint"),
-                QStringLiteral("script evaluates to a function") },
               { QStringLiteral("global_objects"), QJsonArray() << "db" },
           } },
 

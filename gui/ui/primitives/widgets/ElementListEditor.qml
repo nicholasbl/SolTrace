@@ -116,7 +116,7 @@ Item {
             }
 
             STIconButton {
-                text: "\uf802"
+                icon: "\uf802"
 
                 onClicked: {
                     AppData.layout.viewed_element = st_del_root.entity

@@ -42,10 +42,10 @@ RowLayout {
         //Layout.leftMargin: 20
         //Layout.rightMargin: 10
 
-        text: "\uf0c9"
+        icon: "\uf0c9"
         toolTip: (App.view.left_panel.visible ? "Close": "Open") + " Left Panel"
 
-        label.font.pointSize: 20
+        iconSize: 20
         onClicked: App.view.toggle_left_panel(root.available_width);
     }
 

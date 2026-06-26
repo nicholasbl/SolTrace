@@ -18,7 +18,7 @@ RowLayout {
         Layout.preferredWidth: implicitWidth
         Layout.preferredHeight: implicitWidth
 
-        text: "\uf059"
+        icon: "\uf059"
         toolTip: (root.target.inline_docs ? "Disable" : "Enable") + " Inline Docs"
         visible: root.target.size >= SplitPanelData.Normal
         onClicked: root.target.inline_docs = !root.target.inline_docs
@@ -30,7 +30,7 @@ RowLayout {
         Layout.preferredWidth: implicitWidth
         Layout.preferredHeight: implicitWidth
 
-        text: "\uf2d2"
+        icon: "\uf2d2"
         toolTip: "Resize Panel"
         onClicked: window_opts_pop.open()
 
@@ -45,7 +45,7 @@ RowLayout {
                     Layout.preferredWidth: implicitWidth
                     Layout.preferredHeight: implicitWidth
 
-                    text: "\uf422"
+                    icon: "\uf422"
                     toolTip: "Smaller"
                     visible: root.target.size != SplitPanelData.Small
                     onClicked: {
@@ -66,7 +66,7 @@ RowLayout {
                     Layout.preferredWidth: implicitWidth
                     Layout.preferredHeight: implicitWidth
 
-                    text: "\uf424"
+                    icon: "\uf424"
                     toolTip: "Larger"
                     visible: root.target.size != SplitPanelData.Full
                     onClicked: {
@@ -82,7 +82,7 @@ RowLayout {
                     Layout.preferredWidth: implicitWidth
                     Layout.preferredHeight: implicitWidth
 
-                    text: "\uf065"
+                    icon: "\uf065"
                     toolTip: "Full Size"
                     visible: root.target.size != SplitPanelData.Full
                     onClicked: {
@@ -101,7 +101,7 @@ RowLayout {
         Layout.preferredWidth: implicitWidth
         Layout.preferredHeight: implicitWidth
 
-        text: "\uf00d"
+        icon: "\uf00d"
         toolTip: "Close Panel"
         onClicked: {
             root.target.visible = false

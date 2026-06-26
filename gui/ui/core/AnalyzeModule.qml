@@ -61,6 +61,12 @@ ColumnLayout {
         }
     }
 
+    Rectangle {
+        Layout.fillWidth: true
+        height: 1
+        color: Material.dividerColor
+    }
+
     WorkflowStepper {
         previous: "Run Tracer"
         currentIndex: ViewModule.Analyze
