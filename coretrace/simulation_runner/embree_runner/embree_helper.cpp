@@ -20,7 +20,6 @@
 namespace SolTrace::EmbreeRunner
 {
 
-    using SolTrace::Data::CopyVec3;
     using SolTrace::Data::TransformToLocal;
     using SolTrace::Data::TransformToReference;
 

@@ -48,51 +48,10 @@
  *******************************************************************************************************/
 
 #include <math.h>
-#include <stdlib.h>
-
-// #include "types.h"
-// #include "procs.h"
 #include "matvec.hpp"
 
 namespace SolTrace::Data
 {
-
-    // inline void CopyVec3(double dest[3], const std::vector<double> &src)
-    // {
-    //  dest[0] = src[0];
-    //  dest[1] = src[1];
-    //  dest[2] = src[2];
-    // }
-
-    // inline void CopyVec3(std::vector<double> &dest, double src[3])
-    // {
-    //  dest[0] = src[0];
-    //  dest[1] = src[1];
-    //  dest[2] = src[2];
-    // }
-
-    // inline void CopyVec3(double dest[3], double src[3])
-    // {
-    //  dest[0] = src[0];
-    //  dest[1] = src[1];
-    //  dest[2] = src[2];
-    // }
-
-    void CopyMat3(double dest[3][3], const double src[3][3])
-    {
-        for (int i = 0; i < 3; ++i)
-            for (int j = 0; j < 3; ++j)
-                dest[i][j] = src[i][j];
-        return;
-    }
-
-    void IdentityMat3(double mat[3][3])
-    {
-        for (int i = 0; i < 3; ++i)
-            for (int j = 0; j < 3; ++j)
-                mat[i][j] = i == j ? 1.0 : 0.0;
-        return;
-    }
 
     void MatrixVectorMult(const double M[3][3], const double V[3], double MxV[3])
     {
@@ -108,48 +67,8 @@ namespace SolTrace::Data
         MxV[0] = M[0][0] * V[0] + M[0][1] * V[1] + M[0][2] * V[2];
         MxV[1] = M[1][0] * V[0] + M[1][1] * V[1] + M[1][2] * V[2];
         MxV[2] = M[2][0] * V[0] + M[2][1] * V[1] + M[2][2] * V[2];
-        /*
-            int i, j;
-            for (i=0;i<3;i++)
-            {
-                MxV[i] = 0.0;
-                for (j=0;j<3;j++)
-                    MxV[i] = Matrix[i][j]*Vector[j] + MxV[i];
-            }*/
     }
     // End of procedure-------------------------------------------------------------
-
-    void MatrixMatrixMult(const double A[3][3],
-                          const double B[3][3],
-                          double C[3][3])
-    {
-        double sum;
-        for (int i = 0; i < 3; ++i)
-        {
-            for (int j = 0; j < 3; ++j)
-            {
-                sum = 0.0;
-                for (int k = 0; k < 3; ++k)
-                {
-                    sum += A[i][k] * B[k][j];
-                }
-                C[i][j] = sum;
-            }
-        }
-    }
-
-    double DOT(const double A[3], const double B[3])
-    {
-        //{Purpose: To compute the dot product of 2 N-dimensional vectors, A and B
-        //        Input -
-        //              A(N) = First input vector
-        //              B(N) = Second input vector
-        //              N = dimension of vectors
-        //        Output -
-        //             Result of DOT = dot product of A and B}
-
-        return (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
-    }
 
     void MatrixTranspose(const double InputMatrix[3][3],
                          int NumRowsCols,
@@ -382,28 +301,6 @@ namespace SolTrace::Data
         RLocToRef = glm::transpose(RRefToLoc);
     }
 
-    // void AddVec3(double a, const double x[3],
-    //              double b, double y[3])
-    // {
-    //     for (int i = 0; i < 3; ++i)
-    //     {
-    //         y[i] = a * x[i] + b * y[i];
-    //     }
-    //     return;
-    // }
-
-    void AddVec3(double a, const double x[3],
-                 double b, const double y[3],
-                 double z[3])
-    {
-        for (int i = 0; i < 3; ++i)
-        {
-            z[i] = a * x[i] + b * y[i];
-        }
-        return;
-    }
-
-    // end of procedure--------------------------------------------------------------
     //  void EvalPoly(double ax, double ay, std::vector<double> &Coeffs, int POrder, double *az) //the 0.0's are values for DeltaX and DeltaY; **[need to look at this further]**
     //  {
     //      *az = 0.0;
