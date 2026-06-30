@@ -39,7 +39,7 @@ jobs:
           - name: macOS ARM64 Embree bundle
             id: macos-arm64-embree
             platform: macos
-            runner: macos-26
+            runner: macos-15
             shell: bash
             qt_host: mac
             qt_arch: clang_64
