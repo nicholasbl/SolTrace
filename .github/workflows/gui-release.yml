@@ -259,6 +259,8 @@ jobs:
 
       - name: Bundle license files
         if: matrix.platform == 'macos' || matrix.platform == 'windows'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: >-
           python -m scripts.release.release_tools bundle-licenses
           --platform "${{ matrix.platform }}"
@@ -278,6 +280,8 @@ jobs:
           --optix-enabled "${{ matrix.optix_enabled }}"
 
       - name: Package release artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: >-
           python -m scripts.release.release_tools package
           --platform "${{ matrix.platform }}"

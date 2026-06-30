@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import io
+import json
 import tempfile
 import unittest
 import zipfile
@@ -9,7 +11,13 @@ from pathlib import Path
 
 from scripts.release.embree import _extract_zip, select_asset
 from scripts.release.common import ReleaseError
-from scripts.release.licenses import copy_discovered, safe_license_name
+from scripts.release.licenses import (
+    copy_discovered,
+    download_qt_licenses,
+    find_qt_license_dir,
+    find_qt_root,
+    safe_license_name,
+)
 from scripts.release.linux import glibc_versions
 from scripts.release.macos import dependency_is_relocatable, parse_otool_dependencies
 from scripts.release.package import package_windows
@@ -78,6 +86,54 @@ class LicenseTests(unittest.TestCase):
                 [path.name for path in destination.iterdir()],
                 ["Dep__dependency__LICENSE"],
             )
+
+    def test_qt_install_is_valid_without_local_license_directory(self) -> None:
+        """An aqt installation can be located even when licenses were omitted."""
+        with tempfile.TemporaryDirectory() as temporary:
+            qt_root = Path(temporary) / "Qt" / "6.11.1" / "macos"
+            qt_root.mkdir(parents=True)
+            self.assertEqual(find_qt_root({"QT_ROOT_DIR": str(qt_root)}), qt_root)
+            self.assertIsNone(find_qt_license_dir(qt_root))
+
+    def test_download_qt_licenses_uses_pinned_tag_contents(self) -> None:
+        """The fallback enumerates and downloads license files for the Qt version."""
+        metadata = json.dumps(
+            [
+                {
+                    "type": "file",
+                    "name": "LGPL-3.0-only.txt",
+                    "download_url": "https://example.test/LGPL-3.0-only.txt",
+                }
+            ]
+        ).encode()
+
+        class Response(io.BytesIO):
+            """Minimal context-managed HTTP response used by the downloader."""
+
+            def __enter__(self):
+                """Return this in-memory response to the context manager."""
+                return self
+
+            def __exit__(self, *_args):
+                """Close the in-memory response after the request is consumed."""
+                self.close()
+
+        requested: list[str] = []
+
+        def opener(request):
+            """Return deterministic API metadata and license content."""
+            requested.append(request.full_url)
+            return Response(metadata if "api.github.com" in request.full_url else b"LGPL text")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary)
+            self.assertEqual(
+                download_qt_licenses(destination, "6.11.1", opener=opener), 1
+            )
+            self.assertEqual(
+                (destination / "LGPL-3.0-only.txt").read_text(), "LGPL text"
+            )
+        self.assertIn("ref=v6.11.1", requested[0])
 
 
 class MacOSTests(unittest.TestCase):
