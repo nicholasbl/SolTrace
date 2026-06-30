@@ -1,3 +1,5 @@
+"""Stage and statically validate Windows runtime dependencies."""
+
 from __future__ import annotations
 
 import os
@@ -8,6 +10,7 @@ from .common import ReleaseError, enabled, require_path, run
 
 
 def _copy_matches(source: Path, pattern: str, destination: Path, description: str) -> None:
+    """Copy all matching files, failing when a required runtime family is absent."""
     matches = sorted(path for path in source.glob(pattern) if path.is_file())
     if not matches:
         raise ReleaseError(f"No {description} matching {pattern!r} found in {source}")
@@ -17,6 +20,7 @@ def _copy_matches(source: Path, pattern: str, destination: Path, description: st
 
 
 def stage_runtime(*, install_dir: Path, optix_enabled: str | bool) -> None:
+    """Copy Embree/TBB and, for OptiX builds, CUDA runtime DLLs beside the app."""
     runtime_value = os.environ.get("EMBREE_RUNTIME_DIR")
     if not runtime_value:
         raise ReleaseError("EMBREE_RUNTIME_DIR is not set")
@@ -31,11 +35,13 @@ def stage_runtime(*, install_dir: Path, optix_enabled: str | bool) -> None:
 
 
 def _require_match(directory: Path, pattern: str, description: str) -> None:
+    """Require at least one staged file matching a dependency pattern."""
     if not any(path.is_file() for path in directory.glob(pattern)):
         raise ReleaseError(f"{description} is missing from {directory} (pattern {pattern})")
 
 
 def _find_dumpbin() -> Path:
+    """Locate the x64 ``dumpbin`` belonging to the latest installed MSVC toolset."""
     program_files = os.environ.get("ProgramFiles(x86)")
     if not program_files:
         raise ReleaseError("ProgramFiles(x86) is not set")
@@ -79,6 +85,7 @@ def _find_dumpbin() -> Path:
 
 
 def validate(*, install_dir: Path, app_name: str, optix_enabled: str | bool) -> None:
+    """Require key DLL families and print the executable's PE dependency table."""
     bin_dir = require_path(install_dir / "bin", "Windows binary directory")
     executable = require_path(bin_dir / f"{app_name}.exe", "SolTrace executable")
     _require_match(bin_dir, "Qt6Core.dll", "Qt6Core.dll")

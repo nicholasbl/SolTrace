@@ -1,3 +1,5 @@
+"""Create final macOS and Windows release archives from staged install trees."""
+
 from __future__ import annotations
 
 import zipfile
@@ -7,6 +9,7 @@ from .common import ReleaseError, require_path, run
 
 
 def package_macos(*, install_dir: Path, asset: Path, app_name: str) -> None:
+    """Archive a macOS bundle with ``ditto`` so Apple metadata is preserved."""
     app = require_path(install_dir / f"{app_name}.app", "macOS application bundle")
     asset.parent.mkdir(parents=True, exist_ok=True)
     asset.unlink(missing_ok=True)
@@ -14,6 +17,7 @@ def package_macos(*, install_dir: Path, asset: Path, app_name: str) -> None:
 
 
 def package_windows(*, install_dir: Path, asset: Path, app_name: str) -> None:
+    """Create a ZIP whose root matches the Windows CMake installation tree."""
     require_path(install_dir / "bin" / f"{app_name}.exe", "Windows executable")
     asset.parent.mkdir(parents=True, exist_ok=True)
     asset.unlink(missing_ok=True)

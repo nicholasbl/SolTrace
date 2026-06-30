@@ -1,3 +1,5 @@
+"""Shared process, path, and GitHub Actions helpers for release commands."""
+
 from __future__ import annotations
 
 import os
@@ -19,6 +21,7 @@ def run(
     capture: bool = False,
     check: bool = True,
 ) -> subprocess.CompletedProcess[str]:
+    """Run a command, log it, and convert process failures into ``ReleaseError``."""
     args = [os.fspath(part) for part in command]
     print(f"+ {shlex.join(args)}", flush=True)
     try:
@@ -42,12 +45,14 @@ def run(
 
 
 def require_path(path: Path, description: str) -> Path:
+    """Return an existing path or raise an error that identifies the missing input."""
     if not path.exists():
         raise ReleaseError(f"{description} was not found: {path}")
     return path
 
 
 def append_github_file(variable: str, values: Iterable[str | os.PathLike[str]]) -> None:
+    """Append lines to a GitHub Actions environment or PATH command file."""
     output = os.environ.get(variable)
     if not output:
         raise ReleaseError(f"{variable} is not set; this command expects GitHub Actions")
@@ -57,4 +62,5 @@ def append_github_file(variable: str, values: Iterable[str | os.PathLike[str]]) 
 
 
 def enabled(value: str | bool) -> bool:
+    """Interpret common CMake and environment representations of a true value."""
     return value is True or str(value).upper() in {"1", "ON", "TRUE", "YES"}

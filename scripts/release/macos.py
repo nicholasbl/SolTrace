@@ -1,3 +1,5 @@
+"""Stage and validate relocatable dependencies in the macOS application bundle."""
+
 from __future__ import annotations
 
 import os
@@ -11,6 +13,7 @@ EXPECTED_RPATH = "@executable_path/../Frameworks"
 
 
 def parse_otool_dependencies(output: str) -> list[str]:
+    """Parse dependency install names from ``otool -L`` output."""
     dependencies: list[str] = []
     for line in output.splitlines()[1:]:
         stripped = line.strip()
@@ -20,12 +23,14 @@ def parse_otool_dependencies(output: str) -> list[str]:
 
 
 def dependency_is_relocatable(dependency: str) -> bool:
+    """Allow bundle-relative references and Apple-provided system libraries."""
     return dependency.startswith(
         ("@rpath/", "@loader_path/", "@executable_path/", "/System/Library/", "/usr/lib/")
     )
 
 
 def _copy_entry(source: Path, destination: Path) -> None:
+    """Copy a regular file or recreate a relative dylib symlink without dereferencing it."""
     target = destination / source.name
     if target.is_symlink() or target.exists():
         target.unlink()
@@ -36,6 +41,7 @@ def _copy_entry(source: Path, destination: Path) -> None:
 
 
 def stage_runtime(*, install_dir: Path, app_name: str) -> None:
+    """Copy Embree/TBB dylib chains into the bundle and ensure its runtime RPATH."""
     runtime_value = os.environ.get("EMBREE_RUNTIME_DIR")
     if not runtime_value:
         raise ReleaseError("EMBREE_RUNTIME_DIR is not set")
@@ -61,6 +67,7 @@ def stage_runtime(*, install_dir: Path, app_name: str) -> None:
 
 
 def validate(*, install_dir: Path, app_name: str, architecture: str) -> None:
+    """Audit architecture, RPATHs, install names, and required Embree/TBB files."""
     app = require_path(install_dir / f"{app_name}.app", "macOS application bundle")
     executable = require_path(app / "Contents" / "MacOS" / app_name, "application executable")
     frameworks = require_path(app / "Contents" / "Frameworks", "Frameworks directory")

@@ -1,3 +1,5 @@
+"""Discover and bundle project and third-party license material."""
+
 from __future__ import annotations
 
 import os
@@ -12,16 +14,19 @@ LICENSE_PREFIXES = ("license", "copying", "notice", "eula", "third-party")
 
 
 def is_license_file(path: Path) -> bool:
+    """Return whether a file name uses one of the recognized license prefixes."""
     return path.is_file() and path.name.lower().startswith(LICENSE_PREFIXES)
 
 
 def safe_license_name(root: Path, path: Path, prefix: str) -> str:
+    """Flatten a source-relative license path into a collision-resistant file name."""
     relative = path.relative_to(root)
     flattened = "__".join(relative.parts)
     return f"{prefix}__{flattened}"
 
 
 def copy_discovered(root: Path | None, destination: Path, prefix: str) -> int:
+    """Copy recognized license files below ``root`` and return the copied count."""
     if root is None or not root.is_dir():
         return 0
     count = 0
@@ -34,6 +39,7 @@ def copy_discovered(root: Path | None, destination: Path, prefix: str) -> int:
 
 
 def find_qt_root(environment: Mapping[str, str] = os.environ) -> Path:
+    """Resolve the Qt installation root from variables set by install-qt-action."""
     configured = environment.get("QT_ROOT_DIR")
     if configured and (Path(configured) / "LICENSES").is_dir():
         return Path(configured)
@@ -49,6 +55,7 @@ def find_qt_root(environment: Mapping[str, str] = os.environ) -> Path:
 
 
 def destination_for(platform: str, install_dir: Path, app_name: str, appdir: Path | None) -> Path:
+    """Choose the platform-native license directory inside a staged artifact."""
     if platform == "macos":
         return install_dir / f"{app_name}.app" / "Contents" / "Resources" / "licenses"
     if platform == "windows":
@@ -68,6 +75,12 @@ def bundle(
     optix_enabled: str | bool,
     appdir: Path | None = None,
 ) -> Path:
+    """Collect SolTrace, Qt, Embree, build dependency, CUDA, and OptiX licenses.
+
+    Linux callers provide ``appdir`` because licenses are inserted before
+    linuxdeploy creates the AppImage. macOS and Windows destinations are derived
+    directly from the CMake installation tree.
+    """
     destination = destination_for(platform, install_dir, app_name, appdir)
     soltrace_dir = destination / "SolTrace"
     soltrace_dir.mkdir(parents=True, exist_ok=True)
@@ -95,5 +108,6 @@ def bundle(
 
 
 def _environment_path(name: str) -> Path | None:
+    """Convert an optional environment variable into a path."""
     value = os.environ.get(name)
     return Path(value) if value else None

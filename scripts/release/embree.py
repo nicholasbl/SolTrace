@@ -1,3 +1,5 @@
+"""Download and expose a pinned Embree binary release to subsequent CI steps."""
+
 from __future__ import annotations
 
 import json
@@ -13,6 +15,7 @@ from .common import ReleaseError, append_github_file, run
 
 
 def select_asset(asset_names: list[str], pattern: str) -> str:
+    """Return the first release asset matching a case-insensitive regular expression."""
     matcher = re.compile(pattern, re.IGNORECASE)
     for name in asset_names:
         if matcher.search(name):
@@ -24,6 +27,7 @@ def select_asset(asset_names: list[str], pattern: str) -> str:
 
 
 def _extract(archive: Path, destination: Path) -> None:
+    """Extract a supported Embree ZIP or compressed tar archive."""
     name = archive.name.lower()
     if name.endswith(".zip"):
         _extract_zip(archive, destination)
@@ -59,6 +63,7 @@ def _extract_zip(archive: Path, destination: Path) -> None:
 
 
 def _find_cmake_dir(install_dir: Path, version: str) -> Path:
+    """Locate the versioned CMake package directory required by ``find_package``."""
     expected = f"embree-{version}"
     matches = sorted(
         path
@@ -75,6 +80,7 @@ def _find_cmake_dir(install_dir: Path, version: str) -> Path:
 
 
 def _find_runtime_dir(install_dir: Path) -> Path:
+    """Locate the directory containing Embree's platform runtime library."""
     windows = os.name == "nt"
     for path in sorted(install_dir.rglob("*")):
         if not path.is_file():
@@ -90,6 +96,12 @@ def _find_runtime_dir(install_dir: Path) -> Path:
 
 
 def install(*, version: str, asset_regex: str, runner_temp: Path, repository: str) -> None:
+    """Download Embree and publish its CMake and runtime paths to GitHub Actions.
+
+    The selected archive is unpacked below ``runner_temp``. The function writes
+    ``embree_DIR``, ``EMBREE_RUNTIME_DIR``, and ``EMBREE_INSTALL_DIR`` to
+    ``GITHUB_ENV`` and adds the runtime directory to ``GITHUB_PATH``.
+    """
     release = f"v{version}"
     archive_dir = runner_temp / "embree-archive"
     install_dir = runner_temp / "embree"

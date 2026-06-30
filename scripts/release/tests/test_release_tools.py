@@ -1,3 +1,5 @@
+"""Portable unit tests for release selection, parsing, and archive behavior."""
+
 from __future__ import annotations
 
 import tempfile
@@ -14,7 +16,10 @@ from scripts.release.package import package_windows
 
 
 class EmbreeTests(unittest.TestCase):
+    """Verify release asset selection and archive extraction behavior."""
+
     def test_select_asset_is_case_insensitive(self) -> None:
+        """Asset matching tolerates capitalization differences in upstream names."""
         assets = ["embree-4.4.1.x64.windows.zip", "embree-4.4.1.ARM64.macOS.zip"]
         self.assertEqual(
             select_asset(assets, r"arm64.*mac(os)?\.zip$"),
@@ -22,10 +27,12 @@ class EmbreeTests(unittest.TestCase):
         )
 
     def test_select_asset_reports_failure(self) -> None:
+        """A missing platform asset produces an explicit release failure."""
         with self.assertRaises(ReleaseError):
             select_asset(["linux.tar.gz"], r"windows.*\.zip$")
 
     def test_zip_extraction_preserves_symlinks(self) -> None:
+        """Versioned macOS dylib symlink chains survive ZIP extraction."""
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             archive = root / "embree.zip"
@@ -46,7 +53,10 @@ class EmbreeTests(unittest.TestCase):
 
 
 class LicenseTests(unittest.TestCase):
+    """Verify license naming and recursive discovery."""
+
     def test_safe_name_preserves_origin_without_directories(self) -> None:
+        """Flattened names retain enough source context to avoid collisions."""
         root = Path("deps")
         path = root / "library" / "LICENSE.txt"
         self.assertEqual(
@@ -55,6 +65,7 @@ class LicenseTests(unittest.TestCase):
         )
 
     def test_discovery_copies_only_license_files(self) -> None:
+        """Source files unrelated to licensing are not added to an artifact."""
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / "source"
             destination = Path(temporary) / "destination"
@@ -70,7 +81,10 @@ class LicenseTests(unittest.TestCase):
 
 
 class MacOSTests(unittest.TestCase):
+    """Verify parsing and policy checks used by the macOS dependency audit."""
+
     def test_parse_dependencies(self) -> None:
+        """otool metadata is removed while install names are retained."""
         output = """Binary:
 \t@rpath/libembree.4.dylib (compatibility version 4.0.0)
 \t/usr/lib/libc++.1.dylib (compatibility version 1.0.0)
@@ -81,6 +95,7 @@ class MacOSTests(unittest.TestCase):
         )
 
     def test_dependency_policy(self) -> None:
+        """Bundle-relative and system paths pass while build-machine paths fail."""
         self.assertTrue(dependency_is_relocatable("@rpath/QtCore.framework/QtCore"))
         self.assertTrue(
             dependency_is_relocatable(
@@ -91,13 +106,19 @@ class MacOSTests(unittest.TestCase):
 
 
 class LinuxTests(unittest.TestCase):
+    """Verify Linux runtime-baseline inspection helpers."""
+
     def test_extract_glibc_versions(self) -> None:
+        """Duplicate GLIBC references collapse into a distinct version set."""
         data = b"prefix GLIBC_2.29 middle GLIBC_2.34 suffix GLIBC_2.29"
         self.assertEqual(glibc_versions(data), {"GLIBC_2.29", "GLIBC_2.34"})
 
 
 class PackageTests(unittest.TestCase):
+    """Verify final archive layout."""
+
     def test_windows_archive_uses_install_tree_as_root(self) -> None:
+        """Windows ZIPs expose bin and license directories at archive root."""
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             install = root / "dist"

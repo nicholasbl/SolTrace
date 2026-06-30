@@ -1,3 +1,5 @@
+"""Construct and statically validate Linux AppImage release artifacts."""
+
 from __future__ import annotations
 
 import os
@@ -23,10 +25,12 @@ GLIBC_PATTERN = re.compile(rb"GLIBC_[0-9]+(?:\.[0-9]+)*")
 
 
 def glibc_versions(data: bytes) -> set[str]:
+    """Extract referenced GLIBC symbol versions from bytes belonging to an ELF file."""
     return {match.decode("ascii") for match in GLIBC_PATTERN.findall(data)}
 
 
 def _download(url: str, destination: Path) -> None:
+    """Download an AppImage tool and mark it executable."""
     print(f"Downloading {url}")
     with urllib.request.urlopen(url) as response, destination.open("wb") as output:
         shutil.copyfileobj(response, output)
@@ -34,6 +38,7 @@ def _download(url: str, destination: Path) -> None:
 
 
 def _runtime_environment() -> dict[str, str]:
+    """Build the environment linuxdeploy needs to discover Embree and CUDA."""
     environment = os.environ.copy()
     library_paths: list[str] = []
     embree_runtime = environment.get("EMBREE_RUNTIME_DIR")
@@ -59,6 +64,7 @@ def _prepare_appdir(
     app_name: str,
     optix_enabled: str | bool,
 ) -> tuple[Path, Path, Path]:
+    """Create the AppDir skeleton and return its executable, desktop file, and icon."""
     shutil.rmtree(appdir, ignore_errors=True)
     executable = appdir / "usr" / "bin" / app_name
     desktop = appdir / "usr" / "share" / "applications" / f"{app_name}.desktop"
@@ -109,6 +115,7 @@ def _validate_extracted(
     optix_enabled: str | bool,
     environment: dict[str, str],
 ) -> None:
+    """Verify extracted files, dynamic dependencies, PTX assets, and glibc baseline."""
     executable = require_path(extracted / "usr" / "bin" / app_name, "extracted AppImage executable")
     if enabled(optix_enabled):
         for shader in ("intersection.ptx", "materials.ptx", "sun.ptx"):
@@ -150,6 +157,12 @@ def package_appimage(
     app_name: str,
     optix_enabled: str | bool,
 ) -> None:
+    """Build an AppImage from the CMake install tree and validate its contents.
+
+    linuxdeploy and its Qt plugin are downloaded from their continuous releases.
+    The completed AppImage is extracted again so validation operates on the
+    shipped filesystem rather than on build-tree files.
+    """
     appdir = workspace / "AppDir"
     tools = workspace / "appimage-tools"
     extracted = workspace / "squashfs-root"

@@ -1,3 +1,10 @@
+"""Command-line entry point for SolTrace release packaging and validation.
+
+The GitHub Actions workflow invokes this module with ``python -m``. Keeping the
+command definitions here makes the workflow declarative while the platform
+modules remain directly importable and unit-testable.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -9,10 +16,12 @@ from .common import ReleaseError
 
 
 def _path(value: str) -> Path:
+    """Normalize a command-line path relative to the caller's working directory."""
     return Path(value).resolve()
 
 
 def _parser() -> argparse.ArgumentParser:
+    """Define the stable command-line interface used by the release workflow."""
     parser = argparse.ArgumentParser(description="Build and validate SolTrace release artifacts")
     commands = parser.add_subparsers(dest="command", required=True)
 
@@ -56,6 +65,7 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def _add_artifact_arguments(parser: argparse.ArgumentParser, *, include_asset: bool) -> None:
+    """Add paths and build switches shared by artifact-oriented commands."""
     parser.add_argument("--platform", required=True, choices=("macos", "windows", "linux"))
     parser.add_argument("--workspace", required=True, type=_path)
     parser.add_argument("--build-dir", required=True, type=_path)
@@ -67,6 +77,7 @@ def _add_artifact_arguments(parser: argparse.ArgumentParser, *, include_asset: b
 
 
 def _dispatch(args: argparse.Namespace) -> None:
+    """Route parsed arguments to the appropriate platform implementation."""
     if args.command == "install-embree":
         embree.install(
             version=args.version,
@@ -126,6 +137,7 @@ def _dispatch(args: argparse.Namespace) -> None:
 
 
 def main() -> int:
+    """Run the selected command and present expected failures without a traceback."""
     try:
         _dispatch(_parser().parse_args())
     except ReleaseError as error:
