@@ -150,6 +150,24 @@ class MacOSTests(unittest.TestCase):
             ["@rpath/libembree.4.dylib", "/usr/lib/libc++.1.dylib"],
         )
 
+    def test_parse_dependencies_ignores_universal_architecture_headers(self) -> None:
+        """Universal-binary section headers are not interpreted as dependencies."""
+        binary = "/dist/SolTrace.app/Contents/Frameworks/QtConcurrent.framework/QtConcurrent"
+        output = f"""{binary} (architecture x86_64):
+\t@rpath/QtConcurrent.framework/Versions/A/QtConcurrent (compatibility version 6.0.0)
+\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0)
+{binary} (architecture arm64):
+\t@rpath/QtConcurrent.framework/Versions/A/QtConcurrent (compatibility version 6.0.0)
+\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0)
+"""
+        self.assertEqual(
+            parse_otool_dependencies(output),
+            [
+                "@rpath/QtConcurrent.framework/Versions/A/QtConcurrent",
+                "/usr/lib/libc++.1.dylib",
+            ],
+        )
+
     def test_dependency_policy(self) -> None:
         """Bundle-relative and system paths pass while build-machine paths fail."""
         self.assertTrue(dependency_is_relocatable("@rpath/QtCore.framework/QtCore"))

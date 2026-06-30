@@ -13,12 +13,20 @@ EXPECTED_RPATH = "@executable_path/../Frameworks"
 
 
 def parse_otool_dependencies(output: str) -> list[str]:
-    """Parse dependency install names from ``otool -L`` output."""
+    """Parse unique dependency install names from ``otool -L`` output.
+
+    Dependency rows are indented. Thin- and universal-binary section headers
+    are not, so filtering on indentation avoids treating an architecture header's
+    absolute input path as a runtime dependency.
+    """
     dependencies: list[str] = []
-    for line in output.splitlines()[1:]:
+    for line in output.splitlines():
+        if not line or not line[0].isspace():
+            continue
         stripped = line.strip()
-        if stripped:
-            dependencies.append(stripped.split(" (", 1)[0])
+        dependency = stripped.split(" (", 1)[0]
+        if dependency and dependency not in dependencies:
+            dependencies.append(dependency)
     return dependencies
 
 
