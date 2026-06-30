@@ -1,0 +1,29 @@
+# Standalone CPack configuration for the pre-staged Windows runtime tree.
+# This intentionally does not include the project's CPackConfig.cmake or invoke
+# its install rules. See scripts/release/README.md for the packaging rationale.
+
+set(CPACK_GENERATOR "WIX")
+set(CPACK_WIX_VERSION "4")
+set(CPACK_WIX_ARCHITECTURE "x64")
+set(CPACK_WIX_INSTALL_SCOPE "perMachine")
+
+set(CPACK_PACKAGE_NAME "@APP_NAME@")
+set(CPACK_PACKAGE_VENDOR "National Laboratory of the Rockies")
+set(CPACK_PACKAGE_DESCRIPTION "Optical simulation for concentrating solar power systems")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Optical simulation for concentrating solar power systems")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/NLR-SolTrace/SolTrace")
+set(CPACK_PACKAGE_VERSION "@PACKAGE_VERSION@")
+set(CPACK_PACKAGE_FILE_NAME "@PACKAGE_FILE_NAME@")
+set(CPACK_PACKAGE_DIRECTORY "@PACKAGE_DIRECTORY@")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "SolTrace")
+set(CPACK_RESOURCE_FILE_LICENSE "@LICENSE_FILE@")
+
+# The stable upgrade GUID was generated deterministically for the SolTrace
+# Windows MSI product family. Product GUIDs remain package-specific.
+set(CPACK_WIX_UPGRADE_GUID "4F2CA469-A426-5378-BB8C-4E6EA7A23702")
+set(CPACK_WIX_PROGRAM_MENU_FOLDER "SolTrace")
+set(CPACK_WIX_UI_REF "WixUI_InstallDir")
+set(CPACK_PACKAGE_EXECUTABLES "SolTrace" "SolTrace")
+
+set(CPACK_MONOLITHIC_INSTALL ON)
+set(CPACK_INSTALLED_DIRECTORIES "@INSTALLER_ROOT@;/")

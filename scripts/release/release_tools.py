@@ -56,6 +56,18 @@ def _parser() -> argparse.ArgumentParser:
     package_parser = commands.add_parser("package", help="Create the platform release archive")
     _add_artifact_arguments(package_parser, include_asset=True)
 
+    msi_parser = commands.add_parser(
+        "package-windows-msi",
+        help="Create a WiX MSI from the staged Windows runtime tree",
+    )
+    msi_parser.add_argument("--workspace", required=True, type=_path)
+    msi_parser.add_argument("--build-dir", required=True, type=_path)
+    msi_parser.add_argument("--install-dir", required=True, type=_path)
+    msi_parser.add_argument("--installer-root", required=True, type=_path)
+    msi_parser.add_argument("--asset", required=True, type=_path)
+    msi_parser.add_argument("--app-name", required=True)
+    msi_parser.add_argument("--package-version", required=True)
+
     publish_parser = commands.add_parser(
         "publish", help="Upload an asset to a draft GitHub release"
     )
@@ -130,6 +142,16 @@ def _dispatch(args: argparse.Namespace) -> None:
                 app_name=args.app_name,
                 optix_enabled=args.optix_enabled,
             )
+    elif args.command == "package-windows-msi":
+        windows.package_msi(
+            workspace=args.workspace,
+            build_dir=args.build_dir,
+            install_dir=args.install_dir,
+            installer_root=args.installer_root,
+            asset=args.asset,
+            app_name=args.app_name,
+            package_version=args.package_version,
+        )
     elif args.command == "publish":
         publish.publish(tag=args.tag, asset=args.asset)
     else:

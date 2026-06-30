@@ -21,6 +21,11 @@ from scripts.release.licenses import (
 from scripts.release.linux import glibc_versions
 from scripts.release.macos import dependency_is_relocatable, parse_otool_dependencies
 from scripts.release.package import package_windows
+from scripts.release.windows import (
+    _render_cpack_config,
+    package_msi,
+    prepare_installer_root,
+)
 
 
 class EmbreeTests(unittest.TestCase):
@@ -209,6 +214,66 @@ class PackageTests(unittest.TestCase):
                     sorted(archive.namelist()),
                     ["bin/SolTrace.exe", "licenses/LICENSE.md"],
                 )
+
+    def test_windows_installer_root_excludes_development_trees(self) -> None:
+        """The MSI runtime subset omits headers and link-time libraries."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            install = root / "dist"
+            for directory in ("bin", "include", "lib", "licenses", "qml"):
+                (install / directory).mkdir(parents=True)
+            (install / "bin" / "SolTrace.exe").write_bytes(b"executable")
+            (install / "bin" / "Qt6Core.dll").write_bytes(b"runtime")
+            (install / "include" / "api.h").write_text("header")
+            (install / "lib" / "core.lib").write_bytes(b"library")
+            (install / "licenses" / "LICENSE.md").write_text("license")
+            (install / "qml" / "qmldir").write_text("module")
+
+            destination = root / "installer-root"
+            prepare_installer_root(
+                install_dir=install,
+                installer_root=destination,
+                app_name="SolTrace",
+            )
+            self.assertTrue((destination / "bin" / "Qt6Core.dll").is_file())
+            self.assertTrue((destination / "qml" / "qmldir").is_file())
+            self.assertFalse((destination / "include").exists())
+            self.assertFalse((destination / "lib").exists())
+
+    def test_wix_template_renders_without_project_install_configuration(self) -> None:
+        """The standalone config points CPack only at the filtered runtime tree."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "CPackConfig.cmake"
+            _render_cpack_config(
+                Path("packaging/windows/CPackWixConfig.cmake.in"),
+                output,
+                {
+                    "APP_NAME": "SolTrace",
+                    "INSTALLER_ROOT": root / "installer-root",
+                    "LICENSE_FILE": root / "LICENSE.txt",
+                    "PACKAGE_DIRECTORY": root,
+                    "PACKAGE_FILE_NAME": "SolTrace-Windows-x64-Embree",
+                    "PACKAGE_VERSION": "4.0.0",
+                },
+            )
+            rendered = output.read_text()
+            self.assertIn('set(CPACK_INSTALLED_DIRECTORIES "', rendered)
+            self.assertNotIn("CPACK_INSTALL_CMAKE_PROJECTS", rendered)
+            self.assertNotRegex(rendered, r"@[A-Z0-9_]+@")
+
+    def test_msi_rejects_prerelease_version_strings(self) -> None:
+        """MSI ProductVersion remains numeric even when artifact names are not."""
+        with self.assertRaises(ReleaseError):
+            package_msi(
+                workspace=Path("."),
+                build_dir=Path("build"),
+                install_dir=Path("dist"),
+                installer_root=Path("installer-root"),
+                asset=Path("SolTrace.msi"),
+                app_name="SolTrace",
+                package_version="4.0.0-alpha3",
+            )
 
 
 if __name__ == "__main__":
