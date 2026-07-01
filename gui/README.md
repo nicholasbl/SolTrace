@@ -15,6 +15,7 @@ panel is the best place to start once the application is running.
   - Qt Gui
   - Qt Quick
   - Qt Quick 3D
+  - Qt Quick Timeline
   - Qt Widgets
   - Qt Graphs
 - CMake 3.16 or newer
@@ -34,7 +35,7 @@ downloads behind an account for hosting cost reasons
     - Linux users may not have the latest 6.11 version in their distribution 
     repositories
 - Use a tool like `https://github.com/miurahr/aqtinstall` to install binary packages
-    - Example: `aqt install-qt mac desktop 6.11.1 clang_64 -m qtgraphs qtquick3d`
+    - Example: `aqt install-qt mac desktop 6.11.1 clang_64 -m qtgraphs qtquick3d qtquicktimeline`
 - Compile from source from `https://github.com/qt` (not recommended due to build complexity)
     
 
@@ -111,6 +112,13 @@ configuration from a filtered `installer-root`; CPack does not rerun the
 project's install rules. The portable ZIP continues to use the complete staged
 install tree. See `scripts/release/README.md` for maintainer commands and the
 detailed artifact flow.
+
+The macOS artifact is ad-hoc signed after staging so all bundled executables
+have internally consistent signatures. Ad-hoc signing is not a substitute for
+a Developer ID certificate or notarization, and downloaded builds can still
+require the user's explicit approval under Gatekeeper. Trusted, prompt-free
+distribution will require adding Developer ID signing and notarization to the
+release workflow.
 
 ## Notes
 

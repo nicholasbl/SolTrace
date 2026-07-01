@@ -15,6 +15,14 @@ The commands use only the Python standard library. Platform commands such as
 `otool`, `dumpbin`, `ditto`, `linuxdeploy`, and `gh` are invoked as subprocesses
 and must be available for the relevant command.
 
+The macOS release is ad-hoc signed only after all frameworks, libraries, and
+licenses have been staged. The signing command signs nested Mach-O code and
+bundles inside-out, then runs strict deep signature verification. This prevents
+the release pipeline from shipping invalid or partially signed code, but it
+does not establish publisher trust: Gatekeeper assessment still requires a
+Developer ID signature and Apple notarization. Consequently, `spctl --assess`
+is not treated as a passing check for the current ad-hoc artifact.
+
 Run the portable unit tests with:
 
 ```console

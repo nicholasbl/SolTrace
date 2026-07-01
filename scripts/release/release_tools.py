@@ -41,6 +41,12 @@ def _parser() -> argparse.ArgumentParser:
     stage.add_argument("--app-name", required=True)
     stage.add_argument("--optix-enabled", default="OFF")
 
+    sign_macos = commands.add_parser(
+        "sign-macos", help="Ad-hoc sign and verify a staged macOS application"
+    )
+    sign_macos.add_argument("--install-dir", required=True, type=_path)
+    sign_macos.add_argument("--app-name", required=True)
+
     license_parser = commands.add_parser(
         "bundle-licenses", help="Collect redistributable license files"
     )
@@ -102,6 +108,8 @@ def _dispatch(args: argparse.Namespace) -> None:
             macos.stage_runtime(install_dir=args.install_dir, app_name=args.app_name)
         else:
             windows.stage_runtime(install_dir=args.install_dir, optix_enabled=args.optix_enabled)
+    elif args.command == "sign-macos":
+        macos.ad_hoc_sign(install_dir=args.install_dir, app_name=args.app_name)
     elif args.command == "bundle-licenses":
         licenses.bundle(
             platform=args.platform,

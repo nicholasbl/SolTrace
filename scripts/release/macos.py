@@ -37,6 +37,26 @@ def dependency_is_relocatable(dependency: str) -> bool:
     )
 
 
+def bundled_dependency_path(*, dependency: str, binary: Path, app: Path) -> Path | None:
+    """Map a bundle-relative Mach-O install name to its expected on-disk path.
+
+    The release layout keeps all ``@rpath`` libraries in ``Contents/Frameworks``.
+    Loader- and executable-relative dependencies are resolved from the Mach-O
+    file and the app's main executable directory respectively. Apple system
+    dependencies return ``None`` because they are not bundled.
+    """
+    prefixes = {
+        "@rpath/": app / "Contents" / "Frameworks",
+        "@loader_path/": binary.parent,
+        "@executable_path/": app / "Contents" / "MacOS",
+    }
+    for prefix, base in prefixes.items():
+        if dependency.startswith(prefix):
+            relative = dependency.removeprefix(prefix)
+            return Path(os.path.normpath(base / relative))
+    return None
+
+
 def _copy_entry(source: Path, destination: Path) -> None:
     """Copy a regular file or recreate a relative dylib symlink without dereferencing it."""
     target = destination / source.name
@@ -74,6 +94,43 @@ def stage_runtime(*, install_dir: Path, app_name: str) -> None:
         run(["install_name_tool", "-add_rpath", EXPECTED_RPATH, executable])
 
 
+def ad_hoc_sign(*, install_dir: Path, app_name: str) -> None:
+    """Ad-hoc sign embedded Mach-O code inside-out, then verify the app bundle.
+
+    This makes every staged executable carry a consistent signature after the
+    release pipeline has modified the bundle. It does not provide a trusted
+    developer identity or satisfy Gatekeeper's notarization policy.
+    """
+    app = require_path(install_dir / f"{app_name}.app", "macOS application bundle")
+
+    macho_files: list[Path] = []
+    for candidate in sorted(path for path in app.rglob("*") if path.is_file()):
+        if candidate.is_symlink():
+            continue
+        if "Mach-O" in run(["file", candidate], capture=True).stdout:
+            macho_files.append(candidate)
+
+    if not macho_files:
+        raise ReleaseError(f"No Mach-O files found to sign in {app}")
+
+    # Sign code files first, followed by embedded bundles from deepest to
+    # shallowest. Signing the outer app last seals the final nested signatures.
+    embedded_bundles = sorted(
+        (
+            path
+            for path in app.rglob("*")
+            if path.is_dir()
+            and path.suffix.lower()
+            in {".app", ".appex", ".bundle", ".framework", ".xpc"}
+        ),
+        key=lambda path: (-len(path.parts), str(path)),
+    )
+    for target in [*macho_files, *embedded_bundles, app]:
+        run(["codesign", "--force", "--sign", "-", "--timestamp=none", target])
+
+    run(["codesign", "--verify", "--deep", "--strict", "--verbose=4", app])
+
+
 def validate(*, install_dir: Path, app_name: str, architecture: str) -> None:
     """Audit architecture, RPATHs, install names, and required Embree/TBB files."""
     app = require_path(install_dir / f"{app_name}.app", "macOS application bundle")
@@ -97,6 +154,16 @@ def validate(*, install_dir: Path, app_name: str, architecture: str) -> None:
             if not dependency_is_relocatable(dependency):
                 raise ReleaseError(
                     f"Non-relocatable dependency in {candidate}: {dependency}"
+                )
+            bundled_path = bundled_dependency_path(
+                dependency=dependency,
+                binary=candidate,
+                app=app,
+            )
+            if bundled_path is not None and not bundled_path.exists():
+                raise ReleaseError(
+                    f"Missing bundled dependency in {candidate}: {dependency} "
+                    f"(expected {bundled_path})"
                 )
             name = Path(dependency).name
             if name.startswith(("libembree", "libtbb")) and not (frameworks / name).exists():

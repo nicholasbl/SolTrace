@@ -8,6 +8,8 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from scripts.release.embree import _extract_zip, select_asset
 from scripts.release.common import ReleaseError
@@ -19,7 +21,12 @@ from scripts.release.licenses import (
     safe_license_name,
 )
 from scripts.release.linux import glibc_versions
-from scripts.release.macos import dependency_is_relocatable, parse_otool_dependencies
+from scripts.release.macos import (
+    ad_hoc_sign,
+    bundled_dependency_path,
+    dependency_is_relocatable,
+    parse_otool_dependencies,
+)
 from scripts.release.package import package_windows
 from scripts.release.windows import (
     _render_cpack_config,
@@ -182,6 +189,80 @@ class MacOSTests(unittest.TestCase):
             )
         )
         self.assertFalse(dependency_is_relocatable("/Users/runner/embree/libembree.dylib"))
+
+    def test_bundle_dependency_paths_follow_macos_loader_tokens(self) -> None:
+        """Relative install names map to the paths packaged in the app bundle."""
+        app = Path("/dist/SolTrace.app")
+        plugin = app / "Contents" / "PlugIns" / "imageformats" / "libqsvg.dylib"
+        self.assertEqual(
+            bundled_dependency_path(
+                dependency="@rpath/QtQuickTimeline.framework/Versions/A/QtQuickTimeline",
+                binary=plugin,
+                app=app,
+            ),
+            app
+            / "Contents"
+            / "Frameworks"
+            / "QtQuickTimeline.framework"
+            / "Versions"
+            / "A"
+            / "QtQuickTimeline",
+        )
+        self.assertEqual(
+            bundled_dependency_path(
+                dependency="@loader_path/../../Frameworks/libexample.dylib",
+                binary=plugin,
+                app=app,
+            ),
+            app / "Contents" / "Frameworks" / "libexample.dylib",
+        )
+        self.assertIsNone(
+            bundled_dependency_path(
+                dependency="/System/Library/Frameworks/AppKit.framework/AppKit",
+                binary=plugin,
+                app=app,
+            )
+        )
+
+    def test_ad_hoc_signing_is_inside_out_and_deep_verifies(self) -> None:
+        """Embedded code is signed before its containers without deep signing."""
+        with tempfile.TemporaryDirectory() as temporary:
+            app = Path(temporary) / "dist" / "SolTrace.app"
+            executable = app / "Contents" / "MacOS" / "SolTrace"
+            framework = app / "Contents" / "Frameworks" / "Example.framework"
+            framework_binary = framework / "Versions" / "A" / "Example"
+            executable.parent.mkdir(parents=True)
+            framework_binary.parent.mkdir(parents=True)
+            executable.write_bytes(b"executable")
+            framework_binary.write_bytes(b"framework")
+
+            def fake_run(command, **_kwargs):
+                """Report fixture files as Mach-O while recording codesign calls."""
+                output = "Mach-O 64-bit arm64" if command[0] == "file" else ""
+                return SimpleNamespace(stdout=output)
+
+            with patch("scripts.release.macos.run", side_effect=fake_run) as mocked_run:
+                ad_hoc_sign(
+                    install_dir=Path(temporary) / "dist",
+                    app_name="SolTrace",
+                )
+
+            commands = [call.args[0] for call in mocked_run.call_args_list]
+            signing_commands = [
+                command
+                for command in commands
+                if command[:2] == ["codesign", "--force"]
+            ]
+            self.assertEqual(signing_commands[-1][-1], app)
+            self.assertLess(
+                [command[-1] for command in signing_commands].index(framework),
+                [command[-1] for command in signing_commands].index(app),
+            )
+            self.assertTrue(all("--deep" not in command for command in signing_commands))
+            self.assertEqual(
+                commands[-1],
+                ["codesign", "--verify", "--deep", "--strict", "--verbose=4", app],
+            )
 
 
 class LinuxTests(unittest.TestCase):
