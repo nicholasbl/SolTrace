@@ -258,6 +258,8 @@ class PackageTests(unittest.TestCase):
                 },
             )
             rendered = output.read_text()
+            self.assertIn('set(CPACK_WIX_SIZEOF_VOID_P "8")', rendered)
+            self.assertIn('set(CPACK_SYSTEM_NAME "win64")', rendered)
             self.assertIn('set(CPACK_INSTALLED_DIRECTORIES "', rendered)
             self.assertNotIn("CPACK_INSTALL_CMAKE_PROJECTS", rendered)
             self.assertNotRegex(rendered, r"@[A-Z0-9_]+@")
