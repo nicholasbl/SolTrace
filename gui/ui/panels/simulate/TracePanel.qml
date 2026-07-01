@@ -104,7 +104,8 @@ ScrollView {
 
             STPropertyLabel {
                 text: "Options"
-                Layout.columnSpan: root.columnSpan
+                //Layout.columnSpan: root.columnSpan
+                Layout.rowSpan: root.singleColumn ? 1 : 3
                 Layout.alignment: root.labelAlignment
             }
 
