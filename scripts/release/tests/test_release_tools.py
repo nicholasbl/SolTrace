@@ -224,6 +224,47 @@ class MacOSTests(unittest.TestCase):
             )
         )
 
+    def test_loader_path_uses_real_qml_plugin_location(self) -> None:
+        """Qt QML symlinks resolve loader paths from their PlugIns target."""
+        with tempfile.TemporaryDirectory() as temporary:
+            app = Path(temporary) / "SolTrace.app"
+            plugin = app / "Contents" / "PlugIns" / "libfolderlistmodelplugin.dylib"
+            qml_link = (
+                app
+                / "Contents"
+                / "Resources"
+                / "qml"
+                / "Qt"
+                / "labs"
+                / "folderlistmodel"
+                / plugin.name
+            )
+            plugin.parent.mkdir(parents=True)
+            qml_link.parent.mkdir(parents=True)
+            plugin.write_bytes(b"plugin")
+            qml_link.symlink_to(plugin)
+
+            self.assertEqual(
+                bundled_dependency_path(
+                    dependency=(
+                        "@loader_path/../Frameworks/"
+                        "QtLabsFolderListModel.framework/Versions/A/"
+                        "QtLabsFolderListModel"
+                    ),
+                    binary=qml_link,
+                    app=app,
+                ),
+                (
+                    app
+                    / "Contents"
+                    / "Frameworks"
+                    / "QtLabsFolderListModel.framework"
+                    / "Versions"
+                    / "A"
+                    / "QtLabsFolderListModel"
+                ).resolve(),
+            )
+
     def test_ad_hoc_signing_is_inside_out_and_deep_verifies(self) -> None:
         """Embedded code is signed before its containers without deep signing."""
         with tempfile.TemporaryDirectory() as temporary:

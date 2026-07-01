@@ -45,9 +45,13 @@ def bundled_dependency_path(*, dependency: str, binary: Path, app: Path) -> Path
     file and the app's main executable directory respectively. Apple system
     dependencies return ``None`` because they are not bundled.
     """
+    # Qt deploys QML metadata under Resources/qml and places plugin binaries in
+    # Contents/PlugIns, leaving symlinks in the QML tree. dyld resolves
+    # @loader_path from the real Mach-O location, not the QML symlink location.
+    real_binary = binary.resolve()
     prefixes = {
         "@rpath/": app / "Contents" / "Frameworks",
-        "@loader_path/": binary.parent,
+        "@loader_path/": real_binary.parent,
         "@executable_path/": app / "Contents" / "MacOS",
     }
     for prefix, base in prefixes.items():
