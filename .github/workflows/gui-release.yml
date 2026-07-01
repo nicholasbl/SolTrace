@@ -129,7 +129,9 @@ jobs:
             qt_modules: all
             aqt_version: ""
             aqt_source: git+https://github.com/miurahr/aqtinstall.git@master
-            cmake_extra: '-G "Visual Studio 17 2022" -A x64'
+            cmake_extra: >-
+              -G "Visual Studio 17 2022" -A x64
+              -DSOLTRACE_OPTIX_COMPUTE_CAPABILITY=75
             embree_enabled: "ON"
             optix_enabled: "ON"
             msi_enabled: "OFF"
@@ -147,7 +149,7 @@ jobs:
             qt_modules: all
             aqt_version: "==3.3.*"
             aqt_source: ""
-            cmake_extra: ""
+            cmake_extra: -DSOLTRACE_OPTIX_COMPUTE_CAPABILITY=75
             embree_enabled: "ON"
             optix_enabled: "ON"
             msi_enabled: "OFF"

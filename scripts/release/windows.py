@@ -98,6 +98,9 @@ def validate(*, install_dir: Path, app_name: str, optix_enabled: str | bool) -> 
     _require_match(bin_dir, "tbb*.dll", "TBB runtime")
     if enabled(optix_enabled):
         _require_match(bin_dir, "cudart64_*.dll", "CUDA runtime")
+        ptx_dir = require_path(bin_dir / "ptx", "OptiX PTX directory")
+        for shader in ("intersection.ptx", "materials.ptx", "sun.ptx"):
+            require_path(ptx_dir / shader, f"OptiX PTX shader {shader}")
     run([_find_dumpbin(), "/DEPENDENTS", executable])
 
 

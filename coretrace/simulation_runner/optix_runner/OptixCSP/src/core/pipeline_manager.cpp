@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <sstream>
 #include <stdexcept>
@@ -67,9 +68,21 @@ const std::map<OpticalEntityType, std::string> IntersectionKernelMap = {
 
 pipelineManager::pipelineManager(SoltraceState &state) : m_state(state) {}
 
-pipelineManager::~pipelineManager()
+pipelineManager::~pipelineManager() noexcept
 {
-    // cleanup();
+    try
+    {
+        cleanup();
+    }
+    catch (const std::exception &error)
+    {
+        std::cerr << "[OptixRunner] Pipeline cleanup failed during destruction: "
+                  << error.what() << '\n';
+    }
+    catch (...)
+    {
+        std::cerr << "[OptixRunner] Pipeline cleanup failed during destruction with an unknown error.\n";
+    }
 }
 
 namespace

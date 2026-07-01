@@ -56,6 +56,10 @@ initial MSI is produced for the standard Embree build only; defining upgrade
 and side-by-side installation behavior for the OptiX variant is a separate
 product decision.
 
+Official OptiX artifacts explicitly target CUDA compute capability 7.5 as their
+minimum. The build does not inspect the CI host GPU; it emits Turing native code
+plus forward-compatible virtual PTX for newer NVIDIA GPUs.
+
 The MSI command expects a validated Windows `dist` tree, CMake 3.30 or newer,
 and WiX 4 with its matching UI extension. CI pins and installs those tools. The
 generated installer is x64, per-machine, installs under Program Files, and
