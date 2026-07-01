@@ -372,16 +372,28 @@ class PackageTests(unittest.TestCase):
                 output,
                 {
                     "APP_NAME": "SolTrace",
+                    "INSTALL_DIRECTORY": "SolTrace OptiX",
                     "INSTALLER_ROOT": root / "installer-root",
                     "LICENSE_FILE": root / "LICENSE.txt",
                     "PACKAGE_DIRECTORY": root,
                     "PACKAGE_FILE_NAME": "SolTrace-Windows-x64-Embree",
+                    "PACKAGE_NAME": "SolTrace OptiX",
                     "PACKAGE_VERSION": "4.0.0",
+                    "UPGRADE_GUID": "D4AB6CD5-6276-5377-8E41-53D1DE59BD33",
                 },
             )
             rendered = output.read_text()
             self.assertIn('set(CPACK_WIX_SIZEOF_VOID_P "8")', rendered)
             self.assertIn('set(CPACK_SYSTEM_NAME "win64")', rendered)
+            self.assertIn('set(CPACK_PACKAGE_NAME "SolTrace OptiX")', rendered)
+            self.assertIn(
+                'set(CPACK_PACKAGE_INSTALL_DIRECTORY "SolTrace OptiX")', rendered
+            )
+            self.assertIn(
+                'set(CPACK_WIX_UPGRADE_GUID '
+                '"D4AB6CD5-6276-5377-8E41-53D1DE59BD33")',
+                rendered,
+            )
             self.assertIn('set(CPACK_INSTALLED_DIRECTORIES "', rendered)
             self.assertNotIn("CPACK_INSTALL_CMAKE_PROJECTS", rendered)
             self.assertNotRegex(rendered, r"@[A-Z0-9_]+@")
@@ -396,7 +408,26 @@ class PackageTests(unittest.TestCase):
                 installer_root=Path("installer-root"),
                 asset=Path("SolTrace.msi"),
                 app_name="SolTrace",
+                package_name="SolTrace",
+                install_directory="SolTrace",
                 package_version="4.0.0-alpha3",
+                upgrade_guid="4F2CA469-A426-5378-BB8C-4E6EA7A23702",
+            )
+
+    def test_msi_rejects_invalid_upgrade_guid(self) -> None:
+        """Each installable flavor must provide a valid stable UpgradeCode."""
+        with self.assertRaises(ReleaseError):
+            package_msi(
+                workspace=Path("."),
+                build_dir=Path("build"),
+                install_dir=Path("dist"),
+                installer_root=Path("installer-root"),
+                asset=Path("SolTrace.msi"),
+                app_name="SolTrace",
+                package_name="SolTrace OptiX",
+                install_directory="SolTrace OptiX",
+                package_version="4.0.0",
+                upgrade_guid="not-a-guid",
             )
 
 

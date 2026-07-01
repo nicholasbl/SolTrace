@@ -72,7 +72,10 @@ def _parser() -> argparse.ArgumentParser:
     msi_parser.add_argument("--installer-root", required=True, type=_path)
     msi_parser.add_argument("--asset", required=True, type=_path)
     msi_parser.add_argument("--app-name", required=True)
+    msi_parser.add_argument("--package-name", required=True)
+    msi_parser.add_argument("--install-directory", required=True)
     msi_parser.add_argument("--package-version", required=True)
+    msi_parser.add_argument("--upgrade-guid", required=True)
 
     publish_parser = commands.add_parser(
         "publish", help="Upload an asset to a draft GitHub release"
@@ -158,7 +161,10 @@ def _dispatch(args: argparse.Namespace) -> None:
             installer_root=args.installer_root,
             asset=args.asset,
             app_name=args.app_name,
+            package_name=args.package_name,
+            install_directory=args.install_directory,
             package_version=args.package_version,
+            upgrade_guid=args.upgrade_guid,
         )
     elif args.command == "publish":
         publish.publish(tag=args.tag, asset=args.asset)

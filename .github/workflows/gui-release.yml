@@ -72,6 +72,9 @@ jobs:
             embree_enabled: "ON"
             optix_enabled: "OFF"
             msi_enabled: "OFF"
+            msi_package_name: ""
+            msi_install_directory: ""
+            msi_upgrade_guid: ""
             # RenderKit's written installation directions still name only the
             # older x86_64 archive, but the v4.4.1 release also publishes an ARM
             # archive. Select that release asset without hardcoding its full name.
@@ -93,6 +96,9 @@ jobs:
             embree_enabled: "ON"
             optix_enabled: "OFF"
             msi_enabled: "ON"
+            msi_package_name: SolTrace
+            msi_install_directory: SolTrace
+            msi_upgrade_guid: 4F2CA469-A426-5378-BB8C-4E6EA7A23702
             # RenderKit's Windows binary archive is expected to contain the DLLs
             # and bundled CMake config used by find_package(embree 4 REQUIRED).
             embree_asset_regex: ".*x64.*windows.*\\.zip$"
@@ -113,6 +119,9 @@ jobs:
             embree_enabled: "ON"
             optix_enabled: "OFF"
             msi_enabled: "OFF"
+            msi_package_name: ""
+            msi_install_directory: ""
+            msi_upgrade_guid: ""
             # Linux Embree archives are expected to be tarballs. The regex is
             # intentionally broad across x64/x86_64 spelling.
             embree_asset_regex: ".*(x86_64|x64).*linux.*\\.(tar\\.gz|tgz)$"
@@ -134,11 +143,14 @@ jobs:
               -DSOLTRACE_OPTIX_COMPUTE_CAPABILITY=75
             embree_enabled: "ON"
             optix_enabled: "ON"
-            msi_enabled: "OFF"
+            msi_enabled: "ON"
+            msi_package_name: SolTrace OptiX
+            msi_install_directory: SolTrace OptiX
+            msi_upgrade_guid: D4AB6CD5-6276-5377-8E41-53D1DE59BD33
             embree_asset_regex: ".*x64.*windows.*\\.zip$"
             artifact_name: SolTrace-Windows-x64-Embree-OptiX
             asset_name: SolTrace-Windows-x64-Embree-OptiX.zip
-            msi_name: ""
+            msi_name: SolTrace-Windows-x64-Embree-OptiX.msi
 
           - name: Linux x64 Embree OptiX AppImage
             id: linux-x64-embree-optix
@@ -153,6 +165,9 @@ jobs:
             embree_enabled: "ON"
             optix_enabled: "ON"
             msi_enabled: "OFF"
+            msi_package_name: ""
+            msi_install_directory: ""
+            msi_upgrade_guid: ""
             embree_asset_regex: ".*(x86_64|x64).*linux.*\\.(tar\\.gz|tgz)$"
             artifact_name: SolTrace-Linux-x64-Embree-OptiX
             asset_name: SolTrace-Linux-x86_64-Embree-OptiX.AppImage
@@ -336,13 +351,29 @@ jobs:
           --installer-root "${{ github.workspace }}/installer-root"
           --asset "${{ env.MSI_ASSET_PATH }}"
           --app-name "${{ env.APP_NAME }}"
+          --package-name "${{ matrix.msi_package_name }}"
+          --install-directory "${{ matrix.msi_install_directory }}"
           --package-version "${{ env.APP_VERSION }}"
+          --upgrade-guid "${{ matrix.msi_upgrade_guid }}"
 
-      - name: Upload workflow artifact
+      - name: Upload packaged workflow artifact
+        if: matrix.platform != 'windows'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ env.ASSET_PATH }}
+          if-no-files-found: error
+
+      # upload-artifact always creates a ZIP. Uploading our Windows ZIP would
+      # therefore produce a ZIP containing another ZIP in manual workflow runs.
+      # The staged tree is safe to archive directly on Windows; tagged releases
+      # still publish ASSET_PATH below as the intentionally packaged ZIP.
+      - name: Upload Windows workflow artifact contents
+        if: matrix.platform == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ env.INSTALL_DIR }}
           if-no-files-found: error
 
       - name: Upload Windows installer artifact

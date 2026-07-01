@@ -51,10 +51,10 @@ The release pipeline therefore has two explicit phases:
    project's generated CPack configuration and does not execute install rules.
 
 The Windows ZIP still packages the complete `dist` tree. This keeps a portable,
-developer-friendly artifact while the MSI contains the consumer runtime. The
-initial MSI is produced for the standard Embree build only; defining upgrade
-and side-by-side installation behavior for the OptiX variant is a separate
-product decision.
+developer-friendly artifact while each MSI contains the consumer runtime. The
+standard Embree and Embree+OptiX installers use distinct stable UpgradeCodes,
+install directories, and Start menu folders. They therefore upgrade
+independently and can be installed side-by-side.
 
 Official OptiX artifacts explicitly target CUDA compute capability 7.5 as their
 minimum. The build does not inspect the CI host GPU; it emits Turing native code

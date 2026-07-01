@@ -12,6 +12,10 @@ from .common import ReleaseError, enabled, require_path, run
 
 INSTALLER_EXCLUDED_ROOTS = frozenset({"include", "lib"})
 MSI_VERSION_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
+WIX_GUID_PATTERN = re.compile(
+    r"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-"
+    r"[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"
+)
 
 
 def _copy_matches(source: Path, pattern: str, destination: Path, description: str) -> None:
@@ -158,7 +162,10 @@ def package_msi(
     installer_root: Path,
     asset: Path,
     app_name: str,
+    package_name: str,
+    install_directory: str,
     package_version: str,
+    upgrade_guid: str,
 ) -> None:
     """Package a filtered, pre-staged runtime tree with standalone CPack/WiX.
 
@@ -169,6 +176,8 @@ def package_msi(
         raise ReleaseError(
             f"MSI package version must contain three numeric fields: {package_version!r}"
         )
+    if not WIX_GUID_PATTERN.fullmatch(upgrade_guid):
+        raise ReleaseError(f"MSI UpgradeCode is not a GUID: {upgrade_guid!r}")
     prepare_installer_root(
         install_dir=install_dir,
         installer_root=installer_root,
@@ -188,11 +197,14 @@ def package_msi(
         config,
         {
             "APP_NAME": app_name,
+            "INSTALL_DIRECTORY": install_directory,
             "INSTALLER_ROOT": installer_root,
             "LICENSE_FILE": license_file,
             "PACKAGE_DIRECTORY": asset.parent,
             "PACKAGE_FILE_NAME": asset.stem,
+            "PACKAGE_NAME": package_name,
             "PACKAGE_VERSION": package_version,
+            "UPGRADE_GUID": upgrade_guid.upper(),
         },
     )
     run(["cpack", "--config", config, "-G", "WIX", "-B", asset.parent])
