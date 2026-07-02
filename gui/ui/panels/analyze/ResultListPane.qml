@@ -165,7 +165,7 @@ ColumnLayout {
                       AppData.simulation.current_simulation_result_name : ""
             Layout.fillWidth: true
 
-            onTextChanged: {
+            onTextEdited: {
                 if (root.has_current_result) {
                     AppData.simulation.rename_result(root.selected_result_index,
                                                      text)

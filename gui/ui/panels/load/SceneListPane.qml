@@ -24,7 +24,7 @@ ColumnLayout {
                 text: root.current_db ? root.current_db.name : ""
                 Layout.fillWidth: true
 
-                onTextChanged: {
+                onTextEdited: {
                     if (root.current_db) {
                         root.current_db.name = text
                     }
