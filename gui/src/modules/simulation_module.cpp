@@ -48,6 +48,25 @@ void SimulationModule::update_result_world(db::SimulationResultPtr results) {
     auto* database =
         results ? const_cast<db::Database*>(results->database.get()) : nullptr;
     m_world_geometry_model->reset(database);
+
+    QVector3D sun_position(0.0f, 0.0f, 1.0f);
+    bool      is_point_source = false;
+
+    if (database) {
+        auto const* resource = database->ray_source_resource.get();
+        if (resource) {
+            is_point_source =
+                resource->type == db::RaySourceType::PointSource;
+
+            if (resource->source) {
+                auto const& position = resource->source->get_position();
+                sun_position = QVector3D(position.x, position.y, position.z);
+            }
+        }
+    }
+
+    set_result_sun_position(sun_position);
+    set_result_sun_is_point_source(is_point_source);
 }
 
 void SimulationModule::job_done() {
