@@ -99,6 +99,7 @@ Item {
 
             required property string name
             required property var entity
+            required property bool has_children
 
             signal opened(db_entity entity)
 
@@ -117,6 +118,7 @@ Item {
 
             STIconButton {
                 icon: "\uf802"
+                visible: st_del_root.has_children
 
                 onClicked: {
                     AppData.layout.viewed_element = st_del_root.entity
