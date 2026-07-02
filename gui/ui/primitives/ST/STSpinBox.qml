@@ -31,14 +31,6 @@ SpinBox {
         control.valueModified()
     }
 
-    textFromValue: function(value, locale) {
-        return Number(value).toLocaleString(locale, 'f', 0)
-    }
-
-    valueFromText: function(text, locale) {
-        return Math.round(Number.fromLocaleString(locale, String(text).trim()))
-    }
-
     contentItem: TextInput {
         id: input
         readonly property int suffixRightMargin: 30
