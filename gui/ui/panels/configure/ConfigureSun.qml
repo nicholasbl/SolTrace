@@ -365,7 +365,5 @@ Flickable {
         }
     }
 
-    ScrollBar.vertical: ScrollBar {
-        id: vbar
-    }
+    ScrollBar.vertical: STScrollBar { }
 }

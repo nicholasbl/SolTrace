@@ -63,6 +63,8 @@ ColumnLayout {
                 model: AppData.file_source
                 clip: true
 
+                ScrollBar.vertical: STScrollBar { }
+
                 delegate: STItemDelegate {
                     id: db_delegate
 

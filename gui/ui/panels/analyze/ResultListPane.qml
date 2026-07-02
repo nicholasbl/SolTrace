@@ -60,6 +60,8 @@ ColumnLayout {
         clip: true
         model: AppData.simulation.results
 
+        ScrollBar.vertical: STScrollBar { }
+
         onCountChanged: {
             if (count > previousCount) {
                 currentIndex = count - 1

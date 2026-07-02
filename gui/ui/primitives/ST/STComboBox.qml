@@ -52,7 +52,7 @@ ComboBox {
             model: root.popup.visible ? root.delegateModel : null
             currentIndex: root.highlightedIndex
 
-            ScrollIndicator.vertical: ScrollIndicator { }
+            ScrollBar.vertical: STScrollBar { }
 
             delegate: STItemDelegate {
                 id: delegate

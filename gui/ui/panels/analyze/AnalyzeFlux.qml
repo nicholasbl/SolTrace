@@ -231,7 +231,7 @@ Flickable {
 
                 model: AppData.flux.computed_maps_model
 
-                ScrollIndicator.vertical: ScrollIndicator { }
+                ScrollBar.vertical: STScrollBar { }
 
                 delegate: STItemDelegate {
                     id: delegate

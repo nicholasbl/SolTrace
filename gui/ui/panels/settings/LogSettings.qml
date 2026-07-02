@@ -41,6 +41,8 @@ ColumnLayout {
         clip: true
         spacing: 5
 
+        ScrollBar.vertical: STScrollBar { }
+
         onCountChanged: log_list_view.positionViewAtEnd()
 
         delegate: Label {

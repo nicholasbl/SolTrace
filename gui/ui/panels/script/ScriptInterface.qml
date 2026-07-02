@@ -327,6 +327,9 @@ ScrollView {
                 Layout.preferredHeight: 150
 
                 model: output_model
+                clip: true
+
+                ScrollBar.vertical: STScrollBar { }
 
                 delegate: Label {
                     required property string message

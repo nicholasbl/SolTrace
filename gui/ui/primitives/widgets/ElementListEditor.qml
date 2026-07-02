@@ -165,7 +165,7 @@ Item {
                 clip: true
                 model: internal.model
                 property var editorRoot: root
-                ScrollIndicator.vertical: ScrollIndicator { }
+                ScrollBar.vertical: STScrollBar { }
 
                 delegate: listDelegate
 
@@ -245,7 +245,7 @@ Item {
                     clip: true
                     model: internal.model
                     property var editorRoot: root
-                    ScrollIndicator.vertical: ScrollIndicator { }
+                    ScrollBar.vertical: STScrollBar { }
 
                     delegate: listDelegate
 

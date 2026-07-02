@@ -10,6 +10,8 @@ ListView {
     height: 400
     clip: true
 
+    ScrollBar.vertical: STScrollBar { }
+
     model: App.sun.shape.custom_distribution
 
     function nextAngle() {
