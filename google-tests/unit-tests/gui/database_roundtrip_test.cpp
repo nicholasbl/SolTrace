@@ -453,6 +453,35 @@ void expect_sun_box_near(SolTrace::Result::SimulationResult& actual,
 
 } // namespace
 
+TEST(RaySourceResource, ClonePreservesGuiSourceType) {
+    auto sun = SD::make_ray_source<SD::Sun>();
+    sun->set_position(0.0, 0.0, 1.0);
+    sun->set_shape(SD::SunShape::GAUSSIAN, 4.65, 4.65, 0.1);
+
+    db::RaySourceResource original {
+        .source = sun,
+        .type   = db::RaySourceType::PointSource,
+    };
+
+    auto clone = original.clone();
+
+    EXPECT_EQ(clone.type, db::RaySourceType::PointSource);
+    ASSERT_NE(clone.source, nullptr);
+    EXPECT_NE(clone.source, original.source);
+}
+
+TEST(RaySourceResource, CloneWithoutSourcePreservesGuiSourceType) {
+    db::RaySourceResource original {
+        .source = {},
+        .type   = db::RaySourceType::PointSource,
+    };
+
+    auto clone = original.clone();
+
+    EXPECT_EQ(clone.type, db::RaySourceType::PointSource);
+    EXPECT_EQ(clone.source, nullptr);
+}
+
 TEST(DatabaseRoundTrip, PowerTowerSurroundExportsEquivalentGlobalSimData) {
     SD::SimulationData original;
     ASSERT_TRUE(

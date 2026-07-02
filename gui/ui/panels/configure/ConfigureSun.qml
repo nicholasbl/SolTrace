@@ -105,7 +105,7 @@ Flickable {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    visible: App.sun.type == SunModule.Directional
+                    visible: App.sun.type === SunModule.Directional
 
                     Label {
                         id: directionalSunPositionLabel
@@ -137,45 +137,9 @@ Flickable {
                 StackLayout {
                     Layout.fillWidth: true
                     currentIndex: App.sun.ds_position_type
-                    visible: App.sun.type == SunModule.Directional
+                    visible: App.sun.type === SunModule.Directional
 
                     ColumnLayout {
-                        Flow {
-                            Layout.fillWidth: true
-                            spacing: 8
-                            STButton {
-                                text: "Spring"
-                                onClicked: App.sun.calc_data.set_spring()
-                            }
-                            STButton {
-                                text: "Summer"
-                                onClicked: App.sun.calc_data.set_summer()
-                            }
-                            STButton {
-                                text: "Fall"
-                                onClicked: App.sun.calc_data.set_fall()
-                            }
-                            STButton {
-                                text: "Winter"
-                                onClicked: App.sun.calc_data.set_winter()
-                            }
-                        }
-                        Flow {
-                            Layout.fillWidth: true
-                            spacing: 8
-                            STButton {
-                                text: "Morning"
-                                onClicked: App.sun.calc_data.set_morning()
-                            }
-                            STButton {
-                                text: "Noon"
-                                onClicked: App.sun.calc_data.set_noon()
-                            }
-                            STButton {
-                                text: "Afternoon"
-                                onClicked: App.sun.calc_data.set_afternoon()
-                            }
-                        }
 
                         SolarCalculator {
                             Layout.fillWidth: true
@@ -183,7 +147,7 @@ Flickable {
 
                         GridLayout {
                             Layout.fillWidth: true
-                            columns: App.view.left_panel.size == SplitPanelData.Small ? 1 : 2
+                            columns: App.view.left_panel.size === SplitPanelData.Small ? 1 : 2
 
                             STSpinBoxField {
                                 enableSpinBox: false
@@ -214,7 +178,7 @@ Flickable {
                     ColumnLayout {
                         GridLayout {
                             Layout.fillWidth: true
-                            columns: App.view.left_panel.size == SplitPanelData.Small ? 1 : 2
+                            columns: App.view.left_panel.size === SplitPanelData.Small ? 1 : 2
 
                             STSpinBoxField {
                                 id: azimuthField
@@ -253,8 +217,8 @@ Flickable {
                     Layout.fillWidth: true
                     title: "Manual Position"
                     collapsible: false
-                    visible: App.sun.type == SunModule.PointSource
-                             || (App.sun.type == SunModule.Directional
+                    visible: App.sun.type === SunModule.PointSource
+                             || (App.sun.type === SunModule.Directional
                                  && App.sun.ds_position_type === 1)
 
                     GridLayout {

@@ -174,6 +174,53 @@ ColumnLayout {
         }
     }
 
+    RowLayout {
+        Layout.fillWidth: true
+
+        Label {
+            text: "Preset Season"
+        }
+
+        STComboBox {
+            Layout.fillWidth: true
+            currentIndex: -1
+            model: ["Sprint", "Summer", "Fall", "Winter"]
+            onCurrentIndexChanged: {
+                if (currentIndex >= 0) {
+                    [
+                        App.sun.calc_data.set_spring,
+                        App.sun.calc_data.set_summer,
+                        App.sun.calc_data.set_fall,
+                        App.sun.calc_data.set_winter,
+                    ][currentIndex]()
+                }
+            }
+        }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+
+        Label {
+            text: "Preset Time"
+        }
+
+        STComboBox {
+            Layout.fillWidth: true
+            currentIndex: -1
+            model: ["Morning", "Noon", "Afternoon"]
+            onCurrentIndexChanged: {
+                if (currentIndex >= 0) {
+                    [
+                        App.sun.calc_data.set_morning,
+                        App.sun.calc_data.set_noon,
+                        App.sun.calc_data.set_afternoon,
+                    ][currentIndex]()
+                }
+            }
+        }
+    }
+
     Rectangle {
         Layout.columnSpan: 2
         Layout.fillWidth: true
@@ -186,7 +233,7 @@ ColumnLayout {
         spacing: root.fieldSpacing
         Layout.fillWidth: true
 
-        visible: App.sun.calc_data.calculator == SolarCalculatorData.SPA
+        visible: App.sun.calc_data.calculator === SolarCalculatorData.SPA
 
         readonly property int fieldWidth: root.singleColumn ? parent.width : (parent.width - 2 * root.fieldSpacing) / 3
 

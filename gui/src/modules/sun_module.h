@@ -36,7 +36,7 @@ public:
     void         set_variant_data(QVariantList data);
 
 public slots:
-    void reset(QVector<SunShapePoint> points = { });
+    void reset(QVector<SunShapePoint> points = {});
     void append(double angle = 0.0, double intensity = 0.0);
     void remove(int index);
     void clear();
@@ -180,11 +180,15 @@ class SunModule : public QObject {
     QML_ELEMENT
 
 private:
-    void    update_database_connections();
-    void    load_from_database();
-    void    load_from_ray_source(SD::ray_source_ptr const& ray_source);
-    void    write_shape_to_database();
-    QString write_position_to_database();
+    void update_database_connections();
+    void load_from_database();
+
+    // This should be const, but the library has non-const getters
+    void load_from_ray_source(SD::RaySource& ray_source,
+                              db::RaySourceType source_type);
+
+    void                                 write_shape_to_database();
+    QString                              write_position_to_database();
     Data::SolarPositionCalculationMethod selected_calculation_method() const;
 
     Data::SolarPositionCalculator    m_calculator;

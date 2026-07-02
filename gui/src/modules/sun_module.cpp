@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <exception>
+#include <numbers>
 #include <optional>
 #include <vector>
 
@@ -110,6 +111,8 @@ void SunModule::write_shape_to_database() {
     if (m_loading_from_database || m_writing_to_database) return;
     if (!m_current_database) return;
 
+    qDebug() << Q_FUNC_INFO;
+
     QScopedValueRollback<bool> guard(m_writing_to_database, true);
 
     try {
@@ -147,6 +150,8 @@ QString SunModule::update_position() {
         return QStringLiteral("Currently loading from database");
     if (!m_position->from_calculator())
         return QStringLiteral("Not using calculator");
+
+    qDebug() << Q_FUNC_INFO;
 
     try {
         m_calculator.set_method(selected_calculation_method());
@@ -195,6 +200,8 @@ QString SunModule::write_position_to_database() {
     }
     if (!m_current_database || !m_position) return { };
 
+    qDebug() << Q_FUNC_INFO;
+
     QScopedValueRollback<bool> guard(m_writing_to_database, true);
 
     try {
@@ -219,6 +226,9 @@ QString SunModule::write_position_to_database() {
                     m_position->x(), m_position->y(), m_position->z());
 
                 resource.source->set_gen_type(Data::GenType::RANDOM);
+                resource.type = m_type == Type::PointSource
+                                    ? db::RaySourceType::PointSource
+                                    : db::RaySourceType::Directional;
             });
     } catch (std::exception const& e) {
         qWarning() << "Unable to update sun position:" << e.what();
@@ -261,49 +271,119 @@ void SunModule::update_database_connections() {
     load_from_database();
 }
 
-void SunModule::load_from_database() {
-    if (!m_current_database) return;
-    load_from_ray_source(m_current_database->get_ray_source());
+namespace {
+
+constexpr double DEFAULT_SIGMA     = 4.65;
+constexpr double DEFAULT_HALFWIDTH = 4.65;
+constexpr double DEFAULT_CSR       = 0.1;
+
+SD::Sun make_default_ray_source() {
+    SD::Sun sun;
+    sun.set_position(0.0, 0.0, 1.0);
+    sun.set_shape(SD::SunShape::GAUSSIAN,
+                  DEFAULT_SIGMA,
+                  DEFAULT_HALFWIDTH,
+                  DEFAULT_CSR);
+    sun.set_gen_type(SD::GenType::RANDOM);
+    return sun;
 }
 
-void SunModule::load_from_ray_source(SD::ray_source_ptr const& ray_source) {
-    if (!ray_source) return;
+SD::RaySource& default_ray_source() {
+    // This is shared to avoid constructing a fallback on every scene change.
+    // Treat the returned object as read-only. The mutable reference is required
+    // because RaySource's parameter and user-data getters are not const.
+    static auto ret = make_default_ray_source();
+    return ret;
+}
 
-    auto gui_shape = gui_shape_for_data_shape(ray_source->get_shape());
-    if (!gui_shape) return;
+} // namespace
+
+void SunModule::load_from_database() {
+    qDebug() << Q_FUNC_INFO << m_current_database;
+    if (!m_current_database) return;
+
+    auto const* resource = m_current_database->ray_source_resource.get();
+    auto const  source_type = resource ? resource->type
+                                       : db::RaySourceType::Directional;
+
+    if (!resource || !resource->source) {
+        qDebug() << Q_FUNC_INFO << "No ray source in this database";
+        load_from_ray_source(default_ray_source(), source_type);
+        return;
+    }
+
+    load_from_ray_source(*resource->source, source_type);
+}
+
+void SunModule::load_from_ray_source(SD::RaySource& ray_source,
+                                     db::RaySourceType source_type) {
+    qDebug() << Q_FUNC_INFO;
+    // We always need a shape to work with here
+    auto gui_shape = gui_shape_for_data_shape(ray_source.get_shape())
+                         .value_or(SunShape::Shape::Gaussian);
 
     QScopedValueRollback<bool> guard(m_loading_from_database, true);
 
-    if (!std::isnan(ray_source->get_sigma())) {
-        m_shape->set_sigma(ray_source->get_sigma());
+    set_type(source_type == db::RaySourceType::PointSource
+                 ? Type::PointSource
+                 : Type::Directional);
+
+    // A core Sun stores only the parameter used by its active shape and leaves
+    // the other getters as NaN, so apply the complete GUI baseline explicitly.
+    m_shape->set_sigma(DEFAULT_SIGMA);
+    m_shape->set_half_width(DEFAULT_HALFWIDTH);
+    m_shape->set_csr(DEFAULT_CSR);
+
+    if (!std::isnan(ray_source.get_sigma())) {
+        m_shape->set_sigma(ray_source.get_sigma());
     }
-    if (!std::isnan(ray_source->get_half_width())) {
-        m_shape->set_half_width(ray_source->get_half_width());
+
+    if (!std::isnan(ray_source.get_half_width())) {
+        m_shape->set_half_width(ray_source.get_half_width());
     }
-    if (!std::isnan(ray_source->get_circumsolar_ratio())) {
-        m_shape->set_csr(ray_source->get_circumsolar_ratio());
+
+    if (!std::isnan(ray_source.get_circumsolar_ratio())) {
+        m_shape->set_csr(ray_source.get_circumsolar_ratio());
     }
 
     std::vector<double> user_angles;
     std::vector<double> user_intensities;
-    ray_source->get_user_data(user_angles, user_intensities);
-    if (!user_angles.empty() && user_angles.size() == user_intensities.size()) {
-        m_shape->custom_distribution()->reset(
-            points_from_user_data(user_angles, user_intensities));
+
+    ray_source.get_user_data(user_angles, user_intensities);
+
+    m_shape->custom_distribution()->reset(
+        points_from_user_data(user_angles, user_intensities));
+
+    m_shape->set_shape(gui_shape);
+
+    const auto& position = ray_source.get_position();
+    const auto  length = std::sqrt(position.x * position.x +
+                                  position.y * position.y +
+                                  position.z * position.z);
+
+    double azimuth   = 0.0;
+    double elevation = 0.0;
+    if (length > 1.0e-12) {
+        constexpr double radians_to_degrees = 180.0 / std::numbers::pi;
+        azimuth = std::atan2(position.x, position.y) * radians_to_degrees;
+        if (azimuth < 0.0) azimuth += 360.0;
+        elevation = std::asin(std::clamp(position.z / length, -1.0, 1.0)) *
+                    radians_to_degrees;
     }
 
-    m_shape->set_shape(*gui_shape);
-
-    const auto& position = ray_source->get_position();
     m_ds_position->set_from_calculator(false);
     m_ds_position->set_x(position.x);
     m_ds_position->set_y(position.y);
     m_ds_position->set_z(position.z);
+    m_ds_position->set_azimuth(azimuth);
+    m_ds_position->set_elevation(elevation);
 
     m_ps_position->set_from_calculator(false);
     m_ps_position->set_x(position.x);
     m_ps_position->set_y(position.y);
     m_ps_position->set_z(position.z);
+    m_ps_position->set_azimuth(azimuth);
+    m_ps_position->set_elevation(elevation);
 }
 
 Data::SolarPositionCalculationMethod
