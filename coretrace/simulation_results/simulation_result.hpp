@@ -60,17 +60,17 @@ public:
     // Sun results
     // void set_sun_ray_count(uint_fast64_t ray_count) { this->sun_ray_count =
     // ray_count; }
-    uint_fast64_t get_sun_ray_count() { return this->sun_ray_count; }
+    uint_fast64_t get_sun_ray_count() const { return this->sun_ray_count; }
     // void set_sun_dimensions(double width, double height) { this->sun_width =
     // width; this->sun_height = height; }
-    void get_sun_dimensions(double& width, double& height)
+    void get_sun_dimensions(double& width, double& height) const
     {
         width  = this->sun_width;
         height = this->sun_height;
     }
     // void set_sun_A_box(double A) { this->A_sun_box = A; }
-    double get_sun_A_box() { return this->A_sun_box; }
-    double get_ray_area_weight() { return this->ray_area_weight; }
+    double get_sun_A_box() const { return this->A_sun_box; }
+    double get_ray_area_weight() const { return this->ray_area_weight; }
 
     void set_sun_sampling_stats(double        width,
                                 double        height,
@@ -85,10 +85,10 @@ private:
 
     // Sun results
     uint_fast64_t sun_ray_count   = 0;
-    double        sun_width       = 0;
-    double        sun_height      = 0;
-    double        A_sun_box       = 0;
-    double        ray_area_weight = 0;
+    double        sun_width       = -1.0;
+    double        sun_height      = -1.0;
+    double        A_sun_box       = -1.0;
+    double        ray_area_weight = -1.0;
 };
 
 } // namespace SolTrace::Result

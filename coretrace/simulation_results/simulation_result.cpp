@@ -6,7 +6,9 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 #include "element.hpp"
@@ -129,20 +131,30 @@ void SimulationResult::set_sun_sampling_stats(double        width,
                                               double        height,
                                               uint_fast64_t sun_ray_count)
 {
-    this->sun_width     = width;
-    this->sun_height    = height;
-    this->A_sun_box     = width * height;
-    this->sun_ray_count = sun_ray_count;
+    if (sun_ray_count == 0)
+        throw std::invalid_argument("set_sun_sampling_stats: sun_ray_count must be non-zero.");
+    if (width <= 0.0)
+        throw std::invalid_argument("set_sun_sampling_stats: width must be positive.");
+    if (height <= 0.0)
+        throw std::invalid_argument("set_sun_sampling_stats: height must be positive.");
+    this->sun_width       = width;
+    this->sun_height      = height;
+    this->A_sun_box       = width * height;
+    this->sun_ray_count   = sun_ray_count;
     this->ray_area_weight = this->A_sun_box / this->sun_ray_count;
-    return;
 }
 
-void SimulationResult::set_sun_sampling_stats(double sun_A_box, uint_fast64_t sun_ray_count)
+void SimulationResult::set_sun_sampling_stats(double        sun_A_box,
+                                              uint_fast64_t sun_ray_count)
 {
-    this->sun_width = std::numeric_limits<double>::quiet_NaN();
-    this->sun_height = std::numeric_limits<double>::quiet_NaN();
-    this->A_sun_box = sun_A_box;
-    this->sun_ray_count = sun_ray_count;
+    if (sun_ray_count == 0)
+        throw std::invalid_argument("set_sun_sampling_stats: sun_ray_count must be non-zero.");
+    if (sun_A_box <= 0.0)
+        throw std::invalid_argument("set_sun_sampling_stats: sun_A_box must be positive.");
+    this->sun_width       = std::numeric_limits<double>::quiet_NaN();
+    this->sun_height      = std::numeric_limits<double>::quiet_NaN();
+    this->A_sun_box       = sun_A_box;
+    this->sun_ray_count   = sun_ray_count;
     this->ray_area_weight = this->A_sun_box / this->sun_ray_count;
 }
 
