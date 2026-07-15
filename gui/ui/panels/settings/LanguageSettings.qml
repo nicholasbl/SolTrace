@@ -14,16 +14,15 @@ ScrollView {
         spacing: 12
 
         Header {
-            text: "Language"
+            text: qsTr("Language")
         }
 
         ColumnLayout {
             STComboBox {
                 currentIndex: App.docs.locale
-                model: ["English", "Spanish"]
+                model: [qsTr("English"), qsTr("Spanish")]
                 onCurrentIndexChanged: App.docs.locale = currentIndex
             }
         }
     }
 }
-

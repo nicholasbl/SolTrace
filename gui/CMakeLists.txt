@@ -76,7 +76,7 @@ configure_file(
 )
 
 find_package(Qt6 6.11 REQUIRED COMPONENTS
-    Core Gui Qml Quick Quick3D Widgets Graphs Concurrent
+    Core Gui Qml Quick Quick3D Widgets Graphs Concurrent LinguistTools
 )
 
 set(QT_QML_GENERATE_QMLLS_INI ON)
@@ -164,6 +164,18 @@ qt_add_qml_module(SolTrace
     DEPENDENCIES
         QtQuick
         QtQuick3D
+)
+
+set(SOLTRACE_TRANSLATION_FILES
+    translations/soltrace_es.ts
+)
+
+qt_add_translations(SolTrace
+    TS_FILES
+        ${SOLTRACE_TRANSLATION_FILES}
+    RESOURCE_PREFIX "/i18n"
+    LUPDATE_TARGET update_translations
+    LRELEASE_TARGET release_translations
 )
 
 # Add examples folder
