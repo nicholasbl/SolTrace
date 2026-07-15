@@ -39,10 +39,25 @@ load_file(TaskControl& control, QString fname, db::Database* new_db) {
         auto str = fname.toStdString();
 
         stage = "parsing file";
-        if (!new_data->import_from_file(str)) {
-            return return_failure(
-                QString("Could not import the file: %1").arg(fname));
+
+        if (str.ends_with("stinput")) {
+            if (!new_data->import_from_file(str)) {
+                return return_failure(
+                    QString("Could not import the file: %1").arg(fname));
+            }
+        } else if (str.ends_with("json")) {
+            try {
+                new_data->import_json_file(str);
+            } catch (std::exception const& e) {
+                return return_failure(
+                    QString("Could not import the file: %1 %2")
+                        .arg(fname)
+                        .arg(e.what()));
+            }
+        } else {
+            return return_failure("Unknown file type.");
         }
+
 
         ASYNC_TASK_SYNC_POINT(control);
 

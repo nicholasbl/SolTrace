@@ -94,6 +94,9 @@ void SimulationModule::job_done() {
             ANotification::error(
                 "The simulation completed, but no results were produced."));
         return;
+    } else {
+        emit notify(ANotification::info(QString(
+            "A simulation has completed. Check analysis for new data.")));
     }
 
     m_completed_sims.push_back(results);
@@ -102,6 +105,8 @@ void SimulationModule::job_done() {
     set_current_simulation_result_name(results->database->name());
 
     qDebug() << Q_FUNC_INFO << "publish";
+
+
     emit new_results(results);
 }
 

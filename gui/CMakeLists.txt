@@ -170,11 +170,19 @@ set(SOLTRACE_TRANSLATION_FILES
     translations/soltrace_es.ts
 )
 
+add_custom_target(SolTraceTranslationSources
+    SOURCES
+        ${SOLTRACE_QML_FILES}
+)
+
 qt_add_translations(SolTrace
+    SOURCE_TARGETS
+        SolTraceTranslationSources
     TS_FILES
         ${SOLTRACE_TRANSLATION_FILES}
     RESOURCE_PREFIX "/i18n"
     LUPDATE_TARGET update_translations
+    LUPDATE_OPTIONS -extensions qml
     LRELEASE_TARGET release_translations
 )
 

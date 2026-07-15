@@ -13,7 +13,7 @@ AdaptiveFilteredEditor {
 
     wideThreshold: 500
     listWidth: 250
-    emptyListText: "Materials define optical properties. Create one below to assign it to elements."
+    emptyListText: qsTr("Materials define optical properties. Create one below to assign it to elements.")
 
     onEditingChanged: {
         App.view.editing_material = editing
@@ -54,14 +54,14 @@ AdaptiveFilteredEditor {
 
         STIconButton {
             icon: "\uf05b"
-            toolTip: "Select Material From View"
+            toolTip: qsTr("Select Material From View")
             onClicked: App.view.mouse_mode = ViewModule.SelectMaterial
         }
     }
 
     listFooter: RowLayout {
         CreateNewItemButton {
-            title: "New Material"
+            title: qsTr("New Material")
 
             onCreateRequested: function(name) {
                 var new_name = AppData.current_database.sanitize_material_name(name)
@@ -71,7 +71,7 @@ AdaptiveFilteredEditor {
     }
 
     listDelegate: STItemDelegate {
-        text: itemModel ? itemModel.name : "No name"
+        text: itemModel ? itemModel.name : qsTr("No name")
         highlighted: isCurrent
     }
 
@@ -121,7 +121,7 @@ AdaptiveFilteredEditor {
         STComboBar {
             id: bar
             Layout.fillWidth: true
-            model: ["Front", "Back"]
+            model: [qsTr("Front"), qsTr("Back")]
         }
 
         ScrollView {
@@ -155,8 +155,8 @@ AdaptiveFilteredEditor {
             DeleteItemButton {
                 id: delete_button
 
-                title: "Delete Material"
-                itemType: "material"
+                title: qsTr("Delete Material")
+                itemType: qsTr("material")
                 replacementModel: root.source_model
 
                 toDelete: AppData.materials.current_material
@@ -188,7 +188,7 @@ AdaptiveFilteredEditor {
     placeholder: Item {
         Label {
             anchors.centerIn: parent
-            text: "Select a material"
+            text: qsTr("Select a material")
             font.pointSize: 16
             opacity: 0.5
         }
