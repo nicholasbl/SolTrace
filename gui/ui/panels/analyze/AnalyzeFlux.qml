@@ -250,6 +250,9 @@ Flickable {
         STPropertyPanel {
             Layout.fillWidth: true
 
+            // Disable for now until this is a working feature
+            visible: false
+
             collapsible: true
             title: "Flux Volume"
 
