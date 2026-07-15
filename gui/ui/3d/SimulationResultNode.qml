@@ -96,6 +96,9 @@ Node {
                     metalness: 1
                     roughness: 0
                     baseColor: "white"
+
+                    lighting: PrincipledMaterial.NoLighting
+
                     cullMode: PrincipledMaterial.NoCulling
                     baseColorMap: Texture {
                         textureData: flux_texture_data
