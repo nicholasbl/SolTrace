@@ -21,7 +21,7 @@ struct DatabaseRecord {
 
 struct LoadedFile {
     // TODO: Store this in the DB
-    QString                       provenance = {};
+    QString                       provenance = { };
     std::unique_ptr<db::Database> ptr;
 };
 
@@ -61,6 +61,9 @@ public slots:
     void load_new();
 
     bool set_current(int);
+
+    void save_db_at_index(int, QUrl);
+    void save_current(QUrl path);
 
     void delete_current();
     void append_new(QString);

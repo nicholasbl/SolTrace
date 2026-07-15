@@ -194,6 +194,57 @@ bool DatabaseModule::set_current(int index) {
     return true;
 }
 
+static void
+save_common(db::Database& source, QString path, DatabaseModule& notification) {
+    auto result = source.export_to_simdata();
+
+    if (!result) {
+        emit notification.notify(ANotification::error(
+            QStringLiteral("Unable to save database. An error occurred while "
+                           "packing content: %1")
+                .arg(result.get_failure())));
+        return;
+    }
+
+    auto pack = result.get_success();
+
+    try {
+        pack->data->export_json_file(path.toStdString());
+    } catch (std::exception const& ex) {
+        emit notification.notify(ANotification::error(
+            QStringLiteral(
+                "An exception occurred while trying to save content: %1")
+                .arg(ex.what())));
+
+        return;
+    }
+
+    emit notification.notify(
+        ANotification::info(QStringLiteral("File successfully saved.")));
+}
+
+void DatabaseModule::save_db_at_index(int index, QUrl path) {
+    auto db = this->get_at(index);
+
+    if (!db or !db->database) {
+        notify(ANotification::error(QStringLiteral(
+            "An internal error was encountered trying to save the scene.")));
+        return;
+    }
+
+    save_common(*(db->database), path.toLocalFile(), *this);
+}
+
+void DatabaseModule::save_current(QUrl path) {
+    if (!m_current_database) {
+        notify(ANotification::error(QStringLiteral(
+            "An internal error was encountered trying to save the scene.")));
+        return;
+    }
+
+    save_common(*m_current_database, path.toLocalFile(), *this);
+}
+
 void DatabaseModule::delete_current() {
     auto const& v = this->vector();
     auto        iter =

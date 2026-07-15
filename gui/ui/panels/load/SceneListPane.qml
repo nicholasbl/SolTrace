@@ -1,6 +1,8 @@
+import QtCore
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
+import QtQuick.Dialogs
 import QtQuick.Layouts
 
 import SolTrace
@@ -16,9 +18,11 @@ ColumnLayout {
         Layout.fillWidth: true
         title: "Current Scene"
 
+        enabled: !!root.current_db
+
         RowLayout {
             Layout.fillWidth: true
-            enabled: !!root.current_db
+            Layout.columnSpan: 2
 
             STTextField {
                 text: root.current_db ? root.current_db.name : ""
@@ -35,6 +39,45 @@ ColumnLayout {
                 font.family: "Font Awesome 7 Free"
                 font.pointSize: 16
                 text: "\uf303"
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.columnSpan: 2
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+
+            STIconButton {
+                enabled: !AppData.file_source.is_loading
+                icon: "\uf56e"
+                label: "Export"
+                toolTip: "Export scene to file"
+
+                onClicked: file_dialog.open()
+
+                FileDialog {
+                    id: file_dialog
+
+                    fileMode: FileDialog.SaveFile
+
+
+                    onAccepted:
+                        AppData.file_source.save_current(file_dialog.selectedFile)
+
+
+                    Settings {
+                        id: save_file_history
+
+                        category: "save_file_history"
+
+                        property alias last_selected_file: file_dialog.selectedFile
+                        property alias last_selected_folder: file_dialog.currentFolder
+                    }
+                }
             }
         }
     }
