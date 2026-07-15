@@ -101,14 +101,20 @@ void execute_thread_runner(QPromise<SimResult>&      promise,
 
         auto current_runner = make_runner(config.backend);
 
-        SolTrace::Runner::RunnerStatus result;
 
         size_t thread_count = config.thread_count;
 
         qDebug() << "Starting count" << thread_count;
 
         if (thread_count == 0) {
-            thread_count = std::thread::hardware_concurrency();
+            thread_count =
+                std::max<size_t>(std::thread::hardware_concurrency(), 1);
+        }
+
+        // appears to be something odd in the sim code if the number of threads
+        // is at or above the ray count. clamp.
+        if (thread_count >= data->data->get_number_of_rays()) {
+            thread_count = 1;
         }
 
         if (auto ptr = dynamic_cast<SolTrace::NativeRunner::NativeRunner*>(
@@ -120,6 +126,7 @@ void execute_thread_runner(QPromise<SimResult>&      promise,
             qDebug() << "Native parameters" << thread_count;
         }
 
+        SolTrace::Runner::RunnerStatus result;
 
         qDebug() << "Starting simulation with"
                  << data->data->get_number_of_rays()
