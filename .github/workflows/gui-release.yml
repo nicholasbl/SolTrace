@@ -214,11 +214,21 @@ jobs:
           modules: ${{ matrix.qt_modules }}
 
       - name: Install CUDA Toolkit
-        if: matrix.optix_enabled == 'ON'
+        if: matrix.optix_enabled == 'ON' && matrix.platform != 'linux'
         uses: Jimver/cuda-toolkit@v0.2.35
         with:
           cuda: ${{ env.CUDA_VERSION }}
           linux-local-args: '["--toolkit"]'
+          log-file-suffix: '${{ matrix.id }}.txt'
+
+      - name: Install CUDA Toolkit
+        if: matrix.optix_enabled == 'ON' && matrix.platform == 'linux'
+        uses: Jimver/cuda-toolkit@v0.2.35
+        with:
+          cuda: ${{ env.CUDA_VERSION }}
+          method: network
+          sub-packages: '["nvcc", "cudart-dev"]'
+          use-local-cache: false
           log-file-suffix: '${{ matrix.id }}.txt'
 
       - name: Install Qt using aqt master

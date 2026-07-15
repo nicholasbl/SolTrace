@@ -181,9 +181,9 @@ qt_add_translations(SolTrace
     TS_FILES
         ${SOLTRACE_TRANSLATION_FILES}
     RESOURCE_PREFIX "/i18n"
-    LUPDATE_TARGET update_translations
+    LUPDATE_TARGET SolTrace_update_translations
     LUPDATE_OPTIONS -extensions qml
-    LRELEASE_TARGET release_translations
+    LRELEASE_TARGET SolTrace_release_translations
 )
 
 # Add examples folder
