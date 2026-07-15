@@ -695,8 +695,24 @@ void Database::import(SD::SimulationData& data) {
         m_registry.emplace<TransformComponent>(ent, extract_tf(element));
 
         if (!element.get_name().empty()) {
-            m_registry.emplace<IdentityComponent>(
-                ent, QString::fromStdString(element.get_name()));
+
+            // for legacy, sometimes the name is just a number
+
+            auto name = QString::fromStdString(element.get_name());
+
+            bool ok = false;
+
+            auto maybe_number = name.toLong(&ok);
+
+            if (ok) {
+                // these are not super useful. imbue with extra, if possible
+
+                auto id = element.get_id();
+
+                name = QStringLiteral("Element %1").arg(id);
+            }
+
+            m_registry.emplace<IdentityComponent>(ent, name);
         }
 
         if (!element.is_enabled()) {
