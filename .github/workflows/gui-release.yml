@@ -227,7 +227,8 @@ jobs:
         with:
           cuda: ${{ env.CUDA_VERSION }}
           method: network
-          sub-packages: '["nvcc", "cudart-dev", "curand-dev"]'
+          sub-packages: '["nvcc", "cudart-dev"]'
+          non-cuda-sub-packages: '["libcurand-dev"]'
           use-local-cache: false
           log-file-suffix: '${{ matrix.id }}.txt'
 
