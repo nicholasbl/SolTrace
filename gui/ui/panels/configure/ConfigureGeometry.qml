@@ -12,7 +12,7 @@ AdaptiveFilteredEditor {
     source_model: App.materials.geometry_list
     wideThreshold: 500
     listWidth: 250
-    emptyListText: "Geometries define reusable element shapes. Create one below to assign it to elements."
+    emptyListText: qsTr("Geometries define reusable element shapes. Create one below to assign it to elements.")
 
     onEditingChanged: {
         App.view.editing_geometry = editing
@@ -51,14 +51,14 @@ AdaptiveFilteredEditor {
 
         STIconButton {
             icon: "\uf05b"
-            toolTip: "Select Geometry From View"
+            toolTip: qsTr("Select Geometry From View")
             onClicked: App.view.mouse_mode = ViewModule.SelectGeometry
         }
     }
 
     listFooter: RowLayout {
         CreateNewItemButton {
-            title: "New Geometry"
+            title: qsTr("New Geometry")
 
             onCreateRequested: function(name) {
                 var new_name = AppData.current_database.sanitize_geometry_name(name)
@@ -68,7 +68,7 @@ AdaptiveFilteredEditor {
     }
 
     listDelegate: STItemDelegate {
-        text: itemModel ? itemModel.name : "No name"
+        text: itemModel ? itemModel.name : qsTr("No name")
         highlighted: isCurrent
     }
 
@@ -147,7 +147,7 @@ AdaptiveFilteredEditor {
 
                 Label {
                     Layout.fillWidth: true
-                    text: "No geometry for this configuration."
+                    text: qsTr("No geometry for this configuration.")
 
                     elide: Label.ElideRight
 
@@ -172,8 +172,8 @@ AdaptiveFilteredEditor {
             DeleteItemButton {
                 id: delete_button
 
-                title: "Delete Geometry"
-                itemType: "geometry"
+                title: qsTr("Delete Geometry")
+                itemType: qsTr("geometry")
                 replacementModel: root.source_model
 
                 toDelete: AppData.materials.current_geometry
@@ -205,7 +205,7 @@ AdaptiveFilteredEditor {
     placeholder: Item {
         Label {
             anchors.centerIn: parent
-            text: "Select a geometry"
+            text: qsTr("Select a geometry")
             font.pointSize: 16
             opacity: 0.5
             

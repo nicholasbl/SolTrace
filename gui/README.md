@@ -122,6 +122,89 @@ require the user's explicit approval under Gatekeeper. Trusted, prompt-free
 distribution will require adding Developer ID signing and notarization to the
 release workflow.
 
+## Translations
+
+The Qt Quick GUI uses Qt Linguist for user-interface translations. User-facing
+QML strings should be wrapped with `qsTr("...")`; C++ strings that become
+visible in the UI should use the appropriate Qt translation API for that class.
+Do not translate internal identifiers such as model role names, enum names,
+serialized values, filenames, resource paths, icon glyphs, or units that should
+remain standardized.
+
+Translation source files live in `gui/translations/`. The current Spanish
+catalog is `gui/translations/soltrace_es.ts`. Released translation catalogs are
+compiled to `.qm` files by CMake and embedded into the application resource
+prefix `:/i18n`. At runtime, the GUI loads the selected locale's catalog and
+asks the QML engine to retranslate visible bindings.
+
+The line numbers stored in `.ts` files are location metadata. Moving a
+translated string within the same QML component may update the `<location>`
+entry when `update_translations` runs, but it should not invalidate the
+translation. Qt matches messages primarily by context, source text, and optional
+disambiguation/comment. A translation is more likely to become unfinished when
+the source text changes, the string moves to a different QML context, or
+placeholders such as `%1` or `%n` are added, removed, or changed.
+
+### Updating existing translations
+
+After adding or changing translatable UI strings, update the `.ts` catalog from
+the build directory:
+
+```sh
+cmake --build . --target update_translations
+```
+
+Then edit the relevant `gui/translations/*.ts` file with Qt Linguist or a text
+editor. Preserve placeholders such as `%1`, `%n`, and markup such as
+`<em>...</em>` or `<sub>...</sub>` exactly unless the source string itself is
+being changed. Remove `type="unfinished"` only when the translation has been
+reviewed.
+
+Compile the runtime catalogs and rebuild the app:
+
+```sh
+cmake --build . --target release_translations
+cmake --build . --target SolTrace
+```
+
+`release_translations` should report zero unfinished translations for catalogs
+that are expected to ship complete.
+
+### Adding new translatable strings
+
+Use complete user-facing phrases instead of assembling translated fragments.
+For example, prefer `qsTr("Delete Geometry")` over
+`qsTr("Delete") + " " + qsTr("Geometry")`. Word order, grammar, and gender can
+change between languages, so translators need the whole phrase.
+
+Use placeholders for dynamic values:
+
+```qml
+text: qsTr("Delete %1").arg(itemName)
+```
+
+Preserve placeholders such as `%1`, `%2`, and `%n` in every translation. If the
+same English source text has different meanings in different places, provide a
+disambiguation/comment with Qt's translation APIs so translators can tell which
+meaning is intended.
+
+Place `qsTr()` at the UI binding or user-facing API boundary. Avoid translating
+internal data used by logic, persistence, or model lookup, such as enum names,
+role names, IDs, file paths, resource paths, and serialized values. Rich text is
+allowed when the label needs it, but translators must preserve tags such as
+`<em>` and `<sub>`.
+
+### Adding a new language
+
+To add a language, add a new `.ts` file under `gui/translations/` and list it in
+`SOLTRACE_TRANSLATION_FILES` in `gui/CMakeLists.txt`. Use a locale suffix in the
+filename, for example `soltrace_fr.ts` or `soltrace_pt_BR.ts`.
+
+Run `update_translations`, fill the new catalog, then run
+`release_translations`. The generated `.qm` file is embedded automatically
+through the existing CMake translation resource setup. Finally, expose the new
+locale in the GUI language selector so users can choose it.
+
 ## Notes
 
 - The executable target is named `SolTrace`.

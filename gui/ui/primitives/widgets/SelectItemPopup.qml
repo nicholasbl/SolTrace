@@ -107,7 +107,7 @@ STDialog {
             visible: root.allowNothing
             Layout.fillWidth: true
 
-            text: "Unassign"
+            text: qsTr("Unassign")
 
             onClicked: {
                 root.selectedNothing()
