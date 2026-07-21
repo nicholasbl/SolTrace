@@ -89,7 +89,7 @@ public:
     enum class Perspective { Normal = 0, Orthographic = 1 };
 
     enum class SkyType { Day, Blueprint, Adaptive, Realistic };
-    enum class RealsiticSkyType { Clear, PartlyCloudy, LowSun };
+    enum class RealisticSkyType { Clear, PartlyCloudy, LowSun };
 
     explicit SimulationViewState(QObject* parent = nullptr)
         : QObject(parent) { }
@@ -97,16 +97,16 @@ public:
     Q_ENUM(Camera)
     Q_ENUM(Perspective)
     Q_ENUM(SkyType)
-    Q_ENUM(RealsiticSkyType)
+    Q_ENUM(RealisticSkyType)
 
     Q_WRITABLE_PROPERTY(Camera, camera, Camera::Orbital)
     Q_WRITABLE_PROPERTY(Perspective, perspective, Perspective::Normal)
 
     Q_WRITABLE_PROPERTY(bool, sun_viz, true)
     Q_WRITABLE_PROPERTY(SkyType, sky, SkyType::Adaptive)
-    Q_WRITABLE_PROPERTY(RealsiticSkyType,
+    Q_WRITABLE_PROPERTY(RealisticSkyType,
                         realistic_sky,
-                        RealsiticSkyType::Clear)
+                        RealisticSkyType::Clear)
 
     Q_WRITABLE_PROPERTY(double, sun_viz_scale, 50)
     Q_WRITABLE_PROPERTY(QColor, sun_color, "yellow")
