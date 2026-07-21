@@ -213,7 +213,7 @@ ColumnLayout {
                 if (currentIndex >= 0) {
                     [
                         App.sun.calc_data.set_dawn,
-                        App.sun.calc_data.mid_morning,
+                        App.sun.calc_data.set_mid_morning,
                         App.sun.calc_data.set_noon,
                         App.sun.calc_data.set_mid_afternoon,
                         App.sun.calc_data.set_golden_hour,
