@@ -5,7 +5,7 @@ import QtQuick.Layouts
 
 import SolTrace
 
-STDialog {
+STPopup {
     id: root
 
     property var source_model: null
@@ -97,7 +97,7 @@ STDialog {
 
                 onClicked: {
                     selectedEntity(delegate.entity)
-                    root.accept()
+                    root.close()
                 }
             }
         }
@@ -115,6 +115,4 @@ STDialog {
             }
         }
     }
-
-    standardButtons: Dialog.Cancel
 }

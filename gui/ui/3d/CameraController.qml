@@ -111,10 +111,10 @@ Item {
             axis_setup = Qt.vector3d(1,0,0)
             break;
         case CameraController.Y:
-            axis_setup = Qt.vector3d(0,1,0)
+            axis_setup = Qt.vector3d(0,0,1)
             break;
         case CameraController.Z:
-            axis_setup = Qt.vector3d(0,0,1)
+            axis_setup = Qt.vector3d(0,1,0)
             break;
         default:
             return

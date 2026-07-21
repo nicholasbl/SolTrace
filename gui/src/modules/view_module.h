@@ -37,8 +37,8 @@ class SplitPanelData : public QObject {
     Q_OBJECT
     QML_ELEMENT
 
-    const inline static QVector<int> m_sizes      = { 420, 550, 750, 9999 };
-    const inline static QVector<int> m_thresholds = { 480, 600, 850 };
+    const inline static QVector<int> m_sizes      = { 450, 550, 750, 9999 };
+    const inline static QVector<int> m_thresholds = { 550, 750, 850 };
 
 public:
     explicit SplitPanelData(QObject* parent = nullptr);
@@ -88,7 +88,8 @@ public:
 
     enum class Perspective { Normal = 0, Orthographic = 1 };
 
-    enum class SkyType { Day, Blueprint, Adaptive };
+    enum class SkyType { Day, Blueprint, Adaptive, Realistic };
+    enum class RealsiticSkyType { Clear, PartlyCloudy, LowSun };
 
     explicit SimulationViewState(QObject* parent = nullptr)
         : QObject(parent) { }
@@ -96,15 +97,21 @@ public:
     Q_ENUM(Camera)
     Q_ENUM(Perspective)
     Q_ENUM(SkyType)
+    Q_ENUM(RealsiticSkyType)
 
     Q_WRITABLE_PROPERTY(Camera, camera, Camera::Orbital)
     Q_WRITABLE_PROPERTY(Perspective, perspective, Perspective::Normal)
 
     Q_WRITABLE_PROPERTY(bool, sun_viz, true)
     Q_WRITABLE_PROPERTY(SkyType, sky, SkyType::Adaptive)
+    Q_WRITABLE_PROPERTY(RealsiticSkyType,
+                        realistic_sky,
+                        RealsiticSkyType::Clear)
+
     Q_WRITABLE_PROPERTY(double, sun_viz_scale, 50)
     Q_WRITABLE_PROPERTY(QColor, sun_color, "yellow")
     Q_WRITABLE_PROPERTY(QColor, geometry_color, "white")
+    Q_WRITABLE_PROPERTY(bool, show_grid, true)
 
     Q_WRITABLE_PROPERTY(int, fps_walk_speed, 10)
 };

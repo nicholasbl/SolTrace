@@ -55,8 +55,7 @@ void SimulationModule::update_result_world(db::SimulationResultPtr results) {
     if (database) {
         auto const* resource = database->ray_source_resource.get();
         if (resource) {
-            is_point_source =
-                resource->type == db::RaySourceType::PointSource;
+            is_point_source = resource->type == db::RaySourceType::PointSource;
 
             if (resource->source) {
                 auto const& position = resource->source->get_position();
@@ -90,9 +89,8 @@ void SimulationModule::job_done() {
     auto results = from->take();
 
     if (!results) {
-        emit notify(
-            ANotification::error(
-                "The simulation completed, but no results were produced."));
+        emit notify(ANotification::error(
+            "The simulation completed, but no results were produced."));
         return;
     } else {
         emit notify(ANotification::info(QString(
@@ -222,8 +220,7 @@ void SimulationModule::run() {
 
     connect(
         m_running, &RunningJob::finished, this, &SimulationModule::job_done);
-    connect(
-        m_running, &RunningJob::error, this, &SimulationModule::job_failed);
+    connect(m_running, &RunningJob::error, this, &SimulationModule::job_failed);
     connect(
         m_running, &RunningJob::finished, m_running, &RunningJob::deleteLater);
     connect(m_running, &RunningJob::error, m_running, &RunningJob::deleteLater);
@@ -251,10 +248,9 @@ void SimulationModule::delete_result(int index) {
 
     const bool deleting_current = m_current_result == result;
 
-    m_completed_sims.erase(std::remove(m_completed_sims.begin(),
-                                       m_completed_sims.end(),
-                                       result),
-                           m_completed_sims.end());
+    m_completed_sims.erase(
+        std::remove(m_completed_sims.begin(), m_completed_sims.end(), result),
+        m_completed_sims.end());
     m_results->remove_result(index);
 
     if (!deleting_current) return;
@@ -263,8 +259,8 @@ void SimulationModule::delete_result(int index) {
     QString                 replacement_name = "No Simulation Result";
     if (m_results->rowCount() > 0) {
         auto replacement_index = std::min(index, m_results->rowCount() - 1);
-        replacement           = m_results->result_at(replacement_index);
-        replacement_name      = m_results->name_at(replacement_index);
+        replacement            = m_results->result_at(replacement_index);
+        replacement_name       = m_results->name_at(replacement_index);
     }
 
     m_current_result = replacement;
@@ -293,6 +289,11 @@ void SimulationModule::duplicate_current_result_for_edit() {
     if (!m_current_result) return;
 
     emit edit_result_copy_requested(m_current_result);
+}
+
+void SimulationModule::update_max_ray_count(int new_max) {
+    if (new_max < ray_count()) { set_ray_count(new_max); }
+    set_max_ray_count(new_max);
 }
 
 } // namespace SolTrace::GUI::App
