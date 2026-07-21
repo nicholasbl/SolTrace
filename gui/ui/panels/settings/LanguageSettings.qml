@@ -21,7 +21,7 @@ ScrollView {
             STComboBox {
                 currentIndex: App.docs.locale
                 model: [qsTr("English"), qsTr("Spanish")]
-                onCurrentIndexChanged: App.docs.locale = currentIndex
+                onActivated: (index) => App.docs.locale = index
             }
         }
     }
