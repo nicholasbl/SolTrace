@@ -46,8 +46,8 @@ void AppData::load_session() {
     QSettings s;
 
     s.beginGroup("Language");
-    m_docs->set_locale(locale_from_setting(s.value(
-        "locale", static_cast<int>(DocumentationModule::Locale::EN))));
+    m_docs->set_locale(locale_from_setting(
+        s.value("locale", static_cast<int>(DocumentationModule::Locale::EN))));
     s.endGroup();
 
     s.beginGroup("View");
@@ -103,7 +103,7 @@ void AppData::load_session() {
         s.value("sim_sun_color", QColor("yellow")).value<QColor>());
     sim->set_geometry_color(
         s.value("sim_geometry_color", QColor("white")).value<QColor>());
-
+    sim->set_show_grid(s.value("sim_show_grid", true).toBool());
     s.endGroup();
 
     s.beginGroup("Sun");
@@ -198,6 +198,7 @@ void AppData::save_session() {
     s.setValue("sim_sun_viz_scale", sim->sun_viz_scale());
     s.setValue("sim_sun_color", sim->sun_color());
     s.setValue("sim_geometry_color", sim->geometry_color());
+    s.setValue("sim_show_grid", sim->show_grid());
 
     s.endGroup();
 
@@ -322,10 +323,9 @@ AppData::AppData(QObject*       parent,
 
     connect(m_script, &Script::Script::notify, this, &AppData::notification);
 
-    connect(m_docs,
-            &DocumentationModule::locale_changed,
-            this,
-            [this] { apply_ui_locale(m_docs->locale()); });
+    connect(m_docs, &DocumentationModule::locale_changed, this, [this] {
+        apply_ui_locale(m_docs->locale());
+    });
 
     connect(this,
             &AppData::current_database_value_changed,

@@ -54,11 +54,18 @@ ScrollView {
             }
 
             STSpinBox {
+                id: rayCountField
                 Layout.fillWidth: true
                 from: 1
-                value: AppData.simulation.ray_count
-                to: 1000000000
+                to: AppData.simulation.max_ray_count
                 onValueModified: AppData.simulation.ray_count = value
+
+                Binding {
+                    target: rayCountField
+                    property: "value"
+                    value: AppData.simulation.ray_count
+                    restoreMode: Binding.RestoreBinding
+                }
             }
 
             STPropertyLabel {
@@ -71,7 +78,7 @@ ScrollView {
                 from: 1
                 value: AppData.simulation.max_ray_count
                 to: 1000000000
-                onValueModified: AppData.simulation.max_ray_count = value
+                onValueModified: AppData.simulation.update_max_ray_count(value)
             }
 
             STPropertyLabel {

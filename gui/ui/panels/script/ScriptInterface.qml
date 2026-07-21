@@ -58,7 +58,6 @@ ScrollView {
 
     STPopup {
         id: api_popup
-
         parent: Overlay.overlay
         modal: true
         focus: true
