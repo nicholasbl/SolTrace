@@ -20,7 +20,6 @@ RowLayout {
 
         icon: "\uf059"
         toolTip: (root.target.inline_docs ? "Disable" : "Enable") + " Inline Docs"
-        visible: root.target.size >= SplitPanelData.Normal
         onClicked: root.target.inline_docs = !root.target.inline_docs
     }
 
