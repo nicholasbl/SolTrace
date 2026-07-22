@@ -8,6 +8,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QTemporaryFile>
+#include <QTimer>
 #include <QtGlobal>
 #include <QtConcurrent/qtconcurrentrun.h>
 #include <QtCore/qfileinfo.h>
@@ -35,6 +36,16 @@ QString wasm_temp_import_template(QString const& file_name) {
     return QDir::tempPath() + QStringLiteral("/soltrace-import-XXXXXX.") +
            suffix;
 }
+
+#if defined(Q_OS_WASM) && !defined(__EMSCRIPTEN_PTHREADS__)
+struct DirectTaskControl : TaskControl {
+    void suspendIfRequested() const override { }
+    bool cancelRequested() const override { return false; }
+
+    void setProgressValue(int) const override { }
+    void setProgressValueAndText(int, QString) const override { }
+};
+#endif
 
 } // namespace
 
@@ -193,6 +204,19 @@ void DatabaseModule::load_url(QUrl url, QString name_override) {
     // to the task, which then wraps it.
     auto ptr = new db::Database(fname);
 
+#if defined(Q_OS_WASM) && !defined(__EMSCRIPTEN_PTHREADS__)
+    auto local_path = new_source.toLocalFile();
+    QTimer::singleShot(0, this, [this, url, local_path, ptr]() {
+        DirectTaskControl control;
+        auto              result = load_file(control, local_path, ptr);
+
+        if (result) {
+            file_ready(url, std::move(result.get_success()));
+        } else {
+            file_failed(url, std::move(result.get_failure()));
+        }
+    });
+#else
     auto task = launch_async_task<LoadedFile, LoadFileFailed>(
         url,
         this,
@@ -206,6 +230,7 @@ void DatabaseModule::load_url(QUrl url, QString name_override) {
             &DatabaseModule::cancel_current_load,
             task,
             &AsyncTaskBase::cancel);
+#endif
 }
 
 void DatabaseModule::load_new() {

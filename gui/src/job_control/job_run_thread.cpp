@@ -14,6 +14,7 @@
 #endif
 
 #include <QtConcurrentRun>
+#include <QtGlobal>
 
 #include <memory>
 
@@ -140,6 +141,11 @@ void execute_thread_runner(QPromise<SimResult>&      promise,
 
         qDebug() << Q_FUNC_INFO << "setup complete";
 
+#if defined(Q_OS_WASM) && !defined(__EMSCRIPTEN_PTHREADS__)
+        promise.setProgressValueAndText(10, "Running...");
+        auto run_result = current_runner->run_simulation();
+        promise.setProgressValueAndText(90, "Simulation complete");
+#else
         // run simulation will indeed run, but we need to stuff it into another
         // thread so we can poll status.
 
@@ -196,6 +202,7 @@ void execute_thread_runner(QPromise<SimResult>&      promise,
         }
 
         auto run_result = run_future.result();
+#endif
 
         auto end_instant = std::chrono::high_resolution_clock::now();
 

@@ -13,6 +13,8 @@
 #include <QFutureWatcher>
 #include <QGuiApplication>
 #include <QPromise>
+#include <QTimer>
+#include <QtGlobal>
 #include <QtConcurrentRun>
 
 
@@ -36,7 +38,7 @@ RunningJob::RunningJob(SimDataPtr data,
     case RunType::Process: f_ptr = execute_process_runner; break;
     }
 
-#ifdef Q_WASM
+#ifdef Q_OS_WASM
     f_ptr = execute_thread_runner;
 #endif
 
@@ -45,6 +47,39 @@ RunningJob::RunningJob(SimDataPtr data,
 
     auto config = ThreadRunnerConfig { .thread_count = thread_count,
                                        .backend      = backend };
+
+#if defined(Q_OS_WASM) && !defined(__EMSCRIPTEN_PTHREADS__)
+    m_watcher = nullptr;
+
+    QTimer::singleShot(0, this, [this, f_ptr, data, config]() {
+        QPromise<SimResult> promise;
+        promise.start();
+        promise.setProgressRange(0, 100);
+        f_ptr(promise, data, config);
+        promise.finish();
+
+        auto future = promise.future();
+        if (future.resultCount() == 0) {
+            emit this->error(QStringLiteral(
+                "The simulation did not return a result."));
+            return;
+        }
+
+        auto res = std::move(future.result());
+
+        std::visit(
+            overloaded {
+                [this](ResultPtr& ptr) {
+                    this->m_result = std::move(ptr);
+                    emit this->finished();
+                },
+                [this](QString error_text) { emit this->error(error_text); },
+            },
+            res);
+    });
+
+    return;
+#endif
 
     auto future = QtConcurrent::run(f_ptr, data, config);
 
@@ -106,11 +141,14 @@ std::shared_ptr<db::SimulationResult> RunningJob::take() {
 }
 
 void RunningJob::pause() {
+    if (!m_watcher) { return; }
     ((QFutureWatcher<SimResult>*)m_watcher)->suspend();
 }
 void RunningJob::resume() {
+    if (!m_watcher) { return; }
     ((QFutureWatcher<SimResult>*)m_watcher)->resume();
 }
 void RunningJob::cancel() {
+    if (!m_watcher) { return; }
     ((QFutureWatcher<SimResult>*)m_watcher)->cancel();
 }

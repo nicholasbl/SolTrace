@@ -144,6 +144,12 @@ SimulationModule::SimulationModule(QObject* parent)
     auto thread_count = std::thread::hardware_concurrency();
     set_max_threads(thread_count <= 0 ? 1 : thread_count);
 
+#ifdef Q_OS_WASM
+    set_max_threads(1);
+    set_ray_count(500);
+    set_max_ray_count(500);
+#endif
+
 #ifdef SOLTRACE_HAS_EMBREE_RUNNER
     set_runner(Runner::Embree);
 #endif
@@ -206,8 +212,13 @@ void SimulationModule::run() {
 
     qDebug() << Q_FUNC_INFO << magic_enum::enum_name(backend);
 
+    auto thread_count = m_max_threads;
+#ifdef Q_OS_WASM
+    thread_count = 1;
+#endif
+
     m_running =
-        new RunningJob(sim_data, RunType::Thread, m_max_threads, backend, this);
+        new RunningJob(sim_data, RunType::Thread, thread_count, backend, this);
 
     connect(m_running,
             &RunningJob::progress_update,
