@@ -5,14 +5,38 @@
 
 #include <QCoreApplication>
 #include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QTemporaryFile>
+#include <QtGlobal>
 #include <QtConcurrent/qtconcurrentrun.h>
 #include <QtCore/qfileinfo.h>
 #include <QtCore/qfuturewatcher.h>
+
+#ifdef Q_OS_WASM
+#include <QFileDialog>
+#endif
 
 #include <exception>
 
 namespace SolTrace::GUI::App {
 
+namespace {
+
+QString import_name_filter() {
+    return QStringLiteral(
+        "SolTrace Files (*.stinput *.json);;All Files (*)");
+}
+
+QString wasm_temp_import_template(QString const& file_name) {
+    auto suffix = QFileInfo(file_name).suffix();
+    if (suffix.isEmpty()) { suffix = QStringLiteral("stinput"); }
+
+    return QDir::tempPath() + QStringLiteral("/soltrace-import-XXXXXX.") +
+           suffix;
+}
+
+} // namespace
 
 static ::Result<LoadedFile, LoadFileFailed>
 load_file(TaskControl& control, QString fname, db::Database* new_db) {
@@ -188,6 +212,51 @@ void DatabaseModule::load_new() {
     load_url(QUrl());
 }
 
+bool DatabaseModule::open_file_dialog() {
+#ifndef Q_OS_WASM
+    return false;
+#else
+    if (is_loading()) {
+        emit notify(ANotification::warning(
+            "A file is already loading. Please wait for it to finish."));
+        return true;
+    }
+
+    QFileDialog::getOpenFileContent(
+        import_name_filter(),
+        [this](QString const& file_name, QByteArray const& content) {
+            if (file_name.isEmpty()) { return; }
+
+            QTemporaryFile file(wasm_temp_import_template(file_name));
+            file.setAutoRemove(false);
+
+            if (!file.open()) {
+                emit notify(ANotification::error(
+                    QStringLiteral(
+                        "Could not create a temporary import file: %1")
+                        .arg(file.errorString())));
+                return;
+            }
+
+            auto const bytes_written = file.write(content);
+            if (bytes_written != content.size()) {
+                emit notify(ANotification::error(
+                    QStringLiteral("Could not stage the selected file: %1")
+                        .arg(file.errorString())));
+                return;
+            }
+
+            auto const temp_path = file.fileName();
+            file.close();
+
+            load_url(QUrl::fromLocalFile(temp_path),
+                     QFileInfo(file_name).fileName());
+        });
+
+    return true;
+#endif
+}
+
 DatabaseModule::DatabaseModule(QObject* parent)
     : StructModelAdapter { parent } {
 
@@ -209,8 +278,10 @@ bool DatabaseModule::set_current(int index) {
     return true;
 }
 
-static void
-save_common(db::Database& source, QString path, DatabaseModule& notification) {
+static bool save_common(db::Database&   source,
+                        QString         path,
+                        DatabaseModule& notification,
+                        bool            emit_success = true) {
     auto result = source.export_to_simdata();
 
     if (!result) {
@@ -218,7 +289,7 @@ save_common(db::Database& source, QString path, DatabaseModule& notification) {
             QStringLiteral("Unable to save database. An error occurred while "
                            "packing content: %1")
                 .arg(result.get_failure())));
-        return;
+        return false;
     }
 
     auto pack = result.get_success();
@@ -231,11 +302,15 @@ save_common(db::Database& source, QString path, DatabaseModule& notification) {
                 "An exception occurred while trying to save content: %1")
                 .arg(ex.what())));
 
-        return;
+        return false;
     }
 
-    emit notification.notify(
-        ANotification::info(QStringLiteral("File successfully saved.")));
+    if (emit_success) {
+        emit notification.notify(
+            ANotification::info(QStringLiteral("File successfully saved.")));
+    }
+
+    return true;
 }
 
 void DatabaseModule::save_db_at_index(int index, QUrl path) {
@@ -258,6 +333,56 @@ void DatabaseModule::save_current(QUrl path) {
     }
 
     save_common(*m_current_database, path.toLocalFile(), *this);
+}
+
+bool DatabaseModule::save_current_dialog() {
+#ifndef Q_OS_WASM
+    return false;
+#else
+    if (!m_current_database) {
+        notify(ANotification::error(QStringLiteral(
+            "An internal error was encountered trying to save the scene.")));
+        return true;
+    }
+
+    QTemporaryFile file(QDir::tempPath() +
+                        QStringLiteral("/soltrace-export-XXXXXX.json"));
+    file.setAutoRemove(true);
+
+    if (!file.open()) {
+        emit notify(ANotification::error(
+            QStringLiteral("Could not create a temporary export file: %1")
+                .arg(file.errorString())));
+        return true;
+    }
+
+    auto const temp_path = file.fileName();
+    file.close();
+
+    if (!save_common(*m_current_database,
+                     temp_path,
+                     *this,
+                     false /* emit_success */)) {
+        return true;
+    }
+
+    QFile exported_file(temp_path);
+    if (!exported_file.open(QIODevice::ReadOnly)) {
+        emit notify(ANotification::error(
+            QStringLiteral("Could not read the exported scene: %1")
+                .arg(exported_file.errorString())));
+        return true;
+    }
+
+    auto const content = exported_file.readAll();
+    QFileDialog::saveFileContent(
+        content, m_current_database->name() + QStringLiteral(".json"));
+
+    emit notify(
+        ANotification::info(QStringLiteral("File successfully saved.")));
+
+    return true;
+#endif
 }
 
 void DatabaseModule::delete_current() {

@@ -57,7 +57,11 @@ ColumnLayout {
                 label: "Export"
                 toolTip: "Export scene to file"
 
-                onClicked: file_dialog.open()
+                onClicked: {
+                    if (!AppData.file_source.save_current_dialog()) {
+                        file_dialog.open()
+                    }
+                }
 
                 FileDialog {
                     id: file_dialog

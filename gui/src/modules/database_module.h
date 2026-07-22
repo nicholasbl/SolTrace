@@ -57,6 +57,9 @@ public:
     DatabaseModule(QObject* parent = nullptr);
 
 public slots:
+    bool open_file_dialog();
+    bool save_current_dialog();
+
     void load_url(QUrl, QString name_override = "");
     void load_new();
 
