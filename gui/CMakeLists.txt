@@ -232,6 +232,27 @@ if(TARGET optix_runner)
     target_link_libraries(SolTrace PRIVATE optix_runner)
 endif()
 
+set(SOLTRACE_WASM_PTHREAD_POOL_SIZE "4"
+    CACHE STRING "Emscripten pthread pool size for the SolTrace GUI")
+
+function(soltrace_enable_wasm_threads target)
+    if(NOT EMSCRIPTEN OR NOT TARGET ${target})
+        return()
+    endif()
+
+    target_compile_options(${target} PRIVATE -pthread)
+
+    get_target_property(target_type ${target} TYPE)
+    if(target_type STREQUAL "EXECUTABLE"
+            OR target_type STREQUAL "SHARED_LIBRARY"
+            OR target_type STREQUAL "MODULE_LIBRARY")
+        target_link_options(${target} PRIVATE
+            -pthread
+            "-sPTHREAD_POOL_SIZE=${SOLTRACE_WASM_PTHREAD_POOL_SIZE}"
+        )
+    endif()
+endfunction()
+
 target_include_directories(SolTrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_include_directories(SolTrace PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 target_include_directories(SolTrace PRIVATE ../coretrace/simulation_data)
@@ -272,6 +293,14 @@ target_link_libraries(SolTrace
         simresult
         native_runner
 )
+
+# For WASM, demand that pthreads are on
+soltrace_enable_wasm_threads(simdata)
+soltrace_enable_wasm_threads(simresult)
+soltrace_enable_wasm_threads(native_runner)
+soltrace_enable_wasm_threads(embree_runner)
+soltrace_enable_wasm_threads(optix_runner)
+soltrace_enable_wasm_threads(SolTrace)
 
 include(GNUInstallDirs)
 install(TARGETS SolTrace
