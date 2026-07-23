@@ -8,19 +8,21 @@ ColumnLayout {
     id: root
     spacing: 0
 
-    Flickable {
+    ScrollView {
+        id: welcome_scroll
         Layout.fillWidth: true
         Layout.fillHeight: true
-        contentHeight: content.implicitHeight
+        contentWidth: availableWidth
         clip: true
 
         ColumnLayout {
             id: content
-            width: parent.width
+            width: welcome_scroll.availableWidth
+            height: implicitHeight
             spacing: 0
 
             ShadowedRectangle {
-                Layout.fillWidth: true
+                Layout.preferredWidth: parent.width
                 Layout.preferredHeight: banner.height
                 Layout.topMargin: 10
                 Layout.bottomMargin: 20
@@ -48,7 +50,7 @@ ColumnLayout {
                         Layout.fillWidth: true
                         Layout.leftMargin: banner.horizontalPadding
                         Layout.rightMargin: banner.horizontalPadding
-                        Layout.bottomMargin: banner.verticalPadding
+                        Layout.bottomMargin: 8
                         text: "An optical ray tracing tool for modeling concentrating solar power systems. Define your optical geometry, trace rays through the system, and analyze the resulting flux distributions."
                         wrapMode: Text.WordWrap
                     }
@@ -80,7 +82,7 @@ ColumnLayout {
                 ]
 
                 delegate: ColumnLayout {
-                    Layout.fillWidth: true
+                    Layout.maximumWidth: content.width
                     spacing: 0
 
                     required property var modelData
@@ -119,6 +121,25 @@ ColumnLayout {
                         text: modelData.description
                         wrapMode: Text.WordWrap
                     }
+                }
+            }
+
+            ColumnLayout {
+                Layout.maximumWidth: content.width
+
+                Label {
+                    Layout.fillWidth: true
+                    text: "SolTrace has an in-line documentation system to provide useful information next to controls. If you are new to CSP software or SolTrace, you may consider enabling it."
+                    wrapMode: Label.WrapAtWordBoundaryOrAnywhere
+                }
+
+                STSwitch {
+                    Layout.leftMargin: banner.horizontalPadding
+                    Layout.rightMargin: banner.horizontalPadding
+                    Layout.bottomMargin: banner.verticalPadding
+                    text: "Show Inline Documentation"
+                    checked: App.view.inline_docs
+                    onToggled: App.view.inline_docs = checked
                 }
             }
 

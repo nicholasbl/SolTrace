@@ -209,8 +209,9 @@ locale in the GUI language selector so users can choose it.
 
 - The executable target is named `SolTrace`.
 - The QML module URI is `SolTrace`.
-- Application documentation files under `gui/docs` are embedded as Qt
-  resources.
+- Edit application documentation in `gui/docs_source`, then run
+  `gui/scripts/process_docs.py` to regenerate `gui/docs`. Only the generated
+  `gui/docs` tree is embedded as Qt resources.
 - Assets under `gui/assets` are embedded as Qt resources.
 - Third-party header-only dependencies such as EnTT and magic_enum are fetched
   through CPM during configuration.

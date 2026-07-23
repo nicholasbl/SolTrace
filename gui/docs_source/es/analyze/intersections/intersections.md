@@ -1,0 +1,7 @@
+---
+title: "Intersecciones"
+---
+
+La tabla de intersecciones muestra los eventos de rayos del ultimo trazado. Cada fila representa un impacto, perdida, absorcion, reflexion o transmision registrado por la simulacion.
+
+Use esta vista para verificar donde llegan los rayos, revisar interacciones con elementos o depurar trayectorias opticas inesperadas.

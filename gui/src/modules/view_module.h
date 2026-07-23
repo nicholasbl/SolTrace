@@ -61,8 +61,6 @@ public:
     Q_WRITABLE_PROPERTY(bool, visible, false)
     Q_WRITABLE_PROPERTY(bool, saved_visible, false)
 
-    Q_WRITABLE_PROPERTY(bool, inline_docs, false)
-
     // Q_WRITABLE_PROPERTY(bool, tags, false)
     // Idea: show walkthrough tags just for this section
 
@@ -166,6 +164,7 @@ public:
     Q_WRITABLE_PROPERTY(bool, simulation_content_view, false)
     Q_WRITABLE_PROPERTY(bool, show_intersections, true)
     Q_WRITABLE_PROPERTY(MouseMode, mouse_mode, MouseMode::Camera)
+    Q_WRITABLE_PROPERTY(bool, inline_docs, false)
 
     // Viewport State
     QOBJECT_READONLY_PROPERTY(SimulationViewState, sim)

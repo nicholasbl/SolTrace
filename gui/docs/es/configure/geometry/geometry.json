@@ -1,0 +1,1 @@
+{"metadata": {"title": "Geometria"}, "blocks": [{"type": "text", "content": "Las entradas de geometria definen formas de superficie reutilizables. Una geometria puede asignarse a uno o mas elementos del layout para mantener consistentes las formas repetidas.\n\nEdite los parametros del tipo de forma seleccionado y luego asigne esa geometria desde el panel Layout."}]}

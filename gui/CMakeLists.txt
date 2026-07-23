@@ -4,6 +4,8 @@ project(SolTraceApp VERSION 4.0.0 LANGUAGES CXX)
 
 include(cmake/CPM.cmake)
 
+option(SOLTRACE_EMSCRIPTEN_PTHREADS "Force the use of pthreads when building for multithreaded WASM" OFF)
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Git QUIET)
@@ -132,9 +134,11 @@ list(SORT SOLTRACE_ASSET_FILES)
 # Add all documents
 file(GLOB_RECURSE SOLTRACE_DOC_FILES
     CONFIGURE_DEPENDS
+    LIST_DIRECTORIES false
     RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
-    "docs/*.md"
+    "docs/*"
 )
+list(FILTER SOLTRACE_DOC_FILES EXCLUDE REGEX "/\\.DS_Store$")
 list(SORT SOLTRACE_DOC_FILES)
 
 set_source_files_properties(ui/App.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
@@ -294,13 +298,15 @@ target_link_libraries(SolTrace
         native_runner
 )
 
-# For WASM, demand that pthreads are on
-soltrace_enable_wasm_threads(simdata)
-soltrace_enable_wasm_threads(simresult)
-soltrace_enable_wasm_threads(native_runner)
-soltrace_enable_wasm_threads(embree_runner)
-soltrace_enable_wasm_threads(optix_runner)
-soltrace_enable_wasm_threads(SolTrace)
+if(SOLTRACE_EMSCRIPTEN_PTHREADS)
+    # For WASM, demand that pthreads are on
+    soltrace_enable_wasm_threads(simdata)
+    soltrace_enable_wasm_threads(simresult)
+    soltrace_enable_wasm_threads(native_runner)
+    soltrace_enable_wasm_threads(embree_runner)
+    soltrace_enable_wasm_threads(optix_runner)
+    soltrace_enable_wasm_threads(SolTrace)
+endif()
 
 include(GNUInstallDirs)
 install(TARGETS SolTrace

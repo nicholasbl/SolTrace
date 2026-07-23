@@ -194,7 +194,7 @@ RowLayout {
                         width: parent.width
 
                         InlineDocumentation {
-                            key: "placeholder_small"
+                            key: "view.camera"
                             title: "Cameras"
                             target: AppData.view.left_panel
                         }
@@ -239,7 +239,7 @@ RowLayout {
                         width: parent.width
 
                         InlineDocumentation {
-                            key: "placeholder_small"
+                            key: "view.perspective"
                             title: "Camera Perspectives"
                             target: AppData.view.left_panel
                         }

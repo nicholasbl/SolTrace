@@ -23,7 +23,7 @@ ScrollView {
         width: root.availableWidth
 
         InlineDocumentation {
-            key: "placeholder_small"
+            key: "simulate.trace"
             target: AppData.view.left_panel
             title: "Simulation Runner"
         }

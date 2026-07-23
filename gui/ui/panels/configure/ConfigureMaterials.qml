@@ -78,6 +78,11 @@ AdaptiveFilteredEditor {
     detailView: ColumnLayout {
         spacing: 8
 
+        InlineDocumentation {
+            key: "configure.materials"
+            target: App.view.left_panel
+        }
+
         RowLayout {
             STIconButton {
                 icon: "\uf053"

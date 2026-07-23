@@ -74,6 +74,11 @@ AdaptiveFilteredEditor {
 
     detailView: ColumnLayout {
 
+        InlineDocumentation {
+            key: "configure.geometry"
+            target: App.view.left_panel
+        }
+
         RowLayout {
             STIconButton {
                 icon: "\uf053"

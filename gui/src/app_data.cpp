@@ -68,10 +68,11 @@ void AppData::load_session() {
     m_view->right_panel()->set_width(
         s.value("right_panel_width", 100).toUInt());
 
-    m_view->left_panel()->set_inline_docs(
-        s.value("left_panel_inline_docs", false).toBool());
-    m_view->right_panel()->set_inline_docs(
-        s.value("right_panel_inline_docs", false).toBool());
+    m_view->set_inline_docs(
+        s.value("inline_docs",
+                s.value("left_panel_inline_docs", false).toBool() ||
+                    s.value("right_panel_inline_docs", false).toBool())
+            .toBool());
 
     m_view->set_workflow_phase(static_cast<ViewModule::WorkflowPhase>(
         s.value("workflow_phase", 0).toUInt()));
@@ -172,8 +173,7 @@ void AppData::save_session() {
     s.setValue("left_panel_width", m_view->left_panel()->width());
     s.setValue("right_panel_width", m_view->right_panel()->width());
 
-    s.setValue("left_panel_inline_docs", m_view->left_panel()->inline_docs());
-    s.setValue("right_panel_inline_docs", m_view->right_panel()->inline_docs());
+    s.setValue("inline_docs", m_view->inline_docs());
 
     s.setValue("workflow_phase", m_view->workflow_phase());
 

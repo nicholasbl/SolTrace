@@ -178,6 +178,11 @@ ElementListEditor {
 
     detailView: ColumnLayout {
 
+        InlineDocumentation {
+            key: "configure.layout"
+            target: App.view.left_panel
+        }
+
         RowLayout {
             STIconButton {
                 icon: "\uf053"
