@@ -573,11 +573,13 @@ static void import_optics(
 
         registry.emplace<MaterialGroupComponent>(group_entity, new_group);
         registry.emplace<MaterialComponent>(group_entity, new_group_params);
+        auto material_name = QString::fromStdString(property_sptr->get_name());
+        if (material_name.isEmpty()) {
+            material_name = QString("Material %1").arg(group_counter);
+        }
+
         registry.emplace<IdentityComponent>(
-            group_entity,
-            IdentityComponent {
-                .name = QString("Material %1").arg(group_counter),
-            });
+            group_entity, IdentityComponent { .name = material_name });
 
         group_counter++;
 
@@ -622,7 +624,7 @@ struct StageComponent {
     TransformComponent this_in_stage;
 };
 
-void Database::import(SD::SimulationData& data) {
+void Database::import(SD::SimulationData& data, bool legacy_import) {
 
     // Assuming we are not re-using registries, which we are not for the moment
     auto imported_tag = create_tag("imported");
@@ -706,9 +708,9 @@ void Database::import(SD::SimulationData& data) {
 
             bool ok = false;
 
-            auto maybe_number = name.toLong(&ok);
+            name.toLong(&ok);
 
-            if (ok) {
+            if (legacy_import && ok) {
                 // these are not super useful. imbue with extra, if possible
 
                 auto id = element.get_id();
@@ -843,6 +845,14 @@ static void install_group(SD::element_ptr                 ptr,
     ptr->set_optical_property_set(param);
 }
 
+static SD::OpticalPropertySet
+with_optical_name(SD::OpticalPropertySet const& optics, QString const& name) {
+    nlohmann::ordered_json node;
+    optics.write_json(node);
+    node["my_name"] = name.toStdString();
+    return SD::OpticalPropertySet(node);
+}
+
 Result<std::shared_ptr<DatabaseExport>, QString> Database::export_to_simdata() {
     SD::SimulationData ret;
 
@@ -922,11 +932,12 @@ Result<std::shared_ptr<DatabaseExport>, QString> Database::export_to_simdata() {
     std::unordered_map<entt::entity, SD::OpticalPropertySetReference> prop_map;
 
     {
-        auto view =
-            m_registry
-                .view<const MaterialGroupComponent, const MaterialComponent>();
+        auto view = m_registry.view<const MaterialGroupComponent,
+                                    const MaterialComponent>();
         for (auto const& [e, mat_members, mat_data] : view.each()) {
-            auto ref = ret.find_or_add_optical_property_set(mat_data.optics);
+            auto named_optics =
+                with_optical_name(mat_data.optics, name_of(e));
+            auto ref = ret.find_or_add_optical_property_set(named_optics);
 
             prop_map.try_emplace(e, ref);
         }

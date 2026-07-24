@@ -77,7 +77,7 @@ public:
     /// the database constructor. We have this split here so that we can
     /// allocate a database on one thread and fill it in another.
     /// Thus: DO NOT DO QObject THINGS IN THIS FUNCTION, only fill the reg.
-    void import(SD::SimulationData&);
+    void import(SD::SimulationData&, bool legacy_import = false);
 
     /// Convert a database back into a Soltrace dataset
     Result<std::shared_ptr<DatabaseExport>, QString> export_to_simdata();

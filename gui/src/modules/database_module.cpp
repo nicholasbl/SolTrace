@@ -75,7 +75,10 @@ load_file(TaskControl& control, QString fname, db::Database* new_db) {
 
         stage = "parsing file";
 
+        bool legacy_import = false;
+
         if (str.ends_with("stinput")) {
+            legacy_import = true;
             if (!new_data->import_from_file(str)) {
                 return return_failure(
                     QString("Could not import the file: %1").arg(fname));
@@ -99,7 +102,7 @@ load_file(TaskControl& control, QString fname, db::Database* new_db) {
         stage = "importing content";
         control.setProgressValueAndText(50, "Importing content...");
 
-        destination->import(*new_data);
+        destination->import(*new_data, legacy_import);
 
         stage = "finalizing";
         control.setProgressValueAndText(100, "Done");
