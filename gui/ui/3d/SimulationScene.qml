@@ -159,8 +159,10 @@ Item {
 
         OrthographicCamera {
             id: mainOrthoCamera
-            z: 500
+            z: 1000
             clipNear: 0.01
+            horizontalMagnification: 100
+            verticalMagnification: 100
         }
 
         DirectionalLight {
