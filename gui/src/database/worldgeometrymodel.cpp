@@ -42,6 +42,10 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
 
         if (m_database->is_virtual_element(member)) { color = Qt::red; }
 
+        if (m_database->as_registry().all_of<InvisibleComponent>(member)) {
+            color = Qt::black;
+        }
+
         if (m_database->is_selected(member)) { color = Qt::yellow; }
 
         // qDebug() << convert(global->position) << convert(global->rotation);
@@ -175,6 +179,16 @@ InstancedElements::InstancedElements(Database*       db,
             &InstancedElements::on_instance_changed);
 
     connect(db->virtual_tag.self(),
+            &ComponentAPIBase::removed,
+            this,
+            &InstancedElements::on_instance_changed);
+
+    connect(db->invisible.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &InstancedElements::on_instance_changed);
+
+    connect(db->invisible.self(),
             &ComponentAPIBase::removed,
             this,
             &InstancedElements::on_instance_changed);
