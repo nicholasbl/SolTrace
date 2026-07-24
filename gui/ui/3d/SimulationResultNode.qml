@@ -19,6 +19,8 @@ Node {
                     App.view.sim.geometry_thickness)
         AppData.simulation.world_geometry_model.set_subdivision_scale(
                     App.view.sim.geometry_subdivision_scale)
+        AppData.simulation.world_geometry_model.set_default_color(
+                    App.view.sim.geometry_color)
     }
 
     Component.onCompleted: applyPerformanceSettings()
@@ -48,7 +50,7 @@ Node {
                 PrincipledMaterial {
                     metalness: world_node.blueprintMode ? 0 : 1
                     roughness: world_node.blueprintMode ? 1 : 0
-                    baseColor: App.view.sim.geometry_color
+                    baseColor: "white"
 
                     lighting: world_node.blueprintMode ? PrincipledMaterial.NoLighting : PrincipledMaterial.FragmentLighting
                 }
@@ -59,7 +61,7 @@ Node {
     Connections {
         target: App.view.sim
         function onGeometry_color_changed() {
-            AppData.simulation.world_geometry_model.set_all_color(App.view.sim.geometry_color)
+            AppData.simulation.world_geometry_model.set_default_color(App.view.sim.geometry_color)
         }
         function onGeometry_thickness_changed() {
             world_node.applyPerformanceSettings()

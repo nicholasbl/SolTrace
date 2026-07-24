@@ -34,17 +34,15 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
             continue;
         }
 
-        // Select the color for the instance
+        QColor color = m_default_color;
 
-        QColor color = Qt::white;
+        if (auto given_color = m_database->color.get(member); given_color) {
+            color = given_color->color;
+        }
+
+        if (m_database->is_virtual_element(member)) { color = Qt::red; }
 
         if (m_database->is_selected(member)) { color = Qt::yellow; }
-
-        auto given_color = m_database->color.get(member);
-
-        if (given_color) { color = given_color->color; }
-
-        if (m_database->is_virtual_element(member)) { color = Qt::darkGray; }
 
         // qDebug() << convert(global->position) << convert(global->rotation);
 
@@ -117,11 +115,10 @@ void InstancedElements::set_color(int index, QColor color) {
     on_geometry_group_change(m_target_group);
 }
 
-void InstancedElements::set_all_color(QColor color) {
-    auto* ptr = m_database->geometry_root.get(m_target_group);
-    for (auto member : m_member_cache) {
-        m_database->set_color(member, color);
-    }
+void InstancedElements::set_default_color(QColor color) {
+    if (m_default_color == color) return;
+
+    m_default_color = color;
     on_geometry_group_change(m_target_group);
 }
 
@@ -238,6 +235,16 @@ void WorldGeometryModel::apply_surface_options(VisibleGroup const& group) {
         std::clamp<unsigned>(m_subdivision_scale, 1, 10));
 }
 
+void WorldGeometryModel::set_default_color(QColor color) {
+    if (m_default_color == color) return;
+
+    m_default_color = color;
+
+    for (auto const& vg : m_records) {
+        if (vg.group_instances) { vg.group_instances->set_default_color(color); }
+    }
+}
+
 static VisibleGroup vis_assets_for_entity(Database& db, entt::entity e) {
     auto vg = VisibleGroup {
         .geometry_group_entity = e,
@@ -269,6 +276,9 @@ QVector<VisibleGroup> WorldGeometryModel::rebuild_lists() {
     for (auto const& [e, group] : view.each()) {
         auto visible_group = vis_assets_for_entity(*m_host, e);
         apply_surface_options(visible_group);
+        if (visible_group.group_instances) {
+            visible_group.group_instances->set_default_color(m_default_color);
+        }
         new_recs.push_back(std::move(visible_group));
     }
 
@@ -296,12 +306,6 @@ void WorldGeometryModel::group_changed(entt::entity e) {
 }
 void WorldGeometryModel::group_removed(entt::entity e) {
     recompute();
-}
-
-void WorldGeometryModel::set_all_color(QColor color) {
-    for (auto const& vg : m_records) {
-        vg.group_instances->set_all_color(color);
-    }
 }
 
 void WorldGeometryModel::set_surface_thickness(double thickness) {
