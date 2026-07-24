@@ -416,5 +416,12 @@ ColumnLayout {
             checked: root.module.disabled
             onToggled: root.module.disabled = checked
         }
+
+        STSwitch {
+            Layout.columnSpan: 2
+            text: "Virtual"
+            checked: root.module.virtual_element
+            onToggled: root.module.virtual_element = checked
+        }
     }
 }

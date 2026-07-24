@@ -32,10 +32,17 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
             continue;
         }
 
-        QColor color = m_database->is_selected(member) ? Qt::yellow
-                       : m_database->color.get(member)
-                           ? m_database->color.get(member)->color
-                           : Qt::white;
+        // Select the color for the instance
+
+        QColor color = Qt::white;
+
+        if (m_database->is_selected(member)) { color = Qt::yellow; }
+
+        auto given_color = m_database->color.get(member);
+
+        if (given_color) { color = given_color->color; }
+
+        if (m_database->is_virtual_element(member)) { color = Qt::darkGray; }
 
         // qDebug() << convert(global->position) << convert(global->rotation);
 
@@ -160,6 +167,16 @@ InstancedElements::InstancedElements(Database*       db,
 
     connect(db->global_transform.self(),
             &ComponentAPIBase::changed,
+            this,
+            &InstancedElements::on_instance_changed);
+
+    connect(db->virtual_tag.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &InstancedElements::on_instance_changed);
+
+    connect(db->virtual_tag.self(),
+            &ComponentAPIBase::removed,
             this,
             &InstancedElements::on_instance_changed);
 
