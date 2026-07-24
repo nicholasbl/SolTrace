@@ -8,15 +8,15 @@ ColumnLayout {
     id: root
     required property string key
 
-    property SplitPanelData target
     property string titlePrefix: ""
     property string title: ""
     property string body: ""
+    property bool showTitle: true
     property var blocks: []
     readonly property int docsVersion: App.docs.version
     readonly property int docsLocale: App.docs.locale
 
-    visible: App.view.inline_docs && (root.target ? root.target.size > 0 : true)
+    visible: App.view.inline_docs
 
     function svgColor(color) {
         var value = String(color)
@@ -61,6 +61,7 @@ ColumnLayout {
 
     SubHeader {
         id: title
+        visible: root.showTitle
         text: {
             App.docs.locale
             App.docs.version

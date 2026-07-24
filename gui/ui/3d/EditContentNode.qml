@@ -11,6 +11,7 @@ Node {
     rotation: Quaternion.fromEulerAngles(-90, 0, 0)
 
     readonly property real elevation: sunVisualization.elevation
+    readonly property bool blueprintMode: App.view.sim.sky === SimulationViewState.Blueprint
 
     Repeater3D {
         model: App.layout.world_geometry_model
@@ -28,11 +29,11 @@ Node {
 
             materials: [
                 PrincipledMaterial {
-                    metalness: App.view.sim.blueprint_mode ? 0 : 1
-                    roughness: App.view.sim.blueprint_mode ? 1 : 0
+                    metalness: world_node.blueprintMode ? 0 : 1
+                    roughness: world_node.blueprintMode ? 1 : 0
                     baseColor: App.view.sim.geometry_color
 
-                    lighting: App.view.sim.blueprint_mode ? PrincipledMaterial.NoLighting : PrincipledMaterial.FragmentLighting
+                    lighting: world_node.blueprintMode ? PrincipledMaterial.NoLighting : PrincipledMaterial.FragmentLighting
                 }
             ]
         }

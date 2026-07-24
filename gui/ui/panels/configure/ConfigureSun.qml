@@ -57,7 +57,6 @@ Flickable {
 
         InlineDocumentation {
             key: "configure.sun"
-            target: App.view.left_panel
             Layout.margins: 8
         }
 
@@ -74,7 +73,7 @@ Flickable {
             Layout.fillWidth: true
             collapseLabels: App.view.left_panel.size === SplitPanelData.Small
             model: ["Type & Position", "Emission Profile"]
-            prefixModel: ["2a1", "2a2"]
+            prefixModel: ["3a1", "3a2"]
             iconModel: ["\uf124", "\uf1fe"]
         }
 
@@ -131,7 +130,6 @@ Flickable {
                     Layout.fillWidth: true
                     Layout.margins: 8
                     key: "configure.sun.type." + ["directional", "point_source"][App.sun.type]
-                    target: App.view.left_panel
                 }
 
                 ColumnLayout {
@@ -260,7 +258,6 @@ Flickable {
                     Layout.fillWidth: true
                     Layout.margins: 8
                     key: "configure.sun.shape." + ["gaussian", "pillbox", "csr", "custom", "limb_darkened"][App.sun.shape.shape]
-                    target: App.view.left_panel
                 }
 
                 GridLayout {

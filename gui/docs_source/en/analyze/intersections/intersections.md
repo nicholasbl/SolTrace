@@ -2,6 +2,6 @@
 title: "Intersections"
 ---
 
-The intersections table lists the ray events produced by the last trace. Each row represents one hit, miss, absorption, reflection, or transmission event recorded by the simulation.
+The intersections view is for inspecting traced rays and their paths through the scene. Use it to explore where rays intersect elements, isolate rays of interest, and understand why a trace produced a particular result.
 
-Use this view when you need to verify where rays are landing, check element interactions, or debug unexpected optical paths.
+Select or filter rays here when you need to investigate unexpected optical paths before returning to the scene view or flux analysis.

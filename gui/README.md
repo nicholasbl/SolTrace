@@ -205,6 +205,35 @@ Run `update_translations`, fill the new catalog, then run
 through the existing CMake translation resource setup. Finally, expose the new
 locale in the GUI language selector so users can choose it.
 
+## Inline Documentation
+
+Editable inline documentation lives in `gui/docs_source`. The generated
+runtime resources live in `gui/docs` and are the only documentation files
+packed into the application.
+
+Inline documentation files are addressed by dotted keys that follow the source
+path. For example:
+
+```text
+gui/docs_source/en/configure/layout/coordinates.md
+  -> configure.layout.coordinates
+```
+
+Use the same path under each locale directory. Documentation can include normal
+Markdown text and display equations delimited with `$$ ... $$`. Equations are
+rendered to SVG by Typst during processing.
+
+To regenerate the packed docs after editing sources:
+
+```sh
+cd gui
+python3 scripts/process_docs.py
+```
+
+The processor removes the previous `gui/docs` tree before writing new output,
+so stale generated documents do not remain in the application resources. Typst
+is only required when updating documentation, not for ordinary app builds.
+
 ## Notes
 
 - The executable target is named `SolTrace`.

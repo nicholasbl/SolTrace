@@ -18,7 +18,6 @@ ColumnLayout {
 
     InlineDocumentation {
         key: "analyze.results"
-        target: App.view.left_panel
     }
 
     function formatRayCount(count) {
@@ -196,6 +195,7 @@ ColumnLayout {
         STIconButton {
             enabled: root.has_current_result
             icon: "\uf24d"
+            label: "Create Scene"
             toolTip: "Create Scene from Result"
 
             onClicked: {
@@ -208,6 +208,7 @@ ColumnLayout {
         STIconButton {
             enabled: root.has_current_result
             icon: "\uf019"
+            label: "Export"
             toolTip: "Export Result"
             onClicked: {
                 AppData.simulation.select_result(root.selected_result_index)

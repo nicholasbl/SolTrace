@@ -78,11 +78,6 @@ AdaptiveFilteredEditor {
     detailView: ColumnLayout {
         spacing: 8
 
-        InlineDocumentation {
-            key: "configure.materials"
-            target: App.view.left_panel
-        }
-
         RowLayout {
             STIconButton {
                 icon: "\uf053"
@@ -107,51 +102,59 @@ AdaptiveFilteredEditor {
             }
         }
 
-        SurfacePropertyGraphic {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 148
-
-            property var face: bar.currentIndex == 0
-                               ? App.materials.material_edit.front_editor
-                               : App.materials.material_edit.back_editor
-
-            reflectance: face.reflectivity
-            transmittance: face.transmissivity
-            nFront: face.refraction_index_front
-            nBack: face.refraction_index_back
-            slopeErrorMrad: face.slope_error
-            specularityErrorMrad: face.specularity_error
-        }
-
-        STComboBar {
-            id: bar
-            Layout.fillWidth: true
-            model: [qsTr("Front"), qsTr("Back")]
-        }
-
         ScrollView {
             id: mat_scroll
             Layout.fillHeight: true
             Layout.fillWidth: true
             contentWidth: availableWidth
 
-            SwipeView {
+            ColumnLayout {
                 width: mat_scroll.availableWidth
-                height: currentItem ? currentItem.implicitHeight : 0
-                interactive: false
-                clip: true
-                currentIndex: bar.currentIndex
 
-                MaterialOpticals {
-                    collapsed: false
-                    Layout.fillWidth: true
-                    side_editor: App.materials.material_edit.front_editor
+                InlineDocumentation {
+                    key: "configure.materials"
                 }
 
-                MaterialOpticals {
-                    collapsed: false
+                SurfacePropertyGraphic {
                     Layout.fillWidth: true
-                    side_editor: App.materials.material_edit.back_editor
+                    Layout.preferredHeight: 148
+
+                    property var face: bar.currentIndex == 0
+                                       ? App.materials.material_edit.front_editor
+                                       : App.materials.material_edit.back_editor
+
+                    reflectance: face.reflectivity
+                    transmittance: face.transmissivity
+                    nFront: face.refraction_index_front
+                    nBack: face.refraction_index_back
+                    slopeErrorMrad: face.slope_error
+                    specularityErrorMrad: face.specularity_error
+                }
+
+                STComboBar {
+                    id: bar
+                    Layout.fillWidth: true
+                    model: [qsTr("Front"), qsTr("Back")]
+                }
+
+                SwipeView {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: currentItem ? currentItem.implicitHeight : 0
+                    interactive: false
+                    clip: true
+                    currentIndex: bar.currentIndex
+
+                    MaterialOpticals {
+                        collapsed: false
+                        Layout.fillWidth: true
+                        side_editor: App.materials.material_edit.front_editor
+                    }
+
+                    MaterialOpticals {
+                        collapsed: false
+                        Layout.fillWidth: true
+                        side_editor: App.materials.material_edit.back_editor
+                    }
                 }
             }
         }

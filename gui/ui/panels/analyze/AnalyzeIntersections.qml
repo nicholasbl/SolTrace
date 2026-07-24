@@ -48,7 +48,6 @@ Flickable {
 
         InlineDocumentation {
             key: "analyze.intersections"
-            target: App.view.left_panel
         }
 
         Label {

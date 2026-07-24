@@ -74,11 +74,6 @@ AdaptiveFilteredEditor {
 
     detailView: ColumnLayout {
 
-        InlineDocumentation {
-            key: "configure.geometry"
-            target: App.view.left_panel
-        }
-
         RowLayout {
             STIconButton {
                 icon: "\uf053"
@@ -103,73 +98,68 @@ AdaptiveFilteredEditor {
             }
         }
 
-        SurfacePreviewScene {
-            id: preview_scene
-            Layout.fillWidth: true
-
-            property bool show_expand: false
-
-            Layout.preferredHeight: show_expand ? 300 : 148
-
-            property bool no_geometry: App.materials.geometry_edit.surface_geometry.vertex_count === 0
-
-
-            STIconButton {
-                anchors.top: parent.top
-                anchors.left: parent.left
-
-                icon: "\uf424"
-
-                onClicked: preview_scene.show_expand = !preview_scene.show_expand
-            }
-
-            // STIconButton {
-            //     anchors.top: parent.top
-            //     anchors.right: parent.right
-
-            //     text: "\ue80b"
-
-            //     onClicked: {
-
-            //     }
-            // }
-
-            RowLayout {
-                visible: parent.no_geometry
-
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                anchors.margins: 3
-
-                Label {
-                    text: "\uf071"
-
-                    font.family: "Font Awesome 7 Free"
-
-                    color: Material.color(Material.Yellow)
-                }
-
-                Label {
-                    Layout.fillWidth: true
-                    text: qsTr("No geometry for this configuration.")
-
-                    elide: Label.ElideRight
-
-                    color: Material.color(Material.Yellow)
-                }
-            }
-        }
-
         ScrollView {
             id: geometry_scroll
             Layout.fillHeight: true
             Layout.fillWidth: true
             contentWidth: availableWidth
 
-            GeometryProperties {
+            ColumnLayout {
                 width: geometry_scroll.availableWidth
-                height: implicitHeight
+
+                InlineDocumentation {
+                    key: "configure.geometry"
+                }
+
+                SurfacePreviewScene {
+                    id: preview_scene
+                    Layout.fillWidth: true
+
+                    property bool show_expand: false
+
+                    Layout.preferredHeight: show_expand ? 300 : 148
+
+                    property bool no_geometry: App.materials.geometry_edit.surface_geometry.vertex_count === 0
+
+                    STIconButton {
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+
+                        icon: "\uf424"
+
+                        onClicked: preview_scene.show_expand = !preview_scene.show_expand
+                    }
+
+                    RowLayout {
+                        visible: parent.no_geometry
+
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        anchors.margins: 3
+
+                        Label {
+                            text: "\uf071"
+
+                            font.family: "Font Awesome 7 Free"
+
+                            color: Material.color(Material.Yellow)
+                        }
+
+                        Label {
+                            Layout.fillWidth: true
+                            text: qsTr("No geometry for this configuration.")
+
+                            elide: Label.ElideRight
+
+                            color: Material.color(Material.Yellow)
+                        }
+                    }
+                }
+
+                GeometryProperties {
+                    Layout.fillWidth: true
+                }
             }
         }
 

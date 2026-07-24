@@ -36,16 +36,6 @@ RowLayout {
             anchors.horizontalCenter: parent.horizontalCenter
 
             STIconButton {
-                icon: "\uf005"
-                toolTip: "Get Started"
-
-                onClicked: {
-                    App.view.workflow_phase = ViewModule.Start
-                    App.view.open_left_panel(bottom_bar.width)
-                }
-            }
-
-            STIconButton {
                 icon: "\uf02d"
                 toolTip: "Docs"
 
@@ -196,7 +186,6 @@ RowLayout {
                         InlineDocumentation {
                             key: "view.camera"
                             title: "Cameras"
-                            target: AppData.view.left_panel
                         }
 
                         STComboBar {
@@ -241,7 +230,6 @@ RowLayout {
                         InlineDocumentation {
                             key: "view.perspective"
                             title: "Camera Perspectives"
-                            target: AppData.view.left_panel
                         }
 
                         STComboBar {

@@ -59,9 +59,17 @@ Item {
 
             probeExposure: 1.2
 
+            clearColor: "#0041BA"
+
             tonemapMode: SceneEnvironment.TonemapModeAces
 
-            backgroundMode: SceneEnvironment.SkyBox
+            backgroundMode: {
+                if (App.view.sim.sky === SimulationViewState.Blueprint) {
+                    return SceneEnvironment.Color
+                }
+
+                return SceneEnvironment.SkyBox
+            }
 
             lightProbe: App.view.sim.sky === SimulationViewState.Realistic
                         ? hdriSky

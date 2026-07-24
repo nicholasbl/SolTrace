@@ -17,7 +17,6 @@ STPopup {
         InlineDocumentation {
             key: "view.camera"
             title: "Cameras"
-            target: AppData.view.left_panel
         }
 
         STComboBar {
@@ -43,7 +42,6 @@ STPopup {
         InlineDocumentation {
             key: "view.perspective"
             title: "Camera Perspectives"
-            target: AppData.view.left_panel
         }
 
         STComboBar {

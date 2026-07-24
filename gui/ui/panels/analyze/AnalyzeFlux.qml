@@ -40,7 +40,6 @@ Flickable {
 
         InlineDocumentation {
             key: "analyze.flux"
-            target: App.view.left_panel
         }
 
         STPropertyPanel {

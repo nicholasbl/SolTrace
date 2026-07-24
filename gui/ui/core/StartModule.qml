@@ -60,22 +60,22 @@ ColumnLayout {
             Repeater {
                 model: [
                     {
-                        step: "1",
+                        step: "2",
                         title: "Load Scene",
-                        description: "Add a scene to the environment by loading a .stinput file. You can load multiple scenes and switch between them."
+                        description: "Add a scene to the environment by loading a .stinput or .json file. You can load multiple scenes and switch between them."
                     },
                     {
-                        step: "2",
+                        step: "3",
                         title: "Configure Scene",
                         description: "Set the sun shape and position, define optical properties, and arrange stages and elements that make up your concentrator geometry."
                     },
                     {
-                        step: "3",
+                        step: "4",
                         title: "Trace Scene",
                         description: "Configure ray tracing parameters, run the simulation, and review diagnostic output such as logs and bounding boxes."
                     },
                     {
-                        step: "4",
+                        step: "5",
                         title: "Analyze Results",
                         description: "Explore simulation results, inspect ray intersections, analyze flux distributions, and export data. Run multiple traces to compare results."
                     }

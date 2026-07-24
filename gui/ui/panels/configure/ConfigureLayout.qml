@@ -178,11 +178,6 @@ ElementListEditor {
 
     detailView: ColumnLayout {
 
-        InlineDocumentation {
-            key: "configure.layout"
-            target: App.view.left_panel
-        }
-
         RowLayout {
             STIconButton {
                 icon: "\uf053"
@@ -215,9 +210,16 @@ ElementListEditor {
             Layout.fillWidth: true
             contentWidth: availableWidth
 
-            ElementEdit {
+            ColumnLayout {
                 width: layout_scroll.availableWidth
-                height: implicitHeight
+
+                InlineDocumentation {
+                    key: "configure.layout"
+                }
+
+                ElementEdit {
+                    Layout.fillWidth: true
+                }
             }
         }
 
@@ -273,6 +275,7 @@ ElementListEditor {
 
             STIconButton {
                 icon: "\uf140"
+                label: "Orient Camera"
                 toolTip: "Orient Camera to Element"
                 enabled: root.module.instance_edit
                 onClicked: simulation_scene.orient_camera_to_database_position(

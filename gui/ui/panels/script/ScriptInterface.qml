@@ -117,6 +117,11 @@ ScrollView {
     ColumnLayout {
         width: root.availableWidth
 
+        InlineDocumentation {
+            key: "script.interface"
+            Layout.fillWidth: true
+        }
+
         STPropertyPanel {
             Layout.fillWidth: true
 

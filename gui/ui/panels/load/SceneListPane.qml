@@ -86,14 +86,6 @@ ColumnLayout {
         }
     }
 
-    Rectangle {
-        color: Material.dividerColor
-        Layout.preferredHeight: 1
-        Layout.fillWidth: true
-        Layout.leftMargin: 3
-        Layout.rightMargin: 3
-    }
-
     STPropertyPanel {
         Layout.fillWidth: true
         Layout.fillHeight: true

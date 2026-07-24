@@ -99,6 +99,12 @@ ColumnLayout {
                                                       : ViewModule.Camera
         }
 
+        InlineDocumentation {
+            key: "configure.layout.coordinates"
+            Layout.columnSpan: 2
+            Layout.fillWidth: true
+        }
+
         STPropertyLabel {
             text: "Coordinates"
             Layout.alignment: root.labelAlignment
