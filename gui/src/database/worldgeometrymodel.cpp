@@ -180,6 +180,16 @@ InstancedElements::InstancedElements(Database*       db,
             this,
             &InstancedElements::on_instance_changed);
 
+    connect(db->flux_map.self(),
+            &ComponentAPIBase::changed,
+            this,
+            &InstancedElements::on_geometry_group_membership_change);
+
+    connect(db->flux_map.self(),
+            &ComponentAPIBase::removed,
+            this,
+            &InstancedElements::on_geometry_group_membership_change);
+
     connect(db->geometry_root.self(),
             &ComponentAPIBase::changed,
             this,

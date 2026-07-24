@@ -81,6 +81,13 @@ Flickable {
                 model: ["Bins", "Points"]
             }
 
+            STSwitch {
+                Layout.columnSpan: 2
+                text: "Show Whole Scene"
+                checked: AppData.flux.show_other_geometry
+                onToggled: AppData.flux.show_other_geometry = checked
+            }
+
             STPropertyLabel {
                 text: "Plotted Power"
             }

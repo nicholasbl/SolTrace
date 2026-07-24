@@ -21,7 +21,7 @@ Node {
     }
 
     Repeater3D {
-        visible: flux_repeater.count === 0
+        visible: flux_repeater.count === 0 || AppData.flux.show_other_geometry
         model: AppData.simulation.world_geometry_model
 
         delegate: Model {
