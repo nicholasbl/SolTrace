@@ -75,8 +75,11 @@ class WorldGeometryModel : public StructModelAdapter<VisibleGroup> {
     QPointer<Database> m_host;
 
     std::unordered_map<entt::entity, int> m_reverse;
+    double                                m_surface_thickness = 0.05;
+    unsigned                              m_subdivision_scale = 2;
 
     QVector<VisibleGroup> rebuild_lists();
+    void                  apply_surface_options(VisibleGroup const& group);
 
 private slots:
     void recompute();
@@ -86,6 +89,8 @@ private slots:
 
 public slots:
     void set_all_color(QColor color);
+    void set_surface_thickness(double thickness);
+    void set_subdivision_scale(unsigned scale);
 
 public:
     explicit WorldGeometryModel(QObject* parent = nullptr);

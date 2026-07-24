@@ -124,7 +124,8 @@ find_mesh_for(db::SurfaceGenerationOptions surface_options,
 
     if (!surface) { return {}; }
 
-    auto mesh = db::generate_surface(surface->surface, surface->aperture);
+    auto mesh = db::generate_surface(
+        surface->surface, surface->aperture, surface_options);
     if (!mesh) { return {}; }
 
     auto global = database->global_transform.get(entity);

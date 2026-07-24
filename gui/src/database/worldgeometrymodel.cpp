@@ -1,6 +1,8 @@
 #include "worldgeometrymodel.h"
 #include "utilities/math_utility.h"
 
+#include <algorithm>
+
 namespace db {
 
 void InstancedElements::on_geometry_group_change(entt::entity group) {
@@ -226,6 +228,16 @@ QByteArray InstancedElements::getInstanceBuffer(int* instanceCount) {
 
 // =============================================================================
 
+void WorldGeometryModel::apply_surface_options(VisibleGroup const& group) {
+    if (!group.group_geometry) return;
+
+    auto thickness = std::clamp(m_surface_thickness, 0.0, 1.0);
+    group.group_geometry->set_add_thickness(thickness > 0.0);
+    group.group_geometry->set_thickness(thickness);
+    group.group_geometry->set_subdivision_scale(
+        std::clamp<unsigned>(m_subdivision_scale, 1, 10));
+}
+
 static VisibleGroup vis_assets_for_entity(Database& db, entt::entity e) {
     auto vg = VisibleGroup {
         .geometry_group_entity = e,
@@ -241,8 +253,6 @@ static VisibleGroup vis_assets_for_entity(Database& db, entt::entity e) {
     }
 
     vg.group_geometry->set(&db, e);
-    vg.group_geometry->set_add_thickness(true);
-    vg.group_geometry->set_thickness(.05);
 
     return vg;
 }
@@ -257,7 +267,9 @@ QVector<VisibleGroup> WorldGeometryModel::rebuild_lists() {
     auto view = m_host->as_registry().view<GeometryGroupComponent>();
 
     for (auto const& [e, group] : view.each()) {
-        new_recs.push_back(vis_assets_for_entity(*m_host, e));
+        auto visible_group = vis_assets_for_entity(*m_host, e);
+        apply_surface_options(visible_group);
+        new_recs.push_back(std::move(visible_group));
     }
 
     for (size_t i = 0; i < new_recs.size(); i++) {
@@ -289,6 +301,28 @@ void WorldGeometryModel::group_removed(entt::entity e) {
 void WorldGeometryModel::set_all_color(QColor color) {
     for (auto const& vg : m_records) {
         vg.group_instances->set_all_color(color);
+    }
+}
+
+void WorldGeometryModel::set_surface_thickness(double thickness) {
+    thickness = std::clamp(thickness, 0.0, 1.0);
+    if (m_surface_thickness == thickness) return;
+
+    m_surface_thickness = thickness;
+
+    for (auto const& vg : m_records) {
+        apply_surface_options(vg);
+    }
+}
+
+void WorldGeometryModel::set_subdivision_scale(unsigned scale) {
+    scale = std::clamp<unsigned>(scale, 1, 10);
+    if (m_subdivision_scale == scale) return;
+
+    m_subdivision_scale = scale;
+
+    for (auto const& vg : m_records) {
+        apply_surface_options(vg);
     }
 }
 

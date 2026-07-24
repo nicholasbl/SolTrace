@@ -110,6 +110,8 @@ public:
     Q_WRITABLE_PROPERTY(QColor, sun_color, "yellow")
     Q_WRITABLE_PROPERTY(QColor, geometry_color, "white")
     Q_WRITABLE_PROPERTY(bool, show_grid, true)
+    Q_WRITABLE_PROPERTY(double, geometry_thickness, 0.05)
+    Q_WRITABLE_PROPERTY(unsigned, geometry_subdivision_scale, 2)
 
     Q_WRITABLE_PROPERTY(int, fps_walk_speed, 10)
 };

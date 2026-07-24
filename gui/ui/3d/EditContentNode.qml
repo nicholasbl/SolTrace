@@ -13,6 +13,15 @@ Node {
     readonly property real elevation: sunVisualization.elevation
     readonly property bool blueprintMode: App.view.sim.sky === SimulationViewState.Blueprint
 
+    function applyPerformanceSettings() {
+        App.layout.world_geometry_model.set_surface_thickness(
+                    App.view.sim.geometry_thickness)
+        App.layout.world_geometry_model.set_subdivision_scale(
+                    App.view.sim.geometry_subdivision_scale)
+    }
+
+    Component.onCompleted: applyPerformanceSettings()
+
     Repeater3D {
         model: App.layout.world_geometry_model
 
@@ -43,6 +52,12 @@ Node {
         target: App.view.sim
         function onGeometry_color_changed() {
             App.layout.world_geometry_model.set_all_color(App.view.sim.geometry_color)
+        }
+        function onGeometry_thickness_changed() {
+            world_node.applyPerformanceSettings()
+        }
+        function onGeometry_subdivision_scale_changed() {
+            world_node.applyPerformanceSettings()
         }
     }
 

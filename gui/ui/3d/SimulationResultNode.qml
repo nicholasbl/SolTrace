@@ -14,6 +14,15 @@ Node {
     readonly property real elevation: sunVisualization.elevation
     readonly property bool blueprintMode: App.view.sim.sky === SimulationViewState.Blueprint
 
+    function applyPerformanceSettings() {
+        AppData.simulation.world_geometry_model.set_surface_thickness(
+                    App.view.sim.geometry_thickness)
+        AppData.simulation.world_geometry_model.set_subdivision_scale(
+                    App.view.sim.geometry_subdivision_scale)
+    }
+
+    Component.onCompleted: applyPerformanceSettings()
+
     SunVisualizationNode {
         id: sunVisualization
         sourcePosition: App.simulation.result_sun_position
@@ -51,6 +60,12 @@ Node {
         target: App.view.sim
         function onGeometry_color_changed() {
             AppData.simulation.world_geometry_model.set_all_color(App.view.sim.geometry_color)
+        }
+        function onGeometry_thickness_changed() {
+            world_node.applyPerformanceSettings()
+        }
+        function onGeometry_subdivision_scale_changed() {
+            world_node.applyPerformanceSettings()
         }
     }
 
