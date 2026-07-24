@@ -7,7 +7,7 @@ on:
   # named after the tag.
   push:
     tags:
-      - "v*.*.*"
+      - "v*"
 
 permissions:
   # Needed by `gh release create/upload` below.
