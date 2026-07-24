@@ -1,14 +1,20 @@
 #pragma once
-#include "backend.h"
+
+
+#include "database/components.h"
+#include "database/database.h"
 #include "module_common.h"
+#include "ray_source.hpp"
 #include "utilities/notification.h"
 #include "utilities/qt_helpers.h"
 #include "utilities/structmodel.h"
+
 #include <QDateTime>
 #include <QMetaObject>
 #include <QObject>
 #include <QTimeZone>
 #include <QVector>
+#include <qqmlintegration.h>
 
 namespace SolTrace::GUI::App {
 

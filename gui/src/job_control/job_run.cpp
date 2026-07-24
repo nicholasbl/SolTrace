@@ -1,7 +1,6 @@
 #include "job_run.h"
 
 #include "analysis/ray_volume_raster.h"
-#include "job_run_process.h"
 #include "job_run_thread.h"
 #include "native_runner/native_runner.hpp"
 #include "simulation_result.hpp"
@@ -22,27 +21,17 @@
 
 // =============================================================================
 
-RunningJob::RunningJob(SimDataPtr data,
-                       RunType    type,
-                       uint32_t   thread_count,
+RunningJob::RunningJob(SimDataPtr          data,
+                       uint32_t            thread_count,
                        ThreadRunnerBackend backend,
-                       QObject*   parent)
+                       QObject*            parent)
     : QObject(parent) {
 
     void (*f_ptr)(QPromise<SimResult>&      promise,
                   SimDataPtr                data,
                   ThreadRunnerConfig const& config);
 
-    switch (type) {
-    case RunType::Thread: f_ptr = execute_thread_runner; break;
-    case RunType::Process: f_ptr = execute_process_runner; break;
-    }
-
-#ifdef Q_OS_WASM
-    f_ptr = execute_thread_runner;
-#endif
-
-    // TEMPORARY HACK WHILE WE FIX PROCESS STUFF
+    // Future hook for out-of-process approach runner
     f_ptr = execute_thread_runner;
 
     auto config = ThreadRunnerConfig { .thread_count = thread_count,

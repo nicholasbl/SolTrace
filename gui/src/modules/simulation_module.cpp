@@ -217,8 +217,7 @@ void SimulationModule::run() {
     thread_count = 1;
 #endif
 
-    m_running =
-        new RunningJob(sim_data, RunType::Thread, thread_count, backend, this);
+    m_running = new RunningJob(sim_data, thread_count, backend, this);
 
     connect(m_running,
             &RunningJob::progress_update,

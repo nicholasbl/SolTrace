@@ -1,6 +1,5 @@
 #pragma once
 
-#include "backend.h"
 #include "database/fluxmapworldmodel.h"
 #include "database/mesh_qml_bridge.h"
 #include "database/rootelementsmodel.h"

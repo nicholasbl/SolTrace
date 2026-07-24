@@ -12,11 +12,12 @@ ColumnLayout {
     property string title: ""
     property string body: ""
     property bool showTitle: true
+    property bool alwaysVisible: false
     property var blocks: []
     readonly property int docsVersion: App.docs.version
     readonly property int docsLocale: App.docs.locale
 
-    visible: App.view.inline_docs
+    visible: root.alwaysVisible || App.view.inline_docs
 
     function svgColor(color) {
         var value = String(color)

@@ -68,6 +68,9 @@ ColumnLayout {
 
                     fileMode: FileDialog.SaveFile
 
+                    defaultSuffix: "json"
+
+                    nameFilters: ["JSON files (*.json)"]
 
                     onAccepted:
                         AppData.file_source.save_current(file_dialog.selectedFile)

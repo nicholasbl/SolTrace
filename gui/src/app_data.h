@@ -11,8 +11,6 @@
 #include "utilities/notification.h"
 #include "utilities/qt_helpers.h"
 
-#include <backend.h>
-
 #include <modules/database_module.h>
 #include <modules/documentation_module.h>
 #include <modules/export_module.h>
