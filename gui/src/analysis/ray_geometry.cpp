@@ -76,12 +76,13 @@ struct LineVertex {
 
 void RayGeometry::rebuild_geometry() {
     qDebug() << Q_FUNC_INFO << "Start";
+    clear();
+
     if (!m_database) {
         qDebug() << Q_FUNC_INFO << "No database";
+        update();
         return;
     }
-
-    clear();
 
     const size_t ray_limit =
         visible_ray_limit(m_database->records.size(), this->show_percent());

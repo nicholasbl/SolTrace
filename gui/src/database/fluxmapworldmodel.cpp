@@ -57,7 +57,7 @@ void PendingFluxMapModel::reset(db::SimulationResultPtr res) {
 
     on_changed();
 
-    if (res->database) {
+    if (res && res->database) {
         m_host = res->database.get();
         for (auto const& [e, c] :
              res->database->as_registry().view<HasFluxMapComponent>().each()) {
