@@ -7,6 +7,7 @@
 #include "utilities/notification.h"
 #include "utilities/qt_helpers.h"
 #include <QObject>
+#include <QVector3D>
 
 namespace SolTrace::GUI::App {
 
@@ -37,6 +38,7 @@ class FluxModule : public QObject {
 
     Q_WRITABLE_PROPERTY(db::Entity, current_entity, { });
     Q_READONLY_PROPERTY(QString, current_entity_name);
+    Q_READONLY_PROPERTY(QVector3D, current_entity_position);
     Q_READONLY_PROPERTY(analysis::BakedFluxMapStats, current_flux_stats);
 
     Q_WRITABLE_PROPERTY(bool, show_flux_volume, true);

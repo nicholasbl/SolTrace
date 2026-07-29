@@ -165,9 +165,8 @@ bool PendingFluxMapModel::start_generate_for(Entity entity) {
 
     auto mesh_res = std::max(1, mesh_resolution_multiply());
 
-    mesh_res = 4;
-
     db::SurfaceGenerationOptions surface_options;
+    surface_options.subdivide_polygon_apertures = true;
     surface_options.height_field_resolution *= mesh_res;
     surface_options.radial_subdivisions *= mesh_res;
     surface_options.perimeter_subdivisions *= mesh_res;
@@ -192,7 +191,7 @@ bool PendingFluxMapModel::start_generate_for(Entity entity) {
         .image_resolution = { this->image_resolution().width(),
                               this->image_resolution().height(), },
         .grid_line_color =
-            this->show_mesh_grid() ? this->mesh_line_color() : QColor("grey"),
+            this->show_mesh_grid() ? this->mesh_line_color() : QColor(),
         .color_map = QImage(color_map()),
     };
 
@@ -386,7 +385,7 @@ AllComputedMapsModel::AllComputedMapsModel(QObject* parent)
 void AllComputedMapsModel::reset(Database* database) {
     if (m_host) {
         disconnect(m_host->identity.self(), nullptr, this, nullptr);
-        disconnect(m_host->element_tag.self(), nullptr, this, nullptr);
+        disconnect(m_host->flux_map.self(), nullptr, this, nullptr);
     }
 
     m_host = database;
@@ -408,6 +407,21 @@ void AllComputedMapsModel::reset(Database* database) {
             &ComponentAPIBase::removed,
             this,
             &AllComputedMapsModel::recompute);
+}
+
+int AllComputedMapsModel::index_of(db::Entity entity) const {
+    if (auto iter = m_reverse.find(entity); iter != m_reverse.end()) {
+        return iter->second;
+    }
+
+    return -1;
+}
+
+db::Entity AllComputedMapsModel::entity_at(int index) const {
+    auto const& items = vector();
+    if (index < 0 || index >= items.size()) { return {}; }
+
+    return items[index].entity;
 }
 
 } // namespace db

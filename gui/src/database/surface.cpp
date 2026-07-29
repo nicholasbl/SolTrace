@@ -465,8 +465,79 @@ Mesh2D generate_annulus_aperture(SD::Annulus const&              annulus,
     return mesh;
 }
 
+void append_subdivided_triangle(Mesh2D&        mesh,
+                                glm::dvec2     a,
+                                glm::dvec2     b,
+                                glm::dvec2     c,
+                                uint32_t const subdivisions) {
+    auto first_vertex = static_cast<uint32_t>(mesh.vertex.size());
+
+    auto index = [first_vertex, subdivisions](uint32_t i, uint32_t j) {
+        uint32_t before_row = i * (subdivisions + 1) - (i * (i - 1)) / 2;
+        return first_vertex + before_row + j;
+    };
+
+    for (uint32_t i = 0; i <= subdivisions; ++i) {
+        for (uint32_t j = 0; j <= subdivisions - i; ++j) {
+            double u = static_cast<double>(i) / subdivisions;
+            double v = static_cast<double>(j) / subdivisions;
+            mesh.vertex.push_back(a + u * (b - a) + v * (c - a));
+        }
+    }
+
+    for (uint32_t i = 0; i < subdivisions; ++i) {
+        for (uint32_t j = 0; j < subdivisions - i; ++j) {
+            uint32_t p00 = index(i, j);
+            uint32_t p10 = index(i + 1, j);
+            uint32_t p01 = index(i, j + 1);
+
+            mesh.triangles.push_back({ p00, p10, p01 });
+
+            if (j + 1 < subdivisions - i) {
+                uint32_t p11 = index(i + 1, j + 1);
+                mesh.triangles.push_back({ p10, p11, p01 });
+            }
+        }
+    }
+}
+
+Mesh2D generate_subdivided_polygon_aperture(
+    std::vector<glm::dvec2> const&  corners,
+    SurfaceGenerationOptions const& options) {
+    Mesh2D mesh;
+    if (corners.size() < 3) {
+        qDebug() << Q_FUNC_INFO << "Polygon aperture has <3 vertex";
+        return mesh;
+    }
+
+    glm::dvec2 center(0.0);
+    for (auto const& corner : corners)
+        center += corner;
+    center /= static_cast<double>(corners.size());
+
+    uint32_t subdivisions = std::max<uint32_t>(1, options.radial_subdivisions);
+    uint32_t sector_vertices = ((subdivisions + 1) * (subdivisions + 2)) / 2;
+
+    mesh.vertex.reserve(sector_vertices * corners.size());
+    mesh.triangles.reserve(subdivisions * subdivisions * corners.size());
+
+    for (size_t i = 0; i < corners.size(); ++i) {
+        append_subdivided_triangle(mesh,
+                                   center,
+                                   corners[i],
+                                   corners[(i + 1) % corners.size()],
+                                   subdivisions);
+    }
+
+    return mesh;
+}
+
 Mesh2D generate_polygon_aperture(std::vector<glm::dvec2> const&  corners,
                                  SurfaceGenerationOptions const& options) {
+    if (options.subdivide_polygon_apertures) {
+        return generate_subdivided_polygon_aperture(corners, options);
+    }
+
     Mesh2D mesh;
     if (corners.size() < 3) {
         qDebug() << Q_FUNC_INFO << "Polygon aperture has <3 vertex";

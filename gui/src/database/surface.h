@@ -22,6 +22,7 @@ struct SurfaceGenerationOptions {
     uint32_t   perimeter_subdivisions        = 64;
     uint32_t   cylinder_angular_subdivisions = 64;
     uint32_t   cylinder_length_subdivisions  = 24;
+    bool       subdivide_polygon_apertures   = false;
     bool       add_thickness                 = false;
     double     thickness                     = 0.01;
 

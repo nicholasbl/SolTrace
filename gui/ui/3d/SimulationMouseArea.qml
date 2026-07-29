@@ -188,6 +188,30 @@ MouseArea {
         App.materials.current_geometry = entity
     }
 
+    function selectFluxElementFromResultView(mx, my) {
+        const result = view.pick(mx, my)
+        var object = result.objectHit
+        if (!object || !object.instancing) {
+            tracePick("flux element pick miss")
+            returnToCameraModeIfOneShot()
+            return
+        }
+
+        const index = result.instanceIndex
+        if (index < 0) {
+            tracePick("flux element pick failed: invalid instanceIndex=" + index)
+            returnToCameraModeIfOneShot()
+            return
+        }
+
+        var elementEntity = object.instancing.at(index)
+        tracePick("flux element pick -> " + entityString(elementEntity))
+        AppData.flux.select_entity(elementEntity)
+        App.view.workflow_phase = ViewModule.Analyze
+        App.view.left_panel.visible = true
+        returnToCameraModeIfOneShot()
+    }
+
     anchors.fill: parent
     acceptedButtons: Qt.LeftButton
     cursorShape: (App.view.mouse_mode === ViewModule.SelectElement
@@ -204,6 +228,12 @@ MouseArea {
         if (App.view.mouse_mode === ViewModule.PickRay) {
             pickRay(mouse.x, mouse.y)
             returnToCameraModeIfOneShot()
+            return
+        }
+
+        if (App.view.simulation_content_view
+                && App.view.mouse_mode === ViewModule.SelectElement) {
+            selectFluxElementFromResultView(mouse.x, mouse.y)
             return
         }
 

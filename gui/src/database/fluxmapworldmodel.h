@@ -180,6 +180,13 @@ public:
 
     /// Observe a database and rebuild the computed-map list.
     void reset(Database* database);
+
+public slots:
+    /// Return the row for a computed flux map entity, or -1 if absent.
+    int index_of(db::Entity entity) const;
+
+    /// Return the computed flux map entity at row, or an invalid entity.
+    db::Entity entity_at(int index) const;
 };
 
 
