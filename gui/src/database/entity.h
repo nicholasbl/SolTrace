@@ -14,7 +14,6 @@ namespace db {
 struct Entity {
     Q_GADGET
     QML_VALUE_TYPE(db_entity);
-    // Q_PROPERTY(qint64 value MEMBER value);
 
 public:
     Entity() = default;

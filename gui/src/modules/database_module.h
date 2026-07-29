@@ -35,8 +35,6 @@ struct LoadFileFailed {
         : notification(ANotification::error(message)) { }
 };
 
-// using LoadResult = std::variant<LoadedFile, LoadFileFailed>;
-
 /// QML-facing controller for opening, saving, creating, and switching
 /// databases.
 ///

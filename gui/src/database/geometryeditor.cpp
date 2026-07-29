@@ -259,6 +259,8 @@ void GeometryEditor::recompute_geometry_errors() {
                 .arg(aperture_name, surface_name));
     }
 
+    // Special case here...
+    // TODO: Generalize
     if (params->surface->my_type == SD::CYLINDER &&
         params->aperture->my_type == SD::RECTANGLE) {
 

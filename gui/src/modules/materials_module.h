@@ -1,9 +1,9 @@
 #pragma once
 
 #include "database/database.h"
-#include "database/database_models.h"
 #include "database/geometryeditor.h"
 #include "database/materialeditor.h"
+#include "database/models/group_models.h"
 #include "module_common.h"
 #include "utilities/qt_helpers.h"
 

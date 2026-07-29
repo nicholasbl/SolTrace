@@ -9,6 +9,9 @@ set(GUI_UNIT_TEST_SRC
     ../../../gui/src/database/components.cpp
     ../../../gui/src/database/conversion.cpp
     ../../../gui/src/database/database.cpp
+    ../../../gui/src/database/database_clone.cpp
+    ../../../gui/src/database/database_import.cpp
+    ../../../gui/src/database/database_export.cpp
     ../../../gui/src/database/database_notification.cpp
     ../../../gui/src/modules/database_module.cpp
     ../../../gui/src/utilities/asynctask.cpp

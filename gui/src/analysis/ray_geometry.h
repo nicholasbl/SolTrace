@@ -60,12 +60,15 @@ private slots:
 public:
     explicit RayGeometry(QQuick3DObject* parent = nullptr);
 
+    /// Reset with new simulation results
     void set_results(db::SimulationResultPtr);
 
 public slots:
+    /// Rebuild ray geometry from scratch
     void rebuild_geometry();
 
-    // For performance we will be dropping precision.
+    /// Given a world ray, pick a traced ray.
+    /// For performance we will be dropping precision.
     void pick_ray(QVector3D world_position,
                   QVector3D world_direction,
                   float     angle_tolerance_rads);

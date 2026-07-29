@@ -110,7 +110,7 @@ public:
 
 public slots:
     /// Append a completed result with generated display metadata.
-    void append_result(SimulationResultPtr result);
+    void append_result(db::SimulationResultPtr result);
 
     /// Remove a result row.
     void remove_result(int index);

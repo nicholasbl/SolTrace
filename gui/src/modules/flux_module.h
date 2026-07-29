@@ -2,7 +2,7 @@
 
 #include "database/fluxmapworldmodel.h"
 #include "database/mesh_qml_bridge.h"
-#include "database/rootelementsmodel.h"
+#include "database/models/element_models.h"
 #include "module_common.h"
 #include "utilities/notification.h"
 #include "utilities/qt_helpers.h"

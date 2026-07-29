@@ -9,7 +9,7 @@
 #include "database/components.h"
 #include "database/database.h"
 #include "database/database_observer.h"
-#include "database/surfaceparametermodel.h"
+#include "database/models/surface_parameter_model.h"
 #include "utilities/qt_helpers.h"
 
 #include "aperture.hpp"
@@ -61,10 +61,20 @@ public:
 
     SurfaceGeometry();
 
+    /// The quality of the surface geometry. Rough control on surface
+    /// subdivision
     Q_WRITABLE_PROPERTY(Quality, quality, Quality::Normal)
+
+    /// Add thickness to the surface (ie, doubleside with edges)
     Q_WRITABLE_PROPERTY(bool, add_thickness, false)
+
+    /// If thickness is added, how much in world units
     Q_WRITABLE_PROPERTY(double, thickness, 0.01)
+
+    /// Subdiv control. TODO: Clarify with above
     Q_WRITABLE_PROPERTY(unsigned, subdivision_scale, 2)
+
+    /// Bounding box of the surface geometry item
     Q_READONLY_PROPERTY(BoundingBox, bounding_box)
 
     /// Observe database geometry group and rebuild the generated geometry.

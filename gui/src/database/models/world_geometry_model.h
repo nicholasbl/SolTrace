@@ -2,8 +2,7 @@
 
 #include <QtQuick3D/qquick3dinstancing.h>
 
-#include "database.h"
-#include "database/database_models.h"
+#include "database/database.h"
 #include "database/geometryeditor.h"
 
 namespace db {

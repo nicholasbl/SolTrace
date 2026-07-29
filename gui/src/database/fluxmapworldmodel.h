@@ -8,8 +8,8 @@
 
 #include "analysis/flux_map.h"
 #include "database.h"
-#include "database/database_models.h"
 #include "database/geometryeditor.h"
+#include "database/models/entity_name_model.h"
 #include "database/simulationresult.h"
 
 namespace analysis {
@@ -59,7 +59,6 @@ private slots:
 
 public:
     // TODO: Make sure we have bins counts and bin areas to export
-    // TODO: just bin per triangle option
     // power per ray
 
     Q_WRITABLE_PROPERTY(int, mesh_resolution_multiply, 1);
@@ -77,8 +76,8 @@ public:
     /// Database associated with the current simulation result, if any.
     Database const* database() { return m_host; }
 
-    // Create a provider for flux map textures. This MUST be done at the start
-    // of the app, and before any databases!
+    /// Create a provider for flux map textures. This MUST be done at the start
+    /// of the app, and before any databases!
     FluxMapProvider* make_new_provider();
 
 public slots:
@@ -89,6 +88,7 @@ public slots:
     void cancel_for(db::Entity);
 
 signals:
+    /// A new flux map is ready, for an entity, from a given database
     void ready(db::Entity, analysis::BakedFluxMapPtr, db::Database const*);
     void cleared();
 };

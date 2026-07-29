@@ -12,7 +12,7 @@
 
 namespace db {
 
-/// A model that helps edit a geometry instance.
+/// A model that helps edit a material geometry instance.
 class AnInstanceEditor : public QObject {
     Q_OBJECT
     QPointer<Database> m_host;

@@ -21,12 +21,15 @@ namespace db {
 
 namespace {
 
+// TODO: Consolidate all our different PIs
 constexpr double PI = glm::pi<double>();
 
+/// Helper 2D mesh struct. Used for height field
 struct Mesh2D {
     QVector<glm::dvec2> vertex;
     QVector<glm::uvec3> triangles;
 
+    /// Lens the mesh through a function that modifies verticies
     template <class F>
     Mesh map(F&& f) const {
         Mesh ret;
@@ -42,6 +45,7 @@ struct Mesh2D {
         return ret;
     }
 
+    /// Get the 2d AABB
     std::tuple<glm::dvec2, glm::dvec2> bb_2d() const {
         if (vertex.empty()) { return { glm::dvec2 { 0 }, glm::dvec2 { 0 } }; }
         glm::dvec2 mins = vertex[0];
@@ -56,14 +60,17 @@ struct Mesh2D {
     }
 };
 
+/// Clamp from 0 - 1
 double saturate(double value) {
     return std::clamp(value, 0.0, 1.0);
 }
 
+/// Clamp components from 0 - 1
 glm::dvec2 saturate(glm::dvec2 value) {
     return glm::clamp(value, 0.0, 1.0);
 }
 
+/// Build a vertex from parts
 Vertex make_vertex(double    x,
                    double    y,
                    double    z,
@@ -77,6 +84,7 @@ Vertex make_vertex(double    x,
     };
 }
 
+/// Sanitize normals to a 'safe' value, for h-maps
 glm::vec3 safe_normal(glm::vec3 normal,
                       glm::vec3 fallback = glm::vec3(0.0f, 0.0f, 1.0f)) {
     float length = glm::length(normal);
@@ -84,6 +92,7 @@ glm::vec3 safe_normal(glm::vec3 normal,
     return normal / length;
 }
 
+/// Compute a normal, check it against winding for 'front'
 bool front_winding_matches_vertex_normals(Mesh const& mesh) {
     glm::vec3 geometric_normal_sum(0.0f);
     glm::vec3 vertex_normal_sum(0.0f);
@@ -107,6 +116,7 @@ bool front_winding_matches_vertex_normals(Mesh const& mesh) {
     return glm::dot(geometric_normal_sum, vertex_normal_sum) >= 0.0f;
 }
 
+/// Take a mesh h-field, dupe the faces, and add an edge
 Mesh add_height_field_thickness(Mesh mesh, double thickness) {
     if (thickness <= 0.0 || mesh.vertex.empty() || mesh.triangles.empty()) {
         return mesh;

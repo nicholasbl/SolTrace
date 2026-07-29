@@ -2,7 +2,7 @@
 
 #include "database/database.h"
 #include "database/simulationresult.h"
-#include "database/worldgeometrymodel.h"
+#include "database/models/world_geometry_model.h"
 #include "job_control/job_run.h"
 #include "utilities/notification.h"
 #include "utilities/qt_helpers.h"
