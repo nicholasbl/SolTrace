@@ -7,7 +7,7 @@
 namespace db {
 
 namespace {
-
+/// Build a parameter list for a given aperture type
 QVector<ApertureParameter> make_parameters_for(SD::ApertureType type) {
     QVector<ApertureParameter> ret;
 

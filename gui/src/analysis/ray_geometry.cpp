@@ -19,13 +19,16 @@ namespace analysis {
 
 namespace {
 
+/// Number of rays to show by default
 constexpr quint64 DEFAULT_VISIBLE_RAY_COUNT = 10000;
 
+/// Percent of a ray count. Used in a few places.
 float percent_for_ray_count(quint64 count, quint64 available) {
     if (available == 0) return 0.0f;
     return static_cast<float>(count * 100.0 / available);
 }
 
+/// From percent of a count, to the actual count
 size_t visible_ray_limit(size_t available, float show_percent) {
     const auto effective_percent = std::clamp(show_percent, 0.0f, 100.0f);
     const auto requested_rays =
@@ -34,6 +37,7 @@ size_t visible_ray_limit(size_t available, float show_percent) {
                     static_cast<size_t>(std::llround(requested_rays)));
 }
 
+/// Ask if our event filter contains an event.
 bool includes_event(EventTypeContainer const& filter, db::RayEventType event) {
     return filter.events.contains(event);
 }

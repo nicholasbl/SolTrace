@@ -10,6 +10,7 @@
 
 namespace analysis {
 
+/// A not-bitset of ray event types
 struct EventTypeContainer {
     std::unordered_set<db::RayEventType> events;
 
@@ -21,8 +22,10 @@ struct EventTypeContainer {
     QStringList to_list() const;
 };
 
-// TODO make all deltas queued up for Concurrent off thread rebuilding of geom
-// TODO move to tubes and instancing?
+/// Class that builds/rebuilds ray geometry for QML visualization
+///
+/// TODO: make all deltas queued up for Concurrent off thread rebuilding of geom
+/// TODO: move to tubes and instancing?
 class RayGeometry : public QQuick3DGeometry {
     Q_OBJECT
     QML_ELEMENT
@@ -36,10 +39,19 @@ public:
     Q_ENUM(TextureMode)
 
 private:
+    /// Which events to include in our geometry?
     Q_WRITABLE_PROPERTY(QStringList, event_include, {});
+
+    /// How many rays to show?
     Q_WRITABLE_PROPERTY(float, show_percent, 100);
+
+    /// How to set the UVs of the geometry?
     Q_WRITABLE_PROPERTY(TextureMode, texture_mode, TextureMode::Length);
+
+    /// How many rays are there?
     Q_READONLY_PROPERTY(quint64, available_rays);
+
+    /// What is/is there a selected ray?
     Q_WRITABLE_PROPERTY(qint64, selected_ray_id, -1);
 
 private slots:

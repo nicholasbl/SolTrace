@@ -18,22 +18,22 @@ class FluxMapComputer;
 
 namespace db {
 
-// TODO: Move to the database observer?
-
-
 class FluxMapProvider;
 
+/// Quick3D texture data backed by a generated flux-map image.
 class FluxTextureData : public QQuick3DTextureData {
     Q_OBJECT
 
 public:
     explicit FluxTextureData(QQuick3DObject* parent = nullptr);
 
+    /// Replace texture contents with image data.
     void set_image(QImage const& image);
 };
 
 // ============================================================================
 
+/// One pending flux-map computation exposed to QML.
 struct FluxMappedPendingItem {
     Entity entity;
     int    progress = 0;
@@ -43,6 +43,9 @@ struct FluxMappedPendingItem {
                 SM_EXPOSE_RO(progress));
 };
 
+/// Tracks in-progress surface flux-map computations for one result set.
+///
+/// Also owns the FluxMapComputer and creates the image provider used by QML.
 class PendingFluxMapModel : public StructModelAdapter<FluxMappedPendingItem> {
     Q_OBJECT
     QPointer<Database const>            m_host;
@@ -68,8 +71,10 @@ public:
     explicit PendingFluxMapModel(QObject* parent = nullptr);
     virtual ~PendingFluxMapModel() = default;
 
+    /// Reset computation state for a new simulation result.
     void reset(db::SimulationResultPtr);
 
+    /// Database associated with the current simulation result, if any.
     Database const* database() { return m_host; }
 
     // Create a provider for flux map textures. This MUST be done at the start
@@ -77,7 +82,10 @@ public:
     FluxMapProvider* make_new_provider();
 
 public slots:
+    /// Start generating a flux map for entity.
     bool start_generate_for(db::Entity);
+
+    /// Cancel the pending map generation for entity.
     void cancel_for(db::Entity);
 
 signals:
@@ -87,6 +95,7 @@ signals:
 
 // ============================================================================
 
+/// One rendered flux map and its transform in the 3D result scene.
 struct FluxMappedItem {
     Entity                               flux_entity;
     std::shared_ptr<QQuick3DTextureData> flux_texture_data;
@@ -106,6 +115,7 @@ struct FluxMappedItem {
                 SM_EXPOSE_RO(flux_stats));
 };
 
+/// Model of completed flux maps shown in the 3D result scene.
 class FluxMapWorldModel : public StructModelAdapter<FluxMappedItem> {
     Q_OBJECT
 
@@ -116,12 +126,16 @@ public:
     virtual ~FluxMapWorldModel() = default;
 
 public slots:
+    /// Clear all completed flux map rows.
     void on_reset();
+
+    /// Add or replace the completed map for an entity.
     void on_ready(Entity, analysis::BakedFluxMapPtr, Database const*);
 };
 
 // ============================================================================
 
+/// Image provider for QML image://fluxmap requests.
 class FluxMapProvider : public QQuickImageProvider {
     Q_OBJECT
 
@@ -131,17 +145,22 @@ class FluxMapProvider : public QQuickImageProvider {
 public:
     FluxMapProvider();
 
+    /// Return a generated flux-map image for id.
     QImage requestImage(QString const& id,
                         QSize*         size,
                         QSize const&   requestedSize) override;
 
 public slots:
+    /// Store a completed flux map under its generated image id.
     void on_ready(Entity, analysis::BakedFluxMapPtr, Database const*);
+
+    /// Remove all stored images.
     void clear();
 };
 
 // =============================================================================
 
+/// Model listing entities that already have computed flux maps.
 class AllComputedMapsModel : public StructModelAdapter<EntityNamePair> {
     Q_OBJECT
 
@@ -159,6 +178,7 @@ public:
     explicit AllComputedMapsModel(QObject* parent = nullptr);
     ~AllComputedMapsModel() override = default;
 
+    /// Observe a database and rebuild the computed-map list.
     void reset(Database* database);
 };
 
