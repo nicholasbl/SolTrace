@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QtQuick3D/qquick3dinstancing.h>
+#include <QVariantMap>
 
 #include "database/database.h"
 #include "database/geometryeditor.h"
@@ -103,6 +104,9 @@ private slots:
     void group_removed(entt::entity);
 
 public slots:
+    /// Compute current visible world-geometry bounds on demand.
+    Q_INVOKABLE QVariantMap content_bounds(bool include_flux_mapped) const;
+
     /// Update default color on all visible instancing adapters.
     void set_default_color(QColor color);
 

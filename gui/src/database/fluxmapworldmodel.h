@@ -5,6 +5,7 @@
 #include <QQuaternion>
 #include <QQuick3DTextureData>
 #include <QQuickImageProvider>
+#include <QVariantMap>
 
 #include "analysis/flux_map.h"
 #include "database.h"
@@ -126,6 +127,9 @@ public:
     virtual ~FluxMapWorldModel() = default;
 
 public slots:
+    /// Compute current completed flux-map geometry bounds on demand.
+    Q_INVOKABLE QVariantMap content_bounds() const;
+
     /// Clear all completed flux map rows.
     void on_reset();
 
