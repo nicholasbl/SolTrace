@@ -7,6 +7,20 @@ DoubleSpinBox {
     editable: true
 
     property string suffix
+    from: -Infinity
+    to: Infinity
+
+    onValueChanged: {
+        var factor = Math.pow(10, decimals)
+        var rounded = Math.round(value * factor) / factor
+        if (Math.abs(value - rounded) > Number.EPSILON) {
+            value = rounded
+        }
+    }
+
+    textFromValue: function(value, locale) {
+        return value.toFixed(decimals)
+    }
 
     contentItem: TextInput {
         id: input

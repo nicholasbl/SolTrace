@@ -150,7 +150,6 @@ Flickable {
                             Layout.fillWidth: true
                             Layout.preferredWidth: 100
                             label: "Azimuth"
-                            value: root.directionAzimuth()
                             from: 0
                             to: 360
                             decimals: 3
@@ -159,6 +158,10 @@ Flickable {
                             onValueModified: root.setDirectionAngles(
                                                  value,
                                                  root.directionElevation())
+
+                            Binding on value {
+                                value: root.directionAzimuth()
+                            }
                         }
 
                         STSpinBoxField {
@@ -175,6 +178,10 @@ Flickable {
                             onValueModified: root.setDirectionAngles(
                                                  root.directionAzimuth(),
                                                  value)
+
+                            Binding on value {
+                                value: root.directionElevation()
+                            }
                         }
                     }
                 }
