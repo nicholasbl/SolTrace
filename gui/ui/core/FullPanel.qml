@@ -204,11 +204,11 @@ ShadowedGlassRectangle {
                 detailView: StackLayout {
                     currentIndex: buildView.currentIndex
 
-                    FeaturePanel {}
+                    FeatureModule {}
 
                     BInfoModule {}
 
-                    LogSettings {}
+                    LogModule {}
 
                 }
             }
