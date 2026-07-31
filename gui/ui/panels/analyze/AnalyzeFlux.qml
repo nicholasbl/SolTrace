@@ -395,6 +395,7 @@ Flickable {
                 value: 0.90
                 from: 0.0
                 stepSize: .01
+                decimals: 2
                 to: 1.0
             }
 

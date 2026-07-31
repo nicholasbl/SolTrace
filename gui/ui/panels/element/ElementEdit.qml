@@ -140,36 +140,27 @@ ColumnLayout {
                 STDoubleSpinBox {
                     id: local_x_pos
                     Layout.fillWidth: true
+                    value: root.module.position.x
                     onValueModified: localPositionEditor.update_position()
                     decimals: 4
-
-                    Binding on value {
-                        value: root.module.position.x
-                    }
                 }
 
                 STPropertyLabel { text: "Y" }
                 STDoubleSpinBox {
                     id: local_y_pos
                     Layout.fillWidth: true
+                    value: root.module.position.y
                     onValueModified: localPositionEditor.update_position()
                     decimals: 4
-
-                    Binding on value {
-                        value: root.module.position.y
-                    }
                 }
 
                 STPropertyLabel { text: "Z" }
                 STDoubleSpinBox {
                     id: local_z_pos
                     Layout.fillWidth: true
+                    value: root.module.position.z
                     onValueModified: localPositionEditor.update_position()
                     decimals: 4
-
-                    Binding on value {
-                        value: root.module.position.z
-                    }
                 }
 
                 STButton {
@@ -177,10 +168,7 @@ ColumnLayout {
                     Layout.columnSpan: 2
                     text: "Reset Local Default Position"
                     onClicked: {
-                        root.module.position.x = 0
-                        root.module.position.y = 0
-                        root.module.position.z = -1
-                        localPositionEditor.update_position()
+                        root.module.position = Qt.vector3d(0, 0, -1)
                     }
                 }
             }
@@ -201,36 +189,27 @@ ColumnLayout {
                 STDoubleSpinBox {
                     id: global_x_pos
                     Layout.fillWidth: true
+                    value: root.module.global_position.x
                     onValueModified: globalPositionEditor.update_position()
                     decimals: 4
-
-                    Binding on value {
-                        value: root.module.global_position.x
-                    }
                 }
 
                 STPropertyLabel { text: "Y" }
                 STDoubleSpinBox {
                     id: global_y_pos
                     Layout.fillWidth: true
+                    value: root.module.global_position.y
                     onValueModified: globalPositionEditor.update_position()
                     decimals: 4
-
-                    Binding on value {
-                        value: root.module.global_position.y
-                    }
                 }
 
                 STPropertyLabel { text: "Z" }
                 STDoubleSpinBox {
                     id: global_z_pos
                     Layout.fillWidth: true
+                    value: root.module.global_position.z
                     onValueModified: globalPositionEditor.update_position()
                     decimals: 4
-
-                    Binding on value {
-                        value: root.module.global_position.z
-                    }
                 }
 
                 STButton {
@@ -238,10 +217,7 @@ ColumnLayout {
                     Layout.columnSpan: 2
                     text: "Reset Global Default Position"
                     onClicked: {
-                        global_x_pos.value = 0
-                        global_y_pos.value = 0
-                        global_z_pos.value = -1
-                        globalPositionEditor.update_position()
+                        root.module.global_position = Qt.vector3d(0, 0, -1)
                     }
                 }
             }
@@ -265,39 +241,30 @@ ColumnLayout {
             STDoubleSpinBox {
                 id: x_euler
                 Layout.fillWidth: true
+                value: rotPanel.angles.x
                 onValueModified: rotPanel.update_from_angles()
                 from: -180
                 to: 180
-
-                Binding on value {
-                    value: rotPanel.angles.x
-                }
             }
 
             STPropertyLabel { text: "Y Angle (deg)" }
             STDoubleSpinBox {
                 id: y_euler
                 Layout.fillWidth: true
+                value: rotPanel.angles.y
                 onValueModified: rotPanel.update_from_angles()
                 from: -90
                 to: 90
-
-                Binding on value {
-                    value: rotPanel.angles.y
-                }
             }
 
             STPropertyLabel { text: "Z Angle (deg)" }
             STDoubleSpinBox {
                 id: z_euler
                 Layout.fillWidth: true
+                value: rotPanel.angles.z
                 onValueModified: rotPanel.update_from_angles()
                 from: -180
                 to: 180
-
-                Binding on value {
-                    value: rotPanel.angles.z
-                }
             }
 
             STButton {
@@ -305,10 +272,7 @@ ColumnLayout {
                 Layout.columnSpan: 2
                 text: "Reset"
                 onClicked: {
-                    rotPanel.angles.x = 0
-                    rotPanel.angles.y = 0
-                    rotPanel.angles.z = 0
-                    rotPanel.update_from_angles()
+                    root.module.set_from_angles(Qt.vector3d(0, 0, 0))
                 }
             }
 

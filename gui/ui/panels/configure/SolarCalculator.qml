@@ -107,13 +107,10 @@ ColumnLayout {
             label: "Year"
             from: 1900
             to: 2200
+            value: App.sun.calc_data.year
             onValueModified: {
                 App.sun.calc_data.year = value
                 seasonPresetField.clear()
-            }
-
-            Binding on value {
-                value: App.sun.calc_data.year
             }
         }
 
@@ -122,13 +119,10 @@ ColumnLayout {
             label: "Month"
             from: 1
             to: 12
+            value: App.sun.calc_data.month
             onValueModified: {
                 App.sun.calc_data.month = value
                 seasonPresetField.clear()
-            }
-
-            Binding on value {
-                value: App.sun.calc_data.month
             }
         }
 
@@ -137,13 +131,10 @@ ColumnLayout {
             label: "Day"
             from: 1
             to: 31
+            value: App.sun.calc_data.day
             onValueModified: {
                 App.sun.calc_data.day = value
                 seasonPresetField.clear()
-            }
-
-            Binding on value {
-                value: App.sun.calc_data.day
             }
         }
     }
@@ -160,13 +151,10 @@ ColumnLayout {
             label: "Hour"
             from: 0
             to: 23
+            value: App.sun.calc_data.hour
             onValueModified: {
                 App.sun.calc_data.hour = value
                 timePresetField.clear()
-            }
-
-            Binding on value {
-                value: App.sun.calc_data.hour
             }
         }
 
@@ -175,13 +163,10 @@ ColumnLayout {
             label: "Minute"
             from: 0
             to: 59
+            value: App.sun.calc_data.minute
             onValueModified: {
                 App.sun.calc_data.minute = value
                 timePresetField.clear()
-            }
-
-            Binding on value {
-                value: App.sun.calc_data.minute
             }
         }
 
@@ -190,13 +175,10 @@ ColumnLayout {
             label: "Second"
             from: 0
             to: 59
+            value: App.sun.calc_data.second
             onValueModified: {
                 App.sun.calc_data.second = value
                 timePresetField.clear()
-            }
-
-            Binding on value {
-                value: App.sun.calc_data.second
             }
         }
 
@@ -205,13 +187,10 @@ ColumnLayout {
             label: "UTC Offset"
             from: -12
             to: 14
+            value: App.sun.calc_data.timezone_offset
             onValueModified: {
                 App.sun.calc_data.timezone_offset = value
                 timePresetField.clear()
-            }
-
-            Binding on value {
-                value: App.sun.calc_data.timezone_offset
             }
         }
     }
