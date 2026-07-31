@@ -107,8 +107,14 @@ ColumnLayout {
             label: "Year"
             from: 1900
             to: 2200
-            value: App.sun.calc_data.year
-            onValueModified: App.sun.calc_data.year = value
+            onValueModified: {
+                App.sun.calc_data.year = value
+                seasonPresetField.clear()
+            }
+
+            Binding on value {
+                value: App.sun.calc_data.year
+            }
         }
 
         STSpinBoxField {
@@ -116,8 +122,14 @@ ColumnLayout {
             label: "Month"
             from: 1
             to: 12
-            value: App.sun.calc_data.month
-            onValueModified: App.sun.calc_data.month = value
+            onValueModified: {
+                App.sun.calc_data.month = value
+                seasonPresetField.clear()
+            }
+
+            Binding on value {
+                value: App.sun.calc_data.month
+            }
         }
 
         STSpinBoxField {
@@ -125,8 +137,14 @@ ColumnLayout {
             label: "Day"
             from: 1
             to: 31
-            value: App.sun.calc_data.day
-            onValueModified: App.sun.calc_data.day = value
+            onValueModified: {
+                App.sun.calc_data.day = value
+                seasonPresetField.clear()
+            }
+
+            Binding on value {
+                value: App.sun.calc_data.day
+            }
         }
     }
 
@@ -142,8 +160,14 @@ ColumnLayout {
             label: "Hour"
             from: 0
             to: 23
-            value: App.sun.calc_data.hour
-            onValueModified: App.sun.calc_data.hour = value
+            onValueModified: {
+                App.sun.calc_data.hour = value
+                timePresetField.clear()
+            }
+
+            Binding on value {
+                value: App.sun.calc_data.hour
+            }
         }
 
         STSpinBoxField {
@@ -151,8 +175,14 @@ ColumnLayout {
             label: "Minute"
             from: 0
             to: 59
-            value: App.sun.calc_data.minute
-            onValueModified: App.sun.calc_data.minute = value
+            onValueModified: {
+                App.sun.calc_data.minute = value
+                timePresetField.clear()
+            }
+
+            Binding on value {
+                value: App.sun.calc_data.minute
+            }
         }
 
         STSpinBoxField {
@@ -160,8 +190,14 @@ ColumnLayout {
             label: "Second"
             from: 0
             to: 59
-            value: App.sun.calc_data.second
-            onValueModified: App.sun.calc_data.second = value
+            onValueModified: {
+                App.sun.calc_data.second = value
+                timePresetField.clear()
+            }
+
+            Binding on value {
+                value: App.sun.calc_data.second
+            }
         }
 
         STSpinBoxField {
@@ -169,8 +205,14 @@ ColumnLayout {
             label: "UTC Offset"
             from: -12
             to: 14
-            value: App.sun.calc_data.timezone_offset
-            onValueModified: App.sun.calc_data.timezone_offset = value
+            onValueModified: {
+                App.sun.calc_data.timezone_offset = value
+                timePresetField.clear()
+            }
+
+            Binding on value {
+                value: App.sun.calc_data.timezone_offset
+            }
         }
     }
 
@@ -182,10 +224,11 @@ ColumnLayout {
         }
 
         STComboBox {
+            id: seasonPresetField
             Layout.fillWidth: true
             currentIndex: -1
             model: ["Spring (March 20)", "Summer (June 21)", "Fall (September 22)", "Winter (December 21)"]
-            onCurrentIndexChanged: {
+            onActivated: function(index) {
                 if (currentIndex >= 0) {
                     [
                         App.sun.calc_data.set_spring,
@@ -194,6 +237,12 @@ ColumnLayout {
                         App.sun.calc_data.set_winter,
                     ][currentIndex]()
                 }
+                displayText = model[currentIndex]
+            }
+
+            function clear() {
+                currentIndex = -1
+                displayText = ""
             }
         }
     }
@@ -206,10 +255,11 @@ ColumnLayout {
         }
 
         STComboBox {
+            id: timePresetField
             Layout.fillWidth: true
             currentIndex: -1
             model: ["Dawn (6am)", "Mid-Morning (9am)", "Noon (12pm)", "Mid-Afternoon (3pm)", "Golden Hour (5pm)", "Dusk (7pm)"]
-            onCurrentIndexChanged: {
+            onActivated: function(index) {
                 if (currentIndex >= 0) {
                     [
                         App.sun.calc_data.set_dawn,
@@ -220,6 +270,12 @@ ColumnLayout {
                         App.sun.calc_data.set_dusk,
                     ][currentIndex]()
                 }
+                displayText = model[currentIndex]
+            }
+
+            function clear() {
+                currentIndex = -1
+                displayText = ""
             }
         }
     }
