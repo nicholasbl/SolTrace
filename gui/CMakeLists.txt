@@ -80,6 +80,7 @@ configure_file(
 find_package(Qt6 6.11 REQUIRED COMPONENTS
     Core Gui Qml Quick Quick3D Widgets Graphs Concurrent LinguistTools
 )
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 set(QT_QML_GENERATE_QMLLS_INI ON)
 
@@ -153,6 +154,47 @@ qt_add_resources(SolTrace "docs"
     PREFIX "/"
     FILES
         ${SOLTRACE_DOC_FILES}
+)
+
+set(SOLTRACE_LICENSE_MANIFEST
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/third_party_licenses.json")
+set(SOLTRACE_LICENSE_DEPENDENCY_ARGS
+    --qt-dir "${Qt6_DIR}"
+)
+if(TARGET embree_runner)
+    list(APPEND SOLTRACE_LICENSE_DEPENDENCY_ARGS
+        --embree-dir "${embree_DIR}"
+    )
+endif()
+if(TARGET optix_runner)
+    list(APPEND SOLTRACE_LICENSE_DEPENDENCY_ARGS
+        --optix-dir "${OptiX_ROOT_DIR}"
+        --cuda-dir "${CUDAToolkit_LIBRARY_ROOT}"
+    )
+endif()
+add_custom_command(
+    OUTPUT "${SOLTRACE_LICENSE_MANIFEST}"
+    COMMAND
+        "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_license_manifest.py"
+        --workspace "${CMAKE_SOURCE_DIR}"
+        --build-dir "${CMAKE_BINARY_DIR}"
+        ${SOLTRACE_LICENSE_DEPENDENCY_ARGS}
+        --output "${SOLTRACE_LICENSE_MANIFEST}"
+    DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt"
+        "${CMAKE_SOURCE_DIR}/LICENSE.md"
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_license_manifest.py"
+    VERBATIM
+)
+set_source_files_properties("${SOLTRACE_LICENSE_MANIFEST}" PROPERTIES
+    GENERATED TRUE
+    QT_RESOURCE_ALIAS "licenses/third_party_licenses.json"
+)
+qt_add_resources(SolTrace "license_manifest"
+    PREFIX "/"
+    FILES
+        "${SOLTRACE_LICENSE_MANIFEST}"
 )
 
 qt_add_qml_module(SolTrace

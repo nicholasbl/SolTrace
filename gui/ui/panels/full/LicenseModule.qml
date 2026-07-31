@@ -12,6 +12,29 @@ ScrollView {
     contentWidth: availableWidth
     clip: true
 
+    readonly property var thirdPartyLicenses: loadThirdPartyLicenses()
+
+    function loadThirdPartyLicenses() {
+        const request = new XMLHttpRequest()
+        request.open("GET", "qrc:/licenses/third_party_licenses.json", false)
+        request.send()
+        if (request.status !== 200 && request.status !== 0) {
+            return {
+                "licenses": [],
+                "warnings": [qsTr("Embedded third-party license manifest could not be loaded.")]
+            }
+        }
+
+        try {
+            return JSON.parse(request.responseText)
+        } catch (error) {
+            return {
+                "licenses": [],
+                "warnings": [qsTr("Embedded third-party license manifest could not be parsed.")]
+            }
+        }
+    }
+
     ColumnLayout {
         width: root.availableWidth
         spacing: 12
@@ -32,7 +55,7 @@ ScrollView {
             Layout.fillWidth: true
 
             title: qsTr("Skybox: Clear Sky")
-            collapsed: false
+            collapsed: true
 
             ColumnLayout {
                 spacing: 6
@@ -77,7 +100,7 @@ ScrollView {
             Layout.fillWidth: true
 
             title: qsTr("Skybox: Partly Cloudy")
-            collapsed: false
+            collapsed: true
 
             ColumnLayout {
                 spacing: 6
@@ -122,7 +145,7 @@ ScrollView {
             Layout.fillWidth: true
 
             title: qsTr("Skybox: Sunset")
-            collapsed: false
+            collapsed: true
 
             ColumnLayout {
                 spacing: 6
@@ -159,6 +182,71 @@ ScrollView {
                     color: App.theme.fontColor
                     opacity: 0.7
                     text: qsTr("Ground recolored to desert sand. Decorative only — does not affect ray-trace results.")
+                }
+            }
+        }
+
+        Repeater {
+            model: root.thirdPartyLicenses.warnings || []
+
+            Label {
+                required property string modelData
+
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                font.pixelSize: App.theme._normalSize
+                color: Material.color(Material.Yellow)
+                text: modelData
+            }
+        }
+
+        Repeater {
+            model: root.thirdPartyLicenses.licenses || []
+
+            STPropertyPanel {
+                id: licensePanel
+
+                required property var modelData
+
+                Layout.fillWidth: true
+                title: licensePanel.modelData.component + ": " + licensePanel.modelData.name
+                collapsed: true
+                columns: 1
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 6
+
+                    Label {
+                        Layout.fillWidth: true
+                        wrapMode: Text.WrapAnywhere
+                        font.pixelSize: App.theme._normalSize
+                        color: App.theme.fontColor
+                        opacity: 0.7
+                        text: licensePanel.modelData.path
+                    }
+
+                    ScrollView {
+                        id: lic_scroll
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: Math.min(360, Math.max(120, implicitHeight))
+
+                        contentWidth: availableWidth
+
+                        TextArea {
+                            width: lic_scroll.availableWidth
+                            readOnly: true
+                            selectByMouse: false
+                            wrapMode: TextEdit.Wrap
+                            textFormat: TextEdit.PlainText
+                            text: licensePanel.modelData.text
+                            color: App.theme.fontColor
+                            font.family: "monospace"
+                            font.pixelSize: App.theme._normalSize
+                        }
+                    }
+
+
                 }
             }
         }
