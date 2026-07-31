@@ -115,8 +115,17 @@ Flickable {
                 onToggled: AppData.flux.show_other_geometry = checked
             }
 
+            Label {
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
+                text: "Flux map values are normalized ray-density values."
+                color: App.theme.fontColor
+                opacity: 0.75
+                wrapMode: Label.WrapAtWordBoundaryOrAnywhere
+            }
+
             STPropertyLabel {
-                text: "Plotted Power"
+                text: "Plotted Ray Weight"
             }
 
             Label {
@@ -126,7 +135,7 @@ Flickable {
             }
 
             STPropertyLabel {
-                text: "Peak Flux"
+                text: "Peak Normalized Flux"
             }
 
             Label {
@@ -136,7 +145,7 @@ Flickable {
             }
 
             STPropertyLabel {
-                text: "Min Flux"
+                text: "Min Normalized Flux"
             }
 
             Label {
@@ -146,7 +155,7 @@ Flickable {
             }
 
             STPropertyLabel {
-                text: "Average Flux"
+                text: "Average Normalized Flux"
             }
 
             Label {
@@ -156,7 +165,7 @@ Flickable {
             }
 
             STPropertyLabel {
-                text: "Sigma Flux"
+                text: "Sigma Normalized Flux"
             }
 
             Label {
@@ -352,7 +361,7 @@ Flickable {
             visible: false
 
             collapsible: true
-            title: "Flux Volume"
+            title: "Normalized Ray Volume"
 
             STPropertyLabel {
                 text: "Grid Resolution"
