@@ -188,7 +188,7 @@ void Database::set_parent(entt::entity child, entt::entity parent) {
     unset_parent(child);
 
     if (!m_registry.all_of<ChildrenComponent>(parent)) {
-        // if the parent doesnt have a child component, insert this as our first
+        // If the parent has no child component, insert this as the first
         // child
         m_registry.emplace<ChildrenComponent>(parent,
                                               ChildrenComponent {
@@ -657,7 +657,8 @@ db::Entity Database::add_geometry_group(QString             new_name,
 
         auto& other_p = m_registry.get<GeometryComponent>(clone_from);
 
-        // horrible, but it works. library classes don't all have clone()
+        // Library classes do not consistently provide clone(), so copy through
+        // their serialization API.
         nlohmann::ordered_json node;
 
         other_p.surface->write_json(node);

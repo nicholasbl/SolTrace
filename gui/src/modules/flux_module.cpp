@@ -66,8 +66,7 @@ void FluxModule::set_results(db::SimulationResultPtr p) {
     m_pending_flux_maps->reset(p);
     m_ray_iso_volume->set_current_mesh({});
 
-    // HACK HACK HACK
-
+    // Default to the entity with the most ray hits.
     entt::entity largest = entt::null;
     size_t       best    = 0;
 

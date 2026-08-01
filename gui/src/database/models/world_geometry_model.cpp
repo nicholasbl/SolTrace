@@ -101,8 +101,6 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
 
         if (m_database->is_selected(member)) { color = Qt::yellow; }
 
-        // qDebug() << convert(global->position) << convert(global->rotation);
-
         auto entry =
             calculateTableEntryFromQuaternion(convert(global->position),
                                               QVector3D(1, 1, 1),
@@ -115,9 +113,6 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
         m_rev_cache[member] = m_member_cache.size();
         m_member_cache.push_back(member);
     }
-
-    // qDebug() << Q_FUNC_INFO << "group" << entt::to_integral(group) << "->"
-    //          << m_member_cache.size();
 
     markDirty();
 }
@@ -195,7 +190,6 @@ Entity InstancedElements::geometry_of_group() {
 Entity InstancedElements::material_of(int index) {
     entt::entity instance = entity_at(index);
     if (instance == entt::null) return { };
-    // qDebug() << m_database->material_of(instance);
     return m_database->material_of(instance);
 }
 
@@ -283,9 +277,6 @@ InstancedElements::InstancedElements(Database*       db,
 QByteArray InstancedElements::getInstanceBuffer(int* instanceCount) {
 
     if (instanceCount) { *instanceCount = m_member_cache.size(); }
-
-    // qDebug() << Q_FUNC_INFO << m_target_group << m_member_cache.size()
-    //          << m_instance_data.size();
 
     return m_instance_data;
 }

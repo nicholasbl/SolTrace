@@ -123,7 +123,7 @@ file(GLOB_RECURSE SOLTRACE_CPP_FILES
 list(REMOVE_ITEM SOLTRACE_CPP_FILES "src/main.cpp")
 list(SORT SOLTRACE_CPP_FILES)
 
-# TODO tighten bounds on files
+# TODO: Narrow asset glob patterns when the source layout stabilizes.
 file(GLOB_RECURSE SOLTRACE_ASSET_FILES
     CONFIGURE_DEPENDS
     RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"

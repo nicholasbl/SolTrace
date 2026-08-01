@@ -170,12 +170,10 @@ TransformComponent extract_tf(SD::Element const& e) {
     aim = glm::normalize(aim - pos);
 
     auto quat = dir_roll_to_quat(aim, e.get_zrot_radians());
+    (void)quat;
 
-    // TODO: FIX
-    // I dont understand why the above is incorrect and the below is right
+    // TODO: Verify transform conversion against SolTrace coordinate conventions.
     auto quat2 = glm::quat_cast(e.get_local_to_reference());
-
-    // qDebug() << quat << quat2;
 
     return TransformComponent { .position = pos, .rotation = quat2 };
 }
@@ -188,10 +186,9 @@ TransformComponent extract_tf_stage(SD::Element const& e) {
     aim = glm::normalize(aim - pos);
 
     auto quat = dir_roll_to_quat(aim, e.get_zrot_radians());
+    (void)quat;
 
     auto quat2 = glm::quat_cast(e.get_local_to_reference());
-
-    // qDebug() << quat << quat2;
 
     return TransformComponent { .position = pos, .rotation = quat2 };
 }
@@ -216,7 +213,7 @@ static void import_optics(
 
     auto property_sptr = item.get_optical_property_set();
 
-    // If it has nothing, dont import
+    // If it has no optical data, skip importing optics.
     if (!property_sptr and !item.get_aperture() and !item.get_surface()) {
         // does not have geometry.
         qDebug() << "Skipping optics on" << entt::to_integral(entity);
@@ -347,12 +344,6 @@ void Database::import(SD::SimulationData& data, bool legacy_import) {
     for (auto iter = data.get_iterator(); !data.is_at_end(iter); ++iter) {
         auto const& element = *(iter->second);
 
-        // if (element.get_name() == "0") {
-        //     qDebug() << "CHECK 0" << element.is_composite()
-        //              << element.is_single() << element.get_surface().get()
-        //              << element.get_aperture().get();
-        // }
-
         if (element.is_stage()) {
             // we want to avoid materializing stage elements
             auto c = std::dynamic_pointer_cast<SD::StageElement>(iter->second);
@@ -399,7 +390,7 @@ void Database::import(SD::SimulationData& data, bool legacy_import) {
             name.toLong(&ok);
 
             if (legacy_import && ok) {
-                // these are not super useful. imbue with extra, if possible
+                // Legacy numeric names are not descriptive; add context when possible.
 
                 auto id = element.get_id();
 
@@ -427,7 +418,7 @@ void Database::import(SD::SimulationData& data, bool legacy_import) {
                 auto child_ent = get_or_create_entity(iter->second.get());
 
                 if (m_registry.any_of<ChildOfComponent>(child_ent)) {
-                    // Uh oh. We should not have multiple parents!
+                    // Multiple parents indicate invalid hierarchy input.
                     throw std::runtime_error("Multiple parents for element");
                 }
 
@@ -449,17 +440,11 @@ void Database::import(SD::SimulationData& data, bool legacy_import) {
         auto view = m_registry.view<StageComponent const>();
 
         for (auto const& [e, stage] : view.each()) {
-            // qDebug() << entt::to_integral(e);
-
             auto new_pos =
                 stage.stage_tf.position +
                 stage.stage_tf.rotation * stage.this_in_stage.position;
             auto new_rot =
                 stage.stage_tf.rotation * stage.this_in_stage.rotation;
-
-            // qDebug() << new_pos << new_rot;
-            // qDebug() << stage.this_in_stage.position
-            //          << stage.this_in_stage.rotation;
 
             m_registry.emplace_or_replace<TransformComponent>(
                 e,

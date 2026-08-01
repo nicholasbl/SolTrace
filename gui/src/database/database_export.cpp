@@ -12,7 +12,7 @@
 
 namespace db {
 
-// TODO: remove once we have sorted the vector aim thing
+// TODO: Remove once vector aim export semantics are finalized.
 static void install_transform(SD::element_ptr           ptr,
                               TransformComponent const& tf_comp) {
 
@@ -98,9 +98,6 @@ Result<std::shared_ptr<DatabaseExport>, QString> Database::export_to_simdata() {
         }
     }
 
-    // qDebug() << Q_FUNC_INFO << entity_element_map.size();
-    // qDebug() << Q_FUNC_INFO << ret.get_number_of_elements();
-
     {
         auto view = m_registry.view<const TransformComponent>();
         for (auto const& [e, tf] : view.each()) {
@@ -168,14 +165,6 @@ Result<std::shared_ptr<DatabaseExport>, QString> Database::export_to_simdata() {
 
             // has no children
 
-            // if (element->get_name() == "0") {
-            //     qDebug() << "Install" << entt::to_integral(e)
-            //              << element->get_name() <<
-            //              entt::to_integral(mat.group)
-            //              << entt::to_integral(geom.group);
-            // }
-
-
             install_group(element, mat_group, geom_group);
         }
     }
@@ -217,8 +206,6 @@ Result<std::shared_ptr<DatabaseExport>, QString> Database::export_to_simdata() {
             continue;
         }
         auto const& ptr = iter.second;
-        // qDebug() << entt::to_integral(iter.first) << ptr->is_single()
-        //          << ptr->is_composite() << ptr->is_stage();
         try {
             ret.add_element(iter.second);
         } catch (std::exception const& e) {

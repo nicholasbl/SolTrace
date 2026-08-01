@@ -124,8 +124,6 @@ void RayGeometry::rebuild_geometry() {
 
             if (rays_remaining == 0) { break; }
 
-            // qDebug() << "Ray" << ray_number;
-
             rays_remaining -= 1;
             ray_number += 1;
 
@@ -156,8 +154,6 @@ void RayGeometry::rebuild_geometry() {
 
             if (total_ray_distance == 0.0) { total_ray_distance = 1.0; }
 
-            // qDebug() << "Distance" << total_ray_distance;
-
             // Reset counter
             size_t visible_point_index  = 0;
             double current_ray_distance = 0.0;
@@ -170,9 +166,6 @@ void RayGeometry::rebuild_geometry() {
                     continue;
 
                 auto p = convert(interaction.location);
-
-                // qDebug() << "Point" << p << "type" <<
-                // (int)interaction->event;
 
                 // Segments are flip flopped for simplicity
 

@@ -313,8 +313,7 @@ QVariantMap FluxMapWorldModel::content_bounds() const {
 void FluxMapWorldModel::on_ready(Entity                    e,
                                  analysis::BakedFluxMapPtr img,
                                  Database const*           db) {
-    // make sure we dont have this already. Not the cleanest, but we shouldn't
-    // have that many maps here
+    // Avoid duplicating map entries; this list should stay small.
 
     if (!db) return;
 
