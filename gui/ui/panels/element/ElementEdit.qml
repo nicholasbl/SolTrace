@@ -130,18 +130,52 @@ ColumnLayout {
                 Layout.preferredWidth: positionSwipe.width
                 columns: 2
 
+
+                // Splitting out the positions to try and make this more robust
+                property real xPosition: 0
+                property real yPosition: 0
+                property real zPosition: 0
+
+                function set_position_values(x, y, z) {
+                    xPosition = x
+                    yPosition = y
+                    zPosition = z
+                    local_x_pos.value = x
+                    local_y_pos.value = y
+                    local_z_pos.value = z
+                }
+
+                function refresh_position() {
+                    const position = root.module.position
+                    set_position_values(position.x, position.y, position.z)
+                }
+
                 function update_position() {
-                    root.module.position = Qt.vector3d(local_x_pos.value,
-                                                       local_y_pos.value,
-                                                       local_z_pos.value)
+                    root.module.position = Qt.vector3d(xPosition,
+                                                       yPosition,
+                                                       zPosition)
+                }
+
+                Component.onCompleted: refresh_position()
+
+                Connections {
+                    target: root.module
+
+                    function onPosition_changed() {
+                        localPositionEditor.refresh_position()
+                    }
                 }
 
                 STPropertyLabel { text: "X" }
                 STDoubleSpinBox {
                     id: local_x_pos
                     Layout.fillWidth: true
-                    value: root.module.position.x
-                    onValueModified: localPositionEditor.update_position()
+                    from: -Infinity
+                    to: Infinity
+                    onValueModified: {
+                        localPositionEditor.xPosition = value
+                        localPositionEditor.update_position()
+                    }
                     decimals: 4
                 }
 
@@ -149,8 +183,12 @@ ColumnLayout {
                 STDoubleSpinBox {
                     id: local_y_pos
                     Layout.fillWidth: true
-                    value: root.module.position.y
-                    onValueModified: localPositionEditor.update_position()
+                    from: -Infinity
+                    to: Infinity
+                    onValueModified: {
+                        localPositionEditor.yPosition = value
+                        localPositionEditor.update_position()
+                    }
                     decimals: 4
                 }
 
@@ -158,8 +196,12 @@ ColumnLayout {
                 STDoubleSpinBox {
                     id: local_z_pos
                     Layout.fillWidth: true
-                    value: root.module.position.z
-                    onValueModified: localPositionEditor.update_position()
+                    from: -Infinity
+                    to: Infinity
+                    onValueModified: {
+                        localPositionEditor.zPosition = value
+                        localPositionEditor.update_position()
+                    }
                     decimals: 4
                 }
 
@@ -168,7 +210,8 @@ ColumnLayout {
                     Layout.columnSpan: 2
                     text: "Reset Local Default Position"
                     onClicked: {
-                        root.module.position = Qt.vector3d(0, 0, -1)
+                        root.module.position = Qt.vector3d(0, 0, 0)
+                        localPositionEditor.refresh_position()
                     }
                 }
             }
@@ -178,19 +221,51 @@ ColumnLayout {
                 Layout.preferredWidth: positionSwipe.width
                 columns: 2
 
+                property real xPosition: 0
+                property real yPosition: 0
+                property real zPosition: 0
+
+                function set_position_values(x, y, z) {
+                    xPosition = x
+                    yPosition = y
+                    zPosition = z
+                    global_x_pos.value = x
+                    global_y_pos.value = y
+                    global_z_pos.value = z
+                }
+
+                function refresh_position() {
+                    const position = root.module.global_position
+                    set_position_values(position.x, position.y, position.z)
+                }
+
                 function update_position() {
                     root.module.global_position =
-                            Qt.vector3d(global_x_pos.value,
-                                        global_y_pos.value,
-                                        global_z_pos.value)
+                            Qt.vector3d(xPosition,
+                                        yPosition,
+                                        zPosition)
+                }
+
+                Component.onCompleted: refresh_position()
+
+                Connections {
+                    target: root.module
+
+                    function onGlobal_position_changed() {
+                        globalPositionEditor.refresh_position()
+                    }
                 }
 
                 STPropertyLabel { text: "X" }
                 STDoubleSpinBox {
                     id: global_x_pos
                     Layout.fillWidth: true
-                    value: root.module.global_position.x
-                    onValueModified: globalPositionEditor.update_position()
+                    from: -Infinity
+                    to: Infinity
+                    onValueModified: {
+                        globalPositionEditor.xPosition = value
+                        globalPositionEditor.update_position()
+                    }
                     decimals: 4
                 }
 
@@ -198,8 +273,12 @@ ColumnLayout {
                 STDoubleSpinBox {
                     id: global_y_pos
                     Layout.fillWidth: true
-                    value: root.module.global_position.y
-                    onValueModified: globalPositionEditor.update_position()
+                    from: -Infinity
+                    to: Infinity
+                    onValueModified: {
+                        globalPositionEditor.yPosition = value
+                        globalPositionEditor.update_position()
+                    }
                     decimals: 4
                 }
 
@@ -207,8 +286,12 @@ ColumnLayout {
                 STDoubleSpinBox {
                     id: global_z_pos
                     Layout.fillWidth: true
-                    value: root.module.global_position.z
-                    onValueModified: globalPositionEditor.update_position()
+                    from: -Infinity
+                    to: Infinity
+                    onValueModified: {
+                        globalPositionEditor.zPosition = value
+                        globalPositionEditor.update_position()
+                    }
                     decimals: 4
                 }
 
@@ -217,7 +300,8 @@ ColumnLayout {
                     Layout.columnSpan: 2
                     text: "Reset Global Default Position"
                     onClicked: {
-                        root.module.global_position = Qt.vector3d(0, 0, -1)
+                        root.module.global_position = Qt.vector3d(0, 0, 0)
+                        globalPositionEditor.refresh_position()
                     }
                 }
             }
@@ -227,13 +311,38 @@ ColumnLayout {
             id: rotPanel
             title: "Parent-relative Rotation"
 
-            property vector3d angles: root.module.orientation.toEulerAngles()
+            property real xAngle: 0
+            property real yAngle: 0
+            property real zAngle: 0
+
+            function set_angle_values(x, y, z) {
+                xAngle = x
+                yAngle = y
+                zAngle = z
+                x_euler.value = x
+                y_euler.value = y
+                z_euler.value = z
+            }
+
+            function refresh_angles() {
+                const angles = root.module.euler_angles_xyz
+                set_angle_values(angles.x, angles.y, angles.z)
+            }
 
             function update_from_angles() {
-                root.module.set_from_angles(
-                            Qt.vector3d(x_euler.value,
-                                        y_euler.value,
-                                        z_euler.value))
+                root.module.euler_angles_xyz = Qt.vector3d(xAngle,
+                                                           yAngle,
+                                                           zAngle)
+            }
+
+            Component.onCompleted: refresh_angles()
+
+            Connections {
+                target: root.module
+
+                function onEuler_angles_xyz_changed() {
+                    rotPanel.refresh_angles()
+                }
             }
         }
 
@@ -241,39 +350,43 @@ ColumnLayout {
             STDoubleSpinBox {
                 id: x_euler
                 Layout.fillWidth: true
-                value: rotPanel.angles.x
-                onValueModified: rotPanel.update_from_angles()
-                from: -180
-                to: 180
+                from: -Infinity
+                to: Infinity
+                onValueModified: {
+                    rotPanel.xAngle = value
+                    rotPanel.update_from_angles()
+                }
             }
 
             STPropertyLabel { text: "Y Angle (deg)" }
             STDoubleSpinBox {
                 id: y_euler
                 Layout.fillWidth: true
-                value: rotPanel.angles.y
-                onValueModified: rotPanel.update_from_angles()
-                from: -90
-                to: 90
+                from: -Infinity
+                to: Infinity
+                onValueModified: {
+                    rotPanel.yAngle = value
+                    rotPanel.update_from_angles()
+                }
             }
 
             STPropertyLabel { text: "Z Angle (deg)" }
             STDoubleSpinBox {
                 id: z_euler
                 Layout.fillWidth: true
-                value: rotPanel.angles.z
-                onValueModified: rotPanel.update_from_angles()
-                from: -180
-                to: 180
+                from: -Infinity
+                to: Infinity
+                onValueModified: {
+                    rotPanel.zAngle = value
+                    rotPanel.update_from_angles()
+                }
             }
 
             STButton {
                 Layout.fillWidth: true
                 Layout.columnSpan: 2
                 text: "Reset"
-                onClicked: {
-                    root.module.set_from_angles(Qt.vector3d(0, 0, 0))
-                }
+                onClicked: root.module.euler_angles_xyz = Qt.vector3d(0, 0, 0)
             }
 
             STButton {
@@ -312,6 +425,8 @@ ColumnLayout {
                                 id: look_at_x
                                 Layout.fillWidth: true
                                 value: 0
+                                from: -Infinity
+                                to: Infinity
                                 decimals: 4
                                 onValueModified: look_at_pop.accept_position()
                             }
@@ -321,6 +436,8 @@ ColumnLayout {
                                 id: look_at_y
                                 Layout.fillWidth: true
                                 value: 0
+                                from: -Infinity
+                                to: Infinity
                                 decimals: 4
                                 onValueModified: look_at_pop.accept_position()
                             }
@@ -330,6 +447,8 @@ ColumnLayout {
                                 id: look_at_z
                                 Layout.fillWidth: true
                                 value: 0
+                                from: -Infinity
+                                to: Infinity
                                 decimals: 4
                                 onValueModified: look_at_pop.accept_position()
                             }

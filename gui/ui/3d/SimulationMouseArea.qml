@@ -292,7 +292,7 @@ MouseArea {
                     root.initialAngle = screenAngleToObject(mouse.x, mouse.y)
                     var ie = App.layout.instance_edit
                     if (ie) {
-                        root.initialRotation = ie.orientation.toEulerAngles()
+                        root.initialRotation = ie.euler_angles_xyz
                     }
                     return
                 }
@@ -398,7 +398,7 @@ MouseArea {
             else if (root.activeAxis === 1) ry += deltaAngle * sign
             else if (root.activeAxis === 2) rz += deltaAngle * sign
 
-            ie.set_from_angles(Qt.vector3d(rx, ry, rz))
+            ie.euler_angles_xyz = Qt.vector3d(rx, ry, rz)
             return
         }
 

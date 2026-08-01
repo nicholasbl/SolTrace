@@ -19,6 +19,9 @@ class AnInstanceEditor : public QObject {
 
     Q_WRITABLE_PROPERTY(Entity, entity, { });
 
+    mutable bool      m_euler_angles_xyz_valid = false;
+    mutable QVector3D m_euler_angles_xyz;
+
     Q_PROPERTY(QString entity_name READ entity_name WRITE set_entity_name NOTIFY
                    entity_name_changed FINAL)
 
@@ -28,6 +31,8 @@ class AnInstanceEditor : public QObject {
                    set_global_position NOTIFY global_position_changed FINAL)
     Q_PROPERTY(QQuaternion orientation READ orientation WRITE set_orientation
                    NOTIFY orientation_changed FINAL)
+    Q_PROPERTY(QVector3D euler_angles_xyz READ euler_angles_xyz WRITE
+                   set_euler_angles_xyz NOTIFY euler_angles_xyz_changed FINAL)
     Q_PROPERTY(
         QColor color READ color WRITE set_color NOTIFY color_changed FINAL)
     Q_PROPERTY(
@@ -99,6 +104,12 @@ public:
 
     /// Set local transform orientation.
     void set_orientation(const QQuaternion& newOrientation);
+
+    /// Local transform orientation as compatible XYZ Euler angles, in degrees.
+    QVector3D euler_angles_xyz() const;
+
+    /// Set local transform orientation from XYZ Euler angles, in degrees.
+    void set_euler_angles_xyz(const QVector3D& angles);
 
     /// Display color for the selected entity.
     QColor color() const;
@@ -186,6 +197,7 @@ signals:
     void position_changed();
     void global_position_changed();
     void orientation_changed();
+    void euler_angles_xyz_changed();
     void color_changed();
     void hidden_changed();
     void disabled_changed();

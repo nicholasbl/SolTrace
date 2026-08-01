@@ -2,13 +2,31 @@
 
 #include "database/components.h"
 #include "database/conversion.h"
+#include "utilities/euler_angles.h"
 #include "utilities/math_utility.h"
 
 #include <glm/geometric.hpp>
+#include <glm/trigonometric.hpp>
 
 #include <unordered_set>
 
 namespace db {
+
+namespace {
+
+glm::dvec3 radians(QVector3D degrees) {
+    return { glm::radians(static_cast<double>(degrees.x())),
+             glm::radians(static_cast<double>(degrees.y())),
+             glm::radians(static_cast<double>(degrees.z())) };
+}
+
+QVector3D degrees(glm::dvec3 radians) {
+    return { static_cast<float>(glm::degrees(radians.x)),
+             static_cast<float>(glm::degrees(radians.y)),
+             static_cast<float>(glm::degrees(radians.z)) };
+}
+
+} // namespace
 
 #define FIND(MEM)                                                              \
     if (!m_host) return;                                                       \
@@ -16,9 +34,22 @@ namespace db {
     auto& component = m_host->MEM;
 
 void AnInstanceEditor::recompute() {
+    if (m_host && m_host->valid(m_entity)) {
+        auto previous = m_euler_angles_xyz_valid
+                ? radians(m_euler_angles_xyz)
+                : glm::dvec3 { 0.0 };
+        auto euler = compatible_euler_xyz_from_quat(convert(orientation()),
+                                                    previous);
+        m_euler_angles_xyz       = degrees(euler);
+        m_euler_angles_xyz_valid = true;
+    } else {
+        m_euler_angles_xyz_valid = false;
+    }
+
     emit position_changed();
     emit global_position_changed();
     emit orientation_changed();
+    emit euler_angles_xyz_changed();
     emit color_changed();
     emit hidden_changed();
     emit disabled_changed();
@@ -48,6 +79,7 @@ void AnInstanceEditor::an_entity_changed(db::Entity e) {
 AnInstanceEditor::AnInstanceEditor(QObject* parent) : QObject(parent) { }
 
 void AnInstanceEditor::set(db::Entity ent) {
+    m_euler_angles_xyz_valid = false;
     set_entity(ent);
     recompute();
 }
@@ -72,6 +104,7 @@ void AnInstanceEditor::reset(Database* database) {
     }
 
     m_host = database;
+    m_euler_angles_xyz_valid = false;
 
     if (!database) {
         recompute();
@@ -235,11 +268,54 @@ void AnInstanceEditor::set_orientation(const QQuaternion& newOrientation) {
 
     FIND(transform);
 
+    auto previous = m_euler_angles_xyz_valid
+            ? radians(m_euler_angles_xyz)
+            : glm::dvec3 { 0.0 };
+    auto euler = compatible_euler_xyz_from_quat(convert(newOrientation),
+                                                previous);
+
     component.patch(m_entity, [&](TransformComponent& a) {
         a.rotation = convert(newOrientation);
     });
 
+    m_euler_angles_xyz       = degrees(euler);
+    m_euler_angles_xyz_valid = true;
+
     emit orientation_changed();
+    emit euler_angles_xyz_changed();
+}
+
+QVector3D AnInstanceEditor::euler_angles_xyz() const {
+    if (!m_euler_angles_xyz_valid) {
+        auto previous = glm::dvec3 { 0.0 };
+        auto euler = compatible_euler_xyz_from_quat(convert(orientation()),
+                                                    previous);
+        m_euler_angles_xyz       = degrees(euler);
+        m_euler_angles_xyz_valid = true;
+    }
+
+    return m_euler_angles_xyz;
+}
+
+void AnInstanceEditor::set_euler_angles_xyz(const QVector3D& angles) {
+    bool changed = !m_euler_angles_xyz_valid || m_euler_angles_xyz != angles;
+
+    m_euler_angles_xyz       = angles;
+    m_euler_angles_xyz_valid = true;
+
+    auto new_orientation = convert(euler_xyz_to_quat(radians(angles)));
+    if (orientation() != new_orientation) {
+        FIND(transform);
+
+        component.patch(m_entity, [&](TransformComponent& a) {
+            a.rotation = convert(new_orientation);
+        });
+
+        emit orientation_changed();
+        changed = true;
+    }
+
+    if (changed) { emit euler_angles_xyz_changed(); }
 }
 
 QColor AnInstanceEditor::color() const {
@@ -503,7 +579,7 @@ void AnInstanceEditor::set_entity_name(const QString& newEntity_name) {
 }
 
 void AnInstanceEditor::set_from_angles(QVector3D angles) {
-    set_orientation(QQuaternion::fromEulerAngles(angles));
+    set_euler_angles_xyz(angles);
 }
 
 void AnInstanceEditor::look_at_world_position(QVector3D targetPosition) {
