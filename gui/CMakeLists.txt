@@ -161,17 +161,38 @@ set(SOLTRACE_LICENSE_MANIFEST
 set(SOLTRACE_LICENSE_DEPENDENCY_ARGS
     --qt-dir "${Qt6_DIR}"
 )
+
+function(soltrace_append_license_path ARG_NAME ARG_VALUE)
+    if(DEFINED ARG_VALUE
+            AND NOT "${ARG_VALUE}" STREQUAL ""
+            AND NOT "${ARG_VALUE}" MATCHES "-NOTFOUND$")
+        list(APPEND SOLTRACE_LICENSE_DEPENDENCY_ARGS
+            "${ARG_NAME}" "${ARG_VALUE}"
+        )
+        set(SOLTRACE_LICENSE_DEPENDENCY_ARGS
+            "${SOLTRACE_LICENSE_DEPENDENCY_ARGS}"
+            PARENT_SCOPE
+        )
+    endif()
+endfunction()
+
 if(TARGET embree_runner)
-    list(APPEND SOLTRACE_LICENSE_DEPENDENCY_ARGS
-        --embree-dir "${embree_DIR}"
-    )
+    soltrace_append_license_path("--embree-dir" "${embree_DIR}")
 endif()
 if(TARGET optix_runner)
-    list(APPEND SOLTRACE_LICENSE_DEPENDENCY_ARGS
-        --optix-dir "${OptiX_ROOT_DIR}"
-        --cuda-dir "${CUDAToolkit_LIBRARY_ROOT}"
-    )
+    soltrace_append_license_path("--optix-dir" "${OptiX_ROOT_DIR}")
+    set(SOLTRACE_CUDA_LICENSE_DIR "${CUDAToolkit_LIBRARY_ROOT}")
+    if("${SOLTRACE_CUDA_LICENSE_DIR}" STREQUAL ""
+            AND DEFINED CUDAToolkit_TARGET_DIR)
+        set(SOLTRACE_CUDA_LICENSE_DIR "${CUDAToolkit_TARGET_DIR}")
+    endif()
+    if("${SOLTRACE_CUDA_LICENSE_DIR}" STREQUAL ""
+            AND DEFINED CUDAToolkit_ROOT)
+        set(SOLTRACE_CUDA_LICENSE_DIR "${CUDAToolkit_ROOT}")
+    endif()
+    soltrace_append_license_path("--cuda-dir" "${SOLTRACE_CUDA_LICENSE_DIR}")
 endif()
+
 add_custom_command(
     OUTPUT "${SOLTRACE_LICENSE_MANIFEST}"
     COMMAND
