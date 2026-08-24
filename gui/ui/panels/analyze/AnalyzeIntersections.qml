@@ -71,7 +71,7 @@ Flickable {
                 Layout.fillWidth: true
                 Layout.columnSpan: root.child_column_span
 
-                text: "Show Intersections"
+                text: "Show Rays"
                 checked: AppData.view.show_intersections
 
                 onToggled: AppData.view.show_intersections = checked
