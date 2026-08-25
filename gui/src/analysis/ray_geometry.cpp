@@ -13,6 +13,7 @@
 #define GLM_ENABLE_EXPERIMENTAL 1
 
 #include <glm/glm.hpp>
+#include <glm/gtx/intersect.hpp>
 #include <glm/gtx/norm.hpp>
 
 namespace analysis {
@@ -37,10 +38,97 @@ size_t visible_ray_limit(size_t available, float show_percent) {
                     static_cast<size_t>(std::llround(requested_rays)));
 }
 
+
+enum class RaySphereTestResult { Ok, Clip, Skip };
+
+
+/// Snap a segment at a sphere radius
+static bool clip_segment(glm::dvec3& p0, glm::dvec3& p1, double radius) {
+    // We are just going to use a model of a sphere to make life easy
+
+    auto d = p1 - p0;
+
+    // Quadratic equation coefficients: a*t^2 + b*t + c = 0
+    auto a = glm::dot(d, d);
+
+    // Handle edge case where p0 and p1 are the exact same point
+    if (a == 0.0) { return glm::dot(p0, p0) <= (radius * radius); }
+
+    auto b = 2.0 * glm::dot(p0, d);
+
+    auto c = glm::dot(p0, p0) - (radius * radius);
+
+    // Calculate discriminant
+    auto discriminant = (b * b) - (4.0 * a * c);
+
+    // If negative, the infinite line completely misses the sphere
+    if (discriminant < 0.0) { return false; }
+
+    // Find the entry and exit t along the line
+    auto disc_root = glm::sqrt(discriminant);
+    auto t1        = (-b - disc_root) / (2.0 * a); // Entry point
+    auto t2        = (-b + disc_root) / (2.0 * a); // Exit point
+
+    // Find the overlap interval between the sphere [t1, t2] and the segment
+    // [0.0, 1.0]
+    auto clip_start = std::max(0.0, t1);
+    auto clip_end   = std::min(1.0, t2);
+
+    // If the segment doesn't overlap with spheres interior volume
+    if (clip_start > clip_end) {
+        // Bail
+        return false;
+    }
+
+    // Modify the original coordinates
+    auto original_p0 = p0;
+
+    p0 = original_p0 + clip_start * d;
+    p1 = original_p0 + clip_end * d;
+
+    return true;
+}
+
+
+static RaySphereTestResult
+test_ray_sphere(QVector3D& fa, QVector3D& fb, double radius) {
+    auto a = convert(fa);
+    auto b = convert(fb);
+
+    double rad_squared = radius * radius;
+
+    auto center = glm::dvec3(0);
+
+    auto a_ok = glm::distance2(a, center) < rad_squared;
+    auto b_ok = glm::distance2(b, center) < rad_squared;
+
+    if (a_ok and b_ok) {
+        // ray is fully contained, bail
+        return RaySphereTestResult::Ok;
+    }
+
+    if (!a_ok and !b_ok) {
+        // ray is fully outside, skip
+        return RaySphereTestResult::Skip;
+    }
+
+    // straddles, clip
+
+    bool isect = clip_segment(a, b, radius);
+
+    if (!isect) {
+        // hmm, ray does not isect but is not fully in or out. skip for now
+        return RaySphereTestResult::Skip;
+    }
+
+    return RaySphereTestResult::Clip;
+}
+
 /// Ask if our event filter contains an event.
 bool includes_event(EventTypeContainer const& filter, db::RayEventType event) {
     return filter.events.contains(event);
 }
+
 
 } // namespace
 
@@ -78,6 +166,7 @@ struct LineVertex {
     QVector2D uv;
 };
 
+
 void RayGeometry::rebuild_geometry() {
     // Kickoff
     qDebug() << Q_FUNC_INFO << "Start";
@@ -105,6 +194,10 @@ void RayGeometry::rebuild_geometry() {
 
     qDebug() << Q_FUNC_INFO << vertex_count;
 
+    // set up max volume
+    double filter_sphere = max_ray_distance();
+
+
     std::vector<LineVertex> verts;
     std::vector<uint32_t>   index;
     verts.reserve(vertex_count);
@@ -120,7 +213,7 @@ void RayGeometry::rebuild_geometry() {
             target_span = target_span.subspan(m_selected_ray_id, 1);
         }
 
-        for (auto const& ray : target_span) {
+        for (auto const& path : target_span) {
 
             if (rays_remaining == 0) { break; }
 
@@ -135,12 +228,17 @@ void RayGeometry::rebuild_geometry() {
             QVector3D last_point = { };
 
             // first compute an idea of the total ray distance
-            for (auto const& interaction : ray.events) {
+            for (auto const& interaction : path.events) {
 
                 if (!includes_event(m_include_events, interaction.event))
                     continue;
 
                 auto p = convert(interaction.location);
+
+                if (test_ray_sphere(last_point, p, filter_sphere) ==
+                    RaySphereTestResult::Skip) {
+                    continue;
+                }
 
                 // if this is not the first
                 if (visible_event_count > 0) {
@@ -160,12 +258,18 @@ void RayGeometry::rebuild_geometry() {
             auto   texture_mode         = this->texture_mode();
             bool   flip_flip            = false;
 
-            for (auto const& interaction : ray.events) {
+            for (auto const& interaction : path.events) {
 
                 if (!includes_event(m_include_events, interaction.event))
                     continue;
 
                 auto p = convert(interaction.location);
+
+                switch (test_ray_sphere(last_point, p, filter_sphere)) {
+                case RaySphereTestResult::Ok: break;
+                case RaySphereTestResult::Skip: continue;
+                case RaySphereTestResult::Clip: break;
+                }
 
                 // Segments are flip flopped for simplicity
 
@@ -300,6 +404,11 @@ RayGeometry::RayGeometry(QQuick3DObject* parent) : QQuick3DGeometry(parent) {
 
     connect(this,
             &RayGeometry::texture_mode_changed,
+            this,
+            &RayGeometry::rebuild_geometry);
+
+    connect(this,
+            &RayGeometry::max_ray_distance_changed,
             this,
             &RayGeometry::rebuild_geometry);
 }

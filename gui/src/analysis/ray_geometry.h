@@ -54,6 +54,9 @@ private:
     /// What is/is there a selected ray?
     Q_WRITABLE_PROPERTY(qint64, selected_ray_id, -1);
 
+    /// Rays that exit a sphere of this size are clipped
+    Q_WRITABLE_PROPERTY(double, max_ray_distance, 5000);
+
 private slots:
     void inclusion_list_update();
 
