@@ -207,7 +207,6 @@ double extract_total_ray_distance(db::RayRecord const&      path,
         last_point = p;
     }
 
-    if (total_ray_distance == 0.0) { total_ray_distance = 1.0; }
 
     return total_ray_distance;
 }
@@ -279,6 +278,9 @@ void RayGeometry::rebuild_geometry() {
 
     // set up max volume
     double filter_sphere = max_ray_distance();
+    auto   texture_mode  = this->texture_mode();
+    auto   render_mode   = this->isect_mode();
+    bool   is_point_mode = render_mode == IntersectionMode::Point;
 
 
     std::vector<LineVertex> verts;
@@ -309,16 +311,23 @@ void RayGeometry::rebuild_geometry() {
             double total_ray_distance = extract_total_ray_distance(
                 path, m_include_events, filter_sphere);
 
+            if (total_ray_distance == 0.0) {
+                // No drawable non-zero-length segments for this ray.
+                if (!is_point_mode) continue;
+
+                // we set this here to avoid div by zeros
+                total_ray_distance = 1.0;
+            }
+
+
             QVector3D last_point;
             bool      have_last_point = false;
             // Since events are filtered, compute UV ranges from visible events.
             size_t visible_point_index  = 0;
             double current_ray_distance = 0.0;
-            auto   texture_mode         = this->texture_mode();
-            auto   render_mode          = this->isect_mode();
-            bool   flip_flip            = false;
 
-            bool is_point_mode = render_mode == IntersectionMode::Point;
+            bool flip_flip = false;
+
 
             for (auto const& interaction : path.events) {
 
@@ -366,6 +375,14 @@ void RayGeometry::rebuild_geometry() {
                     continue;
                 }
 
+                auto segment_distance =
+                    (clipped->end - clipped->start).length();
+
+                if (segment_distance == 0.0) {
+                    last_point = p;
+                    continue;
+                }
+
                 // Segments are flip flopped for simplicity
 
                 if (texture_mode == TextureMode::Segment) {
@@ -392,9 +409,6 @@ void RayGeometry::rebuild_geometry() {
                 } else if (texture_mode == TextureMode::Length) {
                     // bool is_active =
                     //     m_selected_ray_id < 0 || ray.id == m_selected_ray_id;
-
-                    auto segment_distance =
-                        (clipped->end - clipped->start).length();
 
                     QVector2D start_uv {
                         static_cast<float>(current_ray_distance /
