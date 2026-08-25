@@ -72,7 +72,9 @@ Node {
     }
 
     Model {
+        id: intersection_model
         visible: AppData.view.show_intersections
+        opacity: AppData.view.intersection_opacity
         geometry: AppData.intersections.ray_geometry
 
         materials : [
@@ -84,6 +86,7 @@ Node {
                 baseColorMap: Texture {
                     source: "qrc:/assets/images/b_to_r_wide.png"
                 }
+                pointSize: AppData.view.point_size
             }
         ]
     }

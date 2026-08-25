@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <magic_enum/magic_enum.hpp>
+#include <optional>
 
 #include <QtConcurrentMap>
 
@@ -38,8 +39,15 @@ size_t visible_ray_limit(size_t available, float show_percent) {
                     static_cast<size_t>(std::llround(requested_rays)));
 }
 
-
-enum class RaySphereTestResult { Ok, Clip, Skip };
+/// Ray segment clipping
+enum class RaySphereTestResult {
+    /// Ray segment is fully inside the sphere
+    Ok,
+    /// Ray segment should be clipped
+    Clip,
+    /// Ray segment is fully outside the sphere
+    Skip
+};
 
 
 /// Snap a segment at a sphere radius
@@ -89,7 +97,8 @@ static bool clip_segment(glm::dvec3& p0, glm::dvec3& p1, double radius) {
     return true;
 }
 
-
+/// Test a line segment against a zero-center sphere, and clip it if it
+/// intersects
 static RaySphereTestResult
 test_ray_sphere(QVector3D& fa, QVector3D& fb, double radius) {
     auto a = convert(fa);
@@ -121,12 +130,86 @@ test_ray_sphere(QVector3D& fa, QVector3D& fb, double radius) {
         return RaySphereTestResult::Skip;
     }
 
+    fa = convert(a);
+    fb = convert(b);
+
     return RaySphereTestResult::Clip;
 }
 
 /// Ask if our event filter contains an event.
 bool includes_event(EventTypeContainer const& filter, db::RayEventType event) {
     return filter.events.contains(event);
+}
+
+bool includes_entity(db::RayRecord const& path, db::Entity entity) {
+    if (!entity.is_valid()) return true;
+
+    return std::ranges::any_of(path.events, [entity](auto const& event) {
+        return event.entity == entity.value;
+    });
+}
+
+bool point_inside_sphere(QVector3D const& point, double radius) {
+    auto const p = convert(point);
+    return glm::distance2(p, glm::dvec3(0)) < radius * radius;
+}
+
+struct ClippedSegment {
+    QVector3D start;
+    QVector3D end;
+};
+
+std::optional<ClippedSegment>
+visible_segment(QVector3D const& start, QVector3D const& end, double radius) {
+    auto clipped_start = start;
+    auto clipped_end   = end;
+
+    switch (test_ray_sphere(clipped_start, clipped_end, radius)) {
+    case RaySphereTestResult::Ok:
+    case RaySphereTestResult::Clip:
+        return ClippedSegment {
+            .start = clipped_start,
+            .end   = clipped_end,
+        };
+    case RaySphereTestResult::Skip: return std::nullopt;
+    }
+
+    return std::nullopt;
+}
+
+
+double extract_total_ray_distance(db::RayRecord const&      path,
+                                  EventTypeContainer const& include_events,
+                                  double                    filter_sphere) {
+    QVector3D last_point;
+    bool      have_last_point    = false;
+    double    total_ray_distance = 0.0;
+
+    for (auto const& interaction : path.events) {
+
+        if (!includes_event(include_events, interaction.event)) continue;
+
+        auto p = convert(interaction.location);
+
+        if (!have_last_point) {
+            last_point      = p;
+            have_last_point = true;
+            continue;
+        }
+
+        auto clipped = visible_segment(last_point, p, filter_sphere);
+
+        if (clipped) {
+            total_ray_distance +=
+                (clipped->end - clipped->start).length();
+        }
+
+        last_point = p;
+    }
+
+    if (total_ray_distance == 0.0) { total_ray_distance = 1.0; }
+
+    return total_ray_distance;
 }
 
 
@@ -220,43 +303,22 @@ void RayGeometry::rebuild_geometry() {
             rays_remaining -= 1;
             ray_number += 1;
 
-
-            // Since events are filtered, compute UV ranges from visible events.
-            size_t visible_event_count = 0;
-            double total_ray_distance  = 0.0;
-
-            QVector3D last_point = { };
+            if (!includes_entity(path, entity_filter())) continue;
 
             // first compute an idea of the total ray distance
-            for (auto const& interaction : path.events) {
+            double total_ray_distance = extract_total_ray_distance(
+                path, m_include_events, filter_sphere);
 
-                if (!includes_event(m_include_events, interaction.event))
-                    continue;
-
-                auto p = convert(interaction.location);
-
-                if (test_ray_sphere(last_point, p, filter_sphere) ==
-                    RaySphereTestResult::Skip) {
-                    continue;
-                }
-
-                // if this is not the first
-                if (visible_event_count > 0) {
-                    // record delta
-                    total_ray_distance += (p - last_point).length();
-                }
-
-                last_point = p;
-                visible_event_count += 1;
-            }
-
-            if (total_ray_distance == 0.0) { total_ray_distance = 1.0; }
-
-            // Reset counter
+            QVector3D last_point;
+            bool      have_last_point = false;
+            // Since events are filtered, compute UV ranges from visible events.
             size_t visible_point_index  = 0;
             double current_ray_distance = 0.0;
             auto   texture_mode         = this->texture_mode();
+            auto   render_mode          = this->isect_mode();
             bool   flip_flip            = false;
+
+            bool is_point_mode = render_mode == IntersectionMode::Point;
 
             for (auto const& interaction : path.events) {
 
@@ -265,27 +327,60 @@ void RayGeometry::rebuild_geometry() {
 
                 auto p = convert(interaction.location);
 
-                switch (test_ray_sphere(last_point, p, filter_sphere)) {
-                case RaySphereTestResult::Ok: break;
-                case RaySphereTestResult::Skip: continue;
-                case RaySphereTestResult::Clip: break;
+                if (is_point_mode) {
+                    if (point_inside_sphere(p, filter_sphere)) {
+                        auto at = 0.0f;
+
+                        if (texture_mode == TextureMode::Segment) {
+                            at = float(flip_flip) * .5f + .25f;
+                            flip_flip = !flip_flip;
+                        } else {
+                            at = static_cast<float>(visible_point_index) /
+                                 static_cast<float>(
+                                     std::max<size_t>(1, path.events.size()));
+                        }
+
+                        verts.push_back({
+                            .position = p,
+                            .uv       = { at, 0.0f },
+                        });
+
+                        visible_point_index += 1;
+                    }
+
+                    last_point      = p;
+                    have_last_point = true;
+                    continue;
+                }
+
+                if (!have_last_point) {
+                    last_point      = p;
+                    have_last_point = true;
+                    continue;
+                }
+
+                auto clipped = visible_segment(last_point, p, filter_sphere);
+
+                if (!clipped) {
+                    last_point = p;
+                    continue;
                 }
 
                 // Segments are flip flopped for simplicity
 
-                if (texture_mode == TextureMode::Segment &&
-                    visible_point_index > 0) {
+                if (texture_mode == TextureMode::Segment) {
 
                     float at = float(flip_flip) * .5 + .25;
 
                     auto prev = static_cast<uint32_t>(verts.size());
                     verts.push_back({
-                        .position = last_point,
+                        .position = clipped->start,
                         .uv       = { at, 0.0f },
                     });
+
                     auto cur = static_cast<uint32_t>(verts.size());
                     verts.push_back({
-                        .position = p,
+                        .position = clipped->end,
                         .uv       = { at, 0.0f },
                     });
 
@@ -295,39 +390,44 @@ void RayGeometry::rebuild_geometry() {
                     flip_flip = !flip_flip;
 
                 } else if (texture_mode == TextureMode::Length) {
-                    // if this is not the first
-                    if (visible_point_index > 0) {
-                        // record delta
-                        current_ray_distance += (p - last_point).length();
-                    }
-
                     // bool is_active =
                     //     m_selected_ray_id < 0 || ray.id == m_selected_ray_id;
 
-                    QVector2D uv {
+                    auto segment_distance =
+                        (clipped->end - clipped->start).length();
+
+                    QVector2D start_uv {
                         static_cast<float>(current_ray_distance /
                                            total_ray_distance),
                         0.0,
                     };
 
+                    current_ray_distance += segment_distance;
+
+                    QVector2D end_uv {
+                        static_cast<float>(current_ray_distance /
+                                           total_ray_distance),
+                        0.0,
+                    };
+
+                    auto prev = static_cast<uint32_t>(verts.size());
                     verts.push_back({
-                        .position = p,
-                        .uv       = uv,
+                        .position = clipped->start,
+                        .uv       = start_uv,
                     });
 
+                    auto cur = static_cast<uint32_t>(verts.size());
+                    verts.push_back({
+                        .position = clipped->end,
+                        .uv       = end_uv,
+                    });
 
-                    // install index: connect consecutive vertices within this
-                    // ray
-                    if (visible_point_index > 0) {
-                        auto cur  = static_cast<uint32_t>(verts.size() - 1);
-                        auto prev = static_cast<uint32_t>(verts.size() - 2);
-                        index.push_back(prev);
-                        index.push_back(cur);
-                    }
+                    index.push_back(prev);
+                    index.push_back(cur);
                 }
 
-                // Keep this after vertex emission. Segment mode needs the
-                // previous visible point to build a flat-colored segment.
+                // Keep the raw event point for the next ray segment. Clipped
+                // endpoints are render-only.
                 last_point = p;
                 visible_point_index += 1;
             }
@@ -340,8 +440,14 @@ void RayGeometry::rebuild_geometry() {
 
     auto vertex_buffer = QByteArray(reinterpret_cast<const char*>(verts.data()),
                                     verts.size() * sizeof(LineVertex));
-    auto index_buffer  = QByteArray(reinterpret_cast<const char*>(index.data()),
-                                    index.size() * sizeof(uint32_t));
+
+    QByteArray index_buffer;
+
+    if (index.size()) {
+        index_buffer = QByteArray(reinterpret_cast<const char*>(index.data()),
+                                  index.size() * sizeof(uint32_t));
+    }
+
 
     addAttribute(QQuick3DGeometry::Attribute::PositionSemantic,
                  0,
@@ -351,20 +457,29 @@ void RayGeometry::rebuild_geometry() {
                  3 * sizeof(float),
                  QQuick3DGeometry::Attribute::ComponentType::F32Type);
 
-    addAttribute(QQuick3DGeometry::Attribute::IndexSemantic,
-                 0,
-                 QQuick3DGeometry::Attribute::ComponentType::U32Type);
-
     setStride(sizeof(LineVertex));
     setVertexData(vertex_buffer);
-    setIndexData(index_buffer);
+
+    if (index.size()) {
+        addAttribute(QQuick3DGeometry::Attribute::IndexSemantic,
+                     0,
+                     QQuick3DGeometry::Attribute::ComponentType::U32Type);
+
+        setIndexData(index_buffer);
+    }
+
     setBounds(QVector3D(m_database->bounds_min.x,
                         m_database->bounds_min.y,
                         m_database->bounds_min.z),
               QVector3D(m_database->bounds_max.x,
                         m_database->bounds_max.y,
                         m_database->bounds_max.z));
-    setPrimitiveType(QQuick3DGeometry::PrimitiveType::Lines);
+
+    if (index.size()) {
+        setPrimitiveType(QQuick3DGeometry::PrimitiveType::Lines);
+    } else {
+        setPrimitiveType(QQuick3DGeometry::PrimitiveType::Points);
+    }
 
     qDebug() << Q_FUNC_INFO << "Update";
     update();
@@ -373,6 +488,16 @@ void RayGeometry::rebuild_geometry() {
 void RayGeometry::inclusion_list_update() {
     qDebug() << Q_FUNC_INFO << "List changed";
     m_include_events = EventTypeContainer(event_include());
+
+    rebuild_geometry();
+}
+
+void RayGeometry::entity_filter_update() {
+    if (!m_database || !m_database->database || !entity_filter().is_valid()) {
+        set_entity_filter_name(QString());
+    } else {
+        set_entity_filter_name(m_database->database->name_of(entity_filter()));
+    }
 
     rebuild_geometry();
 }
@@ -403,6 +528,11 @@ RayGeometry::RayGeometry(QQuick3DObject* parent) : QQuick3DGeometry(parent) {
             &RayGeometry::rebuild_geometry);
 
     connect(this,
+            &RayGeometry::entity_filter_changed,
+            this,
+            &RayGeometry::entity_filter_update);
+
+    connect(this,
             &RayGeometry::texture_mode_changed,
             this,
             &RayGeometry::rebuild_geometry);
@@ -411,11 +541,17 @@ RayGeometry::RayGeometry(QQuick3DObject* parent) : QQuick3DGeometry(parent) {
             &RayGeometry::max_ray_distance_changed,
             this,
             &RayGeometry::rebuild_geometry);
+
+    connect(this,
+            &RayGeometry::isect_mode_changed,
+            this,
+            &RayGeometry::rebuild_geometry);
 }
 
 void RayGeometry::set_results(db::SimulationResultPtr data) {
     qDebug() << Q_FUNC_INFO << "New ray geometry database";
     m_database = std::move(data);
+    set_entity_filter({});
     const auto available =
         m_database ? static_cast<quint64>(m_database->records.size()) : 0;
     set_available_rays(available);
@@ -425,6 +561,14 @@ void RayGeometry::set_results(db::SimulationResultPtr data) {
     const bool percent_changed = show_percent() != default_percent;
     set_show_percent(default_percent);
     if (!percent_changed) rebuild_geometry();
+}
+
+void RayGeometry::select_entity_filter(db::Entity entity) {
+    set_entity_filter(entity);
+}
+
+void RayGeometry::clear_entity_filter() {
+    set_entity_filter({});
 }
 
 /// Classic; give me the closest point on a line segment to a ray

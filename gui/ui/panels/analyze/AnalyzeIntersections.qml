@@ -71,10 +71,99 @@ Flickable {
                 Layout.fillWidth: true
                 Layout.columnSpan: root.child_column_span
 
-                text: "Show Paths"
+                text: "Toggle interactions"
                 checked: AppData.view.show_intersections
 
                 onToggled: AppData.view.show_intersections = checked
+            }
+
+            STPropertyLabel {
+                text: "Show as"
+                Layout.alignment: root.labelAlignment
+            }
+
+            STComboBox {
+                id: render_mode
+                Layout.fillWidth: true
+                Layout.columnSpan: root.child_column_span
+                currentIndex: root.ray_geom.isect_mode === RayGeometry.Point
+                              ? 1 : 0
+                model: ["Lines", "Points"]
+
+                onCurrentIndexChanged: {
+                    root.ray_geom.isect_mode = currentIndex === 0
+                            ? RayGeometry.Line
+                            : RayGeometry.Point
+                }
+
+                property bool point_mode: currentIndex === 1
+            }
+
+            STPropertyLabel {
+                text: "Point Size"
+                Layout.alignment: root.labelAlignment
+                visible: render_mode.point_mode
+            }
+
+            STSpinBox {
+                Layout.fillWidth: true
+                Layout.columnSpan: root.child_column_span
+                from: 1
+                to: 10
+                value: AppData.view.point_size
+                onValueChanged: {
+                    AppData.view.point_size = value
+                }
+                visible: render_mode.point_mode
+            }
+
+            STPropertyLabel {
+                text: "Filter element"
+                Layout.alignment: root.labelAlignment
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+
+                STButton {
+                    Layout.fillWidth: true
+                    text: root.ray_geom.entity_filter.is_valid()
+                          ? root.ray_geom.entity_filter_name
+                          : "All Elements"
+                    left_text_icon: "\uf03a"
+
+                    onClicked: entity_filter_pop.open()
+
+                    SelectItemPopup {
+                        id: entity_filter_pop
+                        source_model: root.intersections_module.entity_model
+
+                        onSelectedEntity: (entity) => {
+                            root.ray_geom.select_entity_filter(entity)
+                        }
+                    }
+                    Layout.rightMargin: 4
+                }
+
+                STIconButton {
+                    icon: "\uf245"
+                    toolTip: "Pick element from view"
+
+                    onClicked: {
+                        App.view.simulation_content_view = true
+                        App.view.mouse_mode = ViewModule.SelectRayFilterElement
+                    }
+
+                    Layout.rightMargin: 4
+                }
+
+                STIconButton {
+                    icon: "\uf057"
+                    toolTip: "Clear element filter"
+                    enabled: root.ray_geom.entity_filter.is_valid()
+
+                    onClicked: root.ray_geom.clear_entity_filter()
+                }
             }
 
             STPropertyLabel {
@@ -142,6 +231,41 @@ Flickable {
                 Layout.fillWidth: true
                 onValueModified: root.setVisibleRayCount(value)
                 suffix: "rays"
+            }
+
+            STPropertyLabel {
+                text: "Cutoff radius"
+                Layout.alignment: root.labelAlignment
+            }
+
+            STDoubleSpinBox {
+                Layout.fillWidth: true
+                Layout.columnSpan: root.child_column_span
+                from: 0.0
+                to: Infinity
+                value: root.ray_geom.max_ray_distance
+                stepSize: 100.0
+                decimals: 0
+                onValueModified: root.ray_geom.max_ray_distance = value
+            }
+
+            STPropertyLabel {
+                text: "Opacity"
+                Layout.alignment: root.labelAlignment
+            }
+
+            STDoubleSpinBox {
+                Layout.fillWidth: true
+                Layout.columnSpan: root.child_column_span
+                from: 0.0
+                to: 100.0
+                value: AppData.view.intersection_opacity * 100.0
+                stepSize: 5.0
+                decimals: 0
+                suffix: "%"
+                onValueModified: {
+                    AppData.view.intersection_opacity = value / 100.0
+                }
             }
 
             STPropertySeparator {

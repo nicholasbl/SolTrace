@@ -102,7 +102,8 @@ MouseArea {
         if (App.view.mouse_mode === ViewModule.SelectElement
                 || App.view.mouse_mode === ViewModule.SelectMaterial
                 || App.view.mouse_mode === ViewModule.SelectGeometry
-                || App.view.mouse_mode === ViewModule.PickRay) {
+                || App.view.mouse_mode === ViewModule.PickRay
+                || App.view.mouse_mode === ViewModule.SelectRayFilterElement) {
             App.view.mouse_mode = ViewModule.Camera
         }
     }
@@ -212,12 +213,37 @@ MouseArea {
         returnToCameraModeIfOneShot()
     }
 
+    function selectRayFilterElementFromResultView(mx, my) {
+        const result = view.pick(mx, my)
+        var object = result.objectHit
+        if (!object || !object.instancing) {
+            tracePick("ray filter element pick miss")
+            returnToCameraModeIfOneShot()
+            return
+        }
+
+        const index = result.instanceIndex
+        if (index < 0) {
+            tracePick("ray filter element pick failed: invalid instanceIndex=" + index)
+            returnToCameraModeIfOneShot()
+            return
+        }
+
+        var elementEntity = object.instancing.at(index)
+        tracePick("ray filter element pick -> " + entityString(elementEntity))
+        AppData.intersections.ray_geometry.select_entity_filter(elementEntity)
+        App.view.workflow_phase = ViewModule.Analyze
+        App.view.left_panel.visible = true
+        returnToCameraModeIfOneShot()
+    }
+
     anchors.fill: parent
     acceptedButtons: Qt.LeftButton
     cursorShape: (App.view.mouse_mode === ViewModule.SelectElement
                   || App.view.mouse_mode === ViewModule.SelectMaterial
                   || App.view.mouse_mode === ViewModule.SelectGeometry
-                  || App.view.mouse_mode === ViewModule.PickRay)
+                  || App.view.mouse_mode === ViewModule.PickRay
+                  || App.view.mouse_mode === ViewModule.SelectRayFilterElement)
                  ? Qt.CrossCursor
                  : Qt.ArrowCursor
 
@@ -234,6 +260,12 @@ MouseArea {
         if (App.view.simulation_content_view
                 && App.view.mouse_mode === ViewModule.SelectElement) {
             selectFluxElementFromResultView(mouse.x, mouse.y)
+            return
+        }
+
+        if (App.view.simulation_content_view
+                && App.view.mouse_mode === ViewModule.SelectRayFilterElement) {
+            selectRayFilterElementFromResultView(mouse.x, mouse.y)
             return
         }
 
