@@ -77,15 +77,24 @@ Node {
         opacity: AppData.view.intersection_opacity
         geometry: AppData.intersections.ray_geometry
 
+        property bool use_color_map: AppData.intersections.ray_geometry.texture_mode
+                                     !== RayGeometry.SolidColor
+
+        Texture {
+            id: b_to_w_texture
+            source: "qrc:/assets/images/b_to_r_wide.png"
+        }
+
         materials : [
             PrincipledMaterial {
                 metalness: 0
                 roughness: 1
                 lighting: PrincipledMaterial.NoLighting
-                baseColor: "white"
-                baseColorMap: Texture {
-                    source: "qrc:/assets/images/b_to_r_wide.png"
-                }
+                baseColor: intersection_model.use_color_map
+                           ? "white"
+                           : AppData.view.ray_color
+                baseColorMap: intersection_model.use_color_map ?
+                                  b_to_w_texture : null
                 pointSize: AppData.view.point_size
             }
         ]

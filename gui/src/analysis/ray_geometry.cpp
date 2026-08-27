@@ -340,13 +340,17 @@ void RayGeometry::rebuild_geometry() {
                     if (point_inside_sphere(p, filter_sphere)) {
                         auto at = 0.0f;
 
-                        if (texture_mode == TextureMode::Segment) {
-                            at = float(flip_flip) * .5f + .25f;
-                            flip_flip = !flip_flip;
-                        } else {
+                        switch (texture_mode) {
+                        case TextureMode::SolidColor: break;
+                        case TextureMode::Length:
                             at = static_cast<float>(visible_point_index) /
                                  static_cast<float>(
                                      std::max<size_t>(1, path.events.size()));
+                            break;
+                        case TextureMode::Segment:
+                            at        = float(flip_flip) * .5f + .25f;
+                            flip_flip = !flip_flip;
+                            break;
                         }
 
                         verts.push_back({
@@ -385,28 +389,31 @@ void RayGeometry::rebuild_geometry() {
 
                 // Segments are flip flopped for simplicity
 
-                if (texture_mode == TextureMode::Segment) {
+                switch (texture_mode) {
+                case TextureMode::SolidColor: {
+                    static QVector2D uv {
+                        0.0,
+                        0.0,
+                    };
 
-                    float at = float(flip_flip) * .5 + .25;
 
                     auto prev = static_cast<uint32_t>(verts.size());
                     verts.push_back({
                         .position = clipped->start,
-                        .uv       = { at, 0.0f },
+                        .uv       = uv,
                     });
 
                     auto cur = static_cast<uint32_t>(verts.size());
                     verts.push_back({
                         .position = clipped->end,
-                        .uv       = { at, 0.0f },
+                        .uv       = uv,
                     });
 
                     index.push_back(prev);
                     index.push_back(cur);
-
-                    flip_flip = !flip_flip;
-
-                } else if (texture_mode == TextureMode::Length) {
+                    break;
+                }
+                case TextureMode::Length: {
                     // bool is_active =
                     //     m_selected_ray_id < 0 || ray.id == m_selected_ray_id;
 
@@ -438,6 +445,29 @@ void RayGeometry::rebuild_geometry() {
 
                     index.push_back(prev);
                     index.push_back(cur);
+                    break;
+                }
+                case TextureMode::Segment: {
+                    float at = float(flip_flip) * .5 + .25;
+
+                    auto prev = static_cast<uint32_t>(verts.size());
+                    verts.push_back({
+                        .position = clipped->start,
+                        .uv       = { at, 0.0f },
+                    });
+
+                    auto cur = static_cast<uint32_t>(verts.size());
+                    verts.push_back({
+                        .position = clipped->end,
+                        .uv       = { at, 0.0f },
+                    });
+
+                    index.push_back(prev);
+                    index.push_back(cur);
+
+                    flip_flip = !flip_flip;
+                    break;
+                }
                 }
 
                 // Keep the raw event point for the next ray segment. Clipped

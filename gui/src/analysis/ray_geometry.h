@@ -35,7 +35,7 @@ class RayGeometry : public QQuick3DGeometry {
     EventTypeContainer m_include_events;
 
 public:
-    enum class TextureMode { Length, Segment };
+    enum class TextureMode { SolidColor, Length, Segment };
     Q_ENUM(TextureMode)
 
     enum class IntersectionMode { Point, Line };

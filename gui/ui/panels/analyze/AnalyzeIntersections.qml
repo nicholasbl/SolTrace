@@ -35,6 +35,32 @@ Flickable {
                 available > 0 ? count * 100.0 / available : 0.0
     }
 
+    function textureModeIndex(mode) {
+        switch (mode) {
+        case RayGeometry.SolidColor:
+            return 0
+        case RayGeometry.Length:
+            return 1
+        case RayGeometry.Segment:
+            return 2
+        default:
+            return 1
+        }
+    }
+
+    function textureModeAt(index) {
+        switch (index) {
+        case 0:
+            return RayGeometry.SolidColor
+        case 1:
+            return RayGeometry.Length
+        case 2:
+            return RayGeometry.Segment
+        default:
+            return root.ray_geom.texture_mode
+        }
+    }
+
     contentWidth: width
     contentHeight: content_column.implicitHeight
     clip: true
@@ -194,17 +220,26 @@ Flickable {
                 Layout.alignment: root.labelAlignment
             }
 
-            STComboBar {
+            STComboBox {
                 Layout.fillWidth: true
-                currentIndex: root.ray_geom.texture_mode === RayGeometry.Segment
-                              ? 1 : 0
-                model: ["Length", "Segments"]
+                currentIndex: root.textureModeIndex(root.ray_geom.texture_mode)
+
+                model: ["Solid Color", "Length", "Segment"]
 
                 onCurrentIndexChanged: {
-                    root.ray_geom.texture_mode = currentIndex === 0
-                            ? RayGeometry.Length
-                            : RayGeometry.Segment
+                    if (currentIndex >= 0)
+                        root.ray_geom.texture_mode = root.textureModeAt(currentIndex)
                 }
+            }
+
+            ColorPickerField {
+                id: rayColorPicker
+                Layout.fillWidth: true
+                Layout.columnSpan: root.child_column_span
+                color: AppData.view.ray_color
+                label: "Ray Color"
+                visible: root.ray_geom.texture_mode === RayGeometry.SolidColor
+                onUpdated: AppData.view.ray_color = rayColorPicker.color
             }
 
             STDoubleSpinBox {
