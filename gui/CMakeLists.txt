@@ -95,6 +95,18 @@ if(APPLE)
                MACOSX_PACKAGE_LOCATION "Resources")
 
     qt_add_executable(SolTrace MACOSX_BUNDLE src/main.cpp ${app_icon_macos})
+elseif(WIN32)
+    set(SOLTRACE_WINDOWS_ICON "${CMAKE_CURRENT_SOURCE_DIR}/appicon/SolTrace.ico")
+    set(app_icon_windows "${CMAKE_CURRENT_BINARY_DIR}/generated/SolTrace.rc")
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/appicon/SolTrace.rc.in"
+        "${app_icon_windows}"
+        @ONLY
+    )
+    qt_add_executable(SolTrace
+        src/main.cpp
+        ${app_icon_windows}
+    )
 else()
     qt_add_executable(SolTrace
         src/main.cpp
@@ -383,6 +395,14 @@ install(DIRECTORY
     DESTINATION "${CMAKE_INSTALL_DATADIR}/SolTrace/assets"
     PATTERN ".DS_Store" EXCLUDE
 )
+
+if(NOT APPLE)
+    install(DIRECTORY
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/examples"
+        DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        PATTERN ".DS_Store" EXCLUDE
+    )
+endif()
 
 qt_generate_deploy_qml_app_script(
     TARGET SolTrace
