@@ -56,6 +56,7 @@ private slots:
     void on_changed();
 
     void on_ready(db::Entity, analysis::BakedFluxMapPtr);
+    void on_failed(db::Entity, QString);
     void on_progress(db::Entity, int);
 
 public:
@@ -91,6 +92,7 @@ public slots:
 signals:
     /// A new flux map is ready, for an entity, from a given database
     void ready(db::Entity, analysis::BakedFluxMapPtr, db::Database const*);
+    void failed(QString);
     void cleared();
 };
 

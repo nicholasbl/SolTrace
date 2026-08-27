@@ -105,6 +105,11 @@ PendingFluxMapModel::PendingFluxMapModel(QObject* parent)
             &analysis::FluxMapComputer::image_ready,
             this,
             &PendingFluxMapModel::on_ready);
+
+    connect(m_compute,
+            &analysis::FluxMapComputer::image_failed,
+            this,
+            &PendingFluxMapModel::on_failed);
 }
 
 
@@ -147,6 +152,13 @@ void PendingFluxMapModel::on_ready(Entity e, analysis::BakedFluxMapPtr image) {
     store_remove_by_predicate([e](auto& record) { return record.entity == e; });
 
     emit ready(e, image, m_host);
+}
+
+void PendingFluxMapModel::on_failed(Entity e, QString reason) {
+    emit failed(reason);
+
+    this->store_remove_by_predicate(
+        [e](FluxMappedPendingItem const& item) { return item.entity == e; });
 }
 
 void PendingFluxMapModel::on_progress(Entity e, int progress) {
@@ -253,17 +265,20 @@ bool PendingFluxMapModel::start_generate_for(Entity entity) {
         .color_map = QImage(color_map()),
     };
 
+    store_push_append(FluxMappedPendingItem {
+        .entity   = entity,
+        .progress = 0,
+    });
+
     if (!m_compute->start_generate_for(entity, *mesh, opts)) {
+        store_remove_by_predicate([entity](auto const& item) {
+            return item.entity == entity;
+        });
         qDebug() << Q_FUNC_INFO << "generation kickoff failed";
         return false;
     }
 
     qDebug() << Q_FUNC_INFO << "generation kickoff success";
-
-    store_push_append(FluxMappedPendingItem {
-        .entity   = entity,
-        .progress = 0,
-    });
 
     return true;
 }

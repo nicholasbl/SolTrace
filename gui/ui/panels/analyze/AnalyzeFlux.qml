@@ -282,7 +282,7 @@ Flickable {
             }
 
             STPropertyLabel {
-                text: "Pixel Resolution"
+                text: "Image Resolution (Pixels)"
                 Layout.alignment: root.labelAlignment
             }
 
@@ -326,7 +326,7 @@ Flickable {
             }
 
             STPropertyLabel {
-                text: "Surface divisions"
+                text: "Surface resolution"
                 Layout.alignment: root.labelAlignment
             }
 
@@ -341,6 +341,50 @@ Flickable {
                 }
             }
 
+            ListView {
+                Layout.fillWidth: true
+                Layout.columnSpan: root.child_column_span
+
+                Layout.preferredHeight: 120
+
+                model: root.flux_module.pending_flux_maps
+
+                visible: count > 0
+
+                delegate: Rectangle {
+                    required property var entity;
+                    required property int progress;
+
+                    width: ListView.view.width
+                    height: 24
+
+                    color: Qt.alpha("black", .25)
+
+                    radius: 10
+
+                    border.color: Material.dividerColor
+                    border.width: 1
+
+                    ShadowedRectangle {
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+
+                        width: progress / 100 * parent.width
+                    }
+
+                    Label {
+                        anchors.fill: parent
+
+                        text: "Map for " + parent.entity + ": " + parent.progress + "%"
+
+                        verticalAlignment: Qt.AlignVCenter
+                        horizontalAlignment: Qt.AlignHCenter
+                    }
+
+                }
+            }
+
             STButton {
                 Layout.fillWidth: true
                 Layout.columnSpan: root.child_column_span
@@ -352,6 +396,8 @@ Flickable {
                     AppData.flux.start_generate()
                 }
             }
+
+
         }
 
         STPropertyPanel {

@@ -23,7 +23,7 @@ Item {
     property string rightIcon
 
     WellRectangle {
-            anchors.fill: parent
+        anchors.fill: parent
     }
 
     RowLayout {

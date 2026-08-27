@@ -40,6 +40,11 @@ FluxModule::FluxModule(QQmlEngine* engine, QObject* parent)
             m_flux_map_world_model,
             &db::FluxMapWorldModel::on_reset);
 
+    connect(
+        m_pending_flux_maps,
+        &db::PendingFluxMapModel::failed,
+        [this](QString reason) { this->notify(ANotification::error(reason)); });
+
     connect(m_pending_flux_maps, &db::PendingFluxMapModel::cleared, this, [this] {
         set_current_flux_stats({});
     });
@@ -128,15 +133,16 @@ void FluxModule::flux_map_ready(db::Entity              entity,
 
 void FluxModule::start_generate() {
     qDebug() << Q_FUNC_INFO << "Starting fluxmap generation for current entity";
+
     if (!m_results) {
         emit notify(ANotification::warning(
-            "Run a simulation before generating a flux map."));
+            "Run a trace before generating a flux map."));
         return;
     }
 
     if (!current_entity().is_valid()) {
         emit notify(ANotification::warning(
-            "Select an element before generating a flux map."));
+            "Select an element to generate a flux map."));
         return;
     }
 
@@ -152,7 +158,7 @@ void FluxModule::start_generate_volume_flux(unsigned resolution) {
 
     if (!m_results) {
         emit notify(ANotification::warning(
-            "Run a simulation before generating volume flux."));
+            "Run a trace before generating volume flux."));
         return;
     }
 
