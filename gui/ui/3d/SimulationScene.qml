@@ -94,7 +94,26 @@ Item {
         }
     }
 
+    function bounds_text(bounds) {
+        if (!bounds || !bounds.valid) {
+            return "invalid"
+        }
+
+        return "min=(" + bounds.min.x + ", " + bounds.min.y + ", "
+            + bounds.min.z + ") max=(" + bounds.max.x + ", "
+            + bounds.max.y + ", " + bounds.max.z + ")"
+    }
+
+    function include_logged_database_bounds(bounds, label, source) {
+        console.debug("fit_all_in_view source", label, bounds_text(source))
+        include_database_bounds(bounds, source)
+        console.debug("fit_all_in_view accumulated", label, bounds_text(bounds))
+    }
+
     function fit_all_in_view() {
+        console.debug("fit_all_in_view begin",
+                      "simulation_content_view=" + App.view.simulation_content_view)
+
         var bounds = empty_bounds()
 
         if (App.view.simulation_content_view) {
@@ -102,29 +121,39 @@ Item {
             var normalGeometryVisible = AppData.flux.show_other_geometry
                     || !fluxBounds.valid
 
+            console.debug("fit_all_in_view normal_geometry_visible",
+                          normalGeometryVisible,
+                          "show_other_geometry=" + AppData.flux.show_other_geometry)
+
             if (normalGeometryVisible) {
-                include_database_bounds(
+                include_logged_database_bounds(
                             bounds,
+                            "simulation geometry",
                             AppData.simulation.world_geometry_model.content_bounds(false))
             }
 
-            include_database_bounds(bounds, fluxBounds)
+            include_logged_database_bounds(bounds, "flux maps", fluxBounds)
 
             if (AppData.view.show_intersections) {
-                include_database_bounds(bounds,
-                                        AppData.simulation.current_result_bounds())
+                include_logged_database_bounds(
+                            bounds,
+                            "ray intersections",
+                            AppData.intersections.ray_geometry.content_bounds())
             }
         } else {
-            include_database_bounds(
+            include_logged_database_bounds(
                         bounds,
+                        "layout geometry",
                         AppData.layout.world_geometry_model.content_bounds(false))
         }
 
         if (!bounds.valid) {
+            console.debug("fit_all_in_view no valid bounds; resetting camera")
             reset_camera_view()
             return
         }
 
+        console.debug("fit_all_in_view final scene bounds", bounds_text(bounds))
         controller.fit_bounds(bounds.min, bounds.max)
     }
 

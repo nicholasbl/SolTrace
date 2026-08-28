@@ -5,6 +5,7 @@
 #include "utilities/qt_helpers.h"
 
 #include <QQmlEngine>
+#include <QVariantMap>
 #include <QtQuick3D/qquick3dgeometry.h>
 
 
@@ -33,6 +34,10 @@ class RayGeometry : public QQuick3DGeometry {
     db::SimulationResultPtr m_database;
 
     EventTypeContainer m_include_events;
+
+    bool      m_content_bounds_valid = false;
+    QVector3D m_content_bounds_min;
+    QVector3D m_content_bounds_max;
 
 public:
     enum class TextureMode { SolidColor, Length, Segment };
@@ -82,6 +87,9 @@ public:
 public slots:
     /// Rebuild ray geometry from scratch
     void rebuild_geometry();
+
+    /// Compute bounds for the ray geometry currently visible in the viewport.
+    Q_INVOKABLE QVariantMap content_bounds() const;
 
     /// Given a world ray, pick a traced ray.
     /// For performance we will be dropping precision.

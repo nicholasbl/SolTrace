@@ -248,11 +248,23 @@ struct LineVertex {
     QVector2D uv;
 };
 
+QVariantMap RayGeometry::content_bounds() const {
+    return QVariantMap {
+        { QStringLiteral("valid"), m_content_bounds_valid },
+        { QStringLiteral("min"),
+          m_content_bounds_valid ? m_content_bounds_min : QVector3D() },
+        { QStringLiteral("max"),
+          m_content_bounds_valid ? m_content_bounds_max : QVector3D() },
+    };
+}
 
 void RayGeometry::rebuild_geometry() {
     // Kickoff
     qDebug() << Q_FUNC_INFO << "Start";
     clear();
+    m_content_bounds_valid = false;
+    m_content_bounds_min   = QVector3D();
+    m_content_bounds_max   = QVector3D();
 
     // No db, no geom for you
     if (!m_database) {
@@ -287,6 +299,29 @@ void RayGeometry::rebuild_geometry() {
     std::vector<uint32_t>   index;
     verts.reserve(vertex_count);
     index.reserve(vertex_count * 2); // close enough
+
+    auto append_vertex = [this, &verts](LineVertex vertex) {
+        if (!m_content_bounds_valid) {
+            m_content_bounds_min   = vertex.position;
+            m_content_bounds_max   = vertex.position;
+            m_content_bounds_valid = true;
+        } else {
+            m_content_bounds_min.setX(
+                std::min(m_content_bounds_min.x(), vertex.position.x()));
+            m_content_bounds_min.setY(
+                std::min(m_content_bounds_min.y(), vertex.position.y()));
+            m_content_bounds_min.setZ(
+                std::min(m_content_bounds_min.z(), vertex.position.z()));
+            m_content_bounds_max.setX(
+                std::max(m_content_bounds_max.x(), vertex.position.x()));
+            m_content_bounds_max.setY(
+                std::max(m_content_bounds_max.y(), vertex.position.y()));
+            m_content_bounds_max.setZ(
+                std::max(m_content_bounds_max.z(), vertex.position.z()));
+        }
+
+        verts.push_back(vertex);
+    };
 
     {
         size_t ray_number     = 0;
@@ -353,7 +388,7 @@ void RayGeometry::rebuild_geometry() {
                             break;
                         }
 
-                        verts.push_back({
+                        append_vertex({
                             .position = p,
                             .uv       = { at, 0.0f },
                         });
@@ -398,13 +433,13 @@ void RayGeometry::rebuild_geometry() {
 
 
                     auto prev = static_cast<uint32_t>(verts.size());
-                    verts.push_back({
+                    append_vertex({
                         .position = clipped->start,
                         .uv       = uv,
                     });
 
                     auto cur = static_cast<uint32_t>(verts.size());
-                    verts.push_back({
+                    append_vertex({
                         .position = clipped->end,
                         .uv       = uv,
                     });
@@ -432,13 +467,13 @@ void RayGeometry::rebuild_geometry() {
                     };
 
                     auto prev = static_cast<uint32_t>(verts.size());
-                    verts.push_back({
+                    append_vertex({
                         .position = clipped->start,
                         .uv       = start_uv,
                     });
 
                     auto cur = static_cast<uint32_t>(verts.size());
-                    verts.push_back({
+                    append_vertex({
                         .position = clipped->end,
                         .uv       = end_uv,
                     });
@@ -451,13 +486,13 @@ void RayGeometry::rebuild_geometry() {
                     float at = float(flip_flip) * .5 + .25;
 
                     auto prev = static_cast<uint32_t>(verts.size());
-                    verts.push_back({
+                    append_vertex({
                         .position = clipped->start,
                         .uv       = { at, 0.0f },
                     });
 
                     auto cur = static_cast<uint32_t>(verts.size());
-                    verts.push_back({
+                    append_vertex({
                         .position = clipped->end,
                         .uv       = { at, 0.0f },
                     });
@@ -512,12 +547,8 @@ void RayGeometry::rebuild_geometry() {
         setIndexData(index_buffer);
     }
 
-    setBounds(QVector3D(m_database->bounds_min.x,
-                        m_database->bounds_min.y,
-                        m_database->bounds_min.z),
-              QVector3D(m_database->bounds_max.x,
-                        m_database->bounds_max.y,
-                        m_database->bounds_max.z));
+    setBounds(m_content_bounds_valid ? m_content_bounds_min : QVector3D(),
+              m_content_bounds_valid ? m_content_bounds_max : QVector3D());
 
     if (index.size()) {
         setPrimitiveType(QQuick3DGeometry::PrimitiveType::Lines);
