@@ -114,6 +114,14 @@ Item {
         internal.current_controller.reset()
     }
 
+    function claim_keyboard_focus() {
+        forceActiveFocus()
+    }
+
+    function clear_keyboard_input() {
+        wasd_control.clear_keyboard_input()
+    }
+
     function as_vector3d(value) {
         return Qt.vector3d(value.x, value.y, value.z)
     }
@@ -238,9 +246,27 @@ Item {
         }
     }
 
+    onUse_wasdChanged: {
+        if (!use_wasd) {
+            clear_keyboard_input()
+        }
+    }
+
+    onInput_enabledChanged: {
+        if (!input_enabled) {
+            clear_keyboard_input()
+        }
+    }
+
     // The controller needs focus for keyboard-driven WASD movement. Pointer
     // press below calls forceActiveFocus() so clicking the viewport arms this.
     focus: true
+
+    onActiveFocusChanged: {
+        if (!activeFocus) {
+            clear_keyboard_input()
+        }
+    }
 
     Keys.onPressed: (event)=> { if (input_enabled && !event.isAutoRepeat) handleKeyPress(event) }
     Keys.onReleased: (event)=> { if (input_enabled && !event.isAutoRepeat) handleKeyRelease(event) }
@@ -600,11 +626,15 @@ Item {
             wasd_camera_animation.start()
         }
 
-        function reset() {
-            is_animating = false
+        function clear_keyboard_input() {
             velocity = Qt.vector3d(0, 0, 0)
             kb_state = Qt.vector3d(0, 0, 0)
             kb_shift = false
+        }
+
+        function reset() {
+            is_animating = false
+            clear_keyboard_input()
             speed_multiplier = 1.0
             wasd_camera_animation.stop()
         }

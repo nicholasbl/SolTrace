@@ -39,6 +39,14 @@ Item {
         controller.reset_view()
     }
 
+    function claim_camera_focus() {
+        Qt.callLater(function() {
+            if (root.visible && controller.input_enabled) {
+                controller.claim_keyboard_focus()
+            }
+        })
+    }
+
     function empty_bounds() {
         return {
             valid: false,
@@ -290,6 +298,22 @@ Item {
 
         anchors.fill: parent
 
+    }
+
+    Connections {
+        target: AppData
+
+        function onNew_database(database) {
+            root.claim_camera_focus()
+        }
+    }
+
+    Connections {
+        target: AppData.script
+
+        function onRunCompleted() {
+            root.claim_camera_focus()
+        }
     }
 
     SimulationMouseArea {

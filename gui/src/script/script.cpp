@@ -379,6 +379,7 @@ void Script::run() {
         qCritical().noquote() << "[Script]" << message;
         emit logged((int)ScriptLogLevel::Error, message);
         qDebug() << Q_FUNC_INFO << "No db.";
+        emit runCompleted();
         return;
     }
 
@@ -417,6 +418,7 @@ void Script::run() {
         qCritical().noquote() << "[Script]" << line;
         emit logged((int)ScriptLogLevel::Error, exception);
         emit logged((int)ScriptLogLevel::Error, line);
+        emit runCompleted();
         return;
     }
 
@@ -425,6 +427,7 @@ void Script::run() {
             "Script did not produce a callable function.");
         qCritical().noquote() << "[Script]" << message;
         emit logged((int)ScriptLogLevel::Error, message);
+        emit runCompleted();
         return;
     }
 
@@ -488,6 +491,7 @@ void Script::run() {
                 QString("Invalid argument value for %1.").arg(arg.name);
             qCritical().noquote() << "[Script]" << message;
             emit logged((int)ScriptLogLevel::Error, message);
+            emit runCompleted();
             return;
         }
     }
@@ -506,6 +510,8 @@ void Script::run() {
         emit logged((int)ScriptLogLevel::Error, exception);
         emit logged((int)ScriptLogLevel::Error, line);
     }
+
+    emit runCompleted();
 }
 
 void Script::notify_error(QString message) {

@@ -198,6 +198,8 @@ signals:
     void notify(ANotification);
 
     void logged(int, QString);
+
+    void runCompleted();
 };
 
 } // namespace SolTrace::GUI::Script
