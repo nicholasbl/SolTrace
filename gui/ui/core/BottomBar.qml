@@ -281,6 +281,13 @@ RowLayout {
                         }
 
                         STButton {
+                            text: "45° View"
+                            Layout.columnSpan: 2
+                            Layout.fillWidth: true
+                            onClicked: simulation_scene.align_to_pretty_view()
+                        }
+
+                        STButton {
                             text: "-X"
                             onClicked: simulation_scene.align_to_axis(CameraController.Axis.X, true)
                         }

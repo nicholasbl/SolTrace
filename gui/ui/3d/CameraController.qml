@@ -90,6 +90,10 @@ Item {
         internal.current_controller.align_to_axis(axis, invert)
     }
 
+    function align_to_pretty_view() {
+        internal.current_controller.align_to_pretty_view()
+    }
+
     function look_at(point) {
         internal.current_controller.look_at(point)
     }
@@ -238,6 +242,13 @@ Item {
         }
 
         return axis_setup
+    }
+
+    function build_pretty_view_vector() {
+        return build_align_vector(CameraController.X, false)
+            .plus(build_align_vector(CameraController.Y, false))
+            .plus(build_align_vector(CameraController.Z, false))
+            .normalized()
     }
 
     onUse_orthographicChanged: {
@@ -593,6 +604,23 @@ Item {
             // same value so the shared ParallelAnimation can drive both
             // position and rotation targets without a special case.
             var rotation = rotation_from_forward(axis_setup)
+
+            var camera_position = root.clamp_camera_position(
+                        root.active_camera.position)
+
+            camera_move_animation.from = camera_position
+            camera_move_animation.to = camera_position
+
+            camera_rotation_animation.from = root.active_camera.rotation
+            camera_rotation_animation.to = rotation
+
+            is_animating = true
+            wasd_camera_animation.start()
+        }
+
+        function align_to_pretty_view() {
+            var rotation = rotation_from_forward(
+                        root.build_pretty_view_vector().times(-1.0))
 
             var camera_position = root.clamp_camera_position(
                         root.active_camera.position)
@@ -980,7 +1008,7 @@ Item {
             return result
         }
 
-        function align_to_axis(axis, invert) {
+        function align_to_offset(offset) {
             var cam = root.active_camera
             var target = rotation_point
 
@@ -995,8 +1023,7 @@ Item {
 
             current_distance = root.clamp_orbit_distance(current_distance)
 
-            var axis_offset = build_align_vector(axis, invert)
-            var desired_offset = axis_offset.times(current_distance)
+            var desired_offset = offset.normalized().times(current_distance)
 
             var angles = yaw_pitch_from_offset(desired_offset)
 
@@ -1007,6 +1034,14 @@ Item {
             start_orbit_animation(angles.yaw,
                                   target_pitch,
                                   current_distance)
+        }
+
+        function align_to_axis(axis, invert) {
+            align_to_offset(build_align_vector(axis, invert))
+        }
+
+        function align_to_pretty_view() {
+            align_to_offset(root.build_pretty_view_vector())
         }
 
         function look_at(point) {

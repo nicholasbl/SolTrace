@@ -27,6 +27,10 @@ Item {
         controller.align_to_axis(axis, invert)
     }
 
+    function align_to_pretty_view() {
+        controller.align_to_pretty_view()
+    }
+
     function scene_position_from_database_position(point) {
         return Qt.vector3d(point.x, point.z, -point.y)
     }
