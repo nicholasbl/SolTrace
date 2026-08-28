@@ -1,8 +1,10 @@
+import QtCore
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Effects
 import QtQuick.Layouts
+import QtQuick.Dialogs
 
 import SolTrace
 
@@ -78,6 +80,7 @@ Flickable {
             }
 
             Image {
+                id: flux_image_container
                 Layout.columnSpan: 2
                 Layout.fillWidth: true
                 Layout.preferredHeight: width
@@ -96,6 +99,23 @@ Flickable {
                     anchors.bottom: parent.bottom
                     anchors.right: parent.right
                     anchors.margins: 10
+
+                    onClicked: save_image_dialog.open()
+
+                    FileDialog {
+                        id: save_image_dialog
+
+                        fileMode: FileDialog.SaveFile
+                        defaultSuffix: "png"
+                        currentFolder: StandardPaths.standardLocations(
+                                           StandardPaths.DocumentsLocation
+                                           )[0]
+
+                        onAccepted: {
+                            AppData.flux.save_image(flux_image_container.source,
+                                                    save_image_dialog.currentFile);
+                        }
+                    }
                 }
             }
 

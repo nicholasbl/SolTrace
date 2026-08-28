@@ -21,9 +21,9 @@ FluxModule::FluxModule(QQmlEngine* engine, QObject* parent)
 
     m_ray_iso_volume->setParent(this);
 
-    auto provider = m_pending_flux_maps->make_new_provider();
+    m_image_provider = m_pending_flux_maps->make_new_provider();
 
-    engine->addImageProvider("fluxmap", provider);
+    engine->addImageProvider("fluxmap", m_image_provider);
 
     connect(m_pending_flux_maps,
             &db::PendingFluxMapModel::ready,
@@ -196,6 +196,38 @@ void FluxModule::start_generate_isosurface(float value) {
                                          analysis::volume_to_mesh,
                                          m_results->ray_volume,
                                          value);
+}
+
+void FluxModule::save_image(QString requested_image, QUrl path) {
+    static constexpr char TO_REMOVE[]    = "image://fluxmap/";
+    static constexpr auto TO_REMOTE_SIZE = std::size(TO_REMOVE) - 1;
+
+    requested_image = requested_image.mid(TO_REMOTE_SIZE);
+
+    qDebug() << Q_FUNC_INFO << requested_image << path;
+    if (!m_image_provider) {
+        emit notify(ANotification::error(
+            "Internal error trying to save image: missing image provider"));
+        return;
+    }
+
+    QSize img_size;
+
+    auto image =
+        m_image_provider->requestImage(requested_image, &img_size, QSize());
+
+    if (image.isNull()) {
+        emit notify(ANotification::error("Internal error trying to save image: "
+                                         "unable to fetch requested image"));
+        return;
+    }
+
+
+    if (!image.save(path.toLocalFile())) {
+        emit notify(ANotification::error("Internal error trying to save image: "
+                                         "unable to save image to given path"));
+        return;
+    }
 }
 
 void FluxModule::flux_vol_ready(QUuid const&                  id,

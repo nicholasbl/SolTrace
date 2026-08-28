@@ -24,6 +24,8 @@ namespace SolTrace::GUI::App {
 class FluxModule : public QObject {
     Q_OBJECT
 
+    QPointer<db::FluxMapProvider> m_image_provider;
+
     // TODO: add front or back filtering
 
     db::SimulationResultPtr m_results;
@@ -78,6 +80,8 @@ public slots:
 
     /// Generate an isosurface mesh from the current volumetric raster.
     void start_generate_isosurface(float value);
+
+    void save_image(QString requested_image, QUrl path);
 
 signals:
     void notify(ANotification);
