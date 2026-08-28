@@ -399,7 +399,7 @@ install(DIRECTORY
 if(NOT APPLE)
     install(DIRECTORY
         "${CMAKE_CURRENT_SOURCE_DIR}/assets/examples"
-        DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/SolTrace/assets"
         PATTERN ".DS_Store" EXCLUDE
     )
 endif()

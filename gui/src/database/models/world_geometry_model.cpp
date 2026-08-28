@@ -87,6 +87,10 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
             continue;
         }
 
+        if (m_database->as_registry().all_of<InvisibleComponent>(member)) {
+            continue;
+        }
+
         QColor color = m_default_color;
 
         if (auto given_color = m_database->color.get(member); given_color) {
@@ -94,10 +98,6 @@ void InstancedElements::on_geometry_group_change(entt::entity group) {
         }
 
         if (m_database->is_virtual_element(member)) { color = Qt::red; }
-
-        if (m_database->as_registry().all_of<InvisibleComponent>(member)) {
-            color = Qt::black;
-        }
 
         if (m_database->is_selected(member)) { color = Qt::yellow; }
 

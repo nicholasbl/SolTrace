@@ -118,7 +118,10 @@ def prepare_installer_root(
     """
     require_path(install_dir / "bin" / f"{app_name}.exe", "Windows executable")
     require_path(install_dir / "licenses", "bundled license directory")
-    require_path(install_dir / "bin" / "examples", "bundled examples directory")
+    require_path(
+        install_dir / "share" / "SolTrace" / "assets" / "examples",
+        "bundled examples directory",
+    )
     shutil.rmtree(installer_root, ignore_errors=True)
     installer_root.mkdir(parents=True)
 
@@ -136,7 +139,7 @@ def prepare_installer_root(
         "installer runtime executable",
     )
     require_path(
-        installer_root / "bin" / "examples",
+        installer_root / "share" / "SolTrace" / "assets" / "examples",
         "installer runtime examples directory",
     )
 

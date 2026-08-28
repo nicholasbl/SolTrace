@@ -131,7 +131,14 @@ QUrl DatabaseModule::examples_folder() const {
     appDir.cdUp(); // Contents/
     appDir.cd("Resources/examples");
 #else
-    appDir.cd("examples"); // Linux/Windows: alongside binary
+    QDir installedExamples(appDir);
+    installedExamples.cdUp();
+    installedExamples.cd("share/SolTrace/assets/examples");
+    if (installedExamples.exists()) {
+        return QUrl::fromLocalFile(installedExamples.absolutePath());
+    }
+
+    appDir.cd("examples"); // Local build tree fallback.
 #endif
     return QUrl::fromLocalFile(appDir.absolutePath());
 }

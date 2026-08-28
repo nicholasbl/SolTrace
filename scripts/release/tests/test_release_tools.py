@@ -346,8 +346,9 @@ class PackageTests(unittest.TestCase):
                 (install / directory).mkdir(parents=True)
             (install / "bin" / "SolTrace.exe").write_bytes(b"executable")
             (install / "bin" / "Qt6Core.dll").write_bytes(b"runtime")
-            (install / "bin" / "examples").mkdir()
-            (install / "bin" / "examples" / "sample.stinput").write_text("scene")
+            examples = install / "share" / "SolTrace" / "assets" / "examples"
+            examples.mkdir(parents=True)
+            (examples / "sample.stinput").write_text("scene")
             (install / "include" / "api.h").write_text("header")
             (install / "lib" / "core.lib").write_bytes(b"library")
             (install / "licenses" / "LICENSE.md").write_text("license")
@@ -361,7 +362,14 @@ class PackageTests(unittest.TestCase):
             )
             self.assertTrue((destination / "bin" / "Qt6Core.dll").is_file())
             self.assertTrue(
-                (destination / "bin" / "examples" / "sample.stinput").is_file()
+                (
+                    destination
+                    / "share"
+                    / "SolTrace"
+                    / "assets"
+                    / "examples"
+                    / "sample.stinput"
+                ).is_file()
             )
             self.assertTrue((destination / "qml" / "qmldir").is_file())
             self.assertFalse((destination / "include").exists())

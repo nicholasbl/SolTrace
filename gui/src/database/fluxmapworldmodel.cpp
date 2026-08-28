@@ -12,6 +12,7 @@ namespace db {
 
 namespace {
 
+// TODO: We can use something like this all over the place.
 struct QVectorBoundsAccumulator {
     bool      valid = false;
     QVector3D min;
