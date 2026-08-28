@@ -27,6 +27,16 @@ Item {
         openFileDialog.open()
     }
 
+    function save_current() {
+        if (!App.file_source.current_database || App.file_source.is_loading) {
+            return
+        }
+
+        if (!App.file_source.save_current_dialog()) {
+            saveFileDialog.open()
+        }
+    }
+
     function load_recent(file_path) {
         var file_url = file_url_text(file_path)
         add_files(file_url)
@@ -119,6 +129,25 @@ Item {
                         0, str_file.lastIndexOf("/"))
             root.add_files(selectedFile.toString())
             App.file_source.load_url(selectedFile)
+        }
+    }
+
+    FileDialog {
+        id: saveFileDialog
+
+        fileMode: FileDialog.SaveFile
+        defaultSuffix: "json"
+        nameFilters: ["JSON files (*.json)"]
+
+        onAccepted: App.file_source.save_current(saveFileDialog.selectedFile)
+
+        Settings {
+            id: save_file_history
+
+            category: "save_file_history"
+
+            property alias last_selected_file: saveFileDialog.selectedFile
+            property alias last_selected_folder: saveFileDialog.currentFolder
         }
     }
 

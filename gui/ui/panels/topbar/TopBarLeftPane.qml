@@ -24,6 +24,7 @@ RowLayout {
     }
 
     readonly property bool analyzing: App.view.workflow_phase === ViewModule.Analyze
+    readonly property bool configuring: App.view.workflow_phase === ViewModule.Configure
     readonly property string current_context_title: getTitle()
     readonly property string current_context_name: analyzing
                                                    ? (App.simulation.current_simulation_result_name.length ?
@@ -34,6 +35,10 @@ RowLayout {
                                                         : "None")
 
     spacing: 0
+
+    FileController {
+        id: file_controller
+    }
 
     STIconButton {
         id: leftpanel_open
@@ -194,10 +199,42 @@ RowLayout {
         }
 
         Label {
-            Layout.fillWidth: true
             Layout.maximumWidth: 320
             text: root.current_context_name
             elide: Text.ElideMiddle
+        }
+
+        Rectangle {
+            Layout.fillHeight: true
+            Layout.topMargin: 10
+            Layout.bottomMargin: 10
+            Layout.preferredWidth: 1
+            color: Material.dividerColor
+        }
+
+        STIconButton {
+            visible: !root.analyzing
+            enabled: !App.file_source.is_loading
+            icon: "\uf56f"
+            toolTip: "Load Scene"
+            onClicked: file_menu.open()
+
+            WorkflowFileMenu {
+                id: file_menu
+                showNewScene: false
+            }
+        }
+
+        STIconButton {
+            visible: !root.analyzing && !!App.file_source.current_database
+            enabled: !App.file_source.is_loading
+            icon: "\uf0c7"
+            toolTip: "Save Scene"
+            onClicked: file_controller.save_current()
+        }
+
+        Item {
+            Layout.fillWidth: true
         }
     }
 

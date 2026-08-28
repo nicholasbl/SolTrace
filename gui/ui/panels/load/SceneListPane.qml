@@ -1,8 +1,6 @@
-import QtCore
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
-import QtQuick.Dialogs
 import QtQuick.Layouts
 
 import SolTrace
@@ -14,6 +12,10 @@ ColumnLayout {
     property bool showFooter: true
 
     spacing: 8
+
+    FileController {
+        id: file_controller
+    }
 
     Label {
         Layout.fillWidth: true
@@ -46,35 +48,11 @@ ColumnLayout {
 
         STIconButton {
             enabled: !!root.current_db && !AppData.file_source.is_loading
-            icon: "\uf56e"
+            icon: "\uf0c7"
             label: "Save"
             toolTip: "Save scene to file"
 
-            onClicked: {
-                if (!AppData.file_source.save_current_dialog()) {
-                    file_dialog.open()
-                }
-            }
-
-            FileDialog {
-                id: file_dialog
-
-                fileMode: FileDialog.SaveFile
-                defaultSuffix: "json"
-                nameFilters: ["JSON files (*.json)"]
-
-                onAccepted: AppData.file_source.save_current(
-                                file_dialog.selectedFile)
-
-                Settings {
-                    id: save_file_history
-
-                    category: "save_file_history"
-
-                    property alias last_selected_file: file_dialog.selectedFile
-                    property alias last_selected_folder: file_dialog.currentFolder
-                }
-            }
+            onClicked: file_controller.save_current()
         }
     }
 

@@ -84,16 +84,6 @@ Flickable {
             collapsible: true
             title: "Content"
 
-            STPropertyLabel {
-                text: "Include flux map images"
-                Layout.alignment: root.labelAlignment
-            }
-
-            STSwitch {
-                checked: AppData.exporter.export_flux_map_images
-                text: checked ? "Enabled" : "Disabled"
-                onToggled: AppData.exporter.export_flux_map_images = checked
-            }
 
             STPropertyLabel {
                 text: "Generated maps"
@@ -105,27 +95,26 @@ Flickable {
                 text: AppData.exporter.generated_flux_map_count
             }
 
-            STPropertyLabel {
-                text: "Include rays"
-                Layout.alignment: root.labelAlignment
+
+            STSwitch {
+                Layout.columnSpan: 2
+                checked: AppData.exporter.export_flux_map_images
+                text: "Include flux map images"
+                onToggled: AppData.exporter.export_flux_map_images = checked
             }
 
             STSwitch {
+                Layout.columnSpan: 2
                 checked: AppData.exporter.export_rays
-                text: checked ? "Enabled" : "Disabled"
+                text: "Include rays"
                 onToggled: AppData.exporter.export_rays = checked
             }
 
-            STPropertyLabel {
-                text: "Randomly sample rays"
-                enabled: AppData.exporter.export_rays
-                Layout.alignment: root.labelAlignment
-            }
-
             STSwitch {
+                Layout.columnSpan: 2
                 enabled: AppData.exporter.export_rays
                 checked: AppData.exporter.random_sample_rays
-                text: checked ? "Enabled" : "Disabled"
+                text: "Randomly sample rays"
                 onToggled: AppData.exporter.random_sample_rays = checked
             }
 
@@ -147,6 +136,13 @@ Flickable {
                 suffix: "rays"
                 value: AppData.exporter.random_sample_ray_count
                 onValueModified: AppData.exporter.random_sample_ray_count = value
+            }
+
+            STSwitch {
+                Layout.columnSpan: 2
+                checked: AppData.exporter.export_scene_copy
+                text: "Include copy of scene"
+                onToggled: AppData.exporter.export_scene_copy = checked
             }
         }
 

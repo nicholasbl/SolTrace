@@ -27,6 +27,23 @@ ApplicationWindow {
     font.family: "Roboto"
     font.features: {"liga" : 0, "clig" : 0}
 
+    FileController {
+        id: file_controller
+    }
+
+    Shortcut {
+        sequences: [StandardKey.Save]
+        enabled: !!AppData.file_source.current_database
+                 && !AppData.file_source.is_loading
+        onActivated: file_controller.save_current()
+    }
+
+    Shortcut {
+        sequences: [StandardKey.Open]
+        enabled: !AppData.file_source.is_loading
+        onActivated: file_controller.open_file()
+    }
+
     SimulationScene {
         id: simulation_scene
 

@@ -13,6 +13,7 @@
 #include <QTextStream>
 
 #include <algorithm>
+#include <exception>
 #include <limits>
 #include <numeric>
 
@@ -91,6 +92,8 @@ ExportModule::ExportModule(QObject* parent) : QObject(parent) {
     set_export_flux_map_images(
         settings.value(QStringLiteral("flux_map_images"), true).toBool());
     set_export_rays(settings.value(QStringLiteral("rays"), true).toBool());
+    set_export_scene_copy(
+        settings.value(QStringLiteral("scene_copy"), false).toBool());
     set_random_sample_rays(
         settings.value(QStringLiteral("random_sample_rays"), false).toBool());
     set_random_sample_ray_count(
@@ -116,6 +119,12 @@ ExportModule::ExportModule(QObject* parent) : QObject(parent) {
         QSettings settings;
         settings.beginGroup(QStringLiteral("AnalysisExport"));
         settings.setValue(QStringLiteral("rays"), export_rays());
+        update_can_export();
+    });
+    connect(this, &ExportModule::export_scene_copy_changed, this, [this] {
+        QSettings settings;
+        settings.beginGroup(QStringLiteral("AnalysisExport"));
+        settings.setValue(QStringLiteral("scene_copy"), export_scene_copy());
         update_can_export();
     });
     connect(this, &ExportModule::random_sample_rays_changed, this, [this] {
@@ -159,7 +168,8 @@ QString ExportModule::current_result_file_stem() const {
 void ExportModule::update_can_export() {
     set_can_export(m_results != nullptr &&
                    !path_from_url(export_directory()).isEmpty() &&
-                   (export_flux_map_images() || export_rays()));
+                   (export_flux_map_images() || export_rays() ||
+                    export_scene_copy()));
 }
 
 void ExportModule::export_current() {
@@ -182,6 +192,40 @@ void ExportModule::export_current() {
     QDir const directory(directory_path);
     auto const stem          = current_result_file_stem();
     int        files_written = 0;
+
+    if (export_scene_copy()) {
+        if (!m_results->database) {
+            emit notify(ANotification::error(QStringLiteral(
+                "Could not export the scene copy because the simulation result "
+                "does not include a scene snapshot.")));
+            return;
+        }
+
+        auto* database = const_cast<db::Database*>(m_results->database.get());
+        auto  result   = database->export_to_simdata();
+
+        if (!result) {
+            emit notify(ANotification::error(
+                QStringLiteral("Could not export the scene copy: %1")
+                    .arg(result.get_failure())));
+            return;
+        }
+
+        auto const scene_path =
+            directory.filePath(stem + QStringLiteral("_scene.json"));
+
+        try {
+            result.get_success()->data->export_json_file(
+                scene_path.toStdString());
+        } catch (std::exception const& ex) {
+            emit notify(ANotification::error(
+                QStringLiteral("Could not write the scene copy: %1")
+                    .arg(ex.what())));
+            return;
+        }
+
+        ++files_written;
+    }
 
     if (export_flux_map_images()) {
         for (auto iter = m_flux_maps.begin(); iter != m_flux_maps.end();
