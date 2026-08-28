@@ -84,6 +84,7 @@ Flickable {
                 Layout.columnSpan: 2
                 Layout.fillWidth: true
                 Layout.preferredHeight: width
+                Layout.minimumHeight: 48
 
                 source: map_selector.currentIndex == 0 ?
                             AppData.flux.current_image
@@ -115,6 +116,38 @@ Flickable {
                             AppData.flux.save_image(flux_image_container.source,
                                                     save_image_dialog.currentFile);
                         }
+                    }
+                }
+
+                ShadowedRectangle {
+                    width: 24
+                    height: parent.height / 2
+                    anchors.left: parent.left
+                    anchors.bottom: parent.bottom
+
+                    anchors.bottomMargin: 6
+                    anchors.leftMargin: 6
+
+                    opacity: legend_hover.containsMouse ? 1 : .5
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 200
+                        }
+                    }
+
+                    Image {
+                        rotation: 90
+                        source: "qrc:/assets/images/b_to_r_wide.png"
+                        anchors.centerIn: parent
+                        width: parent.height - 4
+                        height: parent.width - 4
+                    }
+
+                    MouseArea {
+                        id: legend_hover
+                        hoverEnabled: true
+                        anchors.fill: parent
                     }
                 }
             }

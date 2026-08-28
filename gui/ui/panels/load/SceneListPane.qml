@@ -47,8 +47,8 @@ ColumnLayout {
         STIconButton {
             enabled: !!root.current_db && !AppData.file_source.is_loading
             icon: "\uf56e"
-            label: "Export"
-            toolTip: "Export scene to file"
+            label: "Save"
+            toolTip: "Save scene to file"
 
             onClicked: {
                 if (!AppData.file_source.save_current_dialog()) {
