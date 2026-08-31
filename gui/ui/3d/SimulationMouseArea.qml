@@ -38,6 +38,11 @@ MouseArea {
         Qt.vector3d(0, 1, 0),
         Qt.vector3d(0, 0, 1)
     ]
+    property bool pendingScenePress: false
+    property bool cameraDragActive: false
+    property point pendingMousePos: Qt.point(0, 0)
+    property bool pendingCameraPan: false
+    property real cameraDragThreshold: 3.0
 
     // Convert a point from database/world coordinates into the coordinate space
     // used by the Qt Quick 3D scene. This mirrors EditContentNode's -90 degree
@@ -245,6 +250,76 @@ MouseArea {
         returnToCameraModeIfOneShot()
     }
 
+    function resetDeferredCameraDrag() {
+        pendingScenePress = false
+        cameraDragActive = false
+        pendingCameraPan = false
+    }
+
+    function startDeferredCameraDrag(mouse) {
+        cameraDragActive = true
+        pendingScenePress = false
+        controller.mousePressed(Qt.vector2d(pendingMousePos.x, pendingMousePos.y),
+                                pendingCameraPan)
+        controller.mouseMoved(Qt.vector2d(mouse.x, mouse.y))
+        tracePick("deferred camera drag start x=" + mouse.x + " y=" + mouse.y
+                  + " pan=" + pendingCameraPan)
+    }
+
+    function handleScenePick(mx, my, button) {
+        // Second priority: editable scene geometry. Pick returns the Model that
+        // was hit plus an instanceIndex. For instanced geometry the model is a
+        // geometry group and instanceIndex selects the actual element instance.
+        const result = view.pick(mx, my)
+        var object = result.objectHit
+        if (!object) {
+            tracePick("scene pick miss")
+            root.activeAxis = -1
+            returnToCameraModeIfOneShot()
+            return
+        }
+
+        tracePick("scene pick hit object=" + object
+                  + " hasInstancing=" + Boolean(object.instancing)
+                  + " instanceIndex=" + result.instanceIndex)
+
+        if (!object.instancing && button === Qt.LeftButton) {
+            tracePick("scene pick hit non-instanced object")
+            returnToCameraModeIfOneShot()
+        } else if (object.instancing && button === Qt.LeftButton) {
+            const index = result.instanceIndex
+            if (index < 0) {
+                tracePick("scene pick failed: invalid instanceIndex=" + index)
+                returnToCameraModeIfOneShot()
+                return
+            }
+
+            var elementEntity = object.instancing.at(index)
+            var materialEntity = object.instancing.material_of(index)
+            var geometryEntity = object.instancing.geometry_of(index)
+
+            tracePick("instance index=" + index
+                      + " element=" + entityString(elementEntity)
+                      + " material=" + entityString(materialEntity)
+                      + " geometry=" + entityString(geometryEntity))
+
+            if (App.view.mouse_mode === ViewModule.SelectElement
+                    || App.view.mouse_mode === ViewModule.EditElement) {
+                // Selecting a concrete geometry instance makes it the layout
+                // edit target and opens the left panel directly to Layout editing.
+                openLayoutEditorFor(elementEntity)
+            } else if (App.view.mouse_mode === ViewModule.SelectMaterial) {
+                openMaterialEditorFor(materialEntity)
+            } else if (App.view.mouse_mode === ViewModule.SelectGeometry) {
+                openGeometryEditorFor(geometryEntity)
+            } else {
+                tracePick("scene pick ignored for mode=" + App.view.mouse_mode)
+            }
+
+            returnToCameraModeIfOneShot()
+        }
+    }
+
     anchors.fill: parent
     acceptedButtons: Qt.LeftButton
     cursorShape: (App.view.mouse_mode === ViewModule.SelectElement
@@ -347,63 +422,41 @@ MouseArea {
             }
         }
 
-        // Second priority: editable scene geometry. Pick returns the Model that
-        // was hit plus an instanceIndex. For instanced geometry the model is a
-        // geometry group and instanceIndex selects the actual element instance.
-        const result = view.pick(mouse.x, mouse.y)
-        var object = result.objectHit
-        if (!object) {
-            tracePick("scene pick miss")
-            root.activeAxis = -1
-            returnToCameraModeIfOneShot()
+        if (App.view.mouse_mode === ViewModule.EditElement
+                && mouse.button === Qt.LeftButton) {
+            pendingScenePress = true
+            pendingMousePos = Qt.point(mouse.x, mouse.y)
+            pendingCameraPan =
+                    Boolean(mouse.modifiers & Qt.ShiftModifier)
+                    && !controller.use_wasd
+            tracePick("deferred edit press x=" + mouse.x + " y=" + mouse.y
+                      + " pan=" + pendingCameraPan)
             return
         }
 
-        tracePick("scene pick hit object=" + object
-                  + " hasInstancing=" + Boolean(object.instancing)
-                  + " instanceIndex=" + result.instanceIndex)
-
-        if (!object.instancing && mouse.button === Qt.LeftButton) {
-            tracePick("scene pick hit non-instanced object")
-            returnToCameraModeIfOneShot()
-        } else if (object.instancing && mouse.button === Qt.LeftButton) {
-            const index = result.instanceIndex
-            if (index < 0) {
-                tracePick("scene pick failed: invalid instanceIndex=" + index)
-                returnToCameraModeIfOneShot()
-                return
-            }
-
-            var elementEntity = object.instancing.at(index)
-            var materialEntity = object.instancing.material_of(index)
-            var geometryEntity = object.instancing.geometry_of(index)
-
-            tracePick("instance index=" + index
-                      + " element=" + entityString(elementEntity)
-                      + " material=" + entityString(materialEntity)
-                      + " geometry=" + entityString(geometryEntity))
-
-            if (App.view.mouse_mode === ViewModule.SelectElement
-                    || App.view.mouse_mode === ViewModule.EditElement) {
-                // Selecting a concrete geometry instance makes it the layout
-                // edit target and opens the left panel directly to Layout editing.
-                openLayoutEditorFor(elementEntity)
-            } else if (App.view.mouse_mode === ViewModule.SelectMaterial) {
-                openMaterialEditorFor(materialEntity)
-            } else if (App.view.mouse_mode === ViewModule.SelectGeometry) {
-                openGeometryEditorFor(geometryEntity)
-            } else {
-                tracePick("scene pick ignored for mode=" + App.view.mouse_mode)
-            }
-
-            returnToCameraModeIfOneShot()
-        }
+        handleScenePick(mouse.x, mouse.y, mouse.button)
     }
 
     onPositionChanged: (mouse) => {
         // Mouse motion only mutates geometry while a gizmo handle is actively
         // dragging. Ordinary mouse movement is left to CameraController.
-        if (!root.isDragging || root.activeAxis < 0) return
+        if (!root.isDragging || root.activeAxis < 0) {
+            if (cameraDragActive) {
+                controller.mouseMoved(Qt.vector2d(mouse.x, mouse.y))
+                return
+            }
+
+            if (pendingScenePress) {
+                var totalDx = mouse.x - pendingMousePos.x
+                var totalDy = mouse.y - pendingMousePos.y
+                var totalDistance =
+                        Math.sqrt(totalDx * totalDx + totalDy * totalDy)
+                if (totalDistance >= cameraDragThreshold) {
+                    startDeferredCameraDrag(mouse)
+                }
+            }
+            return
+        }
 
         var ie = App.layout.instance_edit
         if (!ie) return
@@ -500,6 +553,20 @@ MouseArea {
         // Releasing the left button ends any gizmo drag and removes visual
         // active-axis highlighting.
         if (mouse.button === Qt.LeftButton) {
+            if (cameraDragActive) {
+                controller.mouseReleased(Qt.vector2d(mouse.x, mouse.y))
+                tracePick("deferred camera drag release x=" + mouse.x
+                          + " y=" + mouse.y)
+                resetDeferredCameraDrag()
+                return
+            }
+
+            if (pendingScenePress) {
+                handleScenePick(mouse.x, mouse.y, mouse.button)
+                resetDeferredCameraDrag()
+                return
+            }
+
             traceGizmo("release x=" + mouse.x + " y=" + mouse.y
                        + " buttons=" + mouse.buttons)
             root.isDragging = false
@@ -508,6 +575,11 @@ MouseArea {
     }
 
     onCanceled: {
+        if (cameraDragActive) {
+            controller.mouseReleased(Qt.vector2d(pendingMousePos.x,
+                                                 pendingMousePos.y))
+        }
+        resetDeferredCameraDrag()
         traceGizmo("canceled")
         root.isDragging = false
         root.activeAxis = -1

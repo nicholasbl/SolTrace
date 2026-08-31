@@ -65,8 +65,7 @@ Item {
                       + " input=" + input_enabled
                       + " mouseDown=" + internal.is_mouse_down
                       + " panning=" + internal.is_panning
-                      + " dragActive=" + dragHandler.active
-                      + " panActive=" + panDragHandler.active)
+                      + " mouseAreaPressed=" + cameraMouseArea.pressed)
 
         if (!enabled && internal.is_mouse_down) {
             mouseReleased(internal.last_pos)
@@ -281,8 +280,7 @@ Item {
                       + " enabled=" + enabled
                       + " mouseDown=" + internal.is_mouse_down
                       + " panning=" + internal.is_panning
-                      + " dragActive=" + dragHandler.active
-                      + " panActive=" + panDragHandler.active)
+                      + " mouseAreaPressed=" + cameraMouseArea.pressed)
 
         if (!input_enabled) {
             clear_keyboard_input()
@@ -310,67 +308,27 @@ Item {
         internal.current_controller.handleKeyRelease(event)
     }
 
-    DragHandler {
-        id: dragHandler
-        target: null
+    MouseArea {
+        id: cameraMouseArea
+        anchors.fill: parent
+        acceptedButtons: Qt.LeftButton
         enabled: root.enabled && root.input_enabled
 
-        // Plain drag means "rotate/look". Keeping this handler NoModifier lets
-        // the Shift-specific handler below own panning without mode checks in
-        // the gesture recognizer itself.
-        acceptedModifiers: Qt.NoModifier
-
-        onCentroidChanged: {
-            console.debug("[CameraController][drag] centroid",
-                          centroid.position,
-                          "active=" + active,
-                          "enabled=" + enabled,
-                          "rootEnabled=" + root.enabled,
-                          "input=" + root.input_enabled)
-            root.mouseMoved(Qt.vector2d(centroid.position.x, centroid.position.y), false);
+        onPressed: (mouse) => {
+            var pan = Boolean(mouse.modifiers & Qt.ShiftModifier) && !root.use_wasd
+            root.mousePressed(Qt.vector2d(mouse.x, mouse.y), pan)
         }
 
-        onActiveChanged: {
-            console.debug("[CameraController][drag] active=" + active
-                          + " enabled=" + enabled
-                          + " rootEnabled=" + root.enabled
-                          + " input=" + root.input_enabled)
-            if (active)
-                root.mousePressed(Qt.vector2d(centroid.position.x, centroid.position.y), false);
-            else
-                root.mouseReleased(Qt.vector2d(centroid.position.x, centroid.position.y));
-        }
-    }
-
-    DragHandler {
-        id: panDragHandler
-        target: null
-        enabled: root.enabled && root.input_enabled && !root.use_wasd
-
-        // Orbit panning is intentionally tied to Shift-drag. In WASD mode Shift
-        // already means "run", so pan is disabled there to avoid overloading
-        // the same gesture.
-        acceptedModifiers: Qt.ShiftModifier
-
-        onCentroidChanged: {
-            console.debug("[CameraController][pan] centroid",
-                          centroid.position,
-                          "active=" + active,
-                          "enabled=" + enabled,
-                          "rootEnabled=" + root.enabled,
-                          "input=" + root.input_enabled)
-            root.mouseMoved(Qt.vector2d(centroid.position.x, centroid.position.y), true);
+        onPositionChanged: (mouse) => {
+            root.mouseMoved(Qt.vector2d(mouse.x, mouse.y))
         }
 
-        onActiveChanged: {
-            console.debug("[CameraController][pan] active=" + active
-                          + " enabled=" + enabled
-                          + " rootEnabled=" + root.enabled
-                          + " input=" + root.input_enabled)
-            if (active)
-                root.mousePressed(Qt.vector2d(centroid.position.x, centroid.position.y), true);
-            else
-                root.mouseReleased(Qt.vector2d(centroid.position.x, centroid.position.y));
+        onReleased: (mouse) => {
+            root.mouseReleased(Qt.vector2d(mouse.x, mouse.y))
+        }
+
+        onCanceled: {
+            root.mouseReleased(internal.last_pos)
         }
     }
 
@@ -381,8 +339,8 @@ Item {
     QtObject {
         id: internal
 
-        // Needed to guard moves against press and release ordering. DragHandler
-        // can emit centroid changes around active-state transitions, so we keep
+        // Needed to guard moves against press and release ordering. Pointer
+        // events can arrive around active-state transitions, so we keep
         // explicit state instead of assuming every move belongs to an active
         // drag.
         property bool is_mouse_down: false
@@ -1156,7 +1114,7 @@ Item {
 
         function handleKeyPress(event) {
             // Orbit mode does not consume keyboard movement. Shift is handled
-            // by panDragHandler as a pointer modifier rather than here.
+            // by the camera mouse area as a pointer modifier rather than here.
         }
 
         function handleKeyRelease(event) {
