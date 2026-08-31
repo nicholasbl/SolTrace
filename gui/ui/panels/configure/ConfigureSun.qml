@@ -96,9 +96,14 @@ Flickable {
 
                     STComboBox {
                         Layout.fillWidth: true
-                        currentIndex: App.sun.type
-                        onCurrentIndexChanged: App.sun.type = currentIndex
-                        model: ["Directional Sun", "Point Source"]
+                        model: [
+                            { value: 0, text: "Directional Sun" },
+                            { value: 1, text: "Point Source" }
+                        ]
+                        textRole: "text"
+                        valueRole: "value"
+                        currentValue: App.sun.type
+                        onActivated: App.sun.type = currentValue
                     }
                 }
 
@@ -114,9 +119,14 @@ Flickable {
 
                     STComboBox {
                         Layout.fillWidth: true
-                        currentIndex: App.sun.ds_position_type
-                        onCurrentIndexChanged: App.sun.ds_position_type = currentIndex
-                        model: ["Solar Calculator", "Manual"]
+                        model: [
+                            { value: 0, text: "Solar Calculator" },
+                            { value: 1, text: "Manual" }
+                        ]
+                        textRole: "text"
+                        valueRole: "value"
+                        currentValue: App.sun.ds_position_type
+                        onActivated: App.sun.ds_position_type = currentValue
                     }
                 }
 
@@ -251,9 +261,17 @@ Flickable {
 
                     STComboBox {
                         Layout.fillWidth: true
-                        currentIndex: App.sun.shape.shape
-                        onCurrentIndexChanged: App.sun.shape.shape = currentIndex
-                        model: ["Gaussian", "Pillbox", "CSR", "Custom", "Limb Darkened"]
+                        model: [
+                            { value: 0, text: "Gaussian" },
+                            { value: 1, text: "Pillbox" },
+                            { value: 2, text: "CSR" },
+                            { value: 3, text: "Custom" },
+                            { value: 4, text: "Limb Darkened" }
+                        ]
+                        textRole: "text"
+                        valueRole: "value"
+                        currentValue: App.sun.shape.shape
+                        onActivated: App.sun.shape.shape = currentValue
                     }
                 }
 

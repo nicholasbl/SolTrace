@@ -45,11 +45,16 @@ ColumnLayout {
 
         STComboBox {
             Layout.fillWidth: true
-            currentIndex: App.sun.calc_data.calculator
-            model: ["Legacy", "Duffie", "SOLPOS", "SPA"]
-            onCurrentIndexChanged: {
-                App.sun.calc_data.calculator = currentIndex
-            }
+            model: [
+                { value: 0, text: "Legacy" },
+                { value: 1, text: "Duffie" },
+                { value: 2, text: "SOLPOS" },
+                { value: 3, text: "SPA" }
+            ]
+            textRole: "text"
+            valueRole: "value"
+            currentValue: App.sun.calc_data.calculator
+            onActivated: App.sun.calc_data.calculator = currentValue
         }
     }
 
