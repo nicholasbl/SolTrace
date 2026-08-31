@@ -146,6 +146,7 @@ void FluxModule::start_generate() {
         return;
     }
 
+    m_pending_flux_maps->set_dni(dni());
     m_pending_flux_maps->start_generate_for(current_entity());
 }
 

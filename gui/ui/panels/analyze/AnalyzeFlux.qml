@@ -168,17 +168,31 @@ Flickable {
                 onToggled: AppData.flux.show_other_geometry = checked
             }
 
+            InlineDocumentation {
+                key: "analyze.flux.display"
+                showTitle: false
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
+            }
+
             Label {
                 Layout.columnSpan: 2
                 Layout.fillWidth: true
-                text: "Flux map values are normalized ray-density values."
+                text: "Flux map values are scaled by solar DNI when ray area metadata is available."
                 color: App.theme.fontColor
                 opacity: 0.75
                 wrapMode: Label.WrapAtWordBoundaryOrAnywhere
             }
 
+            InlineDocumentation {
+                key: "analyze.flux.stats"
+                showTitle: false
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
+            }
+
             STPropertyLabel {
-                text: "Plotted Ray Weight"
+                text: "Plotted Power (W)"
             }
 
             Label {
@@ -188,7 +202,7 @@ Flickable {
             }
 
             STPropertyLabel {
-                text: "Peak Normalized Flux"
+                text: "Peak Flux (W/m^2)"
             }
 
             Label {
@@ -198,7 +212,7 @@ Flickable {
             }
 
             STPropertyLabel {
-                text: "Min Normalized Flux"
+                text: "Min Flux (W/m^2)"
             }
 
             Label {
@@ -208,7 +222,7 @@ Flickable {
             }
 
             STPropertyLabel {
-                text: "Average Normalized Flux"
+                text: "Average Flux (W/m^2)"
             }
 
             Label {
@@ -218,7 +232,7 @@ Flickable {
             }
 
             STPropertyLabel {
-                text: "Sigma Normalized Flux"
+                text: "Sigma Flux (W/m^2)"
             }
 
             Label {
@@ -327,6 +341,37 @@ Flickable {
                 }
             }
 
+            InlineDocumentation {
+                key: "analyze.flux.target"
+                showTitle: false
+                Layout.columnSpan: root.child_column_span
+                Layout.fillWidth: true
+            }
+
+            STPropertyLabel {
+                text: "Solar DNI"
+                Layout.alignment: root.labelAlignment
+            }
+
+            STDoubleSpinBox {
+                Layout.fillWidth: true
+                from: 0.0
+                to: 2000.0
+                stepSize: 50.0
+                decimals: 1
+                value: AppData.flux.dni
+                suffix: " W/m^2"
+
+                onValueModified: AppData.flux.dni = value
+            }
+
+            InlineDocumentation {
+                key: "analyze.flux.dni"
+                showTitle: false
+                Layout.columnSpan: root.child_column_span
+                Layout.fillWidth: true
+            }
+
             STSwitch {
                 Layout.columnSpan: root.child_column_span
                 text: "Show Triangle Grid"
@@ -392,6 +437,13 @@ Flickable {
                 onValueModified: {
                     AppData.flux.pending_flux_maps.mesh_resolution_multiply = value
                 }
+            }
+
+            InlineDocumentation {
+                key: "analyze.flux.resolution"
+                showTitle: false
+                Layout.columnSpan: root.child_column_span
+                Layout.fillWidth: true
             }
 
             ListView {
@@ -461,6 +513,13 @@ Flickable {
 
             collapsible: true
             title: "Normalized Ray Volume"
+
+            InlineDocumentation {
+                key: "analyze.flux.volume"
+                showTitle: false
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
+            }
 
             STPropertyLabel {
                 text: "Grid Resolution"

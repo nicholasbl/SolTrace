@@ -68,6 +68,7 @@ public:
     Q_WRITABLE_PROPERTY(QColor, mesh_line_color, "black");
     Q_WRITABLE_PROPERTY(bool, show_mesh_grid, false);
     Q_WRITABLE_PROPERTY(QString, color_map, "");
+    Q_WRITABLE_PROPERTY(double, dni, 1000.0);
 
     explicit PendingFluxMapModel(QObject* parent = nullptr);
     virtual ~PendingFluxMapModel() = default;

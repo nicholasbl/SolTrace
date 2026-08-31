@@ -11,6 +11,7 @@ Flickable {
 
     property bool singleColumn: App.view.left_panel.size === SplitPanelData.Small
     property int labelAlignment: (singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
+    property int requestedColSpan: singleColumn ? 1 : 2
 
     function displayPath(urlValue) {
         var text = String(urlValue)
@@ -97,21 +98,28 @@ Flickable {
 
 
             STSwitch {
-                Layout.columnSpan: 2
+                Layout.columnSpan: root.requestedColSpan
                 checked: AppData.exporter.export_flux_map_images
                 text: "Include flux map images"
                 onToggled: AppData.exporter.export_flux_map_images = checked
             }
 
             STSwitch {
-                Layout.columnSpan: 2
+                Layout.columnSpan: root.requestedColSpan
+                checked: AppData.exporter.export_flux_map_meshes
+                text: "Include flux map meshes"
+                onToggled: AppData.exporter.export_flux_map_meshes = checked
+            }
+
+            STSwitch {
+                Layout.columnSpan: root.requestedColSpan
                 checked: AppData.exporter.export_rays
                 text: "Include rays"
                 onToggled: AppData.exporter.export_rays = checked
             }
 
             STSwitch {
-                Layout.columnSpan: 2
+                Layout.columnSpan: root.requestedColSpan
                 enabled: AppData.exporter.export_rays
                 checked: AppData.exporter.random_sample_rays
                 text: "Randomly sample rays"
@@ -139,7 +147,7 @@ Flickable {
             }
 
             STSwitch {
-                Layout.columnSpan: 2
+                Layout.columnSpan: root.requestedColSpan
                 checked: AppData.exporter.export_scene_copy
                 text: "Include copy of scene"
                 onToggled: AppData.exporter.export_scene_copy = checked

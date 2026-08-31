@@ -75,6 +75,7 @@ SunModule::SunModule(QObject* parent)
 
 {
     connect(m_shape, &SunShape::changed, this, &SunModule::update_shape);
+    connect(m_shape, &SunShape::notify, this, &SunModule::notify);
 
     /* connect(m_calc_data,
             &SolarCalculatorData::changed,

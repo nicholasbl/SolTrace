@@ -264,6 +264,7 @@ bool PendingFluxMapModel::start_generate_for(Entity entity) {
         .grid_line_color =
             this->show_mesh_grid() ? this->mesh_line_color() : QColor(),
         .color_map = QImage(color_map()),
+        .dni       = this->dni(),
     };
 
     store_push_append(FluxMappedPendingItem {

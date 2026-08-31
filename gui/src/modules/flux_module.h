@@ -45,6 +45,7 @@ class FluxModule : public QObject {
 
     Q_WRITABLE_PROPERTY(bool, show_flux_volume, true);
     Q_WRITABLE_PROPERTY(bool, show_other_geometry, false);
+    Q_WRITABLE_PROPERTY(double, dni, 1000.0);
 
     // Hack
     Q_WRITABLE_PROPERTY(QString, current_image, { });
