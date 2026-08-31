@@ -188,11 +188,15 @@ RowLayout {
                             title: "Cameras"
                         }
 
+                        Label {
+                            text: "Camera Controls"
+                        }
+
                         STComboBar {
                             currentIndex: AppData.view.sim.camera
                             onCurrentIndexChanged: AppData.view.sim.camera = currentIndex
                             Layout.fillWidth: true
-                            model: ["FPS Camera", "Orbital Camera"]
+                            model: ["FPS", "Orbit"]
                             iconModel: ["\uf03d", "\uf135"]
                         }
 
@@ -201,7 +205,7 @@ RowLayout {
                             from: 10
                             to: 100
                             text: "FPS Camera Speed"
-                            visible: AppData.view.sim.camera == 0
+                            visible: AppData.view.sim.camera === 0
 
                             onValueChanged: {
                                 App.view.sim.fps_walk_speed = value
@@ -211,6 +215,10 @@ RowLayout {
                         InlineDocumentation {
                             key: "view.perspective"
                             title: "Camera Perspectives"
+                        }
+
+                        Label {
+                            text: "Camera Projection"
                         }
 
                         STComboBar {

@@ -27,8 +27,6 @@ ColumnLayout {
 
         Layout.fillWidth: true
 
-        collapseLabels: App.view.left_panel.size === SplitPanelData.Small
-
         iconModel: ["\uf03a", "\ue4bc", "\uf06d", "\uf019"]
         model: ["Results", "Intersections", "Flux", "Export"]
     }

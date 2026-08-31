@@ -17,8 +17,6 @@ Rectangle {
     property var iconModel: []
     property var model: []
 
-    property bool collapseLabels: false
-
     property real padding: 10
     property Item selectedItem: null
 
@@ -88,6 +86,10 @@ Rectangle {
         bar.currentIndex = index
     }
 
+    function iconAt(index) {
+        return bar.iconModel && bar.iconModel.length > index ? bar.iconModel[index] : ""
+    }
+
     function modelCount() {
         if (!bar.model) {
             return 0
@@ -155,20 +157,34 @@ Rectangle {
                 Layout.fillHeight: true
                 z: 0
 
+                readonly property string optionText: modelData
+                readonly property string optionIcon: bar.iconAt(index)
+                readonly property bool hasIcon: optionIcon.length > 0
+                readonly property bool textFits: textMetrics.advanceWidth + 12 <= width
+                readonly property bool showIcon: hasIcon && !textFits
+
+                TextMetrics {
+                    id: textMetrics
+                    font.family: bar.fontFamily.length
+                        ? bar.fontFamily
+                        : default_label.font.family
+                    font.pointSize: App.theme.comboBarTextSize
+                    font.weight: bar.fontWeight
+                    text: delegate.optionText
+                }
+
                 Label {
                     id: label
 
                     anchors.fill: parent
 
-                    font.family: bar.collapseLabels
+                    font.family: delegate.showIcon
                         ? "Font Awesome 7 Free"
                         : (bar.fontFamily.length ? bar.fontFamily : default_label.font.family)
 
                     font.pointSize: App.theme.comboBarTextSize
 
-                    text: bar.collapseLabels
-                        ? (bar.iconModel.length > index ? bar.iconModel[index] : "")
-                        : modelData
+                    text: delegate.showIcon ? delegate.optionIcon : delegate.optionText
 
                     font.weight: bar.fontWeight
 
@@ -208,8 +224,8 @@ Rectangle {
                     onClicked: bar.select(index)
 
                     STToolTip {
-                        visible: item_mouse.containsMouse && bar.collapseLabels
-                        text: modelData
+                        visible: item_mouse.containsMouse && delegate.showIcon
+                        text: delegate.optionText
                     }
                 }
             }

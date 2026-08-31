@@ -156,7 +156,6 @@ Flickable {
                 id: map_selector
                 Layout.columnSpan: 2
                 Layout.fillWidth: true
-                collapseLabels: AppData.view.left_panel.size === SplitPanelData.Small
                 iconModel: ["\uf00a", "\uf141"]
                 model: ["Bins", "Points"]
             }
