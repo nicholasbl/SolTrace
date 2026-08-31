@@ -293,13 +293,14 @@ void ExportModule::export_current() {
     if (export_flux_map_images() || export_flux_map_meshes()) {
         for (auto iter = m_flux_maps.begin(); iter != m_flux_maps.end();
              ++iter) {
+            auto const entity_id = QString::number(
+                entt::to_integral(iter->first.value));
             auto const entity_name =
                 m_results->database
                     ? file_safe(m_results->database->name_of(iter->first))
-                    : QStringLiteral("entity_%1")
-                          .arg(entt::to_integral(iter->first.value));
+                    : QStringLiteral("entity");
 
-            auto const base_name = stem + "_" + entity_name;
+            auto const base_name = stem + "_" + entity_name + "_" + entity_id;
             auto const bin_path =
                 directory.filePath(base_name + QStringLiteral("_flux-map.png"));
             auto const point_path = directory.filePath(

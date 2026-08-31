@@ -165,7 +165,7 @@ Flickable {
                             to: 360
                             decimals: 3
                             suffix: "deg"
-                            enabled: App.sun.ds_position_type == SunModule.Angle
+                            enabled: App.sun.ds_position_type === SunModule.Angle
                             onValueModified: root.setDirectionAngles(
                                                  value,
                                                  root.directionElevation())
@@ -181,7 +181,7 @@ Flickable {
                             to: 90
                             decimals: 3
                             suffix: "deg"
-                            enabled: App.sun.ds_position_type == SunModule.Angle
+                            enabled: App.sun.ds_position_type === SunModule.Angle
                             onValueModified: root.setDirectionAngles(
                                                  root.directionAzimuth(),
                                                  value)
