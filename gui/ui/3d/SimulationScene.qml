@@ -17,6 +17,23 @@ Item {
     property real initialAngle: 0.0
     property vector3d initialRotation: Qt.vector3d(0, 0, 0)
 
+    onIsDraggingChanged: {
+        console.debug("[SimulationScene] gizmo isDragging=" + isDragging
+                      + " activeAxis=" + activeAxis
+                      + " cameraController.enabled=" + controller.enabled)
+    }
+
+    onActiveAxisChanged: {
+        console.debug("[SimulationScene] gizmo activeAxis=" + activeAxis
+                      + " isDragging=" + isDragging)
+    }
+
+    onShowGizmoChanged: {
+        console.debug("[SimulationScene] showGizmo=" + showGizmo
+                      + " mouse_mode=" + App.view.mouse_mode
+                      + " instance_edit=" + Boolean(App.layout.instance_edit))
+    }
+
     readonly property var axisDirs: [
         Qt.vector3d(1, 0, 0),
         Qt.vector3d(0, 1, 0),

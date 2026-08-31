@@ -60,6 +60,19 @@ Item {
     property real max_orthographic_magnification: 1000000.0
     property real default_orthographic_magnification: 100.0
 
+    onEnabledChanged: {
+        console.debug("[CameraController] enabled=" + enabled
+                      + " input=" + input_enabled
+                      + " mouseDown=" + internal.is_mouse_down
+                      + " panning=" + internal.is_panning
+                      + " dragActive=" + dragHandler.active
+                      + " panActive=" + panDragHandler.active)
+
+        if (!enabled && internal.is_mouse_down) {
+            mouseReleased(internal.last_pos)
+        }
+    }
+
     function clamp_value(value, min_value, max_value) {
         return Math.max(min_value, Math.min(max_value, value))
     }
@@ -264,6 +277,13 @@ Item {
     }
 
     onInput_enabledChanged: {
+        console.debug("[CameraController] input_enabled=" + input_enabled
+                      + " enabled=" + enabled
+                      + " mouseDown=" + internal.is_mouse_down
+                      + " panning=" + internal.is_panning
+                      + " dragActive=" + dragHandler.active
+                      + " panActive=" + panDragHandler.active)
+
         if (!input_enabled) {
             clear_keyboard_input()
         }
@@ -293,7 +313,7 @@ Item {
     DragHandler {
         id: dragHandler
         target: null
-        enabled: root.input_enabled
+        enabled: root.enabled && root.input_enabled
 
         // Plain drag means "rotate/look". Keeping this handler NoModifier lets
         // the Shift-specific handler below own panning without mode checks in
@@ -301,10 +321,20 @@ Item {
         acceptedModifiers: Qt.NoModifier
 
         onCentroidChanged: {
+            console.debug("[CameraController][drag] centroid",
+                          centroid.position,
+                          "active=" + active,
+                          "enabled=" + enabled,
+                          "rootEnabled=" + root.enabled,
+                          "input=" + root.input_enabled)
             root.mouseMoved(Qt.vector2d(centroid.position.x, centroid.position.y), false);
         }
 
         onActiveChanged: {
+            console.debug("[CameraController][drag] active=" + active
+                          + " enabled=" + enabled
+                          + " rootEnabled=" + root.enabled
+                          + " input=" + root.input_enabled)
             if (active)
                 root.mousePressed(Qt.vector2d(centroid.position.x, centroid.position.y), false);
             else
@@ -315,7 +345,7 @@ Item {
     DragHandler {
         id: panDragHandler
         target: null
-        enabled: root.input_enabled && !root.use_wasd
+        enabled: root.enabled && root.input_enabled && !root.use_wasd
 
         // Orbit panning is intentionally tied to Shift-drag. In WASD mode Shift
         // already means "run", so pan is disabled there to avoid overloading
@@ -323,10 +353,20 @@ Item {
         acceptedModifiers: Qt.ShiftModifier
 
         onCentroidChanged: {
+            console.debug("[CameraController][pan] centroid",
+                          centroid.position,
+                          "active=" + active,
+                          "enabled=" + enabled,
+                          "rootEnabled=" + root.enabled,
+                          "input=" + root.input_enabled)
             root.mouseMoved(Qt.vector2d(centroid.position.x, centroid.position.y), true);
         }
 
         onActiveChanged: {
+            console.debug("[CameraController][pan] active=" + active
+                          + " enabled=" + enabled
+                          + " rootEnabled=" + root.enabled
+                          + " input=" + root.input_enabled)
             if (active)
                 root.mousePressed(Qt.vector2d(centroid.position.x, centroid.position.y), true);
             else
@@ -368,6 +408,9 @@ Item {
 
 
     function mousePressed(coord, pan) {
+        console.debug("[CameraController] mousePressed coord=" + coord
+                      + " pan=" + pan
+                      + " use_wasd=" + root.use_wasd)
         forceActiveFocus()
 
         // The gesture mode is captured here and preserved until release. That
@@ -386,6 +429,9 @@ Item {
     }
 
     function mouseReleased(coord) {
+        console.debug("[CameraController] mouseReleased coord=" + coord
+                      + " wasMouseDown=" + internal.is_mouse_down
+                      + " wasPanning=" + internal.is_panning)
         internal.is_mouse_down = false
         internal.is_panning = false
         internal.mouse_delta_pos = Qt.vector2d(0,0)
@@ -393,10 +439,19 @@ Item {
     }
 
     function mouseMoved(coord) {
-        if (!internal.is_mouse_down) return
+        if (!internal.is_mouse_down) {
+            console.debug("[CameraController] mouseMoved ignored coord=" + coord
+                          + " mouseDown=false")
+            return
+        }
 
         internal.mouse_delta_pos = coord.minus(internal.last_pos)
         internal.last_pos = coord
+
+        console.debug("[CameraController] mouseMoved coord=" + coord
+                      + " delta=" + internal.mouse_delta_pos
+                      + " panning=" + internal.is_panning
+                      + " use_wasd=" + root.use_wasd)
 
         // Pan is handled outside current_controller because it is not a general
         // navigation mode. It is an orbit gesture modifier that translates the
@@ -414,7 +469,7 @@ Item {
 
         orientation: Qt.Vertical
         target: null
-        enabled: root.input_enabled
+        enabled: root.enabled && root.input_enabled
 
         acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
 

@@ -112,6 +112,14 @@ MouseArea {
         console.log("[SimulationMouseArea]", message)
     }
 
+    function traceGizmo(message) {
+        console.debug("[SimulationMouseArea][gizmo]", message
+                      + " isDragging=" + root.isDragging
+                      + " activeAxis=" + root.activeAxis
+                      + " mode=" + root.gizmoMode
+                      + " mouseMode=" + App.view.mouse_mode)
+    }
+
     function entityString(entity) {
         if (!entity) return "<null>"
         if (entity.debug_string) return entity.debug_string()
@@ -301,6 +309,8 @@ MouseArea {
                     root.activeAxis = parseInt(name.split("_")[1])
                     root.isDragging = true
                     root.lastMousePos = Qt.point(mouse.x, mouse.y)
+                    traceGizmo("begin axis drag objectName=" + name
+                               + " x=" + mouse.x + " y=" + mouse.y)
                     return
                 }
 
@@ -311,6 +321,8 @@ MouseArea {
                     root.activeAxis = parseInt(name.split("_")[1]) + 3
                     root.isDragging = true
                     root.lastMousePos = Qt.point(mouse.x, mouse.y)
+                    traceGizmo("begin plane drag objectName=" + name
+                               + " x=" + mouse.x + " y=" + mouse.y)
                     return
                 }
 
@@ -326,6 +338,10 @@ MouseArea {
                     if (ie) {
                         root.initialRotation = ie.euler_angles_xyz
                     }
+                    traceGizmo("begin rotation drag objectName=" + name
+                               + " x=" + mouse.x + " y=" + mouse.y
+                               + " initialAngle=" + root.initialAngle
+                               + " initialRotation=" + root.initialRotation)
                     return
                 }
             }
@@ -395,6 +411,10 @@ MouseArea {
         var dx = mouse.x - root.lastMousePos.x
         var dy = mouse.y - root.lastMousePos.y
 
+        traceGizmo("move x=" + mouse.x + " y=" + mouse.y
+                   + " dx=" + dx + " dy=" + dy
+                   + " buttons=" + mouse.buttons)
+
         // Rotation mode uses total angular difference from the drag start. This
         // avoids accumulating rounding error and lets the object follow circular
         // cursor motion around its projected center.
@@ -431,6 +451,9 @@ MouseArea {
             else if (root.activeAxis === 2) rz += deltaAngle * sign
 
             ie.euler_angles_xyz = Qt.vector3d(rx, ry, rz)
+            traceGizmo("rotate currentAngle=" + currentAngle
+                       + " deltaAngle=" + deltaAngle
+                       + " result=" + ie.euler_angles_xyz)
             return
         }
 
@@ -442,11 +465,15 @@ MouseArea {
         if (root.activeAxis < 3) {
             var dir = axisDirs[root.activeAxis]
             var amount = projectMouseToAxis(dx, dy, dir)
+            traceGizmo("translate axis=" + root.activeAxis
+                       + " amount=" + amount
+                       + " before=" + ie.position)
             ie.position = Qt.vector3d(
                 ie.position.x + dir.x * amount,
                 ie.position.y + dir.y * amount,
                 ie.position.z + dir.z * amount
             )
+            traceGizmo("translate after=" + ie.position)
         } else {
             // activeAxis 3..5: movement constrained to one of the principal
             // planes. Each plane is represented by a pair of world axes.
@@ -456,11 +483,16 @@ MouseArea {
             var dir2 = axisDirs[axes[1]]
             var amount1 = projectMouseToAxis(dx, dy, dir1)
             var amount2 = projectMouseToAxis(dx, dy, dir2)
+            traceGizmo("translate plane=" + root.activeAxis
+                       + " amount1=" + amount1
+                       + " amount2=" + amount2
+                       + " before=" + ie.position)
             ie.position = Qt.vector3d(
                 ie.position.x + dir1.x * amount1 + dir2.x * amount2,
                 ie.position.y + dir1.y * amount1 + dir2.y * amount2,
                 ie.position.z + dir1.z * amount1 + dir2.z * amount2
             )
+            traceGizmo("translate after=" + ie.position)
         }
     }
 
@@ -468,8 +500,16 @@ MouseArea {
         // Releasing the left button ends any gizmo drag and removes visual
         // active-axis highlighting.
         if (mouse.button === Qt.LeftButton) {
+            traceGizmo("release x=" + mouse.x + " y=" + mouse.y
+                       + " buttons=" + mouse.buttons)
             root.isDragging = false
             root.activeAxis = -1
         }
+    }
+
+    onCanceled: {
+        traceGizmo("canceled")
+        root.isDragging = false
+        root.activeAxis = -1
     }
 }
