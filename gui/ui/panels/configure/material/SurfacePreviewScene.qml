@@ -49,7 +49,7 @@ View3D {
         id: camera
         position: Qt.vector3d(3,3,3)
         clipNear: 0.1
-        clipFar: 100
+        clipFar: 1000
 
         eulerRotation.x: -45
         eulerRotation.y: 45
