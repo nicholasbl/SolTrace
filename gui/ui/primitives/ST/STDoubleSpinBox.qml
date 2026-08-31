@@ -17,7 +17,8 @@ DoubleSpinBox {
         readonly property int suffixSpacing: 8
 
         z: 2
-        text: control.textFromValue(control.value, control.locale)
+        //text: control.textFromValue(control.value, control.locale)
+        text: control.displayText
         color: App.theme.fontColor
         font.family: control.font.family
         font.pointSize: App.theme.labelSize

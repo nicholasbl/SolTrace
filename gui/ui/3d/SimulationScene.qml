@@ -367,7 +367,6 @@ Item {
     }
 
     SimulationMouseArea {
-        enabled: App.view.mouse_mode !== ViewModule.Camera
         view: view
         controller: controller
         gizmoOverlay: gizmoOverlay

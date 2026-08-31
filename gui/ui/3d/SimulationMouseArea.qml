@@ -320,8 +320,34 @@ MouseArea {
         }
     }
 
+    function selectEditableElementAt(mx, my) {
+        if (App.view.simulation_content_view) {
+            tracePick("right-click select ignored: simulation content view is active")
+            return
+        }
+
+        const result = view.pick(mx, my)
+        var object = result.objectHit
+        if (!object || !object.instancing) {
+            tracePick("right-click select miss")
+            return
+        }
+
+        const index = result.instanceIndex
+        if (index < 0) {
+            tracePick("right-click select failed: invalid instanceIndex=" + index)
+            return
+        }
+
+        var elementEntity = object.instancing.at(index)
+        tracePick("right-click select -> " + entityString(elementEntity))
+        openLayoutEditorFor(elementEntity)
+    }
+
     anchors.fill: parent
-    acceptedButtons: Qt.LeftButton
+    acceptedButtons: App.view.mouse_mode === ViewModule.Camera
+                     ? Qt.RightButton
+                     : Qt.LeftButton | Qt.RightButton
     cursorShape: (App.view.mouse_mode === ViewModule.SelectElement
                   || App.view.mouse_mode === ViewModule.SelectMaterial
                   || App.view.mouse_mode === ViewModule.SelectGeometry
@@ -332,7 +358,13 @@ MouseArea {
 
     onPressed: (mouse) => {
         tracePick("pressed mode=" + App.view.mouse_mode
+                  + " button=" + mouse.button
                   + " x=" + mouse.x + " y=" + mouse.y)
+
+        if (mouse.button === Qt.RightButton) {
+            selectEditableElementAt(mouse.x, mouse.y)
+            return
+        }
 
         if (App.view.mouse_mode === ViewModule.PickRay) {
             pickRay(mouse.x, mouse.y)
