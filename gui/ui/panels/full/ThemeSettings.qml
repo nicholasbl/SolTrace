@@ -127,7 +127,7 @@ ScrollView {
                     id: headerSizeField
                     label: "Header Size"
                     from: 1
-                    to: 100
+                    to: 48
                     Layout.preferredWidth: 200
                     value: App.theme._headerSize
                     onValueModified: {
@@ -139,7 +139,7 @@ ScrollView {
                     id: subHeaderSizeField
                     label: "Subheader Size"
                     from: 1
-                    to: 100
+                    to: 48
                     Layout.preferredWidth: 200
                     value: App.theme._subHeaderSize
                     onValueModified: {
@@ -151,7 +151,7 @@ ScrollView {
                     id: labelSizeField
                     label: "Label Size"
                     from: 1
-                    to: 100
+                    to: 48
                     Layout.preferredWidth: 200
                     value: App.theme._labelSize
                     onValueModified: {
@@ -163,7 +163,7 @@ ScrollView {
                     id: normalSizeField
                     label: "Normal Font Size"
                     from: 1
-                    to: 100
+                    to: 48
                     Layout.preferredWidth: 200
                     value: App.theme._normalSize
                     onValueModified: {

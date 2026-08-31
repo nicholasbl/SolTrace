@@ -34,7 +34,7 @@ QtObject {
     property real zoomLevel: 1
 
     function calculateSize(baseSize) {
-        return (zoomLevel - 1) * 4 + baseSize
+        return Math.max(1, Math.min(48, (zoomLevel - 1) * 4 + baseSize))
     }
 
     readonly property int headerSize: calculateSize(_headerSize)
