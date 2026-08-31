@@ -361,6 +361,8 @@ AppData::AppData(QObject*       parent,
     connect(
         this, &AppData::new_database, m_script, &Script::Script::set_database);
 
+    m_script->set_services(m_file_source, m_simulation);
+
     connect(qApp, &QCoreApplication::aboutToQuit, this, &AppData::save_session);
 
     connect(this,

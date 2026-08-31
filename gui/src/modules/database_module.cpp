@@ -19,6 +19,7 @@
 #endif
 
 #include <exception>
+#include <utility>
 
 namespace SolTrace::GUI::App {
 
@@ -368,6 +369,16 @@ void DatabaseModule::save_current(QUrl path) {
     }
 
     save_common(*m_current_database, path.toLocalFile(), *this);
+}
+
+bool DatabaseModule::export_current_json(QString path) {
+    if (!m_current_database) {
+        notify(ANotification::error(QStringLiteral(
+            "An internal error was encountered trying to save the scene.")));
+        return false;
+    }
+
+    return save_common(*m_current_database, std::move(path), *this);
 }
 
 bool DatabaseModule::save_current_dialog() {
