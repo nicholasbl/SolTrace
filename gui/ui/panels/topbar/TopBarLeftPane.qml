@@ -148,12 +148,22 @@ RowLayout {
                 anchors.fill: parent
                 spacing: 6
 
-                Label {
+                RowLayout {
                     Layout.fillWidth: true
 
-                    text: "SolTrace"
-                    font.bold: true
-                    wrapMode: Label.WrapAtWordBoundaryOrAnywhere
+                    Label {
+                        Layout.fillWidth: true
+
+                        text: "SolTrace"
+                        font.bold: true
+                        wrapMode: Label.WrapAtWordBoundaryOrAnywhere
+                    }
+
+                    STIconButton {
+                        icon: "\uf00d"
+
+                        onClicked: version_pop.close()
+                    }
                 }
 
                 Label {
