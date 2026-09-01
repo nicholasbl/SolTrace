@@ -14,10 +14,6 @@ ScrollView {
 
     contentWidth: availableWidth
 
-    property bool singleColumn: App.view.left_panel.size === SplitPanelData.Small
-    property var labelAlignment: (singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
-
-    property int columnSpan: singleColumn ? 1 : 2
     property bool showProgressStatus: false
     property bool simulationRunning: AppData.simulation.is_running
 
@@ -47,15 +43,11 @@ ScrollView {
             title: "Simulation Runner"
         }
 
-        STPropertyPanel {
-            Layout.fillWidth: true
-
+        STFormPanel {
             title: "Trace Configuration"
-            columns: root.singleColumn ? 1 : 2
 
             STComboBox {
                 Layout.fillWidth: true
-                Layout.columnSpan: root.columnSpan
                 model: AppData.simulation.runners
                 textRole: "name"
                 valueRole: "runner"
@@ -67,140 +59,127 @@ ScrollView {
                 }
             }
 
-            InlineDocumentation {
+            STFormHelp {
                 key: "simulate.trace.rays"
-                Layout.columnSpan: root.columnSpan
-                Layout.fillWidth: true
             }
 
-            STPropertyLabel {
-                text: "# of Rays"
-                Layout.alignment: root.labelAlignment
-            }
+            STFormRow {
+                label: "# of Rays"
 
-            STSpinBox {
-                id: rayCountField
-                Layout.fillWidth: true
-                from: 1
-                to: AppData.simulation.max_ray_count
-                onValueModified: AppData.simulation.ray_count = value
+                STSpinBox {
+                    id: rayCountField
+                    Layout.fillWidth: true
+                    from: 1
+                    to: AppData.simulation.max_ray_count
+                    onValueModified: AppData.simulation.ray_count = value
 
-                Binding {
-                    target: rayCountField
-                    property: "value"
-                    value: AppData.simulation.ray_count
-                    restoreMode: Binding.RestoreBinding
+                    Binding {
+                        target: rayCountField
+                        property: "value"
+                        value: AppData.simulation.ray_count
+                        restoreMode: Binding.RestoreBinding
+                    }
                 }
             }
 
-            STPropertyLabel {
-                text: "Max # Rays Traced"
-                Layout.alignment: root.labelAlignment
+            STFormRow {
+                label: "Max # Rays Traced"
+
+                STSpinBox {
+                    Layout.fillWidth: true
+                    from: 1
+                    value: AppData.simulation.max_ray_count
+                    to: 1000000000
+                    onValueModified: AppData.simulation.update_max_ray_count(value)
+                }
             }
 
-            STSpinBox {
-                Layout.fillWidth: true
-                from: 1
-                value: AppData.simulation.max_ray_count
-                to: 1000000000
-                onValueModified: AppData.simulation.update_max_ray_count(value)
-            }
-
-            STPropertyLabel {
-                text: "# of CPU Cores"
-                Layout.alignment: root.labelAlignment
+            STFormRow {
+                label: "# of CPU Cores"
                 visible: AppData.simulation.runner < 2
+
+                STSpinBox {
+                    Layout.fillWidth: true
+                    from: 1
+                    value: AppData.simulation.max_threads
+                    to: 64
+                    onValueModified: AppData.simulation.max_threads = value
+                }
             }
 
-            STSpinBox {
-                Layout.fillWidth: true
-                from: 1
-                value: AppData.simulation.max_threads
-                to: 64
-                visible: AppData.simulation.runner < 2
-                onValueModified: AppData.simulation.max_threads = value
+            STFormRow {
+                label: "Seed Value"
+
+                STSpinBox {
+                    Layout.fillWidth: true
+                    from: 1
+                    value: AppData.simulation.seed_value
+                    to: 10000000
+                    onValueModified: AppData.simulation.seed_value = value
+                }
             }
 
-            STPropertyLabel {
-                text: "Seed Value"
-                Layout.alignment: root.labelAlignment
-            }
-
-            STSpinBox {
-                Layout.fillWidth: true
-                from: 1
-                value: AppData.simulation.seed_value
-                to: 10000000
-                onValueModified: AppData.simulation.seed_value = value
-            }
-
-            InlineDocumentation {
+            STFormHelp {
                 key: "simulate.trace.options"
-                Layout.columnSpan: root.columnSpan
-                Layout.fillWidth: true
             }
 
-            STPropertyLabel {
-                text: "Options"
-                //Layout.columnSpan: root.columnSpan
-                Layout.rowSpan: root.singleColumn ? 1 : 3
-                Layout.alignment: root.labelAlignment
-            }
+            STFormRow {
+                label: "Options"
 
-            STSwitch {
-                text: "Sun Shape"
-                checked: AppData.simulation.sun_shape
-                onToggled: AppData.simulation.sun_shape = checked
-            }
+                ColumnLayout {
+                    Layout.fillWidth: true
 
-            STSwitch {
-                text: "Optical Errors"
-                checked: AppData.simulation.optical_errors
-                onToggled: AppData.simulation.optical_errors = checked
-            }
+                    STSwitch {
+                        text: "Sun Shape"
+                        checked: AppData.simulation.sun_shape
+                        onToggled: AppData.simulation.sun_shape = checked
+                    }
 
-            STSwitch {
-                text: "Tracer Debug (if applicable)"
-                //checked: AppData.simulation.optical_errors
-                //onToggled: AppData.simulation.optical_errors = checked
+                    STSwitch {
+                        text: "Optical Errors"
+                        checked: AppData.simulation.optical_errors
+                        onToggled: AppData.simulation.optical_errors = checked
+                    }
+
+                    STSwitch {
+                        text: "Tracer Debug (if applicable)"
+                        //checked: AppData.simulation.optical_errors
+                        //onToggled: AppData.simulation.optical_errors = checked
+                    }
+                }
             }
         }
 
-        STPropertyPanel {
-            Layout.fillWidth: true
-
+        STFormPanel {
             collapsible: true
             title: "Execution"
 
-            STPropertyLabel {
-                text: "Progress"
+            STFormRow {
+                label: "Progress"
                 visible: root.showProgressStatus
+
+                ProgressBar {
+                    Layout.fillWidth: true
+                    from: 0
+                    to: 100
+                    value: AppData.simulation.progress
+
+                    enabled: AppData.simulation.is_running
+                }
             }
 
-            ProgressBar {
-                Layout.fillWidth: true
-                from: 0
-                to: 100
-                value: AppData.simulation.progress
-
-                enabled: AppData.simulation.is_running
+            STFormRow {
+                label: "Stage"
                 visible: root.showProgressStatus
-            }
 
-            STPropertyLabel {
-                text: "Stage"
-                visible: root.showProgressStatus
-            }
-
-            Label {
-                Layout.fillWidth: true
-                text: AppData.simulation.is_running ?
-                          AppData.simulation.current_stage : "Idle"
-                visible: root.showProgressStatus
+                Label {
+                    Layout.fillWidth: true
+                    text: AppData.simulation.is_running ?
+                              AppData.simulation.current_stage : "Idle"
+                }
             }
 
             STButton {
-                Layout.columnSpan: root.columnSpan
                 Layout.fillWidth: true
                 text: "Start Trace"
                 left_text_icon: "\uf0da"
@@ -209,14 +188,11 @@ ScrollView {
                 }
             }
 
-            InlineDocumentation {
+            STFormHelp {
                 key: "simulate.trace.results"
-                Layout.columnSpan: root.columnSpan
-                Layout.fillWidth: true
             }
 
             STIconButton {
-                Layout.columnSpan: root.columnSpan
                 Layout.fillWidth: false
                 Layout.alignment: Qt.AlignRight
                 icon: "\uf1da"

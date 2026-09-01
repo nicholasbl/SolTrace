@@ -3,7 +3,7 @@ import QtQuick.Layouts
 
 import SolTrace
 
-GridLayout {
+ColumnLayout {
     id: root
 
     property var module
@@ -11,13 +11,10 @@ GridLayout {
     property string resetText: "Reset"
     property bool singleColumn: false
     property int labelAlignment: Qt.AlignRight | Qt.AlignVCenter
-    property int childColumnSpan: singleColumn ? 1 : 2
 
     property real xPosition: 0
     property real yPosition: 0
     property real zPosition: 0
-
-    columns: root.singleColumn ? 1 : 2
 
     function set_position_values(x, y, z) {
         xPosition = x
@@ -74,57 +71,62 @@ GridLayout {
         }
     }
 
-    STPropertyLabel {
-        text: "X"
-        Layout.alignment: root.labelAlignment
-    }
-    STDoubleSpinBox {
-        id: x_pos
-        Layout.fillWidth: true
-        from: -Infinity
-        to: Infinity
-        onValueModified: {
-            root.xPosition = value
-            root.update_position()
+    STFormRow {
+        label: "X"
+        singleColumn: root.singleColumn
+        labelAlignment: root.labelAlignment
+
+        STDoubleSpinBox {
+            id: x_pos
+            Layout.fillWidth: true
+            from: -Infinity
+            to: Infinity
+            onValueModified: {
+                root.xPosition = value
+                root.update_position()
+            }
+            decimals: 4
         }
-        decimals: 4
     }
 
-    STPropertyLabel {
-        text: "Y"
-        Layout.alignment: root.labelAlignment
-    }
-    STDoubleSpinBox {
-        id: y_pos
-        Layout.fillWidth: true
-        from: -Infinity
-        to: Infinity
-        onValueModified: {
-            root.yPosition = value
-            root.update_position()
+    STFormRow {
+        label: "Y"
+        singleColumn: root.singleColumn
+        labelAlignment: root.labelAlignment
+
+        STDoubleSpinBox {
+            id: y_pos
+            Layout.fillWidth: true
+            from: -Infinity
+            to: Infinity
+            onValueModified: {
+                root.yPosition = value
+                root.update_position()
+            }
+            decimals: 4
         }
-        decimals: 4
     }
 
-    STPropertyLabel {
-        text: "Z"
-        Layout.alignment: root.labelAlignment
-    }
-    STDoubleSpinBox {
-        id: z_pos
-        Layout.fillWidth: true
-        from: -Infinity
-        to: Infinity
-        onValueModified: {
-            root.zPosition = value
-            root.update_position()
+    STFormRow {
+        label: "Z"
+        singleColumn: root.singleColumn
+        labelAlignment: root.labelAlignment
+
+        STDoubleSpinBox {
+            id: z_pos
+            Layout.fillWidth: true
+            from: -Infinity
+            to: Infinity
+            onValueModified: {
+                root.zPosition = value
+                root.update_position()
+            }
+            decimals: 4
         }
-        decimals: 4
     }
 
     STButton {
         Layout.fillWidth: true
-        Layout.columnSpan: root.childColumnSpan
         text: root.resetText
         onClicked: root.reset_position()
     }

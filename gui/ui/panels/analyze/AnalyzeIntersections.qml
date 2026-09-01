@@ -10,12 +10,8 @@ Flickable {
     id: root
     property var left_panel_size: App.view.left_panel.size
     property var intersections_module : AppData.intersections
-    property bool singleColumn: App.view.left_panel.size === SplitPanelData.Small
-    property int labelAlignment: (singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
 
     property var ray_geom: AppData.intersections.ray_geometry
-
-    property int child_column_span: singleColumn ? 1 : 2
 
     property bool is_selected_ray_valid: ray_geom.selected_ray_id >= 0
 
@@ -78,24 +74,19 @@ Flickable {
 
         Label {
             Layout.fillWidth: true
-            Layout.columnSpan: 2
             text: root.formatRayCount(
                       root.ray_geom.available_rays)
             opacity: 0.75
             horizontalAlignment: Text.AlignHCenter
         }
 
-        STPropertyPanel {
-            Layout.fillWidth: true
-            columns: root.singleColumn ? 1 : 2
-
+        STFormPanel {
             collapsible: true
             title: "Ray Visibility"
 
 
             STSwitch {
                 Layout.fillWidth: true
-                Layout.columnSpan: root.child_column_span
 
                 text: "Toggle interactions"
                 checked: AppData.view.show_intersections
@@ -103,139 +94,130 @@ Flickable {
                 onToggled: AppData.view.show_intersections = checked
             }
 
-            STPropertyLabel {
-                text: "Show as"
-                Layout.alignment: root.labelAlignment
-            }
+            STFormRow {
+                label: "Show as"
 
-            STComboBox {
-                id: render_mode
-                Layout.fillWidth: true
-                Layout.columnSpan: root.child_column_span
-                currentIndex: root.ray_geom.isect_mode === RayGeometry.Point
-                              ? 1 : 0
-                model: ["Lines", "Points"]
+                STComboBox {
+                    id: render_mode
+                    Layout.fillWidth: true
+                    currentIndex: root.ray_geom.isect_mode === RayGeometry.Point
+                                  ? 1 : 0
+                    model: ["Lines", "Points"]
 
-                onCurrentIndexChanged: {
-                    root.ray_geom.isect_mode = currentIndex === 0
-                            ? RayGeometry.Line
-                            : RayGeometry.Point
+                    onCurrentIndexChanged: {
+                        root.ray_geom.isect_mode = currentIndex === 0
+                                ? RayGeometry.Line
+                                : RayGeometry.Point
+                    }
+
+                    property bool point_mode: currentIndex === 1
                 }
-
-                property bool point_mode: currentIndex === 1
             }
 
-            STPropertyLabel {
-                text: "Point Size"
-                Layout.alignment: root.labelAlignment
+            STFormRow {
+                label: "Point Size"
                 visible: render_mode.point_mode
-            }
 
-            STSpinBox {
-                Layout.fillWidth: true
-                Layout.columnSpan: root.child_column_span
-                from: 1
-                to: 10
-                value: AppData.view.point_size
-                onValueChanged: {
-                    AppData.view.point_size = value
+                STSpinBox {
+                    Layout.fillWidth: true
+                    from: 1
+                    to: 10
+                    value: AppData.view.point_size
+                    onValueChanged: {
+                        AppData.view.point_size = value
+                    }
                 }
-                visible: render_mode.point_mode
             }
 
-            STPropertyLabel {
-                text: "Filter element"
-                Layout.alignment: root.labelAlignment
+            STFormRow {
+                label: "Filter element"
+
+                RowLayout {
+                    Layout.fillWidth: true
+
+                    STButton {
+                        Layout.fillWidth: true
+                        text: root.ray_geom.entity_filter.is_valid()
+                              ? root.ray_geom.entity_filter_name
+                              : "All Elements"
+                        left_text_icon: "\uf03a"
+
+                        onClicked: entity_filter_pop.open()
+
+                        SelectItemPopup {
+                            id: entity_filter_pop
+                            source_model: root.intersections_module.entity_model
+
+                            onSelectedEntity: (entity) => {
+                                root.ray_geom.select_entity_filter(entity)
+                            }
+                        }
+                        Layout.rightMargin: 4
+                    }
+
+                    STIconButton {
+                        icon: "\uf245"
+                        toolTip: "Pick element from view"
+
+                        onClicked: {
+                            App.view.simulation_content_view = true
+                            App.view.mouse_mode = ViewModule.SelectRayFilterElement
+                        }
+
+                        Layout.rightMargin: 4
+                    }
+
+                    STIconButton {
+                        icon: "\uf057"
+                        toolTip: "Clear element filter"
+                        enabled: root.ray_geom.entity_filter.is_valid()
+
+                        onClicked: root.ray_geom.clear_entity_filter()
+                    }
+                }
             }
 
-            RowLayout {
-                Layout.fillWidth: true
+            STFormRow {
+                label: "Filter types"
 
                 STButton {
                     Layout.fillWidth: true
-                    text: root.ray_geom.entity_filter.is_valid()
-                          ? root.ray_geom.entity_filter_name
-                          : "All Elements"
-                    left_text_icon: "\uf03a"
+                    text: root.ray_geom.event_include.length > 0
+                          ? root.ray_geom.event_include.join(", ")
+                          : "None"
 
-                    onClicked: entity_filter_pop.open()
+                    onClicked: ray_filter_popup.open_with(
+                                   root.ray_geom.event_include)
 
-                    SelectItemPopup {
-                        id: entity_filter_pop
-                        source_model: root.intersections_module.entity_model
+                    RayFilterPopup {
+                        id: ray_filter_popup
 
-                        onSelectedEntity: (entity) => {
-                            root.ray_geom.select_entity_filter(entity)
+                        onModified: function(filter) {
+                            root.ray_geom.event_include = filter
                         }
                     }
-                    Layout.rightMargin: 4
                 }
+            }
 
-                STIconButton {
-                    icon: "\uf245"
-                    toolTip: "Pick element from view"
+            STFormRow {
+                label: "Color mode"
 
-                    onClicked: {
-                        App.view.simulation_content_view = true
-                        App.view.mouse_mode = ViewModule.SelectRayFilterElement
+                STComboBox {
+                    Layout.fillWidth: true
+                    currentIndex: root.textureModeIndex(root.ray_geom.texture_mode)
+
+                    model: ["Solid Color", "Length", "Segment"]
+
+                    onCurrentIndexChanged: {
+                        if (currentIndex >= 0)
+                            root.ray_geom.texture_mode = root.textureModeAt(currentIndex)
                     }
-
-                    Layout.rightMargin: 4
-                }
-
-                STIconButton {
-                    icon: "\uf057"
-                    toolTip: "Clear element filter"
-                    enabled: root.ray_geom.entity_filter.is_valid()
-
-                    onClicked: root.ray_geom.clear_entity_filter()
-                }
-            }
-
-            STPropertyLabel {
-                text: "Filter types"
-                Layout.alignment: root.labelAlignment
-            }
-
-            STButton {
-                Layout.fillWidth: true
-                text: root.ray_geom.event_include.length > 0
-                      ? root.ray_geom.event_include.join(", ")
-                      : "None"
-
-                onClicked: ray_filter_popup.open_with(
-                               root.ray_geom.event_include)
-
-                RayFilterPopup {
-                    id: ray_filter_popup
-
-                    onModified: function(filter) {
-                        root.ray_geom.event_include = filter
-                    }
-                }
-            }
-
-            STPropertyLabel {
-                text: "Color mode"
-                Layout.alignment: root.labelAlignment
-            }
-
-            STComboBox {
-                Layout.fillWidth: true
-                currentIndex: root.textureModeIndex(root.ray_geom.texture_mode)
-
-                model: ["Solid Color", "Length", "Segment"]
-
-                onCurrentIndexChanged: {
-                    if (currentIndex >= 0)
-                        root.ray_geom.texture_mode = root.textureModeAt(currentIndex)
                 }
             }
 
             ColorPickerField {
                 id: rayColorPicker
                 Layout.fillWidth: true
-                Layout.columnSpan: root.child_column_span
                 color: AppData.view.ray_color
                 label: "Ray Color"
                 visible: root.ray_geom.texture_mode === RayGeometry.SolidColor
@@ -243,7 +225,6 @@ Flickable {
             }
 
             STDoubleSpinBox {
-                Layout.columnSpan: root.child_column_span
                 from: 0.0
                 to: 100.0
                 value: root.ray_geom.show_percent
@@ -257,7 +238,6 @@ Flickable {
             }
 
             STDoubleSpinBox {
-                Layout.columnSpan: root.child_column_span
                 from: 0.0
                 to: root.ray_geom.available_rays
                 value: root.visibleRayCount()
@@ -268,38 +248,34 @@ Flickable {
                 suffix: "rays"
             }
 
-            STPropertyLabel {
-                text: "Cutoff radius"
-                Layout.alignment: root.labelAlignment
+            STFormRow {
+                label: "Cutoff radius"
+
+                STDoubleSpinBox {
+                    Layout.fillWidth: true
+                    from: 0.0
+                    to: Infinity
+                    value: root.ray_geom.max_ray_distance
+                    stepSize: 100.0
+                    decimals: 0
+                    onValueModified: root.ray_geom.max_ray_distance = value
+                }
             }
 
-            STDoubleSpinBox {
-                Layout.fillWidth: true
-                Layout.columnSpan: root.child_column_span
-                from: 0.0
-                to: Infinity
-                value: root.ray_geom.max_ray_distance
-                stepSize: 100.0
-                decimals: 0
-                onValueModified: root.ray_geom.max_ray_distance = value
-            }
+            STFormRow {
+                label: "Opacity"
 
-            STPropertyLabel {
-                text: "Opacity"
-                Layout.alignment: root.labelAlignment
-            }
-
-            STDoubleSpinBox {
-                Layout.fillWidth: true
-                Layout.columnSpan: root.child_column_span
-                from: 0.0
-                to: 100.0
-                value: AppData.view.intersection_opacity * 100.0
-                stepSize: 5.0
-                decimals: 0
-                suffix: "%"
-                onValueModified: {
-                    AppData.view.intersection_opacity = value / 100.0
+                STDoubleSpinBox {
+                    Layout.fillWidth: true
+                    from: 0.0
+                    to: 100.0
+                    value: AppData.view.intersection_opacity * 100.0
+                    stepSize: 5.0
+                    decimals: 0
+                    suffix: "%"
+                    onValueModified: {
+                        AppData.view.intersection_opacity = value / 100.0
+                    }
                 }
             }
 
@@ -307,32 +283,27 @@ Flickable {
                 title: "Selection"
             }
 
-            STPropertyLabel {
-                text: "Selected ID"
-                Layout.alignment: root.labelAlignment
-
-                visible: root.is_selected_ray_valid
-            }
-
-            RowLayout {
+            STFormRow {
+                label: "Selected ID"
                 visible: root.is_selected_ray_valid
 
-                Label {
+                RowLayout {
                     Layout.fillWidth: true
-                    text: root.ray_geom.selected_ray_id
 
-                    visible: root.is_selected_ray_valid
-                }
+                    Label {
+                        Layout.fillWidth: true
+                        text: root.ray_geom.selected_ray_id
+                    }
 
-                STIconButton {
-                    icon: "\uf057"
+                    STIconButton {
+                        icon: "\uf057"
 
-                    onClicked: root.ray_geom.selected_ray_id = -1
+                        onClicked: root.ray_geom.selected_ray_id = -1
+                    }
                 }
             }
 
             STButton {
-                Layout.columnSpan: root.child_column_span
                 Layout.fillWidth: true
                 text: "Pick Ray From View"
                 left_text_icon: "\uf05b"

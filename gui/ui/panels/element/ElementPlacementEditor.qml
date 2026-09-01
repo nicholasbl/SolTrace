@@ -3,22 +3,18 @@ import QtQuick.Layouts
 
 import SolTrace
 
-STPropertyPanel {
+STFormPanel {
     id: root
 
     property var module
     property bool singleColumn: false
     property int labelAlignment: Qt.AlignRight | Qt.AlignVCenter
-    property int childColumnSpan: singleColumn ? 1 : 2
-
-    columns: root.singleColumn ? 1 : 2
 
     STPropertySeparator {
         title: "Placement"
     }
 
     STSwitch {
-        Layout.columnSpan: root.childColumnSpan
         text: "Use 3D widget"
         checked: App.view.mouse_mode === ViewModule.EditElement
         onToggled: App.view.mouse_mode = checked ? ViewModule.EditElement
@@ -27,26 +23,23 @@ STPropertyPanel {
 
     InlineDocumentation {
         key: "configure.layout.coordinates"
-        Layout.columnSpan: root.childColumnSpan
         Layout.fillWidth: true
     }
 
-    STPropertyLabel {
-        text: "Coordinates"
-        Layout.alignment: root.labelAlignment
-        Layout.columnSpan: 1
-    }
+    STFormRow {
+        label: "Coordinates"
+        singleColumn: root.singleColumn
+        labelAlignment: root.labelAlignment
 
-    STComboBox {
-        id: positionModeCombo
-        Layout.columnSpan: 1
-        Layout.fillWidth: true
-        model: ["Local", "Global"]
+        STComboBox {
+            id: positionModeCombo
+            Layout.fillWidth: true
+            model: ["Local", "Global"]
+        }
     }
 
     StackLayout {
         id: positionSwipe
-        Layout.columnSpan: root.childColumnSpan
         Layout.fillWidth: true
         currentIndex: positionModeCombo.currentIndex
 
@@ -70,7 +63,6 @@ STPropertyPanel {
     }
 
     ElementRotationEditor {
-        Layout.columnSpan: root.childColumnSpan
         Layout.fillWidth: true
         module: root.module
         singleColumn: root.singleColumn

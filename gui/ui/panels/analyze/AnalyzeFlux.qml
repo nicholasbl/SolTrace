@@ -12,9 +12,6 @@ Flickable {
     id: root
     property var left_panel_size: App.view.left_panel.size
     property var flux_module : AppData.flux
-    property bool singleColumn: App.view.left_panel.size === SplitPanelData.Small
-    property int labelAlignment: (singleColumn ? Qt.AlignLeft : Qt.AlignRight) | Qt.AlignVCenter
-    property int child_column_span: singleColumn ? 1 : 2
 
     function formatCoordinate(value) {
         if (!isFinite(value)) {
@@ -47,41 +44,36 @@ Flickable {
             key: "analyze.flux"
         }
 
-        STPropertyPanel {
-            Layout.fillWidth: true
-
+        STFormPanel {
             collapsible: true
             title: "Current Flux Map"
 
             visible: AppData.flux.current_image.length || computed_map_combo.count > 0
 
-            STPropertyLabel {
-                text: "Computed Map"
-                Layout.alignment: root.labelAlignment
+            STFormRow {
+                label: "Computed Map"
                 visible: computed_map_combo.count > 0
-            }
 
-            STComboBox {
-                id: computed_map_combo
-                Layout.fillWidth: true
-                visible: count > 0
+                STComboBox {
+                    id: computed_map_combo
+                    Layout.fillWidth: true
 
-                model: AppData.flux.computed_maps_model
-                textRole: "name"
-                currentIndex: Math.max(
-                                  0,
-                                  AppData.flux.computed_maps_model.index_of(
-                                      AppData.flux.current_entity))
+                    model: AppData.flux.computed_maps_model
+                    textRole: "name"
+                    currentIndex: Math.max(
+                                      0,
+                                      AppData.flux.computed_maps_model.index_of(
+                                          AppData.flux.current_entity))
 
-                onActivated: (index) => {
-                    AppData.flux.select_entity(
-                                AppData.flux.computed_maps_model.entity_at(index))
+                    onActivated: (index) => {
+                        AppData.flux.select_entity(
+                                    AppData.flux.computed_maps_model.entity_at(index))
+                    }
                 }
             }
 
             Image {
                 id: flux_image_container
-                Layout.columnSpan: 2
                 Layout.fillWidth: true
                 Layout.preferredHeight: width
                 Layout.minimumHeight: 48
@@ -154,28 +146,22 @@ Flickable {
 
             STComboBar {
                 id: map_selector
-                Layout.columnSpan: 2
                 Layout.fillWidth: true
                 iconModel: ["\uf00a", "\uf141"]
                 model: ["Bins", "Points"]
             }
 
             STSwitch {
-                Layout.columnSpan: 2
                 text: "Show Whole Scene"
                 checked: AppData.flux.show_other_geometry
                 onToggled: AppData.flux.show_other_geometry = checked
             }
 
-            InlineDocumentation {
+            STFormHelp {
                 key: "analyze.flux.display"
-                showTitle: false
-                Layout.columnSpan: 2
-                Layout.fillWidth: true
             }
 
             Label {
-                Layout.columnSpan: 2
                 Layout.fillWidth: true
                 text: "Flux map values are scaled by solar DNI when ray area metadata is available."
                 color: App.theme.fontColor
@@ -183,271 +169,250 @@ Flickable {
                 wrapMode: Label.WrapAtWordBoundaryOrAnywhere
             }
 
-            InlineDocumentation {
+            STFormHelp {
                 key: "analyze.flux.stats"
-                showTitle: false
-                Layout.columnSpan: 2
-                Layout.fillWidth: true
             }
 
-            STPropertyLabel {
-                text: "Plotted Power (W)"
+            STFormRow {
+                label: "Plotted Power (W)"
+
+                Label {
+                    Layout.fillWidth: true
+                    text: root.flux_module.current_flux_stats.plotted_power
+                    font.bold: true
+                }
             }
 
-            Label {
-                Layout.fillWidth: true
-                text: root.flux_module.current_flux_stats.plotted_power
-                font.bold: true
+            STFormRow {
+                label: "Peak Flux (W/m^2)"
+
+                Label {
+                    Layout.fillWidth: true
+                    text: root.flux_module.current_flux_stats.peak_flux
+                    font.bold: true
+                }
             }
 
-            STPropertyLabel {
-                text: "Peak Flux (W/m^2)"
+            STFormRow {
+                label: "Min Flux (W/m^2)"
+
+                Label {
+                    Layout.fillWidth: true
+                    text: root.flux_module.current_flux_stats.min_flux
+                    font.bold: true
+                }
             }
 
-            Label {
-                Layout.fillWidth: true
-                text: root.flux_module.current_flux_stats.peak_flux
-                font.bold: true
+            STFormRow {
+                label: "Average Flux (W/m^2)"
+
+                Label {
+                    Layout.fillWidth: true
+                    text: root.flux_module.current_flux_stats.average_flux
+                    font.bold: true
+                }
             }
 
-            STPropertyLabel {
-                text: "Min Flux (W/m^2)"
+            STFormRow {
+                label: "Sigma Flux (W/m^2)"
+
+                Label {
+                    Layout.fillWidth: true
+                    text: root.flux_module.current_flux_stats.sigma_flux
+                    font.bold: true
+                }
             }
 
-            Label {
-                Layout.fillWidth: true
-                text: root.flux_module.current_flux_stats.min_flux
-                font.bold: true
+            STFormRow {
+                label: "Uniformity"
+
+                Label {
+                    Layout.fillWidth: true
+                    text: root.flux_module.current_flux_stats.uniformity
+                    font.bold: true
+                }
             }
 
-            STPropertyLabel {
-                text: "Average Flux (W/m^2)"
+            STFormRow {
+                label: "Peak Flux Uncert"
+
+                Label {
+                    Layout.fillWidth: true
+                    text: root.flux_module.current_flux_stats.peak_flux_uncertainty
+                    font.bold: true
+                }
             }
 
-            Label {
-                Layout.fillWidth: true
-                text: root.flux_module.current_flux_stats.average_flux
-                font.bold: true
+            STFormRow {
+                label: "Average Flux Uncert"
+
+                Label {
+                    Layout.fillWidth: true
+                    text: root.flux_module.current_flux_stats.average_flux_uncertainty
+                    font.bold: true
+                }
             }
 
-            STPropertyLabel {
-                text: "Sigma Flux (W/m^2)"
-            }
+            STFormRow {
+                label: "Centroid"
 
-            Label {
-                Layout.fillWidth: true
-                text: root.flux_module.current_flux_stats.sigma_flux
-                font.bold: true
-            }
-
-            STPropertyLabel {
-                text: "Uniformity"
-            }
-
-            Label {
-                Layout.fillWidth: true
-                text: root.flux_module.current_flux_stats.uniformity
-                font.bold: true
-            }
-
-            STPropertyLabel {
-                text: "Peak Flux Uncert"
-            }
-
-            Label {
-                Layout.fillWidth: true
-                text: root.flux_module.current_flux_stats.peak_flux_uncertainty
-                font.bold: true
-            }
-
-            STPropertyLabel {
-                text: "Average Flux Uncert"
-            }
-
-            Label {
-                Layout.fillWidth: true
-                text: root.flux_module.current_flux_stats.average_flux_uncertainty
-                font.bold: true
-            }
-
-            STPropertyLabel {
-                text: "Centroid"
-            }
-
-            Label {
-                property vector3d cent: root.flux_module.current_flux_stats.centroid
-                Layout.fillWidth: true
-                text: root.formatCentroid(cent)
-                font.bold: true
+                Label {
+                    property vector3d cent: root.flux_module.current_flux_stats.centroid
+                    Layout.fillWidth: true
+                    text: root.formatCentroid(cent)
+                    font.bold: true
+                }
             }
         }
 
-        STPropertyPanel {
-            Layout.fillWidth: true
-
+        STFormPanel {
             collapsible: true
             title: "Compute Flux Map"
-            columns: root.singleColumn ? 1 : 2
 
-            STPropertyLabel {
-                text: "Element"
-                Layout.alignment: root.labelAlignment
-            }
+            STFormRow {
+                label: "Element"
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 8
-
-                STButton {
+                RowLayout {
                     Layout.fillWidth: true
+                    spacing: 8
 
-                    text: AppData.flux.current_entity_name.length ?
-                              AppData.flux.current_entity_name : "Select Element"
-                    left_text_icon: "\uf03a"
+                    STButton {
+                        Layout.fillWidth: true
 
-                    onClicked: entity_pop.open()
+                        text: AppData.flux.current_entity_name.length ?
+                                  AppData.flux.current_entity_name : "Select Element"
+                        left_text_icon: "\uf03a"
 
-                    SelectItemPopup {
-                        id: entity_pop
-                        source_model: AppData.flux.entity_model
+                        onClicked: entity_pop.open()
 
-                        onSelectedEntity: (entity) => {
-                            AppData.flux.select_entity(entity)
+                        SelectItemPopup {
+                            id: entity_pop
+                            source_model: AppData.flux.entity_model
+
+                            onSelectedEntity: (entity) => {
+                                AppData.flux.select_entity(entity)
+                            }
+                        }
+                    }
+
+                    STIconButton {
+                        icon: "\uf245"
+                        toolTip: "Pick element from view"
+
+                        onClicked: {
+                            App.view.simulation_content_view = true
+                            App.view.mouse_mode = ViewModule.SelectElement
+                        }
+                    }
+
+                    STIconButton {
+                        icon: "\uf140"
+                        toolTip: "Orient Camera to Element"
+                        enabled: AppData.flux.current_entity.is_valid()
+
+                        onClicked: {
+                            App.view.simulation_content_view = true
+                            simulation_scene.orient_camera_to_database_position(
+                                        AppData.flux.current_entity_position)
                         }
                     }
                 }
-
-                STIconButton {
-                    icon: "\uf245"
-                    toolTip: "Pick element from view"
-
-                    onClicked: {
-                        App.view.simulation_content_view = true
-                        App.view.mouse_mode = ViewModule.SelectElement
-                    }
-                }
-
-                STIconButton {
-                    icon: "\uf140"
-                    toolTip: "Orient Camera to Element"
-                    enabled: AppData.flux.current_entity.is_valid()
-
-                    onClicked: {
-                        App.view.simulation_content_view = true
-                        simulation_scene.orient_camera_to_database_position(
-                                    AppData.flux.current_entity_position)
-                    }
-                }
             }
 
-            InlineDocumentation {
+            STFormHelp {
                 key: "analyze.flux.target"
-                showTitle: false
-                Layout.columnSpan: root.child_column_span
-                Layout.fillWidth: true
             }
 
-            STPropertyLabel {
-                text: "Solar DNI"
-                Layout.alignment: root.labelAlignment
+            STFormRow {
+                label: "Solar DNI"
+
+                STDoubleSpinBox {
+                    Layout.fillWidth: true
+                    from: 0.0
+                    to: 2000.0
+                    stepSize: 50.0
+                    decimals: 1
+                    value: AppData.flux.dni
+                    suffix: " W/m^2"
+
+                    onValueModified: AppData.flux.dni = value
+                }
             }
 
-            STDoubleSpinBox {
-                Layout.fillWidth: true
-                from: 0.0
-                to: 2000.0
-                stepSize: 50.0
-                decimals: 1
-                value: AppData.flux.dni
-                suffix: " W/m^2"
-
-                onValueModified: AppData.flux.dni = value
-            }
-
-            InlineDocumentation {
+            STFormHelp {
                 key: "analyze.flux.dni"
-                showTitle: false
-                Layout.columnSpan: root.child_column_span
-                Layout.fillWidth: true
             }
 
             STSwitch {
-                Layout.columnSpan: root.child_column_span
                 text: "Show Triangle Grid"
                 checked: AppData.flux.pending_flux_maps.show_mesh_grid
                 onToggled: AppData.flux.pending_flux_maps.show_mesh_grid = checked
             }
 
-            STPropertyLabel {
-                text: "Image Resolution (Pixels)"
-                Layout.alignment: root.labelAlignment
+            STFormRow {
+                label: "Image Resolution (Pixels)"
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    STSpinBox {
+                        Layout.fillWidth: true
+                        from: 64
+                        to: 8192
+                        stepSize: 64
+                        value: AppData.flux.pending_flux_maps.image_resolution.width
+
+                        onValueModified: {
+                            AppData.flux.pending_flux_maps.image_resolution =
+                                    Qt.size(value,
+                                            AppData.flux.pending_flux_maps.image_resolution.height)
+                        }
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignVCenter
+                        text: "\u00d7"
+                        opacity: 0.7
+                    }
+
+                    STSpinBox {
+                        Layout.fillWidth: true
+                        from: 64
+                        to: 8192
+                        stepSize: 64
+                        value: AppData.flux.pending_flux_maps.image_resolution.height
+
+                        onValueModified: {
+                            AppData.flux.pending_flux_maps.image_resolution =
+                                    Qt.size(AppData.flux.pending_flux_maps.image_resolution.width,
+                                            value)
+                        }
+                    }
+                }
             }
 
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 8
+            STFormRow {
+                label: "Surface resolution"
 
                 STSpinBox {
                     Layout.fillWidth: true
-                    from: 64
-                    to: 8192
-                    stepSize: 64
-                    value: AppData.flux.pending_flux_maps.image_resolution.width
+                    from: 1
+                    to: 16
+                    value: AppData.flux.pending_flux_maps.mesh_resolution_multiply
 
                     onValueModified: {
-                        AppData.flux.pending_flux_maps.image_resolution =
-                                Qt.size(value,
-                                        AppData.flux.pending_flux_maps.image_resolution.height)
-                    }
-                }
-
-                Label {
-                    Layout.alignment: Qt.AlignVCenter
-                    text: "\u00d7"
-                    opacity: 0.7
-                }
-
-                STSpinBox {
-                    Layout.fillWidth: true
-                    from: 64
-                    to: 8192
-                    stepSize: 64
-                    value: AppData.flux.pending_flux_maps.image_resolution.height
-
-                    onValueModified: {
-                        AppData.flux.pending_flux_maps.image_resolution =
-                                Qt.size(AppData.flux.pending_flux_maps.image_resolution.width,
-                                        value)
+                        AppData.flux.pending_flux_maps.mesh_resolution_multiply = value
                     }
                 }
             }
 
-            STPropertyLabel {
-                text: "Surface resolution"
-                Layout.alignment: root.labelAlignment
-            }
-
-            STSpinBox {
-                Layout.fillWidth: true
-                from: 1
-                to: 16
-                value: AppData.flux.pending_flux_maps.mesh_resolution_multiply
-
-                onValueModified: {
-                    AppData.flux.pending_flux_maps.mesh_resolution_multiply = value
-                }
-            }
-
-            InlineDocumentation {
+            STFormHelp {
                 key: "analyze.flux.resolution"
-                showTitle: false
-                Layout.columnSpan: root.child_column_span
-                Layout.fillWidth: true
             }
 
             ListView {
                 Layout.fillWidth: true
-                Layout.columnSpan: root.child_column_span
 
                 Layout.preferredHeight: 120
 
@@ -491,7 +456,6 @@ Flickable {
 
             STButton {
                 Layout.fillWidth: true
-                Layout.columnSpan: root.child_column_span
 
                 text: "Compute Map"
                 left_text_icon: "\uf0da"
@@ -504,39 +468,33 @@ Flickable {
 
         }
 
-        STPropertyPanel {
-            Layout.fillWidth: true
-
+        STFormPanel {
             // Disable for now until this is a working feature
             visible: false
 
             collapsible: true
             title: "Normalized Ray Volume"
 
-            InlineDocumentation {
+            STFormHelp {
                 key: "analyze.flux.volume"
-                showTitle: false
-                Layout.columnSpan: 2
-                Layout.fillWidth: true
             }
 
-            STPropertyLabel {
-                text: "Grid Resolution"
-            }
+            STFormRow {
+                label: "Grid Resolution"
 
-            STSpinBox {
-                id: resolution_spin
-                Layout.fillWidth: true
+                STSpinBox {
+                    id: resolution_spin
+                    Layout.fillWidth: true
 
-                value: 512
-                from: 64
-                to: 2048
+                    value: 512
+                    from: 64
+                    to: 2048
+                }
             }
 
             STButton {
                 enabled: !AppData.flux.ray_volume_flux_in_progress
                 Layout.fillWidth: true
-                Layout.columnSpan: 2
 
                 text: "Start Raster"
                 left_text_icon: "\uf0da"
@@ -550,25 +508,24 @@ Flickable {
                 title: "Isosurface"
             }
 
-            STPropertyLabel {
-                text: "Isovalue"
-            }
+            STFormRow {
+                label: "Isovalue"
 
-            STDoubleSpinBox {
-                id: iso_spin
-                Layout.fillWidth: true
+                STDoubleSpinBox {
+                    id: iso_spin
+                    Layout.fillWidth: true
 
-                value: 0.90
-                from: 0.0
-                stepSize: .01
-                decimals: 2
-                to: 1.0
+                    value: 0.90
+                    from: 0.0
+                    stepSize: .01
+                    decimals: 2
+                    to: 1.0
+                }
             }
 
             STButton {
                 enabled: !AppData.flux.ray_volume_flux_in_progress
                 Layout.fillWidth: true
-                Layout.columnSpan: 2
 
                 text: "Generate Surface"
                 left_text_icon: "\uf0da"
