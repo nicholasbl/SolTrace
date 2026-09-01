@@ -154,7 +154,7 @@ file(GLOB_RECURSE SOLTRACE_DOC_FILES
 list(FILTER SOLTRACE_DOC_FILES EXCLUDE REGEX "/\\.DS_Store$")
 list(SORT SOLTRACE_DOC_FILES)
 
-set_source_files_properties(ui/App.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(ui/app/App.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_resources(SolTrace "assets"
     PREFIX "/"
