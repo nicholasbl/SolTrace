@@ -88,11 +88,18 @@ QtObject {
 
     function openLayoutEditorFor(entity) {
         tracePick("select element -> " + entityString(entity))
+        console.log("[Issue291][openLayoutEditorFor] set workflow phase")
         App.view.workflow_phase = ViewModule.Configure
+        console.log("[Issue291][openLayoutEditorFor] show left panel")
         App.view.left_panel.visible = true
+        console.log("[Issue291][openLayoutEditorFor] select layout section")
         App.view.configure_section = 3
+        console.log("[Issue291][openLayoutEditorFor] enable layout editing")
         App.view.editing_layout = true
+        console.log("[Issue291][openLayoutEditorFor] set edited element "
+                    + entityString(entity))
         App.layout.edited_element = entity
+        console.log("[Issue291][openLayoutEditorFor] complete")
     }
 
     function openMaterialEditorFor(entity) {

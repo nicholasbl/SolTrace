@@ -3,6 +3,8 @@
 #include "data/components.h"
 #include "data_io/database_notification.h"
 
+#include <QDebug>
+
 namespace SolTrace::GUI::Data {
 
 void InstanceSortFilter::recompute_has_filter() {
@@ -131,16 +133,31 @@ int InstanceSortFilter::index_of(Entity entity) const {
 }
 
 QModelIndex InstanceSortFilter::index_for_entity(Entity entity) const {
-    if (!sourceModel() || !entity.is_valid()) return { };
+    qDebug() << "[Issue291][InstanceSortFilter] index_for_entity begin"
+             << entity << "source model" << sourceModel();
+    if (!sourceModel() || !entity.is_valid()) {
+        qDebug() << "[Issue291][InstanceSortFilter] invalid precondition";
+        return { };
+    }
 
+    qDebug() << "[Issue291][InstanceSortFilter] recursive match begin";
     auto const matches =
         sourceModel()->match(sourceModel()->index(0, 0),
                              entity_role,
                              QVariant::fromValue(entity),
                              1,
                              Qt::MatchExactly | Qt::MatchRecursive);
+    qDebug() << "[Issue291][InstanceSortFilter] recursive match complete; count"
+             << matches.size();
     if (matches.isEmpty()) return { };
-    return mapFromSource(matches.front());
+
+    auto const source_index = matches.front();
+    qDebug() << "[Issue291][InstanceSortFilter] mapFromSource begin"
+             << source_index;
+    auto const proxy_index = mapFromSource(source_index);
+    qDebug() << "[Issue291][InstanceSortFilter] mapFromSource complete"
+             << proxy_index;
+    return proxy_index;
 }
 
 void InstanceSortFilter::clear_material() {

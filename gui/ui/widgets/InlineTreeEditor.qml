@@ -35,20 +35,53 @@ STScrollView {
         editing = false
     }
 
+    function describeEntity(entity) {
+        if (!entity) return "<null>"
+        if (entity.debug_string) return entity.debug_string()
+        return String(entity)
+    }
+
+    function traceReveal(message) {
+        console.log("[Issue291][InlineTreeEditor] " + message)
+    }
+
     function revealEntity(entity) {
+        traceReveal("reveal requested for " + describeEntity(entity))
         if (!entity || !entity.is_valid() || !item_tree.model
                 || typeof item_tree.model.index_for_entity !== "function") {
+            traceReveal("reveal rejected by precondition")
             return
         }
 
+        traceReveal("queue reveal callback")
         Qt.callLater(function() {
+            root.traceReveal("reveal callback started for "
+                             + root.describeEntity(entity))
+            root.traceReveal("calling index_for_entity")
             const modelIndex = item_tree.model.index_for_entity(entity)
-            if (!modelIndex || modelIndex.row < 0) return
+            root.traceReveal("index_for_entity returned: valid="
+                             + Boolean(modelIndex)
+                             + " row=" + (modelIndex ? modelIndex.row : -1)
+                             + " column="
+                             + (modelIndex ? modelIndex.column : -1))
+            if (!modelIndex || modelIndex.row < 0) {
+                root.traceReveal("reveal stopped: invalid model index")
+                return
+            }
 
+            root.traceReveal("calling expandToIndex")
             item_tree.expandToIndex(modelIndex)
+            root.traceReveal("expandToIndex returned")
+
+            root.traceReveal("calling rowAtIndex")
             const row = item_tree.rowAtIndex(modelIndex)
-            if (row >= 0)
+            root.traceReveal("rowAtIndex returned " + row)
+            if (row >= 0) {
+                root.traceReveal("calling positionViewAtRow")
                 item_tree.positionViewAtRow(row, TableView.Contain)
+                root.traceReveal("positionViewAtRow returned")
+            }
+            root.traceReveal("reveal callback complete")
         })
     }
 

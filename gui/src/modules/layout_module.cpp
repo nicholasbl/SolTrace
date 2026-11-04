@@ -1,24 +1,37 @@
 #include "layout_module.h"
 
+#include <QDebug>
 
 namespace SolTrace::GUI::App {
 
 void LayoutModule::edited_entity_changed() {
+    qDebug() << "[Issue291][LayoutModule] edited_entity_changed begin"
+             << m_edited_element;
+    qDebug() << "[Issue291][LayoutModule] setting instance editor";
     instance_edit()->set(m_edited_element);
+    qDebug() << "[Issue291][LayoutModule] instance editor set";
 
     if (!m_current_database) {
+        qDebug() << "[Issue291][LayoutModule] no current database";
         set_edited_element_name(QString());
         return;
     }
 
+    qDebug() << "[Issue291][LayoutModule] clearing selection";
     m_current_database->clear_selection();
+    qDebug() << "[Issue291][LayoutModule] selection cleared";
     if (m_edited_element.is_valid() &&
         m_current_database->as_registry()
             .all_of<SolTrace::GUI::Data::ElementComponent>(m_edited_element)) {
+        qDebug() << "[Issue291][LayoutModule] adding selection"
+                 << m_edited_element;
         m_current_database->add_to_selection(m_edited_element);
+        qDebug() << "[Issue291][LayoutModule] selection added";
     }
 
+    qDebug() << "[Issue291][LayoutModule] updating edited element name";
     set_edited_element_name(m_current_database->name_of(m_edited_element));
+    qDebug() << "[Issue291][LayoutModule] edited_entity_changed complete";
 }
 
 void LayoutModule::reset(SolTrace::GUI::Data::Database* database) {

@@ -1,6 +1,7 @@
 #include "scene_models/world_geometry_model.h"
 #include "support/math_utility.h"
 
+#include <QDebug>
 #include <QVariantMap>
 #include <algorithm>
 #include <limits>
@@ -143,11 +144,18 @@ void InstancedElements::on_instance_changed(entt::entity e) {
 }
 
 void InstancedElements::on_selection_changed(entt::entity e) {
+    qDebug() << "[Issue291][InstancedElements] selection change begin"
+             << Entity(e) << "target group" << m_target_group;
     auto iter = m_rev_cache.find(e);
 
-    if (iter == m_rev_cache.end()) { return; }
+    if (iter == m_rev_cache.end()) {
+        qDebug() << "[Issue291][InstancedElements] selection not in group";
+        return;
+    }
 
+    qDebug() << "[Issue291][InstancedElements] instance rebuild begin";
     on_geometry_group_change(m_target_group);
+    qDebug() << "[Issue291][InstancedElements] instance rebuild complete";
 }
 
 bool InstancedElements::belongs_to_target_group(entt::entity e) const {
